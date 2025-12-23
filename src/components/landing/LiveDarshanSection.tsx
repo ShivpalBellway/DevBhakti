@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { Play, Users, Radio, Clock, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import Image from "next/image";
 import liveDarshanPreview from "@/assets/live-darshan-preview.jpg";
 
 const liveTemples = [
@@ -49,10 +50,11 @@ const LiveDarshanSection: React.FC = () => {
           >
             <div className="relative rounded-2xl overflow-hidden bg-sidebar-accent aspect-video shadow-elevated">
               {/* Video preview image */}
-              <img 
-                src={(liveDarshanPreview as any).src || liveDarshanPreview} 
+              <Image 
+                src={liveDarshanPreview} 
                 alt="Live darshan preview" 
-                className="absolute inset-0 w-full h-full object-cover"
+                fill
+                className="object-cover"
               />
               <div className="absolute inset-0 bg-foreground/20" />
               

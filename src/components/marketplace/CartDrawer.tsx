@@ -55,7 +55,7 @@ const CartDrawer: React.FC<CartDrawerProps> = ({
               {items.map((item) => (
                 <div key={item.id} className="flex gap-4 p-3 bg-muted/50 rounded-lg">
                   <img
-                    src={item.image}
+                    src={(item.image as any).src || item.image}
                     alt={item.name}
                     className="w-20 h-20 object-cover rounded-md"
                   />

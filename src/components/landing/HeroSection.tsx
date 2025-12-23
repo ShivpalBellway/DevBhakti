@@ -3,6 +3,7 @@
 import React from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
+import Image from "next/image";
 import { ArrowRight, Play, Sparkles, MapPin, Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import heroTempleImage from "@/assets/hero-temple.jpg";
@@ -12,10 +13,12 @@ const HeroSection: React.FC = () => {
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
       {/* Background image */}
       <div className="absolute inset-0">
-        <img 
+        <Image 
           src={heroTempleImage} 
           alt="Sacred temple at sunrise" 
-          className="w-full h-full object-cover"
+          fill
+          priority
+          className="object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-b from-background/80 via-background/60 to-background/90" />
       </div>

@@ -111,7 +111,7 @@ const MarketplaceSection: React.FC = () => {
               >
                 <div className="aspect-square bg-muted rounded-xl overflow-hidden mb-3">
                   <img 
-                    src={product.image} 
+                    src={(product.image as any).src || product.image} 
                     alt={product.name}
                     className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
                   />
