@@ -1,0 +1,154 @@
+"use client";
+
+import React from "react";
+import { motion } from "framer-motion";
+import Link from "next/link";
+import { ArrowRight, Play, Sparkles, MapPin, Bell } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import heroTempleImage from "@/assets/hero-temple.jpg";
+
+const HeroSection: React.FC = () => {
+  return (
+    <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
+      {/* Background image */}
+      <div className="absolute inset-0">
+        <img 
+          src={heroTempleImage} 
+          alt="Sacred temple at sunrise" 
+          className="w-full h-full object-cover"
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-background/80 via-background/60 to-background/90" />
+      </div>
+      
+      {/* Background decorative elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-1/4 -left-32 w-96 h-96 bg-primary/10 rounded-full blur-3xl animate-pulse-slow" />
+        <div className="absolute bottom-1/4 -right-32 w-80 h-80 bg-secondary/20 rounded-full blur-3xl animate-pulse-slow" />
+      </div>
+
+      <div className="container mx-auto px-4 pt-24 pb-12 relative z-10">
+        <div className="max-w-5xl mx-auto text-center">
+          {/* Badge */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 mb-8"
+          >
+            <Sparkles className="w-4 h-4 text-primary" />
+            <span className="text-sm font-medium text-foreground">
+              Connecting Devotees with Sacred Spaces
+            </span>
+          </motion.div>
+
+          {/* Main heading */}
+          <motion.h1
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+            className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-serif font-bold text-foreground leading-tight mb-6"
+          >
+            Your Digital Gateway to{" "}
+            <span className="text-gradient-sacred">Divine Experiences</span>
+          </motion.h1>
+
+          {/* Subtitle */}
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+            className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10"
+          >
+            Discover temples, book poojas, watch live darshan, explore sacred marketplace,
+            and stay connected with your favorite institutions — all in one platform.
+          </motion.p>
+
+          {/* CTA Buttons */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.3 }}
+            className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16"
+          >
+            <Button variant="hero" size="xl" asChild>
+              <Link href="/auth?mode=register">
+                Start Your Journey
+                <ArrowRight className="w-5 h-5" />
+              </Link>
+            </Button>
+            <Button variant="outline-sacred" size="xl" asChild>
+              <a href="#darshan">
+                <Play className="w-5 h-5" />
+                Watch Live Darshan
+              </a>
+            </Button>
+          </motion.div>
+
+          {/* Stats */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.4 }}
+            className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8 max-w-3xl mx-auto"
+          >
+            {[
+              { value: "500+", label: "Temples" },
+              { value: "50K+", label: "Devotees" },
+              { value: "1M+", label: "Bookings" },
+              { value: "24/7", label: "Live Darshan" },
+            ].map((stat, index) => (
+              <div key={stat.label} className="text-center">
+                <div className="text-2xl md:text-3xl font-serif font-bold text-foreground">
+                  {stat.value}
+                </div>
+                <div className="text-sm text-muted-foreground">{stat.label}</div>
+              </div>
+            ))}
+          </motion.div>
+        </div>
+
+        {/* Floating feature cards */}
+        <motion.div
+          initial={{ opacity: 0, y: 40 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.5 }}
+          className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-4 max-w-4xl mx-auto"
+        >
+          {[
+            {
+              icon: MapPin,
+              title: "Find Nearby Temples",
+              description: "Discover sacred places near you",
+            },
+            {
+              icon: Bell,
+              title: "Instant Notifications",
+              description: "Never miss festival updates",
+            },
+            {
+              icon: Sparkles,
+              title: "Sacred Marketplace",
+              description: "Authentic spiritual products",
+            },
+          ].map((feature, index) => (
+            <motion.div
+              key={feature.title}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: 0.6 + index * 0.1 }}
+              className="bg-card/80 backdrop-blur-sm border border-border rounded-2xl p-5 shadow-soft hover:shadow-warm transition-all duration-300 hover:-translate-y-1"
+            >
+              <div className="w-10 h-10 rounded-xl bg-gradient-sacred flex items-center justify-center mb-3">
+                <feature.icon className="w-5 h-5 text-primary-foreground" />
+              </div>
+              <h3 className="font-semibold text-foreground mb-1">{feature.title}</h3>
+              <p className="text-sm text-muted-foreground">{feature.description}</p>
+            </motion.div>
+          ))}
+        </motion.div>
+      </div>
+    </section>
+  );
+};
+
+export default HeroSection;

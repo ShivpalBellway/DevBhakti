@@ -1,0 +1,31 @@
+import Navbar from "@/components/landing/Navbar";
+import HeroSection from "@/components/landing/HeroSection";
+import FeaturesSection from "@/components/landing/FeaturesSection";
+import MarketplaceSection from "@/components/landing/MarketplaceSection";
+import LiveDarshanSection from "@/components/landing/LiveDarshanSection";
+import CTASection from "@/components/landing/CTASection";
+import Footer from "@/components/landing/Footer";
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "DevBhakti - Your Digital Gateway to Divine Experiences",
+  description: "Discover temples, book poojas, watch live darshan, explore sacred marketplace, and stay connected with your favorite institutions — all in one platform.",
+  keywords: "temple booking, live darshan, pooja booking, spiritual marketplace, Hindu temples, online darshan, temple donations",
+  alternates: {
+    canonical: "https://devbhakti.com",
+  },
+};
+
+export default function Home() {
+  return (
+    <main className="min-h-screen">
+      <Navbar />
+      <HeroSection />
+      <FeaturesSection />
+      <MarketplaceSection />
+      <LiveDarshanSection />
+      <CTASection />
+      <Footer />
+    </main>
+  );
+}
