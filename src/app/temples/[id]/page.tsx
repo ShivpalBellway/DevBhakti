@@ -157,7 +157,7 @@ export default function TempleDetail() {
                     Watch Live Darshan
                   </Button>
                   <Button variant="outline" className="gap-2" asChild>
-                    <Link href="/booking?temple=1">
+                    <Link href={`/booking?temple=${id}`}>
                       <Calendar className="h-4 w-4" />
                       Book Pooja
                     </Link>
@@ -213,7 +213,7 @@ export default function TempleDetail() {
                               {pooja.price}
                             </div>
                             <Button size="sm" asChild>
-                              <Link href={`/booking?temple=1`}>Book Now</Link>
+                              <Link href={`/booking?temple=${id}`}>Book Now</Link>
                             </Button>
                           </div>
                         </div>
@@ -301,12 +301,13 @@ export default function TempleDetail() {
                 </div>
                 <div className="pt-4 border-t border-border">
                   <Button className="w-full" size="lg" asChild>
-                    <Link href="/donation?temple=1">
+                    <Link href={`/donation?temple=${id}`}>
                       <Heart className="h-4 w-4 mr-2" />
                       Make Donation
                     </Link>
                   </Button>
                 </div>
+
               </CardContent>
             </Card>
           </div>
