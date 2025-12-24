@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
-import { Mail, Lock, User, Phone, ArrowRight, Building2, Eye, EyeOff } from "lucide-react";
+import { User, Phone, ArrowRight, Building2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,11 +17,7 @@ const AuthForm: React.FC = () => {
 
   const [mode, setMode] = useState<"login" | "register">(initialMode);
   const [userType, setUserType] = useState<"devotee" | "institution">(initialType);
-  const [showPassword, setShowPassword] = useState(false);
-
   const [formData, setFormData] = useState({
-    email: "",
-    password: "",
     name: "",
     phone: "",
   });
@@ -64,22 +60,20 @@ const AuthForm: React.FC = () => {
             <div className="flex gap-2 p-1 bg-muted rounded-lg mb-6">
               <button
                 onClick={() => setUserType("devotee")}
-                className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-md text-sm font-medium transition-all ${
-                  userType === "devotee"
+                className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-md text-sm font-medium transition-all ${userType === "devotee"
                     ? "bg-card shadow-soft text-foreground"
                     : "text-muted-foreground hover:text-foreground"
-                }`}
+                  }`}
               >
                 <User className="w-4 h-4" />
                 Devotee
               </button>
               <button
                 onClick={() => setUserType("institution")}
-                className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-md text-sm font-medium transition-all ${
-                  userType === "institution"
+                className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-md text-sm font-medium transition-all ${userType === "institution"
                     ? "bg-card shadow-soft text-foreground"
                     : "text-muted-foreground hover:text-foreground"
-                }`}
+                  }`}
               >
                 <Building2 className="w-4 h-4" />
                 Temple
@@ -110,74 +104,23 @@ const AuthForm: React.FC = () => {
             )}
 
             <div className="space-y-2">
-              <Label htmlFor="email">Email Address</Label>
+              <Label htmlFor="phone">Phone Number</Label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                 <Input
-                  id="email"
-                  type="email"
-                  placeholder="Enter your email"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  id="phone"
+                  type="tel"
+                  placeholder="+91 XXXXX XXXXX"
+                  value={formData.phone}
+                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                   className="pl-10"
                   required
                 />
               </div>
             </div>
 
-            {mode === "register" && (
-              <div className="space-y-2">
-                <Label htmlFor="phone">Phone Number</Label>
-                <div className="relative">
-                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                  <Input
-                    id="phone"
-                    type="tel"
-                    placeholder="+91 XXXXX XXXXX"
-                    value={formData.phone}
-                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    className="pl-10"
-                    required
-                  />
-                </div>
-              </div>
-            )}
-
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="password">Password</Label>
-                {mode === "login" && (
-                  <Link
-                    href="/auth/forgot-password"
-                    className="text-sm text-primary hover:underline"
-                  >
-                    Forgot password?
-                  </Link>
-                )}
-              </div>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                <Input
-                  id="password"
-                  type={showPassword ? "text" : "password"}
-                  placeholder="Enter your password"
-                  value={formData.password}
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  className="pl-10 pr-10"
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                >
-                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                </button>
-              </div>
-            </div>
-
             <Button type="submit" variant="sacred" size="lg" className="w-full">
-              {mode === "login" ? "Sign In" : "Create Account"}
+              {mode === "login" ? "Send OTP" : "Create Account & Send OTP"}
               <ArrowRight className="w-5 h-5" />
             </Button>
           </form>
@@ -195,8 +138,8 @@ const AuthForm: React.FC = () => {
           </div>
 
           {/* Social Login */}
-          <div className="grid grid-cols-2 gap-3">
-            <Button variant="outline" className="w-full">
+          <div className="flex justify-center">
+            <Button variant="outline" className="w-full max-w-sm">
               <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
                 <path
                   fill="currentColor"
@@ -217,10 +160,6 @@ const AuthForm: React.FC = () => {
               </svg>
               Google
             </Button>
-            <Button variant="outline" className="w-full">
-              <Phone className="w-5 h-5 mr-2" />
-              OTP
-            </Button>
           </div>
 
           {/* Toggle Mode */}
@@ -233,6 +172,7 @@ const AuthForm: React.FC = () => {
               {mode === "login" ? "Sign up" : "Sign in"}
             </button>
           </p>
+
         </motion.div>
       </div>
 
