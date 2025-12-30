@@ -29,9 +29,9 @@ const Navbar: React.FC = () => {
 
   const navLinks = [
     { label: "Verified Temples", href: "/temples" },
-    { label: "Shop", href: "/marketplace" },
+    { label: "Shop", href: "/marketplace?category=All" },
     { label: "Live Darshan", href: "/live-darshan" },
-    { label: "Buy Prasad", href: "/marketplace" },
+    { label: "Buy Prasad", href: "/marketplace?category=Prasad" },
     // { label: "Dashboard", href: "#dashboard" },
   ];
 
@@ -72,7 +72,7 @@ const Navbar: React.FC = () => {
                   <Button variant="ghost" size="icon" className="relative rounded-full w-10 h-10 border-2 border-[#794A05]
                      hover:border-[#794A05] hover:bg-[#ffffff] transition-all duration-300 ease-in-out
                       hover:shadow-[0_0_0_4px_#ffffff,0_0_0_6px_#794A05] group">
-                    <User className="w-5 h-5 text-[#794A05] transition-all duration-300 group-hover:scale-110"/>
+                    <User className="w-5 h-5 text-[#794A05] transition-all duration-300 group-hover:scale-110" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-64 mt-3 p-2 rounded-[1.8rem] shadow-2xl border-orange-100/50 dark:border-zinc-800 bg-white/95 dark:bg-zinc-950/95 backdrop-blur-md animate-in fade-in zoom-in-95 duration-200">

@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Navbar from "@/components/landing/Navbar";
 import Footer from "@/components/landing/Footer";
 import { Input } from "@/components/ui/input";
@@ -34,6 +34,7 @@ import productKalash from "@/assets/product-kalash.jpg";
 import productShivaIdol from "@/assets/product-shiva-idol.jpg";
 import productCamphor from "@/assets/product-camphor.jpg";
 import productBhagavadGita from "@/assets/product-bhagavadgita.jpg";
+import productGhee from "@/assets/product-ghee.jpg";
 
 const products = [
   {
@@ -140,19 +141,42 @@ const products = [
     badge: "Popular",
     inStock: true,
   },
+  {
+    id: 9,
+    name: "Prasad - Ghee",
+    description: "Pure ghee for aarti - Pack of 100",
+    price: 599,
+    originalPrice: 799,
+    image: productGhee,
+    rating: 4.8,
+    reviews: 445,
+    category: "Prasad",
+    badge: "Popular",
+    inStock: true,
+  },
 ];
 
-const categories = ["All", "Prayer Beads", "Pooja Items", "Incense", "Holy Water", "Idols", "Books"];
+const categories = ["All", "Prayer Beads", "Pooja Items", "Incense", "Holy Water", "Idols", "Books", "Prasad"];
 
-export default function MarketplacePage() {
-  const router = useRouter(); // Use useRouter in Next.js
+function MarketplaceContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const { toast } = useToast();
+
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [priceRange, setPriceRange] = useState([0, 5000]);
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [favorites, setFavorites] = useState<number[]>([]);
   const [cartOpen, setCartOpen] = useState(false);
+
+  // Sync with query parameters
+  useEffect(() => {
+    const categoryParam = searchParams.get("category");
+    if (categoryParam && categories.includes(categoryParam)) {
+      setSelectedCategory(categoryParam);
+    }
+  }, [searchParams]);
 
   const filteredProducts = products.filter((product) => {
     const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase());
@@ -171,7 +195,7 @@ export default function MarketplacePage() {
   const addToCart = (id: number) => {
     const product = products.find(p => p.id === id);
     if (!product) return;
-    
+
     setCartItems((prev) => {
       const existing = prev.find(item => item.id === id);
       if (existing) {
@@ -187,7 +211,7 @@ export default function MarketplacePage() {
         quantity: 1,
       }];
     });
-    
+
     toast({
       title: "Added to cart",
       description: `${product.name} has been added to your cart`,
@@ -210,7 +234,7 @@ export default function MarketplacePage() {
     setCartOpen(false);
     // Passing state is tricky with Next router, usually use Context or query params.
     // For now we just navigate
-    router.push("/marketplace/checkout"); 
+    router.push("/marketplace/checkout");
   };
 
   return (
@@ -350,11 +374,10 @@ export default function MarketplacePage() {
                       onClick={() => toggleFavorite(product.id)}
                     >
                       <Heart
-                        className={`h-4 w-4 ${
-                          favorites.includes(product.id)
+                        className={`h-4 w-4 ${favorites.includes(product.id)
                             ? "fill-red-500 text-red-500"
                             : ""
-                        }`}
+                          }`}
                       />
                     </Button>
                   </div>
@@ -396,7 +419,7 @@ export default function MarketplacePage() {
       </div>
 
       <Footer />
-      
+
       <CartDrawer
         open={cartOpen}
         onOpenChange={setCartOpen}
@@ -406,5 +429,13 @@ export default function MarketplacePage() {
         onCheckout={handleCheckout}
       />
     </div>
+  );
+}
+
+export default function MarketplacePage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading Sacred Marketplace...</div>}>
+      <MarketplaceContent />
+    </Suspense>
   );
 }
