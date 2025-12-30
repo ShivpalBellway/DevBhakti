@@ -3,9 +3,20 @@
 import React from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
+import Image from "next/image";
 import { Clock, IndianRupee, ArrowRight, ChevronLeft, ChevronRight, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+
+// Import pooja images
+import aartiImg from "@/assets/poojas/aarti.jpg";
+import bhogImg from "@/assets/poojas/bhog aarti.jpg";
+import ganeshImg from "@/assets/poojas/ganesh_aarti.jpg";
+import lakshmiImg from "@/assets/poojas/lakshmi pooja.jpg";
+import manglaImg from "@/assets/poojas/mangla aarti.webp";
+import rudraImg from "@/assets/poojas/rudra abhishek.jpg";
+import sandhyaImg from "@/assets/poojas/sandhyaaarti.webp";
+import satyaImg from "@/assets/poojas/satyanarayan puja.webp";
 
 const poojas = [
   {
@@ -16,6 +27,7 @@ const poojas = [
     description: "Early morning blessing aarti",
     category: "Aarti",
     time: "5:00 AM",
+    image: manglaImg,
   },
   {
     id: "bhog",
@@ -25,6 +37,7 @@ const poojas = [
     description: "Mid-day offering aarti",
     category: "Aarti",
     time: "11:00 AM",
+    image: bhogImg,
   },
   {
     id: "sandhya",
@@ -34,6 +47,7 @@ const poojas = [
     description: "Evening prayer aarti",
     category: "Aarti",
     time: "7:00 PM",
+    image: sandhyaImg,
   },
   {
     id: "shringar",
@@ -43,6 +57,7 @@ const poojas = [
     description: "Special decoration aarti",
     category: "Aarti",
     time: "9:00 PM",
+    image: aartiImg,
   },
   {
     id: "rudrabhishek",
@@ -52,6 +67,7 @@ const poojas = [
     description: "Sacred abhishekam ritual",
     category: "Abhishekam",
     time: "On Request",
+    image: rudraImg,
   },
   {
     id: "satyanarayana",
@@ -61,6 +77,7 @@ const poojas = [
     description: "Complete pooja ceremony",
     category: "Pooja",
     time: "Flexible",
+    image: satyaImg,
   },
   {
     id: "ganesh",
@@ -70,6 +87,7 @@ const poojas = [
     description: "Lord Ganesha worship",
     category: "Pooja",
     time: "Flexible",
+    image: ganeshImg,
   },
   {
     id: "lakshmi",
@@ -79,6 +97,7 @@ const poojas = [
     description: "Goddess Lakshmi worship",
     category: "Pooja",
     time: "Flexible",
+    image: lakshmiImg,
   },
 ];
 
@@ -161,67 +180,72 @@ const PoojasSection: React.FC = () => {
                 className="flex-shrink-0 w-[300px] md:w-[340px]"
               >
                 <Link href={`/booking?pooja=${pooja.id}`}>
-                  <div className="group relative bg-card rounded-2xl p-6 border-2 border-border/50 shadow-soft hover:shadow-warm transition-all duration-300 hover:-translate-y-2 h-full flex flex-col">
-                    {/* Decorative gradient background */}
-                    <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-secondary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-2xl" />
-                    
-                    {/* Decorative corner element */}
-                    <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-primary/10 to-transparent rounded-bl-full opacity-50" />
+                  <div className="group relative bg-card rounded-2xl p-6 overflow-hidden border-2 border-border/50 shadow-soft hover:shadow-warm transition-all duration-300 hover:-translate-y-2 h-[420px] flex flex-col">
+                    {/* Background Image with Overlay */}
+                    <div className="absolute inset-0 z-0">
+                      <Image
+                        src={pooja.image}
+                        alt={pooja.name}
+                        fill
+                        className="object-cover transition-transform duration-500 group-hover:scale-110"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/60 to-black/30 group-hover:via-black/50 transition-all duration-300" />
+                    </div>
 
-                    <div className="relative z-10 flex flex-col h-full">
+                    <div className="relative z-10 flex flex-col h-full text-white">
                       {/* Header */}
                       <div className="flex items-start justify-between mb-4">
                         <div className="flex-1">
-                          <Badge variant="secondary" className="mb-2">
+                          {/* <Badge variant="secondary" className="mb-2 bg-primary/20 text-white border-0 backdrop-blur-md">
                             {pooja.category}
-                          </Badge>
-                          <h3 className="text-xl font-serif font-bold text-foreground mb-1 group-hover:text-primary transition-colors">
+                          </Badge> */}
+                          <h3 className="text-xl text-right font-serif font-bold text-white mb-1 group-hover:text-white transition-colors">
                             {pooja.name}
                           </h3>
                         </div>
-                        <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center group-hover:scale-110 group-hover:rotate-3 transition-all duration-300">
+                        {/* <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center group-hover:scale-110 group-hover:rotate-3 transition-all duration-300 border border-white/20">
                           <Sparkles className="w-6 h-6 text-primary" />
-                        </div>
+                        </div> */}
                       </div>
 
                       {/* Description */}
-                      <p className="text-muted-foreground text-sm mb-4 flex-1">
+                      <p className="text-gray-200 text-right text-sm mb-4 flex-1 line-clamp-3">
                         {pooja.description}
                       </p>
 
                       {/* Details */}
                       <div className="space-y-2 mb-4">
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <div className="flex items-center gap-2 text-sm text-gray-300">
                           <Clock className="w-4 h-4" />
                           <span>{pooja.duration}</span>
                           {pooja.time !== "Flexible" && pooja.time !== "On Request" && (
-                            <span className="text-primary">• {pooja.time}</span>
+                            <span className="text-[#FDF2E5] font-medium">• {pooja.time}</span>
                           )}
                         </div>
                         {pooja.time === "Flexible" && (
-                          <div className="text-xs text-muted-foreground">
+                          <div className="text-xs text-gray-400">
                             Time: Flexible
                           </div>
                         )}
                         {pooja.time === "On Request" && (
-                          <div className="text-xs text-muted-foreground">
+                          <div className="text-xs text-gray-400">
                             Time: On Request
                           </div>
                         )}
                       </div>
 
                       {/* Price and CTA */}
-                      <div className="flex items-center justify-between pt-4 border-t border-border/50">
+                      <div className="flex items-center justify-between pt-4 border-t border-white/20">
                         <div className="flex items-center gap-1">
-                          <IndianRupee className="w-5 h-5 text-primary" />
-                          <span className="text-2xl font-bold text-primary">
+                          <IndianRupee className="w-5 h-5 text-white" />
+                          <span className="text-2xl font-bold text-[#FDF2E5]">
                             {pooja.price}
                           </span>
                         </div>
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="group-hover:text-primary"
+                          className="text-[#FDF2E5] hover:text-primary hover:bg-white/10"
                         >
                           Book Now <ArrowRight className="w-4 h-4 ml-1" />
                         </Button>
@@ -254,4 +278,5 @@ const PoojasSection: React.FC = () => {
 };
 
 export default PoojasSection;
+
 
