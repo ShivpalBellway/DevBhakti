@@ -6,6 +6,9 @@ import { ArrowRight, Building2, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 
+import Image from "next/image";
+import templeIcon from "@/assets/icons/temple-icon.png";
+
 const CTASection: React.FC = () => {
   return (
     <section className="py-20 md:py-32 bg-gradient-hero relative overflow-hidden">
@@ -100,8 +103,8 @@ const CTASection: React.FC = () => {
             >
               <div className="absolute top-0 right-0 w-32 h-32 bg-primary-foreground/5 rounded-full -translate-y-1/2 translate-x-1/2" />
               <div className="relative z-10">
-                <div className="w-14 h-14 rounded-xl bg-primary-foreground/10 flex items-center justify-center mb-6">
-                  <Building2 className="w-7 h-7 text-primary-foreground" />
+                <div className="w-14 h-14 rounded-xl invert bg-primary-foreground/10 flex items-center justify-center mb-6">
+                  <Image src={templeIcon} alt="Temple Icon" width={32} height={32} />
                 </div>
                 <h3 className="text-xl font-serif font-bold text-primary-foreground mb-3">
                   Temples, Devotional Shops & Pandits

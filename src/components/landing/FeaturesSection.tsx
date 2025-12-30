@@ -18,6 +18,12 @@ import {
   IndianRupee,
   Sparkles,
 } from "lucide-react";
+import templeIcon from "@/assets/icons/temple-icon.png";
+import pujaIcon from "@/assets/icons/puja.png";
+import diyaIcon from "@/assets/icons/diya.png";
+import offeringIcon from "@/assets/icons/pray.png";
+import prasadIcon from "@/assets/icons/ladoo.png";
+import donateIcon from "@/assets/icons/donate.png";
 
 // Using high-quality Unsplash images that fit the Indian Spiritual theme
 const getImageUrl = (id: string) =>
@@ -25,7 +31,8 @@ const getImageUrl = (id: string) =>
 
 const features = [
   {
-    icon: Calendar,
+    icon: diyaIcon,
+    isImage:true,
     title: "Easy Pooja Booking",
     description:
       "Schedule special Abhishekams and Archana online. Receive SMS & WhatsApp confirmations instantly.",
@@ -33,7 +40,8 @@ const features = [
     accent: "text-orange-600",
   },
   {
-    icon: Video,
+    icon: offeringIcon,
+    isImage: true,
     title: "Live Darshan",
     description:
       "Join the Aarti from home with crystal clear streaming. Never miss a festival celebration.",
@@ -41,7 +49,8 @@ const features = [
     accent: "text-red-600",
   },
   {
-    icon: ShoppingBag,
+    icon: pujaIcon,
+    isImage: true,
     title: "Devotional Products",
     description:
       "Order authentic Puja kits, Rudraksha, and Brass idols. Vastu compliant items delivered to you.",
@@ -51,7 +60,8 @@ const features = [
     accent: "text-yellow-600",
   },
   {
-    icon: IndianRupee,
+    icon: donateIcon,
+    isImage: true,
     title: "Easy Donation",
     description:
       "Offer Dakshina directly to the temple fund. Get 80G tax exemption certificates instantly via email.",
@@ -61,7 +71,8 @@ const features = [
     accent: "text-green-700",
   },
   {
-    icon: MapPin,
+    icon: templeIcon,
+    isImage: true,
     title: "Temple Discovery",
     description:
       "Find ancient temples, Pandits, and Dharamshalas near you using GPS and Pincode search.",
@@ -69,7 +80,8 @@ const features = [
     accent: "text-purple-700",
   },
   {
-    icon: Truck,
+    icon: prasadIcon,
+    isImage: true,
     title: "Prasad Delivery",
     description:
       "We deliver the 'Charnamrit' and 'Laddu' Prasad from the temple sanctum to your doorstep.",
@@ -152,7 +164,7 @@ const FeaturesSection: React.FC = () => {
           </span>
           <h2 className="text-3xl md:text-4xl lg:text-5xl font-serif font-bold text-foreground mt-3 mb-4">
             Everything You Need for Your
-            <span className="text-gradient-sacred">Spiritual Journey</span>
+            <span className="text-gradient-sacred"> Spiritual Journey</span>
           </h2>
           <p className="text-muted-foreground text-lg">
             A complete platform designed to enhance your connection with sacred
@@ -196,8 +208,15 @@ const FeaturesSection: React.FC = () => {
               {/* Content */}
               <div className="absolute inset-0 p-8 flex flex-col justify-end">
                 {/* Floating Icon Badge */}
-                <div className="absolute top-6 right-6 bg-white/10 backdrop-blur-md border border-white/20 p-3 rounded-2xl group-hover:bg-orange-500 group-hover:border-orange-500 transition-colors duration-300">
-                  <feature.icon className="w-6 h-6 text-white" />
+                <div className="absolute top-6 right-6 bg-white/10 backdrop-blur-md border border-white/20 p-3 rounded-2xl group-hover:bg-[#845028] group-hover:border-[#845028] transition-colors duration-300">
+                  {feature.isImage ? (
+                    <Image src={feature.icon as any} alt={feature.title} width={24} height={24} className="w-6 h-6 object-contain invert brightness-0" />
+                  ) : (
+                    (() => {
+                      const IconComponent = feature.icon as any;
+                      return <IconComponent className="w-6 h-6 text-white" />;
+                    })()
+                  )}
                 </div>
 
                 {/* Text Area */}

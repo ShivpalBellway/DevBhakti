@@ -4,10 +4,13 @@ import React from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowRight, Play, Sparkles, MapPin, Bell, Search } from "lucide-react";
+import { ArrowRight, Play, Sparkles, Bell, Search } from "lucide-react";
 import { GlobalSearch } from "./GlobalSearch";
 import { Button } from "@/components/ui/button";
 import heroTempleImage from "@/assets/hero-temple.jpg";
+import templeIcon from "@/assets/icons/temple-icon.png";
+import pujaIcon from "@/assets/icons/puja.png";
+
 
 const HeroSection: React.FC = () => {
   const [isSearchOpen, setIsSearchOpen] = React.useState(false);
@@ -147,7 +150,8 @@ const HeroSection: React.FC = () => {
         >
           {[
             {
-              icon: MapPin,
+              icon: templeIcon,
+              isImage: true,
               title: "Find Nearby Temples",
               description: "Discover sacred places near you",
             },
@@ -157,11 +161,12 @@ const HeroSection: React.FC = () => {
               description: "Never miss festival updates",
             },
             {
-              icon: Sparkles,
+              icon: pujaIcon,
+              isImage: true,
               title: "Devotional Products",
               description: "Authentic spiritual products",
             },
-          ].map((feature, index) => (
+          ].map((feature: any, index) => (
             <motion.div
               key={feature.title}
               initial={{ opacity: 0, y: 20 }}
@@ -170,7 +175,11 @@ const HeroSection: React.FC = () => {
               className="bg-card/80 backdrop-blur-sm border border-border rounded-2xl p-5 shadow-soft hover:shadow-warm transition-all duration-300 hover:-translate-y-1"
             >
               <div className="w-10 h-10 rounded-xl bg-gradient-sacred flex items-center justify-center mb-3">
-                <feature.icon className="w-5 h-5 text-primary-foreground" />
+                {feature.isImage ? (
+                  <Image src={feature.icon} alt={feature.title} width={24} height={24} className="w-6 h-6 object-contain invert brightness-0" />
+                ) : (
+                  <feature.icon className="w-5 h-5 text-primary-foreground" />
+                )}
               </div>
               <h3 className="font-semibold text-foreground mb-1">{feature.title}</h3>
               <p className="text-sm text-muted-foreground">{feature.description}</p>

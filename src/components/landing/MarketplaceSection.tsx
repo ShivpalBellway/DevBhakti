@@ -2,13 +2,16 @@
 
 import React from "react";
 import { motion } from "framer-motion";
-import { ShoppingBag, Star, Truck, Shield, ArrowRight } from "lucide-react";
+import { ShoppingBag, Star, Truck, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import Image from "next/image";
 import productRudraksha from "@/assets/product-rudraksha.jpg";
 import productDiya from "@/assets/product-diya.jpg";
 import productIncense from "@/assets/product-incense.jpg";
 import productGangajal from "@/assets/product-gangajal.jpg";
+
+import templeIcon from "@/assets/icons/temple-icon.png";
 
 const products = [
   {
@@ -68,14 +71,27 @@ const MarketplaceSection: React.FC = () => {
             {/* Benefits */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
               {[
-                { icon: Shield, text: "Temple Verified Products" },
+                { icon: templeIcon, isImage: true, text: "Temple Verified Products" },
                 { icon: Truck, text: "Pan-India Delivery" },
                 { icon: Star, text: "Quality Guaranteed" },
                 { icon: ShoppingBag, text: "Easy Returns" },
-              ].map((benefit) => (
+              ].map((benefit: any) => (
                 <div key={benefit.text} className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                    <benefit.icon className="w-5 h-5 text-primary" />
+                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center overflow-hidden">
+                    {benefit.isImage ? (
+                      <Image
+                        src={benefit.icon}
+                        alt={benefit.text}
+                        width={20}
+                        height={20}
+                        className="w-6 h-6 object-contain "
+                      />
+                    ) : (
+                      (() => {
+                        const IconComponent = benefit.icon as any;
+                        return <IconComponent className="w-5 h-5 text-primary" />;
+                      })()
+                    )}
                   </div>
                   <span className="text-sm font-medium text-foreground">
                     {benefit.text}
@@ -110,8 +126,8 @@ const MarketplaceSection: React.FC = () => {
                 className="bg-card rounded-2xl p-4 border border-border shadow-soft hover:shadow-warm transition-all duration-300 hover:-translate-y-1 cursor-pointer"
               >
                 <div className="aspect-square bg-muted rounded-xl overflow-hidden mb-3">
-                  <img 
-                    src={(product.image as any).src || product.image} 
+                  <img
+                    src={(product.image as any).src || product.image}
                     alt={product.name}
                     className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
                   />

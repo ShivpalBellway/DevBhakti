@@ -2,25 +2,32 @@
 
 import React from "react";
 import { motion } from "framer-motion";
+import Image from "next/image";
 import { ShieldCheck, Receipt, FileText, BellRing, CheckCircle2 } from "lucide-react";
+import templeIcon from "@/assets/icons/temple-icon.png";
+import donateIcon from "@/assets/icons/donate.png";
+import diyaIcon from "@/assets/icons/diya.png";
 
 const trustPoints = [
     {
-        icon: ShieldCheck,
+        icon: templeIcon,
+        isImage: true,
         title: "Verified Temples",
         description: "Every temple on our platform undergoes a rigorous 5-step verification process to ensure authenticity.",
         color: "text-blue-600",
         bg: "bg-blue-50",
     },
     {
-        icon: Receipt,
+        icon: donateIcon,
+        isImage: true,
         title: "Secure Donations with Receipts",
         description: "All contributions are processed via secure gateways. Receive official 80G tax-exempt receipts instantly.",
         color: "text-green-600",
         bg: "bg-green-50",
     },
     {
-        icon: FileText,
+        icon: diyaIcon,
+        isImage: true,
         title: "Clean Records of Poojas & Offerings",
         description: "Transparent tracking for every ritual. Get photo and video proof of your offerings directly from the temple.",
         color: "text-orange-600",
@@ -30,7 +37,7 @@ const trustPoints = [
         icon: BellRing,
         title: "Instant Notifications from Temple Trusts",
         description: "Stay connected with direct updates from the temple management about festivals, aartis, and events.",
-        color: "text-purple-600",
+        color: "text-black",
         bg: "bg-purple-50",
     },
 ];
@@ -100,8 +107,15 @@ const TrustSection: React.FC = () => {
                                     transition={{ duration: 0.5, delay: index * 0.1 }}
                                     className="p-6 rounded-3xl bg-zinc-50/80 border border-zinc-100 hover:border-orange-200 hover:shadow-xl hover:shadow-orange-500/5 transition-all duration-300 group"
                                 >
-                                    <div className={`w-12 h-12 rounded-2xl ${point.bg} ${point.color} flex items-center justify-center mb-5 group-hover:scale-110 transition-transform duration-300 shadow-sm`}>
-                                        <point.icon size={24} />
+                                    <div className={`w-12 h-12 rounded-2xl ${point.bg} ${point.color} flex items-center justify-center mb-5 group-hover:scale-110 transition-transform duration-300 shadow-sm overflow-hidden`}>
+                                        {(point as any).isImage ? (
+                                            <Image src={point.icon as any} alt={point.title} width={24} height={24} className="w-6 h-6 object-contain" />
+                                        ) : (
+                                            (() => {
+                                                const IconComponent = point.icon as any;
+                                                return <IconComponent size={24} />;
+                                            })()
+                                        )}
                                     </div>
                                     <h3 className="text-xl font-bold text-zinc-900 mb-3 group-hover:text-orange-700 transition-colors">
                                         {point.title}
