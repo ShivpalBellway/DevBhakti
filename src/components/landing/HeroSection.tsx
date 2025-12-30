@@ -85,7 +85,7 @@ const HeroSection: React.FC = () => {
               <div className="relative flex items-center bg-white/80 backdrop-blur-md border border-white/50 shadow-2xl rounded-2xl p-2 pl-4 md:pl-6 transition-all group-hover:border-primary/50 group-hover:scale-[1.02]">
                 <Search className="w-5 h-5 md:w-6 md:h-6 text-primary mr-3 md:mr-4 group-hover:scale-110 transition-transform" />
                 <div className="flex-1 text-left py-2 md:py-3">
-                  <span className="text-zinc-500 text-sm md:text-lg block">Search Temples, Poojas, Pandits...</span>
+                  <span className="text-zinc-500 text-sm md:text-lg block">Search Temples, Poojas, Products and more...</span>
                 </div>
                 <button className="bg-primary text-white px-5 md:px-8 py-2 md:py-3 rounded-xl font-medium shadow-lg hover:shadow-primary/30 transition-all">
                   Search
