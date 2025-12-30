@@ -99,7 +99,7 @@ const TemplesSection: React.FC = () => {
   };
 
   return (
-    <section className="py-16 md:py-24 bg-background relative overflow-hidden">
+    <section id="temples" className="py-16 md:py-24 bg-background relative overflow-hidden">
       {/* Background pattern */}
       <div className="absolute inset-0 pattern-lotus opacity-30" />
 
@@ -174,7 +174,7 @@ const TemplesSection: React.FC = () => {
                         className="object-cover group-hover:scale-110 transition-transform duration-300"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/20 to-transparent" />
-                      
+
                       {/* Live badge */}
                       {temple.liveStatus && (
                         <div className="absolute top-4 right-4">
@@ -196,7 +196,7 @@ const TemplesSection: React.FC = () => {
                       <h3 className="text-xl font-serif font-bold text-foreground mb-2 group-hover:text-primary transition-colors">
                         {temple.name}
                       </h3>
-                      
+
                       <div className="flex items-center gap-2 text-muted-foreground mb-3">
                         <MapPin className="w-4 h-4" />
                         <span className="text-sm">{temple.location}</span>

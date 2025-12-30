@@ -58,11 +58,11 @@ const Navbar: React.FC = () => {
 
             {/* Desktop CTA */}
             <div className="hidden md:flex items-center gap-3">
-              <Button variant="ghost" asChild>
+              <Button variant="secondary" asChild>
                 <Link href="/auth">Sign In</Link>
               </Button>
               <Button variant="sacred" asChild>
-                <Link href="/auth?mode=register">Get Started</Link>
+                <Link href="/auth?mode=register">Sign Up</Link>
               </Button>
             </div>
 

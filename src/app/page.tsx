@@ -5,6 +5,7 @@ import FeaturesSection from "@/components/landing/FeaturesSection";
 import PoojasSection from "@/components/landing/PoojasSection";
 import MarketplaceSection from "@/components/landing/MarketplaceSection";
 import LiveDarshanSection from "@/components/landing/LiveDarshanSection";
+import TrustSection from "@/components/landing/TrustSection"; // Added this import
 import CTASection from "@/components/landing/CTASection";
 import Footer from "@/components/landing/Footer";
 import { Metadata } from "next";
@@ -26,8 +27,9 @@ export default function Home() {
       <TemplesSection />
       <FeaturesSection />
       <PoojasSection />
-      <MarketplaceSection />
       <LiveDarshanSection />
+      <TrustSection />
+      <MarketplaceSection />
       <CTASection />
       <Footer />
     </main>
