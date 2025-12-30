@@ -37,7 +37,7 @@ const trustPoints = [
 
 const TrustSection: React.FC = () => {
     return (
-        <section id="trust" className="py-24 relative overflow-hidden bg-white">
+        <section id="trust" className="py-6 relative overflow-hidden bg-white">
             {/* Subtle Background Pattern */}
             <div className="absolute inset-0 opacity-[0.03] pointer-events-none"
                 style={{

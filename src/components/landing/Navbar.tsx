@@ -3,9 +3,17 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, ChevronDown } from "lucide-react";
+import { Menu, X, ChevronDown, ChevronRight, User, LogIn, UserPlus, ShoppingBag, Church } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Logo from "@/components/icons/Logo";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const Navbar: React.FC = () => {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -20,10 +28,11 @@ const Navbar: React.FC = () => {
   }, []);
 
   const navLinks = [
-    { label: "Temples", href: "/temples" },
-    { label: "Marketplace", href: "/marketplace" },
+    { label: "Verified Temples", href: "/temples" },
+    { label: "Shop", href: "/marketplace" },
     { label: "Live Darshan", href: "/live-darshan" },
-    { label: "Dashboard", href: "#dashboard" },
+    { label: "Buy Prasad", href: "/marketplace" },
+    // { label: "Dashboard", href: "#dashboard" },
   ];
 
   return (
@@ -40,7 +49,7 @@ const Navbar: React.FC = () => {
           <nav className="flex items-center justify-between h-16 md:h-20">
             {/* Logo */}
             <Link href="/" className="relative z-10">
-              <Logo size="md" />
+              <Logo size="lg" />
             </Link>
 
             {/* Desktop Navigation */}
@@ -49,21 +58,84 @@ const Navbar: React.FC = () => {
                 <Link
                   key={link.label}
                   href={link.href}
-                  className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                  className="text-md font-medium text-muted-foreground hover:text-foreground transition-colors"
                 >
                   {link.label}
                 </Link>
               ))}
             </div>
 
-            {/* Desktop CTA */}
+            {/* Desktop Profile Dropdown */}
             <div className="hidden md:flex items-center gap-3">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="relative rounded-full w-10 h-10 border-2 border-[#794A05]
+                     hover:border-[#794A05] hover:bg-[#ffffff] transition-all duration-300 ease-in-out
+                      hover:shadow-[0_0_0_4px_#ffffff,0_0_0_6px_#794A05] group">
+                    <User className="w-5 h-5 text-[#794A05] transition-all duration-300 group-hover:scale-110"/>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-64 mt-3 p-2 rounded-[1.8rem] shadow-2xl border-orange-100/50 dark:border-zinc-800 bg-white/95 dark:bg-zinc-950/95 backdrop-blur-md animate-in fade-in zoom-in-95 duration-200">
+                  <DropdownMenuLabel className="font-sans text-primary px-4 py-3 text-xs uppercase tracking-[0.2em] opacity-70">
+                    Accounts & Bookings
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator className="bg-orange-500 dark:bg-zinc-800 my-1 mx-2" />
+
+                  <div className="p-1 space-y-1">
+                    <DropdownMenuItem asChild className="focus:bg-primary focus:text-white rounded-[1.2rem] cursor-pointer transition-all duration-300 group">
+                      <Link href="/auth" className="flex items-center justify-between w-full px-4 py-3">
+                        <div className="flex items-center gap-3">
+                          <LogIn className="w-4 h-4 text-primary group-focus:text-white transition-colors" />
+                          <span className="font-medium">Login</span>
+                        </div>
+                        <ChevronRight className="w-3 h-3 opacity-0 group-focus:opacity-100 -translate-x-2 group-focus:translate-x-0 transition-all" />
+                      </Link>
+                    </DropdownMenuItem>
+
+                    <DropdownMenuItem asChild className="focus:bg-primary focus:text-white rounded-[1.2rem] cursor-pointer transition-all duration-300 group">
+                      <Link href="/auth?mode=register" className="flex items-center justify-between w-full px-4 py-3">
+                        <div className="flex items-center gap-3">
+                          <UserPlus className="w-4 h-4 text-primary group-focus:text-white transition-colors" />
+                          <span className="font-medium">Sign Up</span>
+                        </div>
+                        <ChevronRight className="w-3 h-3 opacity-0 group-focus:opacity-100 -translate-x-2 group-focus:translate-x-0 transition-all" />
+                      </Link>
+                    </DropdownMenuItem>
+
+                    <div className="py-2 mx-4 border-t border-orange-50 dark:border-zinc-800/50" />
+
+                    <DropdownMenuItem asChild className="focus:bg-primary focus:text-white rounded-[1.2rem] cursor-pointer transition-all duration-300 group">
+                      <Link href="/auth" className="flex items-center justify-between w-full px-4 py-3">
+                        <div className="flex items-center gap-3">
+                          <ShoppingBag className="w-4 h-4 text-primary group-focus:text-white transition-colors" />
+                          <span className="font-medium">My Orders</span>
+                        </div>
+                        <ChevronRight className="w-3 h-3 opacity-0 group-focus:opacity-100 -translate-x-2 group-focus:translate-x-0 transition-all" />
+                      </Link>
+                    </DropdownMenuItem>
+
+                    <DropdownMenuItem asChild className="focus:bg-primary focus:text-white rounded-[1.2rem] cursor-pointer transition-all duration-300 group">
+                      <Link href="/auth" className="flex items-center justify-between w-full px-4 py-3">
+                        <div className="flex items-center gap-3">
+                          <Church className="w-4 h-4 text-primary group-focus:text-white transition-colors" />
+                          <span className="font-medium">My Poojas</span>
+                        </div>
+                        <ChevronRight className="w-3 h-3 opacity-0 group-focus:opacity-100 -translate-x-2 group-focus:translate-x-0 transition-all" />
+                      </Link>
+                    </DropdownMenuItem>
+                  </div>
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              {/* Original Buttons - Commented Out */}
+              {/* 
               <Button variant="secondary" asChild>
                 <Link href="/auth">Sign In</Link>
               </Button>
               <Button variant="sacred" asChild>
                 <Link href="/auth?mode=register">Sign Up</Link>
               </Button>
+              */}
             </div>
 
             {/* Mobile Menu Button */}
@@ -99,14 +171,28 @@ const Navbar: React.FC = () => {
                   </Link>
                 ))}
                 <div className="flex flex-col gap-3 mt-6">
-                  <Button variant="outline-sacred" size="lg" asChild>
+                  <div className="grid grid-cols-2 gap-3">
+                    <Button variant="outline-sacred" size="lg" asChild>
+                      <Link href="/auth" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center justify-center gap-2">
+                        <LogIn className="w-4 h-4" /> Login
+                      </Link>
+                    </Button>
+                    <Button variant="sacred" size="lg" asChild>
+                      <Link href="/auth?mode=register" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center justify-center gap-2">
+                        <UserPlus className="w-4 h-4" /> Sign Up
+                      </Link>
+                    </Button>
+                  </div>
+                  <Button variant="ghost" size="lg" asChild className="justify-start gap-4 h-14 rounded-2xl border border-border/50">
                     <Link href="/auth" onClick={() => setIsMobileMenuOpen(false)}>
-                      Sign In
+                      <ShoppingBag className="w-5 h-5 text-orange-600" />
+                      <span>My Orders</span>
                     </Link>
                   </Button>
-                  <Button variant="sacred" size="lg" asChild>
-                    <Link href="/auth?mode=register" onClick={() => setIsMobileMenuOpen(false)}>
-                      Get Started
+                  <Button variant="ghost" size="lg" asChild className="justify-start gap-4 h-14 rounded-2xl border border-border/50">
+                    <Link href="/auth" onClick={() => setIsMobileMenuOpen(false)}>
+                      <Church className="w-5 h-5 text-orange-600" />
+                      <span>My Poojas</span>
                     </Link>
                   </Button>
                 </div>

@@ -259,13 +259,13 @@ const PoojasSection: React.FC = () => {
         </div>
 
         {/* View All Button */}
-        <div className="text-center mt-8">
+        {/* <div className="text-center mt-8">
           <Button variant="outline" asChild>
             <Link href="/booking">
               View All Poojas <ArrowRight className="w-4 h-4 ml-2" />
             </Link>
           </Button>
-        </div>
+        </div> */}
       </div>
 
       <style jsx>{`
