@@ -1,6 +1,8 @@
 import Navbar from "@/components/landing/Navbar";
 import HeroSection from "@/components/landing/HeroSection";
+import TemplesSection from "@/components/landing/TemplesSection";
 import FeaturesSection from "@/components/landing/FeaturesSection";
+import PoojasSection from "@/components/landing/PoojasSection";
 import MarketplaceSection from "@/components/landing/MarketplaceSection";
 import LiveDarshanSection from "@/components/landing/LiveDarshanSection";
 import CTASection from "@/components/landing/CTASection";
@@ -21,7 +23,9 @@ export default function Home() {
     <main className="min-h-screen">
       <Navbar />
       <HeroSection />
+      <TemplesSection />
       <FeaturesSection />
+      <PoojasSection />
       <MarketplaceSection />
       <LiveDarshanSection />
       <CTASection />

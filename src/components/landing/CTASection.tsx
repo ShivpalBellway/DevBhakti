@@ -34,7 +34,9 @@ const CTASection: React.FC = () => {
               Join thousands of devotees and hundreds of temples already connected
               on DevBhakti. Start exploring, booking, and experiencing divine moments.
             </p>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+
+
+            {/* <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <Button variant="hero" size="xl" asChild>
                 <Link href="/auth?mode=register">
                   Get Started Free
@@ -46,7 +48,9 @@ const CTASection: React.FC = () => {
                   Register Your Temple
                 </Link>
               </Button>
-            </div>
+            </div> */}
+
+
           </motion.div>
 
           {/* Two column CTAs */}
@@ -100,7 +104,7 @@ const CTASection: React.FC = () => {
                   <Building2 className="w-7 h-7 text-primary-foreground" />
                 </div>
                 <h3 className="text-xl font-serif font-bold text-primary-foreground mb-3">
-                  For Temples & Institutions
+                  Temples, Devotional Shops & Pandits
                 </h3>
                 <ul className="space-y-3 mb-6">
                   {[

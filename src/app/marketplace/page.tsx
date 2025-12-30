@@ -222,7 +222,7 @@ export default function MarketplacePage() {
         <div className="container mx-auto px-4">
           <div className="text-center max-w-3xl mx-auto">
             <h1 className="text-4xl md:text-5xl font-display font-bold text-foreground mb-4">
-              Sacred Marketplace
+              Devotional Products
             </h1>
             <p className="text-lg text-muted-foreground mb-8">
               Authentic spiritual products delivered to your doorstep
@@ -245,16 +245,19 @@ export default function MarketplacePage() {
           <div className="flex flex-wrap justify-center gap-8 mt-8">
             <div className="flex items-center gap-2 text-muted-foreground">
               <Truck className="h-5 w-5 text-primary" />
-              <span>Free Shipping above ₹499</span>
+              <span>Quick Doorstep Delivery</span>
             </div>
+
             <div className="flex items-center gap-2 text-muted-foreground">
               <Shield className="h-5 w-5 text-primary" />
-              <span>100% Authentic</span>
+              <span>Genuine Products</span>
             </div>
-            <div className="flex items-center gap-2 text-muted-foreground">
+
+            {/* <div className="flex items-center gap-2 text-muted-foreground">
               <Gift className="h-5 w-5 text-primary" />
               <span>Gift Wrapping Available</span>
-            </div>
+            </div> */}
+
           </div>
         </div>
       </section>
