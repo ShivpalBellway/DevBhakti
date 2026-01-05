@@ -43,14 +43,14 @@ const temples = [
 ];
 
 const poojaServices = [
-  { id: "mangala", name: "Mangala Aarti", price: 251, duration: "30 mins", description: "Early morning blessing aarti" },
-  { id: "bhog", name: "Bhog Aarti", price: 501, duration: "45 mins", description: "Mid-day offering aarti" },
-  { id: "sandhya", name: "Sandhya Aarti", price: 351, duration: "30 mins", description: "Evening prayer aarti" },
-  { id: "shringar", name: "Shringar Aarti", price: 751, duration: "1 hour", description: "Special decoration aarti" },
-  { id: "rudrabhishek", name: "Rudrabhishek", price: 1100, duration: "2 hours", description: "Sacred abhishekam ritual" },
-  { id: "satyanarayana", name: "Satyanarayan Pooja", price: 2100, duration: "3 hours", description: "Complete pooja ceremony" },
-  { id: "ganesh", name: "Ganesh Pooja", price: 551, duration: "1 hour", description: "Lord Ganesha worship" },
-  { id: "lakshmi", name: "Lakshmi Pooja", price: 1501, duration: "2 hours", description: "Goddess Lakshmi worship" },
+  { id: "1", name: "Mangala Aarti", price: 251, duration: "30 mins", description: "Early morning blessing aarti" },
+  { id: "2", name: "Bhog Aarti", price: 501, duration: "45 mins", description: "Mid-day offering aarti" },
+  { id: "3", name: "Sandhya Aarti", price: 351, duration: "30 mins", description: "Evening prayer aarti" },
+  { id: "4", name: "Shringar Aarti", price: 751, duration: "1 hour", description: "Special decoration aarti" },
+  { id: "5", name: "Rudrabhishek", price: 1100, duration: "2 hours", description: "Sacred abhishekam ritual" },
+  { id: "6", name: "Satyanarayan Pooja", price: 2100, duration: "3 hours", description: "Complete pooja ceremony" },
+  { id: "7", name: "Ganesh Pooja", price: 551, duration: "1 hour", description: "Lord Ganesha worship" },
+  { id: "8", name: "Lakshmi Pooja", price: 1501, duration: "2 hours", description: "Goddess Lakshmi worship" },
 ];
 
 const timeSlots = [
@@ -128,11 +128,10 @@ function BookingForm() {
             <React.Fragment key={s.num}>
               <div className="flex flex-col items-center">
                 <div
-                  className={`h-10 w-10 rounded-full flex items-center justify-center font-semibold transition-colors ${
-                    step >= s.num
+                  className={`h-10 w-10 rounded-full flex items-center justify-center font-semibold transition-colors ${step >= s.num
                       ? "bg-primary text-primary-foreground"
                       : "bg-muted text-muted-foreground"
-                  }`}
+                    }`}
                 >
                   {step > s.num ? <CheckCircle2 className="h-5 w-5" /> : s.num}
                 </div>
@@ -184,11 +183,10 @@ function BookingForm() {
                     {poojaServices.map((pooja) => (
                       <div
                         key={pooja.id}
-                        className={`flex items-center justify-between p-4 rounded-lg border transition-colors cursor-pointer ${
-                          selectedPooja === pooja.id
+                        className={`flex items-center justify-between p-4 rounded-lg border transition-colors cursor-pointer ${selectedPooja === pooja.id
                             ? "border-primary bg-primary/5"
                             : "border-border hover:border-primary/50"
-                        }`}
+                          }`}
                         onClick={() => setSelectedPooja(pooja.id)}
                       >
                         <div className="flex items-center gap-3">
@@ -436,7 +434,7 @@ function BookingForm() {
                 <p className="text-muted-foreground mb-6">
                   Your booking reference number is <span className="font-bold text-foreground">DBK{Date.now().toString().slice(-8)}</span>
                 </p>
-                
+
                 <div className="bg-muted/50 rounded-lg p-6 max-w-md mx-auto text-left space-y-3 mb-8">
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Temple</span>

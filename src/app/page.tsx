@@ -5,8 +5,10 @@ import TemplesSection from "@/components/landing/TemplesSection";
 import FeaturesSection from "@/components/landing/FeaturesSection";
 import PoojasSection from "@/components/landing/PoojasSection";
 import MarketplaceSection from "@/components/landing/MarketplaceSection";
+import ReviewsSection from "@/components/landing/ReviewsSection";
 import LiveDarshanSection from "@/components/landing/LiveDarshanSection";
-import TrustSection from "@/components/landing/TrustSection"; // Added this import
+import TrustSection from "@/components/landing/TrustSection";
+import VideoTestimonialsSection from "@/components/landing/VideoTestimonialsSection";
 import CTASection from "@/components/landing/CTASection";
 import Footer from "@/components/landing/Footer";
 import { Metadata } from "next";
@@ -21,18 +23,20 @@ export const metadata: Metadata = {
 };
 
 export default function Home() {
-  return (
+  return (    
     <main className="min-h-screen">
       <Navbar />
       <HeroSection />
       <BannerSection />
+      <TrustSection />
       <TemplesSection />
-      <FeaturesSection />
       <PoojasSection />
       <LiveDarshanSection />
-      <TrustSection />
       <MarketplaceSection />
+      <FeaturesSection />
       <CTASection />
+      <VideoTestimonialsSection />
+      <ReviewsSection />
       <Footer />
     </main>
   );

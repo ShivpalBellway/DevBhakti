@@ -7,99 +7,7 @@ import Image from "next/image";
 import { Clock, IndianRupee, ArrowRight, ChevronLeft, ChevronRight, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-
-// Import pooja images
-import aartiImg from "@/assets/poojas/aarti.jpg";
-import bhogImg from "@/assets/poojas/bhog aarti.jpg";
-import ganeshImg from "@/assets/poojas/ganesh_aarti.jpg";
-import lakshmiImg from "@/assets/poojas/lakshmi pooja.jpg";
-import manglaImg from "@/assets/poojas/mangla aarti.webp";
-import rudraImg from "@/assets/poojas/rudra abhishek.jpg";
-import sandhyaImg from "@/assets/poojas/sandhyaaarti.webp";
-import satyaImg from "@/assets/poojas/satyanarayan puja.webp";
-
-const poojas = [
-  {
-    id: "mangala",
-    name: "Mangala Aarti",
-    price: 251,
-    duration: "30 mins",
-    description: "Early morning blessing aarti",
-    category: "Aarti",
-    time: "5:00 AM",
-    image: manglaImg,
-  },
-  {
-    id: "bhog",
-    name: "Bhog Aarti",
-    price: 501,
-    duration: "45 mins",
-    description: "Mid-day offering aarti",
-    category: "Aarti",
-    time: "11:00 AM",
-    image: bhogImg,
-  },
-  {
-    id: "sandhya",
-    name: "Sandhya Aarti",
-    price: 351,
-    duration: "30 mins",
-    description: "Evening prayer aarti",
-    category: "Aarti",
-    time: "7:00 PM",
-    image: sandhyaImg,
-  },
-  {
-    id: "shringar",
-    name: "Shringar Aarti",
-    price: 751,
-    duration: "1 hour",
-    description: "Special decoration aarti",
-    category: "Aarti",
-    time: "9:00 PM",
-    image: aartiImg,
-  },
-  {
-    id: "rudrabhishek",
-    name: "Rudrabhishek",
-    price: 1100,
-    duration: "2 hours",
-    description: "Sacred abhishekam ritual",
-    category: "Abhishekam",
-    time: "On Request",
-    image: rudraImg,
-  },
-  {
-    id: "satyanarayana",
-    name: "Satyanarayan Pooja",
-    price: 2100,
-    duration: "3 hours",
-    description: "Complete pooja ceremony",
-    category: "Pooja",
-    time: "Flexible",
-    image: satyaImg,
-  },
-  {
-    id: "ganesh",
-    name: "Ganesh Pooja",
-    price: 551,
-    duration: "1 hour",
-    description: "Lord Ganesha worship",
-    category: "Pooja",
-    time: "Flexible",
-    image: ganeshImg,
-  },
-  {
-    id: "lakshmi",
-    name: "Lakshmi Pooja",
-    price: 1501,
-    duration: "2 hours",
-    description: "Goddess Lakshmi worship",
-    category: "Pooja",
-    time: "Flexible",
-    image: lakshmiImg,
-  },
-];
+import { poojas } from "@/data/poojas";
 
 const PoojasSection: React.FC = () => {
   const scrollContainerRef = React.useRef<HTMLDivElement>(null);
@@ -115,7 +23,7 @@ const PoojasSection: React.FC = () => {
   };
 
   return (
-    <section className="py-16 md:py-24 bg-gradient-warm relative overflow-hidden">
+    <section id="poojas" className="py-16 md:py-24 bg-gradient-warm relative overflow-hidden">
       {/* Background pattern */}
       <div className="absolute inset-0 pattern-sacred opacity-30" />
 
@@ -179,7 +87,7 @@ const PoojasSection: React.FC = () => {
                 transition={{ duration: 0.4, delay: index * 0.1 }}
                 className="flex-shrink-0 w-[300px] md:w-[340px]"
               >
-                <Link href={`/booking?pooja=${pooja.id}`}>
+                <Link href={`/poojas/${pooja.id}`}>
                   <div className="group relative bg-card rounded-2xl p-6 overflow-hidden border-2 border-border/50 shadow-soft hover:shadow-warm transition-all duration-300 hover:-translate-y-2 h-[420px] flex flex-col">
                     {/* Background Image with Overlay */}
                     <div className="absolute inset-0 z-0">
@@ -210,7 +118,7 @@ const PoojasSection: React.FC = () => {
 
                       {/* Description */}
                       <p className="text-gray-200 text-right text-sm mb-4 flex-1 line-clamp-3">
-                        {pooja.description}
+                        {/* {pooja.description} */}
                       </p>
 
                       {/* Details */}
@@ -232,10 +140,14 @@ const PoojasSection: React.FC = () => {
                             Time: On Request
                           </div>
                         )}
+                        <div className="text-sm text-gray-300 line-clamp-4">
+                          {pooja.description}
+                        </div>
+
                       </div>
 
                       {/* Price and CTA */}
-                      <div className="flex items-center justify-between pt-4 border-t border-white/20">
+                      {/* <div className="flex items-center justify-between pt-4 border-t border-white/20">
                         <div className="flex items-center gap-1">
                           <IndianRupee className="w-5 h-5 text-white" />
                           <span className="text-2xl font-bold text-[#FDF2E5]">
@@ -249,7 +161,7 @@ const PoojasSection: React.FC = () => {
                         >
                           Book Now <ArrowRight className="w-4 h-4 ml-1" />
                         </Button>
-                      </div>
+                      </div> */}
                     </div>
                   </div>
                 </Link>

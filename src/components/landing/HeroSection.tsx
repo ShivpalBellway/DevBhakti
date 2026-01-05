@@ -4,8 +4,7 @@ import React from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowRight, Play, Sparkles, Bell, Search } from "lucide-react";
-import { GlobalSearch } from "./GlobalSearch";
+import { ArrowRight, Play, Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import heroTempleImage from "@/assets/hero-temple.jpg";
 import templeIcon from "@/assets/icons/temple-icon.png";
@@ -13,8 +12,6 @@ import pujaIcon from "@/assets/icons/puja.png";
 
 
 const HeroSection: React.FC = () => {
-  const [isSearchOpen, setIsSearchOpen] = React.useState(false);
-
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
       {/* Background image */}
@@ -38,19 +35,6 @@ const HeroSection: React.FC = () => {
       <div className="container mx-auto px-4 pt-24 pb-12 relative z-10">
         <div className="max-w-5xl mx-auto text-center">
 
-          {/* Badge */}
-          {/* <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 mb-8"
-          >
-            <Sparkles className="w-4 h-4 text-primary" />
-            <span className="text-sm font-medium text-foreground">
-              Connecting Devotees with Sacred Spaces
-            </span>
-          </motion.div> */}
-
           {/* Main heading */}
           <motion.h1
             initial={{ opacity: 0, y: 20 }}
@@ -58,8 +42,8 @@ const HeroSection: React.FC = () => {
             transition={{ duration: 0.5, delay: 0.1 }}
             className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-serif font-bold text-foreground leading-tight mb-6"
           >
-            Your Digital Gateway to{" "}
-            <span className="text-gradient-sacred">Divine Experiences</span>
+            Stay Connected to Your Faith,{" "}
+            <span className="text-gradient-sacred">Wherever You Are</span>
           </motion.h1>
 
           {/* Subtitle */}
@@ -69,33 +53,8 @@ const HeroSection: React.FC = () => {
             transition={{ duration: 0.5, delay: 0.2 }}
             className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10"
           >
-            Discover temples, book poojas, watch live darshan, explore sacred marketplace,
-            and stay connected with your favorite institutions — all in one platform.
+            Discover trusted temples, book poojas, and offer donationsto verified temples - transparently and respectfully.
           </motion.p>
-
-          {/* Hero Search Bar */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.25 }}
-            className="max-w-2xl mx-auto mb-10"
-          >
-            <div
-              onClick={() => setIsSearchOpen(true)}
-              className="relative group cursor-pointer"
-            >
-              <div className="absolute inset-0 bg-primary/20 blur-2xl group-hover:bg-primary/30 transition-all rounded-full" />
-              <div className="relative flex items-center bg-white/80 backdrop-blur-md border border-white/50 shadow-2xl rounded-2xl p-2 pl-4 md:pl-6 transition-all group-hover:border-primary/50 group-hover:scale-[1.02]">
-                <Search className="w-5 h-5 md:w-6 md:h-6 text-primary mr-3 md:mr-4 group-hover:scale-110 transition-transform" />
-                <div className="flex-1 text-left py-2 md:py-3">
-                  <span className="text-zinc-500 text-sm md:text-lg block">Search Temples, Poojas, Products and more...</span>
-                </div>
-                <button className="bg-primary text-white px-5 md:px-8 py-2 md:py-3 rounded-xl font-medium shadow-lg hover:shadow-primary/30 transition-all">
-                  Search
-                </button>
-              </div>
-            </div>
-          </motion.div>
 
           {/* CTA Buttons */}
           <motion.div
@@ -187,8 +146,6 @@ const HeroSection: React.FC = () => {
           ))}
         </motion.div>
       </div>
-
-      <GlobalSearch isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
     </section>
   );
 };

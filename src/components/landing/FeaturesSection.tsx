@@ -125,7 +125,7 @@ const FeaturesSection: React.FC = () => {
   return (
     <section
       id="features"
-      className=" bg-orange-50/50 relative overflow-hidden"
+      className=" bg-orange-50/50 py-6 md:py-6 relative overflow-hidden"
     >
       {/* Decorative Background Pattern (Mandala style via CSS) */}
       <div

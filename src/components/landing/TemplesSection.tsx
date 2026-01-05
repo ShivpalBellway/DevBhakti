@@ -4,7 +4,7 @@ import React from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import Image from "next/image";
-import { MapPin, Star, Video, ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
+import { MapPin, Star, Video, ArrowRight, ChevronLeft, ChevronRight, BadgeCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
@@ -99,7 +99,7 @@ const TemplesSection: React.FC = () => {
   };
 
   return (
-    <section id="temples" className="py-16 md:py-24 bg-background relative overflow-hidden">
+    <section id="temples" className="py-4 md:py-4 bg-background relative overflow-hidden">
       {/* Background pattern */}
       <div className="absolute inset-0 pattern-lotus opacity-30" />
 
@@ -121,7 +121,7 @@ const TemplesSection: React.FC = () => {
               <span className="text-gradient-sacred">Temples</span>
             </h2>
             <p className="text-muted-foreground mt-2">
-              Explore renowned temples across India
+              Browse temples you can trust — curated and verified by DevBhakti
             </p>
           </div>
           <div className="hidden md:flex gap-2">
@@ -193,9 +193,15 @@ const TemplesSection: React.FC = () => {
 
                     {/* Content */}
                     <div className="p-5">
-                      <h3 className="text-xl font-serif font-bold text-foreground mb-2 group-hover:text-primary transition-colors">
-                        {temple.name}
-                      </h3>
+                      <div className="flex items-start justify-between gap-4 mb-2">
+                        <h3 className="text-xl font-serif font-bold text-foreground group-hover:text-primary transition-colors leading-tight">
+                          {temple.name}
+                        </h3>
+                        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#FFF4E6] dark:bg-[#2C1810] border border-[#DEB887]/30 shrink-0 mt-0.5">
+                          <BadgeCheck className="w-3.5 h-3.5 text-[#D97706] fill-white dark:fill-[#2C1810]" />
+                          <span className="text-[10px] font-bold text-[#92400E] dark:text-[#FCD34D] uppercase tracking-wider">Verified</span>
+                        </div>
+                      </div>
 
                       <div className="flex items-center gap-2 text-muted-foreground mb-3">
                         <MapPin className="w-4 h-4" />

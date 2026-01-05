@@ -46,7 +46,7 @@ const products = [
 
 const MarketplaceSection: React.FC = () => {
   return (
-    <section id="marketplace" className="py-12 md:py-20 bg-muted/30 relative overflow-hidden">
+    <section id="marketplace" className="py-8 md:py-12 bg-muted/30 relative overflow-hidden">
       <div className="container mx-auto px-4">
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           {/* Content */}
