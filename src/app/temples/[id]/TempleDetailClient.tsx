@@ -28,7 +28,8 @@ export const templeData = {
     name: "Kashi Vishwanath Temple",
     location: "Varanasi, Uttar Pradesh",
     fullAddress: "Lahori Tola, Varanasi, Uttar Pradesh 221001",
-    image: "https://images.unsplash.com/photo-1587474260584-136574528ed5?w=1200",
+    // image: "https://images.unsplash.com/photo-1587474260584-136574528ed5?w=1200",
+    image: "https://images.unsplash.com/photo-1644332007399-6f7d3fa74bc5?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
     gallery: [
         "https://images.unsplash.com/photo-1587474260584-136574528ed5?w=600",
         "https://images.unsplash.com/photo-1609947017136-9daf32a00321?w=600",
@@ -41,6 +42,7 @@ export const templeData = {
     openTime: "4:00 AM - 11:00 PM",
     phone: "+91 542 239 2629",
     website: "https://shrikashivishwanath.org",
+    map:"https://maps.app.goo.gl/Xy6awaBzAhxCKQHz8",
     description:
         "The Kashi Vishwanath Temple is one of the most famous Hindu temples dedicated to Lord Shiva. It is located in Vishwanath Gali of Varanasi, Uttar Pradesh, India. The temple stands on the western bank of the holy river Ganga, and is one of the twelve Jyotirlingas.",
     history:
@@ -152,16 +154,18 @@ export default function TempleDetail() {
                                 </div>
 
                                 <div className="flex flex-wrap gap-3">
-                                    <Button className="gap-2">
-                                        <Video className="h-4 w-4" />
-                                        Watch Live Darshan
-                                    </Button>
-                                    <Button variant="outline" className="gap-2" asChild>
+                                    <Button variant="gold" className="gap-2" asChild>
                                         <Link href={`/booking?temple=${id}`}>
                                             <Calendar className="h-4 w-4" />
                                             Book Pooja
                                         </Link>
                                     </Button>
+                                   
+                                    <Button variant="outline" className="gap-2">
+                                        <Video className="h-4 w-4" />
+                                        Watch Live Darshan
+                                    </Button>
+                                   
                                 </div>
                             </CardContent>
                         </Card>
@@ -169,8 +173,8 @@ export default function TempleDetail() {
                         {/* Tabs */}
                         <Tabs defaultValue="about" className="w-full">
                             <TabsList className="w-full justify-start bg-muted/50 p-1 rounded-lg">
-                                <TabsTrigger value="about">About</TabsTrigger>
                                 <TabsTrigger value="poojas">Poojas</TabsTrigger>
+                                <TabsTrigger value="about">About</TabsTrigger>
                                 <TabsTrigger value="events">Events</TabsTrigger>
                                 <TabsTrigger value="gallery">Gallery</TabsTrigger>
                             </TabsList>
@@ -274,7 +278,7 @@ export default function TempleDetail() {
                                 <CardTitle className="text-lg">Contact Information</CardTitle>
                             </CardHeader>
                             <CardContent className="space-y-4">
-                                <div className="flex items-center gap-3">
+                                {/* <div className="flex items-center gap-3">
                                     <div className="h-10 w-10 bg-primary/10 rounded-lg flex items-center justify-center">
                                         <Phone className="h-5 w-5 text-primary" />
                                     </div>
@@ -282,20 +286,20 @@ export default function TempleDetail() {
                                         <p className="text-sm text-muted-foreground">Phone</p>
                                         <p className="font-medium">{templeData.phone}</p>
                                     </div>
-                                </div>
+                                </div> */}
                                 <div className="flex items-center gap-3">
                                     <div className="h-10 w-10 bg-primary/10 rounded-lg flex items-center justify-center">
-                                        <Globe className="h-5 w-5 text-primary" />
+                                        <MapPin className="h-5 w-5 text-primary" />
                                     </div>
                                     <div>
-                                        <p className="text-sm text-muted-foreground">Website</p>
+                                        <p className="text-sm text-muted-foreground">Location</p>
                                         <a
-                                            href={templeData.website}
+                                            href={templeData.map}
                                             target="_blank"
                                             rel="noopener noreferrer"
                                             className="font-medium text-primary hover:underline"
                                         >
-                                            Visit Website
+                                            Visit Location
                                         </a>
                                     </div>
                                 </div>
