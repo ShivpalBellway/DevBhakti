@@ -53,7 +53,7 @@ const reviews = [
 
 const ReviewsSection: React.FC = () => {
     return (
-        <section className="py-16 md:py-24 bg-zinc-50 dark:bg-zinc-900/50 overflow-hidden">
+        <section className="py-8 md:py-8 bg-zinc-50 dark:bg-zinc-900/50 overflow-hidden">
             <div className="container mx-auto px-4">
                 {/* Header */}
                 <div className="text-center mb-16">
@@ -78,7 +78,7 @@ const ReviewsSection: React.FC = () => {
                         whileInView={{ opacity: 1, y: 0 }}
                         viewport={{ once: true }}
                         transition={{ delay: 0.1 }}
-                        className="text-muted-foreground text-lg"
+                        className="text-foreground text-lg"
                     >
                         Experiences shared by devotees from across india. 
                     </motion.p>
@@ -119,7 +119,7 @@ const ReviewsSection: React.FC = () => {
                                     ) : (
                                         <div className="relative">
                                             <Quote className="w-8 h-8 text-orange-100 dark:text-orange-900/30 absolute -top-2 -left-2" />
-                                            <p className="relative z-10 text-muted-foreground italic text-sm md:text-base leading-relaxed">
+                                            <p className="relative z-10 text-foreground italic text-sm md:text-base leading-relaxed">
                                                 "{review.content}"
                                             </p>
                                         </div>
@@ -138,7 +138,7 @@ const ReviewsSection: React.FC = () => {
                                     </div>
                                     <div>
                                         <h4 className="font-bold text-foreground text-sm">{review.name}</h4>
-                                        <p className="text-xs text-muted-foreground">{review.location}</p>
+                                        <p className="text-xs text-foreground">{review.location}</p>
                                     </div>
                                     {/* Rating Stars - Optional visual feedback */}
                                     {/* <div className="ml-auto flex gap-0.5">

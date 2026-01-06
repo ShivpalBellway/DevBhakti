@@ -11,7 +11,7 @@ import templeIcon from "@/assets/icons/temple-icon.png";
 
 const CTASection: React.FC = () => {
   return (
-    <section className="py-20 md:py-32 bg-gradient-hero relative overflow-hidden">
+    <section className="py-8 md:py-10 bg-gradient-hero relative overflow-hidden">
       {/* Background pattern */}
       <div className="absolute inset-0 pattern-sacred" />
 
@@ -33,7 +33,7 @@ const CTASection: React.FC = () => {
               Begin Your Sacred{" "}
               <span className="text-gradient-sacred">Journey Today</span>
             </h2>
-            <p className="text-muted-foreground text-lg max-w-2xl mx-auto mb-8">
+            <p className="text-foreground text-lg max-w-2xl mx-auto mb-8">
               Join thousands of devotees and hundreds of temples already connected
               on DevBhakti. Start exploring, booking, and experiencing divine moments.
             </p>
@@ -80,7 +80,7 @@ const CTASection: React.FC = () => {
                   "Receive festival notifications",
                   "Make secure donations",
                 ].map((item) => (
-                  <li key={item} className="flex items-center gap-2 text-muted-foreground text-sm">
+                  <li key={item} className="flex items-center gap-2 text-foreground text-sm">
                     <span className="w-1.5 h-1.5 rounded-full bg-primary" />
                     {item}
                   </li>

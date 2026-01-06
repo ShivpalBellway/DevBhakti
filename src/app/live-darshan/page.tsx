@@ -166,7 +166,7 @@ export default function LiveDarshanPage() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start mb-16">
             <div className="lg:col-span-7">
               <h3 className="text-3xl font-bold mb-4">About the Darshan</h3>
-              <p className="text-muted-foreground text-lg leading-relaxed">{selectedTemple.description}</p>
+              <p className="text-foreground text-lg leading-relaxed">{selectedTemple.description}</p>
             </div>
             <div className="lg:col-span-5 flex flex-wrap lg:justify-end gap-4">
               <Button

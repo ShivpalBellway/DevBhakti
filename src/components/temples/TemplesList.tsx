@@ -70,6 +70,7 @@ const temples = [
     category: "Shiva",
     liveStatus: true,
     openTime: "4:00 AM - 11:00 PM",
+    description: "One of the twelve Jyotirlingas of Lord Shiva, located on the western bank of the holy Ganges. This ancient temple is a center of spiritual power and devotion."
   },
   {
     id: 2,
@@ -81,6 +82,7 @@ const temples = [
     category: "Vishnu",
     liveStatus: true,
     openTime: "3:00 AM - 12:00 AM",
+    description: "Dedicated to Lord Venkateswara, an incarnation of Vishnu. It is one of the richest and most visited religious centers in the world."
   },
   {
     id: 3,
@@ -92,6 +94,7 @@ const temples = [
     category: "Ganesha",
     liveStatus: false,
     openTime: "5:30 AM - 10:00 PM",
+    description: "A revered temple dedicated to Lord Ganesha, known for fulfilling wishes of devotees. The temple has a beautiful gold-plated dome and inner roof."
   },
   {
     id: 4,
@@ -103,6 +106,7 @@ const temples = [
     category: "Shakti",
     liveStatus: true,
     openTime: "5:00 AM - 12:30 PM",
+    description: "An ancient Dravidian-style temple dedicated to Goddess Meenakshi (Parvati) and Lord Sundareshwarar (Shiva). Famous for its stunning architecture."
   },
   {
     id: 5,
@@ -114,6 +118,7 @@ const temples = [
     category: "Vishnu",
     liveStatus: false,
     openTime: "5:00 AM - 11:00 PM",
+    description: "A sacred Vaishnava temple dedicated to Lord Jagannath (Krishna). Famous for the annual Rath Yatra festival and its unique deities."
   },
   {
     id: 6,
@@ -125,6 +130,7 @@ const temples = [
     category: "Shiva",
     liveStatus: true,
     openTime: "6:00 AM - 9:00 PM",
+    description: "The first among the twelve Jyotirlinga shrines of Lord Shiva. This sacred temple has been destroyed and rebuilt several times throughout history."
   },
 ];
 
@@ -149,18 +155,18 @@ export function TemplesList() {
         <Navbar />
 
         {/* Hero Section */}
-        <section className="relative pt-24 pb-12 bg-gradient-to-b from-primary/10 to-background">
+        <section className="relative pt-24 pb-6 bg-gradient-to-b from-primary/10 to-background">
           <div className="container mx-auto px-4">
             <div className="text-center max-w-3xl mx-auto">
               <h1 className="text-4xl md:text-5xl font-display font-bold text-foreground mb-4">
                 Discover Sacred Temples
               </h1>
-              <p className="text-lg text-muted-foreground mb-8">
+              <p className="text-lg text-foreground">
                 Explore thousands of temples across India and connect with divine experiences
               </p>
 
               {/* Search Bar */}
-              <div className="relative max-w-2xl mx-auto">
+              {/* <div className="relative max-w-2xl mx-auto">
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                 <Input
                   type="text"
@@ -169,7 +175,7 @@ export function TemplesList() {
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-12 h-14 text-lg rounded-full border-2 border-primary/20 focus:border-primary"
                 />
-              </div>
+              </div> */}
             </div>
           </div>
         </section>
@@ -196,7 +202,7 @@ export function TemplesList() {
         <section className="py-12">
           <div className="container mx-auto px-4">
             <div className="flex justify-between items-center mb-8">
-              <p className="text-muted-foreground">
+              <p className="text-foreground">
                 Showing <span className="font-semibold text-foreground">{filteredTemples.length}</span> temples
               </p>
             </div>
@@ -228,7 +234,11 @@ export function TemplesList() {
                       <h3 className="text-xl font-display font-semibold text-foreground mb-2 group-hover:text-primary transition-colors">
                         {temple.name}
                       </h3>
-                      <div className="flex items-center gap-2 text-muted-foreground mb-3">
+                      <p className="text-sm text-foreground mb-3">
+                        {temple.description}
+                      </p>
+
+                      <div className="flex items-center gap-2 text-foreground mb-3">
                         <MapPin className="h-4 w-4" />
                         <span className="text-sm">{temple.location}</span>
                       </div>
@@ -240,10 +250,10 @@ export function TemplesList() {
                             ({temple.reviews.toLocaleString()})
                           </span>
                         </div>
-                        <div className="flex items-center gap-1 text-muted-foreground text-sm">
+                        {/* <div className="flex items-center gap-1 text-muted-foreground text-sm">
                           <Clock className="h-4 w-4" />
                           <span>{temple.openTime.split(" - ")[0]}</span>
-                        </div>
+                        </div> */}
                       </div>
                     </CardContent>
                   </Card>

@@ -30,11 +30,11 @@ const Navbar: React.FC = () => {
   }, []);
 
   const navLinks = [
-    { label: "Book Pooja", href: "#poojas" },
+    { label: "Poojas & Sevas", href: "#poojas" },
     { label: "Verified Temples", href: "/temples" },
-    { label: "Shop", href: "/marketplace?category=All" },
+    { label: "Sacred Items", href: "/marketplace?category=All" },
     { label: "Live Darshan", href: "/live-darshan" },
-    { label: "Buy Prasad", href: "/marketplace?category=Prasad" },
+    // { label: "Buy Prasad", href: "/marketplace?category=Prasad" },
   ];
 
   return (
@@ -52,7 +52,12 @@ const Navbar: React.FC = () => {
             {/* Logo & Search Bar Container */}
             <div className="flex items-center gap-4 lg:gap-8 min-w-0">
               <Link href="/" className="relative z-10 flex-shrink-0">
-                <Logo size="lg" />
+                {/* <Logo className="h-28 w-28 " /> */}
+                <Logo
+                  className={`h-28 w-28 transition-colors duration-300 ${
+                    isScrolled ? "" : "h-28 w-24"
+                  }`}
+                />
               </Link>
 
 
@@ -63,20 +68,27 @@ const Navbar: React.FC = () => {
 
               {/* Desktop Search Bar - More Prominent Glassmorphism */}
               <div
-                onClick={() => setIsSearchOpen(true)}
-                className="hidden sm:flex items-center gap-3 px-4 py-2 bg-white/30 dark:bg-zinc-900/80 backdrop-blur-md rounded-xl cursor-pointer transition-all border border-white/50 dark:border-zinc-800/50 hover:border-primary/40 w-fit group shadow-sm hover:shadow-md"
-              >
-                <Search className="w-4 h-6 text-primary transition-transform group-hover:scale-110" />
-                <span className="text-zinc-500 dark:text-zinc-400 text-sm font-medium truncate">Search temples, poojas, products...</span>
+  onClick={() => setIsSearchOpen(true)}
+  className="hidden sm:flex items-center gap-2.5 px-6 py-3
+             w-[350px] md:w-[350px] lg:w-[400px]
+             bg-white/30 dark:bg-zinc-900/80 backdrop-blur-md rounded-xl
+             cursor-pointer transition-all border border-black/50
+             dark:border-zinc-800/50 hover:border-primary/60
+             shadow-sm hover:shadow-md"
+>
+  <Search className="w-5 h-5 text-primary group-hover:scale-110 transition-transform" />
+  <span className="text-black dark:text-black text-sm font-medium truncate">
+    Search temples, poojas, products...
+  </span>
+</div>
 
-              </div>
 
 
               {navLinks.map((link) => (
                 <Link
                   key={link.label}
                   href={link.href}
-                  className="text-md font-medium text-muted-foreground hover:text-foreground transition-colors"
+                  className="text-md font-medium text-foreground hover:text-primary transition-colors"
                 >
                   {link.label}
                 </Link>

@@ -71,7 +71,7 @@ const TrustSection: React.FC = () => {
                             <h2 className="text-4xl md:text-5xl font-serif font-bold text-zinc-900 mb-6 leading-tight">
                                 Built on <span className="text-gradient-sacred">Trust & Transparency</span>
                             </h2>
-                            <p className="text-zinc-600 text-lg mb-8 leading-relaxed max-w-xl">
+                            <p className="text-black text-lg mb-8 leading-relaxed max-w-xl">
                                 Unlike other platforms, DevBhakti is built on the foundation of direct connection. We ensure every rupee you donate and every pooja you book is handled with the utmost sanctity and transparency.
                             </p>
 
@@ -89,7 +89,7 @@ const TrustSection: React.FC = () => {
                                 </div>
                                 <div className="text-sm">
                                     <span className="block font-bold text-zinc-900">10,000+ Devotees Trust Us</span>
-                                    <span className="text-zinc-500">Join a community of faithful believers</span>
+                                    <span className="text-black">Join a community of faithful believers</span>
                                 </div>
                             </div>
                         </motion.div>
@@ -120,7 +120,7 @@ const TrustSection: React.FC = () => {
                                     <h3 className="text-xl font-bold text-zinc-900 mb-3 group-hover:text-orange-700 transition-colors">
                                         {point.title}
                                     </h3>
-                                    <p className="text-zinc-500 text-sm leading-relaxed">
+                                    <p className="text-black text-[15px] leading-relaxed">
                                         {point.description}
                                     </p>
                                 </motion.div>

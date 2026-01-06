@@ -248,13 +248,13 @@ function MarketplaceContent() {
             <h1 className="text-4xl md:text-5xl font-display font-bold text-foreground mb-4">
               Devotional Products
             </h1>
-            <p className="text-lg text-muted-foreground mb-8">
+            <p className="text-lg text-foreground mb-8">
               Authentic spiritual products delivered to your doorstep
             </p>
 
             {/* Search Bar */}
-            <div className="relative max-w-2xl mx-auto">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+            {/* <div className="relative max-w-2xl mx-auto">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-foreground" />
               <Input
                 type="text"
                 placeholder="Search products..."
@@ -262,17 +262,17 @@ function MarketplaceContent() {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-12 h-14 text-lg rounded-full border-2 border-primary/20 focus:border-primary"
               />
-            </div>
+            </div> */}
           </div>
 
           {/* Trust Badges */}
           <div className="flex flex-wrap justify-center gap-8 mt-8">
-            <div className="flex items-center gap-2 text-muted-foreground">
+            <div className="flex items-center gap-2 text-foreground">
               <Truck className="h-5 w-5 text-primary" />
               <span>Quick Doorstep Delivery</span>
             </div>
 
-            <div className="flex items-center gap-2 text-muted-foreground">
+            <div className="flex items-center gap-2 text-foreground">
               <Shield className="h-5 w-5 text-primary" />
               <span>Genuine Products</span>
             </div>
@@ -299,7 +299,7 @@ function MarketplaceContent() {
 
                 {/* Categories */}
                 <div className="mb-6">
-                  <h4 className="text-sm font-medium text-muted-foreground mb-3">
+                  <h4 className="text-sm font-medium text-foreground mb-3">
                     Categories
                   </h4>
                   <div className="space-y-2">
@@ -319,7 +319,7 @@ function MarketplaceContent() {
 
                 {/* Price Range */}
                 <div>
-                  <h4 className="text-sm font-medium text-muted-foreground mb-3">
+                  <h4 className="text-sm font-medium text-foreground mb-3">
                     Price Range
                   </h4>
                   <Slider
@@ -329,7 +329,7 @@ function MarketplaceContent() {
                     step={100}
                     className="mb-2"
                   />
-                  <div className="flex justify-between text-sm text-muted-foreground">
+                  <div className="flex justify-between text-sm text-foreground">
                     <span>₹{priceRange[0]}</span>
                     <span>₹{priceRange[1]}</span>
                   </div>
@@ -341,7 +341,7 @@ function MarketplaceContent() {
           {/* Products Grid */}
           <div className="flex-1">
             <div className="flex justify-between items-center mb-6">
-              <p className="text-muted-foreground">
+              <p className="text-foreground">
                 Showing <span className="font-semibold text-foreground">{filteredProducts.length}</span> products
               </p>
               <Button variant="outline" className="gap-2" onClick={() => setCartOpen(true)}>
@@ -382,17 +382,17 @@ function MarketplaceContent() {
                     </Button>
                   </div>
                   <CardContent className="p-4">
-                    <p className="text-xs text-muted-foreground mb-1">{product.category}</p>
+                    <p className="text-xs text-foreground mb-1">{product.category}</p>
                     <h3 className="font-semibold text-foreground mb-1 line-clamp-1 group-hover:text-primary transition-colors">
                       {product.name}
                     </h3>
-                    <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
+                    <p className="text-sm text-foreground mb-3 line-clamp-2">
                       {product.description}
                     </p>
                     <div className="flex items-center gap-1 mb-3">
                       <Star className="h-4 w-4 text-amber-500 fill-amber-500" />
                       <span className="text-sm font-medium">{product.rating}</span>
-                      <span className="text-xs text-muted-foreground">
+                      <span className="text-xs text-foreground">
                         ({product.reviews})
                       </span>
                     </div>

@@ -21,6 +21,7 @@ const temples = [
     id: 1,
     name: "Kashi Vishwanath Temple",
     location: "Varanasi, Uttar Pradesh",
+    description: "The spiritual heart of India, dedicated to Lord Shiva on the banks of the Ganges.",
     image: templeKashi,
     rating: 4.9,
     reviews: 12500,
@@ -32,6 +33,7 @@ const temples = [
     id: 2,
     name: "Tirupati Balaji Temple",
     location: "Tirupati, Andhra Pradesh",
+    description: "A sacred Vaishnavite shrine known for its spiritual vibrancy and divine aura.",
     image: templeTirupati,
     rating: 4.8,
     reviews: 25000,
@@ -43,6 +45,7 @@ const temples = [
     id: 3,
     name: "Siddhivinayak Temple",
     location: "Mumbai, Maharashtra",
+    description: "Mumbai's most revered Ganesha temple, known for granting the wishes of devotees.",
     image: templeSiddhivinayak,
     rating: 4.7,
     reviews: 8900,
@@ -54,6 +57,7 @@ const temples = [
     id: 4,
     name: "Meenakshi Amman Temple",
     location: "Madurai, Tamil Nadu",
+    description: "A masterpiece of Dravidian architecture dedicated to Goddess Meenakshi.",
     image: templeMeenakshi,
     rating: 4.9,
     reviews: 15600,
@@ -65,6 +69,7 @@ const temples = [
     id: 5,
     name: "Jagannath Temple",
     location: "Puri, Odisha",
+    description: "One of the Char Dham pilgrimage sites, famous for its annual Ratha Yatra.",
     image: templeJagannath,
     rating: 4.8,
     reviews: 11200,
@@ -76,6 +81,7 @@ const temples = [
     id: 6,
     name: "Somnath Temple",
     location: "Somnath, Gujarat",
+    description: "The eternal shrine and first of the twelve Jyotirlingas on the Gujarat coast.",
     image: templeSomnath,
     rating: 4.9,
     reviews: 9800,
@@ -99,7 +105,7 @@ const TemplesSection: React.FC = () => {
   };
 
   return (
-    <section id="temples" className="py-4 md:py-4 bg-background relative overflow-hidden">
+    <section id="temples" className=" bg-background relative overflow-hidden">
       {/* Background pattern */}
       <div className="absolute inset-0 pattern-lotus opacity-30" />
 
@@ -120,7 +126,7 @@ const TemplesSection: React.FC = () => {
               Discover Divine{" "}
               <span className="text-gradient-sacred">Temples</span>
             </h2>
-            <p className="text-muted-foreground mt-2">
+            <p className="text-foreground mt-2">
               Browse temples you can trust — curated and verified by DevBhakti
             </p>
           </div>
@@ -203,7 +209,11 @@ const TemplesSection: React.FC = () => {
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-2 text-muted-foreground mb-3">
+                      <p className="text-sm text-foreground mb-3 line-clamp-2">
+                        {temple.description}
+                      </p>
+
+                      <div className="flex items-center gap-2 text-foreground mb-3">
                         <MapPin className="w-4 h-4" />
                         <span className="text-sm">{temple.location}</span>
                       </div>
@@ -224,10 +234,10 @@ const TemplesSection: React.FC = () => {
                         )}
                       </div>
 
-                      <div className="flex items-center justify-between pt-3 border-t border-border/50">
-                        <span className="text-xs text-muted-foreground">
+                      <div className="flex items-center justify-end pt-3 border-t border-border/50">
+                        {/* <span className="text-xs text-muted-foreground">
                           {temple.openTime}
-                        </span>
+                        </span> */}
                         <Button
                           variant="ghost"
                           size="sm"
@@ -245,7 +255,7 @@ const TemplesSection: React.FC = () => {
         </div>
 
         {/* View All Button */}
-        <div className="text-center mt-8">
+        <div className="text-center mt-4">
           <Button variant="outline" asChild>
             <Link href="/temples">
               View All Temples <ArrowRight className="w-4 h-4 ml-2" />

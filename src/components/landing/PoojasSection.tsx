@@ -23,7 +23,7 @@ const PoojasSection: React.FC = () => {
   };
 
   return (
-    <section id="poojas" className="py-16 md:py-24 bg-gradient-warm relative overflow-hidden">
+    <section id="poojas" className="py-8 md:py-8 bg-white/15 relative overflow-hidden">
       {/* Background pattern */}
       <div className="absolute inset-0 pattern-sacred opacity-30" />
 
@@ -97,17 +97,19 @@ const PoojasSection: React.FC = () => {
                         fill
                         className="object-cover transition-transform duration-500 group-hover:scale-110"
                       />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/60 to-black/30 group-hover:via-black/50 transition-all duration-300" />
+                      {/* <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/60 to-black/30 group-hover:via-black/50 transition-all duration-300" /> */}
+                      {/* <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent transition-all duration-300" /> */}
+
                     </div>
 
-                    <div className="relative z-10 flex flex-col h-full text-white">
+                    <div className="relative z-10 flex flex-col h-full text-white  ">
                       {/* Header */}
                       <div className="flex items-start justify-between mb-4">
                         <div className="flex-1">
                           {/* <Badge variant="secondary" className="mb-2 bg-primary/20 text-white border-0 backdrop-blur-md">
                             {pooja.category}
                           </Badge> */}
-                          <h3 className="text-xl text-right font-serif font-bold text-white mb-1 group-hover:text-white transition-colors">
+                          <h3 className="text-xl text-right font-serif font-bold text-white mb-1 group-hover:text-white transition-colors drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)]">
                             {pooja.name}
                           </h3>
                         </div>
@@ -117,32 +119,34 @@ const PoojasSection: React.FC = () => {
                       </div>
 
                       {/* Description */}
-                      <p className="text-gray-200 text-right text-sm mb-4 flex-1 line-clamp-3">
+                      <p className="text-white text-right text-sm mb-4 flex-1 line-clamp-3 drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)]">
                         {/* {pooja.description} */}
                       </p>
 
                       {/* Details */}
                       <div className="space-y-2 mb-4">
-                        <div className="flex items-center gap-2 text-sm text-gray-300">
+                        {/* <div className="flex items-center gap-2 text-sm text-white drop-shadow-[0_1px_1px_rgba(0,0,0,4)]">
                           <Clock className="w-4 h-4" />
                           <span>{pooja.duration}</span>
                           {pooja.time !== "Flexible" && pooja.time !== "On Request" && (
                             <span className="text-[#FDF2E5] font-medium">• {pooja.time}</span>
                           )}
-                        </div>
-                        {pooja.time === "Flexible" && (
+                        </div> */}
+                        {/* {pooja.time === "Flexible" && (
                           <div className="text-xs text-gray-400">
                             Time: Flexible
                           </div>
-                        )}
-                        {pooja.time === "On Request" && (
+                        )} */}
+                        {/* {pooja.time === "On Request" && (
                           <div className="text-xs text-gray-400">
                             Time: On Request
                           </div>
-                        )}
-                        <div className="text-sm text-gray-300 line-clamp-4">
-                          {pooja.description}
-                        </div>
+                        )} */}
+                        <ul className="text-sm text-white bg-black/20 rounded p-3 list-disc list-inside space-y-1 drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
+                          {pooja.description.map((point, index) => (
+                            <li key={index}>{point}</li>
+                          ))}
+                        </ul>
 
                       </div>
 

@@ -9,13 +9,47 @@ import sandhyaImg from "@/assets/poojas/sandhyaaarti.webp";
 import satyaImg from "@/assets/poojas/satyanarayan puja.webp";
 import ashleshaImg from "@/assets/poojas/ashlesha.jpg";
 
+// Temple images (placeholders for now, or reuse existing ones if applicable)
+// Ideally, we should import specific temple images. I will use placeholders/existing ones for demonstration.
+import templePlaceholder from "@/assets/trimbakeshwarnashik.jpg"; // You might need to add this or use an existing one
+
+export const temples = [
+  {
+    id: "t1",
+    name: "Mahabaleshwar Temple",
+    location: "Gokarna, Karnataka",
+    image: "https://templeinkarnataka.com/wp-content/uploads/2024/08/Mahabaleshwara-Temple1.png", // Using external URL for demo as requested by logic "fetch karke show karenge... temples available hai" implies we might not have local assets for all yet, or I can use the same logic as poojas.
+    description: "The Mahabaleshwar Temple, Gokarna is a 4th-century CE Hindu temple located in Gokarna, Uttara Kannada district, Karnataka state, India which is built in the classical Dravidian architectural style. It is a site of religious pilgrimage. The temple faces the Gokarna beach on the Arabian Sea in which Hindu pilgrims cleanse before visiting the temple for worship. The temple deifies the Pranalinga also known as Atmalinga or Shiva Linga."
+  },
+  {
+    id: "t2",
+    name: "Trimbakeshwar Temple",
+    location: "Nashik, Maharashtra",
+    image: "https://www.captureatrip.com/_next/image?url=https%3A%2F%2Fd1zvcmhypeawxj.cloudfront.net%2Flocation%2FOther%20-%20Domestic%2Fblogs%2Fbiggest-temple-in-india-d33a1783c8-aeih7m-webp-dc4ccf1764-1752061684761.webp&w=3840&q=75", 
+    description: "Trimbakeshwar Shiva Temple is an ancient Hindu temple in the town of Trimbak, in the Trimbakeshwar tehsil in the Nashik District of Maharashtra, India, 28 km from the city of Nashik and 40 km from Nashik road. It is dedicated to the god Shiva and is one of the twelve Jyotirlingas, where the Hindu genealogy registers at Trimbakeshwar, Maharashtra are kept. The origin of the sacred Godavari river is near Trimbak."
+  },
+   {
+    id: "t3",
+    name: "Kashi Vishwanath Temple",
+    location: "Varanasi, Uttar Pradesh",
+    image: "https://upload.wikimedia.org/wikipedia/commons/thumb/0/04/Ahilya_Ghat_by_the_Ganges%2C_Varanasi.jpg/1200px-Ahilya_Ghat_by_the_Ganges%2C_Varanasi.jpg", 
+    description: "Kashi Vishwanath Temple is one of the most famous Hindu temples dedicated to Lord Shiva. It is located in Vishwanath Gali of Varanasi, Uttar Pradesh, India. The temple stands on the western bank of the holy river Ganga, and is one of the twelve Jyotirlingas, the holiest of Shiva temples. The main deity is known by the names Shri Vishwanath and Vishweshwara literally meaning Lord of the Universe."
+  }
+];
+
 export const poojas = [
   {
     id: "1",
     name: "Mangala Aarti",
     price: 251,
     duration: "30 mins",
-    description: "Early morning blessing aarti Early morning blessing aarti Early morning blessing aarti Early morning blessing aarti  Early morning blessing aarti Early morning blessing aarti Early morning blessing aarti Early morning blessing aarti ",
+    templeId: "t3", // Linked to Kashi for demo
+   description: [
+  "Early morning blessing aarti",
+  "Peaceful spiritual atmosphere",
+  "Performed by experienced priests",
+  "Includes mantras and rituals"
+],
     category: "Aarti",
     time: "5:00 AM",
     image: manglaImg,
@@ -26,6 +60,12 @@ export const poojas = [
       "Attracts positive energy for the entire day"
     ],
     process: "The ritual involves lighting of lamps, chanting of sacred mantras, and offering of flowers to the deity at dawn.",
+    processSteps: [
+      { title: "Select Puja Package", description: "Choose Basic or Family participation package" },
+      { title: "Arrival at Temple", description: "Arrive 15 minutes before 5:00 AM timing" },
+      { title: "Participation in Aarti", description: "Join the morning aarti with priests and devotees" },
+      { title: "Receive Prasad", description: "Get sacred prasad after the ceremony" }
+    ],
     templeDetails: "Available at most major Hindu temples. Usually starts between 4:00 AM and 5:30 AM.",
     packages: [
       { name: "Basic", price: 251, description: "Standard participation" },
@@ -40,10 +80,17 @@ export const poojas = [
     name: "Ashlesha Naag Bali Puja",
     price: 5100,
     duration: "3-4 hours",
-    description: "Participate in the First Ashlesha Nakshatra Gokarna Special Ashlesha Naga Bali Puja to remove the malicious effects of Sarpa (Naga) Dosha and clean karmic sins.",
+    description: [
+      "Removes Sarpa (Naga) Dosha effects",
+      "Cleanses past negative karma",
+      "Performed at sacred Gokarna Kshetra",
+      "Brings peace and prosperity"
+    ],
     category: "Special Puja",
     time: "On Request",
     image: ashleshaImg,
+    templeId: "t1", // Linked to Gokarna
+    templeIds: ["t1", "t2"], // Multiple temples for this puja
     about: "Participate in the First Ashlesha Nakshatra Gokarna Special Ashlesha Naga Bali Puja to remove the malicious effects of Sarpa (Naga) Dosha and clean karmic sins.\n\nLife stuck between obstacles and nightmares?\nAppease the powerful Serpent deities (Nagas) on this auspicious First Ashlesha Nakshatra of 2026 to end all your sufferings for the rest of the year.\n\nSarpa Doshas, also known as Naga Doshas, are seen as the result of divine displeasure and karmic links to serpent deities in past births. In Vedic astrology, Sarpa Doshas in a person’s horoscope are believed to bring various problems and obstacles in life. They are believed to cast a deep shadow over their life, silently disrupting relationships, causing painful delays in marriage, unexplained fertility problems, chronic illnesses, and financial losses. Left unaddressed, they can lead to repeated failures, emotional turmoil, and a life marked by suffering.\n\nSignificance of Ashlesha Nakshatra, and Ashlesha Naag Bali Puja:\nAshlesha Nakshatra is an important star in Vedic astrology, linked to serpent energy and known for transformation, hidden knowledge, and deep emotions. It is symbolised by a coiled serpent and is believed to be the most powerful time to perform remedies for Sarpa Dosha, as serpent energies are most active and receptive. The upcoming one is the first Ashlesha Nakshatra of 2026. So, during this special time, a powerful Ashlesha Naaga Bali puja is being organised to help reduce Sarpa Dosha and enter the new year with peace and prosperity.\n\nAshlesha Naag Bali is a powerful Vedic ritual performed to appease the divine Naga Devatas. When performed during this auspicious Nakshatra, it directly accesses and neutralises the negative effects of Sarpa Dosha in one's horoscope and is said to bring divine blessings into one's life. Offerings like milk, flowers, and rice that are favourite to the Naga Devatas are made on Vigrahas or Bimbas of Naga Devatas to appease them, enhancing prosperity, health, and peace.",
     benefits: [
       "Relief from Sarpa Dosha: Removes malefic effects causing delays in marriage, relationship issues, & chronic health conditions. Cleanses past-life karmas related to serpent energies.",
@@ -51,6 +98,13 @@ export const poojas = [
       "Blessings for Prosperity and Peace: Seeks blessings for good health, financial stability, inner peace, and overall well-being. Restores balance and brings harmony."
     ],
     process: "1. Select Puja: Choose from puja packages listed below.\n2. Add Offerings: Enhance your puja experience with optional offerings like Gau Seva, Deep Daan, Vastra Daan, and Anna Daan.\n3. Provide Sankalp details: Enter your Name and Gotra for the Sankalp.\n4. Puja Day Updates: All Sri Mandir devotees' pujas will be conducted collectively on the day of the puja. You will receive real-time updates on your registered WhatsApp number.",
+    processSteps: [
+      { title: "Select Puja Package", description: "Choose Individual or Family participation" },
+      { title: "Add Optional Offerings", description: "Enhance with Gau Seva, Deep Daan, Vastra Daan, Anna Daan" },
+      { title: "Provide Sankalp Details", description: "Enter your Name and Gotra for personalized sankalp" },
+      { title: "Puja Day Updates", description: "Receive real-time WhatsApp updates on puja progress" },
+      { title: "Receive Puja Completion", description: "Get photos, videos and digital prasad after completion" }
+    ],
     templeDetails: "Gokarna kshetra, also known as South Kashi, is a sacred pilgrimage town in Karnataka, revered as one of the seven Mukti Kshetras. It is most famous for the Mahabaleshwar Temple, which houses the Atma Linga of Lord Shiva. The powerful spiritual energy of Gokarna, combined with its coastal serenity, makes it an ideal place for performing dosha parihara rituals, especially Ashlesha Bali Puja.",
     packages: [
       { name: "Individual", price: 5100, description: "Personalized puja for one individual" },
@@ -81,7 +135,12 @@ export const poojas = [
     name: "Sandhya Aarti",
     price: 351,
     duration: "30 mins",
-    description: "Evening prayer aarti",
+    description: [
+      "Performed at sunset twilight",
+      "Marks transition of day to night",
+      "Deeply meditative experience",
+      "Ends the day with gratitude"
+    ],
     category: "Aarti",
     time: "7:00 PM",
     image: sandhyaImg,
@@ -92,6 +151,12 @@ export const poojas = [
       "Brings harmony to the household"
     ],
     process: "A beautiful display of lamps and rhythmic chanting during the evening twilight.",
+    processSteps: [
+      { title: "Book Evening Slot", description: "Reserve your 7:00 PM Sandhya Aarti slot" },
+      { title: "Arrival Preparation", description: "Arrive by 6:45 PM for peaceful seating" },
+      { title: "Participate in Aarti", description: "Join the sunset lamp ceremony with devotional chants" },
+      { title: "Evening Prasad", description: "Receive blessed prasad after the aarti" }
+    ],
     templeDetails: "Performed every evening as the sun sets.",
     packages: [
       { name: "General", price: 351, description: "Evening prayer participation" }
@@ -103,7 +168,12 @@ export const poojas = [
     name: "Shringar Aarti",
     price: 751,
     duration: "1 hour",
-    description: "Special decoration aarti",
+    description: [
+      "Divine decoration of the deity",
+      "Uses flowers, jewels and silks",
+      "Visual feast for the devotees",
+      "Celebrates divine beauty"
+    ],
     category: "Aarti",
     time: "9:00 PM",
     image: aartiImg,
@@ -114,6 +184,13 @@ export const poojas = [
       "Attracts grace and charm into life"
     ],
     process: "The deity is adorned with special garments and ornaments followed by a grand aarti.",
+    processSteps: [
+      { title: "Select Premium Package", description: "Choose the special flower offering package" },
+      { title: "Evening Arrival", description: "Arrive by 8:45 PM for the 9:00 PM ceremony" },
+      { title: "Witness Shringar", description: "Watch the divine decoration with jewels and flowers" },
+      { title: "Grand Aarti", description: "Participate in the final aarti of the day" },
+      { title: "Special Blessings", description: "Receive enhanced prasad and divine blessings" }
+    ],
     templeDetails: "Usually the last major aarti of the day before the deity rests.",
     packages: [
       { name: "Premium", price: 751, description: "Includes special flower offering" }
@@ -125,7 +202,13 @@ export const poojas = [
     name: "Rudrabhishek",
     price: 1100,
     duration: "2 hours",
-    description: "Sacred abhishekam ritual",
+    templeId: "t2",
+    description: [
+      "Powerful bathing of Shiva Linga",
+      "Uses milk, honey, and sacred water",
+      "Chanting of ancient Rudram",
+      "Removes negativity and obstacles"
+    ],
     category: "Abhishekam",
     time: "On Request",
     image: rudraImg,
@@ -148,7 +231,12 @@ export const poojas = [
     name: "Satyanarayan Pooja",
     price: 2100,
     duration: "3 hours",
-    description: "Complete pooja ceremony",
+    description: [
+      "Dedicated to Lord Vishnu",
+      "Ensures family well-being",
+      "Includes Katha and Prasad",
+      "Brings truth and abundance"
+    ],
     category: "Pooja",
     time: "Flexible",
     image: satyaImg,
@@ -170,7 +258,13 @@ export const poojas = [
     name: "Ganesh Pooja",
     price: 551,
     duration: "1 hour",
-    description: "Lord Ganesha worship",
+    templeId: "t4",
+    description: [
+      "Remover of all obstacles",
+      "Best for new beginnings",
+      "Enhances wisdom and intellect",
+      "Traditional Vedic ritual"
+    ],
     category: "Pooja",
     time: "Flexible",
     image: ganeshImg,
@@ -192,7 +286,12 @@ export const poojas = [
     name: "Lakshmi Pooja",
     price: 1501,
     duration: "2 hours",
-    description: "Goddess Lakshmi worship",
+    description: [
+      "Invokes Goddess of Wealth",
+      "Brings financial prosperity",
+      "Removes misfortune",
+      "Blesses home with abundance"
+    ],
     category: "Pooja",
     time: "Flexible",
     image: lakshmiImg,
@@ -214,7 +313,12 @@ export const poojas = [
     name: "Bhog Aarti",
     price: 501,
     duration: "45 mins",
-    description: "Mid-day offering aarti",
+    description: [
+      "Sacred food offering ritual",
+      "Gratitude for nourishment",
+      "Divine mid-day blessings",
+      "Sanctified prasad distribution"
+    ],
     category: "Aarti",
     time: "11:00 AM",
     image: bhogImg,

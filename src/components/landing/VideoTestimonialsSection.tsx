@@ -76,7 +76,7 @@ const VideoTestimonialsSection = () => {
     };
 
     return (
-        <section className="py-20 bg-amber-50/50 dark:bg-zinc-900/50">
+        <section className="py-8 bg-amber-50/50 dark:bg-zinc-900/50">
             <div className="container mx-auto px-4">
                 {/* Header */}
                 <div className="text-center mb-12 max-w-3xl mx-auto">

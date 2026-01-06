@@ -31,7 +31,7 @@ const liveTemples = [
 
 const LiveDarshanSection: React.FC = () => {
   return (
-    <section id="darshan" className="py-20 md:py-32 bg-warm-brown relative overflow-hidden">
+    <section id="darshan" className="py-8 md:py-8 bg-warm-brown relative overflow-hidden">
       {/* Background decorative elements */}
       <div className="absolute inset-0">
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl" />
@@ -129,10 +129,10 @@ const LiveDarshanSection: React.FC = () => {
             </span>
             <h2 className="text-3xl md:text-4xl lg:text-5xl font-serif font-bold text-sidebar-foreground mt-3 mb-4">
               Experience Divine{" "}
-              <span className="text-gradient-sacred">Darshan</span>{" "}
+              <span className="text-[#eea25a]">Darshan</span>{" "}
               from Anywhere
             </h2>
-            <p className="text-sidebar-foreground/70 text-lg mb-8">
+            <p className="text-white/90 text-lg mb-8">
               Connect with sacred temples through low-latency live streaming.
               Watch morning aarti, evening prayers, and special ceremonies
               in real-time from the comfort of your home.

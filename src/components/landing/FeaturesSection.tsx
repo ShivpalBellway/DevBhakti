@@ -25,6 +25,17 @@ import offeringIcon from "@/assets/icons/pray.png";
 import prasadIcon from "@/assets/icons/ladoo.png";
 import donateIcon from "@/assets/icons/donate.png";
 
+
+import poojaBooking from "@/assets/features/poojaBooking.png";
+import liveDarshan from "@/assets/features/livedarshan2.png";
+import devotionalProducts from "@/assets/features/products2.png";
+import easyDonation from "@/assets/features/donation.png";
+import prasadDelivery from "@/assets/features/prasadDelivery.png";
+import templeDiscovery  from "@/assets/features/templeDiscovery.png";
+
+
+
+
 // Using high-quality Unsplash images that fit the Indian Spiritual theme
 const getImageUrl = (id: string) =>
   `https://images.unsplash.com/photo-${id}?auto=format&fit=crop&w=800&q=80`;
@@ -32,11 +43,11 @@ const getImageUrl = (id: string) =>
 const features = [
   {
     icon: diyaIcon,
-    isImage:true,
+    isImage: true,
     title: "Easy Pooja Booking",
     description:
       "Schedule special Abhishekams and Archana online. Receive SMS & WhatsApp confirmations instantly.",
-    image: "1680491024867-1a5768225dac", // Kerala Temple architecture
+    image: poojaBooking,
     accent: "text-orange-600",
   },
   {
@@ -45,7 +56,7 @@ const features = [
     title: "Live Darshan",
     description:
       "Join the Aarti from home with crystal clear streaming. Never miss a festival celebration.",
-    image: "1763186534248-d0de60fd81e2", // Hands with OM/Shiva
+    image: liveDarshan,
     accent: "text-red-600",
   },
   {
@@ -54,9 +65,7 @@ const features = [
     title: "Devotional Products",
     description:
       "Order authentic Puja kits, Rudraksha, and Brass idols. Vastu compliant items delivered to you.",
-    image: "1742632986715-8795748fb43c",
-    // Diya/Light
-    // https://images.unsplash.com/photo-1742632986715-8795748fb43c?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D
+    image: devotionalProducts,
     accent: "text-yellow-600",
   },
   {
@@ -65,9 +74,7 @@ const features = [
     title: "Easy Donation",
     description:
       "Offer Dakshina directly to the temple fund. Get 80G tax exemption certificates instantly via email.",
-    image: "1759591583288-9f5402d76469",
-    // Offering coins
-    // https://images.unsplash.com/photo-1759591583288-9f5402d76469?q=80&w=1171&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D
+    image: easyDonation,
     accent: "text-green-700",
   },
   {
@@ -76,7 +83,7 @@ const features = [
     title: "Temple Discovery",
     description:
       "Find ancient temples, Pandits, and Dharamshalas near you using GPS and Pincode search.",
-    image: "1709308519878-463dc80d5824", // Temple Gopuram/Tower
+    image: templeDiscovery,
     accent: "text-purple-700",
   },
   {
@@ -85,9 +92,7 @@ const features = [
     title: "Prasad Delivery",
     description:
       "We deliver the 'Charnamrit' and 'Laddu' Prasad from the temple sanctum to your doorstep.",
-    image: "1758910536889-43ce7b3199fd",
-    // Sweets/Prasad
-    // https://images.unsplash.com/photo-1758910536889-43ce7b3199fd?q=80&w=735&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D
+    image: prasadDelivery,
     accent: "text-orange-500",
   },
 ];
@@ -166,7 +171,7 @@ const FeaturesSection: React.FC = () => {
             Everything You Need for Your
             <span className="text-gradient-sacred"> Spiritual Journey</span>
           </h2>
-          <p className="text-muted-foreground text-lg">
+          <p className="text-foreground text-lg">
             A complete platform designed to enhance your connection with sacred
             places
           </p>
@@ -191,12 +196,12 @@ const FeaturesSection: React.FC = () => {
                 duration: 0.5,
                 delay: index * 0.1,
               }}
-              className="group relative h-[200px] rounded-3xl overflow-hidden cursor-pointer shadow-xl hover:shadow-2xl hover:shadow-orange-500/20 transition-all duration-500"
+              className="group relative h-[300px] rounded-3xl overflow-hidden cursor-pointer shadow-xl hover:shadow-2xl hover:shadow-orange-500/20 transition-all duration-500"
             >
               {/* Background Image */}
               <div className="absolute inset-0">
                 <Image
-                  src={getImageUrl(feature.image)}
+                  src={typeof feature.image === 'string' ? getImageUrl(feature.image) : feature.image}
                   alt={feature.title}
                   fill
                   className="object-cover transition-transform duration-700 group-hover:scale-110"
@@ -222,10 +227,10 @@ const FeaturesSection: React.FC = () => {
                 {/* Text Area */}
                 <div className="relative z-10">
                   <div className="w-12 h-1 bg-gradient-to-r from-orange-400 to-yellow-400 mb-4 rounded-full" />
-                  <h3 className="text-2xl font-serif font-bold text-white mb-2 group-hover:text-orange-100 transition-colors">
+                  <h3 className="text-2xl font-serif font-bold text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)] mb-2 group-hover:text-orange-100 transition-colors">
                     {feature.title}{" "}
                   </h3>
-                  <p className="text-gray-300 text-sm ">
+                  <p className="text-white text-sm drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
                     {feature.description}{" "}
                   </p>
                 </div>

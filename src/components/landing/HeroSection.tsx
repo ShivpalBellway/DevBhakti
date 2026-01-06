@@ -51,9 +51,9 @@ const HeroSection: React.FC = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
-            className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10"
+            className="text-lg md:text-xl text-foreground max-w-2xl mx-auto mb-10"
           >
-            Discover trusted temples, book poojas, and offer donationsto verified temples - transparently and respectfully.
+           Discover Trusted Temples, Book Poojas, View Live Darshan.
           </motion.p>
 
           {/* CTA Buttons */}
@@ -94,7 +94,7 @@ const HeroSection: React.FC = () => {
                 <div className="text-2xl md:text-3xl font-serif font-bold text-foreground">
                   {stat.value}
                 </div>
-                <div className="text-sm text-muted-foreground">{stat.label}</div>
+                <div className="text-sm text-foreground">{stat.label}</div>
               </div>
             ))}
           </motion.div>
@@ -141,7 +141,7 @@ const HeroSection: React.FC = () => {
                 )}
               </div>
               <h3 className="font-semibold text-foreground mb-1">{feature.title}</h3>
-              <p className="text-sm text-muted-foreground">{feature.description}</p>
+              <p className="text-md text-foreground">{feature.description}</p>
             </motion.div>
           ))}
         </motion.div>
