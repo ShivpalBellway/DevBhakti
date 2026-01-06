@@ -264,9 +264,9 @@ const PoojaDetailClient = ({ id }: PoojaDetailClientProps) => {
                                                 | Array<{ title: string; description?: string }>
                                                 | undefined;
 
-                                            const derivedFromText = (() => {
+                                            const derivedFromText: Array<{ title: string; description?: string }> = (() => {
                                                 const text = (pooja.process || "").trim();
-                                                if (!text) return [] as Array<{ title: string; description?: string }>;
+                                                if (!text) return [];
 
                                                 const lines = text
                                                     .split("\n")
@@ -349,11 +349,15 @@ const PoojaDetailClient = ({ id }: PoojaDetailClientProps) => {
                                         {(() => {
                                             const templeId = (pooja as any).templeId;
                                             const templeIds = (pooja as any).templeIds || [];
-                                            const mainTemples = templeIds.length > 0 ? temples.filter(t => templeIds.includes(t.id)) : (templeId ? [temples.find(t => t.id === templeId)] : []);
+                                            const singleTemple = templeId ? temples.find(t => t.id === templeId) : null;
+                                            const mainTemples = templeIds.length > 0
+                                                ? temples.filter(t => templeIds.includes(t.id))
+                                                : (singleTemple ? [singleTemple] : []);
+
                                             const otherTemples = temples.filter(t => !templeIds.includes(t.id));
 
-                                            // Fallback to existing text if no specific temple is linked
-                                            if (!templeId) {
+                                            // Fallback to existing text if no specific temple is linked or found
+                                            if (mainTemples.length === 0) {
                                                 return (
                                                     <div className="flex flex-col md:flex-row gap-8 items-center bg-orange-50/50 dark:bg-zinc-900/50 rounded-3xl p-8 border border-orange-100 dark:border-zinc-800">
                                                         <div className="w-full md:w-1/3 aspect-video bg-orange-100 rounded-2xl flex items-center justify-center relative overflow-hidden group">
@@ -365,7 +369,7 @@ const PoojaDetailClient = ({ id }: PoojaDetailClientProps) => {
                                                             <span className="text-primary font-bold uppercase tracking-wider text-sm mb-2 block">Sacred Location</span>
                                                             <h3 className="text-2xl font-serif font-bold mb-4">Temple Details</h3>
                                                             <p className="text-lg text-foreground leading-relaxed">
-                                                                { "Details about the conducting temples will be provided post booking."}
+                                                                {"Details about the conducting temples will be provided post booking."}
                                                             </p>
                                                             <Button variant="outline" className="mt-6 gap-2">
                                                                 View on Map <ArrowRight className="w-4 h-4" />
@@ -575,11 +579,11 @@ const PoojaDetailClient = ({ id }: PoojaDetailClientProps) => {
                                                             ))}
                                                         </div>
                                                     </div>
-                                                    
+
                                                     <p className="text-foreground leading-relaxed mb-4 line-clamp-3 group-hover:line-clamp-none transition-all duration-300">
                                                         "{review.message || "A divine experience that brought immense peace and spiritual clarity."}"
                                                     </p>
-                                                    
+
                                                     <div className="flex items-center justify-end pt-4 border-t border-orange-50 dark:border-zinc-800">
                                                         {/* <div className="text-xs text-muted-foreground">
                                                             Verified Purchase ✓
@@ -627,7 +631,7 @@ const PoojaDetailClient = ({ id }: PoojaDetailClientProps) => {
                                                             className="w-full px-6 py-4 text-left flex items-center justify-between hover:bg-orange-50/50 dark:hover:bg-zinc-800/50 transition-colors group"
                                                         >
                                                             <div className="flex items-center gap-3">
-                                                              
+
                                                                 <span className="font-semibold text-foreground group-hover:text-primary transition-colors">
                                                                     {faq.q}
                                                                 </span>
