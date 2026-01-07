@@ -93,7 +93,7 @@ const PoojaDetailClient = ({ id }: PoojaDetailClientProps) => {
                             </h1>
 
                             <div className="mb-6 relative">
-                                <p className={`text-md text-foreground leading-relaxed ${isExpanded ? '' : 'line-clamp-5'}`}>
+                                <p className={`text-md text-foreground leading-relaxed ${isExpanded ? '' : 'line-clamp-2'}`}>
                                     {pooja.about}
                                 </p>
                                 {pooja.about && pooja.about.length > 300 && (
