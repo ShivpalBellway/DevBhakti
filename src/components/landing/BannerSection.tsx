@@ -91,8 +91,8 @@ const BannerSection: React.FC = () => {
                                 key={index}
                                 onClick={() => setCurrentIndex(index)}
                                 className={`transition-all duration-500 rounded-full ${index === currentIndex
-                                        ? "w-10 h-2 bg-white shadow-glow"
-                                        : "w-2 h-2 bg-white/40 hover:bg-white/60 hover:scale-125"
+                                    ? "w-10 h-2 bg-white shadow-glow"
+                                    : "w-2 h-2 bg-white/40 hover:bg-white/60 hover:scale-125"
                                     }`}
                                 aria-label={`Go to slide ${index + 1}`}
                             />

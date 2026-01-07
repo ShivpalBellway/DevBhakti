@@ -64,58 +64,23 @@ const CTASection: React.FC = () => {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: 0.2 }}
-              className="bg-card rounded-2xl p-8 border border-border shadow-soft"
-            >
-              <div className="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center mb-6">
-                <Users className="w-7 h-7 text-primary" />
-              </div>
-              <h3 className="text-xl font-serif font-bold text-foreground mb-3">
-                For Devotees
-              </h3>
-              <ul className="space-y-3 mb-6">
-                {[
-                  "Book poojas and sevas online",
-                  "Watch live darshan 24/7",
-                  "Shop authentic spiritual products",
-                  "Receive festival notifications",
-                  "Make secure donations",
-                ].map((item) => (
-                  <li key={item} className="flex items-center gap-2 text-foreground text-sm">
-                    <span className="w-1.5 h-1.5 rounded-full bg-primary" />
-                    {item}
-                  </li>
-                ))}
-              </ul>
-              <Button variant="outline-sacred" className="w-full" asChild>
-                <Link href="/auth?mode=register">
-                  Sign Up as Devotee
-                </Link>
-              </Button>
-            </motion.div>
-
-            {/* For Institutions */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: 0.3 }}
               className="bg-gradient-sacred rounded-2xl p-8 relative overflow-hidden"
             >
               <div className="absolute top-0 right-0 w-32 h-32 bg-primary-foreground/5 rounded-full -translate-y-1/2 translate-x-1/2" />
               <div className="relative z-10">
-                <div className="w-14 h-14 rounded-xl invert bg-primary-foreground/10 flex items-center justify-center mb-6">
-                  <Image src={templeIcon} alt="Temple Icon" width={32} height={32} />
+                <div className="w-14 h-14 rounded-xl bg-primary-foreground/10 flex items-center justify-center mb-6">
+                  <Users className="w-7 h-7 text-primary-foreground" />
                 </div>
                 <h3 className="text-xl font-serif font-bold text-primary-foreground mb-3">
-                  Temples, Devotional Shops & Pandits
+                  For Devotees
                 </h3>
                 <ul className="space-y-3 mb-6">
                   {[
-                    "Manage bookings and services",
-                    "Stream live darshan",
-                    "Sell products on marketplace",
-                    "Track donations and reports",
-                    "Automated logistics integration",
+                    "Book poojas and sevas online",
+                    "Watch live darshan 24/7",
+                    "Shop authentic spiritual products",
+                    "Receive festival notifications",
+                    "Make secure donations",
                   ].map((item) => (
                     <li key={item} className="flex items-center gap-2 text-primary-foreground/80 text-sm">
                       <span className="w-1.5 h-1.5 rounded-full bg-primary-foreground" />
@@ -124,11 +89,46 @@ const CTASection: React.FC = () => {
                   ))}
                 </ul>
                 <Button variant="outline-light" className="w-full" asChild>
-                  <Link href="/auth?mode=register&type=institution">
-                    Register Your Temple
+                  <Link href="/auth?mode=register">
+                    Sign Up as Devotee
                   </Link>
                 </Button>
               </div>
+            </motion.div>
+
+            {/* For Institutions */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: 0.3 }}
+              className="bg-card rounded-2xl p-8 border border-border shadow-soft"
+            >
+              <div className="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center mb-6">
+                <Image src={templeIcon} alt="Temple Icon" width={32} height={32} />
+              </div>
+              <h3 className="text-xl font-serif font-bold text-foreground mb-3">
+                Temples, Devotional Shops & Pandits
+              </h3>
+              <ul className="space-y-3 mb-6">
+                {[
+                  "Manage bookings and services",
+                  "Stream live darshan",
+                  "Sell products on marketplace",
+                  "Track donations and reports",
+                  "Automated logistics integration",
+                ].map((item) => (
+                  <li key={item} className="flex items-center gap-2 text-foreground text-sm">
+                    <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+                    {item}
+                  </li>
+                ))}
+              </ul>
+              <Button variant="outline-sacred" className="w-full" asChild>
+                <Link href="/auth?mode=register&type=institution">
+                  Register Your Temple
+                </Link>
+              </Button>
             </motion.div>
           </div>
         </div>

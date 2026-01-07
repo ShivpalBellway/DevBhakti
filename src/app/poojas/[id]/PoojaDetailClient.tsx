@@ -66,7 +66,7 @@ const PoojaDetailClient = ({ id }: PoojaDetailClientProps) => {
                         <motion.div
                             initial={{ opacity: 0, x: -20 }}
                             animate={{ opacity: 1, x: 0 }}
-                            className="relative aspect-[4/3] rounded-3xl overflow-hidden shadow-2xl border-4 border-white dark:border-zinc-800"
+                            className="relative aspect-[4/3] rounded-3xl overflow-hidden  "
                         >
                             <Image
                                 src={pooja.image}
@@ -88,7 +88,7 @@ const PoojaDetailClient = ({ id }: PoojaDetailClientProps) => {
                             animate={{ opacity: 1, x: 0 }}
                             className="flex flex-col justify-center"
                         >
-                            <h1 className="text-4xl md:text-5xl font-serif font-bold text-foreground mb-4 underline">
+                            <h1 className="text-4xl md:text-5xl font-serif font-bold text-foreground mb-4 ">
                                 {pooja.name}
                             </h1>
 
@@ -380,135 +380,48 @@ const PoojaDetailClient = ({ id }: PoojaDetailClientProps) => {
                                             }
 
                                             return (
-                                                <div className="space-y-12">
-                                                    {/* Main Temples - Image Left, Description Right */}
-                                                    {mainTemples.length > 0 && (
-                                                        <div className="space-y-12">
-                                                            {mainTemples.map((temple, idx) => {
-                                                                const isEven = idx % 2 === 0; // 0, 2, 4... = even
-                                                                return (
-                                                                    <div key={temple.id} className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-start">
-                                                                        {/* Even index: Image left, Description right */}
-                                                                        {isEven && (
-                                                                            <>
-                                                                                <div className="relative aspect-[4/3] rounded-3xl overflow-hidden shadow-2xl border-4 border-white dark:border-zinc-800 bg-zinc-100 dark:bg-zinc-900">
-                                                                                    <Image
-                                                                                        src={temple.image}
-                                                                                        alt={temple.name}
-                                                                                        fill
-                                                                                        className="object-cover transition-transform duration-700 hover:scale-105"
-                                                                                    />
-                                                                                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-6 pt-20">
-                                                                                        <div className="flex items-center gap-2 text-white/90 text-sm font-medium mb-1">
-                                                                                            <MapPin className="w-4 h-4" />
-                                                                                            {temple.location}
-                                                                                        </div>
-                                                                                        <h3 className="text-white text-2xl font-bold font-serif">{temple.name}</h3>
-                                                                                    </div>
-                                                                                </div>
+                                                <div className="space-y-10">
+                                                    <div className="text-center">
+                                                        <h3 className="text-3xl font-serif font-bold mb-2">Participating Temples</h3>
+                                                        <p className="text-muted-foreground">Sacred locations where this ritual is performed</p>
+                                                    </div>
 
-                                                                                <div className="flex flex-col justify-center h-full py-4">
-                                                                                    <span className="text-primary font-bold uppercase tracking-wider text-sm mb-3">Primary Temple</span>
-                                                                                    <h3 className="text-3xl font-serif font-bold mb-6 text-foreground">{temple.name}</h3>
-                                                                                    <div className="prose prose-orange dark:prose-invert max-w-none mb-8">
-                                                                                        <p className="text-lg text-foreground leading-relaxed whitespace-pre-line text-justify">
-                                                                                            {temple.description}
-                                                                                        </p>
-                                                                                    </div>
+                                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+                                                        {mainTemples.map((temple) => (
+                                                            <div key={temple.id} className="group bg-white dark:bg-zinc-900 rounded-[2rem] border border-orange-100 dark:border-zinc-800 p-6 flex flex-col items-center text-center shadow-sm hover:shadow-xl hover:shadow-orange-500/10 transition-all duration-300">
+                                                                <div className="relative w-32 h-32 mb-4 rounded-full overflow-hidden border-4 border-orange-50 dark:border-zinc-800 shadow-lg group-hover:scale-105 transition-transform duration-500">
+                                                                    <Image
+                                                                        src={temple.image}
+                                                                        alt={temple.name}
+                                                                        fill
+                                                                        className="object-cover"
+                                                                    />
+                                                                </div>
 
-                                                                                    <div className="flex flex-wrap gap-4">
-                                                                                        <Button size="lg" className="rounded-full bg-gradient-sacred hover:shadow-lg hover:shadow-orange-500/25 transition-all text-white font-bold px-8">
-                                                                                            Explore Temple
-                                                                                        </Button>
-                                                                                        <Button size="lg" variant="outline" className="rounded-full border-2 border-orange-100 dark:border-zinc-800 hover:bg-orange-50 dark:hover:bg-zinc-800 font-bold px-8 gap-2">
-                                                                                            View on Map <ArrowRight className="w-4 h-4" />
-                                                                                        </Button>
-                                                                                    </div>
-                                                                                </div>
-                                                                            </>
-                                                                        )}
+                                                                <h4 className="font-bold text-lg mb-1 text-foreground line-clamp-1 group-hover:text-primary transition-colors">
+                                                                    {temple.name}
+                                                                </h4>
 
-                                                                        {/* Odd index: Description left, Image right */}
-                                                                        {!isEven && (
-                                                                            <>
-                                                                                <div className="flex flex-col justify-center h-full py-4">
-                                                                                    <span className="text-primary font-bold uppercase tracking-wider text-sm mb-3">Primary Temple</span>
-                                                                                    <h3 className="text-3xl font-serif font-bold mb-6 text-foreground">{temple.name}</h3>
-                                                                                    <div className="prose prose-orange dark:prose-invert max-w-none mb-8">
-                                                                                        <p className="text-lg text-foreground leading-relaxed whitespace-pre-line text-justify">
-                                                                                            {temple.description}
-                                                                                        </p>
-                                                                                    </div>
+                                                                <div className="flex items-center gap-1 text-sm text-muted-foreground mb-6">
+                                                                    <MapPin className="w-3 h-3 text-primary" />
+                                                                    <span className="line-clamp-1">{temple.location}</span>
+                                                                </div>
 
-                                                                                    <div className="flex flex-wrap gap-4">
-                                                                                        <Button size="lg" className="rounded-full bg-gradient-sacred hover:shadow-lg hover:shadow-orange-500/25 transition-all text-white font-bold px-8">
-                                                                                            Explore Temple
-                                                                                        </Button>
-                                                                                        <Button size="lg" variant="outline" className="rounded-full border-2 border-orange-100 dark:border-zinc-800 hover:bg-orange-50 dark:hover:bg-zinc-800 font-bold px-8 gap-2">
-                                                                                            View on Map <ArrowRight className="w-4 h-4" />
-                                                                                        </Button>
-                                                                                    </div>
-                                                                                </div>
-
-                                                                                <div className="relative aspect-[4/3] rounded-3xl overflow-hidden shadow-2xl border-4 border-white dark:border-zinc-800 bg-zinc-100 dark:bg-zinc-900">
-                                                                                    <Image
-                                                                                        src={temple.image}
-                                                                                        alt={temple.name}
-                                                                                        fill
-                                                                                        className="object-cover transition-transform duration-700 hover:scale-105"
-                                                                                    />
-                                                                                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-6 pt-20">
-                                                                                        <div className="flex items-center gap-2 text-white/90 text-sm font-medium mb-1">
-                                                                                            <MapPin className="w-4 h-4" />
-                                                                                            {temple.location}
-                                                                                        </div>
-                                                                                        <h3 className="text-white text-2xl font-bold font-serif">{temple.name}</h3>
-                                                                                    </div>
-                                                                                </div>
-                                                                            </>
-                                                                        )}
-                                                                    </div>
-                                                                );
-                                                            })}
-                                                        </div>
-                                                    )}
-
-                                                    {/* Other Temples Grid */}
-                                                    {/* {otherTemples.length > 0 && (
-                                                        <div>
-                                                            <h3 className="text-2xl font-serif font-bold mb-6 text-center">Other Sacred Temples</h3>
-                                                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                                                {otherTemples.map((temple, idx) => (
-                                                                    <div key={temple.id} className="group bg-white dark:bg-zinc-900 rounded-2xl border border-orange-100 dark:border-zinc-800 overflow-hidden shadow-sm hover:shadow-xl hover:shadow-orange-500/10 transition-all duration-300">
-                                                                        <div className="relative aspect-[4/3] overflow-hidden">
-                                                                            <Image
-                                                                                src={temple.image}
-                                                                                alt={temple.name}
-                                                                                fill
-                                                                                className="object-cover transition-transform duration-700 group-hover:scale-105"
-                                                                            />
-                                                                            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                                                                            <div className="absolute bottom-0 left-0 right-0 p-4">
-                                                                                <div className="flex items-center gap-2 text-white/90 text-sm font-medium mb-1">
-                                                                                    <MapPin className="w-3 h-3" />
-                                                                                    {temple.location}
-                                                                                </div>
-                                                                                <h4 className="text-white text-lg font-bold">{temple.name}</h4>
-                                                                            </div>
-                                                                        </div>
-                                                                        <div className="p-4">
-                                                                            <p className="text-sm text-muted-foreground leading-relaxed line-clamp-3">
-                                                                                {temple.description}
-                                                                            </p>
-                                                                            <Button variant="outline" size="sm" className="w-full mt-4 rounded-full">
-                                                                                Learn More <ArrowRight className="w-3 h-3 ml-1" />
-                                                                            </Button>
-                                                                        </div>
-                                                                    </div>
-                                                                ))}
+                                                                <div className="flex flex-col w-full gap-2 mt-auto">
+                                                                    <Button size="sm" className="w-full rounded-full bg-primary hover:bg-primary/90 text-white font-bold h-9" asChild>
+                                                                        <Link href={`/temples/${temple.id}`}>
+                                                                            Explore
+                                                                        </Link>
+                                                                    </Button>
+                                                                    <Button variant="outline" size="sm" className="w-full rounded-full border-orange-100 dark:border-zinc-800 h-9 gap-1.5" asChild>
+                                                                        <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(temple.name + " " + temple.location)}`} target="_blank" rel="noopener noreferrer">
+                                                                            View on Map <ArrowRight className="w-3 h-3" />
+                                                                        </a>
+                                                                    </Button>
+                                                                </div>
                                                             </div>
-                                                        </div>
-                                                    )} */}
+                                                        ))}
+                                                    </div>
                                                 </div>
                                             );
                                         })()}

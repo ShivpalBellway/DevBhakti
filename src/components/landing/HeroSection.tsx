@@ -9,11 +9,12 @@ import { Button } from "@/components/ui/button";
 import heroTempleImage from "@/assets/hero-temple.jpg";
 import templeIcon from "@/assets/icons/temple-icon.png";
 import pujaIcon from "@/assets/icons/puja.png";
+import BannerSection from "./BannerSection";
 
 
 const HeroSection: React.FC = () => {
   return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
+    <section className="relative min-h-[700px] flex items-center justify-center overflow-hidden">
       {/* Background image */}
       <div className="absolute inset-0">
         <Image
@@ -53,7 +54,7 @@ const HeroSection: React.FC = () => {
             transition={{ duration: 0.5, delay: 0.2 }}
             className="text-lg md:text-xl text-foreground max-w-2xl mx-auto mb-10"
           >
-           Discover Trusted Temples, Book Poojas, View Live Darshan.
+            Discover Trusted Temples, Book Poojas, View Live Darshan.
           </motion.p>
 
           {/* CTA Buttons */}
@@ -101,7 +102,7 @@ const HeroSection: React.FC = () => {
         </div>
 
         {/* Floating feature cards */}
-        <motion.div
+        {/* <motion.div
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.5 }}
@@ -144,7 +145,22 @@ const HeroSection: React.FC = () => {
               <p className="text-md text-foreground">{feature.description}</p>
             </motion.div>
           ))}
-        </motion.div>
+        </motion.div> */}
+      
+
+
+        {/* <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 0.6 }}
+          className="mt-16 w-full max-w-6xl mx-auto"
+        >
+          <BannerSection hidePadding className="bg-transparent shadow-none" />
+        </motion.div> */}
+
+
+
+
       </div>
     </section>
   );

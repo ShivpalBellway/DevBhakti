@@ -12,6 +12,17 @@ import { poojas } from "@/data/poojas";
 const PoojasSection: React.FC = () => {
   const scrollContainerRef = React.useRef<HTMLDivElement>(null);
 
+  const badgeColors = [
+    "bg-[#DFBB71] text-black ",
+    "bg-red-500 text-black ",
+    "bg-[#FFFFFF] text-black",
+    "bg-[#834F28] text-white ",
+    "bg-[#DFBB71] text-black ",
+    "bg-red-500 text-black ",
+    "bg-[#834F28] text-black ",
+    "bg-[#FFFFFF] text-black ",
+  ];
+
   const scroll = (direction: "left" | "right") => {
     if (scrollContainerRef.current) {
       const scrollAmount = 400;
@@ -142,11 +153,19 @@ const PoojasSection: React.FC = () => {
                             Time: On Request
                           </div>
                         )} */}
-                        <ul className="text-sm text-white bg-black/20 rounded p-3 list-disc list-inside space-y-1 drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
-                          {pooja.description.map((point, index) => (
-                            <li key={index}>{point}</li>
+
+                        {/* bullet points as badges */}
+                        <div className="flex flex-wrap gap-2 mt-auto rounded p-3 justify-center">
+                          {(pooja as any).bullets?.map((bullet: string, bIdx: number) => (
+                            <Badge
+                              key={bIdx}
+                              variant="outline"
+                              className={`text-[10px] uppercase font-bold tracking-tighter backdrop-blur-md px-2 py-0 border-2 ${badgeColors[bIdx % badgeColors.length]}`}
+                            >
+                              {bullet}
+                            </Badge>
                           ))}
-                        </ul>
+                        </div>
 
                       </div>
 
