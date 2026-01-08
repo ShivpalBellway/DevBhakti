@@ -23,14 +23,12 @@ import {
 } from "lucide-react";
 
 // Local temple images for hero banner & gallery
-// import Kashi1 from "@/assets/temples/KashiVishwanathTemple1.webp";
-// import Kashi2 from "@/assets/temples/KashiVishwanathTemple2.jpg";
-// import Kashi3 from "@/assets/temples/KashiVishwanathTemple3.jpg";
-// import Kashi4 from "@/assets/temples/KashiVishwanathTemple4.jpg";
-// import Kashi5 from "@/assets/temples/KashiVishwanathTemple5.jpg";
-import Kashi1 from "@/assets/temples/KashiVishwanathTemple (1).jpeg";
-import Kashi2 from "@/assets/temples/KashiVishwanathTemple (2).jpeg";
-import Kashi3 from "@/assets/temples/KashiVishwanathTemple (3).jpeg";
+
+import Kashi1 from "@/assets/temples/Kashi Vishwanath Banner 1.png";
+import Kashi2 from "@/assets/temples/Kashi Vishwanath Banner 2.png";
+import Kashi3 from "@/assets/temples/Kashi Vishwanath Banner 3.png";
+// import Kashi2 from "@/assets/temples/KashiVishwanathTemple (2).jpeg";
+// import Kashi3 from "@/assets/temples/KashiVishwanathTemple (3).jpeg";
 import Kashi4 from "@/assets/temples/KashiVishwanathTemple (4).jpeg";
 import Kashi5 from "@/assets/temples/KashiVishwanathTemple (5).jpeg";
 
@@ -345,10 +343,10 @@ export default function TempleDetail() {
 
                                 <div className="flex flex-wrap gap-3">
                                     
-                                    <span className="font-bold">¤ Description</span>
+                                    <span className="font-bold">Description</span>
                                      <span>{temple.description}</span>
 
-                                     <span className="font-bold">¤ History</span>
+                                     <span className="font-bold">History</span>
                                      <span>{temple.history}</span>
                                 </div>
 
@@ -373,7 +371,7 @@ export default function TempleDetail() {
                         {/* Tabs */}
                         <Tabs defaultValue="poojas" className="w-full">
                             <TabsList className="w-full justify-start bg-white justify-center text-black p-2 rounded-lg ">
-                                <TabsTrigger value="poojas" className="data-[state=active]:bg-primary data-[state=active]:text-white transition-all">Poojas</TabsTrigger>
+                                <TabsTrigger value="poojas" className="data-[state=active]:bg-primary data-[state=active]:text-white transition-all">Poojas & Aartis</TabsTrigger>
                                 {/* <TabsTrigger value="about" className="data-[state=active]:bg-primary data-[state=active]:text-white transition-all">About</TabsTrigger> */}
                                 <TabsTrigger value="events" className="data-[state=active]:bg-primary data-[state=active]:text-white transition-all">Events</TabsTrigger>
                                 {/* <TabsTrigger value="gallery" className="data-[state=active]:bg-primary data-[state=active]:text-white transition-all">Gallery</TabsTrigger> */}
@@ -411,7 +409,7 @@ export default function TempleDetail() {
                                                         className="flex items-center justify-between p-4 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors"
                                                     >
                                                         <div>
-                                                            <h4 className="font-semibold text-foreground underline bold">{pooja.name}</h4>
+                                                            <h4 className="font-semibold text-foreground mb-3  bold">{pooja.name}</h4>
                                                             {/* <p className="text-sm text-muted-foreground">{pooja.benefits?.join(", ")}</p> */}
 
 

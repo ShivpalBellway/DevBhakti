@@ -56,6 +56,7 @@ import templeSiddhivinayak from "@/assets/temple-siddhivinayak.jpg";
 import templeMeenakshi from "@/assets/temple-meenakshi.jpg";
 import templeJagannath from "@/assets/temple-jagannath.jpg";
 import templeSomnath from "@/assets/temple-somnath.jpg";
+import ravalnath from "@/assets/Shree Ravalnath Mandir1.webp";
 
 import { StaticImageData } from "next/image";
 
@@ -131,6 +132,18 @@ const temples = [
     liveStatus: true,
     openTime: "6:00 AM - 9:00 PM",
     description: "The first among the twelve Jyotirlinga shrines of Lord Shiva. This sacred temple has been destroyed and rebuilt several times throughout history."
+  },
+  {
+    id: 7,
+    name: "Shree Ravalnath Mandir",
+    location: "Pernam Municipal Area, Goa",
+    image: ravalnath,
+    rating: 4.9,
+    reviews: 9800,
+    category: "Shiva",
+    liveStatus: true,
+    openTime: "6:00 AM - 9:00 PM",
+    description: "A beautiful temple dedicated to Lord Shiva, located in the Pernam Municipal Area of Goa. It is known for its stunning architecture and spiritual significance."
   },
 ];
 
