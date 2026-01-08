@@ -12,17 +12,6 @@ import { poojas } from "@/data/poojas";
 const PoojasSection: React.FC = () => {
   const scrollContainerRef = React.useRef<HTMLDivElement>(null);
 
-  const badgeColors = [
-    "bg-[#DFBB71] text-black ",
-    "bg-red-500 text-black ",
-    "bg-[#FFFFFF] text-black",
-    "bg-[#834F28] text-white ",
-    "bg-[#DFBB71] text-black ",
-    "bg-red-500 text-black ",
-    "bg-[#834F28] text-black ",
-    "bg-[#FFFFFF] text-black ",
-  ];
-
   const scroll = (direction: "left" | "right") => {
     if (scrollContainerRef.current) {
       const scrollAmount = 400;
@@ -99,8 +88,8 @@ const PoojasSection: React.FC = () => {
                 className="flex-shrink-0 w-[300px] md:w-[340px]"
               >
                 <Link href={`/poojas/${pooja.id}`}>
-                  <div className="group relative bg-card rounded-2xl p-6 overflow-hidden border-2 border-border/50 shadow-soft hover:shadow-warm transition-all duration-300 hover:-translate-y-2 h-[420px] flex flex-col">
-                    {/* Background Image with Overlay */}
+                  <div className="group relative bg-card rounded-2xl overflow-hidden border border-border/40 shadow-soft hover:shadow-warm transition-all duration-300 hover:-translate-y-2 h-[420px] flex flex-col">
+                    {/* Background Image with bottom gradient for text readability */}
                     <div className="absolute inset-0 z-0">
                       <Image
                         src={pooja.image}
@@ -108,83 +97,41 @@ const PoojasSection: React.FC = () => {
                         fill
                         className="object-cover transition-transform duration-500 group-hover:scale-110"
                       />
-                      {/* <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/60 to-black/30 group-hover:via-black/50 transition-all duration-300" /> */}
-                      {/* <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent transition-all duration-300" /> */}
-
+                      {/* Darker only at bottom 2/3 so image stays bright but text is always readable */}
+                      <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/90 via-black/60 to-transparent group-hover:from-black/95 group-hover:via-black/70 transition-all duration-300" />
                     </div>
 
-                    <div className="relative z-10 flex flex-col h-full text-white  ">
-                      {/* Header */}
-                      <div className="flex items-start justify-between mb-4">
-                        <div className="flex-1">
-                          {/* <Badge variant="secondary" className="mb-2 bg-primary/20 text-white border-0 backdrop-blur-md">
-                            {pooja.category}
-                          </Badge> */}
-                          <h3 className="text-xl text-right font-serif font-bold text-white mb-1 group-hover:text-white transition-colors drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)]">
-                            {pooja.name}
-                          </h3>
-                        </div>
-                        {/* <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center group-hover:scale-110 group-hover:rotate-3 transition-all duration-300 border border-white/20">
-                          <Sparkles className="w-6 h-6 text-primary" />
+                    <div className="relative z-10 flex flex-col h-full text-white px-5 py-6">
+                      {/* Header / Title */}
+                      <div className="mt-auto space-y-3">
+                        {/* <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 backdrop-blur-sm border border-white/20">
+                          <Sparkles className="w-4 h-4 text-[#F5C979]" />
+                          <span className="text-xs tracking-[0.2em] uppercase text-[#FCEFD8]">
+                            Sacred Ritual
+                          </span>
                         </div> */}
+
+                        <h3 className="text-2xl font-serif font-semibold text-white leading-snug drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]">
+                          {pooja.name}
+                        </h3>
                       </div>
 
-                      {/* Description */}
-                      <p className="text-white text-right text-sm mb-4 flex-1 line-clamp-3 drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)]">
-                        {/* {pooja.description} */}
-                      </p>
-
-                      {/* Details */}
-                      <div className="space-y-2 mb-4">
-                        {/* <div className="flex items-center gap-2 text-sm text-white drop-shadow-[0_1px_1px_rgba(0,0,0,4)]">
-                          <Clock className="w-4 h-4" />
-                          <span>{pooja.duration}</span>
-                          {pooja.time !== "Flexible" && pooja.time !== "On Request" && (
-                            <span className="text-[#FDF2E5] font-medium">• {pooja.time}</span>
-                          )}
-                        </div> */}
-                        {/* {pooja.time === "Flexible" && (
-                          <div className="text-xs text-gray-400">
-                            Time: Flexible
-                          </div>
-                        )} */}
-                        {/* {pooja.time === "On Request" && (
-                          <div className="text-xs text-gray-400">
-                            Time: On Request
-                          </div>
-                        )} */}
-
-                        {/* bullet points as badges */}
-                        <div className="flex flex-wrap gap-2 mt-auto rounded p-3 justify-center">
+                      {/* Bullets */}
+                      <div className="mt-4 space-y-2">
+                        {/* <p className="text-xs text-[#FCEFD8]/80 uppercase tracking-[0.25em]">
+                          Blessings you receive
+                        </p> */}
+                        <div className="flex flex-wrap gap-2">
                           {(pooja as any).bullets?.map((bullet: string, bIdx: number) => (
-                            <Badge
+                            <span
                               key={bIdx}
-                              variant="outline"
-                              className={`text-[10px] uppercase font-bold tracking-tighter backdrop-blur-md px-2 py-0 border-2 ${badgeColors[bIdx % badgeColors.length]}`}
+                              className="text-[11px] font-medium px-3 py-1 rounded-full bg-white/12 border border-white/25 text-[#FFF9EA] backdrop-blur-md"
                             >
                               {bullet}
-                            </Badge>
+                            </span>
                           ))}
                         </div>
-
                       </div>
-
-                      {/* Price and CTA */}
-                      {/* <div className="flex items-center justify-between pt-4 border-t border-white/20">
-                        <div className="flex items-center gap-1">
-                          <IndianRupee className="w-5 h-5 text-white" />
-                          <span className="text-2xl font-bold text-[#FDF2E5]">
-                            {pooja.price}
-                          </span>
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-[#FDF2E5] hover:text-primary hover:bg-white/10"
-                        >
-                          Book Now <ArrowRight className="w-4 h-4 ml-1" />
-                        </Button>
-                      </div> */}
                     </div>
                   </div>
                 </Link>

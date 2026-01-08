@@ -409,14 +409,14 @@ const PoojaDetailClient = ({ id }: PoojaDetailClientProps) => {
 
                                                                 <div className="flex flex-col w-full gap-2 mt-auto">
                                                                     <Button size="sm" className="w-full rounded-full bg-primary hover:bg-primary/90 text-white font-bold h-9" asChild>
-                                                                        <Link href={`/temples/${temple.id}`}>
-                                                                            Explore
-                                                                        </Link>
-                                                                    </Button>
-                                                                    <Button variant="outline" size="sm" className="w-full rounded-full border-orange-100 dark:border-zinc-800 h-9 gap-1.5" asChild>
-                                                                        <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(temple.name + " " + temple.location)}`} target="_blank" rel="noopener noreferrer">
-                                                                            View on Map <ArrowRight className="w-3 h-3" />
+                                                                       <a href={`#`} target="_blank" rel="noopener noreferrer">
+                                                                            Book Pooja <ArrowRight className="w-3 h-3" />
                                                                         </a>
+                                                                    </Button>
+                                                                    <Button variant="outline" size="sm" className="w-full rounded-full border-orange-100 dark:border-zinc-800 h-9 gap-1.5" asChild> 
+                                                                         <Link href={`/temples/${temple.id}`}>
+                                                                            Explore Temple
+                                                                        </Link>
                                                                     </Button>
                                                                 </div>
                                                             </div>
