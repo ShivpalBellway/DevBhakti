@@ -30,7 +30,7 @@ const Navbar: React.FC = () => {
   }, []);
 
   const navLinks = [
-    { label: "Poojas & Sevas", href: "#poojas" },
+    { label: "Poojas & Sevas", href: "/poojas" },
     { label: "Verified Temples", href: "/temples" },
     { label: "Sacred Items", href: "/marketplace?category=All" },
     { label: "Live Darshan", href: "/live-darshan" },
@@ -54,9 +54,8 @@ const Navbar: React.FC = () => {
               <Link href="/" className="relative z-10 flex-shrink-0">
                 {/* <Logo className="h-28 w-28 " /> */}
                 <Logo
-                  className={`h-28 w-28 transition-colors duration-300 ${
-                    isScrolled ? "" : "h-28 w-24"
-                  }`}
+                  className={`h-28 w-28 transition-colors duration-300 ${isScrolled ? "" : "h-28 w-24"
+                    }`}
                 />
               </Link>
 
@@ -68,19 +67,19 @@ const Navbar: React.FC = () => {
 
               {/* Desktop Search Bar - More Prominent Glassmorphism */}
               <div
-  onClick={() => setIsSearchOpen(true)}
-  className="hidden sm:flex items-center gap-2.5 px-6 py-3
+                onClick={() => setIsSearchOpen(true)}
+                className="hidden sm:flex items-center gap-2.5 px-6 py-3
              w-[350px] md:w-[350px] lg:w-[400px]
              bg-white/30 dark:bg-zinc-900/80 backdrop-blur-md rounded-xl
              cursor-pointer transition-all border border-black/50
              dark:border-zinc-800/50 hover:border-primary/60
              shadow-sm hover:shadow-md"
->
-  <Search className="w-5 h-5 text-primary group-hover:scale-110 transition-transform" />
-  <span className="text-black dark:text-black text-sm font-medium truncate">
-    Search temples, poojas, products...
-  </span>
-</div>
+              >
+                <Search className="w-5 h-5 text-primary group-hover:scale-110 transition-transform" />
+                <span className="text-black dark:text-black text-sm font-medium truncate">
+                  Search temples, poojas, products...
+                </span>
+              </div>
 
 
 
