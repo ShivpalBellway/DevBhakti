@@ -7,6 +7,7 @@ import { Menu, X, ChevronDown, ChevronRight, User, LogIn, UserPlus, ShoppingBag,
 import { Button } from "@/components/ui/button";
 import Logo from "@/components/icons/Logo";
 import { GlobalSearch } from "./GlobalSearch";
+import TempleLoginModal from "@/components/temples/TempleLoginModal";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,10 +17,15 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-const Navbar: React.FC = () => {
+interface NavbarProps {
+  variant?: "default" | "temple";
+}
+
+const Navbar: React.FC<NavbarProps> = ({ variant = "default" }) => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [showTempleLoginModal, setShowTempleLoginModal] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -108,77 +114,89 @@ const Navbar: React.FC = () => {
                 <Search className="w-2 h-3" />
               </Button>
 
-              <Button
-                variant="outline"
-                className="hidden md:flex bg-[#88542B] border-[#c2a087] text-white hover:bg-[#CA9E52] hover:text-white rounded-full px-4 h-9 mr-2 text-sm font-medium transition-all hover:border-[#864c20]"
-                asChild
-              >
-                <Link href="/auth?mode=register&type=institution">
-                  Register as Temple
-                </Link>
-              </Button>
+              {variant === "default" ? (
+                <Button
+                  variant="outline"
+                  className="hidden md:flex bg-[#88542B] border-[#c2a087] text-white hover:bg-[#CA9E52] hover:text-white rounded-full px-4 h-9 mr-2 text-sm font-medium transition-all hover:border-[#864c20]"
+                  asChild
+                >
+                  <Link href="/temples/register">
+                    Register as Temple
+                  </Link>
+                </Button>
+              ) : (
+                <Button
+                  variant="outline"
+                  onClick={() => setShowTempleLoginModal(true)}
+                  className="hidden md:flex bg-[#88542B] border-[#c2a087] text-white hover:bg-[#CA9E52] hover:text-white rounded-full px-6 h-9 mr-2 text-sm font-medium transition-all hover:border-[#864c20]"
+                >
+                  Temple Login
+                </Button>
+              )}
 
 
               {/* Profile Dropdown */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="relative rounded-full w-9 h-9 md:w-10 md:h-10 border-2 border-[#794A05]
-                     hover:border-[#794A05] hover:bg-[#ffffff] transition-all duration-300 ease-in-out
-                      hover:shadow-[0_0_0_4px_#ffffff,0_0_0_6px_#794A05] group">
-                    <User className="w-4 h-4 md:w-5 md:h-5 text-[#794A05] transition-all duration-300 group-hover:scale-110" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-64 mt-3 p-2 rounded-[1.8rem] shadow-2xl border-orange-100/50 dark:border-zinc-800 bg-white/95 dark:bg-zinc-950/95 backdrop-blur-md animate-in fade-in zoom-in-95 duration-200">
-                  <DropdownMenuLabel className="font-sans text-primary px-4 py-3 text-xs uppercase tracking-[0.2em] opacity-70">
-                    Accounts & Bookings
-                  </DropdownMenuLabel>
-                  <DropdownMenuSeparator className="bg-orange-500 dark:bg-zinc-800 my-1 mx-2" />
+              {variant === "default" && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" className="relative rounded-full w-9 h-9 md:w-10 md:h-10 border-2 border-[#794A05]
+                      hover:border-[#794A05] hover:bg-[#ffffff] transition-all duration-300 ease-in-out
+                        hover:shadow-[0_0_0_4px_#ffffff,0_0_0_6px_#794A05] group">
+                      <User className="w-4 h-4 md:w-5 md:h-5 text-[#794A05] transition-all duration-300 group-hover:scale-110" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-64 mt-3 p-2 rounded-[1.8rem] shadow-2xl border-orange-100/50 dark:border-zinc-800 bg-white/95 dark:bg-zinc-950/95 backdrop-blur-md animate-in fade-in zoom-in-95 duration-200">
+                    <DropdownMenuLabel className="font-sans text-primary px-4 py-3 text-xs uppercase tracking-[0.2em] opacity-70">
+                      Accounts & Bookings
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator className="bg-orange-500 dark:bg-zinc-800 my-1 mx-2" />
 
-                  <div className="p-1 space-y-1">
-                    <DropdownMenuItem asChild className="focus:bg-primary focus:text-white rounded-[1.2rem] cursor-pointer transition-all duration-300 group">
-                      <Link href="/auth" className="flex items-center justify-between w-full px-4 py-3">
-                        <div className="flex items-center gap-3">
-                          <LogIn className="w-4 h-4 text-primary group-focus:text-white transition-colors" />
-                          <span className="font-medium">Login</span>
-                        </div>
-                        <ChevronRight className="w-3 h-3 opacity-0 group-focus:opacity-100 -translate-x-2 group-focus:translate-x-0 transition-all" />
-                      </Link>
-                    </DropdownMenuItem>
+                    <div className="p-1 space-y-1">
+                      <DropdownMenuItem asChild className="focus:bg-primary focus:text-white rounded-[1.2rem] cursor-pointer transition-all duration-300 group">
+                        <Link href="/auth" className="flex items-center justify-between w-full px-4 py-3">
+                          <div className="flex items-center gap-3">
+                            <LogIn className="w-4 h-4 text-primary group-focus:text-white transition-colors" />
+                            <span className="font-medium">Login</span>
+                          </div>
+                          <ChevronRight className="w-3 h-3 opacity-0 group-focus:opacity-100 -translate-x-2 group-focus:translate-x-0 transition-all" />
+                        </Link>
+                      </DropdownMenuItem>
 
-                    <DropdownMenuItem asChild className="focus:bg-primary focus:text-white rounded-[1.2rem] cursor-pointer transition-all duration-300 group">
-                      <Link href="/auth?mode=register" className="flex items-center justify-between w-full px-4 py-3">
-                        <div className="flex items-center gap-3">
-                          <UserPlus className="w-4 h-4 text-primary group-focus:text-white transition-colors" />
-                          <span className="font-medium">Sign Up</span>
-                        </div>
-                        <ChevronRight className="w-3 h-3 opacity-0 group-focus:opacity-100 -translate-x-2 group-focus:translate-x-0 transition-all" />
-                      </Link>
-                    </DropdownMenuItem>
+                      <DropdownMenuItem asChild className="focus:bg-primary focus:text-white rounded-[1.2rem] cursor-pointer transition-all duration-300 group">
+                        <Link href="/auth?mode=register" className="flex items-center justify-between w-full px-4 py-3">
+                          <div className="flex items-center gap-3">
+                            <UserPlus className="w-4 h-4 text-primary group-focus:text-white transition-colors" />
+                            <span className="font-medium">Sign Up</span>
+                          </div>
+                          <ChevronRight className="w-3 h-3 opacity-0 group-focus:opacity-100 -translate-x-2 group-focus:translate-x-0 transition-all" />
+                        </Link>
+                      </DropdownMenuItem>
 
-                    <div className="py-2 mx-4 border-t border-orange-50 dark:border-zinc-800/50" />
+                      <div className="py-2 mx-4 border-t border-orange-50 dark:border-zinc-800/50" />
 
-                    <DropdownMenuItem asChild className="focus:bg-primary focus:text-white rounded-[1.2rem] cursor-pointer transition-all duration-300 group">
-                      <Link href="/auth" className="flex items-center justify-between w-full px-4 py-3">
-                        <div className="flex items-center gap-3">
-                          <ShoppingBag className="w-4 h-4 text-primary group-focus:text-white transition-colors" />
-                          <span className="font-medium">My Orders</span>
-                        </div>
-                        <ChevronRight className="w-3 h-3 opacity-0 group-focus:opacity-100 -translate-x-2 group-focus:translate-x-0 transition-all" />
-                      </Link>
-                    </DropdownMenuItem>
+                      <DropdownMenuItem asChild className="focus:bg-primary focus:text-white rounded-[1.2rem] cursor-pointer transition-all duration-300 group">
+                        <Link href="/auth" className="flex items-center justify-between w-full px-4 py-3">
+                          <div className="flex items-center gap-3">
+                            <ShoppingBag className="w-4 h-4 text-primary group-focus:text-white transition-colors" />
+                            <span className="font-medium">My Orders</span>
+                          </div>
+                          <ChevronRight className="w-3 h-3 opacity-0 group-focus:opacity-100 -translate-x-2 group-focus:translate-x-0 transition-all" />
+                        </Link>
+                      </DropdownMenuItem>
 
-                    <DropdownMenuItem asChild className="focus:bg-primary focus:text-white rounded-[1.2rem] cursor-pointer transition-all duration-300 group">
-                      <Link href="/auth" className="flex items-center justify-between w-full px-4 py-3">
-                        <div className="flex items-center gap-3">
-                          <Church className="w-4 h-4 text-primary group-focus:text-white transition-colors" />
-                          <span className="font-medium">My Poojas</span>
-                        </div>
-                        <ChevronRight className="w-3 h-3 opacity-0 group-focus:opacity-100 -translate-x-2 group-focus:translate-x-0 transition-all" />
-                      </Link>
-                    </DropdownMenuItem>
-                  </div>
-                </DropdownMenuContent>
-              </DropdownMenu>
+                      <DropdownMenuItem asChild className="focus:bg-primary focus:text-white rounded-[1.2rem] cursor-pointer transition-all duration-300 group">
+                        <Link href="/auth" className="flex items-center justify-between w-full px-4 py-3">
+                          <div className="flex items-center gap-3">
+                            <Church className="w-4 h-4 text-primary group-focus:text-white transition-colors" />
+                            <span className="font-medium">My Poojas</span>
+                          </div>
+                          <ChevronRight className="w-3 h-3 opacity-0 group-focus:opacity-100 -translate-x-2 group-focus:translate-x-0 transition-all" />
+                        </Link>
+                      </DropdownMenuItem>
+                    </div>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
 
               {/* Mobile Menu Button */}
               <button
@@ -194,6 +212,28 @@ const Navbar: React.FC = () => {
 
       <GlobalSearch isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
 
+      {/* Temple Login Modal */}
+      <AnimatePresence>
+        {showTempleLoginModal && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-background/80 backdrop-blur-sm"
+              onClick={() => setShowTempleLoginModal(false)}
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="relative z-10 w-full max-w-md"
+            >
+              <TempleLoginModal onClose={() => setShowTempleLoginModal(false)} />
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* Mobile Menu */}
       <AnimatePresence>

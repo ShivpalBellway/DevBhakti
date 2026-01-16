@@ -68,7 +68,7 @@ const AuthForm: React.FC = () => {
                 <User className="w-4 h-4" />
                 Devotee
               </button>
-              <button
+              {/* <button
                 onClick={() => setUserType("institution")}
                 className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-md text-sm font-medium transition-all ${userType === "institution"
                     ? "bg-card shadow-soft text-foreground"
@@ -77,7 +77,7 @@ const AuthForm: React.FC = () => {
               >
                 <Building2 className="w-4 h-4" />
                 Temple
-              </button>
+              </button> */}
             </div>
           )}
 
@@ -186,7 +186,8 @@ const AuthForm: React.FC = () => {
 
         <div className="relative z-10 flex items-center justify-center p-12 w-full">
           <div className="text-center text-primary-foreground max-w-lg">
-            <div className="text-8xl mb-8">🕉️</div>
+            <div className="text-8xl mb-8 text-black"> 🕉</div>
+            {/* 🕉️ */}
             <h2 className="text-3xl font-serif font-bold mb-4">
               Experience Divine Connections
             </h2>

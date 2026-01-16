@@ -8,26 +8,10 @@ import Link from "next/link";
 import Image from "next/image";
 import liveDarshanPreview from "@/assets/live-darshan-preview.jpg";
 
-const liveTemples = [
-  {
-    name: "Kashi Vishwanath Temple",
-    location: "Varanasi, UP",
-    viewers: "12.5K",
-    isLive: true,
-  },
-  {
-    name: "Tirupati Balaji Temple",
-    location: "Tirumala, AP",
-    viewers: "28.3K",
-    isLive: true,
-  },
-  {
-    name: "Shirdi Sai Baba Temple",
-    location: "Shirdi, MH",
-    viewers: "8.7K",
-    isLive: true,
-  },
-];
+import { temples } from "@/data/temples";
+import { Temple } from "@/types/temple";
+
+const liveTemples = temples.filter((t) => t.liveStatus).slice(0, 3);
 
 const LiveDarshanSection: React.FC = () => {
   return (
@@ -50,14 +34,14 @@ const LiveDarshanSection: React.FC = () => {
           >
             <div className="relative rounded-2xl overflow-hidden bg-sidebar-accent aspect-video shadow-elevated">
               {/* Video preview image */}
-              <Image 
-                src={liveDarshanPreview} 
-                alt="Live darshan preview" 
+              <Image
+                src={liveDarshanPreview}
+                alt="Live darshan preview"
                 fill
                 className="object-cover"
               />
               <div className="absolute inset-0 bg-foreground/20" />
-              
+
               {/* Play button overlay */}
               <div className="absolute inset-0 flex items-center justify-center">
                 <div className="text-center">
@@ -95,7 +79,7 @@ const LiveDarshanSection: React.FC = () => {
                   className="flex items-center justify-between bg-sidebar-accent/50 rounded-xl p-4 cursor-pointer hover:bg-sidebar-accent transition-colors"
                 >
                   <div className="flex items-center gap-3">
-                    {temple.isLive && (
+                    {temple.liveStatus && (
                       <div className="w-2 h-2 rounded-full bg-destructive animate-pulse" />
                     )}
                     <div>

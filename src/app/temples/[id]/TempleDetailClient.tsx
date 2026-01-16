@@ -24,132 +24,15 @@ import {
 
 // Local temple images for hero banner & gallery
 
-import Kashi1 from "@/assets/temples/Kashi Vishwanath Banner 1.png";
-import Kashi2 from "@/assets/temples/Kashi Vishwanath Banner 2.png";
-import Kashi3 from "@/assets/temples/Kashi Vishwanath Banner 3.png";
-// import Kashi2 from "@/assets/temples/KashiVishwanathTemple (2).jpeg";
-// import Kashi3 from "@/assets/temples/KashiVishwanathTemple (3).jpeg";
-import Kashi4 from "@/assets/temples/KashiVishwanathTemple (4).jpeg";
-import Kashi5 from "@/assets/temples/KashiVishwanathTemple (5).jpeg";
+import { temples } from "@/data/temples";
+import { Temple } from "@/types/temple";
 
-import Tirupati1 from "@/assets/temples/TirupatiBalajiTemple1.jpg";
-import Tirupati2 from "@/assets/temples/TirupatiBalajiTemple2.jpg";
-import Siddhi1 from "@/assets/temples/SiddhivinayakTemple1.webp";
-import Siddhi2 from "@/assets/temples/SiddhivinayakTemple2.webp";
-import Siddhi3 from "@/assets/temples/SiddhivinayakTemple3.webp";
-import Siddhi4 from "@/assets/temples/SiddhivinayakTemple4.jpg";
-
-type TempleDetail = {
-    id: number;
-    name: string;
-    location: string;
-    fullAddress: string;
-    image: any;
-    heroImages: any[];
-    gallery: any[];
-    rating: number;
-    reviews: number;
-    category: string;
-    liveStatus: boolean;
-    openTime: string;
-    phone?: string;
-    website?: string;
-    mapUrl?: string;
-    description: string;
-    history?: string;
-    poojas?: { name: string; time: string; price: number; benefits: string[] | undefined; }[];
-    upcomingEvents?: { name: string; date: string }[];
-};
 const badgeColors = [
     "bg-blue-100 text-blue-700",
     "bg-green-100 text-green-700",
     "bg-purple-100 text-purple-700",
     "bg-pink-100 text-pink-700",
     "bg-yellow-100 text-yellow-700",
-  ];
-  
-
-const temples: TempleDetail[] = [
-    {
-        id: 1,
-        name: "Kashi Vishwanath Temple",
-        location: "Varanasi, Uttar Pradesh",
-        fullAddress: "Lahori Tola, Varanasi, Uttar Pradesh 221001",
-        image: Kashi1,
-        heroImages: [Kashi1, Kashi2, Kashi3, Kashi4, Kashi5],
-        gallery: [Kashi1, Kashi2, Kashi3, Kashi4, Kashi5],
-        rating: 4.9,
-        reviews: 12500,
-        category: "Shiva",
-        liveStatus: true,
-        openTime: "4:00 AM - 11:00 PM",
-        phone: "+91 542 239 2629",
-        website: "https://shrikashivishwanath.org",
-        mapUrl: "https://maps.app.goo.gl/Xy6awaBzAhxCKQHz8",
-        description:
-            "The Kashi Vishwanath Temple is one of the most famous Hindu temples dedicated to Lord Shiva. It is located in Vishwanath Gali of Varanasi, Uttar Pradesh, India. The temple stands on the western bank of the holy river Ganga, and is one of the twelve Jyotirlingas.",
-        history:
-            "The temple has been referenced in Hindu scriptures for a very long time as a central part of worship in the Shaiva philosophy. The original Vishwanath temple was destroyed by the army of Qutb-ud-din Aibak in 1194 CE. The temple was rebuilt by a Gujarati merchant, but was demolished again during the reign of Mughal emperor Aurangzeb.",
-        poojas: [
-            { name: "Mangala Aarti", time: "3:00 AM", price: 251, benefits: ["Early morning blessing aarti", "Peaceful spiritual atmosphere", "Performed by experienced priests", "Includes mantras and rituals"] },
-            { name: "Bhog Aarti", time: "11:15 AM", price: 501, benefits: ["Mid-day offering aarti", "Divine mid-day blessings", "Sanctified prasad distribution"] },
-            { name: "Sandhya Aarti", time: "7:00 PM", price: 351, benefits: ["Evening prayer aarti", "Divine evening blessings", "Sanctified prasad distribution"] },
-            { name: "Shringar Aarti", time: "9:00 PM", price: 751, benefits: ["Divine decoration of the deity", "Uses flowers, jewels and silks", "Visual feast for the devotees", "Celebrates divine beauty"] },
-            { name: "Rudrabhishek", time: "On Request", price: 1100, benefits: ["Powerful bathing of Shiva Linga", "Uses milk, honey, and sacred water", "Chanting of ancient Rudram", "Removes negativity and obstacles"] },
-        ],
-        upcomingEvents: [
-            { name: "Maha Shivaratri", date: "March 8, 2025" },
-            { name: "Shravan Month", date: "July 2025" },
-            { name: "Dev Deepawali", date: "November 2025" },
-        ],
-    },
-    {
-        id: 2,
-        name: "Tirupati Balaji Temple",
-        location: "Tirupati, Andhra Pradesh",
-        fullAddress: "Tirumala, Tirupati, Andhra Pradesh 517504",
-        image: Tirupati1,
-        heroImages: [Tirupati1, Tirupati2],
-        gallery: [Tirupati1, Tirupati2],
-        rating: 4.8,
-        reviews: 25000,
-        category: "Vishnu",
-        liveStatus: true,
-        openTime: "3:00 AM - 12:00 AM",
-        description:
-            "Dedicated to Lord Venkateswara, an incarnation of Vishnu. It is one of the richest and most visited religious centers in the world.",
-        poojas: [
-            { name: "Mangala Aarti", time: "3:00 AM", price: 251, benefits: ["Early morning blessing aarti", "Peaceful spiritual atmosphere", "Performed by experienced priests", "Includes mantras and rituals"] },
-            { name: "Bhog Aarti", time: "11:15 AM", price: 501, benefits: ["Mid-day offering aarti", "Divine mid-day blessings", "Sanctified prasad distribution"] },
-            { name: "Sandhya Aarti", time: "7:00 PM", price: 351, benefits: ["Evening prayer aarti", "Divine evening blessings", "Sanctified prasad distribution"] },
-            { name: "Shringar Aarti", time: "9:00 PM", price: 751, benefits: ["Divine decoration of the deity", "Uses flowers, jewels and silks", "Visual feast for the devotees", "Celebrates divine beauty"] },
-            { name: "Rudrabhishek", time: "On Request", price: 1100, benefits: ["Powerful bathing of Shiva Linga", "Uses milk, honey, and sacred water", "Chanting of ancient Rudram", "Removes negativity and obstacles"] },
-        ],
-        upcomingEvents: [
-            { name: "Brahmotsavam", date: "October 2025" },
-            { name: "Vaikunta Ekadashi", date: "December 2025" },
-        ],
-    },
-    {
-        id: 3,
-        name: "Siddhivinayak Temple",
-        location: "Mumbai, Maharashtra",
-        fullAddress: "Prabhadevi, Mumbai, Maharashtra 400028",
-        image: Siddhi1,
-        heroImages: [Siddhi1, Siddhi2, Siddhi3, Siddhi4],
-        gallery: [Siddhi1, Siddhi2, Siddhi3, Siddhi4],
-        rating: 4.7,
-        reviews: 8900,
-        category: "Ganesha",
-        liveStatus: false,
-        openTime: "5:30 AM - 10:00 PM",
-        description:
-            "A revered temple dedicated to Lord Ganesha, known for fulfilling wishes of devotees. The temple has a beautiful gold-plated dome and inner roof.",
-        upcomingEvents: [
-            { name: "Ganesh Chaturthi", date: "September 2025" },
-            { name: "Maghi Ganesh Jayanti", date: "January 2026" },
-        ],
-    },
 ];
 
 export default function TempleDetail() {
@@ -276,11 +159,10 @@ export default function TempleDetail() {
                             <button
                                 key={index}
                                 onClick={() => goToImage(index)}
-                                className={`relative w-16 h-16 md:w-20 md:h-20 rounded-lg overflow-hidden border-2 transition-all duration-300 ${
-                                    index === activeImageIndex
-                                        ? "border-primary scale-110 shadow-lg shadow-primary/50"
-                                        : "border-transparent  hover:opacity-100 hover:scale-105"
-                                }`}
+                                className={`relative w-16 h-16 md:w-20 md:h-20 rounded-lg overflow-hidden border-2 transition-all duration-300 ${index === activeImageIndex
+                                    ? "border-primary scale-110 shadow-lg shadow-primary/50"
+                                    : "border-transparent  hover:opacity-100 hover:scale-105"
+                                    }`}
                             >
                                 <img
                                     src={(img as any).src || img}
@@ -305,7 +187,7 @@ export default function TempleDetail() {
             </section>
 
             {/* Content */}
-            <section className="container mx-auto px-4 -mt-16 relative z-10 pb-12 mt-0">
+            <section className="container mx-auto px-4 -mt-16 relative z-10 pb-12">
                 <div className="grid lg:grid-cols-3 gap-8">
                     {/* Main Content */}
                     <div className="lg:col-span-2 space-y-6">
@@ -338,16 +220,16 @@ export default function TempleDetail() {
                                         <Clock className="h-4 w-4 text-primary" />
                                         <span>{temple.openTime}</span>
                                     </div>
-                                   
+
                                 </div>
 
                                 <div className="flex flex-wrap gap-3">
-                                    
-                                    <span className="font-bold">Description</span>
-                                     <span>{temple.description}</span>
 
-                                     <span className="font-bold">History</span>
-                                     <span>{temple.history}</span>
+                                    <span className="font-bold">Description</span>
+                                    <span>{temple.description}</span>
+
+                                    <span className="font-bold">History</span>
+                                    <span>{temple.history}</span>
                                 </div>
 
                                 {/* <div className="flex flex-wrap gap-3">
@@ -364,13 +246,13 @@ export default function TempleDetail() {
                                     </Button>
                                 </div> */}
 
-                               
+
                             </CardContent>
                         </Card>
 
                         {/* Tabs */}
                         <Tabs defaultValue="poojas" className="w-full">
-                            <TabsList className="w-full justify-start bg-white justify-center text-black p-2 rounded-lg ">
+                            <TabsList className="w-full justify-start bg-white text-black p-2 rounded-lg ">
                                 <TabsTrigger value="poojas" className="data-[state=active]:bg-primary data-[state=active]:text-white transition-all">Poojas & Aartis</TabsTrigger>
                                 {/* <TabsTrigger value="about" className="data-[state=active]:bg-primary data-[state=active]:text-white transition-all">About</TabsTrigger> */}
                                 <TabsTrigger value="events" className="data-[state=active]:bg-primary data-[state=active]:text-white transition-all">Events</TabsTrigger>
@@ -413,7 +295,7 @@ export default function TempleDetail() {
                                                             {/* <p className="text-sm text-muted-foreground">{pooja.benefits?.join(", ")}</p> */}
 
 
-{/* <div className="flex flex-wrap gap-2 mt-1">
+                                                            {/* <div className="flex flex-wrap gap-2 mt-1">
   {pooja.benefits?.map((benefit, index) => (
     <span
       key={index}
@@ -425,18 +307,18 @@ export default function TempleDetail() {
   ))}
 </div> */}
 
-<div className="flex flex-wrap gap-2 mt-1">
-  {pooja.benefits?.map((benefit, index) => (
-    <span
-      key={index}
-      className="text-xs px-2.5 py-2 rounded-full 
+                                                            <div className="flex flex-wrap gap-2 mt-1">
+                                                                {pooja.benefits?.map((benefit, index) => (
+                                                                    <span
+                                                                        key={index}
+                                                                        className="text-xs px-2.5 py-2 rounded-full 
                  bg-primary/10 text-primary
                  whitespace-nowrap"
-    >
-      {benefit}
-    </span>
-  ))}
-</div>
+                                                                    >
+                                                                        {benefit}
+                                                                    </span>
+                                                                ))}
+                                                            </div>
 
 
 
@@ -503,7 +385,7 @@ export default function TempleDetail() {
 
                             <TabsContent value="gallery" className="mt-6">
                                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                                    {temple.gallery.map((img, index) => (
+                                    {temple.gallery?.map((img, index) => (
                                         <div key={index} className="aspect-square rounded-lg overflow-hidden">
                                             <img
                                                 src={(img as any).src || img}
@@ -525,7 +407,7 @@ export default function TempleDetail() {
                             </CardHeader>
                             <CardContent className="space-y-4">
                                 {/* <div>
-                                    {temple.gallery.map((img, index) => (
+                                    {temple.gallery?.map((img, index) => (
                                         <div key={index} className=" rounded-lg overflow-hidden">
                                             <img
                                                 src={(img as any).src || img}
@@ -535,7 +417,7 @@ export default function TempleDetail() {
                                         </div>
                                     ))}
                                 </div> */}
-                                
+
                                 {temple.mapUrl && (
                                     <div className="flex items-center gap-3">
                                         <div className="h-10 w-10 bg-primary/10 rounded-lg flex items-center justify-center">
@@ -562,20 +444,20 @@ export default function TempleDetail() {
                                         </Link>
                                     </Button> */}
 
-                                 {/* Book Pooja and Watch Live Darshan Buttons Right Side*/}
-                                 <div className="flex flex-wrap gap-3">
-                                    <Button variant="gold" className="gap-2" asChild>
-                                        <Link href={`/booking?temple=${numericId}`}>
-                                            <Calendar className="h-4 w-4" />
-                                            Book Pooja
-                                        </Link>
-                                    </Button>
+                                    {/* Book Pooja and Watch Live Darshan Buttons Right Side*/}
+                                    <div className="flex flex-wrap gap-3">
+                                        <Button variant="gold" className="gap-2" asChild>
+                                            <Link href={`/booking?temple=${numericId}`}>
+                                                <Calendar className="h-4 w-4" />
+                                                Book Pooja
+                                            </Link>
+                                        </Button>
 
-                                    <Button variant="outline" className="gap-2">
-                                        <Video className="h-4 w-4" />
-                                        Watch Live Darshan
-                                    </Button>
-                                </div>
+                                        <Button variant="outline" className="gap-2">
+                                            <Video className="h-4 w-4" />
+                                            Watch Live Darshan
+                                        </Button>
+                                    </div>
                                 </div>
                             </CardContent>
                         </Card>

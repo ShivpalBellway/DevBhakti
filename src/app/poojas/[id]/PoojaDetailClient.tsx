@@ -23,7 +23,8 @@ import Footer from "@/components/landing/Footer";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { poojas, temples } from "@/data/poojas";
+import { poojas } from "@/data/poojas";
+import { temples } from "@/data/temples";
 
 interface PoojaDetailClientProps {
     id: string;
@@ -409,12 +410,12 @@ const PoojaDetailClient = ({ id }: PoojaDetailClientProps) => {
 
                                                                 <div className="flex flex-col w-full gap-2 mt-auto">
                                                                     <Button size="sm" className="w-full rounded-full bg-primary hover:bg-primary/90 text-white font-bold h-9" asChild>
-                                                                       <a href={`#`} target="_blank" rel="noopener noreferrer">
+                                                                        <a href={`#`} target="_blank" rel="noopener noreferrer">
                                                                             Book Pooja <ArrowRight className="w-3 h-3" />
                                                                         </a>
                                                                     </Button>
-                                                                    <Button variant="outline" size="sm" className="w-full rounded-full border-orange-100 dark:border-zinc-800 h-9 gap-1.5" asChild> 
-                                                                         <Link href={`/temples/${temple.id}`}>
+                                                                    <Button variant="outline" size="sm" className="w-full rounded-full border-orange-100 dark:border-zinc-800 h-9 gap-1.5" asChild>
+                                                                        <Link href={`/temples/${temple.id}`}>
                                                                             Explore Temple
                                                                         </Link>
                                                                     </Button>

@@ -1,7 +1,10 @@
 import TempleDetailClient from "./TempleDetailClient";
+import { temples } from "@/data/temples";
 
 export async function generateStaticParams() {
-  return [{ id: '1' }, { id: '2' }, { id: '3' }];
+  return temples.map((temple) => ({
+    id: temple.id.toString(),
+  }));
 }
 
 export default function TempleDetailPage() {
