@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/command"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
+import { registerTemple } from "@/api/institutionController"
 
 export default function TempleRegistrationForm({ onClose }: { onClose?: () => void }) {
     const [selectedPoojaIds, setSelectedPoojaIds] = useState<string[]>([])
@@ -98,22 +99,39 @@ export default function TempleRegistrationForm({ onClose }: { onClose?: () => vo
         if (!validateForm()) {
             toast({
                 title: "Validation Error",
-                description: "Please fill in all required fields",
-                variant: "destructive"
+                description: "Please fill in all required fields and select at least one pooja.",
+                variant: "destructive",
             })
             return
         }
 
         setIsSubmitting(true)
 
-        setTimeout(() => {
-            setIsSubmitting(false)
+        try {
+            const result = await registerTemple({
+                ...formData,
+                selectedPoojaIds
+            });
+
             setShowSuccess(true)
             toast({
-                title: "Registration Successful!",
-                description: "Your temple has been registered successfully. Our team will review and contact you soon.",
+                title: "Registration Successful",
+                description: result.message || "Your temple registration has been submitted for review.",
             })
-        }, 2000)
+
+            // Close after 3 seconds
+            setTimeout(() => {
+                if (onClose) onClose()
+            }, 3000)
+        } catch (error: any) {
+            toast({
+                title: "Registration Failed",
+                description: error.response?.data?.error || "Something went wrong. Please try again later.",
+                variant: "destructive",
+            })
+        } finally {
+            setIsSubmitting(false)
+        }
     }
 
     return (

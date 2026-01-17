@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Logo from "@/components/icons/Logo";
+import { loginAdmin } from "@/api/adminController";
 
 const AdminLoginForm: React.FC = () => {
     const router = useRouter();
@@ -24,16 +25,20 @@ const AdminLoginForm: React.FC = () => {
         setIsLoading(true);
         setError("");
 
-        // Simulate API call
-        await new Promise((resolve) => setTimeout(resolve, 1000));
+        try {
+            const data = await loginAdmin(formData);
 
-        // Static credentials check
-        if (formData.email === "admin@devbhakti.com" && formData.password === "admin123") {
-            // Set a cookie (simple client-side for this static demo)
+            // Store token and user info simply in localStorage
+            localStorage.setItem("admin_token", data.token);
+            localStorage.setItem("admin_user", JSON.stringify(data.user));
+
+            // Set a cookie for middleware/legacy checks
             document.cookie = "admin_logged_in=true; path=/";
+
             router.push("/admin");
-        } else {
-            setError("Invalid email or password. Please try again.");
+        } catch (err: any) {
+            const message = err.response?.data?.error || "Invalid email or password. Please try again.";
+            setError(message);
             setIsLoading(false);
         }
     };

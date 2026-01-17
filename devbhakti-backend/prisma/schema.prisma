@@ -1,0 +1,86 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  DEVOTEE
+  INSTITUTION
+  SELLER
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique // For Admin
+  password      String?   // For Admin (Hashed)
+  phone         String?   @unique // For Devotee, Institution, Seller
+  role          UserRole  @default(DEVOTEE)
+  isVerified    Boolean   @default(false)
+  
+  // Relationships
+  temple        Temple?   // If role is INSTITUTION
+  // sellerProfile Seller?  // Future: If role is SELLER
+  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model Temple {
+  id           String   @id @default(cuid())
+  name         String
+  location     String
+  fullAddress  String?
+  description  String
+  history      String?
+  image        String?
+  heroImages   String[] 
+  gallery      String[] 
+  rating       Float    @default(0)
+  reviewsCount Int      @default(0)
+  category     String
+  liveStatus   Boolean  @default(false)
+  openTime     String
+  phone        String?
+  website      String?
+  mapUrl       String?
+  viewers      String?
+  isLive       Boolean  @default(false)
+  
+  // Link to User (Institution Owner)
+  userId       String   @unique
+  user         User     @relation(fields: [userId], references: [id])
+  
+  poojas       Pooja[]
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Pooja {
+  id            String   @id @default(cuid())
+  name          String
+  category      String
+  price         Float
+  duration      String
+  description   String[]
+  time          String
+  image         String?
+  about         String?
+  benefits      String[]
+  bullets       String[]
+  process       String?
+  processSteps  Json?    
+  templeId      String
+  temple        Temple   @relation(fields: [templeId], references: [id])
+  templeDetails String?
+  packages      Json?    
+  faqs          Json?    
+  reviews       Json?    
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
