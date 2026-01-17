@@ -7,11 +7,27 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
-import { Plus, Trash2, Sparkles, Building2, MapPin, Check, AlertCircle, X, Store, Banknote, Clock, User, Phone, Mail } from "lucide-react"
+import { Plus, Trash2, Sparkles, Building2, MapPin, Check, AlertCircle, X, Store, Banknote, Clock, User, Phone, Mail, ChevronsUpDown } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
+import { poojas as availablePoojas } from "@/data/poojas"
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from "@/components/ui/popover"
+import {
+    Command,
+    CommandEmpty,
+    CommandGroup,
+    CommandInput,
+    CommandItem,
+} from "@/components/ui/command"
+import { Badge } from "@/components/ui/badge"
+import { cn } from "@/lib/utils"
 
 export default function TempleRegistrationForm({ onClose }: { onClose?: () => void }) {
-    const [poojas, setPoojas] = useState([{ name: "", price: "", duration: "" }])
+    const [selectedPoojaIds, setSelectedPoojaIds] = useState<string[]>([])
+    const [openPoojaSelect, setOpenPoojaSelect] = useState(false)
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [showSuccess, setShowSuccess] = useState(false)
     const [formData, setFormData] = useState({
@@ -32,19 +48,19 @@ export default function TempleRegistrationForm({ onClose }: { onClose?: () => vo
     const [errors, setErrors] = useState<Record<string, string>>({})
     const { toast } = useToast()
 
-    const addPooja = () => {
-        setPoojas([...poojas, { name: "", price: "", duration: "" }])
-        toast({
-            title: "Service added",
-            description: "You can now add details for this pooja service",
-        })
-    }
+    const togglePooja = (poojaId: string) => {
+        setSelectedPoojaIds(prev =>
+            prev.includes(poojaId)
+                ? prev.filter(id => id !== poojaId)
+                : [...prev, poojaId]
+        )
 
-    const removePooja = (index: number) => {
-        setPoojas(poojas.filter((_, i) => i !== index))
+        const pooja = availablePoojas.find(p => p.id === poojaId)
+        const isAdding = !selectedPoojaIds.includes(poojaId)
+
         toast({
-            title: "Service removed",
-            description: "The pooja service has been removed",
+            title: isAdding ? "Service added" : "Service removed",
+            description: `${pooja?.name} has been ${isAdding ? 'added to' : 'removed from'} your temple services`,
         })
     }
 
@@ -60,7 +76,6 @@ export default function TempleRegistrationForm({ onClose }: { onClose?: () => vo
         const newErrors: Record<string, string> = {}
 
         if (!formData.templeName) newErrors.templeName = "Temple name is required"
-        if (!formData.deity) newErrors.deity = "Main deity is required"
         if (!formData.category) newErrors.category = "Category is required"
         if (!formData.openTime) newErrors.openTime = "Opening hours are required"
         if (!formData.description) newErrors.description = "Description is required"
@@ -70,8 +85,8 @@ export default function TempleRegistrationForm({ onClose }: { onClose?: () => vo
         if (!formData.contactName) newErrors.contactName = "Contact person name is required"
         if (!formData.contactPhone) newErrors.contactPhone = "Phone number is required"
 
-        const hasValidPooja = poojas.some(p => p.name && p.price && p.duration)
-        if (!hasValidPooja) newErrors.poojas = "At least one complete pooja service is required"
+        const hasValidPooja = selectedPoojaIds.length > 0
+        if (!hasValidPooja) newErrors.poojas = "At least one pooja service must be selected"
 
         setErrors(newErrors)
         return Object.keys(newErrors).length === 0
@@ -187,17 +202,6 @@ export default function TempleRegistrationForm({ onClose }: { onClose?: () => vo
                                     {errors.templeName && <p className="text-xs text-destructive flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {errors.templeName}</p>}
                                 </div>
                                 <div className="space-y-2.5">
-                                    <Label htmlFor="deity" className="text-foreground/80">Main Deity</Label>
-                                    <Input
-                                        id="deity"
-                                        placeholder="e.g. Lord Ganesha"
-                                        value={formData.deity}
-                                        onChange={handleInputChange}
-                                        className={`bg-background h-11 focus:ring-primary/20 ${errors.deity ? 'border-destructive ring-destructive/20' : ''}`}
-                                    />
-                                    {errors.deity && <p className="text-xs text-destructive flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {errors.deity}</p>}
-                                </div>
-                                <div className="space-y-2.5">
                                     <Label htmlFor="category" className="text-foreground/80">Category</Label>
                                     <div className="relative">
                                         <Sparkles className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
@@ -292,70 +296,91 @@ export default function TempleRegistrationForm({ onClose }: { onClose?: () => vo
                                     <span className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 text-primary text-sm font-bold shadow-sm">3</span>
                                     Poojas & Services
                                 </h3>
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={addPooja}
-                                    className="h-9 border-primary/20 hover:bg-primary/5 hover:text-primary transition-colors text-foreground font-medium"
-                                >
-                                    <Plus className="w-4 h-4 mr-2" /> Add Service
-                                </Button>
                             </div>
 
-                            <div className="space-y-4">
+                            <div className="space-y-6">
                                 {errors.poojas && (
                                     <p className="text-sm text-destructive flex items-center gap-2 bg-destructive/10 p-3 rounded-lg">
                                         <AlertCircle className="w-4 h-4" />
                                         {errors.poojas}
                                     </p>
                                 )}
-                                <AnimatePresence>
-                                    {poojas.map((_, index) => (
-                                        <motion.div
-                                            key={index}
-                                            initial={{ opacity: 0, height: 0, y: -10 }}
-                                            animate={{ opacity: 1, height: "auto", y: 0 }}
-                                            exit={{ opacity: 0, height: 0, y: -10 }}
-                                            className="bg-muted/30 p-5 rounded-xl border border-border relative group hover:shadow-sm transition-all duration-300"
-                                        >
-                                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                                                <div className="md:col-span-2 space-y-2">
-                                                    <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Pooja Name</Label>
-                                                    <div className="relative">
-                                                        <Store className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                                                        <Input placeholder="e.g. Rudrabhishek" className="pl-9 bg-background h-10 border-border" />
-                                                    </div>
-                                                </div>
-                                                <div className="space-y-2">
-                                                    <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Duration</Label>
-                                                    <div className="relative">
-                                                        <Clock className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                                                        <Input placeholder="e.g. 2 hrs" className="pl-9 bg-background h-10 border-border" />
-                                                    </div>
-                                                </div>
-                                                <div className="space-y-2">
-                                                    <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Offering (₹)</Label>
-                                                    <div className="relative">
-                                                        <Banknote className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                                                        <Input placeholder="1100" className="pl-9 bg-background h-10 border-border" />
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            {poojas.length > 1 && (
-                                                <Button
-                                                    type="button"
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    onClick={() => removePooja(index)}
-                                                    className="absolute -top-2 -right-2 w-7 h-7 rounded-full bg-destructive/10 text-destructive hover:bg-destructive hover:text-destructive-foreground opacity-0 group-hover:opacity-100 transition-all shadow-sm"
+
+                                <div className="space-y-2.5">
+                                    <Label className="text-foreground/80">Select Services Offered</Label>
+                                    <Popover open={openPoojaSelect} onOpenChange={setOpenPoojaSelect}>
+                                        <PopoverTrigger asChild>
+                                            <Button
+                                                variant="outline"
+                                                role="combobox"
+                                                aria-expanded={openPoojaSelect}
+                                                className="w-full justify-between bg-background h-11 border-border hover:bg-background/80"
+                                            >
+                                                <span className="text-muted-foreground font-normal">
+                                                    {selectedPoojaIds.length > 0
+                                                        ? `${selectedPoojaIds.length} services selected`
+                                                        : "Search and select poojas..."}
+                                                </span>
+                                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                            </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                                            <Command className="w-full">
+                                                <CommandInput placeholder="Search poojas..." className="h-11" />
+                                                <CommandEmpty>No pooja found.</CommandEmpty>
+                                                <CommandGroup className="max-h-[300px] overflow-y-auto custom-scrollbar">
+                                                    {availablePoojas.map((pooja) => (
+                                                        <CommandItem
+                                                            key={pooja.id}
+                                                            value={pooja.name}
+                                                            onSelect={() => togglePooja(pooja.id)}
+                                                            className="flex items-center justify-between py-3 cursor-pointer"
+                                                        >
+                                                            <div className="flex flex-col">
+                                                                <span className="font-medium">{pooja.name}</span>
+                                                                <span className="text-xs text-muted-foreground">{pooja.category} • {pooja.duration}</span>
+                                                            </div>
+                                                            <div className={cn(
+                                                                "flex h-5 w-5 items-center justify-center rounded-md border border-primary transition-colors",
+                                                                selectedPoojaIds.includes(pooja.id)
+                                                                    ? "bg-primary text-primary-foreground"
+                                                                    : "opacity-50"
+                                                            )}>
+                                                                {selectedPoojaIds.includes(pooja.id) && <Check className="h-3.5 w-3.5" />}
+                                                            </div>
+                                                        </CommandItem>
+                                                    ))}
+                                                </CommandGroup>
+                                            </Command>
+                                        </PopoverContent>
+                                    </Popover>
+                                </div>
+
+                                {selectedPoojaIds.length > 0 && (
+                                    <div className="flex flex-wrap gap-2 p-4 bg-muted/20 rounded-xl border border-dashed border-border">
+                                        {selectedPoojaIds.map(id => {
+                                            const pooja = availablePoojas.find(p => p.id === id)
+                                            return (
+                                                <Badge
+                                                    key={id}
+                                                    variant="secondary"
+                                                    className="pl-3 pr-1 py-1.5 gap-2 bg-background border-border hover:bg-muted transition-colors"
                                                 >
-                                                    <Trash2 className="w-3.5 h-3.5" />
-                                                </Button>
-                                            )}
-                                        </motion.div>
-                                    ))}
-                                </AnimatePresence>
+                                                    <span className="text-sm font-medium">{pooja?.name}</span>
+                                                    <Button
+                                                        type="button"
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        onClick={() => togglePooja(id)}
+                                                        className="h-5 w-5 rounded-full hover:bg-destructive hover:text-destructive-foreground"
+                                                    >
+                                                        <X className="h-3 w-3" />
+                                                    </Button>
+                                                </Badge>
+                                            )
+                                        })}
+                                    </div>
+                                )}
                             </div>
                         </div>
 

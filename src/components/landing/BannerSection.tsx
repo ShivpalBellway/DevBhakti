@@ -15,9 +15,11 @@ import banner6 from "@/assets/banners/banner6.jpg";
 import banner7 from "@/assets/banners/banner7.jpg";
 import banner8 from "@/assets/banners/banner8.jpg";
 import banner9 from "@/assets/banners/banner9.jpg";
+import banner10 from "@/assets/banners/devBhakti_Banner_1.png";
+import banner11 from "@/assets/banners/devBhakti_Banner_2.png";
 
 
-const banners = [banner1, banner2, banner3, banner6, banner7, banner8, banner9];
+const banners = [banner1, banner2, banner3, banner6, banner7, banner8, banner9, banner10, banner11];
 
 const BannerSection: React.FC = () => {
     const [currentIndex, setCurrentIndex] = useState(0);
@@ -45,8 +47,7 @@ const BannerSection: React.FC = () => {
         <section
             className="w-full relative py-8 bg-background overflow-hidden"
             onMouseEnter={() => setIsPaused(true)}
-            onMouseLeave={() => setIsPaused(false)}
-        >
+            onMouseLeave={() => setIsPaused(false)} >
             <div className="container mx-auto px-4">
                 <div className="relative h-[180px] sm:h-[280px] md:h-[420px] rounded-[2rem] overflow-hidden shadow-2xl group">
                     <AnimatePresence initial={false} mode="wait">

@@ -161,7 +161,7 @@ export default function RegisterTemplePage() {
                                     onClick={() => setShowRegistrationModal(true)}
                                     className="h-16 px-10 text-lg bg-primary hover:bg-primary/90 text-primary-foreground shadow-warm rounded-full font-bold transition-all transform hover:scale-105"
                                 >
-                                    <Image src={templeIcon} className="invert brightness-0 mr-3 h-6 w-6" />
+                                    <Image src={templeIcon} alt="temple" className="invert brightness-0 mr-3 h-6 w-6" />
                                     Register Your Temple
                                     <ArrowRight className="ml-2 h-5 w-5" />
                                 </Button>

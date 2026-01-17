@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard,
   Building2,
@@ -18,6 +18,8 @@ import {
   LogOut,
   ChevronRight,
   Menu,
+  Image as ImageIcon,
+  Flower2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Logo from "@/components/icons/Logo";
@@ -45,6 +47,11 @@ const sidebarItems = [
     href: "/admin/bookings",
   },
   {
+    label: "Poojas",
+    icon: Flower2,
+    href: "/admin/poojas",
+  },
+  {
     label: "Marketplace",
     icon: ShoppingBag,
     href: "/admin/marketplace",
@@ -65,6 +72,11 @@ const sidebarItems = [
     href: "/admin/content",
   },
   {
+    label: "Banners",
+    icon: ImageIcon,
+    href: "/admin/banners",
+  },
+  {
     label: "Analytics",
     icon: BarChart3,
     href: "/admin/analytics",
@@ -78,7 +90,51 @@ const sidebarItems = [
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+
+  const isLoginPage = pathname?.startsWith("/admin/login");
+
+  useEffect(() => {
+    // Check if user is logged in
+    const checkAuth = () => {
+      const cookies = document.cookie.split(";");
+      const isLoggedIn = cookies.some((cookie) => cookie.trim().startsWith("admin_logged_in=true"));
+
+      setIsAuthenticated(isLoggedIn);
+
+      if (!isLoggedIn && !isLoginPage) {
+        router.push("/admin/login");
+      }
+    };
+
+    checkAuth();
+  }, [pathname, router, isLoginPage]);
+
+  const handleSignOut = () => {
+    document.cookie = "admin_logged_in=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;";
+    router.push("/admin/login");
+  };
+
+  // If we're on the login page, don't show the admin layout UI
+  if (isLoginPage) {
+    return <>{children}</>;
+  }
+
+  // Show nothing while checking auth to prevent flicker
+  if (isAuthenticated === null) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  // If not authenticated and not on login page, we'll be redirected by useEffect
+  if (!isAuthenticated && !isLoginPage) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-background flex">
@@ -150,6 +206,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </div>
           <Button
             variant="ghost"
+            onClick={handleSignOut}
             className={cn(
               "w-full mt-2 text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground",
               !sidebarOpen && "p-2"

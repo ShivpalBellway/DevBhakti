@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
-import { Sparkles, Building2, X, LogIn, Mail, Lock, Eye, EyeOff, AlertCircle } from "lucide-react"
+import { Sparkles, Building2, X, LogIn, Mail, Lock, Eye, EyeOff, AlertCircle, Phone } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 
 export default function TempleLoginModal({ onClose }: { onClose: () => void }) {
@@ -15,7 +15,7 @@ export default function TempleLoginModal({ onClose }: { onClose: () => void }) {
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [showPassword, setShowPassword] = useState(false)
     const [formData, setFormData] = useState({
-        email: "",
+        number: "",
         password: ""
     })
     const [errors, setErrors] = useState<Record<string, string>>({})
@@ -31,8 +31,8 @@ export default function TempleLoginModal({ onClose }: { onClose: () => void }) {
 
     const validateForm = () => {
         const newErrors: Record<string, string> = {}
-        if (!formData.email) newErrors.email = "Email is required"
-        else if (!/\S+@\S+\.\S+/.test(formData.email)) newErrors.email = "Invalid email format"
+        if (!formData.number) newErrors.number = "Number is required"
+        else if (!/\S+@\S+\.\S+/.test(formData.number)) newErrors.number = "Invalid number format"
 
         if (!formData.password) newErrors.password = "Password is required"
 
@@ -87,19 +87,19 @@ export default function TempleLoginModal({ onClose }: { onClose: () => void }) {
                     <CardContent className="p-8 space-y-6">
                         <div className="space-y-4">
                             <div className="space-y-2.5">
-                                <Label htmlFor="email" className="text-foreground/80">Temple Email</Label>
+                                <Label htmlFor="number" className="text-foreground/80">Mobile Number</Label>
                                 <div className="relative">
-                                    <Mail className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
+                                    <Phone className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
                                     <Input
-                                        id="email"
-                                        type="email"
-                                        placeholder="admin@temple.com"
-                                        value={formData.email}
+                                        id="number"
+                                        type="number"
+                                        placeholder="98765xxxx0"
+                                        value={formData.number}
                                         onChange={handleInputChange}
-                                        className={`pl-10 bg-background h-12 focus:ring-primary/20 ${errors.email ? 'border-destructive ring-destructive/20' : ''}`}
+                                        className={`pl-10 bg-background h-12 focus:ring-primary/20 ${errors.number ? 'border-destructive ring-destructive/20' : ''}`}
                                     />
                                 </div>
-                                {errors.email && <p className="text-xs text-destructive flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {errors.email}</p>}
+                                {errors.number && <p className="text-xs text-destructive flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {errors.number}</p>}
                             </div>
 
                             <div className="space-y-2.5">
