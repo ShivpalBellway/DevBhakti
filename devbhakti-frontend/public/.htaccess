@@ -1,0 +1,16 @@
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+  
+  # Redirect any request that doesn't have a file/directory match to index.html
+  # This is useful for single-page application behavior if needed, 
+  # but for static exports, it's safer to handle trailing slashes.
+
+  # Canonicalize URLs: remove .html extension and handle trailing slashes
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteCond %{REQUEST_FILENAME}\.html -f
+  RewriteRule ^(.*)$ $1.html [NC,L]
+
+  # Error Handling
+  ErrorDocument 404 /404.html
+</IfModule>

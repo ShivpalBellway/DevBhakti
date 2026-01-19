@@ -1,0 +1,246 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+
+@layer base {
+  :root {
+    /* DevBhakti Sacred Color Palette - Updated */
+    /* Warm Sanctum Cream background */
+    --background: 31 100% 95%;
+    /* Charcoal Text foreground */
+    --foreground: 0 0% 17%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 17%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 17%;
+
+    /* Primary Devotional Brown */
+    --primary: 24 56% 31%;
+    --primary-foreground: 0 0% 100%;
+
+    /* Luminous Sacred Gold - Secondary */
+    --secondary: 41 68% 63%;
+    --secondary-foreground: 0 0% 17%;
+
+    /* Muted with Ash Grey */
+    --muted: 31 40% 92%;
+    --muted-foreground: 0 0% 43%;
+
+    /* Deep Indigo - Accent */
+    --accent: 223 29% 26%;
+    --accent-foreground: 0 0% 100%;
+
+    /* Error Red */
+    --destructive: 0 42% 46%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 31 30% 88%;
+    --input: 31 30% 88%;
+    --ring: 24 56% 31%;
+
+    --radius: 0.75rem;
+
+    /* Sacred Gradients - Updated */
+    --gradient-sacred: linear-gradient(135deg, hsl(24 56% 31%) 0%, hsl(41 68% 63%) 100%);
+    --gradient-warm: linear-gradient(180deg, hsl(31 100% 95%) 0%, hsl(31 40% 92%) 100%);
+    --gradient-gold: linear-gradient(135deg, hsl(41 68% 63%) 0%, hsl(41 60% 50%) 100%);
+    --gradient-indigo: linear-gradient(135deg, hsl(223 29% 26%) 0%, hsl(223 35% 20%) 100%);
+    --gradient-hero: linear-gradient(180deg, hsl(31 100% 95%) 0%, hsl(31 80% 92%) 50%, hsl(31 60% 90%) 100%);
+
+    /* Shadows */
+    --shadow-soft: 0 4px 20px -4px hsl(0 0% 17% / 0.08);
+    --shadow-warm: 0 8px 30px -8px hsl(24 56% 31% / 0.15);
+    --shadow-elevated: 0 20px 40px -12px hsl(0 0% 17% / 0.12);
+    --shadow-glow: 0 0 40px hsl(41 68% 63% / 0.3);
+
+    /* Sidebar - Deep Indigo theme */
+    --sidebar-background: 223 29% 26%;
+    --sidebar-foreground: 0 0% 100%;
+    --sidebar-primary: 41 68% 63%;
+    --sidebar-primary-foreground: 0 0% 17%;
+    --sidebar-accent: 223 25% 32%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 223 25% 35%;
+    --sidebar-ring: 41 68% 63%;
+
+    /* Custom Colors */
+    --temple-gold: 41 68% 63%;
+    --sacred-saffron: 24 56% 31%;
+    --deep-burgundy: 223 29% 26%;
+    --temple-cream: 31 100% 95%;
+    --warm-brown: 24 56% 31%;
+    --tulsi-green: 129 15% 43%;
+    --warning-amber: 32 63% 46%;
+    --success: 129 15% 43%;
+    --success-foreground: 0 0% 100%;
+  }
+
+  .dark {
+    /* Dark mode - Deep Indigo base */
+    --background: 223 29% 12%;
+    --foreground: 31 100% 95%;
+
+    --card: 223 28% 16%;
+    --card-foreground: 31 100% 95%;
+
+    --popover: 223 28% 16%;
+    --popover-foreground: 31 100% 95%;
+
+    /* Sacred Gold primary in dark mode */
+    --primary: 41 68% 63%;
+    --primary-foreground: 223 29% 12%;
+
+    /* Devotional Brown secondary */
+    --secondary: 24 56% 40%;
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 223 25% 22%;
+    --muted-foreground: 0 0% 65%;
+
+    --accent: 41 68% 63%;
+    --accent-foreground: 223 29% 12%;
+
+    --destructive: 0 50% 55%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 223 25% 25%;
+    --input: 223 25% 25%;
+    --ring: 41 68% 63%;
+
+    --gradient-sacred: linear-gradient(135deg, hsl(41 68% 63%) 0%, hsl(24 56% 45%) 100%);
+    --gradient-warm: linear-gradient(180deg, hsl(223 29% 12%) 0%, hsl(223 28% 16%) 100%);
+    --gradient-hero: linear-gradient(180deg, hsl(223 29% 12%) 0%, hsl(223 28% 14%) 50%, hsl(223 25% 18%) 100%);
+
+    --shadow-soft: 0 4px 20px -4px hsl(0 0% 0% / 0.3);
+    --shadow-warm: 0 8px 30px -8px hsl(41 68% 63% / 0.2);
+    --shadow-elevated: 0 20px 40px -12px hsl(0 0% 0% / 0.4);
+    --shadow-glow: 0 0 40px hsl(41 68% 63% / 0.25);
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-serif;
+  }
+}
+
+@layer utilities {
+  .text-gradient-sacred {
+    @apply bg-clip-text text-transparent;
+    background-image: var(--gradient-sacred);
+  }
+
+  .bg-gradient-sacred {
+    background-image: var(--gradient-sacred);
+  }
+
+  .bg-gradient-warm {
+    background-image: var(--gradient-warm);
+  }
+
+  .bg-gradient-hero {
+    background-image: var(--gradient-hero);
+  }
+
+  .bg-gradient-gold {
+    background-image: var(--gradient-gold);
+  }
+
+  .bg-gradient-burgundy {
+    background-image: var(--gradient-burgundy);
+  }
+
+  .shadow-soft {
+    box-shadow: var(--shadow-soft);
+  }
+
+  .shadow-warm {
+    box-shadow: var(--shadow-warm);
+  }
+
+  .shadow-elevated {
+    box-shadow: var(--shadow-elevated);
+  }
+
+  .shadow-glow {
+    box-shadow: var(--shadow-glow);
+  }
+
+  /* Sacred pattern overlay */
+  .pattern-sacred {
+    background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23e85d04' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  }
+
+  /* Lotus pattern */
+  .pattern-lotus {
+    background-image: url("data:image/svg+xml,%3Csvg width='80' height='80' viewBox='0 0 80 80' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23e85d04' fill-opacity='0.02'%3E%3Cpath d='M40 40c0-11.046-8.954-20-20-20S0 28.954 0 40s8.954 20 20 20 20-8.954 20-20zm40 0c0-11.046-8.954-20-20-20s-20 8.954-20 20 8.954 20 20 20 20-8.954 20-20z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  }
+
+  /* Animation utilities */
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
+
+  .animate-pulse-slow {
+    animation: pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  .animate-shimmer {
+    animation: shimmer 2s linear infinite;
+  }
+
+  @keyframes float {
+    0%, 100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-10px);
+    }
+  }
+
+  @keyframes shimmer {
+    0% {
+      background-position: -200% 0;
+    }
+    100% {
+      background-position: 200% 0;
+    }
+  }
+
+  /* Premium Scrollbar */
+  .premium-scrollbar::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .premium-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .premium-scrollbar::-webkit-scrollbar-thumb {
+    background: hsl(var(--muted-foreground) / 0.2);
+    border-radius: 10px;
+    transition: background 0.2s;
+  }
+
+  .premium-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--primary) / 0.4);
+  }
+
+  /* Firefox */
+  .premium-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--muted-foreground) / 0.2) transparent;
+  }
+}
