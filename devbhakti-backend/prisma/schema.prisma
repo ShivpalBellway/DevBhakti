@@ -57,6 +57,7 @@ model Temple {
   user         User     @relation(fields: [userId], references: [id])
   
   poojas       Pooja[]
+  events       Event[]
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 }
@@ -83,4 +84,18 @@ model Pooja {
   reviews       Json?    
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+}
+
+model Event {
+  id          String   @id @default(cuid())
+  name        String
+  date        String
+  description String?
+  
+  // Link to Temple (Institution)
+  templeId    String
+  temple      Temple   @relation(fields: [templeId], references: [id], onDelete: Cascade)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }

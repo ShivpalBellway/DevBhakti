@@ -1,235 +1,207 @@
 "use client";
 
-import React, { useState } from "react";
-import { motion } from "framer-motion";
+import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import {
-    Building2,
+    Plus,
     Search,
-    Filter,
-    MoreVertical,
-    CheckCircle,
-    XCircle,
-    Clock,
+    Edit2,
+    Trash2,
+    Building2,
     MapPin,
     Eye,
+    ExternalLink
 } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
+import {
+    fetchAllInstitutionsAdmin,
+    deleteInstitutionAdmin,
+} from "@/api/adminController";
+import { useToast } from "@/hooks/use-toast";
 
-const institutions = [
-    {
-        id: 1,
-        name: "Kashi Vishwanath Temple",
-        location: "Varanasi, UP",
-        status: "verified",
-        bookings: 1234,
-        revenue: "₹12.5L",
-        joinedDate: "Jan 15, 2024",
-    },
-    {
-        id: 2,
-        name: "Tirupati Balaji Temple",
-        location: "Tirumala, AP",
-        status: "verified",
-        bookings: 5678,
-        revenue: "₹45.2L",
-        joinedDate: "Feb 20, 2024",
-    },
-    {
-        id: 3,
-        name: "ISKCON Mumbai",
-        location: "Mumbai, MH",
-        status: "pending",
-        bookings: 0,
-        revenue: "₹0",
-        joinedDate: "Dec 18, 2024",
-    },
-    {
-        id: 4,
-        name: "Shirdi Sai Baba Temple",
-        location: "Shirdi, MH",
-        status: "verified",
-        bookings: 3456,
-        revenue: "₹28.7L",
-        joinedDate: "Mar 10, 2024",
-    },
-    {
-        id: 5,
-        name: "Vaishno Devi Temple",
-        location: "Katra, J&K",
-        status: "rejected",
-        bookings: 0,
-        revenue: "₹0",
-        joinedDate: "Nov 25, 2024",
-    },
-];
+export default function InstitutionsListPage() {
+    const router = useRouter();
+    const [institutions, setInstitutions] = useState<any[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [searchTerm, setSearchTerm] = useState("");
+    const { toast } = useToast();
 
-const statusConfig = {
-    verified: {
-        label: "Verified",
-        color: "bg-success/10 text-success border-success/20",
-        icon: CheckCircle,
-    },
-    pending: {
-        label: "Pending",
-        color: "bg-secondary/20 text-secondary-foreground border-secondary/30",
-        icon: Clock,
-    },
-    rejected: {
-        label: "Rejected",
-        color: "bg-destructive/10 text-destructive border-destructive/20",
-        icon: XCircle,
-    },
-};
+    useEffect(() => {
+        loadInstitutions();
+    }, []);
 
-export default function AdminInstitutionsPage() {
-    const [searchQuery, setSearchQuery] = useState("");
+    const loadInstitutions = async () => {
+        setIsLoading(true);
+        try {
+            const data = await fetchAllInstitutionsAdmin();
+            setInstitutions(data);
+        } catch (error) {
+            toast({
+                title: "Error",
+                description: "Failed to load institutions",
+                variant: "destructive",
+            });
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
-    const filteredInstitutions = institutions.filter((inst) =>
-        inst.name.toLowerCase().includes(searchQuery.toLowerCase())
+    const handleDelete = async (id: string) => {
+        if (window.confirm("Are you sure you want to delete this institution?")) {
+            try {
+                await deleteInstitutionAdmin(id);
+                toast({ title: "Success", description: "Institution deleted successfully" });
+                loadInstitutions();
+            } catch (error) {
+                toast({
+                    title: "Error",
+                    description: "Failed to delete institution",
+                    variant: "destructive",
+                });
+            }
+        }
+    };
+
+    const filteredInstitutions = institutions.filter(
+        (inst) =>
+            inst.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            inst.temple?.name?.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     return (
         <div className="space-y-6">
-            {/* Page header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-2xl md:text-3xl font-serif font-bold text-foreground">
-                        Institutions
-                    </h1>
-                    <p className="text-muted-foreground mt-1">
-                        Manage temples and institutions registered on DevBhakti
-                    </p>
+                    <h1 className="text-2xl font-bold tracking-tight text-slate-900">Institutions & Temples</h1>
+                    <p className="text-muted-foreground">Manage organizational accounts and temple profiles.</p>
                 </div>
-                <Button variant="sacred">
-                    <Building2 className="w-4 h-4 mr-2" />
-                    Add Institution
+                <Button onClick={() => router.push('/admin/institutions/create')} className="bg-primary">
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add New Institution
                 </Button>
             </div>
 
-            {/* Stats */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {[
-                    { label: "Total", value: "524", color: "text-foreground" },
-                    { label: "Verified", value: "486", color: "text-success" },
-                    { label: "Pending", value: "32", color: "text-secondary" },
-                    { label: "Rejected", value: "6", color: "text-destructive" },
-                ].map((stat) => (
-                    <Card key={stat.label}>
-                        <CardContent className="p-4">
-                            <p className={`text-2xl font-bold ${stat.color}`}>{stat.value}</p>
-                            <p className="text-sm text-muted-foreground">{stat.label}</p>
-                        </CardContent>
-                    </Card>
-                ))}
-            </div>
-
-            {/* Filters */}
             <div className="flex flex-col md:flex-row gap-4">
                 <div className="relative flex-1">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                     <Input
-                        placeholder="Search institutions..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="pl-10"
+                        placeholder="Search by owner or temple name..."
+                        className="pl-10 h-10"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
                     />
                 </div>
-                <Button variant="outline" className="gap-2">
-                    <Filter className="w-4 h-4" />
-                    Filters
-                </Button>
             </div>
 
-            {/* Institutions Table */}
-            <Card>
-                <CardContent className="p-0">
-                    <div className="overflow-x-auto">
-                        <table className="w-full">
-                            <thead className="border-b border-border bg-muted/30">
-                                <tr>
-                                    <th className="text-left p-4 text-sm font-medium text-muted-foreground">
-                                        Institution
-                                    </th>
-                                    <th className="text-left p-4 text-sm font-medium text-muted-foreground">
-                                        Status
-                                    </th>
-                                    <th className="text-left p-4 text-sm font-medium text-muted-foreground">
-                                        Bookings
-                                    </th>
-                                    <th className="text-left p-4 text-sm font-medium text-muted-foreground">
-                                        Revenue
-                                    </th>
-                                    <th className="text-left p-4 text-sm font-medium text-muted-foreground">
-                                        Joined
-                                    </th>
-                                    <th className="text-right p-4 text-sm font-medium text-muted-foreground">
-                                        Actions
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {filteredInstitutions.map((institution, index) => {
-                                    const status = statusConfig[institution.status as keyof typeof statusConfig];
-                                    return (
-                                        <motion.tr
-                                            key={institution.id}
-                                            initial={{ opacity: 0, y: 10 }}
-                                            animate={{ opacity: 1, y: 0 }}
-                                            transition={{ duration: 0.3, delay: index * 0.05 }}
-                                            className="border-b border-border hover:bg-muted/30 transition-colors"
-                                        >
-                                            <td className="p-4">
-                                                <div className="flex items-center gap-3">
-                                                    <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                                                        <Building2 className="w-5 h-5 text-primary" />
-                                                    </div>
-                                                    <div>
-                                                        <p className="font-medium text-foreground">
-                                                            {institution.name}
-                                                        </p>
-                                                        <p className="text-sm text-muted-foreground flex items-center gap-1">
-                                                            <MapPin className="w-3 h-3" />
-                                                            {institution.location}
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td className="p-4">
-                                                <Badge variant="outline" className={status.color}>
-                                                    <status.icon className="w-3 h-3 mr-1" />
-                                                    {status.label}
-                                                </Badge>
-                                            </td>
-                                            <td className="p-4 text-foreground font-medium">
-                                                {institution.bookings.toLocaleString()}
-                                            </td>
-                                            <td className="p-4 text-foreground font-medium">
-                                                {institution.revenue}
-                                            </td>
-                                            <td className="p-4 text-muted-foreground text-sm">
-                                                {institution.joinedDate}
-                                            </td>
-                                            <td className="p-4 text-right">
-                                                <div className="flex items-center justify-end gap-2">
-                                                    <Button variant="ghost" size="icon">
-                                                        <Eye className="w-4 h-4" />
-                                                    </Button>
-                                                    <Button variant="ghost" size="icon">
-                                                        <MoreVertical className="w-4 h-4" />
-                                                    </Button>
-                                                </div>
-                                            </td>
-                                        </motion.tr>
-                                    );
-                                })}
-                            </tbody>
-                        </table>
-                    </div>
-                </CardContent>
-            </Card>
+            <div className="border rounded-xl bg-card overflow-hidden shadow-sm">
+                <Table>
+                    <TableHeader className="bg-slate-50/50">
+                        <TableRow>
+                            <TableHead>Institution/Owner</TableHead>
+                            <TableHead>Temple Profile</TableHead>
+                            <TableHead>Statistics</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead className="text-right">Actions</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {isLoading ? (
+                            <TableRow>
+                                <TableCell colSpan={5} className="text-center py-12 text-muted-foreground">
+                                    <div className="flex flex-col items-center gap-2">
+                                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                                        <span>Loading data...</span>
+                                    </div>
+                                </TableCell>
+                            </TableRow>
+                        ) : filteredInstitutions.length === 0 ? (
+                            <TableRow>
+                                <TableCell colSpan={5} className="text-center py-12 text-muted-foreground">
+                                    No institutions found.
+                                </TableCell>
+                            </TableRow>
+                        ) : (
+                            filteredInstitutions.map((inst) => (
+                                <TableRow key={inst.id} className="hover:bg-slate-50/50 transition-colors">
+                                    <TableCell>
+                                        <div className="flex flex-col">
+                                            <span className="font-semibold text-slate-900">{inst.name || "N/A"}</span>
+                                            <span className="text-xs text-muted-foreground">{inst.email || inst.phone}</span>
+                                        </div>
+                                    </TableCell>
+                                    <TableCell>
+                                        <div className="flex flex-col gap-0.5">
+                                            <div className="flex items-center gap-1.5 font-medium text-slate-800">
+                                                <Building2 className="w-3.5 h-3.5 text-primary" />
+                                                <span>{inst.temple?.name || "No Temple"}</span>
+                                            </div>
+                                            <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
+                                                <MapPin className="w-3 h-3" />
+                                                <span>{inst.temple?.location || "N/A"}</span>
+                                            </div>
+                                        </div>
+                                    </TableCell>
+                                    <TableCell>
+                                        <div className="flex flex-col gap-1 text-[11px]">
+                                            <span className="text-slate-600">Poojas: {inst.temple?._count?.poojas || 0}</span>
+                                            <span className="text-slate-600">Events: {inst.temple?._count?.events || 0}</span>
+                                        </div>
+                                    </TableCell>
+                                    <TableCell>
+                                        {inst.temple?.liveStatus ? (
+                                            <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200">Live</Badge>
+                                        ) : (
+                                            <Badge variant="outline" className="text-amber-600 bg-amber-50">Pending</Badge>
+                                        )}
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                        <div className="flex justify-end gap-1">
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="h-8 w-8 text-slate-600"
+                                                onClick={() => router.push(`/admin/institutions/${inst.id}`)}
+                                                title="View Details"
+                                            >
+                                                <Eye className="w-4 h-4" />
+                                            </Button>
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="h-8 w-8 text-blue-600"
+                                                onClick={() => router.push(`/admin/institutions/edit/${inst.id}`)}
+                                                title="Edit Institution"
+                                            >
+                                                <Edit2 className="w-4 h-4" />
+                                            </Button>
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="h-8 w-8 text-destructive"
+                                                onClick={() => handleDelete(inst.id)}
+                                                title="Delete Institution"
+                                            >
+                                                <Trash2 className="w-4 h-4" />
+                                            </Button>
+                                        </div>
+                                    </TableCell>
+                                </TableRow>
+                            ))
+                        )}
+                    </TableBody>
+                </Table>
+            </div>
         </div>
     );
 }

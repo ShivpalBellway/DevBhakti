@@ -52,6 +52,11 @@ const sidebarItems = [
     href: "/admin/poojas",
   },
   {
+    label: "Events",
+    icon: Calendar,
+    href: "/admin/events",
+  },
+  {
     label: "Marketplace",
     icon: ShoppingBag,
     href: "/admin/marketplace",
