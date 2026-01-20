@@ -11,8 +11,9 @@ export const sendOTP = async (req: Request, res: Response) => {
         const { phone, name, email } = req.body;
 
         if (!phone) {
-            return res.status(400).json({ message: 'Phone number is required' });
+            return res.status(400).json({ success: false, message: 'Phone number is required' });
         }
+
 
         // Generate random 6-digit OTP
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
@@ -46,12 +47,14 @@ export const sendOTP = async (req: Request, res: Response) => {
         // In a real app, you would send OTP via SMS gateway here
         console.log(`OTP for ${phone}: ${otp}`);
 
-        res.json({ message: 'OTP sent successfully', phone, otp });
+        res.json({ success: true, message: 'OTP sent successfully', data: { phone, otp } });
+
 
     } catch (error) {
         console.error('Error in sendOTP:', error);
-        res.status(500).json({ message: 'Internal server error' });
+        res.status(500).json({ success: false, message: 'Internal server error' });
     }
+
 };
 
 export const verifyOTP = async (req: Request, res: Response) => {
@@ -59,19 +62,22 @@ export const verifyOTP = async (req: Request, res: Response) => {
         const { phone, otp } = req.body;
 
         if (!phone || !otp) {
-            return res.status(400).json({ message: 'Phone and OTP are required' });
+            return res.status(400).json({ success: false, message: 'Phone and OTP are required' });
         }
+
 
         const user = await prisma.user.findUnique({ where: { phone } });
 
         if (!user) {
-            return res.status(404).json({ message: 'User not found' });
+            return res.status(404).json({ success: false, message: 'User not found' });
         }
+
 
         // Check if OTP matches and is not expired
         if (user.otp !== otp || !user.otpExpires || user.otpExpires < new Date()) {
-            return res.status(400).json({ message: 'Invalid or expired OTP' });
+            return res.status(400).json({ success: false, message: 'Invalid or expired OTP' });
         }
+
 
         // Mark user as verified and clear OTP
         const updatedUser = await prisma.user.update({
@@ -92,21 +98,26 @@ export const verifyOTP = async (req: Request, res: Response) => {
         );
 
         res.json({
+            success: true,
             message: 'Login successful',
-            token,
-            user: {
-                id: updatedUser.id,
-                name: updatedUser.name,
-                phone: updatedUser.phone,
-                email: updatedUser.email,
-                role: updatedUser.role,
-                profileImage: updatedUser.profileImage
+            data: {
+                token,
+                user: {
+                    id: updatedUser.id,
+                    name: updatedUser.name,
+                    phone: updatedUser.phone,
+                    email: updatedUser.email,
+                    role: updatedUser.role,
+                    profileImage: updatedUser.profileImage
+                }
             }
         });
+
     } catch (error) {
         console.error('Error in verifyOTP:', error);
-        res.status(500).json({ message: 'Internal server error' });
+        res.status(500).json({ success: false, message: 'Internal server error' });
     }
+
 };
 
 export const updateProfile = async (req: Request, res: Response) => {
@@ -126,18 +137,23 @@ export const updateProfile = async (req: Request, res: Response) => {
         });
 
         res.json({
+            success: true,
             message: 'Profile updated successfully',
-            user: {
-                id: updatedUser.id,
-                name: updatedUser.name,
-                phone: updatedUser.phone,
-                email: updatedUser.email,
-                role: updatedUser.role,
-                profileImage: updatedUser.profileImage
+            data: {
+                user: {
+                    id: updatedUser.id,
+                    name: updatedUser.name,
+                    phone: updatedUser.phone,
+                    email: updatedUser.email,
+                    role: updatedUser.role,
+                    profileImage: updatedUser.profileImage
+                }
             }
         });
+
     } catch (error) {
         console.error('Error updating profile:', error);
-        res.status(500).json({ message: 'Internal server error' });
+        res.status(500).json({ success: false, message: 'Internal server error' });
     }
+
 };

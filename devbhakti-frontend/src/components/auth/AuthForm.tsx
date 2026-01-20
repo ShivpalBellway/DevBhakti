@@ -58,9 +58,10 @@ const AuthForm: React.FC = () => {
         email: mode === "register" && formData.email ? formData.email : undefined
       });
       setShowOtpInput(true);
-      if (response.otp) {
-        setReceivedOtp(response.otp);
+      if (response.data?.otp) {
+        setReceivedOtp(response.data.otp);
       }
+
 
 
 
@@ -76,8 +77,9 @@ const AuthForm: React.FC = () => {
     setLoading(true);
     try {
       const response = await verifyOTP(formData.phone, otp);
-      localStorage.setItem("token", response.token);
-      localStorage.setItem("user", JSON.stringify(response.user));
+      localStorage.setItem("token", response.data.token);
+      localStorage.setItem("user", JSON.stringify(response.data.user));
+
 
       // If there's a profile image, upload it now
       if (profileImage) {
