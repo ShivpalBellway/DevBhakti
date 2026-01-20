@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import * as cmsController from '../../controllers/admin/cmsController';
-import { uploadCmsImage } from '../../middleware/uploadMiddleware';
+import { uploadCmsImage, uploadCmsTestimonial } from '../../middleware/uploadMiddleware';
+
 import { authenticate, authorize } from '../../middleware/authMiddleware';
 
 const router = Router();
@@ -8,6 +9,7 @@ const router = Router();
 // Public GET routes
 router.get('/banners', cmsController.getBanners);
 router.get('/features', cmsController.getFeatures);
+router.get('/testimonials', cmsController.getTestimonials);
 
 // Middleware for Admin only CMS mutations
 router.use(authenticate);
@@ -23,5 +25,11 @@ router.post('/features', uploadCmsImage.fields([{ name: 'image', maxCount: 1 }, 
 router.put('/features/:id', uploadCmsImage.fields([{ name: 'image', maxCount: 1 }, { name: 'icon', maxCount: 1 }]), cmsController.updateFeature);
 router.delete('/features/:id', cmsController.deleteFeature);
 
+// Testimonials (Admin)
+router.post('/testimonials', uploadCmsTestimonial.fields([{ name: 'thumbnail', maxCount: 1 }, { name: 'videoSrc', maxCount: 1 }]), cmsController.createTestimonial);
+router.put('/testimonials/:id', uploadCmsTestimonial.fields([{ name: 'thumbnail', maxCount: 1 }, { name: 'videoSrc', maxCount: 1 }]), cmsController.updateTestimonial);
+router.delete('/testimonials/:id', cmsController.deleteTestimonial);
+
 export default router;
+
 

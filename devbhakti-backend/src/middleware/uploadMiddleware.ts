@@ -10,22 +10,23 @@ if (!fs.existsSync(uploadDir)) {
 
 const cmsBannerDir = 'uploads/cms/banners';
 const cmsFeatureDir = 'uploads/cms/features';
+const cmsTestimonialDir = 'uploads/cms/testimonials';
 
-[cmsBannerDir, cmsFeatureDir].forEach(dir => {
+[cmsBannerDir, cmsFeatureDir, cmsTestimonialDir].forEach(dir => {
     if (!fs.existsSync(dir)) {
         fs.mkdirSync(dir, { recursive: true });
     }
 });
 
-
 const fileFilter = (req: any, file: any, cb: any) => {
     if (file.mimetype.startsWith('image/')) {
         cb(null, true);
+    } else if (file.mimetype.startsWith('video/') && req.originalUrl.includes('testimonials')) {
+        cb(null, true);
     } else {
-        cb(new Error('Not an image! Please upload only images.'), false);
+        cb(new Error('Invalid file type!'), false);
     }
 };
-
 
 export const uploadPoojaImage = multer({
     storage: multer.diskStorage({
@@ -54,7 +55,17 @@ export const uploadCmsImage = multer({
         }
     }),
     fileFilter: fileFilter,
-    limits: { fileSize: 10 * 1024 * 1024 } // 10MB for banners
+    limits: { fileSize: 10 * 1024 * 1024 }
 });
 
-
+export const uploadCmsTestimonial = multer({
+    storage: multer.diskStorage({
+        destination: (req, file, cb) => cb(null, cmsTestimonialDir),
+        filename: (req, file, cb) => {
+            const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+            cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
+        }
+    }),
+    fileFilter: fileFilter,
+    limits: { fileSize: 50 * 1024 * 1024 } // 50MB for videos
+});
