@@ -11,12 +11,14 @@ if (!fs.existsSync(uploadDir)) {
 const cmsBannerDir = 'uploads/cms/banners';
 const cmsFeatureDir = 'uploads/cms/features';
 const cmsTestimonialDir = 'uploads/cms/testimonials';
+const userUploadDir = 'uploads/users';
 
-[cmsBannerDir, cmsFeatureDir, cmsTestimonialDir].forEach(dir => {
+[cmsBannerDir, cmsFeatureDir, cmsTestimonialDir, userUploadDir].forEach(dir => {
     if (!fs.existsSync(dir)) {
         fs.mkdirSync(dir, { recursive: true });
     }
 });
+
 
 const fileFilter = (req: any, file: any, cb: any) => {
     if (file.mimetype.startsWith('image/')) {
@@ -68,4 +70,15 @@ export const uploadCmsTestimonial = multer({
     }),
     fileFilter: fileFilter,
     limits: { fileSize: 50 * 1024 * 1024 } // 50MB for videos
+});
+export const uploadUserImage = multer({
+    storage: multer.diskStorage({
+        destination: (req, file, cb) => cb(null, userUploadDir),
+        filename: (req, file, cb) => {
+            const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+            cb(null, 'profile-' + uniqueSuffix + path.extname(file.originalname));
+        }
+    }),
+    fileFilter: fileFilter,
+    limits: { fileSize: 2 * 1024 * 1024 } // 2MB for profile pics
 });

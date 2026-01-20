@@ -20,8 +20,12 @@ model User {
   email         String?   @unique // For Admin
   password      String?   // For Admin (Hashed)
   phone         String?   @unique // For Devotee, Institution, Seller
+  profileImage  String?
+  otp           String?
+  otpExpires    DateTime?
   role          UserRole  @default(DEVOTEE)
   isVerified    Boolean   @default(false)
+
   
   // Relationships
   temple        Temple?   // If role is INSTITUTION

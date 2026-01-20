@@ -10,6 +10,9 @@ import adminInstitutionRoutes from './routes/admin/institutionRoutes';
 import adminCmsRoutes from './routes/admin/cmsRoutes';
 import institutionTempleRoutes from './routes/institution/templeRoutes';
 import templeRoutes from './routes/templeRoutes';
+import authRoutes from './routes/devotee/authRoutes';
+
+
 
 dotenv.config();
 
@@ -37,8 +40,12 @@ app.use('/api/admin/cms', adminCmsRoutes);
 // Institution Routes
 app.use('/api/institution/temples', institutionTempleRoutes);
 
+// Devotee Auth Routes
+app.use('/api/auth', authRoutes);
+
 // General Routes (Temporary)
-app.use('/api/temples', templeRoutes);
+ app.use('/api/temples', templeRoutes);
+
 
 app.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
