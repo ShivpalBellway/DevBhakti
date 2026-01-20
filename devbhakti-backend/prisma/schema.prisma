@@ -99,3 +99,26 @@ model Event {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
+
+model Banner {
+  id        String   @id @default(cuid())
+  image     String
+  link      String?
+  active    Boolean  @default(true)
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Feature {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  image       String // Background image for the feature card
+  icon        String // Icon image for the feature card
+  active      Boolean  @default(true)
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+

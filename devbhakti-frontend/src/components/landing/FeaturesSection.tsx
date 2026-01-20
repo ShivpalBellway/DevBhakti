@@ -1,8 +1,12 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import Image from "next/image";
+import axios from "axios";
+import { API_URL, BASE_URL } from "@/config/apiConfig";
+
+
 import {
   Calendar,
   ShoppingBag,
@@ -31,7 +35,7 @@ import liveDarshan from "@/assets/features/livedarshan2.png";
 import devotionalProducts from "@/assets/features/products2.png";
 import easyDonation from "@/assets/features/donation.png";
 import prasadDelivery from "@/assets/features/prasadDelivery.png";
-import templeDiscovery  from "@/assets/features/templeDiscovery.png";
+import templeDiscovery from "@/assets/features/templeDiscovery.png";
 
 
 
@@ -126,7 +130,28 @@ const institutionFeatures = [
   },
 ];
 
+
+
 const FeaturesSection: React.FC = () => {
+  const [dynamicFeatures, setDynamicFeatures] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchFeatures = async () => {
+      try {
+        const response = await axios.get(`${API_URL}/admin/cms/features`);
+        const activeFeatures = response.data.filter((f: any) => f.active);
+        if (activeFeatures.length > 0) {
+          setDynamicFeatures(activeFeatures);
+        }
+      } catch (error) {
+        console.error("Error fetching dynamic features:", error);
+      }
+    };
+    fetchFeatures();
+  }, []);
+
+  const displayFeatures = dynamicFeatures.length > 0 ? dynamicFeatures : features;
+
   return (
     <section
       id="features"
@@ -148,6 +173,8 @@ const FeaturesSection: React.FC = () => {
       <div className="container mx-auto px-4 relative z-10">
         {/* Section Header */}
         <motion.div
+          // ... rest of the file using displayFeatures instead of features
+
           initial={{
             opacity: 0,
             y: 20,
@@ -178,7 +205,7 @@ const FeaturesSection: React.FC = () => {
         </motion.div>
         {/* Main Features Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {features.map((feature, index) => (
+          {displayFeatures.map((feature, index) => (
             <motion.div
               key={feature.title}
               initial={{
@@ -201,7 +228,12 @@ const FeaturesSection: React.FC = () => {
               {/* Background Image */}
               <div className="absolute inset-0">
                 <Image
-                  src={typeof feature.image === 'string' ? getImageUrl(feature.image) : feature.image}
+                  src={
+                    feature.image && typeof feature.image === 'string' && (feature.image.startsWith('/') || feature.image.startsWith('http'))
+                      ? (feature.image.startsWith('http') ? feature.image : `${BASE_URL}${feature.image}`)
+                      : (typeof feature.image === 'string' ? getImageUrl(feature.image) : feature.image)
+                  }
+
                   alt={feature.title}
                   fill
                   className="object-cover transition-transform duration-700 group-hover:scale-110"
@@ -214,7 +246,13 @@ const FeaturesSection: React.FC = () => {
               <div className="absolute inset-0 p-8 flex flex-col justify-end">
                 {/* Floating Icon Badge */}
                 <div className="absolute top-6 right-6 bg-white/10 backdrop-blur-md border border-white/20 p-3 rounded-2xl group-hover:bg-[#845028] group-hover:border-[#845028] transition-colors duration-300">
-                  {feature.isImage ? (
+                  {dynamicFeatures.length > 0 ? (
+                    <img
+                      src={feature.icon.startsWith('http') ? feature.icon : `${BASE_URL}${feature.icon}`}
+                      alt={feature.title}
+                      className="w-6 h-6 object-contain invert brightness-0"
+                    />
+                  ) : feature.isImage ? (
                     <Image src={feature.icon as any} alt={feature.title} width={24} height={24} className="w-6 h-6 object-contain invert brightness-0" />
                   ) : (
                     (() => {
@@ -238,6 +276,7 @@ const FeaturesSection: React.FC = () => {
             </motion.div>
           ))}{" "}
         </div>
+
         {/* Institutional Features - Redesigned as a Sacred Scroll/Panel */}
         {/*
   Institutional Features - Sacred Scroll / Panel Section

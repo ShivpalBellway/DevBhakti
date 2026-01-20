@@ -57,6 +57,15 @@ const sidebarItems = [
     href: "/admin/events",
   },
   {
+    label: "CMS",
+    icon: FileText,
+    href: "#",
+    subItems: [
+      { label: "Manage Banners", href: "/admin/cms/banners" },
+      { label: "Manage Features", href: "/admin/cms/features" },
+    ]
+  },
+  {
     label: "Marketplace",
     icon: ShoppingBag,
     href: "/admin/marketplace",
@@ -72,16 +81,6 @@ const sidebarItems = [
     href: "/admin/live-darshan",
   },
   {
-    label: "Content",
-    icon: FileText,
-    href: "/admin/content",
-  },
-  {
-    label: "Banners",
-    icon: ImageIcon,
-    href: "/admin/banners",
-  },
-  {
     label: "Analytics",
     icon: BarChart3,
     href: "/admin/analytics",
@@ -92,6 +91,7 @@ const sidebarItems = [
     href: "/admin/settings",
   },
 ];
+
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -121,6 +121,29 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     document.cookie = "admin_logged_in=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;";
     router.push("/admin/login");
   };
+
+  const [openMenus, setOpenMenus] = useState<string[]>([]);
+
+  const toggleMenu = (label: string) => {
+    if (openMenus.includes(label)) {
+      setOpenMenus(openMenus.filter((item) => item !== label));
+    } else {
+      setOpenMenus([...openMenus, label]);
+    }
+  };
+
+  useEffect(() => {
+    // Open menus if a sub-item is active
+    sidebarItems.forEach(item => {
+      if (item.subItems) {
+        if (item.subItems.some(sub => pathname === sub.href)) {
+          if (!openMenus.includes(item.label)) {
+            setOpenMenus(prev => [...prev, item.label]);
+          }
+        }
+      }
+    });
+  }, [pathname]);
 
   // If we're on the login page, don't show the admin layout UI
   if (isLoginPage) {
@@ -166,9 +189,63 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 py-4 px-3 space-y-1 overflow-y-auto">
+        <nav className="flex-1 py-4 px-3 space-y-1 overflow-y-auto custom-scrollbar">
           {sidebarItems.map((item) => {
-            const isActive = pathname === item.href;
+            const hasSubItems = item.subItems && item.subItems.length > 0;
+            const isOpen = openMenus.includes(item.label);
+            const isActive = pathname === item.href || (item.subItems?.some(sub => pathname === sub.href));
+
+            if (hasSubItems) {
+              return (
+                <div key={item.label} className="space-y-1">
+                  <button
+                    onClick={() => toggleMenu(item.label)}
+                    className={cn(
+                      "w-full flex items-center justify-between px-3 py-2.5 rounded-lg transition-all duration-200",
+                      isActive
+                        ? "bg-sidebar-primary/10 text-sidebar-primary"
+                        : "text-sidebar-foreground hover:bg-sidebar-accent"
+                    )}
+                  >
+                    <div className="flex items-center gap-3">
+                      <item.icon className="w-5 h-5 flex-shrink-0" />
+                      {sidebarOpen && (
+                        <span className="font-medium text-sm">{item.label}</span>
+                      )}
+                    </div>
+                    {sidebarOpen && (
+                      <ChevronRight className={cn(
+                        "w-4 h-4 transition-transform duration-200",
+                        isOpen && "rotate-90"
+                      )} />
+                    )}
+                  </button>
+
+                  {isOpen && sidebarOpen && (
+                    <div className="ml-9 space-y-1">
+                      {item.subItems!.map((sub) => {
+                        const isSubActive = pathname === sub.href;
+                        return (
+                          <Link
+                            key={sub.href}
+                            href={sub.href}
+                            className={cn(
+                              "block px-3 py-2 rounded-md text-sm transition-colors",
+                              isSubActive
+                                ? "text-sidebar-primary font-medium bg-sidebar-primary/5"
+                                : "text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent"
+                            )}
+                          >
+                            {sub.label}
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            }
+
             return (
               <Link
                 key={item.href}
@@ -188,6 +265,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             );
           })}
         </nav>
+
 
         {/* User section */}
         <div className="p-3 border-t border-sidebar-border">

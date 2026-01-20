@@ -19,19 +19,45 @@ import banner10 from "@/assets/banners/devBhakti_Banner_1.png";
 import banner11 from "@/assets/banners/devBhakti_Banner_2.png";
 
 
-const banners = [banner1, banner2, banner3, banner6, banner7, banner8, banner9, banner10, banner11];
+import { API_URL, BASE_URL } from "@/config/apiConfig";
+
+import axios from "axios";
+
+// Static fallback banners
+const staticBanners = [banner1, banner2, banner3, banner6, banner7, banner8, banner9, banner10, banner11];
 
 const BannerSection: React.FC = () => {
+    const [banners, setBanners] = useState<any[]>([]);
     const [currentIndex, setCurrentIndex] = useState(0);
     const [isPaused, setIsPaused] = useState(false);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchBanners = async () => {
+            try {
+                const response = await axios.get(`${API_URL}/admin/cms/banners`);
+                const activeBanners = response.data.filter((b: any) => b.active);
+                if (activeBanners.length > 0) {
+                    setBanners(activeBanners);
+                }
+            } catch (error) {
+                console.error("Error fetching dynamic banners:", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchBanners();
+    }, []);
 
     const nextSlide = useCallback(() => {
-        setCurrentIndex((prevIndex) => (prevIndex + 1) % banners.length);
-    }, []);
+        const length = banners.length > 0 ? banners.length : staticBanners.length;
+        setCurrentIndex((prevIndex) => (prevIndex + 1) % length);
+    }, [banners.length]);
 
     const prevSlide = useCallback(() => {
-        setCurrentIndex((prevIndex) => (prevIndex - 1 + banners.length) % banners.length);
-    }, []);
+        const length = banners.length > 0 ? banners.length : staticBanners.length;
+        setCurrentIndex((prevIndex) => (prevIndex - 1 + length) % length);
+    }, [banners.length]);
 
     useEffect(() => {
         if (isPaused) return;
@@ -42,6 +68,8 @@ const BannerSection: React.FC = () => {
 
         return () => clearInterval(timer);
     }, [isPaused, nextSlide]);
+
+    const displayBanners = banners.length > 0 ? banners : staticBanners;
 
     return (
         <section
@@ -59,13 +87,24 @@ const BannerSection: React.FC = () => {
                             transition={{ duration: 0.8, ease: "easeInOut" }}
                             className="absolute inset-0 w-full h-full"
                         >
-                            <Image
-                                src={banners[currentIndex]}
-                                alt={`DevBhakti Sacred Banner ${currentIndex + 1}`}
-                                fill
-                                className="object-cover transform scale-105"
-                                priority
-                            />
+                            {banners.length > 0 ? (
+                                <Image
+                                    src={banners[currentIndex].image.startsWith('http') ? banners[currentIndex].image : `${BASE_URL}${banners[currentIndex].image}`}
+                                    alt={`DevBhakti Sacred Banner ${currentIndex + 1}`}
+
+                                    fill
+                                    className="object-cover transform scale-105"
+                                    priority
+                                />
+                            ) : (
+                                <Image
+                                    src={staticBanners[currentIndex]}
+                                    alt={`DevBhakti Sacred Banner ${currentIndex + 1}`}
+                                    fill
+                                    className="object-cover transform scale-105"
+                                    priority
+                                />
+                            )}
                             {/* Subtle Overlay */}
                             <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent" />
                         </motion.div>
@@ -87,7 +126,7 @@ const BannerSection: React.FC = () => {
 
                     {/* Navigation Dots */}
                     <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-3 z-30">
-                        {banners.map((_, index) => (
+                        {displayBanners.map((_, index) => (
                             <button
                                 key={index}
                                 onClick={() => setCurrentIndex(index)}
@@ -115,5 +154,6 @@ const BannerSection: React.FC = () => {
         </section>
     );
 };
+
 
 export default BannerSection;

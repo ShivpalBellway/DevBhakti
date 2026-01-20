@@ -7,6 +7,7 @@ import adminTempleRoutes from './routes/admin/templeRoutes';
 import adminPoojaRoutes from './routes/admin/poojaRoutes';
 import adminEventRoutes from './routes/admin/eventRoutes';
 import adminInstitutionRoutes from './routes/admin/institutionRoutes';
+import adminCmsRoutes from './routes/admin/cmsRoutes';
 import institutionTempleRoutes from './routes/institution/templeRoutes';
 import templeRoutes from './routes/templeRoutes';
 
@@ -30,6 +31,8 @@ app.use('/api/admin/temples', adminTempleRoutes);
 app.use('/api/admin/poojas', adminPoojaRoutes);
 app.use('/api/admin/events', adminEventRoutes);
 app.use('/api/admin/institutions', adminInstitutionRoutes);
+app.use('/api/admin/cms', adminCmsRoutes);
+
 
 // Institution Routes
 app.use('/api/institution/temples', institutionTempleRoutes);

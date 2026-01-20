@@ -142,3 +142,81 @@ export const deleteInstitutionAdmin = async (id: string) => {
     });
     return response.data;
 };
+
+// Admin CMS Management
+export const fetchAllBannersAdmin = async () => {
+    const token = localStorage.getItem("admin_token");
+    const response = await axios.get(`${API_URL}/admin/cms/banners`, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+
+export const createBannerAdmin = async (formData: FormData) => {
+    const token = localStorage.getItem("admin_token");
+    const response = await axios.post(`${API_URL}/admin/cms/banners`, formData, {
+        headers: { 
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'multipart/form-data'
+        }
+    });
+    return response.data;
+};
+
+export const updateBannerAdmin = async (id: string, formData: FormData) => {
+    const token = localStorage.getItem("admin_token");
+    const response = await axios.put(`${API_URL}/admin/cms/banners/${id}`, formData, {
+        headers: { 
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'multipart/form-data'
+        }
+    });
+    return response.data;
+};
+
+export const deleteBannerAdmin = async (id: string) => {
+    const token = localStorage.getItem("admin_token");
+    const response = await axios.delete(`${API_URL}/admin/cms/banners/${id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+
+export const fetchAllFeaturesAdmin = async () => {
+    const token = localStorage.getItem("admin_token");
+    const response = await axios.get(`${API_URL}/admin/cms/features`, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+
+export const createFeatureAdmin = async (formData: FormData) => {
+    const token = localStorage.getItem("admin_token");
+    const response = await axios.post(`${API_URL}/admin/cms/features`, formData, {
+        headers: { 
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'multipart/form-data'
+        }
+    });
+    return response.data;
+};
+
+export const updateFeatureAdmin = async (id: string, formData: FormData) => {
+    const token = localStorage.getItem("admin_token");
+    const response = await axios.put(`${API_URL}/admin/cms/features/${id}`, formData, {
+        headers: { 
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'multipart/form-data'
+        }
+    });
+    return response.data;
+};
+
+export const deleteFeatureAdmin = async (id: string) => {
+    const token = localStorage.getItem("admin_token");
+    const response = await axios.delete(`${API_URL}/admin/cms/features/${id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+
