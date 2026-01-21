@@ -13,7 +13,7 @@ out/
 .env.*
 
 # Uploads
-uploads/
+# uploads/
 
 # OS
 .DS_Store
