@@ -14,7 +14,6 @@ export const getBanners = async (req: Request, res: Response) => {
     }
 };
 
-
 export const createBanner = async (req: Request, res: Response) => {
     try {
         const { link, active, order } = req.body;
@@ -40,7 +39,6 @@ export const createBanner = async (req: Request, res: Response) => {
         res.status(500).json({ message: 'Error creating banner', error });
     }
 };
-
 
 export const updateBanner = async (req: Request, res: Response) => {
     try {
@@ -75,7 +73,6 @@ export const updateBanner = async (req: Request, res: Response) => {
     }
 };
 
-
 export const deleteBanner = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
@@ -87,7 +84,6 @@ export const deleteBanner = async (req: Request, res: Response) => {
         res.status(500).json({ message: 'Error deleting banner', error });
     }
 };
-
 
 // Feature Controllers
 export const getFeatures = async (req: Request, res: Response) => {
@@ -132,7 +128,6 @@ export const createFeature = async (req: Request, res: Response) => {
     }
 };
 
-
 export const updateFeature = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
@@ -175,7 +170,6 @@ export const updateFeature = async (req: Request, res: Response) => {
     }
 };
 
-
 export const deleteFeature = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
@@ -188,3 +182,97 @@ export const deleteFeature = async (req: Request, res: Response) => {
     }
 };
 
+// Testimonial Controllers
+export const getTestimonials = async (req: Request, res: Response) => {
+    try {
+        const testimonials = await prisma.testimonial.findMany({
+            orderBy: { order: 'asc' }
+        });
+        res.json(testimonials);
+    } catch (error) {
+        console.error('Error fetching testimonials:', error);
+        res.status(500).json({ message: 'Error fetching testimonials', error });
+    }
+};
+
+export const createTestimonial = async (req: Request, res: Response) => {
+    try {
+        const { title, subtitle, category, active, order } = req.body;
+        const files = req.files as { [fieldname: string]: Express.Multer.File[] };
+        
+        const thumbnail = files['thumbnail'] ? `/uploads/cms/testimonials/${files['thumbnail'][0].filename}` : null;
+        const videoSrc = files['videoSrc'] ? `/uploads/cms/testimonials/${files['videoSrc'][0].filename}` : null;
+
+        if (!thumbnail || !videoSrc) {
+            return res.status(400).json({ message: 'Both thumbnail and video are required' });
+        }
+
+        const testimonial = await prisma.testimonial.create({
+            data: {
+                title,
+                subtitle,
+                category,
+                thumbnail,
+                videoSrc,
+                active: active === 'true' || active === true,
+                order: parseInt(order as string) || 0
+            }
+        });
+
+        res.status(201).json(testimonial);
+    } catch (error) {
+        console.error('Error creating testimonial:', error);
+        res.status(500).json({ message: 'Error creating testimonial', error });
+    }
+};
+
+export const updateTestimonial = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+        const { title, subtitle, category, active, order } = req.body;
+        
+        const existingTestimonial = await prisma.testimonial.findUnique({ where: { id: id as string } });
+        if (!existingTestimonial) return res.status(404).json({ message: 'Testimonial not found' });
+
+        const files = req.files as { [fieldname: string]: Express.Multer.File[] };
+        
+        let thumbnail = existingTestimonial.thumbnail;
+        if (files && files['thumbnail']) {
+            thumbnail = `/uploads/cms/testimonials/${files['thumbnail'][0].filename}`;
+        }
+
+        let videoSrc = existingTestimonial.videoSrc;
+        if (files && files['videoSrc']) {
+            videoSrc = `/uploads/cms/testimonials/${files['videoSrc'][0].filename}`;
+        }
+
+        const testimonial = await prisma.testimonial.update({
+            where: { id: id as string },
+            data: {
+                title,
+                subtitle,
+                category,
+                thumbnail,
+                videoSrc,
+                active: active === 'true' || active === true,
+                order: parseInt(order as string) || 0
+            }
+        });
+
+        res.json(testimonial);
+    } catch (error) {
+        console.error('Error updating testimonial:', error);
+        res.status(500).json({ message: 'Error updating testimonial', error });
+    }
+};
+
+export const deleteTestimonial = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+        await prisma.testimonial.delete({ where: { id: id as string } });
+        res.json({ message: 'Testimonial deleted successfully' });
+    } catch (error) {
+        console.error('Error deleting testimonial:', error);
+        res.status(500).json({ message: 'Error deleting testimonial', error });
+    }
+};

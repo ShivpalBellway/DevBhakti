@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
+
 import { motion } from "framer-motion";
 import { Play, ChevronLeft, ChevronRight, Pause } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -10,15 +11,19 @@ import thumb2 from "@/assets/poojas/satyanarayan puja.webp";
 import thumb3 from "@/assets/temple-tirupati.jpg";
 import thumb4 from "@/assets/temple-siddhivinayak.jpg";
 import Image, { StaticImageData } from "next/image";
+import axios from "axios";
+import { API_URL, BASE_URL } from "@/config/apiConfig";
+
 
 interface VideoStory {
-    id: number;
+    id: string | number;
     title: string;
     subtitle: string;
-    videoSrc: string;
-    thumbnail: StaticImageData;
+    videoSrc: string | any;
+    thumbnail: StaticImageData | string;
     category: string;
 }
+
 
 const stories: VideoStory[] = [
     {
@@ -57,7 +62,25 @@ const stories: VideoStory[] = [
 
 const VideoTestimonialsSection = () => {
     const scrollContainerRef = useRef<HTMLDivElement>(null);
-    const [playingId, setPlayingId] = useState<number | null>(null);
+    const [playingId, setPlayingId] = useState<string | number | null>(null);
+    const [dynamicStories, setDynamicStories] = useState<VideoStory[]>([]);
+
+    useEffect(() => {
+        const fetchTestimonials = async () => {
+            try {
+                const response = await axios.get(`${API_URL}/admin/cms/testimonials`);
+                if (response.data && response.data.length > 0) {
+                    setDynamicStories(response.data);
+                }
+            } catch (error) {
+                console.error("Error fetching testimonials:", error);
+            }
+        };
+        fetchTestimonials();
+    }, []);
+
+    const storiesToDisplay = dynamicStories.length > 0 ? dynamicStories : stories;
+
 
     const scroll = (direction: "left" | "right") => {
         if (scrollContainerRef.current) {
@@ -132,9 +155,10 @@ const VideoTestimonialsSection = () => {
                         ref={scrollContainerRef}
                         className="flex gap-6 overflow-x-auto pb-8 snap-x snap-mandatory scrollbar-hide px-4"
                     >
-                        {stories.map((story, index) => (
+                        {storiesToDisplay.map((story, index) => (
                             <motion.div
                                 key={story.id}
+
                                 initial={{ opacity: 0, y: 20 }}
                                 whileInView={{ opacity: 1, y: 0 }}
                                 viewport={{ once: true }}
@@ -146,11 +170,14 @@ const VideoTestimonialsSection = () => {
                                 <div className="absolute inset-0 bg-black">
                                     {playingId === story.id ? (
                                         <video
-                                            src={story.videoSrc}
+                                            src={typeof story.videoSrc === 'string' && (story.videoSrc.startsWith('/') || story.videoSrc.startsWith('http'))
+                                                ? (story.videoSrc.startsWith('http') ? story.videoSrc : `${BASE_URL}${story.videoSrc}`)
+                                                : story.videoSrc}
                                             className="w-full h-full object-cover"
                                             controls
                                             autoPlay
                                             playsInline
+
                                             onError={() => {
                                                 console.error("Video failed to load:", story.videoSrc);
                                                 setPlayingId(null);
@@ -161,11 +188,14 @@ const VideoTestimonialsSection = () => {
                                     ) : (
                                         <>
                                             <Image
-                                                src={story.thumbnail}
+                                                src={typeof story.thumbnail === 'string' && (story.thumbnail.startsWith('/') || story.thumbnail.startsWith('http'))
+                                                    ? (story.thumbnail.startsWith('http') ? story.thumbnail : `${BASE_URL}${story.thumbnail}`)
+                                                    : story.thumbnail}
                                                 alt={story.title}
                                                 fill
                                                 className="object-cover transition-transform duration-700 group-hover/card:scale-105 opacity-90"
                                             />
+
                                             {/* Gradient Overlay */}
                                             <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
 

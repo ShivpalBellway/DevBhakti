@@ -4,29 +4,100 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
-import { User, Phone, ArrowRight, Building2 } from "lucide-react";
+import { User, Phone, ArrowRight, Building2, Mail, Camera, Key } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Logo from "@/components/icons/Logo";
+import { sendOTP, verifyOTP, updateProfile } from "@/api/authController";
+
+import { useRouter } from "next/navigation";
+
 
 const AuthForm: React.FC = () => {
   const searchParams = useSearchParams();
   const initialMode = searchParams.get("mode") === "register" ? "register" : "login";
   const initialType = searchParams.get("type") === "institution" ? "institution" : "devotee";
 
+  const router = useRouter();
   const [mode, setMode] = useState<"login" | "register">(initialMode);
   const [userType, setUserType] = useState<"devotee" | "institution">(initialType);
+
+  const [showOtpInput, setShowOtpInput] = useState(false);
+  const [receivedOtp, setReceivedOtp] = useState(""); // For development
+  const [loading, setLoading] = useState(false);
+
+  const [otp, setOtp] = useState("");
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
+    email: "",
   });
+  const [profileImage, setProfileImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    // TODO: Implement authentication
-    console.log("Form submitted:", { mode, userType, formData });
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files?.[0]) {
+      const file = e.target.files[0];
+      setProfileImage(file);
+      setImagePreview(URL.createObjectURL(file));
+    }
   };
+
+  const handleSendOTP = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      // In a real app with profile image during register, we might need to upload it after verification 
+      // or send as multipart if backend supports it in send-otp. 
+      // For now, let's just send basic info.
+      const response = await sendOTP({
+        phone: formData.phone,
+        name: mode === "register" ? formData.name : undefined,
+        email: mode === "register" && formData.email ? formData.email : undefined
+      });
+      setShowOtpInput(true);
+      if (response.data?.otp) {
+        setReceivedOtp(response.data.otp);
+      }
+
+
+
+
+    } catch (error: any) {
+      alert(error.response?.data?.message || "Failed to send OTP");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerifyOTP = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      const response = await verifyOTP(formData.phone, otp);
+      localStorage.setItem("token", response.data.token);
+      localStorage.setItem("user", JSON.stringify(response.data.user));
+
+
+      // If there's a profile image, upload it now
+      if (profileImage) {
+        const imageFormData = new FormData();
+        imageFormData.append("profileImage", profileImage);
+        await updateProfile(imageFormData);
+      }
+
+      alert("Login successful!");
+      router.push("/");
+
+    } catch (error: any) {
+      alert(error.response?.data?.message || "Invalid OTP");
+    } finally {
+      setLoading(false);
+    }
+  };
+
 
   return (
     <div className="min-h-screen flex">
@@ -61,8 +132,8 @@ const AuthForm: React.FC = () => {
               <button
                 onClick={() => setUserType("devotee")}
                 className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-md text-sm font-medium transition-all ${userType === "devotee"
-                    ? "bg-card shadow-soft text-foreground"
-                    : "text-muted-foreground hover:text-foreground"
+                  ? "bg-card shadow-soft text-foreground"
+                  : "text-muted-foreground hover:text-foreground"
                   }`}
               >
                 <User className="w-4 h-4" />
@@ -82,48 +153,125 @@ const AuthForm: React.FC = () => {
           )}
 
           {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-5">
-            {mode === "register" && (
+          {!showOtpInput ? (
+            <form onSubmit={handleSendOTP} className="space-y-5">
+              {mode === "register" && (
+                <>
+                  <div className="flex justify-center mb-6">
+                    <div className="relative group">
+                      <div className="w-24 h-24 rounded-full overflow-hidden bg-muted border-2 border-primary/20 flex items-center justify-center">
+                        {imagePreview ? (
+                          <img src={imagePreview} className="w-full h-full object-cover" />
+                        ) : (
+                          <User className="w-10 h-10 text-muted-foreground" />
+                        )}
+                      </div>
+                      <label className="absolute bottom-0 right-0 p-1.5 bg-primary rounded-full text-white cursor-pointer shadow-lg hover:scale-110 transition-transform">
+                        <Camera className="w-4 h-4" />
+                        <input type="file" className="hidden" accept="image/*" onChange={handleImageChange} />
+                      </label>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="name">Full Name</Label>
+                    <div className="relative">
+                      <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                      <Input
+                        id="name"
+                        type="text"
+                        placeholder="Enter your name"
+                        value={formData.name}
+                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                        className="pl-10"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email Address (Optional)</Label>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                      <Input
+                        id="email"
+                        type="email"
+                        placeholder="example@email.com"
+                        value={formData.email}
+                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                        className="pl-10"
+                      />
+                    </div>
+                  </div>
+                </>
+              )}
+
               <div className="space-y-2">
-                <Label htmlFor="name">
-                  {userType === "institution" ? "Temple/Institution Name" : "Full Name"}
-                </Label>
+                <Label htmlFor="phone">Phone Number</Label>
                 <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                   <Input
-                    id="name"
-                    type="text"
-                    placeholder={userType === "institution" ? "Enter temple name" : "Enter your name"}
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    id="phone"
+                    type="tel"
+                    placeholder="+91 XXXXX XXXXX"
+                    value={formData.phone}
+                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                     className="pl-10"
                     required
                   />
                 </div>
               </div>
-            )}
 
-            <div className="space-y-2">
-              <Label htmlFor="phone">Phone Number</Label>
-              <div className="relative">
-                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                <Input
-                  id="phone"
-                  type="tel"
-                  placeholder="+91 XXXXX XXXXX"
-                  value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  className="pl-10"
-                  required
-                />
+              <Button type="submit" variant="sacred" size="lg" className="w-full" disabled={loading}>
+                {loading ? "Processing..." : (mode === "login" ? "Send OTP" : "Create Account & Send OTP")}
+                {!loading && <ArrowRight className="w-5 h-5" />}
+              </Button>
+            </form>
+          ) : (
+            <form onSubmit={handleVerifyOTP} className="space-y-5">
+              {receivedOtp && (
+                <div className="p-3 bg-primary/10 border border-primary/20 rounded-lg text-center">
+                  <p className="text-sm font-medium text-primary">
+                    Development OTP: <span className="text-lg font-bold tracking-widest">{receivedOtp}</span>
+                  </p>
+                </div>
+              )}
+              <div className="space-y-2">
+
+                <Label htmlFor="otp">Enter 6-digit OTP</Label>
+                <div className="relative">
+                  <Key className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                  <Input
+                    id="otp"
+                    type="text"
+                    maxLength={6}
+                    placeholder="123456"
+                    value={otp}
+                    onChange={(e) => setOtp(e.target.value)}
+                    className="pl-10 text-center tracking-[0.5em] font-bold text-xl"
+                    required
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground text-center">
+                  OTP sent to {formData.phone}
+                </p>
               </div>
-            </div>
 
-            <Button type="submit" variant="sacred" size="lg" className="w-full">
-              {mode === "login" ? "Send OTP" : "Create Account & Send OTP"}
-              <ArrowRight className="w-5 h-5" />
-            </Button>
-          </form>
+              <Button type="submit" variant="sacred" size="lg" className="w-full" disabled={loading}>
+                {loading ? "Verifying..." : "Verify OTP & Sign In"}
+                {!loading && <ArrowRight className="w-5 h-5" />}
+              </Button>
+
+              <button
+                type="button"
+                onClick={() => setShowOtpInput(false)}
+                className="w-full text-sm text-primary hover:underline"
+              >
+                Change Phone Number
+              </button>
+            </form>
+          )}
+
 
           {/* Divider */}
           <div className="relative my-8">
