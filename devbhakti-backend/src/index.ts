@@ -11,6 +11,8 @@ import adminCmsRoutes from './routes/admin/cmsRoutes';
 import institutionTempleRoutes from './routes/institution/templeRoutes';
 import templeRoutes from './routes/templeRoutes';
 import authRoutes from './routes/devotee/authRoutes';
+import favoriteRoutes from './routes/devotee/favoriteRoutes';
+
 
 
 
@@ -42,6 +44,8 @@ app.use('/api/institution/temples', institutionTempleRoutes);
 
 // Devotee Auth Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/favorites', favoriteRoutes);
+
 
 // General Routes (Temporary)
  app.use('/api/temples', templeRoutes);
