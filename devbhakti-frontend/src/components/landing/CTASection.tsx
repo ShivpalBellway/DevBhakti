@@ -47,7 +47,7 @@ const CTASection: React.FC = () => {
                 </Link>
               </Button>
               <Button variant="outline-sacred" size="xl" asChild>
-                <Link href="/auth?mode=register&type=institution">
+                <Link href="/auth?mode=register&type=temple">
                   Register Your Temple
                 </Link>
               </Button>
@@ -96,7 +96,7 @@ const CTASection: React.FC = () => {
               </div>
             </motion.div>
 
-            {/* For Institutions */}
+            {/* For Temples */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -125,7 +125,7 @@ const CTASection: React.FC = () => {
                 ))}
               </ul>
               <Button variant="outline-sacred" className="w-full" asChild>
-                <Link href="/auth?mode=register&type=institution">
+                <Link href="/auth?mode=register&type=temple">
                   Register Your Temple
                 </Link>
               </Button>

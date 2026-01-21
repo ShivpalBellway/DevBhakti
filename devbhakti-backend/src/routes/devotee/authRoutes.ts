@@ -12,6 +12,7 @@ router.post('/send-otp', authController.sendOTP);
 router.post('/verify-otp', authController.verifyOTP);
 
 // Profile Management (Protected)
+router.get('/profile', authenticate, authController.getProfile);
 router.put('/profile', authenticate, uploadUserImage.single('profileImage'), authController.updateProfile);
 
 export default router;

@@ -132,11 +132,10 @@ function DonationForm() {
             <React.Fragment key={s.num}>
               <div className="flex flex-col items-center">
                 <div
-                  className={`h-10 w-10 rounded-full flex items-center justify-center font-semibold transition-colors ${
-                    step >= s.num
+                  className={`h-10 w-10 rounded-full flex items-center justify-center font-semibold transition-colors ${step >= s.num
                       ? "bg-primary text-primary-foreground"
                       : "bg-muted text-muted-foreground"
-                  }`}
+                    }`}
                 >
                   {step > s.num ? <CheckCircle2 className="h-5 w-5" /> : s.num}
                 </div>
@@ -165,11 +164,10 @@ function DonationForm() {
                   {temples.map((temple) => (
                     <div
                       key={temple.id}
-                      className={`flex items-center space-x-3 p-4 rounded-lg border transition-colors cursor-pointer ${
-                        selectedTemple === temple.id
+                      className={`flex items-center space-x-3 p-4 rounded-lg border transition-colors cursor-pointer ${selectedTemple === temple.id
                           ? "border-primary bg-primary/5"
                           : "border-border hover:border-primary/50"
-                      }`}
+                        }`}
                       onClick={() => setSelectedTemple(temple.id)}
                     >
                       <RadioGroupItem value={temple.id} id={`temple-${temple.id}`} />
@@ -199,11 +197,10 @@ function DonationForm() {
                     {donationPurposes.map((purpose) => (
                       <div
                         key={purpose.id}
-                        className={`flex items-start gap-3 p-4 rounded-lg border transition-colors cursor-pointer ${
-                          selectedPurpose === purpose.id
+                        className={`flex items-start gap-3 p-4 rounded-lg border transition-colors cursor-pointer ${selectedPurpose === purpose.id
                             ? "border-primary bg-primary/5"
                             : "border-border hover:border-primary/50"
-                        }`}
+                          }`}
                         onClick={() => setSelectedPurpose(purpose.id)}
                       >
                         <RadioGroupItem value={purpose.id} id={purpose.id} className="mt-1" />
@@ -469,7 +466,7 @@ function DonationForm() {
                 <p className="text-muted-foreground mb-6">
                   Your donation reference number is <span className="font-bold text-foreground">DON{Date.now().toString().slice(-8)}</span>
                 </p>
-                
+
                 <div className="bg-muted/50 rounded-lg p-6 max-w-md mx-auto text-left space-y-3 mb-8">
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Temple</span>

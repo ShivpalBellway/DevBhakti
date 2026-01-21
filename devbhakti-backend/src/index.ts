@@ -6,9 +6,11 @@ import adminAuthRoutes from './routes/admin/authRoutes';
 import adminTempleRoutes from './routes/admin/templeRoutes';
 import adminPoojaRoutes from './routes/admin/poojaRoutes';
 import adminEventRoutes from './routes/admin/eventRoutes';
-import adminInstitutionRoutes from './routes/admin/institutionRoutes';
+// (adminInstitutionRoutes merged into adminTempleRoutes)
 import adminCmsRoutes from './routes/admin/cmsRoutes';
-import institutionTempleRoutes from './routes/institution/templeRoutes';
+import templeAdminTempleRoutes from './routes/temple_admin/templeRoutes';
+import templeAdminPoojaRoutes from './routes/temple_admin/poojaRoutes';
+import templeAdminEventRoutes from './routes/temple_admin/eventRoutes';
 import templeRoutes from './routes/templeRoutes';
 import authRoutes from './routes/devotee/authRoutes';
 import favoriteRoutes from './routes/devotee/favoriteRoutes';
@@ -35,12 +37,14 @@ app.use('/api/admin/auth', adminAuthRoutes);
 app.use('/api/admin/temples', adminTempleRoutes);
 app.use('/api/admin/poojas', adminPoojaRoutes);
 app.use('/api/admin/events', adminEventRoutes);
-app.use('/api/admin/institutions', adminInstitutionRoutes);
+// (institutions merged into temples)
 app.use('/api/admin/cms', adminCmsRoutes);
 
 
-// Institution Routes
-app.use('/api/institution/temples', institutionTempleRoutes);
+// Temple Admin Routes
+app.use('/api/temple-admin/temples', templeAdminTempleRoutes);
+app.use('/api/temple-admin/poojas', templeAdminPoojaRoutes);
+app.use('/api/temple-admin/events', templeAdminEventRoutes);
 
 // Devotee Auth Routes
 app.use('/api/auth', authRoutes);
@@ -48,7 +52,7 @@ app.use('/api/favorites', favoriteRoutes);
 
 
 // General Routes (Temporary)
- app.use('/api/temples', templeRoutes);
+app.use('/api/temples', templeRoutes);
 
 
 app.listen(PORT, () => {

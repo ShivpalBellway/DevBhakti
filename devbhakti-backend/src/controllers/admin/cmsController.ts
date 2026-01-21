@@ -47,7 +47,7 @@ export const updateBanner = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
         const { link, active, order } = req.body;
-        
+
         const existingBanner = await prisma.banner.findUnique({ where: { id: id as string } });
 
         if (!existingBanner) return res.status(404).json({ success: false, message: 'Banner not found' });
@@ -107,7 +107,7 @@ export const createFeature = async (req: Request, res: Response) => {
     try {
         const { title, description, active, order } = req.body;
         const files = req.files as { [fieldname: string]: Express.Multer.File[] };
-        
+
         const image = files['image'] ? `/uploads/cms/features/${files['image'][0].filename}` : null;
         const icon = files['icon'] ? `/uploads/cms/features/${files['icon'][0].filename}` : null;
 
@@ -140,14 +140,14 @@ export const updateFeature = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
         const { title, description, active, order } = req.body;
-        
+
         const existingFeature = await prisma.feature.findUnique({ where: { id: id as string } });
 
         if (!existingFeature) return res.status(404).json({ success: false, message: 'Feature not found' });
 
 
         const files = req.files as { [fieldname: string]: Express.Multer.File[] };
-        
+
         let image = existingFeature.image;
         if (files && files['image']) {
             image = `/uploads/cms/features/${files['image'][0].filename}`;
@@ -210,7 +210,7 @@ export const createTestimonial = async (req: Request, res: Response) => {
     try {
         const { title, subtitle, category, active, order } = req.body;
         const files = req.files as { [fieldname: string]: Express.Multer.File[] };
-        
+
         const thumbnail = files['thumbnail'] ? `/uploads/cms/testimonials/${files['thumbnail'][0].filename}` : null;
         const videoSrc = files['videoSrc'] ? `/uploads/cms/testimonials/${files['videoSrc'][0].filename}` : null;
 
@@ -243,13 +243,13 @@ export const updateTestimonial = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
         const { title, subtitle, category, active, order } = req.body;
-        
+
         const existingTestimonial = await prisma.testimonial.findUnique({ where: { id: id as string } });
         if (!existingTestimonial) return res.status(404).json({ success: false, message: 'Testimonial not found' });
 
 
         const files = req.files as { [fieldname: string]: Express.Multer.File[] };
-        
+
         let thumbnail = existingTestimonial.thumbnail;
         if (files && files['thumbnail']) {
             thumbnail = `/uploads/cms/testimonials/${files['thumbnail'][0].filename}`;

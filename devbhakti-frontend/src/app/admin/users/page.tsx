@@ -95,7 +95,7 @@ export default function AdminUsersPage() {
                         Users
                     </h1>
                     <p className="text-muted-foreground mt-1">
-                        Manage devotees and institution admins on DevBhakti
+                        Manage devotees and Temple Admins on DevBhakti
                     </p>
                 </div>
                 <Button variant="sacred">
@@ -109,7 +109,7 @@ export default function AdminUsersPage() {
                 {[
                     { label: "Total Users", value: "52,847", color: "text-foreground" },
                     { label: "Devotees", value: "52,321", color: "text-primary" },
-                    { label: "Institution Admins", value: "526", color: "text-secondary" },
+                    { label: "Temple Admins", value: "526", color: "text-secondary" },
                     { label: "New This Month", value: "1,234", color: "text-success" },
                 ].map((stat) => (
                     <Card key={stat.label}>
@@ -141,7 +141,7 @@ export default function AdminUsersPage() {
                             onClick={() => setTypeFilter(type as typeof typeFilter)}
                             className="capitalize"
                         >
-                            {type === "all" ? "All" : type}
+                            {type === "all" ? "All" : type === "institution" ? "Temple Admin" : "Devotee"}
                         </Button>
                     ))}
                 </div>
@@ -207,7 +207,7 @@ export default function AdminUsersPage() {
                                                         : "bg-primary/10 text-primary border-primary/20"
                                                 }
                                             >
-                                                {user.type === "institution" ? "Institution" : "Devotee"}
+                                                {user.type === "institution" ? "Temple Admin" : "Devotee"}
                                             </Badge>
                                         </td>
                                         <td className="p-4">

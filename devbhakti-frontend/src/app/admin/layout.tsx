@@ -32,9 +32,9 @@ const sidebarItems = [
     href: "/admin",
   },
   {
-    label: "Institutions",
+    label: "Temples",
     icon: Building2,
-    href: "/admin/institutions",
+    href: "/admin/temples",
   },
   {
     label: "Users",

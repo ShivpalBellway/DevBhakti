@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import {
   Building2,
@@ -17,7 +18,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 const stats = [
   {
-    title: "Total Institutions",
+    title: "Total Temples",
     value: "524",
     change: "+12%",
     trend: "up",
@@ -58,8 +59,8 @@ const recentActivity = [
     icon: Calendar,
   },
   {
-    type: "institution",
-    title: "New institution registered: ISKCON Mumbai",
+    type: "temple",
+    title: "New temple registered: ISKCON Mumbai",
     time: "15 minutes ago",
     icon: Building2,
   },
@@ -87,24 +88,25 @@ const pendingApprovals = [
   {
     name: "Siddhivinayak Temple",
     location: "Mumbai, MH",
-    type: "Institution",
+    type: "Temple",
     date: "Dec 20, 2024",
   },
   {
     name: "Meenakshi Temple",
     location: "Madurai, TN",
-    type: "Institution",
+    type: "Temple",
     date: "Dec 19, 2024",
   },
   {
     name: "Jagannath Temple",
     location: "Puri, OD",
-    type: "Institution",
+    type: "Temple",
     date: "Dec 18, 2024",
   },
 ];
 
 export default function AdminDashboardPage() {
+  const router = useRouter();
   return (
     <div className="space-y-6">
       {/* Page header */}
@@ -135,9 +137,8 @@ export default function AdminDashboardPage() {
                     <stat.icon className="w-6 h-6 text-primary-foreground" />
                   </div>
                   <div
-                    className={`flex items-center gap-1 text-sm font-medium ${
-                      stat.trend === "up" ? "text-success" : "text-destructive"
-                    }`}
+                    className={`flex items-center gap-1 text-sm font-medium ${stat.trend === "up" ? "text-success" : "text-destructive"
+                      }`}
                   >
                     {stat.trend === "up" ? (
                       <TrendingUp className="w-4 h-4" />
@@ -230,7 +231,7 @@ export default function AdminDashboardPage() {
                   </div>
                 ))}
               </div>
-              <button className="w-full mt-4 py-2 text-sm text-primary hover:underline">
+              <button className="w-full mt-4 py-2 text-sm text-primary hover:underline" onClick={() => router.push('/admin/temples')}>
                 Review all pending
               </button>
             </CardContent>
@@ -251,13 +252,14 @@ export default function AdminDashboardPage() {
           <CardContent>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {[
-                { label: "Add Institution", icon: Building2, color: "bg-primary" },
-                { label: "Manage Users", icon: Users, color: "bg-secondary" },
-                { label: "View Reports", icon: TrendingUp, color: "bg-accent" },
-                { label: "Payment Settings", icon: CreditCard, color: "bg-success" },
+                { label: "Add Temple", icon: Building2, color: "bg-primary", path: "/admin/temples/create" },
+                { label: "Manage Users", icon: Users, color: "bg-secondary", path: "/admin/users" },
+                { label: "View Reports", icon: TrendingUp, color: "bg-accent", path: "/admin/reports" },
+                { label: "Payment Settings", icon: CreditCard, color: "bg-success", path: "/admin/payments" },
               ].map((action) => (
                 <button
                   key={action.label}
+                  onClick={() => action.path && router.push(action.path)}
                   className="flex flex-col items-center gap-3 p-4 rounded-xl border border-border hover:border-primary/30 hover:bg-muted/50 transition-all group"
                 >
                   <div

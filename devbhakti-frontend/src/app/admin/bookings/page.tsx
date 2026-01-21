@@ -23,7 +23,7 @@ const bookings = [
     {
         id: "BK-001234",
         service: "Morning Aarti",
-        institution: "Kashi Vishwanath Temple",
+        temple: "Kashi Vishwanath Temple",
         user: "Rahul Sharma",
         date: "Dec 25, 2024",
         time: "5:00 AM",
@@ -33,7 +33,7 @@ const bookings = [
     {
         id: "BK-001235",
         service: "Rudrabhishek Pooja",
-        institution: "Tirupati Balaji Temple",
+        temple: "Tirupati Balaji Temple",
         user: "Priya Patel",
         date: "Dec 26, 2024",
         time: "9:00 AM",
@@ -43,7 +43,7 @@ const bookings = [
     {
         id: "BK-001236",
         service: "Satyanarayan Katha",
-        institution: "ISKCON Mumbai",
+        temple: "ISKCON Mumbai",
         user: "Amit Kumar",
         date: "Dec 27, 2024",
         time: "7:00 PM",
@@ -53,7 +53,7 @@ const bookings = [
     {
         id: "BK-001237",
         service: "VIP Darshan",
-        institution: "Shirdi Sai Baba Temple",
+        temple: "Shirdi Sai Baba Temple",
         user: "Neha Gupta",
         date: "Dec 28, 2024",
         time: "10:00 AM",
@@ -63,7 +63,7 @@ const bookings = [
     {
         id: "BK-001238",
         service: "Special Pooja",
-        institution: "Vaishno Devi Temple",
+        temple: "Vaishno Devi Temple",
         user: "Vikram Singh",
         date: "Dec 29, 2024",
         time: "6:00 AM",
@@ -182,7 +182,7 @@ export default function AdminBookingsPage() {
                                         Service
                                     </th>
                                     <th className="text-left p-4 text-sm font-medium text-muted-foreground">
-                                        Institution
+                                        Temple
                                     </th>
                                     <th className="text-left p-4 text-sm font-medium text-muted-foreground">
                                         User
@@ -224,7 +224,7 @@ export default function AdminBookingsPage() {
                                                 <div className="flex items-center gap-2">
                                                     <Building2 className="w-4 h-4 text-muted-foreground" />
                                                     <span className="text-sm text-foreground">
-                                                        {booking.institution}
+                                                        {booking.temple}
                                                     </span>
                                                 </div>
                                             </td>

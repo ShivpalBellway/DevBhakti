@@ -8,21 +8,7 @@ export const loginAdmin = async (credentials: any) => {
 };
 
 // Admin Temple Management
-export const fetchAllTemplesAdmin = async () => {
-    const token = localStorage.getItem("admin_token");
-    const response = await axios.get(`${API_URL}/admin/temples`, {
-        headers: { Authorization: `Bearer ${token}` }
-    });
-    return response.data;
-};
-
-export const approveTempleAdmin = async (id: string) => {
-    const token = localStorage.getItem("admin_token");
-    const response = await axios.patch(`${API_URL}/admin/temples/${id}/approve`, {}, {
-        headers: { Authorization: `Bearer ${token}` }
-    });
-    return response.data;
-};
+// (Consolidated below)
 
 // Admin Pooja Management
 export const fetchAllPoojasAdmin = async () => {
@@ -36,7 +22,7 @@ export const fetchAllPoojasAdmin = async () => {
 export const createPoojaAdmin = async (formData: FormData) => {
     const token = localStorage.getItem("admin_token");
     const response = await axios.post(`${API_URL}/admin/poojas`, formData, {
-        headers: { 
+        headers: {
             Authorization: `Bearer ${token}`,
             'Content-Type': 'multipart/form-data'
         }
@@ -47,7 +33,7 @@ export const createPoojaAdmin = async (formData: FormData) => {
 export const updatePoojaAdmin = async (id: string, formData: FormData) => {
     const token = localStorage.getItem("admin_token");
     const response = await axios.put(`${API_URL}/admin/poojas/${id}`, formData, {
-        headers: { 
+        headers: {
             Authorization: `Bearer ${token}`,
             'Content-Type': 'multipart/form-data'
         }
@@ -104,19 +90,19 @@ export const deleteEventAdmin = async (id: string) => {
     return response.data;
 };
 
-// Admin Institution Management
-export const fetchAllInstitutionsAdmin = async () => {
+// Admin Temple Management
+export const fetchAllTemplesAdmin = async () => {
     const token = localStorage.getItem("admin_token");
-    const response = await axios.get(`${API_URL}/admin/institutions`, {
+    const response = await axios.get(`${API_URL}/admin/temples`, {
         headers: { Authorization: `Bearer ${token}` }
     });
     return response.data;
 };
 
-export const createInstitutionAdmin = async (formData: FormData) => {
+export const createTempleAdmin = async (formData: FormData) => {
     const token = localStorage.getItem("admin_token");
-    const response = await axios.post(`${API_URL}/admin/institutions`, formData, {
-        headers: { 
+    const response = await axios.post(`${API_URL}/admin/temples`, formData, {
+        headers: {
             Authorization: `Bearer ${token}`,
             'Content-Type': 'multipart/form-data'
         }
@@ -124,10 +110,10 @@ export const createInstitutionAdmin = async (formData: FormData) => {
     return response.data;
 };
 
-export const updateInstitutionAdmin = async (id: string, formData: FormData) => {
+export const updateTempleAdmin = async (id: string, formData: FormData) => {
     const token = localStorage.getItem("admin_token");
-    const response = await axios.put(`${API_URL}/admin/institutions/${id}`, formData, {
-        headers: { 
+    const response = await axios.put(`${API_URL}/admin/temples/${id}`, formData, {
+        headers: {
             Authorization: `Bearer ${token}`,
             'Content-Type': 'multipart/form-data'
         }
@@ -135,9 +121,17 @@ export const updateInstitutionAdmin = async (id: string, formData: FormData) => 
     return response.data;
 };
 
-export const deleteInstitutionAdmin = async (id: string) => {
+export const deleteTempleAdmin = async (id: string) => {
     const token = localStorage.getItem("admin_token");
-    const response = await axios.delete(`${API_URL}/admin/institutions/${id}`, {
+    const response = await axios.delete(`${API_URL}/admin/temples/${id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+
+export const toggleTempleStatusAdmin = async (id: string, isVerified: boolean, liveStatus: boolean) => {
+    const token = localStorage.getItem("admin_token");
+    const response = await axios.patch(`${API_URL}/admin/temples/${id}/status`, { isVerified, liveStatus }, {
         headers: { Authorization: `Bearer ${token}` }
     });
     return response.data;
@@ -149,13 +143,13 @@ export const fetchAllBannersAdmin = async () => {
     const response = await axios.get(`${API_URL}/admin/cms/banners`, {
         headers: { Authorization: `Bearer ${token}` }
     });
-    return response.data;
+    return response.data.data;
 };
 
 export const createBannerAdmin = async (formData: FormData) => {
     const token = localStorage.getItem("admin_token");
     const response = await axios.post(`${API_URL}/admin/cms/banners`, formData, {
-        headers: { 
+        headers: {
             Authorization: `Bearer ${token}`,
             'Content-Type': 'multipart/form-data'
         }
@@ -166,7 +160,7 @@ export const createBannerAdmin = async (formData: FormData) => {
 export const updateBannerAdmin = async (id: string, formData: FormData) => {
     const token = localStorage.getItem("admin_token");
     const response = await axios.put(`${API_URL}/admin/cms/banners/${id}`, formData, {
-        headers: { 
+        headers: {
             Authorization: `Bearer ${token}`,
             'Content-Type': 'multipart/form-data'
         }
@@ -187,13 +181,13 @@ export const fetchAllFeaturesAdmin = async () => {
     const response = await axios.get(`${API_URL}/admin/cms/features`, {
         headers: { Authorization: `Bearer ${token}` }
     });
-    return response.data;
+    return response.data.data;
 };
 
 export const createFeatureAdmin = async (formData: FormData) => {
     const token = localStorage.getItem("admin_token");
     const response = await axios.post(`${API_URL}/admin/cms/features`, formData, {
-        headers: { 
+        headers: {
             Authorization: `Bearer ${token}`,
             'Content-Type': 'multipart/form-data'
         }
@@ -204,7 +198,7 @@ export const createFeatureAdmin = async (formData: FormData) => {
 export const updateFeatureAdmin = async (id: string, formData: FormData) => {
     const token = localStorage.getItem("admin_token");
     const response = await axios.put(`${API_URL}/admin/cms/features/${id}`, formData, {
-        headers: { 
+        headers: {
             Authorization: `Bearer ${token}`,
             'Content-Type': 'multipart/form-data'
         }
@@ -226,13 +220,13 @@ export const fetchAllTestimonialsAdmin = async () => {
     const response = await axios.get(`${API_URL}/admin/cms/testimonials`, {
         headers: { Authorization: `Bearer ${token}` }
     });
-    return response.data;
+    return response.data.data;
 };
 
 export const createTestimonialAdmin = async (formData: FormData) => {
     const token = localStorage.getItem("admin_token");
     const response = await axios.post(`${API_URL}/admin/cms/testimonials`, formData, {
-        headers: { 
+        headers: {
             Authorization: `Bearer ${token}`,
             'Content-Type': 'multipart/form-data'
         }
@@ -243,7 +237,7 @@ export const createTestimonialAdmin = async (formData: FormData) => {
 export const updateTestimonialAdmin = async (id: string, formData: FormData) => {
     const token = localStorage.getItem("admin_token");
     const response = await axios.put(`${API_URL}/admin/cms/testimonials/${id}`, formData, {
-        headers: { 
+        headers: {
             Authorization: `Bearer ${token}`,
             'Content-Type': 'multipart/form-data'
         }

@@ -318,30 +318,62 @@ const Navbar: React.FC<NavbarProps> = ({ variant = "default" }) => {
                     </Link>
                   ))}
                   <div className="flex flex-col gap-3 mt-6">
-                    <div className="grid grid-cols-2 gap-3">
-                      <Button variant="outline-sacred" size="lg" asChild>
-                        <Link href="/auth" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center justify-center gap-2">
-                          <LogIn className="w-4 h-4" /> Login
+                    {!user ? (
+                      <div className="grid grid-cols-2 gap-3">
+                        <Button variant="outline-sacred" size="lg" asChild>
+                          <Link href="/auth" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center justify-center gap-2">
+                            <LogIn className="w-4 h-4" /> Login
+                          </Link>
+                        </Button>
+                        <Button variant="sacred" size="lg" asChild>
+                          <Link href="/auth?mode=register" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center justify-center gap-2">
+                            <UserPlus className="w-4 h-4" /> Sign Up
+                          </Link>
+                        </Button>
+                      </div>
+                    ) : (
+                      <Button variant="ghost" size="lg" asChild className="justify-start gap-4 h-14 rounded-2xl border border-border/50 bg-orange-50/50">
+                        <Link href="/profile" onClick={() => setIsMobileMenuOpen(false)}>
+                          <div className="w-10 h-10 rounded-full border border-orange-200 overflow-hidden">
+                            {user.profileImage ? (
+                              <img src={user.profileImage.startsWith('http') ? user.profileImage : `${BASE_URL.replace('/api', '')}${user.profileImage}`} className="w-full h-full object-cover" />
+                            ) : (
+                              <User className="w-4 h-4 m-3 text-orange-600" />
+                            )}
+                          </div>
+                          <div className="flex flex-col items-start translate-y-[-2px]">
+                            <span className="font-bold text-slate-900">{user.name}</span>
+                            <span className="text-xs text-slate-500 font-medium tracking-tight">View Sacred Profile</span>
+                          </div>
+                          <ChevronRight className="w-4 h-4 ml-auto text-slate-300" />
                         </Link>
                       </Button>
-                      <Button variant="sacred" size="lg" asChild>
-                        <Link href="/auth?mode=register" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center justify-center gap-2">
-                          <UserPlus className="w-4 h-4" /> Sign Up
-                        </Link>
-                      </Button>
-                    </div>
+                    )}
+
                     <Button variant="ghost" size="lg" asChild className="justify-start gap-4 h-14 rounded-2xl border border-border/50">
-                      <Link href="/auth" onClick={() => setIsMobileMenuOpen(false)}>
+                      <Link href={user ? "/account/orders" : "/auth"} onClick={() => setIsMobileMenuOpen(false)}>
                         <ShoppingBag className="w-5 h-5 text-orange-600" />
                         <span>My Orders</span>
                       </Link>
                     </Button>
                     <Button variant="ghost" size="lg" asChild className="justify-start gap-4 h-14 rounded-2xl border border-border/50">
-                      <Link href="/auth" onClick={() => setIsMobileMenuOpen(false)}>
+                      <Link href={user ? "/account/poojas" : "/auth"} onClick={() => setIsMobileMenuOpen(false)}>
                         <Church className="w-5 h-5 text-orange-600" />
                         <span>My Poojas</span>
                       </Link>
                     </Button>
+
+                    {user && (
+                      <Button
+                        variant="ghost"
+                        size="lg"
+                        onClick={handleLogout}
+                        className="justify-start gap-4 h-14 rounded-2xl border border-red-100 text-red-600 hover:bg-red-50"
+                      >
+                        <LogOut className="w-5 h-5" />
+                        <span>Logout</span>
+                      </Button>
+                    )}
                   </div>
                 </div>
               </div>

@@ -1,492 +1,579 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { motion, AnimatePresence } from "framer-motion"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardFooter } from "@/components/ui/card"
-import { Plus, Trash2, Sparkles, Building2, MapPin, Check, AlertCircle, X, Store, Banknote, Clock, User, Phone, Mail, ChevronsUpDown } from "lucide-react"
-import { useToast } from "@/hooks/use-toast"
-import { poojas as availablePoojas } from "@/data/poojas"
+import React, { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
-    Popover,
-    PopoverContent,
-    PopoverTrigger,
-} from "@/components/ui/popover"
-import {
-    Command,
-    CommandEmpty,
-    CommandGroup,
-    CommandInput,
-    CommandItem,
-} from "@/components/ui/command"
-import { Badge } from "@/components/ui/badge"
-import { cn } from "@/lib/utils"
-import { registerTemple } from "@/api/institutionController"
+    X,
+    Upload,
+    Plus,
+    Trash2,
+    Calendar,
+    Image as ImageIcon,
+    Layout,
+    Building2,
+    MapPin,
+    Sparkles,
+    ArrowRight,
+    History,
+    FileText,
+    Key,
+    User,
+    Mail,
+    Phone,
+    Globe,
+    Check
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { useToast } from "@/hooks/use-toast";
+import { registerTemple, fetchAllPoojasPublic } from "@/api/templeAdminController";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
 
 export default function TempleRegistrationForm({ onClose }: { onClose?: () => void }) {
-    const [selectedPoojaIds, setSelectedPoojaIds] = useState<string[]>([])
-    const [openPoojaSelect, setOpenPoojaSelect] = useState(false)
-    const [isSubmitting, setIsSubmitting] = useState(false)
-    const [showSuccess, setShowSuccess] = useState(false)
+    const { toast } = useToast();
+    const [isLoading, setIsLoading] = useState(false);
+    const [allPoojas, setAllPoojas] = useState<any[]>([]);
+    const [showSuccess, setShowSuccess] = useState(false);
+
+    // Form State
     const [formData, setFormData] = useState({
+        // Auth / Owner Info
+        name: "",
+        email: "",
+        phone: "",
+        password: "",
+        // Temple Basic
         templeName: "",
-        deity: "",
+        location: "", // City, State
+        fullAddress: "",
         category: "",
         openTime: "",
+        // Details
         description: "",
-        city: "",
-        state: "",
+        history: "",
+        viewers: "",
+        // Contact & Social
+        templePhone: "",
         website: "",
         mapUrl: "",
-        address: "",
-        contactName: "",
-        contactPhone: "",
-        contactEmail: ""
-    })
-    const [errors, setErrors] = useState<Record<string, string>>({})
-    const { toast } = useToast()
+        // Fixed stats for reg
+        rating: "0",
+        reviewsCount: "0"
+    });
 
-    const togglePooja = (poojaId: string) => {
-        setSelectedPoojaIds(prev =>
-            prev.includes(poojaId)
-                ? prev.filter(id => id !== poojaId)
-                : [...prev, poojaId]
-        )
+    // Relationships State
+    const [selectedPoojaIds, setSelectedPoojaIds] = useState<string[]>([]);
+    const [inlineEvents, setInlineEvents] = useState<any[]>([]);
 
-        const pooja = availablePoojas.find(p => p.id === poojaId)
-        const isAdding = !selectedPoojaIds.includes(poojaId)
+    // Images State
+    const [mainImage, setMainImage] = useState<File | null>(null);
+    const [mainImagePreview, setMainImagePreview] = useState<string>("");
+    const [heroImages, setHeroImages] = useState<File[]>([]);
+    const [heroPreviews, setHeroPreviews] = useState<string[]>([]);
 
-        toast({
-            title: isAdding ? "Service added" : "Service removed",
-            description: `${pooja?.name} has been ${isAdding ? 'added to' : 'removed from'} your temple services`,
-        })
-    }
+    useEffect(() => {
+        loadPoojas();
+    }, []);
 
-    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-        const { id, value } = e.target
-        setFormData(prev => ({ ...prev, [id]: value }))
-        if (errors[id]) {
-            setErrors(prev => ({ ...prev, [id]: "" }))
+    const loadPoojas = async () => {
+        try {
+            const data = await fetchAllPoojasPublic();
+            setAllPoojas(Array.isArray(data) ? data : data.data || []);
+        } catch (error) {
+            console.error("Failed to load poojas");
         }
-    }
+    };
 
-    const validateForm = () => {
-        const newErrors: Record<string, string> = {}
+    // Handlers
+    const handleMainImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            setMainImage(file);
+            setMainImagePreview(URL.createObjectURL(file));
+        }
+    };
 
-        if (!formData.templeName) newErrors.templeName = "Temple name is required"
-        if (!formData.category) newErrors.category = "Category is required"
-        if (!formData.openTime) newErrors.openTime = "Opening hours are required"
-        if (!formData.description) newErrors.description = "Description is required"
-        if (!formData.city) newErrors.city = "City is required"
-        if (!formData.state) newErrors.state = "State is required"
-        if (!formData.address) newErrors.address = "Address is required"
-        if (!formData.contactName) newErrors.contactName = "Contact person name is required"
-        if (!formData.contactPhone) newErrors.contactPhone = "Phone number is required"
+    const handleHeroImagesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const files = Array.from(e.target.files || []);
+        if (files.length > 0) {
+            setHeroImages(prev => [...prev, ...files]);
+            const newPreviews = files.map(file => URL.createObjectURL(file));
+            setHeroPreviews(prev => [...prev, ...newPreviews]);
+        }
+    };
 
-        const hasValidPooja = selectedPoojaIds.length > 0
-        if (!hasValidPooja) newErrors.poojas = "At least one pooja service must be selected"
+    const removeHeroImage = (index: number) => {
+        setHeroImages(prev => prev.filter((_, i) => i !== index));
+        setHeroPreviews(prev => prev.filter((_, i) => i !== index));
+    };
 
-        setErrors(newErrors)
-        return Object.keys(newErrors).length === 0
-    }
+    const addEvent = () => {
+        setInlineEvents(prev => [...prev, { name: "", date: "", description: "" }]);
+    };
+
+    const removeEvent = (index: number) => {
+        setInlineEvents(prev => prev.filter((_, i) => i !== index));
+    };
+
+    const updateEvent = (index: number, field: string, value: string) => {
+        setInlineEvents(prev => {
+            const newEvents = [...prev];
+            newEvents[index] = { ...newEvents[index], [field]: value };
+            return newEvents;
+        });
+    };
+
+    const togglePooja = (id: string) => {
+        setSelectedPoojaIds(prev =>
+            prev.includes(id) ? prev.filter(pid => pid !== id) : [...prev, id]
+        );
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault()
-
-        if (!validateForm()) {
-            toast({
-                title: "Validation Error",
-                description: "Please fill in all required fields and select at least one pooja.",
-                variant: "destructive",
-            })
-            return
-        }
-
-        setIsSubmitting(true)
+        e.preventDefault();
+        setIsLoading(true);
 
         try {
-            const result = await registerTemple({
-                ...formData,
-                selectedPoojaIds
+            const fd = new FormData();
+
+            // Normalize Phone numbers
+            let normalizedPhone = formData.phone;
+            if (normalizedPhone.length === 10) {
+                normalizedPhone = `+91${normalizedPhone}`;
+            }
+
+            // Append basic fields
+            Object.entries(formData).forEach(([key, value]) => {
+                if (key === 'phone') {
+                    fd.append(key, normalizedPhone);
+                } else {
+                    fd.append(key, value);
+                }
             });
 
-            setShowSuccess(true)
-            toast({
-                title: "Registration Successful",
-                description: result.message || "Your temple registration has been submitted for review.",
-            })
+            // Append relationships
+            fd.append("poojaIds", JSON.stringify(selectedPoojaIds));
+            fd.append("inlineEvents", JSON.stringify(inlineEvents));
 
-            // Close after 3 seconds
-            setTimeout(() => {
-                if (onClose) onClose()
-            }, 3000)
+            // Append images
+            if (mainImage) fd.append("image", mainImage);
+            heroImages.forEach(file => {
+                fd.append("heroImages", file);
+            });
+
+            await registerTemple(fd);
+            setShowSuccess(true);
+            toast({ title: "Success", description: "Temple registration submitted successfully" });
         } catch (error: any) {
             toast({
-                title: "Registration Failed",
-                description: error.response?.data?.error || "Something went wrong. Please try again later.",
-                variant: "destructive",
-            })
+                title: "Error",
+                description: error.response?.data?.message || "Failed to submit registration. Ensure unique phone number.",
+                variant: "destructive"
+            });
         } finally {
-            setIsSubmitting(false)
+            setIsLoading(false);
         }
+    };
+
+    if (showSuccess) {
+        return (
+            <div className="p-12 text-center space-y-6">
+                <div className="w-24 h-24 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto shadow-inner border border-emerald-200">
+                    <Check className="w-12 h-12" />
+                </div>
+                <h2 className="text-3xl font-serif font-bold text-slate-900">Registration Successful!</h2>
+                <p className="text-slate-600 max-w-sm mx-auto leading-relaxed">
+                    Your temple registration has been submitted and is currently <strong>Pending Admin Approval</strong>.
+                    You will receive a notification once your account is activated.
+                </p>
+                <Button onClick={onClose} className="bg-primary hover:bg-primary/90 text-white px-8 h-12 rounded-full shadow-lg">
+                    Back to Home
+                </Button>
+            </div>
+        );
     }
 
     return (
-        <div className="w-full max-w-4xl mx-auto font-sans">
-            {/* Success Modal */}
-            <AnimatePresence>
-                {showSuccess && (
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="absolute inset-0 z-[60] flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm rounded-3xl"
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        <motion.div
-                            initial={{ scale: 0.9, opacity: 0, y: 20 }}
-                            animate={{ scale: 1, opacity: 1, y: 0 }}
-                            exit={{ scale: 0.9, opacity: 0, y: 20 }}
-                            className="bg-card w-full max-w-md p-8 rounded-2xl shadow-warm border border-border text-center"
+        <div className="w-full max-w-4xl mx-auto bg-white rounded-[2rem] overflow-hidden shadow-2xl relative border border-slate-100 font-sans flex flex-col max-h-[90vh]">
+            {/* Form Header */}
+            <div className="bg-gradient-to-r from-[#88542b] to-[#88542b] p-8 md:p-10 text-white relative shrink-0">
+                <div className="absolute inset-0 pattern-sacred opacity-10 pointer-events-none" />
+                <div className="relative z-10 flex justify-between items-start">
+                    <div>
+                        <h2 className="text-3xl md:text-4xl font-serif font-bold mb-2">Register Your Temple</h2>
+                        <p className="text-orange-50 font-medium">Join our community and reach thousands of devotees.</p>
+                    </div>
+                    {onClose && (
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={onClose}
+                            className="text-white hover:bg-white/20 rounded-full h-10 w-10 shrink-0"
                         >
-                            <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
-                                <Sparkles className="w-10 h-10 text-primary animate-pulse" />
-                            </div>
-                            <h3 className="text-3xl font-serif font-bold text-foreground mb-3">Divine Welcome!</h3>
-                            <p className="text-muted-foreground mb-8">
-                                Your temple registration has been submitted successfully to DevBhakti. May this be the beginning of a sacred digital journey.
-                            </p>
-                            <Button
-                                onClick={() => {
-                                    setShowSuccess(false)
-                                    if (onClose) onClose()
-                                }}
-                                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground h-12 text-lg font-medium shadow-soft"
-                            >
-                                Continue to Dashboard
-                            </Button>
-                        </motion.div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
+                            <X className="w-6 h-6" />
+                        </Button>
+                    )}
+                </div>
+            </div>
 
-            <form onSubmit={handleSubmit}>
-                <Card className="border-0 shadow-none bg-card/95 backdrop-blur-xl overflow-hidden flex flex-col max-h-[90vh]">
-                    {/* Header */}
-                    <div className="relative bg-gradient-sacred p-8 shrink-0">
-                        <div className="absolute inset-0 pattern-sacred opacity-10"></div>
-                        <div className="relative z-10 flex justify-between items-start">
-                            <div>
-                                <h2 className="text-2xl md:text-3xl font-serif font-bold text-white flex items-center gap-3">
-                                    <Building2 className="w-8 h-8 opacity-90" />
-                                    Register Your Temple
-                                </h2>
-                                <p className="text-white/90 mt-2 font-medium">Join the Divine Digital Network</p>
+            <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-8 md:p-10 space-y-10 custom-scrollbar">
+                {/* 1. Account Identity */}
+                <section className="space-y-6">
+                    <div className="flex items-center gap-3 pb-3 border-b border-slate-100">
+                        <div className="p-2 bg-orange-50 text-orange-600 rounded-lg">
+                            <User className="w-5 h-5" />
+                        </div>
+                        <h3 className="text-xl font-bold text-slate-800">Administrator Identity</h3>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-2">
+                            <label className="text-sm font-bold text-slate-600 ml-1">Admin/Owner Name *</label>
+                            <Input
+                                value={formData.name}
+                                onChange={e => setFormData({ ...formData, name: e.target.value })}
+                                placeholder="Full Name of Trustee"
+                                className="h-12 border-slate-200 focus:border-orange-500 rounded-xl"
+                                required
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-sm font-bold text-slate-600 ml-1">Contact Phone *</label>
+                            <Input
+                                value={formData.phone}
+                                onChange={e => setFormData({ ...formData, phone: e.target.value })}
+                                placeholder="Registered Mobile Number"
+                                className="h-12 border-slate-200 focus:border-orange-500 rounded-xl"
+                                required
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-sm font-bold text-slate-600 ml-1">Email Address</label>
+                            <Input
+                                type="email"
+                                value={formData.email}
+                                onChange={e => setFormData({ ...formData, email: e.target.value })}
+                                placeholder="admin@temple.org"
+                                className="h-12 border-slate-200 focus:border-orange-500 rounded-xl"
+                            />
+                        </div>
+                        {/* <div className="space-y-2">
+                            <label className="text-sm font-bold text-slate-600 ml-1">Choose Password *</label>
+                            <Input
+                                type="password"
+                                value={formData.password}
+                                onChange={e => setFormData({ ...formData, password: e.target.value })}
+                                placeholder="Minimum 6 characters"
+                                className="h-12 border-slate-200 focus:border-orange-500 rounded-xl"
+                                required
+                            />
+                        </div> */}
+                    </div>
+                </section>
+
+                {/* 2. Temple Profile */}
+                <section className="space-y-6">
+                    <div className="flex items-center gap-3 pb-3 border-b border-slate-100">
+                        <div className="p-2 bg-orange-50 text-orange-600 rounded-lg">
+                            <Building2 className="w-5 h-5" />
+                        </div>
+                        <h3 className="text-xl font-bold text-slate-800">Temple Profile</h3>
+                    </div>
+                    <div className="space-y-6">
+                        <div className="space-y-2">
+                            <label className="text-sm font-bold text-slate-600 ml-1">Temple Official Name *</label>
+                            <Input
+                                value={formData.templeName}
+                                onChange={e => setFormData({ ...formData, templeName: e.target.value })}
+                                placeholder="e.g. Somnath Mahadev Temple"
+                                className="h-12 border-slate-200 focus:border-orange-500 rounded-xl"
+                                required
+                            />
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="space-y-2">
+                                <label className="text-sm font-bold text-slate-600 ml-1">Location (City, State) *</label>
+                                <Input
+                                    value={formData.location}
+                                    onChange={e => setFormData({ ...formData, location: e.target.value })}
+                                    placeholder="Varanasi, UP"
+                                    className="h-12 border-slate-200 focus:border-orange-500 rounded-xl"
+                                    required
+                                />
                             </div>
-                            {onClose && (
-                                <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={onClose}
-                                    className="text-white/80 hover:text-white hover:bg-white/20 rounded-full h-10 w-10 transition-colors"
-                                >
-                                    <X className="w-6 h-6" />
-                                </Button>
-                            )}
+                            <div className="space-y-2">
+                                <label className="text-sm font-bold text-slate-600 ml-1">Main Deity / Category *</label>
+                                <Input
+                                    value={formData.category}
+                                    onChange={e => setFormData({ ...formData, category: e.target.value })}
+                                    placeholder="e.g. Shiva, Ganesha"
+                                    className="h-12 border-slate-200 focus:border-orange-500 rounded-xl"
+                                    required
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-sm font-bold text-slate-600 ml-1">Opening Hours</label>
+                                <Input
+                                    value={formData.openTime}
+                                    onChange={e => setFormData({ ...formData, openTime: e.target.value })}
+                                    placeholder="4 AM - 10 PM"
+                                    className="h-12 border-slate-200 focus:border-orange-500 rounded-xl"
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-sm font-bold text-slate-600 ml-1">Visitor Count (Approx daily)</label>
+                                <Input
+                                    value={formData.viewers}
+                                    onChange={e => setFormData({ ...formData, viewers: e.target.value })}
+                                    placeholder="e.g. 5,000+"
+                                    className="h-12 border-slate-200 focus:border-orange-500 rounded-xl"
+                                />
+                            </div>
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-sm font-bold text-slate-600 ml-1">Full Physical Address *</label>
+                            <Input
+                                value={formData.fullAddress}
+                                onChange={e => setFormData({ ...formData, fullAddress: e.target.value })}
+                                placeholder="Street, Landmark, Pincode"
+                                className="h-12 border-slate-200 focus:border-orange-500 rounded-xl"
+                                required
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-sm font-bold text-slate-600 ml-1">Sacred History</label>
+                            <Textarea
+                                value={formData.history}
+                                onChange={e => setFormData({ ...formData, history: e.target.value })}
+                                placeholder="Describe the ancient origin and legends..."
+                                className="min-h-[100px] border-slate-200 focus:border-orange-500 rounded-xl resize-none"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-sm font-bold text-slate-600 ml-1">Description / Overview</label>
+                            <Textarea
+                                value={formData.description}
+                                onChange={e => setFormData({ ...formData, description: e.target.value })}
+                                placeholder="General amenities and visitor info..."
+                                className="min-h-[100px] border-slate-200 focus:border-orange-500 rounded-xl resize-none"
+                            />
                         </div>
                     </div>
+                </section>
 
-                    <CardContent className="p-8 space-y-8 overflow-y-auto custom-scrollbar flex-grow">
-                        {/* Section 1: Basic Info */}
-                        <div className="space-y-6">
-                            <h3 className="text-xl font-serif font-semibold text-foreground flex items-center gap-3 pb-3 border-b border-border">
-                                <span className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 text-primary text-sm font-bold shadow-sm">1</span>
-                                Temple Details
-                            </h3>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div className="space-y-2.5">
-                                    <Label htmlFor="templeName" className="text-foreground/80">Temple Name</Label>
-                                    <Input
-                                        id="templeName"
-                                        placeholder="e.g. Shree Siddhivinayak Temple"
-                                        value={formData.templeName}
-                                        onChange={handleInputChange}
-                                        className={`bg-background h-11 focus:ring-primary/20 ${errors.templeName ? 'border-destructive ring-destructive/20' : ''}`}
-                                    />
-                                    {errors.templeName && <p className="text-xs text-destructive flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {errors.templeName}</p>}
-                                </div>
-                                <div className="space-y-2.5">
-                                    <Label htmlFor="category" className="text-foreground/80">Category</Label>
-                                    <div className="relative">
-                                        <Sparkles className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
-                                        <Input
-                                            id="category"
-                                            placeholder="e.g. Shiva, Vishnu, Devi"
-                                            value={formData.category}
-                                            onChange={handleInputChange}
-                                            className={`pl-10 bg-background h-11 focus:ring-primary/20 ${errors.category ? 'border-destructive ring-destructive/20' : ''}`}
-                                        />
-                                    </div>
-                                    {errors.category && <p className="text-xs text-destructive flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {errors.category}</p>}
-                                </div>
-                                <div className="space-y-2.5">
-                                    <Label htmlFor="openTime" className="text-foreground/80">Opening Hours</Label>
-                                    <div className="relative">
-                                        <Clock className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
-                                        <Input
-                                            id="openTime"
-                                            placeholder="e.g. 5:00 AM - 10:00 PM"
-                                            value={formData.openTime}
-                                            onChange={handleInputChange}
-                                            className={`pl-10 bg-background h-11 focus:ring-primary/20 ${errors.openTime ? 'border-destructive ring-destructive/20' : ''}`}
-                                        />
-                                    </div>
-                                    {errors.openTime && <p className="text-xs text-destructive flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {errors.openTime}</p>}
-                                </div>
-                                <div className="col-span-1 md:col-span-2 space-y-2.5">
-                                    <Label htmlFor="description" className="text-foreground/80">About the Temple</Label>
-                                    <Textarea
-                                        id="description"
-                                        placeholder="Share the history, significance, and divine energy of this sacred place..."
-                                        className={`min-h-[100px] bg-background resize-none focus:ring-primary/20 ${errors.description ? 'border-destructive ring-destructive/20' : ''}`}
-                                        value={formData.description}
-                                        onChange={handleInputChange}
-                                    />
-                                    {errors.description && <p className="text-xs text-destructive flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {errors.description}</p>}
-                                </div>
-                            </div>
+                {/* 3. Media Assets */}
+                <section className="space-y-6">
+                    <div className="flex items-center gap-3 pb-3 border-b border-slate-100">
+                        <div className="p-2 bg-orange-50 text-orange-600 rounded-lg">
+                            <ImageIcon className="w-5 h-5" />
                         </div>
-
-                        {/* Section 2: Location */}
-                        <div className="space-y-6">
-                            <h3 className="text-xl font-serif font-semibold text-foreground flex items-center gap-3 pb-3 border-b border-border">
-                                <span className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 text-primary text-sm font-bold shadow-sm">2</span>
-                                Sacred Location
-                            </h3>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div className="space-y-2.5">
-                                    <Label htmlFor="city" className="text-foreground/80">City</Label>
-                                    <div className="relative">
-                                        <MapPin className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
-                                        <Input
-                                            id="city"
-                                            className={`pl-10 bg-background h-11 focus:ring-primary/20 ${errors.city ? 'border-destructive ring-destructive/20' : ''}`}
-                                            placeholder="e.g. Varanasi"
-                                            value={formData.city}
-                                            onChange={handleInputChange}
-                                        />
+                        <h3 className="text-xl font-bold text-slate-800">Divine Media</h3>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div className="space-y-3">
+                            <label className="text-sm font-bold text-slate-600 ml-1">Main Profile Image</label>
+                            <div className="border-2 border-dashed border-slate-200 rounded-2xl p-4 hover:bg-slate-50 transition-all group relative cursor-pointer">
+                                <input
+                                    type="file"
+                                    accept="image/*"
+                                    className="absolute inset-0 opacity-0 cursor-pointer"
+                                    onChange={handleMainImageChange}
+                                />
+                                {mainImagePreview ? (
+                                    <div className="aspect-video rounded-xl overflow-hidden relative shadow-sm">
+                                        <img src={mainImagePreview} className="w-full h-full object-cover" />
+                                        <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <Upload className="text-white w-8 h-8" />
+                                        </div>
                                     </div>
-                                    {errors.city && <p className="text-xs text-destructive flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {errors.city}</p>}
-                                </div>
-                                <div className="space-y-2.5">
-                                    <Label htmlFor="state" className="text-foreground/80">State</Label>
-                                    <Input
-                                        id="state"
-                                        placeholder="e.g. Uttar Pradesh"
-                                        value={formData.state}
-                                        onChange={handleInputChange}
-                                        className={`bg-background h-11 focus:ring-primary/20 ${errors.state ? 'border-destructive ring-destructive/20' : ''}`}
-                                    />
-                                    {errors.state && <p className="text-xs text-destructive flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {errors.state}</p>}
-                                </div>
-                                <div className="col-span-1 md:col-span-2 space-y-2.5">
-                                    <Label htmlFor="address" className="text-foreground/80">Full Address</Label>
-                                    <Textarea
-                                        id="address"
-                                        placeholder="Complete street address, pincode, and landmarks..."
-                                        className={`h-20 bg-background resize-none focus:ring-primary/20 ${errors.address ? 'border-destructive ring-destructive/20' : ''}`}
-                                        value={formData.address}
-                                        onChange={handleInputChange}
-                                    />
-                                    {errors.address && <p className="text-xs text-destructive flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {errors.address}</p>}
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Section 3: Services */}
-                        <div className="space-y-6">
-                            <div className="flex items-center justify-between pb-3 border-b border-border">
-                                <h3 className="text-xl font-serif font-semibold text-foreground flex items-center gap-3">
-                                    <span className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 text-primary text-sm font-bold shadow-sm">3</span>
-                                    Poojas & Services
-                                </h3>
-                            </div>
-
-                            <div className="space-y-6">
-                                {errors.poojas && (
-                                    <p className="text-sm text-destructive flex items-center gap-2 bg-destructive/10 p-3 rounded-lg">
-                                        <AlertCircle className="w-4 h-4" />
-                                        {errors.poojas}
-                                    </p>
-                                )}
-
-                                <div className="space-y-2.5">
-                                    <Label className="text-foreground/80">Select Services Offered</Label>
-                                    <Popover open={openPoojaSelect} onOpenChange={setOpenPoojaSelect}>
-                                        <PopoverTrigger asChild>
-                                            <Button
-                                                variant="outline"
-                                                role="combobox"
-                                                aria-expanded={openPoojaSelect}
-                                                className="w-full justify-between bg-background h-11 border-border hover:bg-background/80"
-                                            >
-                                                <span className="text-muted-foreground font-normal">
-                                                    {selectedPoojaIds.length > 0
-                                                        ? `${selectedPoojaIds.length} services selected`
-                                                        : "Search and select poojas..."}
-                                                </span>
-                                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                            </Button>
-                                        </PopoverTrigger>
-                                        <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
-                                            <Command className="w-full">
-                                                <CommandInput placeholder="Search poojas..." className="h-11" />
-                                                <CommandEmpty>No pooja found.</CommandEmpty>
-                                                <CommandGroup className="max-h-[300px] overflow-y-auto custom-scrollbar">
-                                                    {availablePoojas.map((pooja) => (
-                                                        <CommandItem
-                                                            key={pooja.id}
-                                                            value={pooja.name}
-                                                            onSelect={() => togglePooja(pooja.id)}
-                                                            className="flex items-center justify-between py-3 cursor-pointer"
-                                                        >
-                                                            <div className="flex flex-col">
-                                                                <span className="font-medium">{pooja.name}</span>
-                                                                <span className="text-xs text-muted-foreground">{pooja.category} • {pooja.duration}</span>
-                                                            </div>
-                                                            <div className={cn(
-                                                                "flex h-5 w-5 items-center justify-center rounded-md border border-primary transition-colors",
-                                                                selectedPoojaIds.includes(pooja.id)
-                                                                    ? "bg-primary text-primary-foreground"
-                                                                    : "opacity-50"
-                                                            )}>
-                                                                {selectedPoojaIds.includes(pooja.id) && <Check className="h-3.5 w-3.5" />}
-                                                            </div>
-                                                        </CommandItem>
-                                                    ))}
-                                                </CommandGroup>
-                                            </Command>
-                                        </PopoverContent>
-                                    </Popover>
-                                </div>
-
-                                {selectedPoojaIds.length > 0 && (
-                                    <div className="flex flex-wrap gap-2 p-4 bg-muted/20 rounded-xl border border-dashed border-border">
-                                        {selectedPoojaIds.map(id => {
-                                            const pooja = availablePoojas.find(p => p.id === id)
-                                            return (
-                                                <Badge
-                                                    key={id}
-                                                    variant="secondary"
-                                                    className="pl-3 pr-1 py-1.5 gap-2 bg-background border-border hover:bg-muted transition-colors"
-                                                >
-                                                    <span className="text-sm font-medium">{pooja?.name}</span>
-                                                    <Button
-                                                        type="button"
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        onClick={() => togglePooja(id)}
-                                                        className="h-5 w-5 rounded-full hover:bg-destructive hover:text-destructive-foreground"
-                                                    >
-                                                        <X className="h-3 w-3" />
-                                                    </Button>
-                                                </Badge>
-                                            )
-                                        })}
+                                ) : (
+                                    <div className="py-10 text-center space-y-2">
+                                        <Upload className="w-10 h-10 text-slate-300 mx-auto group-hover:text-[#88542b] transition-colors" />
+                                        <p className="text-xs text-slate-400 font-medium font-bold uppercase tracking-wider">Select Main Photo</p>
                                     </div>
                                 )}
                             </div>
                         </div>
-
-                        {/* Section 4: Contact */}
-                        <div className="space-y-6">
-                            <h3 className="text-xl font-serif font-semibold text-foreground flex items-center gap-3 pb-3 border-b border-border">
-                                <span className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 text-primary text-sm font-bold shadow-sm">4</span>
-                                Contact Details
-                            </h3>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div className="space-y-2.5">
-                                    <Label htmlFor="contactName" className="text-foreground/80">Contact Person</Label>
-                                    <div className="relative">
-                                        <User className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
-                                        <Input
-                                            id="contactName"
-                                            placeholder="Name of authorized person"
-                                            className={`pl-10 bg-background h-11 focus:ring-primary/20 ${errors.contactName ? 'border-destructive ring-destructive/20' : ''}`}
-                                            value={formData.contactName}
-                                            onChange={handleInputChange}
-                                        />
+                        <div className="space-y-3">
+                            <label className="text-sm font-bold text-slate-600 ml-1">Hero Banners (Max 5)</label>
+                            <div className="grid grid-cols-3 gap-2">
+                                {heroPreviews.slice(0, 5).map((url, i) => (
+                                    <div key={url} className="aspect-square rounded-xl overflow-hidden relative border border-slate-100 group">
+                                        <img src={url} className="w-full h-full object-cover" />
+                                        <button
+                                            type="button"
+                                            onClick={() => removeHeroImage(i)}
+                                            className="absolute top-1 right-1 bg-white/90 text-red-500 p-1 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                                        >
+                                            <Trash2 className="w-3 h-3" />
+                                        </button>
                                     </div>
-                                    {errors.contactName && <p className="text-xs text-destructive flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {errors.contactName}</p>}
-                                </div>
-                                <div className="space-y-2.5">
-                                    <Label htmlFor="contactPhone" className="text-foreground/80">Phone Number</Label>
-                                    <div className="relative">
-                                        <Phone className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
-                                        <Input
-                                            id="contactPhone"
-                                            placeholder="+91..."
-                                            className={`pl-10 bg-background h-11 focus:ring-primary/20 ${errors.contactPhone ? 'border-destructive ring-destructive/20' : ''}`}
-                                            value={formData.contactPhone}
-                                            onChange={handleInputChange}
+                                ))}
+                                {heroPreviews.length < 5 && (
+                                    <div className="aspect-square border-2 border-dashed border-slate-200 rounded-xl flex items-center justify-center hover:bg-slate-50 transition-all cursor-pointer relative group">
+                                        <input
+                                            type="file"
+                                            multiple
+                                            accept="image/*"
+                                            className="absolute inset-0 opacity-0 cursor-pointer"
+                                            onChange={handleHeroImagesChange}
                                         />
+                                        <Plus className="w-6 h-6 text-slate-300 group-hover:text-[#88542b]" />
                                     </div>
-                                    {errors.contactPhone && <p className="text-xs text-destructive flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {errors.contactPhone}</p>}
-                                </div>
-                                <div className="col-span-1 md:col-span-2 space-y-2.5">
-                                    <Label htmlFor="contactEmail" className="text-foreground/80">Email Address (Optional)</Label>
-                                    <div className="relative">
-                                        <Mail className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
-                                        <Input
-                                            id="contactEmail"
-                                            placeholder="temple.admin@example.com"
-                                            className="pl-10 bg-background h-11 focus:ring-primary/20"
-                                            value={formData.contactEmail}
-                                            onChange={handleInputChange}
-                                        />
-                                    </div>
-                                </div>
+                                )}
                             </div>
                         </div>
+                    </div>
+                </section>
 
-                    </CardContent>
-
-                    <CardFooter className="p-6 bg-muted/20 border-t border-border flex justify-end gap-4 shrink-0">
-                        {onClose && (
-                            <Button
+                {/* 4. Poojas */}
+                <section className="space-y-6">
+                    <div className="flex items-center gap-3 pb-3 border-b border-slate-100">
+                        <div className="p-2 bg-orange-50 text-orange-600 rounded-lg">
+                            <Sparkles className="w-5 h-5" />
+                        </div>
+                        <h3 className="text-xl font-bold text-slate-800">Performed Poojas</h3>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                        {allPoojas.map(pooja => (
+                            <button
+                                key={pooja.id}
                                 type="button"
-                                variant="outline"
-                                onClick={onClose}
-                                disabled={isSubmitting}
-                                className="h-11 px-6 border-border font-medium text-muted-foreground hover:text-foreground hover:bg-muted"
+                                onClick={() => togglePooja(pooja.id)}
+                                className={`px-5 py-2.5 rounded-xl text-sm font-bold transition-all border ${selectedPoojaIds.includes(pooja.id)
+                                    ? "bg-[#88542b] text-white border-[#88542b] shadow-md shadow-[#88542b]/20"
+                                    : "bg-slate-50 text-slate-600 border-slate-100 hover:border-[#88542b]/20"
+                                    }`}
                             >
-                                Cancel
-                            </Button>
-                        )}
-                        <Button
-                            type="submit"
-                            disabled={isSubmitting}
-                            className="bg-primary hover:bg-primary/90 text-primary-foreground h-11 px-8 font-semibold shadow-warm transition-all hover:scale-[1.02]"
-                        >
-                            {isSubmitting ? (
-                                <>
-                                    <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent"></div>
-                                    Processing...
-                                </>
-                            ) : (
-                                <>
-                                    <Sparkles className="w-4 h-4 mr-2" />
-                                    Complete Registration
-                                </>
-                            )}
+                                {pooja.name}
+                                {selectedPoojaIds.includes(pooja.id) && " ✓"}
+                            </button>
+                        ))}
+                    </div>
+                </section>
+
+                {/* 5. Online Presence */}
+                <section className="space-y-6">
+                    <div className="flex items-center gap-3 pb-3 border-b border-slate-100">
+                        <div className="p-2 bg-orange-50 text-orange-600 rounded-lg">
+                            <Globe className="w-5 h-5" />
+                        </div>
+                        <h3 className="text-xl font-bold text-slate-800">Online & Contact</h3>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-2">
+                            <label className="text-sm font-bold text-slate-600 ml-1">Official Website</label>
+                            <Input
+                                value={formData.website}
+                                onChange={e => setFormData({ ...formData, website: e.target.value })}
+                                placeholder="https://temple-name.org"
+                                className="h-12 border-slate-200 focus:border-orange-500 rounded-xl"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-sm font-bold text-slate-600 ml-1">Google Maps URL</label>
+                            <Input
+                                value={formData.mapUrl}
+                                onChange={e => setFormData({ ...formData, mapUrl: e.target.value })}
+                                placeholder="Share location link"
+                                className="h-12 border-slate-200 focus:border-orange-500 rounded-xl"
+                            />
+                        </div>
+                    </div>
+                </section>
+
+                {/* 6. Inline Events */}
+                <section className="space-y-6 pb-6">
+                    <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                        {/* <div className="flex items-center gap-3">
+                            <div className="p-2 bg-orange-50 text-orange-600 rounded-lg">
+                                <Calendar className="w-5 h-5" />
+                            </div>
+                            <h3 className="text-xl font-bold text-slate-800">Major Festivals / Events</h3>
+                        </div> */}
+                        <Button type="button" variant="outline" size="sm" onClick={addEvent} className="rounded-lg border-slate-200 hover:border-orange-400 hover:bg-orange-50">
+                            <Plus className="w-4 h-4 mr-2" /> Add Festival
                         </Button>
-                    </CardFooter>
-                </Card>
+                    </div>
+                    <div className="space-y-4">
+                        {inlineEvents.map((ev, i) => (
+                            <div key={i} className="p-5 border border-slate-100 rounded-2xl bg-white shadow-sm relative group animate-in slide-in-from-top-2">
+                                <button
+                                    type="button"
+                                    onClick={() => removeEvent(i)}
+                                    className="absolute top-4 right-4 text-slate-300 hover:text-red-500 transition-colors"
+                                >
+                                    <Trash2 className="w-4 h-4" />
+                                </button>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] uppercase font-bold text-slate-400 ml-1">Event Name</label>
+                                        <Input
+                                            value={ev.name}
+                                            onChange={e => updateEvent(i, 'name', e.target.value)}
+                                            placeholder="e.g. Maha Shivratri"
+                                            className="h-11 bg-slate-50 border-transparent focus:bg-white rounded-xl"
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] uppercase font-bold text-slate-400 ml-1">Probable Date/Month</label>
+                                        <Input
+                                            value={ev.date}
+                                            onChange={e => updateEvent(i, 'date', e.target.value)}
+                                            placeholder="e.g. February/March"
+                                            className="h-11 bg-slate-50 border-transparent focus:bg-white rounded-xl"
+                                        />
+                                    </div>
+                                    <div className="space-y-2 md:col-span-2">
+                                        <label className="text-[10px] uppercase font-bold text-slate-400 ml-1">Event Significance</label>
+                                        <Input
+                                            value={ev.description}
+                                            onChange={e => updateEvent(i, 'description', e.target.value)}
+                                            placeholder="Divine rituals and celebrations"
+                                            className="h-11 bg-slate-50 border-transparent focus:bg-white rounded-xl"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                        {inlineEvents.length === 0 && (
+                            <div className="text-center py-10 border-2 border-dashed border-slate-100 rounded-2xl">
+                                <p className="text-slate-400 text-sm font-medium italic">No events listed. Share your major festivals.</p>
+                            </div>
+                        )}
+                    </div>
+                </section>
             </form>
+
+            {/* Footer Actions */}
+            <div className="p-8 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-4 shrink-0">
+                <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={onClose}
+                    className="h-14 px-8 text-slate-500 font-bold hover:bg-slate-200"
+                >
+                    Discard
+                </Button>
+                <Button
+                    onClick={handleSubmit}
+                    disabled={isLoading}
+                    className="h-14 px-12 bg-gradient-to-r from-[#88542b] to-[#794a05] hover:from-[#794a05] hover:to-[#88542b] text-white rounded-2xl text-lg font-bold shadow-xl shadow-amber-900/20 active:scale-95 transition-all"
+                >
+                    {isLoading ? (
+                        <div className="flex items-center gap-2">
+                            <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                            Registering...
+                        </div>
+                    ) : (
+                        <div className="flex items-center gap-2">
+                            Register Temple
+                            <ArrowRight className="w-5 h-5" />
+                        </div>
+                    )}
+                </Button>
+            </div>
         </div>
-    )
+    );
 }

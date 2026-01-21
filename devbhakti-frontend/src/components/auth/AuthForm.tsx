@@ -17,7 +17,7 @@ import { useRouter } from "next/navigation";
 const AuthForm: React.FC = () => {
   const searchParams = useSearchParams();
   const initialMode = searchParams.get("mode") === "register" ? "register" : "login";
-  const initialType = searchParams.get("type") === "institution" ? "institution" : "devotee";
+  const initialType = (searchParams.get("type") === "institution" || searchParams.get("type") === "temple") ? "institution" : "devotee";
 
   const router = useRouter();
   const [mode, setMode] = useState<"login" | "register">(initialMode);
@@ -52,10 +52,13 @@ const AuthForm: React.FC = () => {
       // In a real app with profile image during register, we might need to upload it after verification 
       // or send as multipart if backend supports it in send-otp. 
       // For now, let's just send basic info.
+      // Strip spaces/hyphens for cleaner transmission
+      const normalizedPhone = formData.phone.replace(/\D/g, '');
       const response = await sendOTP({
-        phone: formData.phone,
+        phone: normalizedPhone,
         name: mode === "register" ? formData.name : undefined,
-        email: mode === "register" && formData.email ? formData.email : undefined
+        email: mode === "register" && formData.email ? formData.email : undefined,
+        role: "DEVOTEE"
       });
       setShowOtpInput(true);
       if (response.data?.otp) {
@@ -75,8 +78,10 @@ const AuthForm: React.FC = () => {
   const handleVerifyOTP = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    // Strip spaces/hyphens for cleaner transmission
+    const normalizedPhone = formData.phone.replace(/\D/g, '');
     try {
-      const response = await verifyOTP(formData.phone, otp);
+      const response = await verifyOTP(normalizedPhone, otp, "DEVOTEE");
       localStorage.setItem("token", response.data.token);
       localStorage.setItem("user", JSON.stringify(response.data.user));
 

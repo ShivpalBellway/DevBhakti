@@ -101,7 +101,7 @@ const features = [
   },
 ];
 
-const institutionFeatures = [
+const templeAdminFeatures = [
   {
     icon: Users,
     title: "Devotee Management",
@@ -277,9 +277,9 @@ const FeaturesSection: React.FC = () => {
           ))}{" "}
         </div>
 
-        {/* Institutional Features - Redesigned as a Sacred Scroll/Panel */}
+        {/* Temple Admin Features - Redesigned as a Sacred Scroll/Panel */}
         {/*
-  Institutional Features - Sacred Scroll / Panel Section
+  Temple Admin Features - Sacred Scroll / Panel Section
 
   <motion.div
     initial={{ opacity: 0, scale: 0.95 }}
@@ -304,7 +304,7 @@ const FeaturesSection: React.FC = () => {
           </span>
 
           <h3 className="text-3xl md:text-4xl font-serif font-bold text-gray-900 mt-2 mb-6">
-            Empower Your Institution Digitally
+            Empower Your Temple Digitally
           </h3>
 
           <p className="text-gray-600 mb-8 leading-relaxed">
