@@ -139,7 +139,7 @@ const FeaturesSection: React.FC = () => {
     const fetchFeatures = async () => {
       try {
         const response = await axios.get(`${API_URL}/admin/cms/features`);
-        const activeFeatures = response.data.filter((f: any) => f.active);
+        const activeFeatures = response.data.data?.filter((f: any) => f.active) || [];
         if (activeFeatures.length > 0) {
           setDynamicFeatures(activeFeatures);
         }

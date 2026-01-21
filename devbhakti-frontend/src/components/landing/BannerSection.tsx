@@ -36,7 +36,7 @@ const BannerSection: React.FC = () => {
         const fetchBanners = async () => {
             try {
                 const response = await axios.get(`${API_URL}/admin/cms/banners`);
-                const activeBanners = response.data.filter((b: any) => b.active);
+                const activeBanners = response.data.data?.filter((b: any) => b.active) || [];
                 if (activeBanners.length > 0) {
                     setBanners(activeBanners);
                 }

@@ -69,8 +69,8 @@ const VideoTestimonialsSection = () => {
         const fetchTestimonials = async () => {
             try {
                 const response = await axios.get(`${API_URL}/admin/cms/testimonials`);
-                if (response.data && response.data.length > 0) {
-                    setDynamicStories(response.data);
+                if (response.data.data && response.data.data.length > 0) {
+                    setDynamicStories(response.data.data);
                 }
             } catch (error) {
                 console.error("Error fetching testimonials:", error);
