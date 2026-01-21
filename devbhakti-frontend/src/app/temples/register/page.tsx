@@ -173,7 +173,7 @@ export default function RegisterTemplePage() {
                     <motion.div
                         className="absolute bottom-10 left-1/2 transform -translate-x-1/2 text-muted-foreground"
                         animate={{ y: [0, 10, 0] }}
-                        transition={{ duration: 2, repeat: Infinity }}
+                        transition={{ duration: 2, repeat: Number.POSITIVE_INFINITY }}
                     >
                     </motion.div>
                 </section>
@@ -401,32 +401,35 @@ export default function RegisterTemplePage() {
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                             {[
                                 { title: "Temple Website", desc: "Beautiful, mobile-friendly website for your temple", icon: Globe, color: "from-primary to-primary" },
-                                { title: "Donation Portal", desc: "Secure platform for receiving donations online", icon: donateIcon,isImage: true, color: "from-primary to-primary" },
+                                { title: "Donation Portal", desc: "Secure platform for receiving donations online", icon: donateIcon, isImage: true, color: "from-primary to-primary" },
                                 { title: "Pooja Booking", desc: "Easy booking system for all rituals and ceremonies", icon: diyaIcon, isImage: true, color: "from-primary to-primary" },
-                                { title: "Live Streaming", desc: "HD quality streaming of daily aartis and events", icon: offeringIcon, isImage: true,color: "from-primary to-primary" },
+                                { title: "Live Streaming", desc: "HD quality streaming of daily aartis and events", icon: offeringIcon, isImage: true, color: "from-primary to-primary" },
                                 { title: "Devotee App", desc: "Custom mobile app for Android and iOS", icon: Smartphone, color: "from-primary to-primary" },
                                 { title: "Analytics Dashboard", desc: "Insights to grow your temple's digital presence", icon: LayoutDashboard, color: "from-primary to-primary" }
-                            ].map((feature, i) => (
-                                <motion.div
-                                    key={i}
-                                    initial={{ opacity: 0, scale: 0.9 }}
-                                    whileInView={{ opacity: 1, scale: 1 }}
-                                    transition={{ duration: 0.5, delay: 0.1 * i }}
-                                    viewport={{ once: true }}
-                                    whileHover={{ y: -5 }}
-                                    className="bg-card rounded-2xl p-8 hover:shadow-warm transition-all duration-300 group border border-border"
-                                >
-                                    <div className={`w-16 h-16 bg-gradient-to-r ${feature.color} rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform`}>
-                                        {feature.isImage ? (
-                                            <Image src={feature.icon as any} alt={feature.title} width={32} height={32} className="w-8 h-8 object-contain brightness-0 invert" />
-                                        ) : (
-                                            <feature.icon className="w-8 h-8 text-white" />
-                                        )}
-                                    </div>
-                                    <h3 className="text-xl font-bold font-serif text-foreground mb-3">{feature.title}</h3>
-                                    <p className="text-muted-foreground">{feature.desc}</p>
-                                </motion.div>
-                            ))}
+                            ].map((feature, i) => {
+                                const Icon = feature.icon as any;
+                                return (
+                                    <motion.div
+                                        key={i}
+                                        initial={{ opacity: 0, scale: 0.9 }}
+                                        whileInView={{ opacity: 1, scale: 1 }}
+                                        transition={{ duration: 0.5, delay: 0.1 * i }}
+                                        viewport={{ once: true }}
+                                        whileHover={{ y: -5 }}
+                                        className="bg-card rounded-2xl p-8 hover:shadow-warm transition-all duration-300 group border border-border"
+                                    >
+                                        <div className={`w-16 h-16 bg-gradient-to-r ${feature.color} rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform`}>
+                                            {feature.isImage ? (
+                                                <Image src={feature.icon as any} alt={feature.title} width={32} height={32} className="w-8 h-8 object-contain brightness-0 invert" />
+                                            ) : (
+                                                <Icon className="w-8 h-8 text-white" />
+                                            )}
+                                        </div>
+                                        <h3 className="text-xl font-bold font-serif text-foreground mb-3">{feature.title}</h3>
+                                        <p className="text-muted-foreground">{feature.desc}</p>
+                                    </motion.div>
+                                );
+                            })}
                         </div>
                     </div>
                 </section>
@@ -481,7 +484,7 @@ export default function RegisterTemplePage() {
                                     <span>Easy Setup</span>
                                 </div>
                                 <div className="flex items-center gap-2 text-black">
-                                   <CheckCircle2 className="w-5 h-5 text-black" />
+                                    <CheckCircle2 className="w-5 h-5 text-black" />
                                     <span>Dedicated Support</span>
                                 </div>
                             </div>
