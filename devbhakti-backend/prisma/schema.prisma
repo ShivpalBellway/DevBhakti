@@ -166,4 +166,18 @@ model Favorite {
   @@unique([userId, productId])
 }
 
+model CTACard {
+  id          String   @id @default(cuid())
+  title       String
+  points      String[] // Array of bullet points
+  icon        String   // Icon/image URL
+  buttonText  String
+  buttonLink  String
+  cardType    String   // "primary" or "secondary" for styling
+  active      Boolean  @default(true)
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
 

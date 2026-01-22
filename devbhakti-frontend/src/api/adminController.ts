@@ -252,3 +252,42 @@ export const deleteTestimonialAdmin = async (id: string) => {
     });
     return response.data;
 };
+
+// CTA Cards Management
+export const fetchAllCTACardsAdmin = async () => {
+    const token = localStorage.getItem("admin_token");
+    const response = await axios.get(`${API_URL}/admin/cms/cta-cards`, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data.data;
+};
+
+export const createCTACardAdmin = async (formData: FormData) => {
+    const token = localStorage.getItem("admin_token");
+    const response = await axios.post(`${API_URL}/admin/cms/cta-cards`, formData, {
+        headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'multipart/form-data'
+        }
+    });
+    return response.data;
+};
+
+export const updateCTACardAdmin = async (id: string, formData: FormData) => {
+    const token = localStorage.getItem("admin_token");
+    const response = await axios.put(`${API_URL}/admin/cms/cta-cards/${id}`, formData, {
+        headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'multipart/form-data'
+        }
+    });
+    return response.data;
+};
+
+export const deleteCTACardAdmin = async (id: string) => {
+    const token = localStorage.getItem("admin_token");
+    const response = await axios.delete(`${API_URL}/admin/cms/cta-cards/${id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};

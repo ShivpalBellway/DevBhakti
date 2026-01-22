@@ -11,9 +11,10 @@ if (!fs.existsSync(uploadDir)) {
 const cmsBannerDir = 'uploads/cms/banners';
 const cmsFeatureDir = 'uploads/cms/features';
 const cmsTestimonialDir = 'uploads/cms/testimonials';
+const cmsCTADir = 'uploads/cms/cta';
 const userUploadDir = 'uploads/users';
 
-[cmsBannerDir, cmsFeatureDir, cmsTestimonialDir, userUploadDir].forEach(dir => {
+[cmsBannerDir, cmsFeatureDir, cmsTestimonialDir, cmsCTADir, userUploadDir].forEach(dir => {
     if (!fs.existsSync(dir)) {
         fs.mkdirSync(dir, { recursive: true });
     }
@@ -47,6 +48,8 @@ export const uploadCmsImage = multer({
         destination: (req, file, cb) => {
             if (req.originalUrl.includes('banners')) {
                 cb(null, cmsBannerDir);
+            } else if (req.originalUrl.includes('cta-cards')) {
+                cb(null, cmsCTADir);
             } else {
                 cb(null, cmsFeatureDir);
             }

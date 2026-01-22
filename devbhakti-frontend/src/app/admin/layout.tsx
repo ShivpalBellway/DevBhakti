@@ -64,7 +64,7 @@ const sidebarItems = [
       { label: "Manage Banners", href: "/admin/cms/banners" },
       { label: "Manage Features", href: "/admin/cms/features" },
       { label: "Manage Testimonials", href: "/admin/cms/testimonials" },
-
+      { label: "Manage CTA Cards", href: "/admin/cms/cta-cards" },
     ]
   },
   {

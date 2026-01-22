@@ -10,6 +10,7 @@ const router = Router();
 router.get('/banners', cmsController.getBanners);
 router.get('/features', cmsController.getFeatures);
 router.get('/testimonials', cmsController.getTestimonials);
+router.get('/cta-cards', cmsController.getCTACards);
 
 // Middleware for Admin only CMS mutations
 router.use(authenticate);
@@ -29,6 +30,11 @@ router.delete('/features/:id', cmsController.deleteFeature);
 router.post('/testimonials', uploadCmsTestimonial.fields([{ name: 'thumbnail', maxCount: 1 }, { name: 'videoSrc', maxCount: 1 }]), cmsController.createTestimonial);
 router.put('/testimonials/:id', uploadCmsTestimonial.fields([{ name: 'thumbnail', maxCount: 1 }, { name: 'videoSrc', maxCount: 1 }]), cmsController.updateTestimonial);
 router.delete('/testimonials/:id', cmsController.deleteTestimonial);
+
+// CTA Cards (Admin)
+router.post('/cta-cards', uploadCmsImage.single('icon'), cmsController.createCTACard);
+router.put('/cta-cards/:id', uploadCmsImage.single('icon'), cmsController.updateCTACard);
+router.delete('/cta-cards/:id', cmsController.deleteCTACard);
 
 export default router;
 
