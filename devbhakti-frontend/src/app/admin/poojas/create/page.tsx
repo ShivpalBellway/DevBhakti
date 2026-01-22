@@ -41,11 +41,29 @@ export default function CreatePoojaPage() {
     const loadTemples = async () => {
         try {
             const data = await fetchAllTemplesAdmin();
-            setTemples(data);
-            if (data.length > 0) {
-                setFormData(prev => ({ ...prev, templeId: data[0].id }));
+            console.log('Raw temple data from API:', data); // Debug log
+            
+            // Extract actual temple objects from User responses
+            const actualTemples = data
+                .filter((user: any) => user.temple) // Only include users that have temples
+                .map((user: any) => user.temple); // Extract the temple object
+            
+            console.log('Extracted temples:', actualTemples); // Debug log
+            console.log('Temple structure:', actualTemples.map((t: any) => ({ id: t.id, name: t.name })));
+            
+            setTemples(actualTemples);
+            if (actualTemples.length > 0) {
+                console.log('Setting default templeId to:', actualTemples[0].id);
+                setFormData(prev => ({ ...prev, templeId: actualTemples[0].id }));
+            } else {
+                toast({
+                    title: "Warning",
+                    description: "No temples found. Please create a temple first.",
+                    variant: "destructive"
+                });
             }
         } catch (error) {
+            console.error('Error loading temples:', error); // Debug log
             toast({
                 title: "Error",
                 description: "Failed to load temples",
@@ -145,6 +163,22 @@ export default function CreatePoojaPage() {
         e.preventDefault();
         setIsSubmitting(true);
 
+        // Validate temple selection
+        if (!formData.templeId) {
+            toast({
+                title: "Error",
+                description: "Please select a temple",
+                variant: "destructive"
+            });
+            setIsSubmitting(false);
+            return;
+        }
+
+        console.log('=== FRONTEND SUBMISSION DEBUG ===');
+        console.log('Form data:', formData);
+        console.log('Selected templeId:', formData.templeId);
+        console.log('Available temples:', temples);
+
         const submissionData = new FormData();
         submissionData.append('name', formData.name);
         submissionData.append('price', formData.price.toString());
@@ -164,14 +198,22 @@ export default function CreatePoojaPage() {
             submissionData.append('image', imageFile);
         }
 
+        // Log FormData contents
+        console.log('FormData contents:');
+        for (let [key, value] of submissionData.entries()) {
+            console.log(`${key}:`, value);
+        }
+
         try {
             await createPoojaAdmin(submissionData);
             toast({ title: "Success", description: "Pooja created successfully" });
             router.push('/admin/poojas');
-        } catch (error) {
+        } catch (error: any) {
+            console.error('Create pooja error:', error);
+            const errorMessage = error.response?.data?.error || "Failed to create pooja";
             toast({
                 title: "Error",
-                description: "Failed to create pooja",
+                description: errorMessage,
                 variant: "destructive"
             });
         } finally {
@@ -212,18 +254,24 @@ export default function CreatePoojaPage() {
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="templeId">Temple *</Label>
-                        <select
-                            id="templeId"
-                            className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
-                            value={formData.templeId}
-                            onChange={(e) => setFormData({ ...formData, templeId: e.target.value })}
-                            required
-                        >
-                            <option value="">Select a Temple</option>
-                            {temples.map(temple => (
-                                <option key={temple.id} value={temple.id}>{temple.name}</option>
-                            ))}
-                        </select>
+                        {temples.length === 0 ? (
+                            <div className="w-full h-10 px-3 rounded-md border border-red-200 bg-red-50 text-red-600 text-sm flex items-center">
+                                No temples available. Please create a temple first.
+                            </div>
+                        ) : (
+                            <select
+                                id="templeId"
+                                className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+                                value={formData.templeId}
+                                onChange={(e) => setFormData({ ...formData, templeId: e.target.value })}
+                                required
+                            >
+                                <option value="">Select a Temple</option>
+                                {temples.map(temple => (
+                                    <option key={temple.id} value={temple.id}>{temple.name}</option>
+                                ))}
+                            </select>
+                        )}
                     </div>
                 </div>
 
@@ -511,7 +559,7 @@ export default function CreatePoojaPage() {
                     <Button type="button" variant="outline" onClick={() => router.back()}>
                         Cancel
                     </Button>
-                    <Button type="submit" disabled={isSubmitting}>
+                    <Button type="submit" disabled={isSubmitting || temples.length === 0}>
                         {isSubmitting ? "Creating..." : "Create Pooja"}
                     </Button>
                 </div>

@@ -66,8 +66,14 @@ export default function AdminEventsPage() {
                 fetchAllEventsAdmin(),
                 fetchAllTemplesAdmin(),
             ]);
+
+            // Extract actual temple objects from User responses
+            const actualTemples = templesData
+                .filter((user: any) => user.temple) // Only include users that have temples
+                .map((user: any) => user.temple); // Extract the temple object
+
             setEvents(eventsData);
-            setTemples(templesData);
+            setTemples(actualTemples);
         } catch (error) {
             toast({
                 title: "Error",
@@ -90,11 +96,13 @@ export default function AdminEventsPage() {
             });
         } else {
             setEditingEvent(null);
+            // Extract temple IDs from actual temples array
+            const templeIds = temples.map((t: any) => t.id);
             setFormData({
                 name: "",
                 date: "",
                 description: "",
-                templeId: temples.length > 0 ? temples[0].id : "",
+                templeId: templeIds.length > 0 ? templeIds[0] : "",
             });
         }
         setIsDialogOpen(true);

@@ -252,10 +252,46 @@ export const toggleTempleStatus = async (req: Request, res: Response) => {
 export const deleteTemple = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    await prisma.user.delete({ where: { id: String(id) } });
+    
+    // Use a transaction to delete both records safely
+    await prisma.$transaction(async (tx) => {
+      // First find the user to get the temple ID
+      const user = await tx.user.findUnique({
+        where: { id: String(id) },
+        include: { temple: true }
+      });
+      
+      if (!user) {
+        throw new Error('Temple account not found');
+      }
+      
+      // Delete the temple record first (if it exists)
+      if (user.temple) {
+        await tx.temple.delete({
+          where: { id: user.temple.id }
+        });
+      }
+      
+      // Then delete the user record
+      await tx.user.delete({ where: { id: String(id) } });
+    });
+    
     res.json({ message: 'Temple account deleted successfully' });
   } catch (error: any) {
     console.error('Delete error:', error);
-    res.status(500).json({ error: error.message || 'Failed to delete temple' });
+    
+    // If it's a foreign key constraint error, provide more specific message
+    if (error.code === 'P2002') {
+      res.status(400).json({ 
+        error: 'Cannot delete temple account. Please delete all associated poojas and events first.' 
+      });
+    } else if (error.message === 'Temple account not found') {
+      res.status(404).json({ error: 'Temple account not found' });
+    } else {
+      res.status(500).json({ error: error.message || 'Failed to delete temple' });
+    }
   }
 };
+
+
+

@@ -21,6 +21,10 @@ export const getAllPoojas = async (req: Request, res: Response) => {
 
 export const createPooja = async (req: Request, res: Response) => {
     try {
+        console.log('=== CREATE POOJA DEBUG ===');
+        console.log('Request body:', req.body);
+        console.log('Request file:', req.file);
+        
         const {
             name,
             category,
@@ -37,6 +41,21 @@ export const createPooja = async (req: Request, res: Response) => {
             packages,
             faqs
         } = req.body;
+
+        console.log('Extracted templeId:', templeId);
+        console.log('Type of templeId:', typeof templeId);
+
+        // Validate temple exists
+        const temple = await prisma.temple.findUnique({
+            where: { id: String(templeId) }
+        });
+
+        console.log('Found temple:', temple);
+
+        if (!temple) {
+            console.log('ERROR: Temple not found with ID:', templeId);
+            return res.status(400).json({ error: 'Invalid templeId: Temple does not exist' });
+        }
 
         // Handle image path
         let imagePath = '';
@@ -90,6 +109,17 @@ export const updatePooja = async (req: Request, res: Response) => {
             packages,
             faqs
         } = req.body;
+
+        // Validate temple exists if templeId is provided
+        if (templeId) {
+            const temple = await prisma.temple.findUnique({
+                where: { id: String(templeId) }
+            });
+
+            if (!temple) {
+                return res.status(400).json({ error: 'Invalid templeId: Temple does not exist' });
+            }
+        }
 
         // Handle image path
         let updateData: any = {

@@ -48,7 +48,19 @@ export default function TemplesManagementPage() {
         setIsLoading(true);
         try {
             const data = await fetchAllTemplesAdmin();
-            setTemples(data);
+            
+            // Extract temple objects but keep the user ID for deletion
+            const actualTemples = data
+                .filter((user: any) => user.temple) // Only include users that have temples
+                .map((user: any) => ({
+                    ...user.temple, // Spread temple properties
+                    userId: user.id, // Keep the user ID for deletion
+                    isVerified: user.isVerified, // Keep user verification status
+                    email: user.email, // Keep user email
+                    phone: user.phone // Keep user phone
+                })); // Extract the temple object with user ID
+            
+            setTemples(actualTemples);
         } catch (error) {
             toast({
                 title: "Error",
@@ -150,7 +162,7 @@ export default function TemplesManagementPage() {
                             </TableRow>
                         ) : (
                             filteredTemples.map((inst) => (
-                                <TableRow key={inst.id} className="hover:bg-slate-50/50 transition-colors">
+                                <TableRow key={inst.userId} className="hover:bg-slate-50/50 transition-colors">
                                     <TableCell>
                                         <div className="flex flex-col">
                                             <span className="font-semibold text-slate-900">{inst.name || "N/A"}</span>
@@ -190,7 +202,7 @@ export default function TemplesManagementPage() {
                                                 variant="ghost"
                                                 size="icon"
                                                 className={`h-8 w-8 ${inst.isVerified ? 'text-amber-600' : 'text-emerald-600'}`}
-                                                onClick={() => handleToggleStatus(inst.id, inst.isVerified, inst.temple?.liveStatus || false)}
+                                                onClick={() => handleToggleStatus(inst.userId, inst.isVerified, inst.temple?.liveStatus || false)}
                                                 title={inst.isVerified ? "Deactivate" : "Approve Temple"}
                                             >
                                                 {inst.isVerified ? <XCircle className="w-4 h-4" /> : <CheckCircle className="w-4 h-4" />}
@@ -199,7 +211,7 @@ export default function TemplesManagementPage() {
                                                 variant="ghost"
                                                 size="icon"
                                                 className="h-8 w-8 text-slate-600"
-                                                onClick={() => router.push(`/admin/temples/${inst.id}`)}
+                                                onClick={() => router.push(`/admin/temples/${inst.userId}`)}
                                                 title="View Details"
                                             >
                                                 <Eye className="w-4 h-4" />
@@ -208,7 +220,7 @@ export default function TemplesManagementPage() {
                                                 variant="ghost"
                                                 size="icon"
                                                 className="h-8 w-8 text-blue-600"
-                                                onClick={() => router.push(`/admin/temples/edit/${inst.id}`)}
+                                                onClick={() => router.push(`/admin/temples/edit/${inst.userId}`)}
                                                 title="Edit Temple Account"
                                             >
                                                 <Edit2 className="w-4 h-4" />
@@ -217,7 +229,7 @@ export default function TemplesManagementPage() {
                                                 variant="ghost"
                                                 size="icon"
                                                 className="h-8 w-8 text-destructive"
-                                                onClick={() => handleDelete(inst.id)}
+                                                onClick={() => handleDelete(inst.userId)}
                                                 title="Delete Temple Account"
                                             >
                                                 <Trash2 className="w-4 h-4" />

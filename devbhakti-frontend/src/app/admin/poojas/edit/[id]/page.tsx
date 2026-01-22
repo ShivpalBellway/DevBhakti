@@ -50,7 +50,12 @@ export default function EditPoojaPage() {
                 fetchAllTemplesAdmin()
             ]);
 
-            setTemples(templesData);
+            // Extract actual temple objects from User responses
+            const actualTemples = templesData
+                .filter((user: any) => user.temple) // Only include users that have temples
+                .map((user: any) => user.temple); // Extract the temple object
+
+            setTemples(actualTemples);
 
             const pooja = poojasData.find((p: any) => p.id === poojaId);
             if (pooja) {
