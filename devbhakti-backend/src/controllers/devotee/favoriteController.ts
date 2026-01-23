@@ -36,7 +36,11 @@ export const addFavorite = async (req: Request, res: Response) => {
             });
         }
         console.error('Add favorite error:', error);
-        res.status(500).json({ success: false, message: 'Internal server error' });
+        res.status(500).json({ 
+            success: false, 
+            message: 'Internal server error',
+            error: error.message 
+        });
     }
 };
 
@@ -69,8 +73,18 @@ export const removeFavorite = async (req: Request, res: Response) => {
 
         res.json({ success: true, message: 'Item removed from favorites' });
     } catch (error: any) {
+        if (error.code === 'P2025') {
+            return res.status(404).json({
+                success: false,
+                message: 'Item not found in favorites'
+            });
+        }
         console.error('Remove favorite error:', error);
-        res.status(500).json({ success: false, message: 'Internal server error' });
+        res.status(500).json({ 
+            success: false, 
+            message: 'Internal server error',
+            error: error.message 
+        });
     }
 };
 
@@ -108,6 +122,10 @@ export const getFavorites = async (req: Request, res: Response) => {
         });
     } catch (error: any) {
         console.error('Get favorites error:', error);
-        res.status(500).json({ success: false, message: 'Internal server error' });
+        res.status(500).json({ 
+            success: false, 
+            message: 'Internal server error',
+            error: error.message
+        });
     }
 };
