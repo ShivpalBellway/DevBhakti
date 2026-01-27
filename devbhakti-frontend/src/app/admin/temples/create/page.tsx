@@ -199,21 +199,21 @@ export default function CreateTemplePage() {
                         </div>
                         <div className="space-y-2">
                             <label className="text-sm font-semibold text-slate-700">Account Phone *</label>
-                            <Input
-                                value={formData.phone}
-                                onChange={e => setFormData({ ...formData, phone: e.target.value })}
-                                placeholder="Login Phone Number"
-                                required
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <label className="text-sm font-semibold text-slate-700">Initial Password</label>
-                            <Input
-                                type="password"
-                                value={formData.password}
-                                onChange={e => setFormData({ ...formData, password: e.target.value })}
-                                placeholder="Default: 123456"
-                            />
+                            <div className="relative">
+                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 font-semibold border-r border-slate-300 pr-2">+91</span>
+                                <Input
+                                    type="tel"
+                                    maxLength={10}
+                                    value={formData.phone}
+                                    onChange={e => {
+                                        const val = e.target.value.replace(/\D/g, '');
+                                        setFormData({ ...formData, phone: val });
+                                    }}
+                                    placeholder="Enter 10-digit number"
+                                    className="pl-14"
+                                    required
+                                />
+                            </div>
                         </div>
                     </div>
                 </div>

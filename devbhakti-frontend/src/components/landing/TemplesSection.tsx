@@ -4,14 +4,56 @@ import React from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import Image from "next/image";
-import { MapPin, Star, Video, ArrowRight, ChevronLeft, ChevronRight, BadgeCheck } from "lucide-react";
+import { MapPin, Star, Video, ArrowRight, ChevronLeft, ChevronRight, BadgeCheck, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { useRouter } from "next/navigation";
+import { useToast } from "@/hooks/use-toast";
 
-import { temples } from "@/data/temples";
+import { fetchPublicTemples } from "@/api/publicController";
+import { fetchUserFavorites, addFavorite, removeFavorite } from "@/api/userController";
+import { API_URL } from "@/config/apiConfig";
 
 const TemplesSection: React.FC = () => {
   const scrollContainerRef = React.useRef<HTMLDivElement>(null);
+  const [temples, setTemples] = React.useState<any[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  const [favorites, setFavorites] = React.useState<any[]>([]);
+  const router = useRouter();
+  const { toast } = useToast();
+  const [user, setUser] = React.useState<any>(null);
+
+  React.useEffect(() => {
+    const savedUser = localStorage.getItem("user");
+    if (savedUser) {
+      setUser(JSON.parse(savedUser));
+      loadFavorites();
+    }
+    loadTemples();
+  }, []);
+
+  const loadFavorites = async () => {
+    try {
+      const res = await fetchUserFavorites();
+      if (res.success) {
+        setFavorites(res.data);
+      }
+    } catch (error) {
+      console.error("Error loading favorites:", error);
+    }
+  };
+
+  const loadTemples = async () => {
+    const data = await fetchPublicTemples();
+    setTemples(data);
+    setLoading(false);
+  };
+
+  const getFullImageUrl = (path: string) => {
+    if (!path) return "/placeholder.jpg";
+    if (path.startsWith('http')) return path;
+    return `${API_URL.replace('/api', '')}${path}`;
+  };
 
   const scroll = (direction: "left" | "right") => {
     if (scrollContainerRef.current) {
@@ -23,8 +65,47 @@ const TemplesSection: React.FC = () => {
     }
   };
 
+  const toggleFavorite = async (e: React.MouseEvent, templeId: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (!user) {
+      router.push("/auth");
+      return;
+    }
+
+    const isFav = favorites.some((f) => f.templeId === templeId);
+    try {
+      if (isFav) {
+        await removeFavorite({ templeId });
+        setFavorites(favorites.filter((f) => f.templeId !== templeId));
+        toast({ title: "Removed from favorites" });
+      } else {
+        await addFavorite({ templeId });
+        setFavorites([...favorites, { templeId }]);
+        toast({ title: "Added to favorites" });
+      }
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.response?.data?.message || error.message || "Failed to update favorites",
+        variant: "destructive",
+      });
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="py-20 flex justify-center items-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  if (temples.length === 0) return null;
+
   return (
-    <section id="temples" className=" bg-background relative overflow-hidden">
+    <section id="temples" className="py-16 bg-background relative overflow-hidden">
       {/* Background pattern */}
       <div className="absolute inset-0 pattern-lotus opacity-30" />
 
@@ -88,86 +169,90 @@ const TemplesSection: React.FC = () => {
                 transition={{ duration: 0.4, delay: index * 0.1 }}
                 className="flex-shrink-0 w-[320px] md:w-[380px]"
               >
-                <Link href={`/temples/${temple.id}`}>
-                  <div className="group relative bg-card rounded-2xl overflow-hidden border-2 border-border/50 shadow-soft hover:shadow-warm transition-all duration-300 hover:-translate-y-2 h-full">
-                    {/* Image */}
-                    <div className="relative h-48 md:h-56 overflow-hidden">
-                      <Image
-                        src={temple.image}
-                        alt={temple.name}
-                        fill
-                        className="object-cover group-hover:scale-110 transition-transform duration-300"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/20 to-transparent" />
+                <div className="relative group/card h-full">
+                  <Link href={`/temples/${temple.id}`}>
+                    <div className="bg-card rounded-2xl overflow-hidden border-2 border-border/50 shadow-soft hover:shadow-warm transition-all duration-300 hover:-translate-y-2 h-full flex flex-col">
+                      {/* Image */}
+                      <div className="relative h-48 md:h-56 overflow-hidden">
+                        <img
+                          src={getFullImageUrl(temple.image)}
+                          alt={temple.name}
+                          className="w-full h-full object-cover group-hover/card:scale-110 transition-transform duration-300"
+                          onError={(e) => {
+                            (e.target as any).src = "https://via.placeholder.com/400x300?text=Temple"
+                          }}
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/20 to-transparent" />
 
-                      {/* Live badge */}
-                      {temple.liveStatus && (
-                        <div className="absolute top-4 right-4">
-                          <Badge className="bg-red-500 text-white border-0 flex items-center gap-1">
-                            <div className="w-2 h-2 bg-white rounded-full animate-pulse" />
-                            Live
-                          </Badge>
-                        </div>
-                      )}
-
-                      {/* Category badge */}
-                      <div className="absolute top-4 left-4">
-                        <Badge variant="secondary">{temple.category}</Badge>
-                      </div>
-                    </div>
-
-                    {/* Content */}
-                    <div className="p-5">
-                      <div className="flex items-start justify-between gap-4 mb-2">
-                        <h3 className="text-xl font-serif font-bold text-foreground group-hover:text-primary transition-colors leading-tight">
-                          {temple.name}
-                        </h3>
-                        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#FFF4E6] dark:bg-[#2C1810] border border-[#DEB887]/30 shrink-0 mt-0.5">
-                          <BadgeCheck className="w-3.5 h-3.5 text-[#D97706] fill-white dark:fill-[#2C1810]" />
-                          <span className="text-[10px] font-bold text-[#92400E] dark:text-[#FCD34D] uppercase tracking-wider">Verified</span>
+                        {/* Category badge */}
+                        <div className="absolute top-4 left-4">
+                          <Badge variant="secondary">{temple.category}</Badge>
                         </div>
                       </div>
 
-                      <p className="text-sm text-foreground mb-3 line-clamp-2">
-                        {temple.description}
-                      </p>
-
-                      <div className="flex items-center gap-2 text-foreground mb-3">
-                        <MapPin className="w-4 h-4" />
-                        <span className="text-sm">{temple.location}</span>
-                      </div>
-
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center gap-1">
-                          <Star className="w-4 h-4 fill-secondary text-secondary" />
-                          <span className="font-semibold text-foreground">{temple.rating}</span>
-                          <span className="text-sm text-muted-foreground">
-                            ({temple.reviews.toLocaleString()})
-                          </span>
-                        </div>
-                        {temple.liveStatus && (
-                          <div className="flex items-center gap-1 text-accent">
-                            <Video className="w-4 h-4" />
-                            <span className="text-xs font-medium">Live Darshan</span>
+                      {/* Content */}
+                      <div className="p-5 flex-grow">
+                        <div className="flex items-start justify-between gap-4 mb-2">
+                          <h3 className="text-xl font-serif font-bold text-foreground group-hover/card:text-primary transition-colors leading-tight">
+                            {temple.name}
+                          </h3>
+                          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#FFF4E6] dark:bg-[#2C1810] border border-[#DEB887]/30 shrink-0 mt-0.5">
+                            <BadgeCheck className="w-3.5 h-3.5 text-[#D97706] fill-white dark:fill-[#2C1810]" />
+                            <span className="text-[10px] font-bold text-[#92400E] dark:text-[#FCD34D] uppercase tracking-wider">Verified</span>
                           </div>
-                        )}
-                      </div>
+                        </div>
 
-                      <div className="flex items-center justify-end pt-3 border-t border-border/50">
-                        {/* <span className="text-xs text-muted-foreground">
-                          {temple.openTime}
-                        </span> */}
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="group-hover:text-primary"
-                        >
-                          Explore <ArrowRight className="w-4 h-4 ml-1" />
-                        </Button>
+                        <p className="text-sm text-foreground mb-3 line-clamp-2">
+                          {temple.description}
+                        </p>
+
+                        <div className="flex items-center gap-2 text-foreground mb-3">
+                          <MapPin className="w-4 h-4" />
+                          <span className="text-sm">{temple.location}</span>
+                        </div>
+
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center gap-1">
+                            <Star className="w-4 h-4 fill-secondary text-secondary" />
+                            <span className="font-semibold text-foreground">{temple.rating}</span>
+                            <span className="text-sm text-muted-foreground">
+                              ({(temple.reviewsCount || 0).toLocaleString()})
+                            </span>
+                          </div>
+                          {temple.liveStatus && (
+                            <div className="flex items-center gap-1 text-accent">
+                              <Video className="w-4 h-4" />
+                              <span className="text-xs font-medium">Live Darshan</span>
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="flex items-center justify-end pt-3 border-t border-border/50">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="group-hover/card:text-primary"
+                          >
+                            Explore <ArrowRight className="w-4 h-4 ml-1" />
+                          </Button>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </Link>
+                  </Link>
+
+                  {/* Favorite Button - Outside Link */}
+                  <button
+                    onClick={(e) => toggleFavorite(e, temple.id)}
+                    className="absolute top-4 right-4 z-30 p-2 rounded-full bg-white/20 backdrop-blur-md border border-white/30 hover:bg-white/40 transition-all group/fav"
+                  >
+                    <Heart
+                      className={`w-5 h-5 transition-all ${favorites.some((f) => f.templeId === temple.id)
+                        ? "fill-red-500 text-red-500"
+                        : "text-white group-hover/fav:text-red-200"
+                        }`}
+                    />
+                  </button>
+                </div>
               </motion.div>
             ))}
           </div>
@@ -193,4 +278,3 @@ const TemplesSection: React.FC = () => {
 };
 
 export default TemplesSection;
-

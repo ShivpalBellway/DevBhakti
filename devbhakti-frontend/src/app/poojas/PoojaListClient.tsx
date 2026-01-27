@@ -14,9 +14,14 @@ import {
     Star,
     ChevronRight,
     Zap,
-    Users
+    Users,
+    Heart
 } from "lucide-react";
-import { poojas } from "@/data/poojas";
+import { fetchPublicPoojas } from "@/api/publicController";
+import { fetchUserFavorites, addFavorite, removeFavorite } from "@/api/userController";
+import { useRouter } from "next/navigation";
+import { useToast } from "@/hooks/use-toast";
+import { API_URL } from "@/config/apiConfig";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -28,6 +33,73 @@ const categories = ["All", "Aarti", "Pooja", "Abhishekam", "Special Puja"];
 const PoojaListClient: React.FC = () => {
     const [searchQuery, setSearchQuery] = useState("");
     const [selectedCategory, setSelectedCategory] = useState("All");
+    const [poojas, setPoojas] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [favorites, setFavorites] = useState<any[]>([]);
+    const router = useRouter();
+    const { toast } = useToast();
+    const [user, setUser] = useState<any>(null);
+
+    React.useEffect(() => {
+        const savedUser = localStorage.getItem("user");
+        if (savedUser) {
+            setUser(JSON.parse(savedUser));
+            loadFavorites();
+        }
+        loadPoojas();
+    }, []);
+
+    const loadFavorites = async () => {
+        try {
+            const res = await fetchUserFavorites();
+            if (res.success) {
+                setFavorites(res.data);
+            }
+        } catch (error) {
+            console.error("Error loading favorites:", error);
+        }
+    };
+
+    const loadPoojas = async () => {
+        const data = await fetchPublicPoojas();
+        setPoojas(data);
+        setLoading(false);
+    };
+
+    const getFullImageUrl = (path: string) => {
+        if (!path) return "/placeholder.jpg";
+        if (path.startsWith('http')) return path;
+        return `${API_URL.replace('/api', '')}${path}`;
+    };
+
+    const toggleFavorite = async (e: React.MouseEvent, poojaId: string) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        if (!user) {
+            router.push("/auth");
+            return;
+        }
+
+        const isFav = favorites.some((f) => f.poojaId === poojaId);
+        try {
+            if (isFav) {
+                await removeFavorite({ poojaId });
+                setFavorites(favorites.filter((f) => f.poojaId !== poojaId));
+                toast({ title: "Removed from favorites" });
+            } else {
+                await addFavorite({ poojaId });
+                setFavorites([...favorites, { poojaId }]);
+                toast({ title: "Added to favorites" });
+            }
+        } catch (error: any) {
+            toast({
+                title: "Error",
+                description: error.response?.data?.message || error.message || "Failed to update favorites",
+                variant: "destructive",
+            });
+        }
+    };
 
     const filteredPoojas = poojas.filter((pooja) => {
         const matchesSearch =
@@ -37,6 +109,17 @@ const PoojaListClient: React.FC = () => {
             selectedCategory === "All" || pooja.category === selectedCategory;
         return matchesSearch && matchesCategory;
     });
+
+    if (loading) {
+        return (
+            <div className="min-h-screen bg-[#FDFCFB]">
+                <Navbar />
+                <div className="pt-32 flex justify-center items-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen bg-[#FDFCFB]">
@@ -132,14 +215,13 @@ const PoojaListClient: React.FC = () => {
                                     exit={{ opacity: 0, scale: 0.95 }}
                                     transition={{ delay: index * 0.05 }}
                                 >
-                                    <Link href={`/poojas/${pooja.id}`}>
-                                        <div className="group bg-white rounded-[2.5rem] p-4 shadow-sm hover:shadow-2xl transition-all duration-500 border border-orange-50/50 h-full flex flex-col hover:-translate-y-2">
+                                    <div className="relative group/card bg-white rounded-[2.5rem] p-4 shadow-sm hover:shadow-2xl transition-all duration-500 border border-orange-50/50 h-full flex flex-col hover:-translate-y-2">
+                                        <Link href={`/poojas/${pooja.id}`}>
                                             <div className="relative aspect-[4/3] overflow-hidden rounded-[2rem] mb-6">
-                                                <Image
-                                                    src={pooja.image}
+                                                <img
+                                                    src={getFullImageUrl(pooja.image)}
                                                     alt={pooja.name}
-                                                    fill
-                                                    className="object-cover group-hover:scale-110 transition-transform duration-700"
+                                                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                                                 />
                                                 <div className="absolute top-4 left-4 flex gap-2">
                                                     <Badge className="bg-white/90 backdrop-blur-md text-zinc-900 border-none shadow-lg">
@@ -206,8 +288,21 @@ const PoojaListClient: React.FC = () => {
                                                     </Button>
                                                 </div>
                                             </div>
-                                        </div>
-                                    </Link>
+                                        </Link>
+
+                                        {/* Favorite Button - Outside Link */}
+                                        <button
+                                            onClick={(e) => toggleFavorite(e, pooja.id)}
+                                            className="absolute top-4 right-4 z-40 p-2 rounded-full bg-white/20 backdrop-blur-md border border-white/30 hover:bg-white/40 transition-all group/fav"
+                                        >
+                                            <Heart
+                                                className={`w-5 h-5 transition-all ${favorites.some((f) => f.poojaId === pooja.id)
+                                                    ? "fill-red-500 text-red-500"
+                                                    : "text-white group-hover/fav:text-red-200"
+                                                    }`}
+                                            />
+                                        </button>
+                                    </div>
                                 </motion.div>
                             ))}
                         </AnimatePresence>

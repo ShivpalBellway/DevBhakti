@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import {
   Search,
@@ -28,130 +28,82 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Navbar from "@/components/landing/Navbar";
 import Footer from "@/components/landing/Footer";
 
-// We'll define the interfaces for our data here to be safe and clear in TS
-interface Temple {
-  id: number;
-  name: string;
-  location: string;
-  image: string;
-  rating: number;
-  reviews: number;
-  category: string;
-  liveStatus: boolean;
-  openTime: string;
-  fullAddress?: string;
-  gallery?: string[];
-  phone?: string;
-  website?: string;
-  description?: string;
-  history?: string;
-  poojas?: { name: string; time: string; price: number }[];
-  upcomingEvents?: { name: string; date: string }[];
-}
-
-// Mock Data
-import templeKashi from "@/assets/temple-kashi.jpg";
-import templeTirupati from "@/assets/temple-tirupati.jpg";
-import templeSiddhivinayak from "@/assets/temple-siddhivinayak.jpg";
-import templeMeenakshi from "@/assets/temple-meenakshi.jpg";
-import templeJagannath from "@/assets/temple-jagannath.jpg";
-import templeSomnath from "@/assets/temple-somnath.jpg";
-import ravalnath from "@/assets/Shree Ravalnath Mandir1.webp";
-
-import { StaticImageData } from "next/image";
-
-const temples = [
-  {
-    id: 1,
-    name: "Kashi Vishwanath Temple",
-    location: "Varanasi, Uttar Pradesh",
-    image: templeKashi,
-    rating: 4.9,
-    reviews: 12500,
-    category: "Shiva",
-    liveStatus: true,
-    openTime: "4:00 AM - 11:00 PM",
-    description: "One of the twelve Jyotirlingas of Lord Shiva, located on the western bank of the holy Ganges. This ancient temple is a center of spiritual power and devotion."
-  },
-  {
-    id: 2,
-    name: "Tirupati Balaji Temple",
-    location: "Tirupati, Andhra Pradesh",
-    image: templeTirupati,
-    rating: 4.8,
-    reviews: 25000,
-    category: "Vishnu",
-    liveStatus: true,
-    openTime: "3:00 AM - 12:00 AM",
-    description: "Dedicated to Lord Venkateswara, an incarnation of Vishnu. It is one of the richest and most visited religious centers in the world."
-  },
-  {
-    id: 3,
-    name: "Siddhivinayak Temple",
-    location: "Mumbai, Maharashtra",
-    image: templeSiddhivinayak,
-    rating: 4.7,
-    reviews: 8900,
-    category: "Ganesha",
-    liveStatus: false,
-    openTime: "5:30 AM - 10:00 PM",
-    description: "A revered temple dedicated to Lord Ganesha, known for fulfilling wishes of devotees. The temple has a beautiful gold-plated dome and inner roof."
-  },
-  {
-    id: 4,
-    name: "Meenakshi Amman Temple",
-    location: "Madurai, Tamil Nadu",
-    image: templeMeenakshi,
-    rating: 4.9,
-    reviews: 15600,
-    category: "Shakti",
-    liveStatus: true,
-    openTime: "5:00 AM - 12:30 PM",
-    description: "An ancient Dravidian-style temple dedicated to Goddess Meenakshi (Parvati) and Lord Sundareshwarar (Shiva). Famous for its stunning architecture."
-  },
-  {
-    id: 5,
-    name: "Jagannath Temple",
-    location: "Puri, Odisha",
-    image: templeJagannath,
-    rating: 4.8,
-    reviews: 11200,
-    category: "Vishnu",
-    liveStatus: false,
-    openTime: "5:00 AM - 11:00 PM",
-    description: "A sacred Vaishnava temple dedicated to Lord Jagannath (Krishna). Famous for the annual Rath Yatra festival and its unique deities."
-  },
-  {
-    id: 6,
-    name: "Somnath Temple",
-    location: "Somnath, Gujarat",
-    image: templeSomnath,
-    rating: 4.9,
-    reviews: 9800,
-    category: "Shiva",
-    liveStatus: true,
-    openTime: "6:00 AM - 9:00 PM",
-    description: "The first among the twelve Jyotirlinga shrines of Lord Shiva. This sacred temple has been destroyed and rebuilt several times throughout history."
-  },
-  {
-    id: 7,
-    name: "Shree Ravalnath Mandir",
-    location: "Pernam Municipal Area, Goa",
-    image: ravalnath,
-    rating: 4.9,
-    reviews: 9800,
-    category: "Shiva",
-    liveStatus: true,
-    openTime: "6:00 AM - 9:00 PM",
-    description: "A beautiful temple dedicated to Lord Shiva, located in the Pernam Municipal Area of Goa. It is known for its stunning architecture and spiritual significance."
-  },
-];
+import { fetchPublicTemples } from "@/api/publicController";
+import { fetchUserFavorites, addFavorite, removeFavorite } from "@/api/userController";
+import { API_URL } from "@/config/apiConfig";
 
 const categories = ["All", "Shiva", "Vishnu", "Shakti", "Ganesha", "Hanuman"];
 
 export function TemplesList() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
+  const [temples, setTemples] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [favorites, setFavorites] = useState<any[]>([]);
+  const { toast } = useToast();
+  const router = useRouter();
+  const [user, setUser] = useState<any>(null);
+
+  React.useEffect(() => {
+    const savedUser = localStorage.getItem("user");
+    if (savedUser) {
+      setUser(JSON.parse(savedUser));
+      loadFavorites();
+    }
+    loadTemples();
+  }, []);
+
+  const loadFavorites = async () => {
+    try {
+      const res = await fetchUserFavorites();
+      if (res.success) {
+        setFavorites(res.data);
+      }
+    } catch (error) {
+      console.error("Error loading favorites:", error);
+    }
+  };
+
+  const loadTemples = async () => {
+    const data = await fetchPublicTemples();
+    setTemples(data);
+    setLoading(false);
+  };
+
+  const getFullImageUrl = (path: string) => {
+    if (!path) return "/placeholder.jpg";
+    if (path.startsWith('http')) return path;
+    return `${API_URL.replace('/api', '')}${path}`;
+  };
+
+  const toggleFavorite = async (e: React.MouseEvent, templeId: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (!user) {
+      router.push("/auth");
+      return;
+    }
+
+    const isFav = favorites.some((f) => f.templeId === templeId);
+    try {
+      if (isFav) {
+        await removeFavorite({ templeId });
+        setFavorites(favorites.filter((f) => f.templeId !== templeId));
+        toast({ title: "Removed from favorites" });
+      } else {
+        await addFavorite({ templeId });
+        setFavorites([...favorites, { templeId }]);
+        toast({ title: "Added to favorites" });
+      }
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.response?.data?.message || error.message || "Failed to update favorites",
+        variant: "destructive",
+      });
+    }
+  };
 
   const filteredTemples = temples.filter((temple) => {
     const matchesSearch =
@@ -161,6 +113,17 @@ export function TemplesList() {
       selectedCategory === "All" || temple.category === selectedCategory;
     return matchesSearch && matchesCategory;
   });
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navbar />
+        <div className="pt-32 flex justify-center items-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -177,18 +140,6 @@ export function TemplesList() {
               <p className="text-lg text-foreground">
                 Explore thousands of temples across India and connect with divine experiences
               </p>
-
-              {/* Search Bar */}
-              {/* <div className="relative max-w-2xl mx-auto">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                <Input
-                  type="text"
-                  placeholder="Search temples by name or location..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-12 h-14 text-lg rounded-full border-2 border-primary/20 focus:border-primary"
-                />
-              </div> */}
             </div>
           </div>
         </section>
@@ -222,55 +173,69 @@ export function TemplesList() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredTemples.map((temple) => (
-                <Link key={temple.id} href={`/temples/${temple.id}`}>
-                  <Card className="group overflow-hidden hover:shadow-xl transition-all duration-300 border-border/50 hover:border-primary/30 h-full">
-                    <div className="relative aspect-[4/3] overflow-hidden">
-                      <img
-                        src={(temple.image as any).src || temple.image}
-                        alt={temple.name}
-                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                      />
-                      {temple.liveStatus && (
-                        <Badge className="absolute top-3 left-3 bg-red-500 text-white animate-pulse">
-                          <span className="w-2 h-2 bg-white rounded-full mr-2" />
-                          LIVE
+                <div key={temple.id} className="relative group/card h-full">
+                  <Link href={`/temples/${temple.id}`}>
+                    <Card className="group overflow-hidden hover:shadow-xl transition-all duration-300 border-border/50 hover:border-primary/30 h-full">
+                      <div className="relative aspect-[4/3] overflow-hidden">
+                        <img
+                          src={getFullImageUrl(temple.image)}
+                          alt={temple.name}
+                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                          onError={(e) => {
+                            (e.target as any).src = "https://via.placeholder.com/400x300?text=Temple"
+                          }}
+                        />
+                        {temple.liveStatus && (
+                          <Badge className="absolute top-3 left-3 bg-red-500 text-white animate-pulse">
+                            <span className="w-2 h-2 bg-white rounded-full mr-2" />
+                            LIVE
+                          </Badge>
+                        )}
+                        <Badge
+                          variant="secondary"
+                          className="absolute top-3 right-3 bg-background/90 backdrop-blur-sm"
+                        >
+                          {temple.category}
                         </Badge>
-                      )}
-                      <Badge
-                        variant="secondary"
-                        className="absolute top-3 right-3 bg-background/90 backdrop-blur-sm"
-                      >
-                        {temple.category}
-                      </Badge>
-                    </div>
-                    <CardContent className="p-5">
-                      <h3 className="text-xl font-display font-semibold text-foreground mb-2 group-hover:text-primary transition-colors">
-                        {temple.name}
-                      </h3>
-                      <p className="text-sm text-foreground mb-3">
-                        {temple.description}
-                      </p>
+                      </div>
+                      <CardContent className="p-5">
+                        <h3 className="text-xl font-display font-semibold text-foreground mb-2 group-hover:text-primary transition-colors">
+                          {temple.name}
+                        </h3>
+                        <p className="text-sm text-foreground mb-3 line-clamp-2">
+                          {temple.description}
+                        </p>
 
-                      <div className="flex items-center gap-2 text-foreground mb-3">
-                        <MapPin className="h-4 w-4" />
-                        <span className="text-sm">{temple.location}</span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-1">
-                          <Star className="h-4 w-4 text-amber-500 fill-amber-500" />
-                          <span className="font-medium text-foreground">{temple.rating}</span>
-                          <span className="text-muted-foreground text-sm">
-                            ({temple.reviews.toLocaleString()})
-                          </span>
+                        <div className="flex items-center gap-2 text-foreground mb-3">
+                          <MapPin className="h-4 w-4" />
+                          <span className="text-sm">{temple.location}</span>
                         </div>
-                        {/* <div className="flex items-center gap-1 text-muted-foreground text-sm">
-                          <Clock className="h-4 w-4" />
-                          <span>{temple.openTime.split(" - ")[0]}</span>
-                        </div> */}
-                      </div>
-                    </CardContent>
-                  </Card>
-                </Link>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-1">
+                            <Star className="h-4 w-4 text-amber-500 fill-amber-500" />
+                            <span className="font-medium text-foreground">{temple.rating}</span>
+                            <span className="text-muted-foreground text-sm">
+                              ({(temple.reviewsCount || 0).toLocaleString()})
+                            </span>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </Link>
+
+                  {/* Favorite Button - Outside Link */}
+                  <button
+                    onClick={(e) => toggleFavorite(e, temple.id)}
+                    className="absolute top-3 right-12 z-30 p-2 rounded-full bg-background/50 backdrop-blur-md border border-border hover:bg-background/80 transition-all group/fav"
+                  >
+                    <Heart
+                      className={`w-4 h-4 transition-all ${favorites.some((f) => f.templeId === temple.id)
+                        ? "fill-red-500 text-red-500"
+                        : "text-muted-foreground group-hover/fav:text-red-500"
+                        }`}
+                    />
+                  </button>
+                </div>
               ))}
             </div>
           </div>
@@ -281,6 +246,3 @@ export function TemplesList() {
     </>
   );
 }
-
-// Separate detail view component to keep things organized if we were merging files, 
-// but since we are doing page.tsx architecture, we'll keep it modular.

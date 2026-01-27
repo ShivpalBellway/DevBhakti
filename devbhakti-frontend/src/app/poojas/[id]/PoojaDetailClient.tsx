@@ -24,7 +24,7 @@ import Footer from "@/components/landing/Footer";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { fetchPoojaById } from "@/api/userController";
+import { fetchPublicPoojaById } from "@/api/publicController";
 import { API_URL } from "@/config/apiConfig";
 
 interface PoojaDetailClientProps {
@@ -36,8 +36,8 @@ const PoojaDetailClient = ({ id }: PoojaDetailClientProps) => {
     const [pooja, setPooja] = useState<any>(null);
     const [isLoading, setIsLoading] = useState(true);
 
-    const getImageUrl = (path: string) => {
-        if (!path) return "https://via.placeholder.com/800x600";
+    const getFullImageUrl = (path: string) => {
+        if (!path) return "/placeholder.jpg";
         if (path.startsWith('http')) return path;
         return `${API_URL.replace('/api', '')}${path}`;
     };
@@ -45,7 +45,7 @@ const PoojaDetailClient = ({ id }: PoojaDetailClientProps) => {
     useEffect(() => {
         const loadPooja = async () => {
             try {
-                const data = await fetchPoojaById(id);
+                const data = await fetchPublicPoojaById(id);
                 setPooja(data);
             } catch (error) {
                 console.error("Failed to fetch pooja:", error);
@@ -99,12 +99,10 @@ const PoojaDetailClient = ({ id }: PoojaDetailClientProps) => {
                             animate={{ opacity: 1, x: 0 }}
                             className="relative aspect-[4/3] rounded-3xl overflow-hidden shadow-2xl"
                         >
-                            <Image
-                                src={getImageUrl(pooja.image)}
+                            <img
+                                src={getFullImageUrl(pooja.image)}
                                 alt={pooja.name}
-                                fill
-                                className="object-cover"
-                                priority
+                                className="w-full h-full object-cover"
                             />
                             <div className="absolute top-4 left-4">
                                 <Badge className="bg-primary/90 text-white backdrop-blur-md px-3 py-1 text-sm">
@@ -328,11 +326,10 @@ const PoojaDetailClient = ({ id }: PoojaDetailClientProps) => {
                                         {pooja.temple ? (
                                             <div className="flex flex-col md:flex-row gap-8 items-center bg-orange-50/50 dark:bg-zinc-900/50 rounded-3xl p-8 border border-orange-100 dark:border-zinc-800">
                                                 <div className="w-full md:w-1/3 aspect-video relative rounded-2xl overflow-hidden shadow-lg">
-                                                    <Image
-                                                        src={pooja.temple.image || "https://via.placeholder.com/400x300"}
-                                                        alt={pooja.temple.name}
-                                                        fill
-                                                        className="object-cover"
+                                                    <img
+                                                        src={getFullImageUrl(pooja.temple?.image)}
+                                                        alt={pooja.temple?.name}
+                                                        className="w-full h-full object-cover"
                                                     />
                                                 </div>
                                                 <div className="flex-1">

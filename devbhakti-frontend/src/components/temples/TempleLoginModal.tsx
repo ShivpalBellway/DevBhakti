@@ -109,14 +109,18 @@ export default function TempleLoginModal({ onClose }: TempleLoginModalProps) {
                         <div className="space-y-2">
                             <Label htmlFor="phone" className="text-slate-700 ml-1">Phone Number</Label>
                             <div className="relative group">
-                                <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-[#7b4623] transition-colors" />
+                                <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
+                                    <Phone className="w-5 h-5 text-slate-400 group-focus-within:text-[#7b4623] transition-colors" />
+                                    <span className="text-slate-400 font-semibold border-l pl-2 border-slate-300 leading-none group-focus-within:text-[#7b4623] transition-colors">+91</span>
+                                </div>
                                 <Input
                                     id="phone"
                                     type="tel"
-                                    placeholder="Enter registered mobile"
+                                    maxLength={10}
+                                    placeholder="XXXXX XXXXX"
                                     value={phone}
-                                    onChange={(e) => setPhone(e.target.value)}
-                                    className="h-12 pl-12 bg-slate-50 border-slate-200 focus:border-[#7b4623] focus:ring-[#7b4623]/10 rounded-xl"
+                                    onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))}
+                                    className="h-12 pl-24 bg-slate-50 border-slate-200 focus:border-[#7b4623] focus:ring-[#7b4623]/10 rounded-xl"
                                     required
                                 />
                             </div>

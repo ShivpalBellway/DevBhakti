@@ -69,8 +69,11 @@ export const registerTemple = async (req: Request, res: Response) => {
       });
 
       // 2. Create the Temple linked to the User
+      const templeId = `TMP-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+
       const temple = await tx.temple.create({
         data: {
+          templeId: templeId,
           name: data.templeName || 'New Temple',
           category: data.category || 'Sacred',
           openTime: data.openTime || '',

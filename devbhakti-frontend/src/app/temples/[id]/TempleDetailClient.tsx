@@ -24,39 +24,100 @@ import {
 
 // Local temple images for hero banner & gallery
 
-import { temples } from "@/data/temples";
-import { Temple } from "@/types/temple";
-
-const badgeColors = [
-    "bg-blue-100 text-blue-700",
-    "bg-green-100 text-green-700",
-    "bg-purple-100 text-purple-700",
-    "bg-pink-100 text-pink-700",
-    "bg-yellow-100 text-yellow-700",
-];
+import { fetchPublicTempleById } from "@/api/publicController";
+import { fetchUserFavorites, addFavorite, removeFavorite } from "@/api/userController";
+import { API_URL } from "@/config/apiConfig";
+import { useRouter } from "next/navigation";
+import { useToast } from "@/hooks/use-toast";
 
 export default function TempleDetail() {
     const params = useParams();
+    const [temple, setTemple] = useState<any>(null);
+    const [loading, setLoading] = useState(true);
     const [isFavorite, setIsFavorite] = useState(false);
-
-    const numericId = Number(params?.id);
-    const temple =
-        temples.find((t) => t.id === numericId) ??
-        temples[0];
-
     const [activeImageIndex, setActiveImageIndex] = useState(0);
     const [isAutoScrolling, setIsAutoScrolling] = useState(true);
+    const [user, setUser] = useState<any>(null);
+    const router = useRouter();
+    const { toast } = useToast();
 
-    // Reset slider when temple changes
     useEffect(() => {
-        setActiveImageIndex(0);
-        setIsAutoScrolling(true);
-    }, [numericId]);
+        const savedUser = localStorage.getItem("user");
+        if (savedUser) {
+            setUser(JSON.parse(savedUser));
+            checkIfFavorite();
+        }
+    }, [params?.id]);
 
-    const heroImages =
-        temple.heroImages && temple.heroImages.length > 0
-            ? temple.heroImages
-            : [temple.image];
+    const checkIfFavorite = async () => {
+        try {
+            const res = await fetchUserFavorites();
+            if (res.success) {
+                const isFav = res.data.some((f: any) => f.templeId === params?.id);
+                setIsFavorite(isFav);
+            }
+        } catch (error) {
+            console.error("Error checking favorite status:", error);
+        }
+    };
+
+    useEffect(() => {
+        const loadTemple = async () => {
+            if (params?.id) {
+                setLoading(true);
+                const data = await fetchPublicTempleById(params.id as string);
+                setTemple(data);
+                setLoading(false);
+            }
+        };
+        loadTemple();
+    }, [params?.id]);
+
+    const getFullImageUrl = (path: string) => {
+        if (!path) return "/placeholder.jpg";
+        if (path.startsWith('http')) return path;
+        return `${API_URL.replace('/api', '')}${path}`;
+    };
+
+    // Auto-scroll hero banner
+    useEffect(() => {
+        if (!temple) return;
+        const heroImages = temple.heroImages && temple.heroImages.length > 0 ? temple.heroImages : [temple.image];
+
+        if (heroImages.length <= 1 || !isAutoScrolling) return;
+
+        const interval = setInterval(() => {
+            setActiveImageIndex((prev) => (prev + 1) % heroImages.length);
+        }, 5000);
+
+        return () => clearInterval(interval);
+    }, [temple, isAutoScrolling]);
+
+    if (loading) {
+        return (
+            <div className="min-h-screen bg-background flex flex-col">
+                <Navbar />
+                <div className="flex-1 flex items-center justify-center pt-20">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                </div>
+                <Footer />
+            </div>
+        );
+    }
+
+    if (!temple) {
+        return (
+            <div className="min-h-screen bg-background flex flex-col">
+                <Navbar />
+                <div className="flex-1 flex items-center justify-center pt-20">
+                    <p className="text-xl text-muted-foreground">Temple not found or not verified.</p>
+                </div>
+                <Footer />
+            </div>
+        );
+    }
+
+    const heroImages = temple.heroImages && temple.heroImages.length > 0 ? temple.heroImages : [temple.image];
 
     // Navigation functions
     const goToNext = () => {
@@ -74,16 +135,30 @@ export default function TempleDetail() {
         setActiveImageIndex(index);
     };
 
-    // Auto-scroll hero banner (only if user hasn't manually navigated)
-    useEffect(() => {
-        if (heroImages.length <= 1 || !isAutoScrolling) return;
+    const toggleFavorite = async () => {
+        if (!user) {
+            router.push("/auth");
+            return;
+        }
 
-        const interval = setInterval(() => {
-            setActiveImageIndex((prev) => (prev + 1) % heroImages.length);
-        }, 5000); // 5 seconds
-
-        return () => clearInterval(interval);
-    }, [heroImages.length, isAutoScrolling]);
+        try {
+            if (isFavorite) {
+                await removeFavorite({ templeId: params?.id as string });
+                setIsFavorite(false);
+                toast({ title: "Removed from favorites" });
+            } else {
+                await addFavorite({ templeId: params?.id as string });
+                setIsFavorite(true);
+                toast({ title: "Added to favorites" });
+            }
+        } catch (error: any) {
+            toast({
+                title: "Error",
+                description: error.response?.data?.message || error.message || "Failed to update favorites",
+                variant: "destructive",
+            });
+        }
+    };
 
     return (
         <div className="min-h-screen bg-background">
@@ -92,10 +167,7 @@ export default function TempleDetail() {
             {/* Hero Image Carousel */}
             <section className="relative h-[50vh] md:h-[60vh] overflow-hidden mt-20">
                 <img
-                    src={
-                        (heroImages[activeImageIndex] as any).src ||
-                        heroImages[activeImageIndex]
-                    }
+                    src={getFullImageUrl(heroImages[activeImageIndex])}
                     alt={temple.name}
                     className="w-full h-full object-cover transition-opacity duration-700"
                 />
@@ -115,7 +187,7 @@ export default function TempleDetail() {
                         variant="secondary"
                         size="icon"
                         className="rounded-full bg-background/80 backdrop-blur-sm"
-                        onClick={() => setIsFavorite(!isFavorite)}
+                        onClick={toggleFavorite}
                     >
                         <Heart
                             className={`h-5 w-5 ${isFavorite ? "fill-red-500 text-red-500" : ""}`}
@@ -165,7 +237,7 @@ export default function TempleDetail() {
                                     }`}
                             >
                                 <img
-                                    src={(img as any).src || img}
+                                    src={getFullImageUrl(img)}
                                     alt={`${temple.name} ${index + 1}`}
                                     className="w-full h-full object-cover"
                                 />
@@ -206,7 +278,7 @@ export default function TempleDetail() {
                                         <Star className="h-5 w-5 text-amber-500 fill-amber-500" />
                                         <span className="font-bold text-foreground">{temple.rating}</span>
                                         <span className="text-muted-foreground text-sm">
-                                            ({temple.reviews.toLocaleString()} reviews)
+                                            ({(temple.reviewsCount || 0).toLocaleString()} reviews)
                                         </span>
                                     </div>
                                 </div>
@@ -334,7 +406,7 @@ export default function TempleDetail() {
                                                                 {pooja.price}
                                                             </div>
                                                             <Button size="sm" asChild>
-                                                                <Link href={`/booking?temple=${numericId}`}>Book Now</Link>
+                                                                <Link href={`/booking?temple=${temple.id}`}>Book Now</Link>
                                                             </Button>
                                                         </div>
                                                     </div>
@@ -447,7 +519,7 @@ export default function TempleDetail() {
                                     {/* Book Pooja and Watch Live Darshan Buttons Right Side*/}
                                     <div className="flex flex-wrap gap-3">
                                         <Button variant="gold" className="gap-2" asChild>
-                                            <Link href={`/booking?temple=${numericId}`}>
+                                            <Link href={`/booking?temple=${temple.id}`}>
                                                 <Calendar className="h-4 w-4" />
                                                 Book Pooja
                                             </Link>

@@ -59,6 +59,7 @@ model Temple {
   mapUrl       String?
   viewers      String?
   isLive       Boolean  @default(false)
+  templeId     String?  @unique // Custom Unique ID e.g. TMP-A8X92B
   
   // Link to User (Institution Owner)
   userId       String   @unique

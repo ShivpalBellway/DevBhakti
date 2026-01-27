@@ -82,6 +82,7 @@ export const createTemple = async (req: Request, res: Response) => {
           isVerified: true,
           temple: {
             create: {
+              templeId: `TMP-${Math.random().toString(36).substring(2, 8).toUpperCase()}`,
               name: data.templeName,
               location: data.location,
               fullAddress: data.fullAddress,

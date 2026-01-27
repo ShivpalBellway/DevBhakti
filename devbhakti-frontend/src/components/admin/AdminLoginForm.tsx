@@ -82,7 +82,7 @@ const AdminLoginForm: React.FC = () => {
                                 <Input
                                     id="email"
                                     type="email"
-                                    placeholder="admin@devbhakti.com"
+                                    placeholder="your@gmail.com"
                                     value={formData.email}
                                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                                     className="pl-10 h-12 border-slate-200 focus:border-primary focus:ring-primary"
@@ -103,7 +103,7 @@ const AdminLoginForm: React.FC = () => {
                                 <Input
                                     id="password"
                                     type={showPassword ? "text" : "password"}
-                                    placeholder="••••••••"
+                                    placeholder="Enter Your Password"
                                     value={formData.password}
                                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                                     className="pl-10 pr-10 h-12 border-slate-200 focus:border-primary focus:ring-primary"

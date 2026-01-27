@@ -40,6 +40,13 @@ export default function TempleEditPoojaPage() {
         loadPooja();
     }, []);
 
+    const STATIC_PACKAGE_TYPES = [
+        { name: "Single", description: "For 1 person" },
+        { name: "Couple", description: "For 2 people" },
+        { name: "Family", description: "Upto 5 people" },
+        { name: "Group", description: "Upto 6 people" }
+    ];
+
     const loadPooja = async () => {
         setIsLoading(true);
         try {
@@ -48,6 +55,11 @@ export default function TempleEditPoojaPage() {
             const pooja = (response.data || []).find((p: any) => p.id === poojaId);
 
             if (pooja) {
+                // Only keep packages that match our fixed types
+                const validPackages = (pooja.packages || []).filter((p: any) =>
+                    STATIC_PACKAGE_TYPES.some(st => st.name === p.name)
+                );
+
                 setFormData({
                     name: pooja.name,
                     price: pooja.price,
@@ -58,7 +70,7 @@ export default function TempleEditPoojaPage() {
                     description: pooja.description || [],
                     benefits: pooja.benefits || [],
                     bullets: pooja.bullets || [],
-                    packages: pooja.packages || [],
+                    packages: validPackages,
                     processSteps: pooja.processSteps || [],
                     faqs: pooja.faqs || []
                 });
@@ -92,24 +104,25 @@ export default function TempleEditPoojaPage() {
         }
     };
 
-    const addPackage = () => {
-        setFormData({
-            ...formData,
-            packages: [...formData.packages, { name: "", price: 0, description: "" }]
-        });
+    const togglePackage = (ptype: any) => {
+        const exists = formData.packages.find(p => p.name === ptype.name);
+        if (exists) {
+            setFormData({
+                ...formData,
+                packages: formData.packages.filter(p => p.name !== ptype.name)
+            });
+        } else {
+            setFormData({
+                ...formData,
+                packages: [...formData.packages, { ...ptype, price: 0 }]
+            });
+        }
     };
 
     const updatePackage = (index: number, field: string, value: any) => {
         const newPackages = [...formData.packages];
         newPackages[index] = { ...newPackages[index], [field]: value };
         setFormData({ ...formData, packages: newPackages });
-    };
-
-    const removePackage = (index: number) => {
-        setFormData({
-            ...formData,
-            packages: formData.packages.filter((_, i) => i !== index)
-        });
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -240,47 +253,83 @@ export default function TempleEditPoojaPage() {
                     </div>
                 </div>
 
-                <div className="space-y-4">
+                <div className="space-y-6">
                     <div className="flex items-center justify-between border-b pb-2">
                         <h3 className="text-lg font-semibold text-[#7b4623]">Update Packages</h3>
-                        <Button type="button" variant="ghost" size="sm" onClick={addPackage} className="text-[#7b4623] hover:bg-orange-50">
-                            <Plus className="w-4 h-4 mr-1" /> Add
-                        </Button>
                     </div>
-                    <div className="space-y-4">
-                        {formData.packages.map((pkg, index) => (
-                            <div key={index} className="grid grid-cols-1 sm:grid-cols-12 gap-3 p-4 bg-slate-50/50 rounded-xl border border-slate-100">
-                                <div className="sm:col-span-5">
-                                    <Input
-                                        placeholder="Name"
-                                        value={pkg.name}
-                                        onChange={(e) => updatePackage(index, 'name', e.target.value)}
-                                        className="h-10 border-slate-200"
-                                    />
-                                </div>
-                                <div className="sm:col-span-2">
-                                    <Input
-                                        type="number"
-                                        value={pkg.price}
-                                        onChange={(e) => updatePackage(index, 'price', parseInt(e.target.value))}
-                                        className="h-10 border-slate-200"
-                                    />
-                                </div>
-                                <div className="sm:col-span-4">
-                                    <Input
-                                        placeholder="Details"
-                                        value={pkg.description}
-                                        onChange={(e) => updatePackage(index, 'description', e.target.value)}
-                                        className="h-10 border-slate-200"
-                                    />
-                                </div>
-                                <div className="sm:col-span-1 flex items-center justify-center">
-                                    <Button type="button" variant="ghost" size="icon" onClick={() => removePackage(index)} className="text-red-600 hover:bg-red-50">
-                                        <X className="w-4 h-4" />
+
+                    <div className="space-y-3">
+                        <Label className="text-sm font-medium">Select Packages to Offer</Label>
+                        <div className="flex flex-wrap gap-3">
+                            {STATIC_PACKAGE_TYPES.map((ptype) => {
+                                const isSelected = formData.packages.some(p => p.name === ptype.name);
+                                return (
+                                    <Button
+                                        key={ptype.name}
+                                        type="button"
+                                        variant={isSelected ? "default" : "outline"}
+                                        onClick={() => togglePackage(ptype)}
+                                        className={`rounded-full px-6 transition-all ${isSelected ? 'bg-[#7b4623] hover:bg-[#5d351a] shadow-md border-transparent' : 'hover:border-[#7b4623] hover:text-[#7b4623]'}`}
+                                    >
+                                        {isSelected && <Plus className="w-4 h-4 mr-2 rotate-45" />}
+                                        {!isSelected && <Plus className="w-4 h-4 mr-2" />}
+                                        {ptype.name}
                                     </Button>
-                                </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+
+                    <div className="space-y-4">
+                        {formData.packages.length > 0 ? (
+                            <div className="space-y-4 pt-2">
+                                <Label className="text-sm font-medium">Configure Selected Packages</Label>
+                                {formData.packages.map((pkg, index) => (
+                                    <div key={pkg.name} className="grid grid-cols-1 sm:grid-cols-12 gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-100 items-end">
+                                        <div className="sm:col-span-3">
+                                            <Label className="text-[10px] uppercase font-bold text-slate-400 block mb-1">Type</Label>
+                                            <div className="h-10 flex items-center px-3 bg-white rounded-lg border border-slate-200 font-semibold text-[#7b4623]">
+                                                {pkg.name}
+                                            </div>
+                                        </div>
+                                        <div className="sm:col-span-3">
+                                            <Label className="text-[10px] uppercase font-bold text-slate-400 block mb-1">Price (₹)</Label>
+                                            <Input
+                                                type="number"
+                                                value={pkg.price}
+                                                onChange={(e) => updatePackage(index, 'price', parseInt(e.target.value) || 0)}
+                                                className="h-10 border-slate-200 focus:border-[#7b4623]"
+                                                required
+                                            />
+                                        </div>
+                                        <div className="sm:col-span-5">
+                                            <Label className="text-[10px] uppercase font-bold text-slate-400 block mb-1">Short Note</Label>
+                                            <Input
+                                                placeholder="Details"
+                                                value={pkg.description}
+                                                onChange={(e) => updatePackage(index, 'description', e.target.value)}
+                                                className="h-10 border-slate-200"
+                                            />
+                                        </div>
+                                        <div className="sm:col-span-1 flex items-center justify-center">
+                                            <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="icon"
+                                                onClick={() => togglePackage(pkg)}
+                                                className="text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-full"
+                                            >
+                                                <X className="w-4 h-4" />
+                                            </Button>
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
-                        ))}
+                        ) : (
+                            <div className="text-center py-12 bg-slate-50 rounded-2xl border border-dashed border-slate-200 text-slate-400">
+                                <p className="text-sm italic">Toggle the buttons above to enable specific pricing packages.</p>
+                            </div>
+                        )}
                     </div>
                 </div>
 

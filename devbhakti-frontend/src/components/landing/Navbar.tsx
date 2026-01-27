@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, ChevronDown, ChevronRight, User, LogIn, UserPlus, ShoppingBag, Church, Search, ArrowRight, LogOut } from "lucide-react";
+import { Menu, X, ChevronDown, ChevronRight, User, LogIn, UserPlus, ShoppingBag, Church, Search, ArrowRight, LogOut, Heart } from "lucide-react";
 import { BASE_URL } from "@/config/apiConfig";
 
 import { Button } from "@/components/ui/button";
@@ -238,6 +238,16 @@ const Navbar: React.FC<NavbarProps> = ({ variant = "default" }) => {
                         </Link>
                       </DropdownMenuItem>
 
+                      <DropdownMenuItem asChild className="focus:bg-primary focus:text-white rounded-[1.2rem] cursor-pointer transition-all duration-300 group">
+                        <Link href={user ? "/favorites" : "/auth"} className="flex items-center justify-between w-full px-4 py-3">
+                          <div className="flex items-center gap-3">
+                            <Heart className="w-4 h-4 text-primary group-focus:text-white transition-colors" />
+                            <span className="font-medium">My Favorites</span>
+                          </div>
+                          <ChevronRight className="w-3 h-3 opacity-0 group-focus:opacity-100 -translate-x-2 group-focus:translate-x-0 transition-all" />
+                        </Link>
+                      </DropdownMenuItem>
+
                       {user && (
                         <>
                           <div className="py-2 mx-4 border-t border-orange-50 dark:border-zinc-800/50" />
@@ -360,6 +370,12 @@ const Navbar: React.FC<NavbarProps> = ({ variant = "default" }) => {
                       <Link href={user ? "/account/poojas" : "/auth"} onClick={() => setIsMobileMenuOpen(false)}>
                         <Church className="w-5 h-5 text-orange-600" />
                         <span>My Poojas</span>
+                      </Link>
+                    </Button>
+                    <Button variant="ghost" size="lg" asChild className="justify-start gap-4 h-14 rounded-2xl border border-border/50">
+                      <Link href={user ? "/favorites" : "/auth"} onClick={() => setIsMobileMenuOpen(false)}>
+                        <Heart className="w-5 h-5 text-orange-600" />
+                        <span>My Favorites</span>
                       </Link>
                     </Button>
 

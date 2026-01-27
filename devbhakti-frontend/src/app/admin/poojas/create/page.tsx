@@ -18,6 +18,13 @@ export default function CreatePoojaPage() {
     const [imagePreview, setImagePreview] = useState<string>("");
     const [isSubmitting, setIsSubmitting] = useState(false);
 
+    const STATIC_PACKAGE_TYPES = [
+        { name: "Single", description: "For 1 person" },
+        { name: "Couple", description: "For 2 people" },
+        { name: "Family", description: "Upto 5 people" },
+        { name: "Group", description: "Upto 6 people" }
+    ];
+
     const [formData, setFormData] = useState({
         name: "",
         price: 0,
@@ -41,19 +48,12 @@ export default function CreatePoojaPage() {
     const loadTemples = async () => {
         try {
             const data = await fetchAllTemplesAdmin();
-            console.log('Raw temple data from API:', data); // Debug log
-            
-            // Extract actual temple objects from User responses
             const actualTemples = data
-                .filter((user: any) => user.temple) // Only include users that have temples
-                .map((user: any) => user.temple); // Extract the temple object
-            
-            console.log('Extracted temples:', actualTemples); // Debug log
-            console.log('Temple structure:', actualTemples.map((t: any) => ({ id: t.id, name: t.name })));
-            
+                .filter((user: any) => user.temple)
+                .map((user: any) => user.temple);
+
             setTemples(actualTemples);
             if (actualTemples.length > 0) {
-                console.log('Setting default templeId to:', actualTemples[0].id);
                 setFormData(prev => ({ ...prev, templeId: actualTemples[0].id }));
             } else {
                 toast({
@@ -63,12 +63,7 @@ export default function CreatePoojaPage() {
                 });
             }
         } catch (error) {
-            console.error('Error loading temples:', error); // Debug log
-            toast({
-                title: "Error",
-                description: "Failed to load temples",
-                variant: "destructive"
-            });
+            toast({ title: "Error", description: "Failed to load temples", variant: "destructive" });
         }
     };
 
@@ -99,24 +94,25 @@ export default function CreatePoojaPage() {
         setFormData({ ...formData, [field]: newArray });
     };
 
-    const addPackage = () => {
-        setFormData({
-            ...formData,
-            packages: [...formData.packages, { name: "", price: 0, description: "" }]
-        });
+    const togglePackage = (ptype: any) => {
+        const exists = formData.packages.find(p => p.name === ptype.name);
+        if (exists) {
+            setFormData({
+                ...formData,
+                packages: formData.packages.filter(p => p.name !== ptype.name)
+            });
+        } else {
+            setFormData({
+                ...formData,
+                packages: [...formData.packages, { ...ptype, price: 0 }]
+            });
+        }
     };
 
     const updatePackage = (index: number, field: string, value: any) => {
         const newPackages = [...formData.packages];
         newPackages[index] = { ...newPackages[index], [field]: value };
         setFormData({ ...formData, packages: newPackages });
-    };
-
-    const removePackage = (index: number) => {
-        setFormData({
-            ...formData,
-            packages: formData.packages.filter((_, i) => i !== index)
-        });
     };
 
     const addStep = () => {
@@ -163,21 +159,11 @@ export default function CreatePoojaPage() {
         e.preventDefault();
         setIsSubmitting(true);
 
-        // Validate temple selection
         if (!formData.templeId) {
-            toast({
-                title: "Error",
-                description: "Please select a temple",
-                variant: "destructive"
-            });
+            toast({ title: "Error", description: "Please select a temple", variant: "destructive" });
             setIsSubmitting(false);
             return;
         }
-
-        console.log('=== FRONTEND SUBMISSION DEBUG ===');
-        console.log('Form data:', formData);
-        console.log('Selected templeId:', formData.templeId);
-        console.log('Available temples:', temples);
 
         const submissionData = new FormData();
         submissionData.append('name', formData.name);
@@ -198,22 +184,14 @@ export default function CreatePoojaPage() {
             submissionData.append('image', imageFile);
         }
 
-        // Log FormData contents
-        console.log('FormData contents:');
-        for (let [key, value] of submissionData.entries()) {
-            console.log(`${key}:`, value);
-        }
-
         try {
             await createPoojaAdmin(submissionData);
             toast({ title: "Success", description: "Pooja created successfully" });
             router.push('/admin/poojas');
         } catch (error: any) {
-            console.error('Create pooja error:', error);
-            const errorMessage = error.response?.data?.error || "Failed to create pooja";
             toast({
                 title: "Error",
-                description: errorMessage,
+                description: error.response?.data?.error || "Failed to create pooja",
                 variant: "destructive"
             });
         } finally {
@@ -223,13 +201,8 @@ export default function CreatePoojaPage() {
 
     return (
         <div className="space-y-6">
-            {/* Header */}
             <div className="flex items-center gap-4">
-                <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => router.back()}
-                >
+                <Button variant="ghost" size="icon" onClick={() => router.back()}>
                     <ArrowLeft className="w-5 h-5" />
                 </Button>
                 <div>
@@ -238,9 +211,7 @@ export default function CreatePoojaPage() {
                 </div>
             </div>
 
-            {/* Form */}
             <form onSubmit={handleSubmit} className="space-y-6 bg-card p-6 rounded-lg border">
-                {/* Basic Info */}
                 <div className="grid grid-cols-2 gap-6">
                     <div className="space-y-2">
                         <Label htmlFor="name">Pooja Name *</Label>
@@ -254,24 +225,18 @@ export default function CreatePoojaPage() {
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="templeId">Temple *</Label>
-                        {temples.length === 0 ? (
-                            <div className="w-full h-10 px-3 rounded-md border border-red-200 bg-red-50 text-red-600 text-sm flex items-center">
-                                No temples available. Please create a temple first.
-                            </div>
-                        ) : (
-                            <select
-                                id="templeId"
-                                className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
-                                value={formData.templeId}
-                                onChange={(e) => setFormData({ ...formData, templeId: e.target.value })}
-                                required
-                            >
-                                <option value="">Select a Temple</option>
-                                {temples.map(temple => (
-                                    <option key={temple.id} value={temple.id}>{temple.name}</option>
-                                ))}
-                            </select>
-                        )}
+                        <select
+                            id="templeId"
+                            className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+                            value={formData.templeId}
+                            onChange={(e) => setFormData({ ...formData, templeId: e.target.value })}
+                            required
+                        >
+                            <option value="">Select a Temple</option>
+                            {temples.map(temple => (
+                                <option key={temple.id} value={temple.id}>{temple.name}</option>
+                            ))}
+                        </select>
                     </div>
                 </div>
 
@@ -308,19 +273,6 @@ export default function CreatePoojaPage() {
                     </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                        <Label htmlFor="time">Time *</Label>
-                        <Input
-                            id="time"
-                            placeholder="e.g. 6:00 AM"
-                            value={formData.time}
-                            onChange={(e) => setFormData({ ...formData, time: e.target.value })}
-                            required
-                        />
-                    </div>
-                </div>
-
                 <div className="space-y-2">
                     <Label htmlFor="about">About Pooja</Label>
                     <Textarea
@@ -332,7 +284,6 @@ export default function CreatePoojaPage() {
                     />
                 </div>
 
-                {/* Image Upload */}
                 <div className="space-y-2">
                     <Label>Pooja Image</Label>
                     <div className="flex items-center gap-6">
@@ -361,7 +312,6 @@ export default function CreatePoojaPage() {
                     </div>
                 </div>
 
-                {/* Description Points */}
                 <div className="space-y-4 p-4 border rounded-xl bg-slate-50/50">
                     <div className="flex items-center justify-between">
                         <h3 className="font-semibold">Description Points</h3>
@@ -385,7 +335,6 @@ export default function CreatePoojaPage() {
                     </div>
                 </div>
 
-                {/* Benefits */}
                 <div className="space-y-4 p-4 border rounded-xl bg-slate-50/50">
                     <div className="flex items-center justify-between">
                         <h3 className="font-semibold">Benefits</h3>
@@ -409,7 +358,6 @@ export default function CreatePoojaPage() {
                     </div>
                 </div>
 
-                {/* Bullets/Highlights */}
                 <div className="space-y-4 p-4 border rounded-xl bg-slate-50/50">
                     <div className="flex items-center justify-between">
                         <h3 className="font-semibold">Highlights (Bullets)</h3>
@@ -434,52 +382,75 @@ export default function CreatePoojaPage() {
                     </div>
                 </div>
 
-                {/* Packages */}
+                {/* Packages Section - Matches Temple Panel */}
                 <div className="space-y-4 p-4 border rounded-xl bg-slate-50/50">
                     <div className="flex items-center justify-between">
                         <h3 className="font-semibold">Pooja Packages</h3>
-                        <Button type="button" variant="outline" size="sm" onClick={addPackage}>
-                            <Plus className="w-4 h-4 mr-2" /> Add Package
-                        </Button>
                     </div>
-                    <div className="space-y-4">
-                        {formData.packages.map((pkg, index) => (
-                            <div key={index} className="grid grid-cols-12 gap-3 p-4 bg-white border rounded-lg">
-                                <div className="col-span-4 space-y-1.5">
-                                    <Label className="text-xs">Package Name</Label>
-                                    <Input
-                                        placeholder="e.g. Family Package"
-                                        value={pkg.name}
-                                        onChange={(e) => updatePackage(index, 'name', e.target.value)}
-                                    />
-                                </div>
-                                <div className="col-span-2 space-y-1.5">
-                                    <Label className="text-xs">Price (₹)</Label>
-                                    <Input
-                                        type="number"
-                                        value={pkg.price}
-                                        onChange={(e) => updatePackage(index, 'price', parseInt(e.target.value))}
-                                    />
-                                </div>
-                                <div className="col-span-5 space-y-1.5">
-                                    <Label className="text-xs">Description</Label>
-                                    <Input
-                                        placeholder="e.g. For 4 people"
-                                        value={pkg.description}
-                                        onChange={(e) => updatePackage(index, 'description', e.target.value)}
-                                    />
-                                </div>
-                                <div className="col-span-1 flex items-end justify-center pb-1">
-                                    <Button type="button" variant="ghost" size="icon" onClick={() => removePackage(index)}>
-                                        <X className="w-4 h-4 text-destructive" />
+
+                    <div className="space-y-3">
+                        <Label className="text-sm font-medium">Select Packages to Offer</Label>
+                        <div className="flex flex-wrap gap-3">
+                            {STATIC_PACKAGE_TYPES.map((ptype) => {
+                                const isSelected = formData.packages.some(p => p.name === ptype.name);
+                                return (
+                                    <Button
+                                        key={ptype.name}
+                                        type="button"
+                                        variant={isSelected ? "default" : "outline"}
+                                        onClick={() => togglePackage(ptype)}
+                                        className={`rounded-full px-6 transition-all ${isSelected ? 'bg-primary text-white' : ''}`}
+                                    >
+                                        {isSelected && <Plus className="w-4 h-4 mr-2 rotate-45" />}
+                                        {!isSelected && <Plus className="w-4 h-4 mr-2" />}
+                                        {ptype.name}
                                     </Button>
-                                </div>
-                            </div>
-                        ))}
+                                );
+                            })}
+                        </div>
                     </div>
+
+                    {formData.packages.length > 0 ? (
+                        <div className="space-y-4 pt-4">
+                            {formData.packages.map((pkg, index) => (
+                                <div key={pkg.name} className="grid grid-cols-12 gap-3 p-4 bg-white border rounded-lg">
+                                    <div className="col-span-3 space-y-1.5">
+                                        <Label className="text-xs">Type</Label>
+                                        <div className="h-10 flex items-center px-3 bg-slate-50 rounded-md border text-sm font-medium">
+                                            {pkg.name}
+                                        </div>
+                                    </div>
+                                    <div className="col-span-3 space-y-1.5">
+                                        <Label className="text-xs">Price (₹)</Label>
+                                        <Input
+                                            type="number"
+                                            value={pkg.price}
+                                            onChange={(e) => updatePackage(index, 'price', parseInt(e.target.value) || 0)}
+                                        />
+                                    </div>
+                                    <div className="col-span-5 space-y-1.5">
+                                        <Label className="text-xs">Description</Label>
+                                        <Input
+                                            placeholder="Short note..."
+                                            value={pkg.description}
+                                            onChange={(e) => updatePackage(index, 'description', e.target.value)}
+                                        />
+                                    </div>
+                                    <div className="col-span-1 flex items-end justify-center pb-1">
+                                        <Button type="button" variant="ghost" size="icon" onClick={() => togglePackage(pkg)}>
+                                            <X className="w-4 h-4 text-destructive" />
+                                        </Button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="text-center py-6 bg-white border border-dashed rounded-lg text-muted-foreground text-sm">
+                            Select at least one package above to set its price.
+                        </div>
+                    )}
                 </div>
 
-                {/* Process Steps */}
                 <div className="space-y-4 p-4 border rounded-xl bg-slate-50/50">
                     <div className="flex items-center justify-between">
                         <h3 className="font-semibold">Ritual Process Steps</h3>
@@ -519,7 +490,6 @@ export default function CreatePoojaPage() {
                     </div>
                 </div>
 
-                {/* FAQs */}
                 <div className="space-y-4 p-4 border rounded-xl bg-slate-50/50">
                     <div className="flex items-center justify-between">
                         <h3 className="font-semibold">Frequently Asked Questions</h3>
@@ -554,7 +524,6 @@ export default function CreatePoojaPage() {
                     </div>
                 </div>
 
-                {/* Actions */}
                 <div className="flex justify-end gap-4 pt-6 border-t">
                     <Button type="button" variant="outline" onClick={() => router.back()}>
                         Cancel

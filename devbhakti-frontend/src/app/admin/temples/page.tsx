@@ -3,19 +3,26 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
-    Plus,
     Search,
+    Plus,
+    Eye,
     Edit2,
     Trash2,
     Building2,
     MapPin,
-    Eye,
     CheckCircle,
     XCircle,
-    ExternalLink
+    Clock,
+    Globe,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
 import {
     Table,
     TableBody,
@@ -32,12 +39,15 @@ import {
     toggleTempleStatusAdmin
 } from "@/api/adminController";
 import { useToast } from "@/hooks/use-toast";
+import TemplePreview from "@/components/admin/TemplePreview";
 
 export default function TemplesManagementPage() {
     const router = useRouter();
     const [temples, setTemples] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState("");
+    const [selectedTemple, setSelectedTemple] = useState<any>(null);
+    const [isPreviewOpen, setIsPreviewOpen] = useState(false);
     const { toast } = useToast();
 
     useEffect(() => {
@@ -48,18 +58,24 @@ export default function TemplesManagementPage() {
         setIsLoading(true);
         try {
             const data = await fetchAllTemplesAdmin();
-            
-            // Extract temple objects but keep the user ID for deletion
+
+            // Extract temple objects but keep the user data properly
             const actualTemples = data
                 .filter((user: any) => user.temple) // Only include users that have temples
                 .map((user: any) => ({
-                    ...user.temple, // Spread temple properties
-                    userId: user.id, // Keep the user ID for deletion
-                    isVerified: user.isVerified, // Keep user verification status
-                    email: user.email, // Keep user email
-                    phone: user.phone // Keep user phone
-                })); // Extract the temple object with user ID
-            
+                    // User data
+                    userId: user.id,
+                    userName: user.name,
+                    userEmail: user.email,
+                    userPhone: user.phone,
+                    isVerified: user.isVerified,
+                    // Temple data
+                    templeId: user.temple.id,
+                    templeName: user.temple.name,
+                    templeLocation: user.temple.location,
+                    ...user.temple // Spread other temple properties
+                }));
+
             setTemples(actualTemples);
         } catch (error) {
             toast({
@@ -104,8 +120,10 @@ export default function TemplesManagementPage() {
 
     const filteredTemples = temples.filter(
         (inst) =>
-            inst.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            inst.temple?.name?.toLowerCase().includes(searchTerm.toLowerCase())
+            inst.userName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            inst.userEmail?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            inst.templeName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            inst.templeLocation?.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     return (
@@ -138,6 +156,7 @@ export default function TemplesManagementPage() {
                     <TableHeader className="bg-slate-50/50">
                         <TableRow>
                             <TableHead>Temple Owner</TableHead>
+                            <TableHead>Temple ID</TableHead>
                             <TableHead>Temple Profile</TableHead>
                             <TableHead>Statistics</TableHead>
                             <TableHead>Status</TableHead>
@@ -165,35 +184,49 @@ export default function TemplesManagementPage() {
                                 <TableRow key={inst.userId} className="hover:bg-slate-50/50 transition-colors">
                                     <TableCell>
                                         <div className="flex flex-col">
-                                            <span className="font-semibold text-slate-900">{inst.name || "N/A"}</span>
-                                            <span className="text-xs text-muted-foreground">{inst.email || inst.phone}</span>
+                                            <span className="font-semibold text-slate-900">{inst.userName || "N/A"}</span>
+                                            <span className="text-xs text-muted-foreground">{inst.userEmail || inst.userPhone || "N/A"}</span>
                                         </div>
+                                    </TableCell>
+                                    <TableCell>
+                                        <Badge variant="outline" className="font-mono text-xs">
+                                            {inst.templeId || "N/A"}
+                                        </Badge>
                                     </TableCell>
                                     <TableCell>
                                         <div className="flex flex-col gap-0.5">
                                             <div className="flex items-center gap-1.5 font-medium text-slate-800">
                                                 <Building2 className="w-3.5 h-3.5 text-primary" />
-                                                <span>{inst.temple?.name || "No Temple"}</span>
+                                                <span>{inst.templeName || "No Temple"}</span>
                                             </div>
                                             <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
                                                 <MapPin className="w-3 h-3" />
-                                                <span>{inst.temple?.location || "N/A"}</span>
+                                                <span>{inst.templeLocation || "N/A"}</span>
                                             </div>
                                         </div>
                                     </TableCell>
                                     <TableCell>
                                         <div className="flex flex-col gap-1 text-[11px]">
-                                            <span className="text-slate-600">Poojas: {inst.temple?._count?.poojas || 0}</span>
-                                            <span className="text-slate-600">Events: {inst.temple?._count?.events || 0}</span>
+                                            <span className="text-slate-600">Poojas: {inst._count?.poojas || 0}</span>
+                                            <span className="text-slate-600">Events: {inst._count?.events || 0}</span>
                                         </div>
                                     </TableCell>
                                     <TableCell>
-                                        <div className="flex flex-col gap-1">
-                                            {inst.isVerified ? (
-                                                <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200">Verified</Badge>
-                                            ) : (
-                                                <Badge variant="outline" className="text-amber-600 bg-amber-50">Pending Approval</Badge>
-                                            )}
+                                        <div className="flex flex-col gap-2">
+                                            <div className="flex items-center gap-2">
+                                                {inst.isVerified ? (
+                                                    <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-emerald-50 text-emerald-700 rounded-lg border border-emerald-200">
+                                                        <CheckCircle className="w-3.5 h-3.5" />
+                                                        <span className="text-xs font-semibold">Verified</span>
+                                                    </div>
+                                                ) : (
+                                                    <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-amber-50 text-amber-700 rounded-lg border border-amber-200">
+                                                        <Clock className="w-3.5 h-3.5" />
+                                                        <span className="text-xs font-semibold">Pending</span>
+                                                    </div>
+                                                )}
+                                            </div>
+
                                         </div>
                                     </TableCell>
                                     <TableCell className="text-right">
@@ -219,8 +252,30 @@ export default function TemplesManagementPage() {
                                             <Button
                                                 variant="ghost"
                                                 size="icon"
+                                                className="h-8 w-8 text-indigo-600"
+                                                onClick={() => {
+                                                    setSelectedTemple(inst);
+                                                    setIsPreviewOpen(true);
+                                                }}
+                                                title="Preview on Website"
+                                            >
+                                                <Globe className="w-4 h-4" />
+                                            </Button>
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
                                                 className="h-8 w-8 text-blue-600"
-                                                onClick={() => router.push(`/admin/temples/edit/${inst.userId}`)}
+                                                onClick={() => {
+                                                    console.log('=== TEMPLE DATA DEBUG ===');
+                                                    console.log('inst:', inst);
+                                                    console.log('User Email:', inst.email);
+                                                    console.log('User Phone:', inst.phone);
+                                                    console.log('User ID:', inst.userId);
+                                                    console.log('Temple Name:', inst.name);
+                                                    console.log('Temple Location:', inst.location);
+                                                    console.log('============================');
+                                                    router.push(`/admin/temples/edit/${inst.userId}`)
+                                                }}
                                                 title="Edit Temple Account"
                                             >
                                                 <Edit2 className="w-4 h-4" />
@@ -242,6 +297,15 @@ export default function TemplesManagementPage() {
                     </TableBody>
                 </Table>
             </div>
+
+            <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
+                <DialogContent className="max-w-6xl p-0 overflow-hidden border-none bg-transparent shadow-2xl">
+                    <DialogHeader className="sr-only">
+                        <DialogTitle>Temple Preview</DialogTitle>
+                    </DialogHeader>
+                    {selectedTemple && <TemplePreview temple={selectedTemple} />}
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

@@ -13,8 +13,28 @@ export const fetchPublicTemples = async () => {
     return response.data;
 };
 
-// Fetch Single Pooja
-export const fetchPoojaById = async (id: string) => {
-    const response = await axios.get(`${API_URL}/temples/poojas/${id}`);
+// Favorites Management
+export const fetchUserFavorites = async () => {
+    const token = localStorage.getItem("token");
+    if (!token) return { success: false, data: [] };
+    const response = await axios.get(`${API_URL}/favorites`, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+
+export const addFavorite = async (data: { templeId?: string; poojaId?: string; productId?: string }) => {
+    const token = localStorage.getItem("token");
+    const response = await axios.post(`${API_URL}/favorites/add`, data, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+
+export const removeFavorite = async (data: { templeId?: string; poojaId?: string; productId?: string }) => {
+    const token = localStorage.getItem("token");
+    const response = await axios.post(`${API_URL}/favorites/remove`, data, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
     return response.data;
 };

@@ -308,56 +308,70 @@ export const getCTACards = async (req: Request, res: Response) => {
 
 export const createCTACard = async (req: Request, res: Response) => {
     try {
-        const { title, points, icon, buttonText, buttonLink, cardType, active, order } = req.body;
+        const { title, points, buttonText, buttonLink, cardType, active, order } = req.body;
+        const icon = req.file ? `/uploads/cms/cta/${req.file.filename}` : null;
+
+        if (!icon) {
+            return res.status(400).json({ success: false, message: 'Icon is required' });
+        }
 
         const ctaCard = await prisma.cTACard.create({
             data: {
                 title,
-                points,
+                points: typeof points === 'string' ? JSON.parse(points) : points,
                 icon,
                 buttonText,
                 buttonLink,
                 cardType,
-                active: active ?? true,
-                order: order ?? 0
+                active: active === 'true' || active === true,
+                order: parseInt(order as string) || 0
             }
         });
 
         res.status(201).json({ success: true, data: ctaCard });
     } catch (error) {
         console.error('Error creating CTA card:', error);
-        res.status(500).json({ error: 'Failed to create CTA card' });
+        res.status(500).json({ success: false, message: 'Failed to create CTA card', error: error instanceof Error ? error.message : String(error) });
     }
 };
 
 export const updateCTACard = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
-        const { title, points, icon, buttonText, buttonLink, cardType, active, order } = req.body;
+        const { title, points, buttonText, buttonLink, cardType, active, order } = req.body;
 
         const existingCard = await prisma.cTACard.findUnique({ where: { id: id as string } });
         if (!existingCard) {
-            return res.status(404).json({ error: 'CTA card not found' });
+            return res.status(404).json({ success: false, message: 'CTA card not found' });
+        }
+
+        let icon = existingCard.icon;
+        if (req.file) {
+            icon = `/uploads/cms/cta/${req.file.filename}`;
         }
 
         const ctaCard = await prisma.cTACard.update({
             where: { id: id as string },
             data: {
                 title,
-                points,
+                points: typeof points === 'string' ? JSON.parse(points) : points,
                 icon,
                 buttonText,
                 buttonLink,
                 cardType,
-                active,
-                order
+                active: active === 'true' || active === true,
+                order: parseInt(order as string) || 0
             }
         });
 
         res.json({ success: true, data: ctaCard });
     } catch (error) {
-        console.error('Error updating CTA card:', error);
-        res.status(500).json({ error: 'Failed to update CTA card' });
+        console.error('Error updating CTA card (INTERNAL ERROR):', error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Failed to update CTA card', 
+            details: error instanceof Error ? error.message : String(error) 
+        });
     }
 };
 

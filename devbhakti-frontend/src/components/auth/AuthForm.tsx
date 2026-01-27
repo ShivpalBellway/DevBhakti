@@ -214,14 +214,21 @@ const AuthForm: React.FC = () => {
               <div className="space-y-2">
                 <Label htmlFor="phone">Phone Number</Label>
                 <div className="relative">
-                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                  <div className="absolute left-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
+                    <Phone className="w-5 h-5 text-muted-foreground" />
+                    <span className="text-muted-foreground font-semibold border-l pl-2 border-slate-300 leading-none">+91</span>
+                  </div>
                   <Input
                     id="phone"
                     type="tel"
-                    placeholder="+91 XXXXX XXXXX"
+                    placeholder="XXXXX XXXXX"
+                    maxLength={10}
                     value={formData.phone}
-                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    className="pl-10"
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/\D/g, '');
+                      setFormData({ ...formData, phone: val })
+                    }}
+                    className="pl-24"
                     required
                   />
                 </div>

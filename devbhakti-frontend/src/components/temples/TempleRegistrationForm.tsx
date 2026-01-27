@@ -21,7 +21,8 @@ import {
     Mail,
     Phone,
     Globe,
-    Check
+    Check,
+    CheckCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -240,13 +241,23 @@ export default function TempleRegistrationForm({ onClose }: { onClose?: () => vo
                         </div>
                         <div className="space-y-2">
                             <label className="text-sm font-bold text-slate-600 ml-1">Contact Phone *</label>
-                            <Input
-                                value={formData.phone}
-                                onChange={e => setFormData({ ...formData, phone: e.target.value })}
-                                placeholder="Registered Mobile Number"
-                                className="h-12 border-slate-200 focus:border-orange-500 rounded-xl"
-                                required
-                            />
+                            <div className="relative">
+                                <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 font-bold border-r pr-2 border-slate-300">
+                                    +91
+                                </div>
+                                <Input
+                                    value={formData.phone}
+                                    type="tel"
+                                    maxLength={10}
+                                    onChange={e => {
+                                        const val = e.target.value.replace(/\D/g, '');
+                                        setFormData({ ...formData, phone: val });
+                                    }}
+                                    placeholder="XXXXX XXXXX"
+                                    className="h-12 pl-14 border-slate-200 focus:border-orange-500 rounded-xl"
+                                    required
+                                />
+                            </div>
                         </div>
                         <div className="space-y-2">
                             <label className="text-sm font-bold text-slate-600 ml-1">Email Address</label>
@@ -332,7 +343,7 @@ export default function TempleRegistrationForm({ onClose }: { onClose?: () => vo
                             </div>
                         </div>
                         <div className="space-y-2">
-                            <label className="text-sm font-bold text-slate-600 ml-1">Full Physical Address *</label>
+                            <label className="text-sm font-bold text-slate-600 ml-1">Full Address *</label>
                             <Input
                                 value={formData.fullAddress}
                                 onChange={e => setFormData({ ...formData, fullAddress: e.target.value })}
@@ -390,13 +401,24 @@ export default function TempleRegistrationForm({ onClose }: { onClose?: () => vo
                                 ) : (
                                     <div className="py-10 text-center space-y-2">
                                         <Upload className="w-10 h-10 text-slate-300 mx-auto group-hover:text-[#88542b] transition-colors" />
-                                        <p className="text-xs text-slate-400 font-medium font-bold uppercase tracking-wider">Select Main Photo</p>
+                                        <p className="text-xs text-slate-400 font-medium uppercase tracking-wider">Select Main Photo</p>
                                     </div>
                                 )}
+                                {/* Hover Info */}
+                                <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-slate-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10">
+                                    <div className="text-center">
+                                        <p className="font-semibold">Main Profile Image</p>
+                                        <p className="text-slate-300">Max 2MB • 1200x800px</p>
+                                        <p className="text-slate-400">JPG, PNG, WebP</p>
+                                    </div>
+                                    <div className="absolute top-full left-1/2 transform -translate-x-1/2 -mt-1">
+                                        <div className="w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-slate-800"></div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                         <div className="space-y-3">
-                            <label className="text-sm font-bold text-slate-600 ml-1">Hero Banners (Max 5)</label>
+                            <label className="text-sm font-bold text-slate-600 ml-1">Banners (Max 5)</label>
                             <div className="grid grid-cols-3 gap-2">
                                 {heroPreviews.slice(0, 5).map((url, i) => (
                                     <div key={url} className="aspect-square rounded-xl overflow-hidden relative border border-slate-100 group">
@@ -420,6 +442,17 @@ export default function TempleRegistrationForm({ onClose }: { onClose?: () => vo
                                             onChange={handleHeroImagesChange}
                                         />
                                         <Plus className="w-6 h-6 text-slate-300 group-hover:text-[#88542b]" />
+                                        {/* Hover Info */}
+                                        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-slate-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10">
+                                            <div className="text-center">
+                                                <p className="font-semibold">Banner Images</p>
+                                                <p className="text-slate-300">Max 1MB each • 800x800px</p>
+                                                <p className="text-slate-400">JPG, PNG, WebP</p>
+                                            </div>
+                                            <div className="absolute top-full left-1/2 transform -translate-x-1/2 -mt-1">
+                                                <div className="w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-slate-800"></div>
+                                            </div>
+                                        </div>
                                     </div>
                                 )}
                             </div>
@@ -433,24 +466,51 @@ export default function TempleRegistrationForm({ onClose }: { onClose?: () => vo
                         <div className="p-2 bg-orange-50 text-orange-600 rounded-lg">
                             <Sparkles className="w-5 h-5" />
                         </div>
-                        <h3 className="text-xl font-bold text-slate-800">Performed Poojas</h3>
+                        <div>
+                            <h3 className="text-xl font-bold text-slate-800">Performed Poojas</h3>
+                            {/* <p className="text-sm text-slate-500 mt-1">Your poojas and sevas that you want to list. Please select from avilable poojas once you are approved from admin you can create more poojas.</p> */}
+                            List of poojas and sevas you wish to offer. Please select from the available poojas. Once approved by the admin, you will be able to create additional poojas.
+                        </div>
                     </div>
-                    <div className="flex flex-wrap gap-2">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         {allPoojas.map(pooja => (
-                            <button
+                            <div
                                 key={pooja.id}
-                                type="button"
-                                onClick={() => togglePooja(pooja.id)}
-                                className={`px-5 py-2.5 rounded-xl text-sm font-bold transition-all border ${selectedPoojaIds.includes(pooja.id)
-                                    ? "bg-[#88542b] text-white border-[#88542b] shadow-md shadow-[#88542b]/20"
-                                    : "bg-slate-50 text-slate-600 border-slate-100 hover:border-[#88542b]/20"
+                                className={`relative rounded-xl border-2 p-4 cursor-pointer transition-all hover:shadow-md ${selectedPoojaIds.includes(pooja.id)
+                                        ? "border-[#88542b] bg-orange-50 shadow-sm"
+                                        : "border-slate-200 bg-white hover:border-[#88542b]/30"
                                     }`}
+                                onClick={() => togglePooja(pooja.id)}
                             >
-                                {pooja.name}
-                                {selectedPoojaIds.includes(pooja.id) && " ✓"}
-                            </button>
+                                <div className="flex items-start gap-3">
+                                    <div className={`mt-1 w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${selectedPoojaIds.includes(pooja.id)
+                                            ? "border-[#88542b] bg-[#88542b]"
+                                            : "border-slate-300 bg-white"
+                                        }`}>
+                                        {selectedPoojaIds.includes(pooja.id) && (
+                                            <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                            </svg>
+                                        )}
+                                    </div>
+                                    <div className="flex-1">
+                                        <h4 className="font-semibold text-slate-800 text-sm">{pooja.name}</h4>
+                                        {pooja.category && (
+                                            <p className="text-xs text-slate-500 mt-1">{pooja.category}</p>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
                         ))}
                     </div>
+                    {selectedPoojaIds.length > 0 && (
+                        <div className="flex items-center gap-2 p-3 bg-green-50 rounded-lg border border-green-200">
+                            <CheckCircle className="w-4 h-4 text-green-600" />
+                            <span className="text-sm text-green-700 font-medium">
+                                {selectedPoojaIds.length} pooja{selectedPoojaIds.length > 1 ? 's' : ''} selected
+                            </span>
+                        </div>
+                    )}
                 </section>
 
                 {/* 5. Online Presence */}
@@ -484,14 +544,14 @@ export default function TempleRegistrationForm({ onClose }: { onClose?: () => vo
                 </section>
 
                 {/* 6. Inline Events */}
-                <section className="space-y-6 pb-6">
+                {/* <section className="space-y-6 pb-6">
                     <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-                        {/* <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-3">
                             <div className="p-2 bg-orange-50 text-orange-600 rounded-lg">
                                 <Calendar className="w-5 h-5" />
                             </div>
                             <h3 className="text-xl font-bold text-slate-800">Major Festivals / Events</h3>
-                        </div> */}
+                        </div>
                         <Button type="button" variant="outline" size="sm" onClick={addEvent} className="rounded-lg border-slate-200 hover:border-orange-400 hover:bg-orange-50">
                             <Plus className="w-4 h-4 mr-2" /> Add Festival
                         </Button>
@@ -543,7 +603,7 @@ export default function TempleRegistrationForm({ onClose }: { onClose?: () => vo
                             </div>
                         )}
                     </div>
-                </section>
+                </section> */}
             </form>
 
             {/* Footer Actions */}

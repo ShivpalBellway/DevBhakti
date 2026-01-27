@@ -23,8 +23,13 @@ export const getAllTemples = async (req: Request, res: Response) => {
   try {
     const userId = getUserIdFromRequest(req);
     
-    // Fetch all temples
+    // Fetch only temples where user is verified
     const temples = await prisma.temple.findMany({
+      where: {
+        user: {
+          isVerified: true
+        }
+      },
       include: {
         poojas: true
       }
@@ -64,16 +69,24 @@ export const getTempleById = async (req: Request, res: Response) => {
     const { id } = req.params;
     const userId = getUserIdFromRequest(req);
 
-    const temple = await prisma.temple.findUnique({
-      where: { id: id as string },
+    const temple = await prisma.temple.findFirst({
+      where: { 
+        id: id as string,
+        user: {
+            isVerified: true
+        }
+      },
       include: {
         poojas: true,
-        events: true
+        events: true,
+        user: {
+            select: { isVerified: true }
+        }
       }
     });
     
     if (!temple) {
-      return res.status(404).json({ success: false, message: 'Temple not found' });
+      return res.status(404).json({ success: false, message: 'Temple not found or not verified' });
     }
 
     let isFavorite = false;
@@ -113,8 +126,15 @@ export const getPoojaById = async (req: Request, res: Response) => {
     const { id } = req.params;
     const userId = getUserIdFromRequest(req);
 
-    const pooja = await prisma.pooja.findUnique({
-      where: { id: String(id) },
+    const pooja = await prisma.pooja.findFirst({
+      where: { 
+        id: String(id),
+        temple: {
+            user: {
+                isVerified: true
+            }
+        }
+      },
       include: {
         temple: true
       }
@@ -150,6 +170,13 @@ export const getAllPoojas = async (req: Request, res: Response) => {
     const userId = getUserIdFromRequest(req);
 
     const poojas = await prisma.pooja.findMany({
+      where: {
+        temple: {
+            user: {
+                isVerified: true
+            }
+        }
+      },
       include: {
         temple: {
           select: {

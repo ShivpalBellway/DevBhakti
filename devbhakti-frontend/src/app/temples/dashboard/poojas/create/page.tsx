@@ -17,6 +17,13 @@ export default function TempleCreatePoojaPage() {
     const [imagePreview, setImagePreview] = useState<string>("");
     const [isSubmitting, setIsSubmitting] = useState(false);
 
+    const STATIC_PACKAGE_TYPES = [
+        { name: "Single", description: "For 1 person" },
+        { name: "Couple", description: "For 2 people" },
+        { name: "Family", description: "Upto 5 people" },
+        { name: "Group", description: "Upto 6 people" }
+    ];
+
     const [formData, setFormData] = useState({
         name: "",
         price: 0,
@@ -27,7 +34,7 @@ export default function TempleCreatePoojaPage() {
         description: [] as string[],
         benefits: [] as string[],
         bullets: [] as string[],
-        packages: [] as any[],
+        packages: [] as any[], // Start with empty, user will select
         processSteps: [] as any[],
         faqs: [] as any[]
     });
@@ -44,24 +51,25 @@ export default function TempleCreatePoojaPage() {
         }
     };
 
-    const addPackage = () => {
-        setFormData({
-            ...formData,
-            packages: [...formData.packages, { name: "", price: 0, description: "" }]
-        });
+    const togglePackage = (ptype: any) => {
+        const exists = formData.packages.find(p => p.name === ptype.name);
+        if (exists) {
+            setFormData({
+                ...formData,
+                packages: formData.packages.filter(p => p.name !== ptype.name)
+            });
+        } else {
+            setFormData({
+                ...formData,
+                packages: [...formData.packages, { ...ptype, price: 0 }]
+            });
+        }
     };
 
     const updatePackage = (index: number, field: string, value: any) => {
         const newPackages = [...formData.packages];
         newPackages[index] = { ...newPackages[index], [field]: value };
         setFormData({ ...formData, packages: newPackages });
-    };
-
-    const removePackage = (index: number) => {
-        setFormData({
-            ...formData,
-            packages: formData.packages.filter((_, i) => i !== index)
-        });
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -166,7 +174,7 @@ export default function TempleCreatePoojaPage() {
                                 required
                             />
                         </div>
-                        <div className="space-y-2">
+                        {/* <div className="space-y-2">
                             <Label htmlFor="time">Preferred Time *</Label>
                             <Input
                                 id="time"
@@ -176,7 +184,7 @@ export default function TempleCreatePoojaPage() {
                                 className="rounded-xl h-11 border-slate-200 focus:border-[#7b4623] focus:ring-[#7b4623]/10"
                                 required
                             />
-                        </div>
+                        </div> */}
                     </div>
 
                     <div className="space-y-2">
@@ -229,53 +237,81 @@ export default function TempleCreatePoojaPage() {
                     </div>
                 </div>
 
-                <div className="space-y-4">
+                <div className="space-y-6">
                     <div className="flex items-center justify-between border-b pb-2">
                         <h3 className="text-lg font-semibold text-[#7b4623]">Pricing Packages</h3>
-                        <Button type="button" variant="ghost" size="sm" onClick={addPackage} className="text-[#7b4623] hover:bg-orange-50 h-8">
-                            <Plus className="w-4 h-4 mr-1" /> Add Package
-                        </Button>
                     </div>
-                    {formData.packages.length === 0 ? (
-                        <p className="text-sm text-center text-muted-foreground py-4 italic">No extra packages. Base price will apply.</p>
-                    ) : (
-                        <div className="space-y-4">
+
+                    <div className="space-y-3">
+                        <Label className="text-sm font-medium">Select Packages to Offer</Label>
+                        <div className="flex flex-wrap gap-3">
+                            {STATIC_PACKAGE_TYPES.map((ptype) => {
+                                const isSelected = formData.packages.some(p => p.name === ptype.name);
+                                return (
+                                    <Button
+                                        key={ptype.name}
+                                        type="button"
+                                        variant={isSelected ? "default" : "outline"}
+                                        onClick={() => togglePackage(ptype)}
+                                        className={`rounded-full px-6 transition-all ${isSelected ? 'bg-[#7b4623] hover:bg-[#5d351a] shadow-md' : 'hover:border-[#7b4623] hover:text-[#7b4623]'}`}
+                                    >
+                                        {isSelected && <Plus className="w-4 h-4 mr-2 rotate-45" />}
+                                        {!isSelected && <Plus className="w-4 h-4 mr-2" />}
+                                        {ptype.name}
+                                    </Button>
+                                );
+                            })}
+                        </div>
+                    </div>
+
+                    {formData.packages.length > 0 ? (
+                        <div className="space-y-4 pt-4">
+                            <Label className="text-sm font-medium">Set Package Pricing</Label>
                             {formData.packages.map((pkg, index) => (
-                                <div key={index} className="grid grid-cols-1 sm:grid-cols-12 gap-4 p-4 bg-slate-50/50 rounded-xl border border-slate-100">
-                                    <div className="sm:col-span-5 space-y-1.5">
-                                        <Label className="text-[10px] uppercase font-bold text-slate-400">Package Name</Label>
-                                        <Input
-                                            placeholder="e.g. Family Package"
-                                            value={pkg.name}
-                                            onChange={(e) => updatePackage(index, 'name', e.target.value)}
-                                            className="rounded-lg h-10 border-slate-200"
-                                        />
+                                <div key={pkg.name} className="grid grid-cols-1 sm:grid-cols-12 gap-4 p-5 bg-slate-50 rounded-2xl border border-slate-100 items-end">
+                                    <div className="sm:col-span-3 space-y-1.5">
+                                        <Label className="text-[10px] uppercase font-bold text-slate-400">Type</Label>
+                                        <div className="h-10 flex items-center px-3 bg-white rounded-lg border border-slate-200 font-semibold text-[#7b4623]">
+                                            {pkg.name}
+                                        </div>
                                     </div>
-                                    <div className="sm:col-span-2 space-y-1.5">
+                                    <div className="sm:col-span-3 space-y-1.5">
                                         <Label className="text-[10px] uppercase font-bold text-slate-400">Price (₹)</Label>
                                         <Input
                                             type="number"
+                                            placeholder="0"
                                             value={pkg.price}
-                                            onChange={(e) => updatePackage(index, 'price', parseInt(e.target.value))}
-                                            className="rounded-lg h-10 border-slate-200"
+                                            onChange={(e) => updatePackage(index, 'price', parseInt(e.target.value) || 0)}
+                                            className="rounded-lg h-10 border-slate-200 focus:border-[#7b4623]"
+                                            required
                                         />
                                     </div>
-                                    <div className="sm:col-span-4 space-y-1.5">
+                                    <div className="sm:col-span-5 space-y-1.5">
                                         <Label className="text-[10px] uppercase font-bold text-slate-400">Short Note</Label>
                                         <Input
-                                            placeholder="e.g. For 4 persons"
+                                            placeholder="e.g. Special prasad included"
                                             value={pkg.description}
                                             onChange={(e) => updatePackage(index, 'description', e.target.value)}
                                             className="rounded-lg h-10 border-slate-200"
                                         />
                                     </div>
-                                    <div className="sm:col-span-1 flex items-end justify-center pb-0.5">
-                                        <Button type="button" variant="ghost" size="icon" onClick={() => removePackage(index)} className="hover:text-red-600 hover:bg-red-50">
+                                    <div className="sm:col-span-1 flex justify-center">
+                                        <Button
+                                            type="button"
+                                            variant="ghost"
+                                            size="icon"
+                                            onClick={() => togglePackage(pkg)}
+                                            className="text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-full"
+                                        >
                                             <X className="w-4 h-4" />
                                         </Button>
                                     </div>
                                 </div>
                             ))}
+                        </div>
+                    ) : (
+                        <div className="text-center py-10 bg-slate-50 rounded-2xl border border-dashed border-slate-200 text-slate-400">
+                            <p className="text-sm italic">Select at least one package above to set its price.</p>
                         </div>
                     )}
                 </div>

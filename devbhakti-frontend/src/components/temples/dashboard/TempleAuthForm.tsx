@@ -121,16 +121,18 @@ const TempleAuthForm: React.FC = () => {
                                 <div className="space-y-3">
                                     <Label htmlFor="phone" className="text-slate-700 font-medium ml-1">Registered Phone Number</Label>
                                     <div className="relative group">
-                                        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[#7b4623] transition-colors">
-                                            <Phone className="w-5 h-5" />
+                                        <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
+                                            <Phone className="w-5 h-5 text-slate-400 group-focus-within:text-[#7b4623] transition-colors" />
+                                            <span className="text-slate-400 font-semibold border-l pl-2 border-slate-300 leading-none group-focus-within:text-[#7b4623] transition-colors">+91</span>
                                         </div>
                                         <Input
                                             id="phone"
                                             type="tel"
-                                            placeholder="Enter your 10-digit mobile number"
+                                            maxLength={10}
+                                            placeholder="XXXXX XXXXX"
                                             value={phone}
-                                            onChange={(e) => setPhone(e.target.value)}
-                                            className="h-14 pl-12 bg-slate-50 border-slate-200 focus:border-[#7b4623] focus:ring-[#7b4623]/10 rounded-2xl text-lg tracking-wide"
+                                            onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))}
+                                            className="h-14 pl-24 bg-slate-50 border-slate-200 focus:border-[#7b4623] focus:ring-[#7b4623]/10 rounded-2xl text-lg tracking-wide"
                                             required
                                         />
                                     </div>
