@@ -318,7 +318,7 @@ export const getPendingUpdateRequests = async (req: Request, res: Response) => {
 // Approve Update Request
 export const approveUpdateRequest = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
 
     const request = await prisma.templeUpdateRequest.findUnique({
       where: { id },
@@ -355,7 +355,7 @@ export const approveUpdateRequest = async (req: Request, res: Response) => {
 // Reject Update Request
 export const rejectUpdateRequest = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
 
     await prisma.templeUpdateRequest.update({
       where: { id },
