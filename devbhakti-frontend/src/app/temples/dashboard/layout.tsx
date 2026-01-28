@@ -42,7 +42,7 @@ const sidebarItems = [
         href: "/temples/dashboard/events",
     },
     {
-        label: "User Management",
+        label: "Devotee Management",
         icon: Users,
         href: "/temples/dashboard/users",
     },

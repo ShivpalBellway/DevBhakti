@@ -5,7 +5,10 @@ import {
     createTemple,
     updateTemple,
     deleteTemple,
-    toggleTempleStatus
+    toggleTempleStatus,
+    getPendingUpdateRequests,
+    approveUpdateRequest,
+    rejectUpdateRequest
 } from '../../controllers/admin/templeController';
 import { authenticate, authorize } from '../../middleware/authMiddleware';
 
@@ -38,5 +41,10 @@ router.post('/', templeUpload, createTemple);
 router.put('/:id', templeUpload, updateTemple);
 router.patch('/:id/status', toggleTempleStatus);
 router.delete('/:id', deleteTemple);
+
+// Update Request Routes
+router.get('/update-requests', getPendingUpdateRequests);
+router.post('/update-requests/:id/approve', approveUpdateRequest);
+router.post('/update-requests/:id/reject', rejectUpdateRequest);
 
 export default router;

@@ -71,6 +71,19 @@ model Temple {
   createdAt    DateTime @default(now())
 
   updatedAt    DateTime @updatedAt
+
+  updateRequests TempleUpdateRequest[]
+}
+
+model TempleUpdateRequest {
+  id            String   @id @default(cuid())
+  templeId      String
+  temple        Temple   @relation(fields: [templeId], references: [id], onDelete: Cascade)
+  requestedData Json     // Store the changes JSON
+  oldData       Json     // Store current values for comparison
+  status        String   @default("PENDING") // PENDING, APPROVED, REJECTED
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 }
 
 model Pooja {

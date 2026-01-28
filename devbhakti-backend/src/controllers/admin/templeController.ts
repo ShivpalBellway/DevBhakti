@@ -288,9 +288,84 @@ export const deleteTemple = async (req: Request, res: Response) => {
       });
     } else if (error.message === 'Temple account not found') {
       res.status(404).json({ error: 'Temple account not found' });
-    } else {
-      res.status(500).json({ error: error.message || 'Failed to delete temple' });
     }
+  }
+};
+
+// Get Pending Update Requests
+export const getPendingUpdateRequests = async (req: Request, res: Response) => {
+  try {
+    const requests = await prisma.templeUpdateRequest.findMany({
+      where: { status: 'PENDING' },
+      include: {
+        temple: {
+          select: {
+            name: true,
+            location: true,
+            id: true
+          }
+        }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+    res.json(requests);
+  } catch (error: any) {
+    console.error('Fetch update requests error:', error);
+    res.status(500).json({ error: 'Failed to fetch update requests' });
+  }
+};
+
+// Approve Update Request
+export const approveUpdateRequest = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    const request = await prisma.templeUpdateRequest.findUnique({
+      where: { id },
+      include: { temple: true }
+    });
+
+    if (!request || request.status !== 'PENDING') {
+      return res.status(404).json({ error: 'Pending update request not found' });
+    }
+
+    const requestedData = request.requestedData as any;
+
+    await prisma.$transaction(async (tx) => {
+      // 1. Update Temple with requested data
+      await tx.temple.update({
+        where: { id: request.templeId },
+        data: requestedData
+      });
+
+      // 2. Mark request as APPROVED
+      await tx.templeUpdateRequest.update({
+        where: { id },
+        data: { status: 'APPROVED' }
+      });
+    });
+
+    res.json({ success: true, message: 'Update request approved and applied' });
+  } catch (error: any) {
+    console.error('Approve update request error:', error);
+    res.status(500).json({ error: error.message || 'Failed to approve update request' });
+  }
+};
+
+// Reject Update Request
+export const rejectUpdateRequest = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    await prisma.templeUpdateRequest.update({
+      where: { id },
+      data: { status: 'REJECTED' }
+    });
+
+    res.json({ success: true, message: 'Update request rejected' });
+  } catch (error: any) {
+    console.error('Reject update request error:', error);
+    res.status(500).json({ error: error.message || 'Failed to reject update request' });
   }
 };
 

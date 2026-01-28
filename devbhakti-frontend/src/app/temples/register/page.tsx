@@ -146,20 +146,20 @@ export default function RegisterTemplePage() {
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ duration: 1, delay: 0.2 }}
                         >
-                            <h1 className="text-5xl md:text-7xl lg:text-8xl font-serif font-extrabold tracking-tight mb-8 leading-tight text-foreground">
-                                <span className="text-primary">Digital Temple</span>
-                                <br />
-                                <span>Presence</span>
-                            </h1>
-                            <p className="text-xl md:text-2xl text-black max-w-3xl mx-auto mb-12 leading-relaxed font-light font-sans">
-                                Bring the sacred blessings of your temple to devotees across the globe through our spiritual platform.
-                            </p>
+                          <h1 className="text-2xl md:text-4xl lg:text-6xl font-serif font-extrabold tracking-tight mb-8 leading-tight text-foreground">
+    <span className="text-primary">Helping Temples Stay Connected</span>
+    <br />
+    <span>with Devotees Worldwide</span>
+</h1>
+<p className="text-xl md:text-2xl text-black max-w-3xl mx-auto mb-12 leading-relaxed font-light font-sans">
+    A temple-first digital platform for online poojas, donations, live darshan, and devotee communication.
+</p>
 
                             <div className="flex flex-col sm:flex-row gap-6 justify-center">
                                 <Button
                                     size="lg"
                                     onClick={() => setShowRegistrationModal(true)}
-                                    className="h-16 px-10 text-lg bg-primary hover:bg-primary/90 text-primary-foreground shadow-warm rounded-full font-bold transition-all transform hover:scale-105"
+                                    className="h-14 px-9 text-lg bg-primary hover:bg-primary/90 text-primary-foreground shadow-warm rounded-full font-bold transition-all transform hover:scale-105"
                                 >
                                     <Image src={templeIcon} alt="temple" className="invert brightness-0 mr-3 h-6 w-6" />
                                     Register Your Temple

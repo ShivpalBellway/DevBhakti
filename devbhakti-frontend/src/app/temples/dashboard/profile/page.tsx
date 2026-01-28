@@ -20,6 +20,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Switch } from "@/components/ui/switch";
 import { fetchMyTempleProfile, updateMyTempleProfile } from "@/api/templeAdminController";
 import { useToast } from "@/hooks/use-toast";
 import { API_URL } from "@/config/apiConfig";
@@ -33,6 +34,7 @@ export default function TempleProfilePage() {
     // File refs
     const mainImageRef = useRef<HTMLInputElement>(null);
     const heroImagesRef = useRef<HTMLInputElement>(null);
+    const galleryRef = useRef<HTMLInputElement>(null);
 
     // Form states
     const [formData, setFormData] = useState<any>({
@@ -47,12 +49,15 @@ export default function TempleProfilePage() {
         website: "",
         mapUrl: "",
         viewers: "",
+        isLive: false,
     });
 
     const [mainImagePreview, setMainImagePreview] = useState<string | null>(null);
     const [heroPreviews, setHeroPreviews] = useState<string[]>([]);
+    const [galleryPreviews, setGalleryPreviews] = useState<string[]>([]);
     const [selectedMainFile, setSelectedMainFile] = useState<File | null>(null);
     const [selectedHeroFiles, setSelectedHeroFiles] = useState<File[]>([]);
+    const [selectedGalleryFiles, setSelectedGalleryFiles] = useState<File[]>([]);
 
     useEffect(() => {
         loadProfile();
@@ -77,10 +82,14 @@ export default function TempleProfilePage() {
                     website: data.website || "",
                     mapUrl: data.mapUrl || "",
                     viewers: data.viewers || "",
+                    isLive: data.isLive || false,
                 });
                 if (data.image) setMainImagePreview(getImageUrl(data.image));
                 if (data.heroImages && Array.isArray(data.heroImages)) {
                     setHeroPreviews(data.heroImages.map(img => getImageUrl(img)));
+                }
+                if (data.gallery && Array.isArray(data.gallery)) {
+                    setGalleryPreviews(data.gallery.map(img => getImageUrl(img)));
                 }
             }
         } catch (error) {
@@ -122,10 +131,26 @@ export default function TempleProfilePage() {
         }
     };
 
+    const handleGalleryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const files = Array.from(e.target.files || []);
+        if (files.length > 0) {
+            setSelectedGalleryFiles(prev => [...prev, ...files]);
+            files.forEach(file => {
+                const reader = new FileReader();
+                reader.onloadend = () => setGalleryPreviews(prev => [...prev, reader.result as string]);
+                reader.readAsDataURL(file);
+            });
+        }
+    };
+
     const removeHeroImage = (index: number) => {
         setHeroPreviews(prev => prev.filter((_, i) => i !== index));
         // Note: This only handles UI removal for now. Actual backend update will depend on how you handle existing vs new images.
         // For simplicity, we'll just send the new files if added.
+    };
+
+    const removeGalleryImage = (index: number) => {
+        setGalleryPreviews(prev => prev.filter((_, i) => i !== index));
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -145,12 +170,25 @@ export default function TempleProfilePage() {
                 fd.append('heroImages', file);
             });
 
+            selectedGalleryFiles.forEach(file => {
+                fd.append('gallery', file);
+            });
+
             const response = await updateMyTempleProfile(fd);
             if (response.success) {
-                toast({ title: "Success", description: "Profile updated successfully" });
+                if (response.pendingApproval) {
+                    toast({
+                        title: "Update Pending",
+                        description: "Your changes to sensitive fields have been submitted for admin approval. They will be visible on the public profile once approved.",
+                        className: "bg-amber-50 border-amber-200 text-amber-900 shadow-lg border-2"
+                    });
+                } else {
+                    toast({ title: "Success", description: "Profile updated successfully" });
+                }
                 loadProfile(); // Refresh
                 setSelectedMainFile(null);
                 setSelectedHeroFiles([]);
+                setSelectedGalleryFiles([]);
             }
         } catch (error) {
             toast({
@@ -282,6 +320,68 @@ export default function TempleProfilePage() {
                             />
                         </CardContent>
                     </Card>
+
+                    {/* Gallery */}
+                 {/*     <Card className="border-none shadow-md rounded-2xl">
+                        <CardHeader className="bg-[#7b4623]/5 border-b pb-4">
+                            <CardTitle className="text-lg font-serif text-[#7b4623] flex items-center gap-2">
+                                <ImageIcon className="w-5 h-5" />
+                                Temple Gallery
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="pt-6">
+                            <div className="grid grid-cols-2 gap-3">
+                                {galleryPreviews.map((preview, idx) => (
+                                    <div key={idx} className="relative aspect-square rounded-lg overflow-hidden border bg-slate-50">
+                                        <img src={preview} className="w-full h-full object-cover" />
+                                        <button
+                                            type="button"
+                                            onClick={() => removeGalleryImage(idx)}
+                                            className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
+                                        >
+                                            <X className="w-3 h-3" />
+                                        </button>
+                                    </div>
+                                ))}
+                                <div
+                                    onClick={() => galleryRef.current?.click()}
+                                    className="aspect-square rounded-lg border-2 border-dashed border-slate-200 bg-slate-50 flex items-center justify-center text-slate-400 hover:bg-slate-100 transition-colors cursor-pointer"
+                                >
+                                    <Plus className="w-6 h-6" />
+                                </div>
+                            </div>
+                            <input
+                                type="file"
+                                ref={galleryRef}
+                                className="hidden"
+                                accept="image/*"
+                                multiple
+                                onChange={handleGalleryChange}
+                            />
+                        </CardContent>
+                    </Card> */}
+
+                    {/* Live Status */}
+                    <Card className="border-none shadow-md rounded-2xl">
+                        <CardHeader className="bg-[#7b4623]/5 border-b pb-4">
+                            <CardTitle className="text-lg font-serif text-[#7b4623] flex items-center gap-2">
+                                <div className={`w-2 h-2 rounded-full ${formData.isLive ? 'bg-red-600 animate-pulse' : 'bg-slate-400'}`} />
+                                Live Status
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="pt-6">
+                            <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-100">
+                                <div className="space-y-0.5">
+                                    <Label className="text-slate-900 font-medium">Broadcast Live</Label>
+                                    <p className="text-xs text-muted-foreground">Toggle to show live darshan to devotees</p>
+                                </div>
+                                <Switch
+                                    checked={formData.isLive}
+                                    onCheckedChange={(checked) => setFormData({ ...formData, isLive: checked })}
+                                />
+                            </div>
+                        </CardContent>
+                    </Card>
                 </div>
 
                 {/* Right Column - Details */}
@@ -300,7 +400,7 @@ export default function TempleProfilePage() {
                                     <Input
                                         value={formData.name}
                                         onChange={e => setFormData({ ...formData, name: e.target.value })}
-                                        className="h-11 border-slate-200 focus:border-[#7b4623] focus:ring-[#7b4623]/10"
+                                        className="h-11 border-slate-200 focus:border-[#7b4623] focus:ring-[#7b4623]/10 text-slate-900"
                                     />
                                 </div>
                                 <div className="space-y-2">
@@ -308,7 +408,7 @@ export default function TempleProfilePage() {
                                     <Input
                                         value={formData.category}
                                         onChange={e => setFormData({ ...formData, category: e.target.value })}
-                                        className="h-11 border-slate-200 focus:border-[#7b4623] focus:ring-[#7b4623]/10"
+                                        className="h-11 border-slate-200 focus:border-[#7b4623] focus:ring-[#7b4623]/10 text-slate-900"
                                     />
                                 </div>
                                 <div className="space-y-2">
@@ -317,15 +417,24 @@ export default function TempleProfilePage() {
                                         value={formData.openTime}
                                         onChange={e => setFormData({ ...formData, openTime: e.target.value })}
                                         placeholder="e.g. 6:00 AM - 9:00 PM"
-                                        className="h-11 border-slate-200 focus:border-[#7b4623] focus:ring-[#7b4623]/10"
+                                        className="h-11 border-slate-200 focus:border-[#7b4623] focus:ring-[#7b4623]/10 text-slate-900"
                                     />
                                 </div>
-                                <div className="space-y-2">
+                              {/*  <div className="space-y-2">
                                     <Label className="text-slate-600">Phone Number</Label>
                                     <Input
                                         value={formData.phone}
                                         onChange={e => setFormData({ ...formData, phone: e.target.value })}
-                                        className="h-11 border-slate-200 focus:border-[#7b4623] focus:ring-[#7b4623]/10"
+                                        className="h-11 border-slate-200 focus:border-[#7b4623] focus:ring-[#7b4623]/10 text-slate-900"
+                                    />
+                                </div> */}
+                                <div className="space-y-2">
+                                    <Label className="text-slate-600">Virtual Viewers</Label>
+                                    <Input
+                                        value={formData.viewers}
+                                        onChange={e => setFormData({ ...formData, viewers: e.target.value })}
+                                        placeholder="e.g. 1.2k+"
+                                        className="h-11 border-slate-200 focus:border-[#7b4623] focus:ring-[#7b4623]/10 text-slate-900"
                                     />
                                 </div>
                             </div>

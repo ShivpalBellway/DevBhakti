@@ -165,26 +165,105 @@ export const updateMyTempleProfile = async (req: Request, res: Response) => {
       return res.status(404).json({ success: false, message: 'Temple not found' });
     }
 
-    const updatedTemple = await prisma.temple.update({
-      where: { id: temple.id },
-      data: {
-        name: data.name,
-        category: data.category,
-        openTime: data.openTime,
-        description: data.description,
-        history: data.history,
-        location: data.location,
-        fullAddress: data.fullAddress,
-        phone: data.phone,
-        website: data.website,
-        mapUrl: data.mapUrl,
-        viewers: data.viewers,
-        image: getFilePath(files, 'image') || undefined,
-        heroImages: files && files['heroImages'] ? getFilePaths(files, 'heroImages') : undefined,
-      }
-    });
+    // Define sensitive fields
+    const sensitiveFields = ['name', 'location', 'category', 'fullAddress', 'image', 'heroImages', 'gallery'];
+    
+    // Check if any sensitive field is being updated
+    const updateData: any = {};
+    const sensitiveChanges: any = {};
+    const oldSensitiveData: any = {};
+    let hasSensitiveChanges = false;
 
-    res.json({ success: true, data: updatedTemple, message: 'Profile updated successfully' });
+    // Map of fields to their values in req.body
+    const fieldMapping: any = {
+      name: data.name,
+      category: data.category,
+      location: data.location,
+      fullAddress: data.fullAddress,
+      openTime: data.openTime,
+      description: data.description,
+      history: data.history,
+      phone: data.phone,
+      website: data.website,
+      mapUrl: data.mapUrl,
+      viewers: data.viewers,
+      isLive: data.isLive !== undefined ? (String(data.isLive) === 'true') : undefined,
+    };
+
+    // Handle files
+    const newImage = getFilePath(files, 'image');
+    if (newImage) {
+      sensitiveChanges['image'] = newImage;
+      oldSensitiveData['image'] = temple.image;
+      hasSensitiveChanges = true;
+    }
+
+    const newHeroImages = files && files['heroImages'] ? getFilePaths(files, 'heroImages') : null;
+    if (newHeroImages && newHeroImages.length > 0) {
+      sensitiveChanges['heroImages'] = newHeroImages;
+      oldSensitiveData['heroImages'] = temple.heroImages;
+      hasSensitiveChanges = true;
+    }
+
+    const newGallery = files && files['gallery'] ? getFilePaths(files, 'gallery') : null;
+    if (newGallery && newGallery.length > 0) {
+      sensitiveChanges['gallery'] = newGallery;
+      oldSensitiveData['gallery'] = temple.gallery;
+      hasSensitiveChanges = true;
+    }
+
+    // Check textual fields
+    for (const key in fieldMapping) {
+      const newValue = fieldMapping[key];
+      const oldValue = (temple as any)[key];
+
+      if (newValue !== undefined && newValue !== oldValue) {
+        if (sensitiveFields.includes(key)) {
+          sensitiveChanges[key] = newValue;
+          oldSensitiveData[key] = oldValue;
+          hasSensitiveChanges = true;
+        } else {
+          updateData[key] = newValue;
+        }
+      }
+    }
+
+    if (hasSensitiveChanges) {
+      // Create a pending update request
+      await prisma.templeUpdateRequest.create({
+        data: {
+          templeId: temple.id,
+          requestedData: sensitiveChanges,
+          oldData: oldSensitiveData,
+          status: 'PENDING'
+        }
+      });
+
+      // Update non-sensitive fields immediately if any
+      if (Object.keys(updateData).length > 0) {
+        await prisma.temple.update({
+          where: { id: temple.id },
+          data: updateData
+        });
+      }
+
+      return res.json({ 
+        success: true, 
+        message: 'Sensitive fields update request submitted for admin approval. Non-sensitive fields (if any) updated.',
+        pendingApproval: true 
+      });
+    }
+
+    // If no sensitive changes, update everything directly
+    if (Object.keys(updateData).length > 0) {
+      const updatedTemple = await prisma.temple.update({
+        where: { id: temple.id },
+        data: updateData
+      });
+      return res.json({ success: true, data: updatedTemple, message: 'Profile updated successfully' });
+    }
+
+    res.json({ success: true, message: 'No changes detected' });
   } catch (error: any) {
     console.error('Update Temple Profile Error:', error);
     res.status(500).json({ success: false, message: error.message });

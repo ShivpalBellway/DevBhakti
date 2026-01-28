@@ -137,6 +137,30 @@ export const toggleTempleStatusAdmin = async (id: string, isVerified: boolean, l
     return response.data;
 };
 
+export const fetchTempleUpdateRequests = async () => {
+    const token = localStorage.getItem("admin_token");
+    const response = await axios.get(`${API_URL}/admin/temples/update-requests`, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+
+export const approveTempleUpdate = async (requestId: string) => {
+    const token = localStorage.getItem("admin_token");
+    const response = await axios.post(`${API_URL}/admin/temples/update-requests/${requestId}/approve`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+
+export const rejectTempleUpdate = async (requestId: string) => {
+    const token = localStorage.getItem("admin_token");
+    const response = await axios.post(`${API_URL}/admin/temples/update-requests/${requestId}/reject`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+
 // Admin CMS Management
 export const fetchAllBannersAdmin = async () => {
     const token = localStorage.getItem("admin_token");

@@ -36,7 +36,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import {
     fetchAllTemplesAdmin,
     deleteTempleAdmin,
-    toggleTempleStatusAdmin
+    toggleTempleStatusAdmin,
+    fetchTempleUpdateRequests
 } from "@/api/adminController";
 import { useToast } from "@/hooks/use-toast";
 import TemplePreview from "@/components/admin/TemplePreview";
@@ -48,11 +49,22 @@ export default function TemplesManagementPage() {
     const [searchTerm, setSearchTerm] = useState("");
     const [selectedTemple, setSelectedTemple] = useState<any>(null);
     const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+    const [updateRequestsCount, setUpdateRequestsCount] = useState(0);
     const { toast } = useToast();
 
     useEffect(() => {
         loadTemples();
+        loadUpdateRequestsCount();
     }, []);
+
+    const loadUpdateRequestsCount = async () => {
+        try {
+            const requests = await fetchTempleUpdateRequests();
+            setUpdateRequestsCount(requests.length);
+        } catch (error) {
+            console.error("Failed to load update requests count", error);
+        }
+    };
 
     const loadTemples = async () => {
         setIsLoading(true);
@@ -133,10 +145,21 @@ export default function TemplesManagementPage() {
                     <h1 className="text-2xl font-bold tracking-tight text-slate-900">Temple Management</h1>
                     <p className="text-muted-foreground">Manage temple administrator accounts and temple profiles.</p>
                 </div>
-                <Button onClick={() => router.push('/admin/temples/create')} className="bg-primary">
-                    <Plus className="w-4 h-4 mr-2" />
-                    Add New Temple
-                </Button>
+                <div className="flex gap-2">
+                    <Button variant="outline" onClick={() => router.push('/admin/temples/update-requests')} className="border-primary text-primary hover:bg-primary/10 relative">
+                        <Clock className="w-4 h-4 mr-2" />
+                        Update Requests
+                        {updateRequestsCount > 0 && (
+                            <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-medium text-white ring-2 ring-white">
+                                {updateRequestsCount}
+                            </span>
+                        )}
+                    </Button>
+                    <Button onClick={() => router.push('/admin/temples/create')} className="bg-primary">
+                        <Plus className="w-4 h-4 mr-2" />
+                        Add New Temple
+                    </Button>
+                </div>
             </div>
 
             <div className="flex flex-col md:flex-row gap-4">
