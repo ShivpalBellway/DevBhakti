@@ -7,6 +7,7 @@ import adminTempleRoutes from './routes/admin/templeRoutes';
 import adminPoojaRoutes from './routes/admin/poojaRoutes';
 import adminEventRoutes from './routes/admin/eventRoutes';
 import adminProductRoutes from './routes/admin/productRoutes';
+import adminCategoryRoutes from './routes/admin/categoryRoutes';
 // (adminInstitutionRoutes merged into adminTempleRoutes)
 import adminCmsRoutes from './routes/admin/cmsRoutes';
 import templeAdminTempleRoutes from './routes/temple_admin/templeRoutes';
@@ -38,6 +39,7 @@ app.use('/api/admin/auth', adminAuthRoutes);
 app.use('/api/admin/temples', adminTempleRoutes);
 app.use('/api/admin/poojas', adminPoojaRoutes);
 app.use('/api/admin/products', adminProductRoutes);
+app.use('/api/admin/categories', adminCategoryRoutes);
 app.use('/api/admin/events', adminEventRoutes);
 // (institutions merged into temples)
 app.use('/api/admin/cms', adminCmsRoutes);

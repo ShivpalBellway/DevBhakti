@@ -33,19 +33,9 @@ import { useToast } from "@/hooks/use-toast";
 import { 
   fetchProductByIdAdmin,
   updateProductAdmin,
-  fetchAllTemplesAdmin
+  fetchAllTemplesAdmin,
+  fetchActiveCategoriesAdmin
 } from "@/api/adminController";
-
-// Temple categories
-const categories = [
-  "Idols",
-  "Puja Items",
-  "Books",
-  "Clothing",
-  "Prasad",
-  "Accessories",
-  "Other",
-];
 
 interface Variant {
   id: string;
@@ -60,10 +50,13 @@ interface Product {
   name: string;
   description: string;
   category: string;
-  templeId: string;
+  categoryId: string;
   status: "pending" | "approved" | "rejected";
   image?: string;
+  templeId?: string;
   variants: Variant[];
+  createdAt: string;
+  updatedAt: string;
 }
 
 export default function EditProductPage() {
@@ -74,7 +67,9 @@ export default function EditProductPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [temples, setTemples] = useState<any[]>([]);
+  const [categories, setCategories] = useState<any[]>([]);
   const [isLoadingTemples, setIsLoadingTemples] = useState(true);
+  const [isLoadingCategories, setIsLoadingCategories] = useState(true);
   const [productImage, setProductImage] = useState<File | null>(null);
   const [productImagePreview, setProductImagePreview] = useState<string>("");
   const [existingImage, setExistingImage] = useState<string>("");
@@ -94,6 +89,7 @@ export default function EditProductPage() {
 
   useEffect(() => {
     loadTemples();
+    loadCategories();
     if (params.id) {
       loadProduct(params.id as string);
     }
@@ -106,10 +102,19 @@ export default function EditProductPage() {
       // Transform temples data to match expected format
       const transformedTemples = [
         { id: "general", name: "General Products (No Temple)" },
-        ...data.map((temple: any) => ({
-          id: temple.templeId || temple.id,
-          name: temple.templeName || temple.name
-        }))
+        ...data
+          .filter((user: any) => user.temple) // Only include users with temple data
+          .map((user: any) => ({
+            id: user.temple.id, // Use temple.id (primary key) for product relation
+            name: user.temple.name, // Use temple.name from temple table
+            templeId: user.temple.templeId, // Keep templeId for reference
+            user: {
+              id: user.id,
+              name: user.name,
+              email: user.email,
+              phone: user.phone
+            }
+          }))
       ];
       setTemples(transformedTemples);
     } catch (error: any) {
@@ -129,6 +134,25 @@ export default function EditProductPage() {
     }
   };
 
+  const loadCategories = async () => {
+    setIsLoadingCategories(true);
+    try {
+      const data = await fetchActiveCategoriesAdmin();
+      setCategories(data);
+    } catch (error: any) {
+      console.error("Load Categories Error:", error);
+      const errorMessage = error?.response?.data?.message || error?.message || "Failed to load categories";
+      
+      toast({
+        title: "Warning",
+        description: `Could not load categories: ${errorMessage}. Please check category management.`,
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoadingCategories(false);
+    }
+  };
+
   const loadProduct = async (id: string) => {
     setIsLoading(true);
     try {
@@ -138,8 +162,8 @@ export default function EditProductPage() {
       setFormData({
         name: data.name,
         description: data.description,
-        category: data.category,
-        templeId: data.templeId || "general", // Handle null templeId
+        category: data.categoryId || "",
+        templeId: data.templeId || "general",
         status: data.status,
       });
       setVariants(data.variants);
@@ -397,14 +421,15 @@ export default function EditProductPage() {
                   <Select
                     value={formData.category}
                     onValueChange={(value) => setFormData({ ...formData, category: value })}
+                    disabled={isLoadingCategories}
                   >
                     <SelectTrigger className={errors.category ? "border-red-500" : ""}>
-                      <SelectValue placeholder="Select category" />
+                      <SelectValue placeholder={isLoadingCategories ? "Loading categories..." : "Select category"} />
                     </SelectTrigger>
                     <SelectContent>
                       {categories.map((category) => (
-                        <SelectItem key={category} value={category}>
-                          {category}
+                        <SelectItem key={category.id} value={category.id}>
+                          {category.name}
                         </SelectItem>
                       ))}
                     </SelectContent>

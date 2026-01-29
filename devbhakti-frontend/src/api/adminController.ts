@@ -383,6 +383,89 @@ export const deleteProductAdmin = async (id: string) => {
     return response.data;
 };
 
+// Admin Category Management
+export const fetchAllCategoriesAdmin = async () => {
+    const token = localStorage.getItem("admin_token");
+    const response = await axios.get(`${API_URL}/admin/categories`, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data.data.categories;
+};
+
+export const fetchActiveCategoriesAdmin = async () => {
+    const token = localStorage.getItem("admin_token");
+    const response = await axios.get(`${API_URL}/admin/categories/active`, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data.data;
+};
+
+export const fetchCategoryByIdAdmin = async (id: string) => {
+    const token = localStorage.getItem("admin_token");
+    const response = await axios.get(`${API_URL}/admin/categories/${id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data.data;
+};
+
+export const createCategoryAdmin = async (categoryData: any) => {
+    const token = localStorage.getItem("admin_token");
+    
+    // Check if categoryData is FormData
+    if (categoryData instanceof FormData) {
+      const response = await axios.post(`${API_URL}/admin/categories`, categoryData, {
+        headers: {
+            Authorization: `Bearer ${token}`,
+            // Don't set Content-Type for FormData - let axios set it automatically
+        }
+      });
+      return response.data;
+    } else {
+      // Handle JSON data
+      const response = await axios.post(`${API_URL}/admin/categories`, categoryData, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      return response.data;
+    }
+};
+
+export const updateCategoryAdmin = async (id: string, categoryData: any) => {
+    const token = localStorage.getItem("admin_token");
+    
+    // Check if categoryData is FormData
+    if (categoryData instanceof FormData) {
+      const response = await axios.put(`${API_URL}/admin/categories/${id}`, categoryData, {
+        headers: {
+            Authorization: `Bearer ${token}`,
+            // Don't set Content-Type for FormData - let axios set it automatically
+        }
+      });
+      return response.data;
+    } else {
+      // Handle JSON data
+      const response = await axios.put(`${API_URL}/admin/categories/${id}`, categoryData, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      return response.data;
+    }
+};
+
+export const deleteCategoryAdmin = async (id: string) => {
+    const token = localStorage.getItem("admin_token");
+    const response = await axios.delete(`${API_URL}/admin/categories/${id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+
+export const toggleCategoryStatusAdmin = async (id: string, status: boolean) => {
+    const token = localStorage.getItem("admin_token");
+    const response = await axios.patch(`${API_URL}/admin/categories/${id}/status`, { isActive: status }, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+
 export const toggleProductStatusAdmin = async (id: string, status: string) => {
     const token = localStorage.getItem("admin_token");
     const response = await axios.patch(`${API_URL}/admin/products/${id}/status`, { status }, {

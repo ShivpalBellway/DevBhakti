@@ -57,6 +57,8 @@ export default function ProductsManagementPage() {
     setIsLoading(true);
     try {
       const data = await fetchAllProductsAdmin();
+      console.log('Products API Response:', data);
+      console.log('First Product:', data[0]);
       setProducts(data);
     } catch (error: any) {
       console.error("Load Products Error:", error);
@@ -228,13 +230,22 @@ export default function ProductsManagementPage() {
                   </TableCell>
                   <TableCell>
                     <Badge variant="outline" className="font-medium">
-                      {product.category}
+                      {product.categoryObj?.name || (product.category === "general" ? "General Products" : `Category: ${product.category?.slice(0, 8)}...`)}
                     </Badge>
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-1.5 text-slate-700">
-                      <Building2 className="w-3.5 h-3.5 text-primary" />
-                      <span className="text-sm">{product.templeName}</span>
+                      {product.temple ? (
+                        <>
+                          <Building2 className="w-3.5 h-3.5 text-primary" />
+                          <span className="text-sm">{product.temple.name}</span>
+                        </>
+                      ) : (
+                        <>
+                          <Package className="w-3.5 h-3.5 text-slate-400" />
+                          <span className="text-sm text-slate-500">General Product</span>
+                        </>
+                      )}
                     </div>
                   </TableCell>
                   <TableCell>

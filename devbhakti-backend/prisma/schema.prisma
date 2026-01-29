@@ -164,11 +164,27 @@ model Testimonial {
   updatedAt   DateTime @updatedAt
 }
 
+model ProductCategory {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  image       String?
+  isActive    Boolean  @default(true)
+  sortOrder   Int      @default(0)
+  
+  // Relations
+  products    Product[]
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
 model Product {
   id          String   @id @default(cuid())
   name        String
   description String
   category    String
+  categoryId  String?
   status      String   @default("pending") // pending, approved, rejected
   image       String?
   
@@ -177,6 +193,7 @@ model Product {
   temple      Temple?  @relation(fields: [templeId], references: [id], onDelete: Cascade)
   
   // Relations
+  categoryObj ProductCategory? @relation(fields: [categoryId], references: [id])
   variants    ProductVariant[]
   favorites   Favorite[]
   

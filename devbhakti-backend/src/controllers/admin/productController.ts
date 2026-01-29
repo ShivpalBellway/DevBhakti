@@ -7,13 +7,14 @@ const prisma = new PrismaClient();
 export const createProduct = async (req: Request, res: Response) => {
   try {
     // Handle both JSON and FormData
-    let name, description, category, templeId, status, variants, image;
+    let name, description, category, categoryId, templeId, status, variants, image;
     
     if (req.is('multipart/form-data')) {
       // FormData handling
       name = req.body.name;
       description = req.body.description;
       category = req.body.category;
+      categoryId = req.body.category || null; // Use category field as categoryId
       templeId = req.body.templeId || null;
       status = req.body.status || "pending";
       
@@ -26,11 +27,12 @@ export const createProduct = async (req: Request, res: Response) => {
       }
     } else {
       // JSON handling
-      const { name: productName, description: productDescription, category: productCategory, templeId: productTempleId, status: productStatus = "pending", variants: productVariants } = req.body;
+      const { name: productName, description: productDescription, category: productCategory, categoryId: productCategoryId, templeId: productTempleId, status: productStatus = "pending", variants: productVariants } = req.body;
       
       name = productName;
       description = productDescription;
       category = productCategory;
+      categoryId = productCategory || null; // Use category field as categoryId
       templeId = productTempleId || null;
       status = productStatus;
       variants = productVariants || [];
@@ -93,6 +95,7 @@ export const createProduct = async (req: Request, res: Response) => {
         name,
         description,
         category,
+        categoryId: categoryId || null, // Use categoryId from FormData
         templeId: templeId || null, // Allow null for admin-created products
         status,
         image: image || null,
@@ -107,6 +110,13 @@ export const createProduct = async (req: Request, res: Response) => {
       },
       include: {
         variants: true,
+        categoryObj: categoryId ? {
+          select: {
+            id: true,
+            name: true,
+            description: true
+          }
+        } : false,
         temple: templeId ? {
           select: {
             id: true,
@@ -187,6 +197,13 @@ export const getAllProducts = async (req: Request, res: Response) => {
         where,
         include: {
           variants: true,
+          categoryObj: {
+            select: {
+              id: true,
+              name: true,
+              description: true
+            }
+          },
           temple: {
             select: {
               id: true,
@@ -273,13 +290,14 @@ export const updateProduct = async (req: Request, res: Response) => {
     const { id } = req.params;
     
     // Handle both JSON and FormData
-    let name, description, category, templeId, status, variants, image, removeImage;
+    let name, description, category, categoryId, templeId, status, variants, image, removeImage;
     
     if (req.is('multipart/form-data')) {
       // FormData handling
       name = req.body.name;
       description = req.body.description;
       category = req.body.category;
+      categoryId = req.body.category || null; // Use category field as categoryId
       templeId = req.body.templeId || null;
       status = req.body.status;
       
@@ -295,11 +313,12 @@ export const updateProduct = async (req: Request, res: Response) => {
       removeImage = req.body.removeImage === 'true';
     } else {
       // JSON handling
-      const { name: productName, description: productDescription, category: productCategory, templeId: productTempleId, status: productStatus, variants: productVariants } = req.body;
+      const { name: productName, description: productDescription, category: productCategory, categoryId: productCategoryId, templeId: productTempleId, status: productStatus, variants: productVariants } = req.body;
       
       name = productName;
       description = productDescription;
       category = productCategory;
+      categoryId = productCategory || null; // Use category field as categoryId
       templeId = productTempleId || null;
       status = productStatus;
       variants = productVariants || [];
@@ -374,6 +393,7 @@ export const updateProduct = async (req: Request, res: Response) => {
     if (name) updateData.name = name;
     if (description) updateData.description = description;
     if (category) updateData.category = category;
+    if (categoryId !== undefined) updateData.categoryId = categoryId; // Add categoryId update
     if (status) updateData.status = status;
     if (templeId !== undefined) updateData.templeId = templeId === "general" ? null : templeId;
     
@@ -407,6 +427,13 @@ export const updateProduct = async (req: Request, res: Response) => {
       data: updateData,
       include: {
         variants: true,
+        categoryObj: categoryId ? {
+          select: {
+            id: true,
+            name: true,
+            description: true
+          }
+        } : false,
         temple: templeId ? {
           select: {
             id: true,
@@ -559,6 +586,13 @@ export const getProductsByTemple = async (req: Request, res: Response) => {
         where,
         include: {
           variants: true,
+          categoryObj: {
+            select: {
+              id: true,
+              name: true,
+              description: true
+            }
+          },
           temple: {
             select: {
               id: true,

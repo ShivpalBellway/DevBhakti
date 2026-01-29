@@ -36,26 +36,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { createProductAdmin, fetchAllTemplesAdmin } from "@/api/adminController";
-
-// Temple categories
-const categories = [
-  "Idols",
-  "Puja Items",
-  "Books",
-  "Clothing",
-  "Prasad",
-  "Accessories",
-  "Other",
-];
-
-interface Variant {
-  id: string;
-  name: string;
-  price: number;
-  stock: number;
-  image?: string;
-}
+import { createProductAdmin, fetchAllTemplesAdmin, fetchActiveCategoriesAdmin } from "@/api/adminController";
 
 export default function CreateProductPage() {
   const router = useRouter();
@@ -63,7 +44,9 @@ export default function CreateProductPage() {
   
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [temples, setTemples] = useState<any[]>([]);
+  const [categories, setCategories] = useState<any[]>([]);
   const [isLoadingTemples, setIsLoadingTemples] = useState(true);
+  const [isLoadingCategories, setIsLoadingCategories] = useState(true);
   const [productImage, setProductImage] = useState<File | null>(null);
   const [productImagePreview, setProductImagePreview] = useState<string>("");
   
@@ -83,6 +66,7 @@ export default function CreateProductPage() {
 
   useEffect(() => {
     loadTemples();
+    loadCategories();
   }, []);
 
   const loadTemples = async () => {
@@ -92,10 +76,19 @@ export default function CreateProductPage() {
       // Transform temples data to match expected format
       const transformedTemples = [
         { id: "general", name: "General Products (No Temple)" },
-        ...data.map((temple: any) => ({
-          id: temple.templeId || temple.id,
-          name: temple.templeName || temple.name
-        }))
+        ...data
+          .filter((user: any) => user.temple) // Only include users with temple data
+          .map((user: any) => ({
+            id: user.temple.id, // Use temple.id (primary key) for product relation
+            name: user.temple.name, // Use temple.name from temple table
+            templeId: user.temple.templeId, // Keep templeId for reference
+            user: {
+              id: user.id,
+              name: user.name,
+              email: user.email,
+              phone: user.phone
+            }
+          }))
       ];
       setTemples(transformedTemples);
     } catch (error: any) {
@@ -112,6 +105,25 @@ export default function CreateProductPage() {
       });
     } finally {
       setIsLoadingTemples(false);
+    }
+  };
+
+  const loadCategories = async () => {
+    setIsLoadingCategories(true);
+    try {
+      const data = await fetchActiveCategoriesAdmin();
+      setCategories(data);
+    } catch (error: any) {
+      console.error("Load Categories Error:", error);
+      const errorMessage = error?.response?.data?.message || error?.message || "Failed to load categories";
+      
+      toast({
+        title: "Warning",
+        description: `Could not load categories: ${errorMessage}. Please check category management.`,
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoadingCategories(false);
     }
   };
 
@@ -326,8 +338,8 @@ export default function CreateProductPage() {
                     </SelectTrigger>
                     <SelectContent>
                       {categories.map((category) => (
-                        <SelectItem key={category} value={category}>
-                          {category}
+                        <SelectItem key={category.id} value={category.id}>
+                          {category.name}
                         </SelectItem>
                       ))}
                     </SelectContent>
