@@ -26,6 +26,18 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { fetchPublicPoojaById } from "@/api/publicController";
 import { API_URL } from "@/config/apiConfig";
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogDescription,
+    DialogFooter
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useToast } from "@/components/ui/use-toast";
+import { useRouter } from "next/navigation";
 
 interface PoojaDetailClientProps {
     id: string;
@@ -35,6 +47,23 @@ const PoojaDetailClient = ({ id }: PoojaDetailClientProps) => {
     const [isExpanded, setIsExpanded] = React.useState(false);
     const [pooja, setPooja] = useState<any>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [activeTab, setActiveTab] = useState("about");
+    const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
+    const [selectedPackage, setSelectedPackage] = useState<any>(null);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isLoggedIn, setIsLoggedIn] = useState(false);
+    const [user, setUser] = useState<any>(null);
+    const { toast } = useToast();
+    const router = useRouter();
+
+    useEffect(() => {
+        const token = localStorage.getItem("token");
+        const userStr = localStorage.getItem("user");
+        setIsLoggedIn(!!token);
+        if (userStr) {
+            setUser(JSON.parse(userStr));
+        }
+    }, []);
 
     const getFullImageUrl = (path: string) => {
         if (!path) return "/placeholder.jpg";
@@ -42,11 +71,22 @@ const PoojaDetailClient = ({ id }: PoojaDetailClientProps) => {
         return `${API_URL.replace('/api', '')}${path}`;
     };
 
+    const scrollToPackages = () => {
+        setActiveTab("packages");
+        const element = document.getElementById("booking-tabs");
+        if (element) {
+            element.scrollIntoView({ behavior: "smooth" });
+        }
+    };
+
     useEffect(() => {
         const loadPooja = async () => {
             try {
                 const data = await fetchPublicPoojaById(id);
                 setPooja(data);
+                if (data?.packages && data.packages.length > 0) {
+                    setSelectedPackage(data.packages[0]);
+                }
             } catch (error) {
                 console.error("Failed to fetch pooja:", error);
             } finally {
@@ -55,6 +95,33 @@ const PoojaDetailClient = ({ id }: PoojaDetailClientProps) => {
         };
         loadPooja();
     }, [id]);
+
+    const handleSelectPackage = (pkg: any) => {
+        if (!isLoggedIn) {
+            toast({
+                title: "Login Required",
+                description: "Please login to book this pooja.",
+                variant: "destructive"
+            });
+            router.push("/auth?mode=login");
+            return;
+        }
+        setSelectedPackage(pkg);
+        setIsBookingModalOpen(true);
+    };
+
+    const handleConfirmBooking = () => {
+        setIsSubmitting(true);
+        // Simulate booking success
+        setTimeout(() => {
+            setIsSubmitting(false);
+            setIsBookingModalOpen(false);
+            toast({
+                title: "Booking Successful!",
+                description: `You have successfully booked the ${selectedPackage.name} for ${pooja.name}.`,
+            });
+        }, 1500);
+    };
 
     if (isLoading) {
         return (
@@ -170,7 +237,11 @@ const PoojaDetailClient = ({ id }: PoojaDetailClientProps) => {
                                         {pooja.price}
                                     </div>
                                 </div>
-                                <Button size="lg" className="rounded-2xl px-8 text-lg font-bold shadow-lg shadow-primary/25 hover:scale-105 transition-transform">
+                                <Button
+                                    size="lg"
+                                    onClick={scrollToPackages}
+                                    className="rounded-2xl px-8 text-lg font-bold shadow-lg shadow-primary/25 hover:scale-105 transition-transform"
+                                >
                                     Book Now <ArrowRight className="ml-2 w-5 h-5" />
                                 </Button>
                             </div>
@@ -178,8 +249,12 @@ const PoojaDetailClient = ({ id }: PoojaDetailClientProps) => {
                     </div>
 
                     {/* Tabs Section */}
-                    <div className="mt-12">
-                        <Tabs defaultValue="about" className="w-full">
+                    <div className="mt-12" id="booking-tabs">
+                        <Tabs
+                            value={activeTab}
+                            onValueChange={setActiveTab}
+                            className="w-full"
+                        >
                             <div className="flex justify-center mb-10">
                                 <TabsList className="h-auto bg-white/50 dark:bg-zinc-900/50 backdrop-blur-md p-1.5 rounded-full border border-orange-100 text-black dark:border-zinc-800 gap-1 flex-wrap justify-center shadow-sm relative z-10">
                                     {[
@@ -285,7 +360,10 @@ const PoojaDetailClient = ({ id }: PoojaDetailClientProps) => {
                                                                 {pkg.price}
                                                             </div>
                                                         </div>
-                                                        <Button className="rounded-full px-8 py-6 text-lg font-bold bg-primary hover:shadow-lg transition-all">
+                                                        <Button
+                                                            onClick={() => handleSelectPackage(pkg)}
+                                                            className="rounded-full px-8 py-6 text-lg font-bold bg-primary hover:shadow-lg transition-all"
+                                                        >
                                                             Select
                                                         </Button>
                                                     </div>
@@ -363,6 +441,85 @@ const PoojaDetailClient = ({ id }: PoojaDetailClientProps) => {
             </main>
 
             <Footer />
+
+            <Dialog open={isBookingModalOpen} onOpenChange={setIsBookingModalOpen}>
+                <DialogContent className="sm:max-w-[500px] rounded-[2rem] p-0 overflow-hidden border-none shadow-2xl">
+                    <div className="bg-primary p-8 text-white relative">
+                        <DialogHeader>
+                            <DialogTitle className="text-3xl font-serif font-bold mb-2">Confirm Booking</DialogTitle>
+                            <DialogDescription className="text-primary-foreground/80 text-lg">
+                                Review your details for {pooja.name}
+                            </DialogDescription>
+                        </DialogHeader>
+                    </div>
+
+                    <div className="p-8 space-y-6">
+                        <div className="space-y-4">
+                            <div className="p-4 bg-orange-50 dark:bg-zinc-900 rounded-2xl border border-orange-100 dark:border-zinc-800">
+                                <h4 className="text-xs font-bold uppercase tracking-wider text-primary mb-3">Devotee Details</h4>
+                                <div className="space-y-2">
+                                    <div className="flex justify-between text-sm">
+                                        <span className="text-muted-foreground">Name:</span>
+                                        <span className="font-medium">{user?.name || "N/A"}</span>
+                                    </div>
+                                    <div className="flex justify-between text-sm">
+                                        <span className="text-muted-foreground">Phone:</span>
+                                        <span className="font-medium">{user?.phone || "N/A"}</span>
+                                    </div>
+                                    {user?.email && (
+                                        <div className="flex justify-between text-sm">
+                                            <span className="text-muted-foreground">Email:</span>
+                                            <span className="font-medium">{user.email}</span>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
+                            <div className="p-4 bg-orange-50 dark:bg-zinc-900 rounded-2xl border border-orange-100 dark:border-zinc-800">
+                                <h4 className="text-xs font-bold uppercase tracking-wider text-primary mb-3">Package Details</h4>
+                                <div className="space-y-2">
+                                    <div className="flex justify-between text-sm">
+                                        <span className="text-muted-foreground">Package:</span>
+                                        <span className="font-medium">{selectedPackage?.name}</span>
+                                    </div>
+                                    <div className="flex justify-between text-sm">
+                                        <span className="text-muted-foreground">Price:</span>
+                                        <div className="flex items-center gap-0.5 font-bold text-primary">
+                                            <IndianRupee className="w-3.5 h-3.5" />
+                                            {selectedPackage?.price}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <DialogFooter className="mt-8 flex flex-col sm:flex-row gap-4">
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => setIsBookingModalOpen(false)}
+                                className="rounded-full px-8 py-6 h-auto text-lg w-full sm:w-auto"
+                            >
+                                Cancel
+                            </Button>
+                            <Button
+                                onClick={handleConfirmBooking}
+                                disabled={isSubmitting}
+                                className="rounded-full px-8 py-6 h-auto text-lg bg-primary w-full sm:w-auto shadow-lg shadow-primary/20"
+                            >
+                                {isSubmitting ? (
+                                    <>
+                                        <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                                        Booking...
+                                    </>
+                                ) : (
+                                    "Confirm & Book"
+                                )}
+                            </Button>
+                        </DialogFooter>
+                    </div>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 };
