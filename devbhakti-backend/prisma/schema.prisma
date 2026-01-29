@@ -67,6 +67,7 @@ model Temple {
   
   poojas       Pooja[]
   events       Event[]
+  products     Product[]
   favorites    Favorite[]
   createdAt    DateTime @default(now())
 
@@ -163,6 +164,41 @@ model Testimonial {
   updatedAt   DateTime @updatedAt
 }
 
+model Product {
+  id          String   @id @default(cuid())
+  name        String
+  description String
+  category    String
+  status      String   @default("pending") // pending, approved, rejected
+  image       String?
+  
+  // Link to Temple (optional - admin can create products without temple)
+  templeId    String?
+  temple      Temple?  @relation(fields: [templeId], references: [id], onDelete: Cascade)
+  
+  // Relations
+  variants    ProductVariant[]
+  favorites   Favorite[]
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model ProductVariant {
+  id        String   @id @default(cuid())
+  name      String   // e.g., "Small", "Medium", "Large", "Red", "Blue"
+  price     Float
+  stock     Int      @default(0)
+  image     String?
+  
+  // Link to Product
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 model Favorite {
   id        String   @id @default(cuid())
   userId    String
@@ -172,6 +208,7 @@ model Favorite {
   poojaId   String?
   pooja     Pooja?   @relation(fields: [poojaId], references: [id], onDelete: Cascade)
   productId String?
+  product   Product? @relation(fields: [productId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
 
   // Ensure unique favorites per user

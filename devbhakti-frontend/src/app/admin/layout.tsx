@@ -20,6 +20,7 @@ import {
   Menu,
   Image as ImageIcon,
   Flower2,
+  Package,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Logo from "@/components/icons/Logo";
@@ -50,6 +51,15 @@ const sidebarItems = [
     label: "Poojas",
     icon: Flower2,
     href: "/admin/poojas",
+  },
+  {
+    label: "Product Management",
+    icon: Package,
+    href: "#",
+    subItems: [
+      { label: "All Products", href: "/admin/products" },
+      { label: "Product Categories", href: "/admin/products/categories" }
+    ]
   },
   {
     label: "Events",
