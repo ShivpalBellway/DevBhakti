@@ -315,3 +315,86 @@ export const deleteCTACardAdmin = async (id: string) => {
     });
     return response.data;
 };
+
+// Admin Product Management
+export const fetchAllProductsAdmin = async () => {
+    const token = localStorage.getItem("admin_token");
+    const response = await axios.get(`${API_URL}/admin/products`, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data.data.products;
+};
+
+export const fetchProductByIdAdmin = async (id: string) => {
+    const token = localStorage.getItem("admin_token");
+    const response = await axios.get(`${API_URL}/admin/products/${id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data.data;
+};
+
+export const createProductAdmin = async (productData: any) => {
+    const token = localStorage.getItem("admin_token");
+    
+    // Check if productData is FormData
+    if (productData instanceof FormData) {
+      const response = await axios.post(`${API_URL}/admin/products`, productData, {
+        headers: {
+            Authorization: `Bearer ${token}`,
+            // Don't set Content-Type for FormData - let axios set it automatically
+        }
+      });
+      return response.data;
+    } else {
+      // Handle JSON data
+      const response = await axios.post(`${API_URL}/admin/products`, productData, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      return response.data;
+    }
+};
+
+export const updateProductAdmin = async (id: string, productData: any) => {
+    const token = localStorage.getItem("admin_token");
+    
+    // Check if productData is FormData
+    if (productData instanceof FormData) {
+      const response = await axios.put(`${API_URL}/admin/products/${id}`, productData, {
+        headers: {
+            Authorization: `Bearer ${token}`,
+            // Don't set Content-Type for FormData - let axios set it automatically
+        }
+      });
+      return response.data;
+    } else {
+      // Handle JSON data
+      const response = await axios.put(`${API_URL}/admin/products/${id}`, productData, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      return response.data;
+    }
+};
+
+export const deleteProductAdmin = async (id: string) => {
+    const token = localStorage.getItem("admin_token");
+    const response = await axios.delete(`${API_URL}/admin/products/${id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+
+export const toggleProductStatusAdmin = async (id: string, status: string) => {
+    const token = localStorage.getItem("admin_token");
+    const response = await axios.patch(`${API_URL}/admin/products/${id}/status`, { status }, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+
+export const fetchProductsByTempleAdmin = async (templeId: string) => {
+    const token = localStorage.getItem("admin_token");
+    const response = await axios.get(`${API_URL}/admin/products/temple/${templeId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data.data.products;
+};
