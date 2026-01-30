@@ -15,6 +15,9 @@ import templeAdminEventRoutes from './routes/temple_admin/eventRoutes';
 import templeRoutes from './routes/templeRoutes';
 import authRoutes from './routes/devotee/authRoutes';
 import favoriteRoutes from './routes/devotee/favoriteRoutes';
+import bookingRoutes from './routes/devotee/bookingRoutes';
+import adminBookingRoutes from './routes/admin/bookingRoutes';
+import templeAdminBookingRoutes from './routes/temple_admin/bookingRoutes';
 
 
 
@@ -39,6 +42,7 @@ app.use('/api/admin/temples', adminTempleRoutes);
 app.use('/api/admin/poojas', adminPoojaRoutes);
 app.use('/api/admin/products', adminProductRoutes);
 app.use('/api/admin/events', adminEventRoutes);
+app.use('/api/admin/bookings', adminBookingRoutes);
 // (institutions merged into temples)
 app.use('/api/admin/cms', adminCmsRoutes);
 
@@ -47,10 +51,12 @@ app.use('/api/admin/cms', adminCmsRoutes);
 app.use('/api/temple-admin/temples', templeAdminTempleRoutes);
 app.use('/api/temple-admin/poojas', templeAdminPoojaRoutes);
 app.use('/api/temple-admin/events', templeAdminEventRoutes);
+app.use('/api/temple-admin/bookings', templeAdminBookingRoutes);
 
 // Devotee Auth Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/favorites', favoriteRoutes);
+app.use('/api/bookings', bookingRoutes);
 
 
 // General Routes (Temporary)

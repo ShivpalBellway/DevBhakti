@@ -22,7 +22,7 @@ const getUserIdFromRequest = (req: Request): string | null => {
 export const getAllTemples = async (req: Request, res: Response) => {
   try {
     const userId = getUserIdFromRequest(req);
-    
+
     // Fetch only temples where user is verified
     const temples = await prisma.temple.findMany({
       where: {
@@ -31,7 +31,9 @@ export const getAllTemples = async (req: Request, res: Response) => {
         }
       },
       include: {
-        poojas: true
+        poojas: {
+          where: { status: true }
+        }
       }
     });
 
@@ -70,21 +72,25 @@ export const getTempleById = async (req: Request, res: Response) => {
     const userId = getUserIdFromRequest(req);
 
     const temple = await prisma.temple.findFirst({
-      where: { 
+      where: {
         id: id as string,
         user: {
-            isVerified: true
+          isVerified: true
         }
       },
       include: {
-        poojas: true,
-        events: true,
+        poojas: {
+          where: { status: true }
+        },
+        events: {
+          where: { status: true }
+        },
         user: {
-            select: { isVerified: true }
+          select: { isVerified: true }
         }
       }
     });
-    
+
     if (!temple) {
       return res.status(404).json({ success: false, message: 'Temple not found or not verified' });
     }
@@ -101,7 +107,7 @@ export const getTempleById = async (req: Request, res: Response) => {
       });
       if (fav) isFavorite = true;
     }
-    
+
     res.json({ success: true, data: { ...temple, isFavorite } });
 
   } catch (error) {
@@ -127,19 +133,19 @@ export const getPoojaById = async (req: Request, res: Response) => {
     const userId = getUserIdFromRequest(req);
 
     const pooja = await prisma.pooja.findFirst({
-      where: { 
+      where: {
         id: String(id),
         temple: {
-            user: {
-                isVerified: true
-            }
+          user: {
+            isVerified: true
+          }
         }
       },
       include: {
         temple: true
       }
     });
-    
+
     if (!pooja) {
       return res.status(404).json({ success: false, message: 'Pooja not found' });
     }
@@ -156,7 +162,7 @@ export const getPoojaById = async (req: Request, res: Response) => {
       });
       if (fav) isFavorite = true;
     }
-    
+
     res.json({ success: true, data: { ...pooja, isFavorite } });
 
   } catch (error) {
@@ -171,10 +177,11 @@ export const getAllPoojas = async (req: Request, res: Response) => {
 
     const poojas = await prisma.pooja.findMany({
       where: {
+        status: true,
         temple: {
-            user: {
-                isVerified: true
-            }
+          user: {
+            isVerified: true
+          }
         }
       },
       include: {

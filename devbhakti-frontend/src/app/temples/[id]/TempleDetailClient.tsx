@@ -424,9 +424,9 @@ export default function TempleDetail() {
                             <TabsContent value="events" className="mt-6">
                                 <Card className="border-border/50">
                                     <CardContent className="p-6">
-                                        {temple.upcomingEvents && temple.upcomingEvents.length > 0 ? (
+                                        {temple.events && temple.events.length > 0 ? (
                                             <div className="space-y-4">
-                                                {temple.upcomingEvents.map((event, index) => (
+                                                {temple.events.map((event: any, index: number) => (
                                                     <div
                                                         key={index}
                                                         className="flex items-center justify-between p-4 bg-muted/30 rounded-lg"

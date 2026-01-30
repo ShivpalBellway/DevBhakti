@@ -20,13 +20,18 @@ import {
     Loader2,
     Edit3,
     Calendar,
-    Award
+    Award,
+    X,
+    Receipt,
+    ExternalLink
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { updateProfile, fetchProfile } from "@/api/authController";
+import { fetchMyBookings } from "@/api/userController";
 import { BASE_URL } from "@/config/apiConfig";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -49,6 +54,9 @@ const ProfilePage = () => {
     });
     const [profilePreview, setProfilePreview] = useState<string | null>(null);
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
+    const [bookings, setBookings] = useState<any[]>([]);
+    const [isBookingsLoading, setIsBookingsLoading] = useState(false);
+    const [selectedBooking, setSelectedBooking] = useState<any | null>(null);
 
     useEffect(() => {
         loadProfile();
@@ -72,17 +80,35 @@ const ProfilePage = () => {
                 }
                 // Also update localStorage to keep it fresh
                 localStorage.setItem("user", JSON.stringify(u));
+
+                // Load bookings after profile
+                loadBookings();
             }
         } catch (error) {
             console.error("Failed to load profile", error);
             const savedUser = localStorage.getItem("user");
             if (savedUser) {
                 setUser(JSON.parse(savedUser));
+                loadBookings();
             } else {
                 router.push("/auth?mode=login");
             }
         } finally {
             setIsLoading(false);
+        }
+    };
+
+    const loadBookings = async () => {
+        setIsBookingsLoading(true);
+        try {
+            const res = await fetchMyBookings();
+            if (res.success) {
+                setBookings(res.data);
+            }
+        } catch (error) {
+            console.error("Failed to load bookings", error);
+        } finally {
+            setIsBookingsLoading(false);
         }
     };
 
@@ -246,10 +272,10 @@ const ProfilePage = () => {
                                 <div className="grid grid-cols-2 gap-4 w-full pt-6 border-t border-slate-50">
                                     <div className="text-center p-3 bg-orange-50/50 rounded-2xl">
                                         <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1">Rituals</p>
-                                        <p className="text-xl font-bold text-primary">12</p>
+                                        <p className="text-xl font-bold text-primary">{bookings.length}</p>
                                     </div>
                                     <div className="text-center p-3 bg-orange-50/50 rounded-2xl">
-                                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1">Sacred Items</p>
+                                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1">Favorites</p>
                                         <p className="text-xl font-bold text-primary">05</p>
                                     </div>
                                 </div>
@@ -312,30 +338,72 @@ const ProfilePage = () => {
                                             {/* Tabs / Features Area */}
                                             <div className="pt-6">
                                                 <div className="flex items-center gap-3 mb-6">
-                                                    <Calendar className="w-5 h-5 text-orange-600" />
-                                                    <h4 className="font-bold text-lg text-slate-800">Recent Pilgrimage Activity</h4>
+                                                    <Church className="w-5 h-5 text-orange-600" />
+                                                    <h4 className="font-bold text-lg text-slate-800">Your Booked Poojas</h4>
                                                 </div>
                                                 <div className="space-y-4">
-                                                    {[1, 2].map(i => (
-                                                        <div key={i} className="flex items-center justify-between p-4 border border-slate-50 rounded-2xl hover:bg-orange-50/30 transition-colors group cursor-pointer">
-                                                            <div className="flex items-center gap-4">
-                                                                <div className="w-12 h-12 bg-white shadow-sm rounded-xl flex items-center justify-center border border-slate-100">
-                                                                    <ShoppingBag className="w-5 h-5 text-slate-400" />
-                                                                </div>
-                                                                <div>
-                                                                    <p className="font-bold text-slate-700">Sacred Item Order #{1034 + i}</p>
-                                                                    <p className="text-xs text-slate-400">Ordered on 1{i} Oct, 2025</p>
-                                                                </div>
-                                                            </div>
-                                                            <div className="flex items-center gap-2 text-emerald-600 font-bold text-sm bg-emerald-50 px-3 py-1 rounded-full">
-                                                                Delivered
-                                                            </div>
+                                                    {isBookingsLoading ? (
+                                                        <div className="flex justify-center py-8">
+                                                            <Loader2 className="w-8 h-8 text-primary animate-spin" />
                                                         </div>
-                                                    ))}
+                                                    ) : bookings.length > 0 ? (
+                                                        bookings.slice(0, 5).map((booking: any) => (
+                                                            <div
+                                                                key={booking.id}
+                                                                onClick={() => setSelectedBooking(booking)}
+                                                                className="flex flex-col md:flex-row md:items-center justify-between p-5 border border-slate-100 rounded-[1.5rem] hover:bg-orange-50/30 transition-all group cursor-pointer shadow-sm hover:shadow-md"
+                                                            >
+                                                                <div className="flex items-center gap-4 mb-3 md:mb-0">
+                                                                    <div className="w-14 h-14 bg-orange-50 rounded-2xl flex items-center justify-center border border-orange-100/50 group-hover:bg-white transition-colors">
+                                                                        <Church className="w-7 h-7 text-primary" />
+                                                                    </div>
+                                                                    <div>
+                                                                        <div className="flex items-center gap-2">
+                                                                            <p className="font-bold text-slate-800">{booking.pooja?.name}</p>
+                                                                            <span className="text-[10px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full uppercase tracking-tighter">#{booking.id.slice(-6)}</span>
+                                                                        </div>
+                                                                        <p className="text-xs text-slate-500 flex items-center gap-1 mt-0.5">
+                                                                            <span className="font-medium">{booking.temple?.name}</span>
+                                                                        </p>
+                                                                        <p className="text-[10px] text-slate-400 mt-1 flex items-center gap-1">
+                                                                            <Calendar className="w-3 h-3" />
+                                                                            Booked on {new Date(booking.createdAt).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}
+                                                                        </p>
+                                                                    </div>
+                                                                </div>
+                                                                <div className="flex items-center justify-between md:justify-end gap-6 border-t md:border-t-0 pt-3 md:pt-0 border-slate-50">
+                                                                    <div className="text-right">
+                                                                        <p className="text-xs text-slate-400 font-medium">{booking.packageName}</p>
+                                                                        <p className="font-bold text-primary flex items-center justify-end text-sm">
+                                                                            <ShoppingBag className="w-3 h-3 mr-1" />
+                                                                            ₹{booking.packagePrice}
+                                                                        </p>
+                                                                    </div>
+                                                                    <div className={`flex items-center gap-1.5 font-bold text-[10px] uppercase tracking-wider px-3 py-1.5 rounded-full ${booking.status === 'BOOKED' ? 'bg-emerald-50 text-emerald-600' : 'bg-orange-50 text-orange-600'
+                                                                        }`}>
+                                                                        <CheckCircle2 className="w-3 h-3" />
+                                                                        {booking.status}
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        ))
+                                                    ) : (
+                                                        <div className="text-center py-12 bg-slate-50/50 rounded-3xl border border-dashed border-slate-200">
+                                                            <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm">
+                                                                <Church className="w-8 h-8 text-slate-300" />
+                                                            </div>
+                                                            <p className="text-slate-500 font-medium">No bookings found in your sanctuary yet.</p>
+                                                            <Button variant="link" className="text-primary mt-2" asChild>
+                                                                <Link href="/poojas">Explore Poojas</Link>
+                                                            </Button>
+                                                        </div>
+                                                    )}
                                                 </div>
-                                                <Button variant="ghost" className="w-full mt-4 text-primary font-bold group">
-                                                    View All Activities <ChevronRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
-                                                </Button>
+                                                {bookings.length > 5 && (
+                                                    <Button variant="ghost" className="w-full mt-4 text-primary font-bold group rounded-2xl hover:bg-orange-50">
+                                                        View All Bookings <ChevronRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
+                                                    </Button>
+                                                )}
                                             </div>
                                         </div>
                                     </motion.div>
@@ -421,6 +489,132 @@ const ProfilePage = () => {
             </main>
 
             <Footer />
+
+            {/* Booking Detail Modal */}
+            <AnimatePresence>
+                {selectedBooking && (
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={() => setSelectedBooking(null)}
+                            className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
+                        />
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                            className="bg-white w-full max-w-xl rounded-[2.5rem] shadow-2xl overflow-hidden relative"
+                        >
+                            {/* Modal Header */}
+                            <div className="bg-gradient-to-r from-primary to-primary/80 p-8 text-white">
+                                <button
+                                    onClick={() => setSelectedBooking(null)}
+                                    className="absolute top-6 right-6 p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
+                                >
+                                    <X className="w-5 h-5" />
+                                </button>
+                                <div className="flex items-center gap-4 mb-2">
+                                    <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-md">
+                                        <Church className="w-7 h-7" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-2xl font-serif font-bold">Booking Details</h3>
+                                        <p className="text-orange-100 text-sm opacity-90 uppercase tracking-widest font-medium">Sacred Receipt</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="p-8 space-y-8">
+                                {/* Booking Status Banner */}
+                                <div className={`flex items-center justify-between p-4 rounded-2xl ${selectedBooking.status === 'BOOKED' ? 'bg-emerald-50 border border-emerald-100' : 'bg-orange-50 border border-orange-100'
+                                    }`}>
+                                    <div className="flex items-center gap-2">
+                                        <Receipt className={`w-5 h-5 ${selectedBooking.status === 'BOOKED' ? 'text-emerald-500' : 'text-orange-500'}`} />
+                                        <span className="font-bold text-slate-700">Booking Status</span>
+                                    </div>
+                                    <Badge className={`rounded-full px-4 py-1 font-bold ${selectedBooking.status === 'BOOKED' ? 'bg-emerald-500 hover:bg-emerald-600' : 'bg-orange-500 hover:bg-orange-600'
+                                        }`}>
+                                        {selectedBooking.status}
+                                    </Badge>
+                                </div>
+
+                                {/* Details Grid */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                    <div className="space-y-4">
+                                        <div>
+                                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1">Poojary / Ritual</p>
+                                            <div className="flex items-center gap-2 text-slate-800 font-bold">
+                                                <div className="w-2 h-2 rounded-full bg-primary" />
+                                                {selectedBooking.pooja?.name}
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1">Holy Temple</p>
+                                            <p className="text-slate-700 font-medium flex items-center gap-1.5">
+                                                <Church className="w-3.5 h-3.5 text-slate-400" />
+                                                {selectedBooking.temple?.name}
+                                            </p>
+                                        </div>
+                                        <div>
+                                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1">Schedule Date</p>
+                                            <p className="text-slate-700 font-medium flex items-center gap-1.5">
+                                                <Calendar className="w-3.5 h-3.5 text-slate-400" />
+                                                {new Date(selectedBooking.createdAt).toLocaleDateString(undefined, {
+                                                    weekday: 'long',
+                                                    day: 'numeric',
+                                                    month: 'long',
+                                                    year: 'numeric'
+                                                })}
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-4">
+                                        <div>
+                                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1">Devotee Name</p>
+                                            <p className="text-slate-800 font-bold flex items-center gap-1.5">
+                                                <User className="w-3.5 h-3.5 text-slate-400" />
+                                                {selectedBooking.devoteeName}
+                                            </p>
+                                        </div>
+                                        <div>
+                                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1">Contact Phone</p>
+                                            <p className="text-slate-700 font-medium">{selectedBooking.devoteePhone}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1">Booking Reference</p>
+                                            <p className="text-sm font-mono text-primary font-bold">#{selectedBooking.id.toUpperCase()}</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Amount Summary */}
+                                <div className="pt-6 border-t border-slate-100 flex items-center justify-between">
+                                    <div>
+                                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Selected Package</p>
+                                        <p className="text-slate-700 font-bold">{selectedBooking.packageName}</p>
+                                    </div>
+                                    <div className="text-right">
+                                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Total Offering</p>
+                                        <p className="text-3xl font-serif font-bold text-primary">₹{selectedBooking.packagePrice}</p>
+                                    </div>
+                                </div>
+
+                                <div className="pt-4 flex gap-3">
+                                    <Button className="flex-1 rounded-2xl h-12 font-bold shadow-lg shadow-primary/20">
+                                        Download Receipt
+                                    </Button>
+                                    <Button variant="outline" className="flex-1 rounded-2xl h-12 font-bold border-slate-200">
+                                        Need Help?
+                                    </Button>
+                                </div>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
         </div>
     );
 };

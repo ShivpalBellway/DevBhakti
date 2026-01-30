@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useState, Suspense } from "react";
+import React, { useState, Suspense, useEffect } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
+import { API_URL } from "@/config/apiConfig";
 import Navbar from "@/components/landing/Navbar";
 import Footer from "@/components/landing/Footer";
 import { Button } from "@/components/ui/button";
@@ -33,40 +34,25 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
-const temples = [
-  { id: "1", name: "Kashi Vishwanath Temple", location: "Varanasi, UP" },
-  { id: "2", name: "Tirupati Balaji Temple", location: "Tirupati, AP" },
-  { id: "3", name: "Siddhivinayak Temple", location: "Mumbai, MH" },
-  { id: "4", name: "Meenakshi Temple", location: "Madurai, TN" },
-  { id: "5", name: "Jagannath Temple", location: "Puri, Odisha" },
-  { id: "6", name: "Somnath Temple", location: "Gujarat" },
-];
-
-const poojaServices = [
-  { id: "1", name: "Mangala Aarti", price: 251, duration: "30 mins", description: "Early morning blessing aarti" },
-  { id: "2", name: "Bhog Aarti", price: 501, duration: "45 mins", description: "Mid-day offering aarti" },
-  { id: "3", name: "Sandhya Aarti", price: 351, duration: "30 mins", description: "Evening prayer aarti" },
-  { id: "4", name: "Shringar Aarti", price: 751, duration: "1 hour", description: "Special decoration aarti" },
-  { id: "5", name: "Rudrabhishek", price: 1100, duration: "2 hours", description: "Sacred abhishekam ritual" },
-  { id: "6", name: "Satyanarayan Pooja", price: 2100, duration: "3 hours", description: "Complete pooja ceremony" },
-  { id: "7", name: "Ganesh Pooja", price: 551, duration: "1 hour", description: "Lord Ganesha worship" },
-  { id: "8", name: "Lakshmi Pooja", price: 1501, duration: "2 hours", description: "Goddess Lakshmi worship" },
-];
-
-const timeSlots = [
-  "5:00 AM", "6:00 AM", "7:00 AM", "8:00 AM", "9:00 AM", "10:00 AM",
-  "11:00 AM", "12:00 PM", "4:00 PM", "5:00 PM", "6:00 PM", "7:00 PM"
-];
+import { fetchPublicTemples, fetchPublicPoojas, fetchPublicPoojaById } from "@/api/publicController";
 
 function BookingForm() {
   const searchParams = useSearchParams();
   const { toast } = useToast();
+  const router = useRouter();
   const [step, setStep] = useState(1);
+  const [loading, setLoading] = useState(true);
+
+  const [allTemples, setAllTemples] = useState<any[]>([]);
+  const [allPoojas, setAllPoojas] = useState<any[]>([]);
+
   const [selectedTemple, setSelectedTemple] = useState(searchParams.get("temple") || "");
-  const [selectedPooja, setSelectedPooja] = useState("");
+  const [selectedPooja, setSelectedPooja] = useState(searchParams.get("pooja") || "");
   const [selectedDate, setSelectedDate] = useState("");
   const [selectedTime, setSelectedTime] = useState("");
+  const [selectedPackage, setSelectedPackage] = useState("");
   const [devoteeCount, setDevoteeCount] = useState("1");
+
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
@@ -75,16 +61,72 @@ function BookingForm() {
     specialRequests: "",
   });
 
-  const selectedPoojaData = poojaServices.find(p => p.id === selectedPooja);
-  const totalAmount = selectedPoojaData ? selectedPoojaData.price * parseInt(devoteeCount || "1") : 0;
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const [templesData, poojasData] = await Promise.all([
+          fetchPublicTemples(),
+          fetchPublicPoojas()
+        ]);
+        setAllTemples(templesData);
+        setAllPoojas(poojasData);
+
+        // Pre-fill user data
+        const savedUser = localStorage.getItem("user");
+        if (savedUser) {
+          const user = JSON.parse(savedUser);
+          setFormData(prev => ({
+            ...prev,
+            name: user.name || "",
+            phone: user.phone || "",
+            email: user.email || "",
+          }));
+        }
+
+        // If a pooja is selected via URL, try to auto-select its temple
+        const poojaId = searchParams.get("pooja");
+        if (poojaId) {
+          const pooja = poojasData.find((p: any) => p.id === poojaId);
+          if (pooja && pooja.templeId) {
+            setSelectedTemple(pooja.templeId);
+          }
+        }
+      } catch (error) {
+        console.error("Failed to load booking data:", error);
+        toast({ title: "Error loading services", variant: "destructive" });
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadData();
+  }, [searchParams]);
+
+  // Filter poojas based on selected temple, or show all if no temple selected (for selection)
+  const availablePoojas = selectedTemple
+    ? allPoojas.filter(p => p.templeId === selectedTemple)
+    : allPoojas;
+
+  const selectedPoojaData = allPoojas.find(p => p.id === selectedPooja);
+
+  // Extract packages from pooja data if available, or use defaults
+  const poojaPackages = selectedPoojaData?.packages ?
+    (typeof selectedPoojaData.packages === 'string' ? JSON.parse(selectedPoojaData.packages) : selectedPoojaData.packages)
+    : [
+      { id: "p1", name: "Basic Package", price: selectedPoojaData?.price || 501, description: "Standard ritual with digital certificate" },
+      { id: "p2", name: "Standard Package", price: (selectedPoojaData?.price || 501) + 600, description: "Detailed ritual with prasad delivery" },
+      { id: "p3", name: "Premium Package", price: (selectedPoojaData?.price || 501) + 1600, description: "Grand ritual with live stream and special prasad" },
+    ];
+
+  const selectedPackageData = poojaPackages.find((p: any) => (p.id === selectedPackage || p.name === selectedPackage));
+  const totalAmount = selectedPackageData?.price || selectedPoojaData?.price || 0;
 
   const handleNext = () => {
     if (step === 1 && (!selectedTemple || !selectedPooja)) {
       toast({ title: "Please select temple and pooja service", variant: "destructive" });
       return;
     }
-    if (step === 2 && (!selectedDate || !selectedTime)) {
-      toast({ title: "Please select date and time slot", variant: "destructive" });
+    if (step === 2 && (!selectedDate || !selectedPackage)) {
+      toast({ title: "Please select date and package", variant: "destructive" });
       return;
     }
     if (step === 3 && (!formData.name || !formData.phone || !formData.email)) {
@@ -94,10 +136,59 @@ function BookingForm() {
     setStep(step + 1);
   };
 
-  const handleConfirmBooking = () => {
-    setStep(5); // Show confirmation
-    toast({ title: "Booking Confirmed!", description: "You will receive confirmation via email and SMS." });
+  const handleConfirmBooking = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        toast({ title: "Please login to book", variant: "destructive" });
+        router.push("/auth");
+        return;
+      }
+
+      const bookingData = {
+        poojaId: selectedPooja,
+        packageName: selectedPackageData?.name || "Standard",
+        packagePrice: totalAmount,
+        devoteeName: formData.name,
+        devoteePhone: formData.phone,
+        devoteeEmail: formData.email,
+        bookingDate: selectedDate,
+        address: formData.address,
+        specialRequests: formData.specialRequests,
+      };
+
+      const response = await fetch(`${API_URL}/bookings`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(bookingData)
+      });
+
+      const res = await response.json();
+
+      if (res.success) {
+        setStep(5); // Show confirmation
+        toast({ title: "Booking Confirmed!", description: "You will receive confirmation via email and SMS." });
+      } else {
+        toast({ title: "Booking Failed", description: res.message || "Something went wrong", variant: "destructive" });
+      }
+    } catch (error: any) {
+      console.error("Booking error:", error);
+      toast({ title: "Error", description: "Failed to confirm booking. Please try again.", variant: "destructive" });
+    }
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center">
+        <Navbar />
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+        <p className="mt-4 text-muted-foreground animate-pulse">Loading Sacred Services...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -106,9 +197,9 @@ function BookingForm() {
       {/* Header */}
       <section className="bg-gradient-to-br from-primary/10 via-secondary/20 to-background pt-24 pb-12">
         <div className="container mx-auto px-4">
-          <Link href="/temples" className="inline-flex items-center text-muted-foreground hover:text-foreground mb-4 transition-colors">
+          <Link href={searchParams.get("pooja") ? "/poojas" : "/temples"} className="inline-flex items-center text-muted-foreground hover:text-foreground mb-4 transition-colors">
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Temples
+            Back to {searchParams.get("pooja") ? "Poojas" : "Temples"}
           </Link>
           <h1 className="text-3xl md:text-4xl font-display font-bold text-foreground">Book Pooja Service</h1>
           <p className="text-muted-foreground mt-2">Complete your spiritual journey with easy online booking</p>
@@ -129,8 +220,8 @@ function BookingForm() {
               <div className="flex flex-col items-center">
                 <div
                   className={`h-10 w-10 rounded-full flex items-center justify-center font-semibold transition-colors ${step >= s.num
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-muted text-muted-foreground"
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted text-muted-foreground"
                     }`}
                 >
                   {step > s.num ? <CheckCircle2 className="h-5 w-5" /> : s.num}
@@ -161,7 +252,7 @@ function BookingForm() {
                       <SelectValue placeholder="Choose a temple" />
                     </SelectTrigger>
                     <SelectContent>
-                      {temples.map((temple) => (
+                      {allTemples.map((temple) => (
                         <SelectItem key={temple.id} value={temple.id}>
                           {temple.name} - {temple.location}
                         </SelectItem>
@@ -180,12 +271,12 @@ function BookingForm() {
                 </CardHeader>
                 <CardContent>
                   <RadioGroup value={selectedPooja} onValueChange={setSelectedPooja} className="space-y-3">
-                    {poojaServices.map((pooja) => (
+                    {availablePoojas.map((pooja) => (
                       <div
                         key={pooja.id}
                         className={`flex items-center justify-between p-4 rounded-lg border transition-colors cursor-pointer ${selectedPooja === pooja.id
-                            ? "border-primary bg-primary/5"
-                            : "border-border hover:border-primary/50"
+                          ? "border-primary bg-primary/5"
+                          : "border-border hover:border-primary/50"
                           }`}
                         onClick={() => setSelectedPooja(pooja.id)}
                       >
@@ -195,7 +286,7 @@ function BookingForm() {
                             <Label htmlFor={pooja.id} className="font-semibold cursor-pointer">
                               {pooja.name}
                             </Label>
-                            <p className="text-sm text-muted-foreground">{pooja.description}</p>
+                            <p className="text-sm text-muted-foreground line-clamp-1">{pooja.description?.[0] || pooja.about}</p>
                             <Badge variant="secondary" className="mt-1">{pooja.duration}</Badge>
                           </div>
                         </div>
@@ -205,6 +296,11 @@ function BookingForm() {
                         </div>
                       </div>
                     ))}
+                    {availablePoojas.length === 0 && (
+                      <div className="text-center py-8 text-muted-foreground italic">
+                        No pooja services available for the selected temple.
+                      </div>
+                    )}
                   </RadioGroup>
                 </CardContent>
               </Card>
@@ -232,6 +328,45 @@ function BookingForm() {
                 </CardContent>
               </Card>
 
+              <Card className="border-border/50">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Badge variant="outline" className="h-6 w-6 rounded-full p-0 flex items-center justify-center border-primary text-primary">P</Badge>
+                    Select Package
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <RadioGroup value={selectedPackage} onValueChange={setSelectedPackage} className="space-y-3">
+                    {poojaPackages.map((pkg: any) => (
+                      <div
+                        key={pkg.id || pkg.name}
+                        className={`flex items-center justify-between p-4 rounded-lg border transition-colors cursor-pointer ${selectedPackage === (pkg.id || pkg.name)
+                          ? "border-primary bg-primary/5"
+                          : "border-border hover:border-primary/50"
+                          }`}
+                        onClick={() => setSelectedPackage(pkg.id || pkg.name)}
+                      >
+                        <div className="flex items-center gap-3">
+                          <RadioGroupItem value={pkg.id || pkg.name} id={pkg.id || pkg.name} />
+                          <div>
+                            <Label htmlFor={pkg.id || pkg.name} className="font-semibold cursor-pointer">
+                              {pkg.name}
+                            </Label>
+                            <p className="text-sm text-muted-foreground">{pkg.description}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center text-primary font-bold text-lg">
+                          <IndianRupee className="h-4 w-4" />
+                          {pkg.price}
+                        </div>
+                      </div>
+                    ))}
+                  </RadioGroup>
+                </CardContent>
+              </Card>
+
+              {/* Hiding Time Slot and Devotee Count as per user request */}
+              {/* 
               <Card className="border-border/50">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
@@ -277,6 +412,7 @@ function BookingForm() {
                   </Select>
                 </CardContent>
               </Card>
+              */}
             </div>
           )}
 
@@ -361,24 +497,30 @@ function BookingForm() {
                 <CardContent className="space-y-4">
                   <div className="flex justify-between py-2 border-b border-border">
                     <span className="text-muted-foreground">Temple</span>
-                    <span className="font-medium">{temples.find(t => t.id === selectedTemple)?.name}</span>
+                    <span className="font-medium">{allTemples.find(t => t.id === selectedTemple)?.name}</span>
                   </div>
                   <div className="flex justify-between py-2 border-b border-border">
                     <span className="text-muted-foreground">Service</span>
                     <span className="font-medium">{selectedPoojaData?.name}</span>
                   </div>
                   <div className="flex justify-between py-2 border-b border-border">
-                    <span className="text-muted-foreground">Date & Time</span>
-                    <span className="font-medium">{selectedDate} at {selectedTime}</span>
+                    <span className="text-muted-foreground">Date</span>
+                    <span className="font-medium">{selectedDate}</span>
                   </div>
                   <div className="flex justify-between py-2 border-b border-border">
-                    <span className="text-muted-foreground">Devotees</span>
-                    <span className="font-medium">{devoteeCount}</span>
+                    <span className="text-muted-foreground">Package</span>
+                    <span className="font-medium">{selectedPackageData?.name}</span>
                   </div>
                   <div className="flex justify-between py-2 border-b border-border">
-                    <span className="text-muted-foreground">Price per person</span>
+                    <span className="text-muted-foreground">Service Price</span>
                     <span className="font-medium flex items-center">
                       <IndianRupee className="h-4 w-4" />{selectedPoojaData?.price}
+                    </span>
+                  </div>
+                  <div className="flex justify-between py-2 border-b border-border">
+                    <span className="text-muted-foreground">Package Price</span>
+                    <span className="font-medium flex items-center">
+                      <IndianRupee className="h-4 w-4" />{selectedPackageData?.price}
                     </span>
                   </div>
                   <div className="flex justify-between py-3 text-lg font-bold">
@@ -438,19 +580,31 @@ function BookingForm() {
                 <div className="bg-muted/50 rounded-lg p-6 max-w-md mx-auto text-left space-y-3 mb-8">
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Temple</span>
-                    <span className="font-medium">{temples.find(t => t.id === selectedTemple)?.name}</span>
+                    <span className="font-medium">{allTemples.find(t => t.id === selectedTemple)?.name}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Service</span>
                     <span className="font-medium">{selectedPoojaData?.name}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Date & Time</span>
-                    <span className="font-medium">{selectedDate} at {selectedTime}</span>
+                    <span className="text-muted-foreground">Devotee</span>
+                    <span className="font-medium">{formData.name}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Amount Paid</span>
-                    <span className="font-medium flex items-center"><IndianRupee className="h-4 w-4" />{totalAmount}</span>
+                    <span className="text-muted-foreground">Phone</span>
+                    <span className="font-medium">{formData.phone}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Date</span>
+                    <span className="font-medium">{selectedDate}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Package</span>
+                    <span className="font-medium">{selectedPackageData?.name}</span>
+                  </div>
+                  <div className="flex justify-between border-t border-border pt-2 mt-2">
+                    <span className="text-muted-foreground font-bold">Total Amount</span>
+                    <span className="font-bold flex items-center text-primary"><IndianRupee className="h-4 w-4" />{totalAmount}</span>
                   </div>
                 </div>
 
@@ -460,7 +614,7 @@ function BookingForm() {
 
                 <div className="flex flex-col sm:flex-row gap-3 justify-center">
                   <Button variant="outline" asChild>
-                    <Link href="#dashboard">View My Bookings</Link>
+                    <Link href="/profile">View My Bookings</Link>
                   </Button>
                   <Button asChild>
                     <Link href="/temples">Book Another Pooja</Link>

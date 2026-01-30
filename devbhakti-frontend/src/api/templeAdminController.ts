@@ -123,3 +123,28 @@ export const updateMyTempleProfile = async (formData: FormData) => {
     });
     return response.data;
 };
+
+// Temple Booking Management
+export const fetchMyTempleBookings = async () => {
+    const token = localStorage.getItem("token");
+    const response = await axios.get(`${API_URL}/temple-admin/bookings`, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+
+export const updateBookingStatus = async (id: string, status: string) => {
+    const token = localStorage.getItem("token");
+    const response = await axios.patch(`${API_URL}/temple-admin/bookings/${id}/status`, { status }, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+
+export const deleteBooking = async (id: string) => {
+    const token = localStorage.getItem("token");
+    const response = await axios.delete(`${API_URL}/temple-admin/bookings/${id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};

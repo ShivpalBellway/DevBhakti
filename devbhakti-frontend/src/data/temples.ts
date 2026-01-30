@@ -45,16 +45,16 @@ export const temples: Temple[] = [
     website: "https://shrikashivishwanath.org",
     mapUrl: "https://maps.app.goo.gl/Xy6awaBzAhxCKQHz8",
     poojas: [
-        { name: "Mangala Aarti", time: "3:00 AM", price: 251, benefits: ["Early morning blessing aarti", "Peaceful spiritual atmosphere", "Performed by experienced priests", "Includes mantras and rituals"] },
-        { name: "Bhog Aarti", time: "11:15 AM", price: 501, benefits: ["Mid-day offering aarti", "Divine mid-day blessings", "Sanctified prasad distribution"] },
-        { name: "Sandhya Aarti", time: "7:00 PM", price: 351, benefits: ["Evening prayer aarti", "Divine evening blessings", "Sanctified prasad distribution"] },
-        { name: "Shringar Aarti", time: "9:00 PM", price: 751, benefits: ["Divine decoration of the deity", "Uses flowers, jewels and silks", "Visual feast for the devotees", "Celebrates divine beauty"] },
-        { name: "Rudrabhishek", time: "On Request", price: 1100, benefits: ["Powerful bathing of Shiva Linga", "Uses milk, honey, and sacred water", "Chanting of ancient Rudram", "Removes negativity and obstacles"] },
+      { name: "Mangala Aarti", time: "3:00 AM", price: 251, benefits: ["Early morning blessing aarti", "Peaceful spiritual atmosphere", "Performed by experienced priests", "Includes mantras and rituals"] },
+      { name: "Bhog Aarti", time: "11:15 AM", price: 501, benefits: ["Mid-day offering aarti", "Divine mid-day blessings", "Sanctified prasad distribution"] },
+      { name: "Sandhya Aarti", time: "7:00 PM", price: 351, benefits: ["Evening prayer aarti", "Divine evening blessings", "Sanctified prasad distribution"] },
+      { name: "Shringar Aarti", time: "9:00 PM", price: 751, benefits: ["Divine decoration of the deity", "Uses flowers, jewels and silks", "Visual feast for the devotees", "Celebrates divine beauty"] },
+      { name: "Rudrabhishek", time: "On Request", price: 1100, benefits: ["Powerful bathing of Shiva Linga", "Uses milk, honey, and sacred water", "Chanting of ancient Rudram", "Removes negativity and obstacles"] },
     ],
-    upcomingEvents: [
-        { name: "Maha Shivaratri", date: "March 8, 2025" },
-        { name: "Shravan Month", date: "July 2025" },
-        { name: "Dev Deepawali", date: "November 2025" },
+    events: [
+      { name: "Maha Shivaratri", date: "March 8, 2025" },
+      { name: "Shravan Month", date: "July 2025" },
+      { name: "Dev Deepawali", date: "November 2025" },
     ]
   },
   {
@@ -73,15 +73,15 @@ export const temples: Temple[] = [
     viewers: "28.3K",
     openTime: "3:00 AM - 12:00 AM",
     poojas: [
-        { name: "Mangala Aarti", time: "3:00 AM", price: 251, benefits: ["Early morning blessing aarti", "Peaceful spiritual atmosphere", "Performed by experienced priests", "Includes mantras and rituals"] },
-        { name: "Bhog Aarti", time: "11:15 AM", price: 501, benefits: ["Mid-day offering aarti", "Divine mid-day blessings", "Sanctified prasad distribution"] },
-        { name: "Sandhya Aarti", time: "7:00 PM", price: 351, benefits: ["Evening prayer aarti", "Divine evening blessings", "Sanctified prasad distribution"] },
-        { name: "Shringar Aarti", time: "9:00 PM", price: 751, benefits: ["Divine decoration of the deity", "Uses flowers, jewels and silks", "Visual feast for the devotees", "Celebrates divine beauty"] },
-        { name: "Rudrabhishek", time: "On Request", price: 1100, benefits: ["Powerful bathing of Shiva Linga", "Uses milk, honey, and sacred water", "Chanting of ancient Rudram", "Removes negativity and obstacles"] },
+      { name: "Mangala Aarti", time: "3:00 AM", price: 251, benefits: ["Early morning blessing aarti", "Peaceful spiritual atmosphere", "Performed by experienced priests", "Includes mantras and rituals"] },
+      { name: "Bhog Aarti", time: "11:15 AM", price: 501, benefits: ["Mid-day offering aarti", "Divine mid-day blessings", "Sanctified prasad distribution"] },
+      { name: "Sandhya Aarti", time: "7:00 PM", price: 351, benefits: ["Evening prayer aarti", "Divine evening blessings", "Sanctified prasad distribution"] },
+      { name: "Shringar Aarti", time: "9:00 PM", price: 751, benefits: ["Divine decoration of the deity", "Uses flowers, jewels and silks", "Visual feast for the devotees", "Celebrates divine beauty"] },
+      { name: "Rudrabhishek", time: "On Request", price: 1100, benefits: ["Powerful bathing of Shiva Linga", "Uses milk, honey, and sacred water", "Chanting of ancient Rudram", "Removes negativity and obstacles"] },
     ],
-    upcomingEvents: [
-        { name: "Brahmotsavam", date: "October 2025" },
-        { name: "Vaikunta Ekadashi", date: "December 2025" },
+    events: [
+      { name: "Brahmotsavam", date: "October 2025" },
+      { name: "Vaikunta Ekadashi", date: "December 2025" },
     ]
   },
   {
@@ -98,9 +98,9 @@ export const temples: Temple[] = [
     category: "Ganesha",
     liveStatus: false,
     openTime: "5:30 AM - 10:00 PM",
-    upcomingEvents: [
-        { name: "Ganesh Chaturthi", date: "September 2025" },
-        { name: "Maghi Ganesh Jayanti", date: "January 2026" },
+    events: [
+      { name: "Ganesh Chaturthi", date: "September 2025" },
+      { name: "Maghi Ganesh Jayanti", date: "January 2026" },
     ]
   },
   {
@@ -119,9 +119,9 @@ export const temples: Temple[] = [
     liveStatus: true,
     openTime: "5:00 AM - 12:30 PM",
     poojas: [
-        { name: "Kumkum Archana", time: "Every Friday", price: 101, benefits: ["Divine blessings", "Prosperity"] }
+      { name: "Kumkum Archana", time: "Every Friday", price: 101, benefits: ["Divine blessings", "Prosperity"] }
     ],
-    upcomingEvents: []
+    events: []
   },
   {
     id: 5,
@@ -138,9 +138,9 @@ export const temples: Temple[] = [
     liveStatus: false,
     openTime: "5:00 AM - 11:00 PM",
     poojas: [
-        { name: "Ratha Yatra Special", time: "Once a year", price: 5001, benefits: ["Moksha", "Divine Grace"] }
+      { name: "Ratha Yatra Special", time: "Once a year", price: 5001, benefits: ["Moksha", "Divine Grace"] }
     ],
-    upcomingEvents: []
+    events: []
   },
   {
     id: 6,
@@ -158,9 +158,9 @@ export const temples: Temple[] = [
     viewers: "8.7K",
     openTime: "6:00 AM - 9:00 PM",
     poojas: [
-        { name: "Somnath Aarti", time: "7:00 PM", price: 251, benefits: ["Peace", "Prosperity"] }
+      { name: "Somnath Aarti", time: "7:00 PM", price: 251, benefits: ["Peace", "Prosperity"] }
     ],
-    upcomingEvents: []
+    events: []
   },
   {
     id: 7,
@@ -177,9 +177,9 @@ export const temples: Temple[] = [
     liveStatus: false,
     openTime: "6:00 AM - 8:00 PM",
     poojas: [
-        { name: "Rudra Homa", time: "Morning", price: 1500, benefits: ["Health", "Wealth"] }
+      { name: "Rudra Homa", time: "Morning", price: 1500, benefits: ["Health", "Wealth"] }
     ],
-    upcomingEvents: []
+    events: []
   },
   {
     id: 8,
@@ -196,8 +196,8 @@ export const temples: Temple[] = [
     liveStatus: false,
     openTime: "5:30 AM - 9:00 PM",
     poojas: [
-        { name: "Kaal Sarp Dosh Puja", time: "flexible", price: 2100, benefits: ["Removal of obstacles"] }
+      { name: "Kaal Sarp Dosh Puja", time: "flexible", price: 2100, benefits: ["Removal of obstacles"] }
     ],
-    upcomingEvents: []
+    events: []
   },
 ];

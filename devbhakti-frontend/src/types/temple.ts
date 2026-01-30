@@ -38,5 +38,5 @@ export interface Temple {
   mapUrl?: string;
   viewers?: string; // For Live Darshan
   poojas?: Pooja[]; // Nested poojas for display efficiency on detail page
-  upcomingEvents?: TempleEvent[];
+  events?: TempleEvent[];
 }

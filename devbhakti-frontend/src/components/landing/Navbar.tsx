@@ -181,7 +181,27 @@ const Navbar: React.FC<NavbarProps> = ({ variant = "default" }) => {
                     <DropdownMenuSeparator className="bg-orange-500 dark:bg-zinc-800 my-1 mx-2" />
 
                     <div className="p-1 space-y-1">
-                      {!user ? (
+                      {user && user.role === "DEVOTEE" ? (
+                        <DropdownMenuItem asChild className="focus:bg-primary focus:text-white rounded-[1.2rem] cursor-pointer transition-all duration-300 group">
+                          <Link href="/profile" className="flex items-center justify-between w-full px-4 py-3">
+                            <div className="flex items-center gap-3">
+                              <User className="w-4 h-4 text-primary group-focus:text-white transition-colors" />
+                              <span className="font-medium">My Profile</span>
+                            </div>
+                            <ChevronRight className="w-3 h-3 opacity-0 group-focus:opacity-100 -translate-x-2 group-focus:translate-x-0 transition-all" />
+                          </Link>
+                        </DropdownMenuItem>
+                      ) : user && user.role === "INSTITUTION" ? (
+                        <DropdownMenuItem asChild className="focus:bg-primary focus:text-white rounded-[1.2rem] cursor-pointer transition-all duration-300 group">
+                          <Link href="/temples/dashboard" className="flex items-center justify-between w-full px-4 py-3">
+                            <div className="flex items-center gap-3">
+                              <Church className="w-4 h-4 text-primary group-focus:text-white transition-colors" />
+                              <span className="font-medium">Temple Dashboard</span>
+                            </div>
+                            <ChevronRight className="w-3 h-3 opacity-0 group-focus:opacity-100 -translate-x-2 group-focus:translate-x-0 transition-all" />
+                          </Link>
+                        </DropdownMenuItem>
+                      ) : !user && (
                         <>
                           <DropdownMenuItem asChild className="focus:bg-primary focus:text-white rounded-[1.2rem] cursor-pointer transition-all duration-300 group">
                             <Link href="/auth" className="flex items-center justify-between w-full px-4 py-3">
@@ -203,50 +223,44 @@ const Navbar: React.FC<NavbarProps> = ({ variant = "default" }) => {
                             </Link>
                           </DropdownMenuItem>
                         </>
-                      ) : (
-                        <DropdownMenuItem asChild className="focus:bg-primary focus:text-white rounded-[1.2rem] cursor-pointer transition-all duration-300 group">
-                          <Link href="/profile" className="flex items-center justify-between w-full px-4 py-3">
-                            <div className="flex items-center gap-3">
-                              <User className="w-4 h-4 text-primary group-focus:text-white transition-colors" />
-                              <span className="font-medium">My Profile</span>
-                            </div>
-                            <ChevronRight className="w-3 h-3 opacity-0 group-focus:opacity-100 -translate-x-2 group-focus:translate-x-0 transition-all" />
-                          </Link>
-                        </DropdownMenuItem>
                       )}
 
 
-                      <div className="py-2 mx-4 border-t border-orange-50 dark:border-zinc-800/50" />
+                      {(!user || user.role === "DEVOTEE") && (
+                        <>
+                          <div className="py-2 mx-4 border-t border-orange-50 dark:border-zinc-800/50" />
 
-                      <DropdownMenuItem asChild className="focus:bg-primary focus:text-white rounded-[1.2rem] cursor-pointer transition-all duration-300 group">
-                        <Link href="/auth" className="flex items-center justify-between w-full px-4 py-3">
-                          <div className="flex items-center gap-3">
-                            <ShoppingBag className="w-4 h-4 text-primary group-focus:text-white transition-colors" />
-                            <span className="font-medium">My Orders</span>
-                          </div>
-                          <ChevronRight className="w-3 h-3 opacity-0 group-focus:opacity-100 -translate-x-2 group-focus:translate-x-0 transition-all" />
-                        </Link>
-                      </DropdownMenuItem>
+                          <DropdownMenuItem asChild className="focus:bg-primary focus:text-white rounded-[1.2rem] cursor-pointer transition-all duration-300 group">
+                            <Link href="/auth" className="flex items-center justify-between w-full px-4 py-3">
+                              <div className="flex items-center gap-3">
+                                <ShoppingBag className="w-4 h-4 text-primary group-focus:text-white transition-colors" />
+                                <span className="font-medium">My Orders</span>
+                              </div>
+                              <ChevronRight className="w-3 h-3 opacity-0 group-focus:opacity-100 -translate-x-2 group-focus:translate-x-0 transition-all" />
+                            </Link>
+                          </DropdownMenuItem>
 
-                      <DropdownMenuItem asChild className="focus:bg-primary focus:text-white rounded-[1.2rem] cursor-pointer transition-all duration-300 group">
-                        <Link href={user ? "/account/poojas" : "/auth"} className="flex items-center justify-between w-full px-4 py-3">
-                          <div className="flex items-center gap-3">
-                            <Church className="w-4 h-4 text-primary group-focus:text-white transition-colors" />
-                            <span className="font-medium">My Poojas</span>
-                          </div>
-                          <ChevronRight className="w-3 h-3 opacity-0 group-focus:opacity-100 -translate-x-2 group-focus:translate-x-0 transition-all" />
-                        </Link>
-                      </DropdownMenuItem>
+                          <DropdownMenuItem asChild className="focus:bg-primary focus:text-white rounded-[1.2rem] cursor-pointer transition-all duration-300 group">
+                            <Link href={user ? "/account/poojas" : "/auth"} className="flex items-center justify-between w-full px-4 py-3">
+                              <div className="flex items-center gap-3">
+                                <Church className="w-4 h-4 text-primary group-focus:text-white transition-colors" />
+                                <span className="font-medium">My Poojas</span>
+                              </div>
+                              <ChevronRight className="w-3 h-3 opacity-0 group-focus:opacity-100 -translate-x-2 group-focus:translate-x-0 transition-all" />
+                            </Link>
+                          </DropdownMenuItem>
 
-                      <DropdownMenuItem asChild className="focus:bg-primary focus:text-white rounded-[1.2rem] cursor-pointer transition-all duration-300 group">
-                        <Link href={user ? "/favorites" : "/auth"} className="flex items-center justify-between w-full px-4 py-3">
-                          <div className="flex items-center gap-3">
-                            <Heart className="w-4 h-4 text-primary group-focus:text-white transition-colors" />
-                            <span className="font-medium">My Favorites</span>
-                          </div>
-                          <ChevronRight className="w-3 h-3 opacity-0 group-focus:opacity-100 -translate-x-2 group-focus:translate-x-0 transition-all" />
-                        </Link>
-                      </DropdownMenuItem>
+                          <DropdownMenuItem asChild className="focus:bg-primary focus:text-white rounded-[1.2rem] cursor-pointer transition-all duration-300 group">
+                            <Link href={user ? "/favorites" : "/auth"} className="flex items-center justify-between w-full px-4 py-3">
+                              <div className="flex items-center gap-3">
+                                <Heart className="w-4 h-4 text-primary group-focus:text-white transition-colors" />
+                                <span className="font-medium">My Favorites</span>
+                              </div>
+                              <ChevronRight className="w-3 h-3 opacity-0 group-focus:opacity-100 -translate-x-2 group-focus:translate-x-0 transition-all" />
+                            </Link>
+                          </DropdownMenuItem>
+                        </>
+                      )}
 
                       {user && (
                         <>

@@ -164,9 +164,9 @@ export default function TemplePreview({ temple }: TemplePreviewProps) {
                             <TabsContent value="events" className="mt-4">
                                 <Card className="border-none shadow-md">
                                     <CardContent className="p-4">
-                                        {temple.upcomingEvents && temple.upcomingEvents.length > 0 ? (
+                                        {temple.events && temple.events.length > 0 ? (
                                             <div className="space-y-3">
-                                                {temple.upcomingEvents.map((event: any, index: number) => (
+                                                {temple.events.map((event: any, index: number) => (
                                                     <div
                                                         key={index}
                                                         className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg border border-slate-100"

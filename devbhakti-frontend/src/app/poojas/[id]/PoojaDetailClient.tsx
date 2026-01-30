@@ -1,9 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import Image from "next/image";
 import Link from "next/link";
-import { Sparkle } from "lucide-react";
 import {
     Clock,
     IndianRupee,
@@ -14,11 +12,12 @@ import {
     Star,
     HelpCircle,
     PlayCircle,
-    Package,
-    ChevronDown,
-    Loader2
+    Loader2,
+    MessageSquare,
+    Sparkle,
+    ArrowUpRight
 } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import Navbar from "@/components/landing/Navbar";
 import Footer from "@/components/landing/Footer";
 import { Button } from "@/components/ui/button";
@@ -26,17 +25,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { fetchPublicPoojaById } from "@/api/publicController";
 import { API_URL } from "@/config/apiConfig";
-import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-    DialogDescription,
-    DialogFooter
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { useToast } from "@/components/ui/use-toast";
+import { toast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
 
 interface PoojaDetailClientProps {
@@ -44,16 +33,11 @@ interface PoojaDetailClientProps {
 }
 
 const PoojaDetailClient = ({ id }: PoojaDetailClientProps) => {
-    const [isExpanded, setIsExpanded] = React.useState(false);
     const [pooja, setPooja] = useState<any>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [activeTab, setActiveTab] = useState("about");
-    const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
-    const [selectedPackage, setSelectedPackage] = useState<any>(null);
-    const [isSubmitting, setIsSubmitting] = useState(false);
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [user, setUser] = useState<any>(null);
-    const { toast } = useToast();
     const router = useRouter();
 
     useEffect(() => {
@@ -71,22 +55,11 @@ const PoojaDetailClient = ({ id }: PoojaDetailClientProps) => {
         return `${API_URL.replace('/api', '')}${path}`;
     };
 
-    const scrollToPackages = () => {
-        setActiveTab("packages");
-        const element = document.getElementById("booking-tabs");
-        if (element) {
-            element.scrollIntoView({ behavior: "smooth" });
-        }
-    };
-
     useEffect(() => {
         const loadPooja = async () => {
             try {
                 const data = await fetchPublicPoojaById(id);
                 setPooja(data);
-                if (data?.packages && data.packages.length > 0) {
-                    setSelectedPackage(data.packages[0]);
-                }
             } catch (error) {
                 console.error("Failed to fetch pooja:", error);
             } finally {
@@ -96,345 +69,356 @@ const PoojaDetailClient = ({ id }: PoojaDetailClientProps) => {
         loadPooja();
     }, [id]);
 
-    const handleSelectPackage = (pkg: any) => {
-        if (!isLoggedIn) {
-            toast({
-                title: "Login Required",
-                description: "Please login to book this pooja.",
-                variant: "destructive"
-            });
-            router.push("/auth?mode=login");
-            return;
-        }
-        setSelectedPackage(pkg);
-        setIsBookingModalOpen(true);
-    };
 
-    const handleConfirmBooking = () => {
-        setIsSubmitting(true);
-        // Simulate booking success
-        setTimeout(() => {
-            setIsSubmitting(false);
-            setIsBookingModalOpen(false);
-            toast({
-                title: "Booking Successful!",
-                description: `You have successfully booked the ${selectedPackage.name} for ${pooja.name}.`,
-            });
-        }, 1500);
-    };
 
     if (isLoading) {
         return (
-            <div className="min-h-screen flex flex-col items-center justify-center">
-                <Loader2 className="w-10 h-10 text-primary animate-spin" />
-                <p className="mt-4 text-muted-foreground font-medium">Loading divine details...</p>
+            <div className="min-h-screen bg-[#FFF8F0] flex flex-col items-center justify-center">
+                <Loader2 className="w-12 h-12 text-primary animate-spin" />
+                <p className="mt-4 text-primary font-serif italic text-lg tracking-wide">Divine details loading...</p>
             </div>
         );
     }
 
     if (!pooja) {
         return (
-            <div className="min-h-screen flex flex-col items-center justify-center">
-                <h1 className="text-2xl font-bold">Pooja not found</h1>
-                <Button asChild className="mt-4">
-                    <Link href="/">Back to Home</Link>
+            <div className="min-h-screen bg-[#FFF8F0] flex flex-col items-center justify-center">
+                <h1 className="text-3xl font-serif font-bold text-primary mb-6">Pooja not found</h1>
+                <Button asChild variant="default" className="rounded-full px-8">
+                    <Link href="/">Return to Home</Link>
                 </Button>
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen bg-background">
+        <div className="min-h-screen bg-[#FFF8F0] selection:bg-primary/20">
             <Navbar />
 
-            <main className="pt-24 pb-16">
-                <div className="container mx-auto px-4">
-                    {/* Breadcrumb */}
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground mb-6">
-                        <Link href="/" className="hover:text-primary transition-colors">Home</Link>
-                        <span>/</span>
-                        <Link href="/#poojas" className="hover:text-primary transition-colors">Poojas</Link>
-                        <span>/</span>
-                        <span className="text-foreground font-medium">{pooja.name}</span>
-                    </div>
-
+            <main className="pt-28 pb-20">
+                <div className="container mx-auto px-4 max-w-[1440px]">
                     {/* Hero Section */}
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 mb-12">
-                        {/* Left: Image */}
-                        <motion.div
-                            initial={{ opacity: 0, x: -20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            className="relative aspect-[4/3] rounded-3xl overflow-hidden shadow-2xl"
-                        >
-                            <img
-                                src={getFullImageUrl(pooja.image)}
-                                alt={pooja.name}
-                                className="w-full h-full object-cover"
-                            />
-                            <div className="absolute top-4 left-4">
-                                <Badge className="bg-primary/90 text-white backdrop-blur-md px-3 py-1 text-sm">
-                                    {pooja.category}
-                                </Badge>
-                            </div>
-                        </motion.div>
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start mb-16">
+                        {/* Left: Image Card */}
+                        <div className="lg:col-span-5 relative">
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                className="relative aspect-square md:aspect-[4/5] lg:aspect-square rounded-[2.5rem] overflow-hidden shadow-2xl border-4 border-white shadow-primary/10"
+                            >
+                                <img
+                                    src={getFullImageUrl(pooja.image)}
+                                    alt={pooja.name}
+                                    className="w-full h-full object-cover"
+                                />
+                                <div className="absolute top-6 left-6">
+                                    <Badge className="bg-primary/90 text-white backdrop-blur-md px-5 py-2 text-sm font-bold rounded-xl border border-white/20">
+                                        {pooja.category || "Ritual"}
+                                    </Badge>
+                                </div>
+                            </motion.div>
+                        </div>
 
-                        {/* Right: Short Details */}
-                        <motion.div
-                            initial={{ opacity: 0, x: 20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            className="flex flex-col justify-center"
-                        >
-                            <h1 className="text-4xl md:text-5xl font-serif font-bold text-foreground mb-4 ">
-                                {pooja.name}
-                            </h1>
-
-                            <div className="mb-6 relative">
-                                <p className={`text-md text-foreground leading-relaxed ${isExpanded ? '' : 'line-clamp-3'}`}>
-                                    {pooja.about}
+                        {/* Right: Info Section */}
+                        <div className="lg:col-span-7 flex flex-col h-full justify-between py-2">
+                            <motion.div
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 0.1 }}
+                            >
+                                <h1 className="text-5xl md:text-6xl font-serif font-bold text-[#1a1a1a] mb-6 leading-tight">
+                                    {pooja.name}
+                                </h1>
+                                <p className="text-lg text-[#555] leading-relaxed mb-8 max-w-2xl">
+                                    {pooja.about?.split('.')[0]}. {pooja.about?.split('.')[1] || ""}
                                 </p>
-                                {pooja.about && pooja.about.length > 200 && (
-                                    <button
-                                        onClick={() => setIsExpanded(!isExpanded)}
-                                        className="text-primary text-sm font-semibold mt-1 hover:underline focus:outline-none"
+
+                                {/* Benefits Brief Cards */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-10">
+                                    <div className="bg-white/60 backdrop-blur-sm p-6 rounded-[1.5rem] border border-primary/10 hover:border-primary/20 transition-colors">
+                                        <ul className="space-y-3">
+                                            {(pooja.bullets || ["Peaceful spiritual atmosphere", "Performed by experienced priests", "Includes mantras and rituals"]).slice(0, 4).map((bullet: string, i: number) => (
+                                                <li key={i} className="flex items-start gap-3 text-sm text-[#444]">
+                                                    <div className="w-4 h-4 rounded bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
+                                                        <div className="w-1.5 h-1.5 bg-primary rounded-sm rotate-45" />
+                                                    </div>
+                                                    <span>{bullet}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                    <div className="bg-white/60 backdrop-blur-sm p-6 rounded-[1.5rem] border border-primary/10 hover:border-primary/20 transition-colors">
+                                        <ul className="space-y-3">
+                                            {(pooja.benefits || ["Brings peace and mental clarity", "Spiritual alignment", "Attracts positive energy"]).slice(0, 4).map((benefit: string, i: number) => (
+                                                <li key={i} className="flex items-start gap-3 text-sm text-[#444]">
+                                                    <div className="w-4 h-4 rounded bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
+                                                        <div className="w-1.5 h-1.5 bg-primary rounded-sm rotate-45" />
+                                                    </div>
+                                                    <span>{benefit}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                </div>
+
+                                {/* Booking Bar */}
+                                <div className="bg-[#FFEAD1] p-5 rounded-[2rem] border border-primary/10 flex flex-col md:flex-row items-center justify-between gap-6 shadow-lg shadow-primary/5">
+                                    <div className="px-4">
+                                        <div className="text-primary/70 text-[10px] font-bold uppercase tracking-[0.2em] mb-1">Starting From</div>
+                                        <div className="flex items-center gap-1 text-3xl font-bold text-primary">
+                                            <IndianRupee className="w-6 h-6 stroke-[2.5]" />
+                                            <span>{pooja.price}</span>
+                                        </div>
+                                    </div>
+                                    <Button
+                                        size="lg"
+                                        onClick={() => {
+                                            const token = localStorage.getItem("token");
+                                            if (!token) {
+                                                toast({ title: "Please login to book pooja", variant: "destructive" });
+                                                router.push("/auth");
+                                                return;
+                                            }
+                                            // If temple is available, navigate directly to booking with both params
+                                            if (pooja.temple?.id) {
+                                                router.push(`/booking?pooja=${id}&temple=${pooja.temple.id}`);
+                                            } else {
+                                                // Otherwise scroll to temple tab to select temple first
+                                                setActiveTab("temple");
+                                                document.getElementById('content-tabs')?.scrollIntoView({ behavior: 'smooth' });
+                                            }
+                                        }}
+                                        className="bg-white text-primary hover:bg-primary hover:text-white transition-all duration-500 rounded-full px-10 py-7 text-lg font-bold border-2 border-primary group shadow-md"
                                     >
-                                        {isExpanded ? "Read Less" : "Read More"}
-                                    </button>
-                                )}
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-6 mb-8">
-                                <div className="flex flex-col gap-3 p-4 bg-orange-50 dark:bg-zinc-900 rounded-2xl border border-orange-100 dark:border-zinc-800">
-                                    <h4 className="text-xs font-bold uppercase tracking-widest text-primary">Key Highlights</h4>
-                                    <ul className="text-sm text-foreground space-y-2">
-                                        {(pooja.bullets || []).map((point: string, index: number) => (
-                                            <li key={index} className="flex items-center gap-2">
-                                                <Sparkle className="w-3 h-3 text-primary" />
-                                                {point}
-                                            </li>
-                                        ))}
-                                    </ul>
+                                        Book Now <ArrowRight className="ml-3 w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                                    </Button>
                                 </div>
-                                <div className="flex flex-col gap-3 p-4 bg-orange-50 dark:bg-zinc-900 rounded-2xl border border-orange-100 dark:border-zinc-800">
-                                    <h4 className="text-xs font-bold uppercase tracking-widest text-primary">Ritual Info</h4>
-                                    <div className="space-y-2">
-                                        <div className="flex items-center gap-2 text-sm">
-                                            <Clock className="w-4 h-4 text-primary" />
-                                            <span>{pooja.duration}</span>
-                                        </div>
-                                        <div className="flex items-center gap-2 text-sm">
-                                            <MapPin className="w-4 h-4 text-primary" />
-                                            <span>{pooja.temple?.name || "Sacred Temple"}</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="flex items-center justify-between p-4 bg-gradient-to-r from-primary/10 to-primary/5 rounded-3xl border border-primary/20 shadow-xl">
-                                <div>
-                                    <div className="text-muted-foreground text-xs mb-1 uppercase tracking-wider font-bold">Starting from</div>
-                                    <div className="flex items-center gap-1 text-3xl text-primary font-bold">
-                                        <IndianRupee className="w-6 h-6" />
-                                        {pooja.price}
-                                    </div>
-                                </div>
-                                <Button
-                                    size="lg"
-                                    onClick={scrollToPackages}
-                                    className="rounded-2xl px-8 text-lg font-bold shadow-lg shadow-primary/25 hover:scale-105 transition-transform"
-                                >
-                                    Book Now <ArrowRight className="ml-2 w-5 h-5" />
-                                </Button>
-                            </div>
-                        </motion.div>
+                            </motion.div>
+                        </div>
                     </div>
 
-                    {/* Tabs Section */}
-                    <div className="mt-12" id="booking-tabs">
+                    {/* Tabs Navigation */}
+                    <div id="content-tabs" className="mt-20">
                         <Tabs
                             value={activeTab}
                             onValueChange={setActiveTab}
                             className="w-full"
                         >
-                            <div className="flex justify-center mb-10">
-                                <TabsList className="h-auto bg-white/50 dark:bg-zinc-900/50 backdrop-blur-md p-1.5 rounded-full border border-orange-100 text-black dark:border-zinc-800 gap-1 flex-wrap justify-center shadow-sm relative z-10">
+                            <div className="flex justify-center mb-12">
+                                <TabsList className="h-auto bg-white/70 backdrop-blur-md p-1.5 rounded-full border border-primary/10 shadow-lg flex flex-wrap justify-center sm:flex-nowrap">
                                     {[
                                         { id: "about", label: "About", icon: Info },
                                         { id: "benefits", label: "Benefits", icon: CheckCircle2 },
                                         { id: "process", label: "Process", icon: PlayCircle },
-                                        { id: "packages", label: "Packages", icon: Package },
-                                        { id: "faqs", label: "FAQs", icon: HelpCircle },
                                         { id: "temple", label: "Temple", icon: MapPin },
+                                        { id: "reviews", label: "Reviews", icon: Star },
+                                        { id: "faqs", label: "FAQs", icon: HelpCircle },
                                     ].map((tab) => (
                                         <TabsTrigger
                                             key={tab.id}
                                             value={tab.id}
-                                            className="rounded-full px-6 py-2.5 text-sm font-medium data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-orange-500/25 transition-all duration-300 flex items-center gap-2"
+                                            className="rounded-full px-7 py-3 text-sm font-semibold transition-all duration-500 data-[state=active]:bg-primary data-[state=active]:text-white shadow-none data-[state=active]:shadow-lg flex items-center gap-2 group"
                                         >
-                                            <tab.icon className="w-4 h-4" />
+                                            <tab.icon className="w-4 h-4 group-hover:scale-110 transition-transform" />
                                             {tab.label}
                                         </TabsTrigger>
                                     ))}
                                 </TabsList>
                             </div>
 
-                            <div className="bg-white dark:bg-zinc-950 rounded-[2.5rem] border border-orange-100 dark:border-zinc-800 shadow-xl p-8 md:p-12 relative overflow-hidden min-h-[400px]">
-                                {/* about tab */}
-                                <TabsContent value="about" className="relative z-10 mt-0 focus-visible:outline-none">
-                                    <div className="max-w-4xl mx-auto">
-                                        <h3 className="text-3xl font-serif font-bold mb-6 text-primary">About the Ritual</h3>
-                                        <div className="prose prose-orange dark:prose-invert max-w-none">
-                                            <p className="text-lg text-foreground leading-relaxed whitespace-pre-line mb-8">
-                                                {pooja.about || "Information about this puja will be updated soon."}
-                                            </p>
+                            <AnimatePresence mode="wait">
+                                <motion.div
+                                    key={activeTab}
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: -10 }}
+                                    transition={{ duration: 0.3 }}
+                                    className="bg-white rounded-[3rem] shadow-xl border border-primary/5 p-10 md:p-16"
+                                >
+                                    {/* About Tab Content */}
+                                    <TabsContent value="about" className="mt-0 outline-none">
+                                        <div className="max-w-6xl mx-auto">
+                                            <h2 className="text-4xl font-serif font-bold mb-8 text-primary">About the Ritual</h2>
+                                            <div className="space-y-6">
+                                                <p className="text-xl text-[#555] leading-relaxed font-light italic">
+                                                    {pooja.about || "Detailed ritual information will be updated soon."}
+                                                </p>
+                                                {pooja.description && Array.isArray(pooja.description) && (
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6">
+                                                        {pooja.description.map((desc: string, i: number) => (
+                                                            <div key={i} className="flex items-start gap-4">
+                                                                <div className="w-1.5 h-1.5 bg-primary mt-2.5 rounded-full shrink-0" />
+                                                                <p className="text-[#666] leading-relaxed">{desc}</p>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </TabsContent>
 
-                                            {pooja.description && Array.isArray(pooja.description) && pooja.description.length > 0 && (
-                                                <div className="space-y-4">
-                                                    {pooja.description.map((point: string, idx: number) => (
-                                                        <div key={idx} className="flex items-start gap-3">
-                                                            <div className="w-1.5 h-1.5 rounded-full bg-primary mt-2.5 shrink-0" />
-                                                            <p className="text-lg text-foreground/80">{point}</p>
+                                    {/* Benefits Tab Content */}
+                                    <TabsContent value="benefits" className="mt-0 outline-none">
+                                        <div className="max-w-6xl mx-auto text-center">
+                                            <h2 className="text-4xl font-serif font-bold mb-2 relative inline-block">
+                                                Divine Blessings & Benefits
+                                                <div className="absolute -bottom-2 left-0 right-0 h-1 bg-primary/20 rounded-full" />
+                                            </h2>
+                                            <p className="text-[#888] mt-6 mb-12 italic font-serif">Spiritual advantages of performing this sacred ritual</p>
+
+                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-left">
+                                                {(pooja.benefits || ["Brings peace and mental clarity", "Corrects morning routine", "Attracts positive energy"]).map((benefit: string, i: number) => (
+                                                    <motion.div
+                                                        whileHover={{ y: -5 }}
+                                                        key={i}
+                                                        className="bg-[#FFF8F0]/50 p-8 rounded-[2rem] border border-primary/5 shadow-sm group cursor-default"
+                                                    >
+                                                        <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center mb-6 shadow-md shadow-primary/5">
+                                                            <Sparkle className="w-6 h-6 text-[#f59e0b]" />
                                                         </div>
-                                                    ))}
-                                                </div>
-                                            )}
+                                                        <h4 className="text-xl font-serif font-bold mb-4 group-hover:text-primary transition-colors underline decoration-primary/10 decoration-2 underline-offset-4">{benefit}</h4>
+                                                        <p className="text-[#777] text-sm leading-relaxed mb-6">Experience spiritual upliftment and divine grace through this sacred ritual.</p>
+                                                        <Link href="#" className="text-primary text-[10px] font-bold uppercase tracking-widest flex items-center gap-2 group/link">
+                                                            Read More <ArrowUpRight className="w-3 h-3 group-hover/link:translate-x-0.5 group-hover/link:-translate-y-0.5 transition-transform" />
+                                                        </Link>
+                                                    </motion.div>
+                                                ))}
+                                            </div>
                                         </div>
-                                    </div>
-                                </TabsContent>
+                                    </TabsContent>
 
-                                {/* Benefits tab */}
-                                <TabsContent value="benefits" className="relative z-10 mt-0 focus-visible:outline-none">
-                                    <div className="max-w-4xl mx-auto">
-                                        <h3 className="text-3xl font-serif font-bold mb-8 text-center">Divine Blessings & Benefits</h3>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                            {(pooja.benefits || []).map((benefit: string, idx: number) => (
-                                                <div key={idx} className="p-6 rounded-2xl bg-orange-50/50 dark:bg-zinc-900/50 border border-orange-100 dark:border-zinc-800 flex items-start gap-4">
-                                                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                                                        <Sparkle className="w-5 h-5 text-primary" />
-                                                    </div>
-                                                    <p className="text-foreground font-medium">{benefit}</p>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                </TabsContent>
+                                    {/* Process Tab Content */}
+                                    <TabsContent value="process" className="mt-0 outline-none">
+                                        <div className="max-w-6xl mx-auto text-center">
+                                            <h2 className="text-4xl font-serif font-bold mb-2 relative inline-block text-primary">
+                                                Puja Process
+                                                <div className="absolute -bottom-2 left-0 right-0 h-1 bg-primary/10 rounded-full" />
+                                            </h2>
+                                            <p className="text-[#888] mt-6 mb-16 italic font-serif">Simple steps from selection to completion</p>
 
-                                {/* process tab */}
-                                <TabsContent value="process" className="relative z-10 mt-0 focus-visible:outline-none">
-                                    <div className="max-w-4xl mx-auto">
-                                        <h3 className="text-3xl font-serif font-bold mb-10 text-center">Ritual Process</h3>
-                                        <div className="space-y-8">
-                                            {(pooja.processSteps || []).map((step: any, idx: number) => (
-                                                <div key={idx} className="flex gap-6">
-                                                    <div className="flex flex-col items-center">
-                                                        <div className="w-12 h-12 rounded-full bg-primary text-white font-bold flex items-center justify-center shadow-lg shadow-primary/20">
-                                                            {idx + 1}
+                                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 text-left">
+                                                {(pooja.processSteps || [
+                                                    { title: "Select Puja Package", description: "Choose Basic or Family participation package" },
+                                                    { title: "Arrival at Temple", description: "Arrive 15 minutes before the scheduled timing" },
+                                                    { title: "Participation in Aarti", description: "Join the morning ritual with priests and devotees" },
+                                                    { title: "Receive Prasad", description: "Get sacred prasad after the completion of ceremony" }
+                                                ]).map((step: any, i: number) => (
+                                                    <div key={i} className="bg-white p-8 rounded-[2rem] border border-[#f5e1c8] hover:border-primary/20 transition-all duration-500 shadow-sm relative group">
+                                                        <div className="absolute -top-4 -left-4 w-12 h-12 bg-[#5d4037] text-white rounded-full flex items-center justify-center font-bold font-serif text-lg shadow-lg">
+                                                            {i + 1}
                                                         </div>
-                                                        {idx !== (pooja.processSteps.length - 1) && (
-                                                            <div className="w-0.5 h-full bg-primary/20 my-2" />
-                                                        )}
+                                                        <h4 className="text-xl font-serif font-bold mb-4 mt-2 group-hover:text-primary transition-colors">{step.title}</h4>
+                                                        <p className="text-[#666] text-sm leading-relaxed">{step.description}. Guided instructions provided by Vedic experts.</p>
                                                     </div>
-                                                    <div className="pb-8">
-                                                        <h4 className="text-xl font-bold text-foreground mb-2">{step.title}</h4>
-                                                        <p className="text-muted-foreground leading-relaxed">{step.description}</p>
-                                                    </div>
-                                                </div>
-                                            ))}
+                                                ))}
+                                            </div>
                                         </div>
-                                    </div>
-                                </TabsContent>
+                                    </TabsContent>
 
-                                {/* Packages tab */}
-                                <TabsContent value="packages" className="relative z-10 mt-0 focus-visible:outline-none">
-                                    <div className="max-w-5xl mx-auto">
-                                        <h3 className="text-3xl font-serif font-bold mb-10 text-center">Choose Your Package</h3>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                            {(pooja.packages || []).map((pkg: any, idx: number) => (
-                                                <div key={idx} className="p-8 rounded-[2.5rem] border border-orange-100 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-md hover:shadow-xl transition-all group">
-                                                    <h4 className="text-2xl font-bold mb-3 font-serif">{pkg.name}</h4>
-                                                    <p className="text-muted-foreground mb-8 text-lg">{pkg.description}</p>
-                                                    <div className="flex items-end justify-between border-t border-orange-100 dark:border-zinc-800 pt-6">
-                                                        <div>
-                                                            <span className="text-xs text-muted-foreground block mb-1 uppercase font-bold">Contribution</span>
-                                                            <div className="flex items-center gap-1 text-3xl font-bold text-primary">
-                                                                <IndianRupee className="w-6 h-6" />
-                                                                {pkg.price}
+                                    {/* Temple Tab Content */}
+                                    <TabsContent value="temple" className="mt-0 outline-none">
+                                        <div className="max-w-6xl mx-auto">
+                                            <div className="text-center">
+                                                <h2 className="text-4xl font-serif font-bold mb-2 text-primary">Participating Temples</h2>
+                                                <p className="text-[#888] mt-4 mb-16 italic font-serif">Sacred locations where this ritual is performed</p>
+                                            </div>
+
+                                            <div className="flex flex-col md:flex-row justify-start gap-12">
+                                                {pooja.temple ? (
+                                                    <div className="bg-white p-10 rounded-[2.5rem] border border-primary/10 shadow-xl max-w-sm w-full group overflow-hidden relative text-center">
+                                                        <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16 blur-2xl group-hover:bg-primary/10 transition-colors" />
+
+                                                        <div className="relative w-32 h-32 mx-auto mb-8 rounded-full overflow-hidden border-4 border-white shadow-xl group-hover:scale-105 transition-transform">
+                                                            <img
+                                                                src={getFullImageUrl(pooja.temple.image)}
+                                                                alt={pooja.temple.name}
+                                                                className="w-full h-full object-cover"
+                                                            />
+                                                        </div>
+                                                        <h3 className="text-2xl font-serif font-bold text-[#1a1a1a] mb-2">{pooja.temple.name}</h3>
+                                                        <p className="flex items-center justify-center gap-2 text-[#777] text-sm mb-10">
+                                                            <MapPin className="w-4 h-4 text-primary" />
+                                                            {pooja.temple.location}
+                                                        </p>
+
+                                                        <div className="space-y-4">
+                                                            <Button className="w-full bg-[#5d4037] hover:bg-black text-white rounded-full py-6 font-bold flex items-center justify-center gap-2 transition-all group/btn" asChild>
+                                                                <Link href={`/booking?pooja=${id}&temple=${pooja.temple.id}`}>
+                                                                    Book Pooja <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
+                                                                </Link>
+                                                            </Button>
+                                                            <Button variant="outline" className="w-full border-primary/5 text-[#5d4037] bg-[#FFF8F0]/30 hover:bg-[#FFF8F0]/50 rounded-full py-6 font-bold transition-all" asChild>
+                                                                <Link href={`/temples/${pooja.temple.id}`}>Explore Temple</Link>
+                                                            </Button>
+                                                        </div>
+                                                    </div>
+                                                ) : (
+                                                    <div className="p-16 border-2 border-dashed border-primary/10 rounded-[3rem] w-full italic text-[#999]">
+                                                        Participating temple data will be shared soon.
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </TabsContent>
+
+
+
+                                    {/* Reviews tab */}
+                                    <TabsContent value="reviews" className="mt-0 outline-none">
+                                        <div className="max-w-6xl mx-auto">
+                                            <h2 className="text-4xl font-serif font-bold mb-12 text-center text-primary">Devotee Experiences</h2>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                                {(pooja.reviews || [
+                                                    { name: "Anand Sharma", location: "Delhi", message: "A very peaceful experience. The ritual was performed with great authenticity.", rating: 5 },
+                                                    { name: "Priya Nair", location: "Bangalore", message: "Felt a deep sense of calm. Highly recommend for anyone looking for spiritual peace.", rating: 5 }
+                                                ]).map((review: any, idx: number) => (
+                                                    <div key={idx} className="p-10 rounded-[2.5rem] bg-[#FAFAFA] border border-primary/5 relative group group-hover:bg-white transition-colors">
+                                                        <MessageSquare className="absolute top-8 right-8 w-12 h-12 text-primary/5" />
+                                                        <div className="flex items-center gap-1 text-[#f59e0b] mb-6">
+                                                            {[...Array(review.rating || 5)].map((_, i) => (
+                                                                <Star key={i} className="w-4 h-4 fill-[#f59e0b]" />
+                                                            ))}
+                                                        </div>
+                                                        <p className="italic text-[#444] text-lg leading-relaxed mb-10 font-serif">"{review.message}"</p>
+                                                        <div className="flex items-center gap-5">
+                                                            <div className="w-14 h-14 rounded-full bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center font-bold text-white text-xl shadow-lg font-serif">
+                                                                {review.name[0]}
+                                                            </div>
+                                                            <div>
+                                                                <div className="font-bold text-[#1a1a1a] font-serif">{review.name}</div>
+                                                                <div className="text-sm text-[#888] font-medium">{review.location}</div>
                                                             </div>
                                                         </div>
-                                                        <Button
-                                                            onClick={() => handleSelectPackage(pkg)}
-                                                            className="rounded-full px-8 py-6 text-lg font-bold bg-primary hover:shadow-lg transition-all"
-                                                        >
-                                                            Select
-                                                        </Button>
                                                     </div>
-                                                </div>
-                                            ))}
+                                                ))}
+                                            </div>
                                         </div>
-                                    </div>
-                                </TabsContent>
+                                    </TabsContent>
 
-                                {/* FAQs tab */}
-                                <TabsContent value="faqs" className="relative z-10 mt-0 focus-visible:outline-none">
-                                    <div className="max-w-4xl mx-auto">
-                                        <h3 className="text-3xl font-serif font-bold mb-10 text-center">Frequently Asked Questions</h3>
-                                        <div className="space-y-4">
-                                            {(pooja.faqs || []).map((faq: any, idx: number) => (
-                                                <div key={idx} className="p-6 rounded-2xl border border-orange-100 dark:border-zinc-800 bg-orange-50/30 dark:bg-zinc-900/30">
-                                                    <h4 className="text-lg font-bold text-foreground mb-3 flex items-start gap-3">
-                                                        <HelpCircle className="w-5 h-5 text-primary mt-1 shrink-0" />
-                                                        {faq.q}
-                                                    </h4>
-                                                    <p className="text-muted-foreground leading-relaxed pl-8">
-                                                        {faq.a}
-                                                    </p>
-                                                </div>
-                                            ))}
-                                            {(!pooja.faqs || pooja.faqs.length === 0) && (
-                                                <div className="text-center py-12">
-                                                    <p className="text-muted-foreground">No FAQs available for this pooja yet.</p>
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-                                </TabsContent>
-
-                                {/* Temple tab */}
-                                <TabsContent value="temple" className="relative z-10 mt-0 focus-visible:outline-none">
-                                    <div className="max-w-4xl mx-auto">
-                                        {pooja.temple ? (
-                                            <div className="flex flex-col md:flex-row gap-8 items-center bg-orange-50/50 dark:bg-zinc-900/50 rounded-3xl p-8 border border-orange-100 dark:border-zinc-800">
-                                                <div className="w-full md:w-1/3 aspect-video relative rounded-2xl overflow-hidden shadow-lg">
-                                                    <img
-                                                        src={getFullImageUrl(pooja.temple?.image)}
-                                                        alt={pooja.temple?.name}
-                                                        className="w-full h-full object-cover"
-                                                    />
-                                                </div>
-                                                <div className="flex-1">
-                                                    <Badge className="mb-2">{pooja.temple.category}</Badge>
-                                                    <h3 className="text-2xl font-serif font-bold mb-2">{pooja.temple.name}</h3>
-                                                    <div className="flex items-center gap-2 text-muted-foreground mb-4">
-                                                        <MapPin className="w-4 h-4 text-primary" />
-                                                        <span>{pooja.temple.location}</span>
+                                    {/* FAQs tab */}
+                                    <TabsContent value="faqs" className="mt-0 outline-none">
+                                        <div className="max-w-6xl mx-auto">
+                                            <h2 className="text-4xl font-serif font-bold mb-12 text-center text-primary text-gradient-sacred">Questions? We have answers.</h2>
+                                            <div className="space-y-6">
+                                                {(pooja.faqs || [
+                                                    { q: "What is the significance of this ritual?", a: "This ritual is performed to invoke divine blessings, seek protection, and ensure the overall well-being of the devotee and their family." },
+                                                    { q: "How long does the ritual take?", a: "The duration varies by ritual, typically ranging from 45 minutes to 3 hours depending on the complexity and package chosen." }
+                                                ]).map((faq: any, idx: number) => (
+                                                    <div key={idx} className="p-8 rounded-[2rem] border border-primary/5 bg-[#FFF8F0]/30 hover:bg-white transition-all duration-500 hover:shadow-lg">
+                                                        <h4 className="text-xl font-serif font-bold text-[#1a1a1a] mb-4 flex items-start gap-4">
+                                                            <HelpCircle className="w-6 h-6 text-primary mt-0.5 shrink-0 opacity-50" />
+                                                            {faq.q}
+                                                        </h4>
+                                                        <p className="text-[#666] leading-relaxed pl-10 italic">
+                                                            {faq.a}
+                                                        </p>
                                                     </div>
-                                                    <p className="text-foreground leading-relaxed line-clamp-3">
-                                                        {pooja.temple.description}
-                                                    </p>
-                                                    <Button variant="outline" className="mt-6 gap-2 rounded-full" asChild>
-                                                        <Link href={`/temples/${pooja.temple.id}`}>
-                                                            Explore Temple <ArrowRight className="w-4 h-4" />
-                                                        </Link>
-                                                    </Button>
-                                                </div>
+                                                ))}
                                             </div>
-                                        ) : (
-                                            <div className="text-center py-12">
-                                                <p className="text-muted-foreground">Temple details will be available soon.</p>
-                                            </div>
-                                        )}
-                                    </div>
-                                </TabsContent>
-                            </div>
+                                        </div>
+                                    </TabsContent>
+                                </motion.div>
+                            </AnimatePresence>
                         </Tabs>
                     </div>
                 </div>
@@ -442,84 +426,7 @@ const PoojaDetailClient = ({ id }: PoojaDetailClientProps) => {
 
             <Footer />
 
-            <Dialog open={isBookingModalOpen} onOpenChange={setIsBookingModalOpen}>
-                <DialogContent className="sm:max-w-[500px] rounded-[2rem] p-0 overflow-hidden border-none shadow-2xl">
-                    <div className="bg-primary p-8 text-white relative">
-                        <DialogHeader>
-                            <DialogTitle className="text-3xl font-serif font-bold mb-2">Confirm Booking</DialogTitle>
-                            <DialogDescription className="text-primary-foreground/80 text-lg">
-                                Review your details for {pooja.name}
-                            </DialogDescription>
-                        </DialogHeader>
-                    </div>
 
-                    <div className="p-8 space-y-6">
-                        <div className="space-y-4">
-                            <div className="p-4 bg-orange-50 dark:bg-zinc-900 rounded-2xl border border-orange-100 dark:border-zinc-800">
-                                <h4 className="text-xs font-bold uppercase tracking-wider text-primary mb-3">Devotee Details</h4>
-                                <div className="space-y-2">
-                                    <div className="flex justify-between text-sm">
-                                        <span className="text-muted-foreground">Name:</span>
-                                        <span className="font-medium">{user?.name || "N/A"}</span>
-                                    </div>
-                                    <div className="flex justify-between text-sm">
-                                        <span className="text-muted-foreground">Phone:</span>
-                                        <span className="font-medium">{user?.phone || "N/A"}</span>
-                                    </div>
-                                    {user?.email && (
-                                        <div className="flex justify-between text-sm">
-                                            <span className="text-muted-foreground">Email:</span>
-                                            <span className="font-medium">{user.email}</span>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-
-                            <div className="p-4 bg-orange-50 dark:bg-zinc-900 rounded-2xl border border-orange-100 dark:border-zinc-800">
-                                <h4 className="text-xs font-bold uppercase tracking-wider text-primary mb-3">Package Details</h4>
-                                <div className="space-y-2">
-                                    <div className="flex justify-between text-sm">
-                                        <span className="text-muted-foreground">Package:</span>
-                                        <span className="font-medium">{selectedPackage?.name}</span>
-                                    </div>
-                                    <div className="flex justify-between text-sm">
-                                        <span className="text-muted-foreground">Price:</span>
-                                        <div className="flex items-center gap-0.5 font-bold text-primary">
-                                            <IndianRupee className="w-3.5 h-3.5" />
-                                            {selectedPackage?.price}
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <DialogFooter className="mt-8 flex flex-col sm:flex-row gap-4">
-                            <Button
-                                type="button"
-                                variant="outline"
-                                onClick={() => setIsBookingModalOpen(false)}
-                                className="rounded-full px-8 py-6 h-auto text-lg w-full sm:w-auto"
-                            >
-                                Cancel
-                            </Button>
-                            <Button
-                                onClick={handleConfirmBooking}
-                                disabled={isSubmitting}
-                                className="rounded-full px-8 py-6 h-auto text-lg bg-primary w-full sm:w-auto shadow-lg shadow-primary/20"
-                            >
-                                {isSubmitting ? (
-                                    <>
-                                        <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                                        Booking...
-                                    </>
-                                ) : (
-                                    "Confirm & Book"
-                                )}
-                            </Button>
-                        </DialogFooter>
-                    </div>
-                </DialogContent>
-            </Dialog>
         </div>
     );
 };

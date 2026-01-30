@@ -38,3 +38,11 @@ export const removeFavorite = async (data: { templeId?: string; poojaId?: string
     });
     return response.data;
 };
+export const fetchMyBookings = async () => {
+    const token = localStorage.getItem("token");
+    if (!token) return { success: false, data: [] };
+    const response = await axios.get(`${API_URL}/bookings/my`, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};

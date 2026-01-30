@@ -282,10 +282,32 @@ const PoojaListClient: React.FC = () => {
                                                         <span className="text-xs text-zinc-400 uppercase font-bold tracking-widest">Dakshina</span>
                                                         <span className="text-2xl font-bold text-zinc-900 font-display">₹{pooja.price}</span>
                                                     </div>
-                                                    <Button className="rounded-2xl px-6 bg-zinc-900 hover:bg-primary group/btn transition-all duration-300">
-                                                        Book Now
-                                                        <ChevronRight className="w-4 h-4 ml-2 group-hover/btn:translate-x-1 transition-transform" />
-                                                    </Button>
+                                                    <div className="flex flex-col gap-2 w-full">
+                                                        <Button
+                                                            className="w-full rounded-xl bg-primary hover:bg-primary/90 group/book transition-all duration-300"
+                                                            onClick={(e) => {
+                                                                e.preventDefault();
+                                                                e.stopPropagation();
+                                                                const token = localStorage.getItem("token");
+                                                                if (!token) {
+                                                                    toast({ title: "Please login to book pooja", variant: "destructive" });
+                                                                    router.push("/auth");
+                                                                    return;
+                                                                }
+                                                                router.push(`/booking?pooja=${pooja.id}`);
+                                                            }}
+                                                        >
+                                                            Book Now
+                                                            <Zap className="w-4 h-4 ml-2 fill-white animate-pulse" />
+                                                        </Button>
+                                                        <Button
+                                                            variant="outline"
+                                                            className="w-full rounded-xl border-orange-100 hover:bg-orange-50 transition-all duration-300"
+                                                        >
+                                                            More Details
+                                                            <ChevronRight className="w-4 h-4 ml-2 group-hover/btn:translate-x-1 transition-transform" />
+                                                        </Button>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </Link>
