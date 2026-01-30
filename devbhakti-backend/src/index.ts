@@ -16,9 +16,15 @@ import templeAdminEventRoutes from './routes/temple_admin/eventRoutes';
 import templeRoutes from './routes/templeRoutes';
 import authRoutes from './routes/devotee/authRoutes';
 import favoriteRoutes from './routes/devotee/favoriteRoutes';
+import publicOrderRoutes from './routes/marketplace/productOrderRoutes';
+import adminOrderRoutes from './routes/admin/productOrderRoutes';
+import templeAdminOrderRoutes from './routes/temple_admin/productOrderRoutes';
 
 
 
+
+import adminFinanceManagementRoutes from './routes/admin/financeManagementRoutes';
+import templeAdminFinanceRoutes from './routes/temple_admin/financeRoutes';
 
 dotenv.config();
 
@@ -43,16 +49,21 @@ app.use('/api/admin/categories', adminCategoryRoutes);
 app.use('/api/admin/events', adminEventRoutes);
 // (institutions merged into temples)
 app.use('/api/admin/cms', adminCmsRoutes);
+app.use('/api/admin/orders', adminOrderRoutes);
+app.use('/api/admin/finance', adminFinanceManagementRoutes);
 
 
 // Temple Admin Routes
 app.use('/api/temple-admin/temples', templeAdminTempleRoutes);
 app.use('/api/temple-admin/poojas', templeAdminPoojaRoutes);
 app.use('/api/temple-admin/events', templeAdminEventRoutes);
+app.use('/api/temple-admin/orders', templeAdminOrderRoutes);
+app.use('/api/temple-admin/finance', templeAdminFinanceRoutes);
 
 // Devotee Auth Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/favorites', favoriteRoutes);
+app.use('/api/orders', publicOrderRoutes);
 
 
 // General Routes (Temporary)

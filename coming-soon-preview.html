@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DevBhakti | Coming Soon</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #794A05;
+            --secondary: #FF9933;
+            --accent: #D4AF37;
+            --bg: #FFF9F2;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg);
+            color: #2D1B02;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Decorative Background Elements */
+        .bg-pattern {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0.05;
+            background-image: radial-gradient(var(--primary) 1px, transparent 1px);
+            background-size: 40px 40px;
+            z-index: 0;
+        }
+
+        .gradient-sphere {
+            position: absolute;
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(255, 153, 51, 0.15) 0%, rgba(255, 255, 255, 0) 70%);
+            filter: blur(80px);
+            z-index: 0;
+            border-radius: 50%;
+        }
+
+        .sphere-1 { top: -200px; right: -100px; }
+        .sphere-2 { bottom: -200px; left: -100px; }
+
+        .container {
+            position: relative;
+            z-index: 10;
+            text-align: center;
+            padding: 2rem;
+            max-width: 800px;
+            animation: fadeIn 1.2s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .logo {
+            font-family: 'Playfair Display', serif;
+            font-size: 3.5rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .logo-icon {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-radius: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 10px 20px rgba(121, 74, 5, 0.2);
+        }
+
+        .logo-text {
+            background: linear-gradient(to right, var(--primary), var(--secondary), var(--primary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-size: 200% auto;
+            animation: shine 4s linear infinite;
+        }
+
+        @keyframes shine {
+            to { background-position: 200% center; }
+        }
+
+        .coming-soon {
+            font-size: 5rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: -2px;
+            line-height: 1;
+            margin: 1.5rem 0;
+            background: linear-gradient(to right, #794A05, #FF9933, #794A05);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-size: 200% auto;
+            animation: shine 3s linear infinite;
+        }
+
+        .description {
+            font-size: 1.25rem;
+            color: #6B441F;
+            max-width: 600px;
+            margin: 0 auto 3rem;
+            font-weight: 400;
+            line-height: 1.6;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 8px 20px;
+            background: #FFF0E0;
+            border: 1px solid #FFE0C0;
+            color: var(--primary);
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            margin-bottom: 2rem;
+        }
+
+        .divider {
+            width: 80px;
+            height: 4px;
+            background: linear-gradient(to right, transparent, var(--secondary), transparent);
+            margin: 2rem auto;
+            border-radius: 2px;
+        }
+
+        .footer {
+            position: absolute;
+            bottom: 40px;
+            left: 0;
+            width: 100%;
+            text-align: center;
+            font-size: 0.9rem;
+            color: #A08060;
+            font-weight: 500;
+        }
+
+        @media (max-width: 768px) {
+            .coming-soon { font-size: 3.5rem; }
+            .logo { font-size: 2.5rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-pattern"></div>
+    <div class="gradient-sphere sphere-1"></div>
+    <div class="gradient-sphere sphere-2"></div>
+
+    <div class="container">
+        <div class="logo">
+            
+            <span class="logo-text">DevBhakti</span>
+        </div>
+        
+        <div class="divider"></div>
+
+        <div class="badge">Spiritual Excellence Awaits</div>
+        <h1 class="coming-soon">Coming Soon</h1>
+        
+        <p class="description">
+            We are preparing a sacred digital experience for devotees across the globe. 
+            A unified platform for Temples, Poojas, and Sacred Products.
+        </p>
+
+        <div class="divider"></div>
+    </div>
+
+    <div class="footer">
+        &copy; 2026 DevBhakti.in | All Rights Reserved.
+    </div>
+</body>
+</html>

@@ -481,3 +481,52 @@ export const fetchProductsByTempleAdmin = async (templeId: string) => {
     });
     return response.data.data.products;
 };
+
+// Admin Order Management
+export const fetchAllOrdersAdmin = async () => {
+    const token = localStorage.getItem("admin_token");
+    const response = await axios.get(`${API_URL}/admin/orders`, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+
+export const updateSubOrderStatusAdmin = async (subOrderId: string, data: { status: string; shippingLabel?: string }) => {
+    const token = localStorage.getItem("admin_token");
+    const response = await axios.patch(`${API_URL}/admin/orders/sub-order/${subOrderId}`, data, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+
+// Admin Finance Management
+export const fetchWithdrawalRequestsAdmin = async () => {
+    const token = localStorage.getItem("admin_token");
+    const url = `${API_URL}/admin/finance/withdrawals`;
+    console.log(`GET: ${url}`);
+    const response = await axios.get(url, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+
+export const updateWithdrawalStatusAdmin = async (requestId: string, data: any) => {
+    const token = localStorage.getItem("admin_token");
+    const response = await axios.patch(`${API_URL}/admin/finance/withdrawals/${requestId}`, data, {
+        headers: { 
+            Authorization: `Bearer ${token}`,
+            // If data is FormData, let axios handle the Content-Type
+        }
+    });
+    return response.data;
+};
+
+export const fetchPlatformFinanceSummary = async () => {
+    const token = localStorage.getItem("admin_token");
+    const url = `${API_URL}/admin/finance/platform-summary`;
+    console.log(`GET: ${url}`);
+    const response = await axios.get(url, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};

@@ -124,9 +124,16 @@ export const registerTemple = async (req: Request, res: Response) => {
 };
 
 export const getMyTempleProfile = async (req: Request, res: Response) => {
+  console.log("Fetching temple profile for user...");
   try {
-    const userId = (req as any).user.userId;
+    const userId = (req as any).user?.userId;
+    
+    if (!userId) {
+      console.error("No userId found in request - Authentication failure suspected");
+      return res.status(401).json({ success: false, message: 'Unauthenticated' });
+    }
 
+    console.log(`Searching temple for userId: ${userId}`);
     const temple = await prisma.temple.findUnique({
       where: { userId },
       include: {
@@ -141,13 +148,15 @@ export const getMyTempleProfile = async (req: Request, res: Response) => {
     });
 
     if (!temple) {
-      return res.status(404).json({ success: false, message: 'Temple not found' });
+      console.log(`No temple found for userId: ${userId}`);
+      return res.status(404).json({ success: false, message: 'Temple record not found for this account' });
     }
 
+    console.log("Temple profile fetched successfully");
     res.json({ success: true, data: temple });
   } catch (error: any) {
     console.error('Fetch Temple Profile Error:', error);
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: `Server error: ${error.message}` });
   }
 };
 

@@ -94,7 +94,7 @@ const AuthForm: React.FC = () => {
       }
 
       alert("Login successful!");
-      router.push("/");
+      window.location.href = "/";
 
     } catch (error: any) {
       alert(error.response?.data?.message || "Invalid OTP");

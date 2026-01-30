@@ -40,3 +40,33 @@ export const fetchPublicPoojaById = async (id: string) => {
         return null;
     }
 };
+
+// Get Public Products (for landing page)
+export const fetchPublicProducts = async (params?: {
+  page?: number;
+  limit?: number;
+  search?: string;
+  category?: string;
+  templeId?: string;
+}) => {
+    try {
+        const response = await axios.get(`${API_URL}/admin/products/public`, {
+            params
+        });
+        return response.data.data.products;
+    } catch (error) {
+        console.error("Error fetching public products:", error);
+        return [];
+    }
+};
+
+// Get Product by ID (public)
+export const fetchProductByIdPublic = async (id: string) => {
+    try {
+        const response = await axios.get(`${API_URL}/admin/products/${id}`);
+        return response.data.data;
+    } catch (error) {
+        console.error("Error fetching product by id:", error);
+        return null;
+    }
+};

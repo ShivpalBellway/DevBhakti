@@ -4,20 +4,14 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Minus, Plus, Trash2, IndianRupee, ShoppingBag } from "lucide-react";
 
-export interface CartItem {
-  id: number;
-  name: string;
-  price: number;
-  image: string;
-  quantity: number;
-}
+import { useCart, CartItem } from "@/context/CartContext";
 
 interface CartDrawerProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   items: CartItem[];
-  onUpdateQuantity: (id: number, quantity: number) => void;
-  onRemoveItem: (id: number) => void;
+  onUpdateQuantity: (variantId: string, quantity: number) => void;
+  onRemoveItem: (variantId: string) => void;
   onCheckout: () => void;
 }
 
@@ -53,9 +47,9 @@ const CartDrawer: React.FC<CartDrawerProps> = ({
           ) : (
             <div className="space-y-4">
               {items.map((item) => (
-                <div key={item.id} className="flex gap-4 p-3 bg-muted/50 rounded-lg">
+                <div key={item.variantId} className="flex gap-4 p-3 bg-muted/50 rounded-lg">
                   <img
-                    src={(item.image as any).src || item.image}
+                    src={item.image.startsWith('http') ? item.image : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}${item.image}`}
                     alt={item.name}
                     className="w-20 h-20 object-cover rounded-md"
                   />
@@ -70,7 +64,7 @@ const CartDrawer: React.FC<CartDrawerProps> = ({
                         variant="outline"
                         size="icon"
                         className="h-7 w-7"
-                        onClick={() => onUpdateQuantity(item.id, item.quantity - 1)}
+                        onClick={() => onUpdateQuantity(item.variantId, item.quantity - 1)}
                         disabled={item.quantity <= 1}
                       >
                         <Minus className="h-3 w-3" />
@@ -80,7 +74,7 @@ const CartDrawer: React.FC<CartDrawerProps> = ({
                         variant="outline"
                         size="icon"
                         className="h-7 w-7"
-                        onClick={() => onUpdateQuantity(item.id, item.quantity + 1)}
+                        onClick={() => onUpdateQuantity(item.variantId, item.quantity + 1)}
                       >
                         <Plus className="h-3 w-3" />
                       </Button>
@@ -88,7 +82,7 @@ const CartDrawer: React.FC<CartDrawerProps> = ({
                         variant="ghost"
                         size="icon"
                         className="h-7 w-7 ml-auto text-destructive"
-                        onClick={() => onRemoveItem(item.id)}
+                        onClick={() => onRemoveItem(item.variantId)}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>

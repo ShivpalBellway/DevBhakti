@@ -38,10 +38,18 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { createProductAdmin, fetchAllTemplesAdmin, fetchActiveCategoriesAdmin } from "@/api/adminController";
 
+interface Variant {
+  id: string;
+  name: string;
+  price: number;
+  stock: number;
+  image?: string | null;
+}
+
 export default function CreateProductPage() {
   const router = useRouter();
   const { toast } = useToast();
-  
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [temples, setTemples] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
@@ -49,15 +57,20 @@ export default function CreateProductPage() {
   const [isLoadingCategories, setIsLoadingCategories] = useState(true);
   const [productImage, setProductImage] = useState<File | null>(null);
   const [productImagePreview, setProductImagePreview] = useState<string>("");
-  
+
   const [formData, setFormData] = useState({
     name: "",
     description: "",
     category: "",
     templeId: "",
     status: "pending" as "pending" | "approved" | "rejected",
+    highlights: "",
+    longDescription: "",
+    shippingInfo: "Ships in 24-48 Hours",
+    origin: "India",
+    rating: "4.5",
   });
-  
+
   const [variants, setVariants] = useState<Variant[]>([
     { id: "1", name: "", price: 0, stock: 0 }
   ]);
@@ -94,10 +107,10 @@ export default function CreateProductPage() {
     } catch (error: any) {
       console.error("Load Temples Error:", error);
       const errorMessage = error?.response?.data?.message || error?.message || "Failed to load temples";
-      
+
       // Fallback to general option only
       setTemples([{ id: "general", name: "General Products (No Temple)" }]);
-      
+
       toast({
         title: "Warning",
         description: `Could not load temples: ${errorMessage}. Only general products available.`,
@@ -116,7 +129,7 @@ export default function CreateProductPage() {
     } catch (error: any) {
       console.error("Load Categories Error:", error);
       const errorMessage = error?.response?.data?.message || error?.message || "Failed to load categories";
-      
+
       toast({
         title: "Warning",
         description: `Could not load categories: ${errorMessage}. Please check category management.`,
@@ -202,7 +215,7 @@ export default function CreateProductPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       toast({
         title: "Validation Error",
@@ -213,45 +226,52 @@ export default function CreateProductPage() {
     }
 
     setIsSubmitting(true);
-    
+
     try {
       const validVariants = variants.filter(v => v.name.trim() && v.price > 0);
-      
+
       // Create FormData for file upload
       const formDataToSend = new FormData();
-      
+
       // Add basic product data
       formDataToSend.append('name', formData.name);
       formDataToSend.append('description', formData.description);
       formDataToSend.append('category', formData.category);
       formDataToSend.append('status', formData.status);
-      
+
       // Add templeId (null for general products)
       if (formData.templeId !== "general") {
         formDataToSend.append('templeId', formData.templeId);
       }
-      
+
       // Add product image if exists
       if (productImage) {
         formDataToSend.append('image', productImage);
       }
-      
+
+      // Add additional details
+      formDataToSend.append('highlights', formData.highlights);
+      formDataToSend.append('longDescription', formData.longDescription);
+      formDataToSend.append('shippingInfo', formData.shippingInfo);
+      formDataToSend.append('origin', formData.origin);
+      formDataToSend.append('rating', formData.rating);
+
       // Add variants as JSON string
       formDataToSend.append('variants', JSON.stringify(validVariants));
 
       await createProductAdmin(formDataToSend);
-      
+
       toast({
         title: "Success",
         description: "Product created successfully",
       });
-      
+
       router.push("/admin/products");
     } catch (error: any) {
       console.error("Create Product Error:", error);
       const errorMessage = error?.response?.data?.message || error?.message || "Failed to create product";
       const errorDetails = error?.response?.data?.details;
-      
+
       toast({
         title: "Error Creating Product",
         description: errorDetails ? `${errorMessage}: ${errorDetails}` : errorMessage,
@@ -279,8 +299,8 @@ export default function CreateProductPage() {
   };
 
   const updateVariant = (id: string, field: keyof Variant, value: string | number) => {
-    setVariants(variants.map(variant => 
-      variant.id === id 
+    setVariants(variants.map(variant =>
+      variant.id === id
         ? { ...variant, [field]: field === 'price' || field === 'stock' ? Number(value) : value }
         : variant
     ));
@@ -326,7 +346,7 @@ export default function CreateProductPage() {
                   />
                   {errors.name && <p className="text-sm text-red-500">{errors.name}</p>}
                 </div>
-                
+
                 <div className="space-y-2">
                   <Label htmlFor="category">Category *</Label>
                   <Select
@@ -366,9 +386,9 @@ export default function CreateProductPage() {
                 <div className="flex items-center gap-4">
                   {productImagePreview ? (
                     <div className="relative">
-                      <img 
-                        src={productImagePreview} 
-                        alt="Product preview" 
+                      <img
+                        src={productImagePreview}
+                        alt="Product preview"
                         className="w-24 h-24 object-cover rounded-lg border"
                       />
                       <Button
@@ -425,7 +445,7 @@ export default function CreateProductPage() {
                   <Label htmlFor="status">Status</Label>
                   <Select
                     value={formData.status}
-                    onValueChange={(value: "pending" | "approved" | "rejected") => 
+                    onValueChange={(value: "pending" | "approved" | "rejected") =>
                       setFormData({ ...formData, status: value })
                     }
                   >
@@ -439,6 +459,63 @@ export default function CreateProductPage() {
                     </SelectContent>
                   </Select>
                 </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="rating">Base Rating (1-5)</Label>
+                  <Input
+                    id="rating"
+                    type="number"
+                    step="0.1"
+                    min="1"
+                    max="5"
+                    value={formData.rating}
+                    onChange={(e) => setFormData({ ...formData, rating: e.target.value })}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="origin">Origin / Source</Label>
+                  <Input
+                    id="origin"
+                    value={formData.origin}
+                    onChange={(e) => setFormData({ ...formData, origin: e.target.value })}
+                    placeholder="e.g., India, Varanasi, Haridwar"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="shippingInfo">Shipping Label</Label>
+                  <Input
+                    id="shippingInfo"
+                    value={formData.shippingInfo}
+                    onChange={(e) => setFormData({ ...formData, shippingInfo: e.target.value })}
+                    placeholder="e.g., Ships in 24-48 Hours"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="highlights">Product Highlights (Comma separated)</Label>
+                <Textarea
+                  id="highlights"
+                  value={formData.highlights}
+                  onChange={(e) => setFormData({ ...formData, highlights: e.target.value })}
+                  placeholder="Pure Brass, Handcrafted, Blessed by Priests..."
+                  rows={2}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="longDescription">Detailed Product Description / Benefits</Label>
+                <Textarea
+                  id="longDescription"
+                  value={formData.longDescription}
+                  onChange={(e) => setFormData({ ...formData, longDescription: e.target.value })}
+                  placeholder="Explain the significance, usage, and benefits in detail..."
+                  rows={6}
+                />
               </div>
             </CardContent>
           </Card>
@@ -457,7 +534,7 @@ export default function CreateProductPage() {
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Price Range:</span>
                   <span className="font-medium">
-                    {variants.filter(v => v.price > 0).length > 0 
+                    {variants.filter(v => v.price > 0).length > 0
                       ? `₹${Math.min(...variants.filter(v => v.price > 0).map(v => v.price))} - ₹${Math.max(...variants.filter(v => v.price > 0).map(v => v.price))}`
                       : "N/A"
                     }
@@ -497,7 +574,7 @@ export default function CreateProductPage() {
                 <p className="text-sm text-red-600">{errors.variants}</p>
               </div>
             )}
-            
+
             <div className="space-y-4">
               {variants.map((variant, index) => (
                 <div key={variant.id} className="flex items-center gap-4 p-4 border rounded-lg bg-slate-50">
@@ -515,7 +592,7 @@ export default function CreateProductPage() {
                         <p className="text-sm text-red-500">{errors[`variant_name_${index}`]}</p>
                       )}
                     </div>
-                    
+
                     <div className="space-y-2">
                       <Label htmlFor={`variant-price-${variant.id}`}>Price (₹) *</Label>
                       <Input
@@ -532,7 +609,7 @@ export default function CreateProductPage() {
                         <p className="text-sm text-red-500">{errors[`variant_price_${index}`]}</p>
                       )}
                     </div>
-                    
+
                     <div className="space-y-2">
                       <Label htmlFor={`variant-stock-${variant.id}`}>Stock</Label>
                       <Input
@@ -548,7 +625,7 @@ export default function CreateProductPage() {
                         <p className="text-sm text-red-500">{errors[`variant_stock_${index}`]}</p>
                       )}
                     </div>
-                    
+
                     <div className="space-y-2">
                       <Label>Actions</Label>
                       <div className="flex gap-2">

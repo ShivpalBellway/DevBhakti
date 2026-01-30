@@ -10,6 +10,7 @@ import {
   Calendar,
   ShoppingBag,
   CreditCard,
+  IndianRupee,
   Video,
   FileText,
   BarChart3,
@@ -58,7 +59,8 @@ const sidebarItems = [
     href: "#",
     subItems: [
       { label: "All Products", href: "/admin/products" },
-      { label: "Product Categories", href: "/admin/products/categories" }
+      { label: "Product Categories", href: "/admin/products/categories" },
+      { label: "Product Orders", href: "/admin/products/orders" }
     ]
   },
   {
@@ -83,8 +85,8 @@ const sidebarItems = [
     href: "/admin/marketplace",
   },
   {
-    label: "Payments",
-    icon: CreditCard,
+    label: "Payouts & Finance",
+    icon: IndianRupee,
     href: "/admin/payments",
   },
   {
