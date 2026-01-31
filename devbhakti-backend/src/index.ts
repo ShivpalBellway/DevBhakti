@@ -20,6 +20,7 @@ import favoriteRoutes from './routes/devotee/favoriteRoutes';
 import bookingRoutes from './routes/devotee/bookingRoutes';
 import adminBookingRoutes from './routes/admin/bookingRoutes';
 import templeAdminBookingRoutes from './routes/temple_admin/bookingRoutes';
+import cartRoutes from './routes/devotee/cartRoutes';
 import publicOrderRoutes from './routes/marketplace/productOrderRoutes';
 import adminOrderRoutes from './routes/admin/productOrderRoutes';
 import templeAdminOrderRoutes from './routes/temple_admin/productOrderRoutes';
@@ -77,6 +78,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/favorites', favoriteRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/orders', publicOrderRoutes);
+app.use('/api/cart', cartRoutes);
 
 
 // General Routes (Temporary)
