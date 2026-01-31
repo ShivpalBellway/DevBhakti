@@ -49,6 +49,7 @@ model Temple {
   mapUrl         String?
   viewers        String?
   isLive         Boolean               @default(false)
+  isActive       Boolean               @default(true)  // Active/Inactive status for visibility
   userId         String                @unique
   
   // Financial Configuration
@@ -277,6 +278,7 @@ enum BookingStatus {
   BOOKED
   COMPLETED
   REJECTED
+  CANCELLED
 }
 
 model Order {

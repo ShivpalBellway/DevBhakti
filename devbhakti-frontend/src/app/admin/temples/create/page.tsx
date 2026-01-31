@@ -52,7 +52,9 @@ export default function CreateTemplePage() {
         // Stats
         rating: "0",
         reviewsCount: "0",
-        liveStatus: "true",
+        slug: "", // Added slug field
+        isActive: "true", // Added isActive for visibility
+        liveStatus: "false", // Future feature
         productCommissionRate: "10.0",
         poojaCommissionRate: "5.0"
     });
@@ -272,6 +274,23 @@ export default function CreateTemplePage() {
                                 onChange={e => setFormData({ ...formData, viewers: e.target.value })}
                                 placeholder="e.g. 10K+"
                             />
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-sm font-semibold text-slate-700 uppercase tracking-widest text-[11px] text-primary">Public URL Slug *</label>
+                            <div className="flex items-center gap-1">
+                                <span className="text-xs text-muted-foreground bg-slate-100 px-2 py-2 rounded-l-md border border-r-0">devbhakti.in/temples/</span>
+                                <Input
+                                    value={formData.slug}
+                                    onChange={e => {
+                                        const val = e.target.value.toLowerCase().replace(/[^a-z0-9-]+/g, '-');
+                                        setFormData({ ...formData, slug: val });
+                                    }}
+                                    placeholder="kashi-vishwanath-temple"
+                                    className="rounded-l-none"
+                                    required
+                                />
+                            </div>
+                            <p className="text-[10px] text-muted-foreground italic">Alphanumeric and hyphens only. This will be the public URL.</p>
                         </div>
                     </div>
 
@@ -521,23 +540,44 @@ export default function CreateTemplePage() {
                 </div>
 
                 {/* Status Toggle */}
-                <div className="flex items-center gap-3 p-6 bg-emerald-50 rounded-xl border border-emerald-100">
-                    <div className="relative inline-flex h-6 w-11 items-center rounded-full bg-slate-200 cursor-pointer">
-                        <input
-                            type="checkbox"
-                            id="liveStatus"
-                            className="sr-only peer"
-                            checked={formData.liveStatus === "true"}
-                            onChange={e => setFormData({ ...formData, liveStatus: e.target.checked ? "true" : "false" })}
-                        />
-                        <label
-                            htmlFor="liveStatus"
-                            className="w-11 h-6 bg-slate-400 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-emerald-200 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"
-                        ></label>
+                <div className="flex flex-col md:flex-row gap-4">
+                    <div className="flex-1 flex items-center gap-3 p-6 bg-emerald-50 rounded-xl border border-emerald-100 shadow-sm">
+                        <div className="relative inline-flex h-6 w-11 items-center rounded-full bg-slate-200 cursor-pointer">
+                            <input
+                                type="checkbox"
+                                id="isActive"
+                                className="sr-only peer"
+                                checked={formData.isActive === "true"}
+                                onChange={e => setFormData({ ...formData, isActive: e.target.checked ? "true" : "false" })}
+                            />
+                            <label
+                                htmlFor="isActive"
+                                className="w-11 h-6 bg-slate-400 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-emerald-200 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"
+                            ></label>
+                        </div>
+                        <div>
+                            <p className="text-sm font-bold text-emerald-900">Mark as Active & Verified</p>
+                            <p className="text-xs text-emerald-700">Visible to all devotees on the platform immediately.</p>
+                        </div>
                     </div>
-                    <div>
-                        <p className="text-sm font-bold text-emerald-900">Mark as Live & Verified</p>
-                        <p className="text-xs text-emerald-700">Visible to all devotees on the platform immediately.</p>
+
+                    <div className="flex-1 flex items-center gap-3 p-6 bg-amber-50 rounded-xl border border-amber-100 shadow-sm opacity-60 grayscale-[0.5]">
+                        <div className="relative inline-flex h-6 w-11 items-center rounded-full bg-slate-200 cursor-pointer">
+                            <input
+                                type="checkbox"
+                                id="liveStatus"
+                                className="sr-only peer"
+                                disabled // Future feature
+                            />
+                            <label
+                                htmlFor="liveStatus"
+                                className="w-11 h-6 bg-slate-400 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-600"
+                            ></label>
+                        </div>
+                        <div>
+                            <p className="text-sm font-bold text-amber-900">Live Streaming Mode (Future)</p>
+                            <p className="text-xs text-amber-700">Will be used for real-time video streaming.</p>
+                        </div>
                     </div>
                 </div>
 

@@ -4,12 +4,14 @@ import path from "path";
 import { 
   getAllWithdrawalRequests, 
   updateWithdrawalStatus,
-  getPlatformFinanceSummary
+  getPlatformFinanceSummary,
+  getAllPlatformTransactions
 } from "../../controllers/admin/financeManagementController";
 
 const router = Router();
 
 router.get("/platform-summary", getPlatformFinanceSummary);
+router.get("/transactions", getAllPlatformTransactions);
 
 // Multer setup for receipt uploads
 const storage = multer.diskStorage({

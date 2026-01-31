@@ -47,7 +47,7 @@ export const updateBookingStatus = async (req: Request, res: Response) => {
         const { status } = req.body;
         const { userId } = (req as any).user;
 
-        if (!['PENDING', 'BOOKED', 'COMPLETED', 'REJECTED'].includes(status)) {
+        if (!['PENDING', 'BOOKED', 'COMPLETED', 'REJECTED', 'CANCELLED'].includes(status)) {
             return res.status(400).json({ success: false, message: 'Invalid status' });
         }
 
@@ -69,6 +69,19 @@ export const updateBookingStatus = async (req: Request, res: Response) => {
             where: { id: id as string },
             data: { status }
         });
+
+        // Sync Ledger Status
+        if (status === "COMPLETED") {
+            await prisma.templeLedger.updateMany({
+                where: { sourceId: id as string, type: "POOJA_EARNING" },
+                data: { status: "COMPLETED" }
+            });
+        } else if (status === "CANCELLED" || status === "REJECTED") {
+            await prisma.templeLedger.updateMany({
+                where: { sourceId: id as string, type: "POOJA_EARNING" },
+                data: { status: "CANCELLED" }
+            });
+        }
 
         res.json({
             success: true,

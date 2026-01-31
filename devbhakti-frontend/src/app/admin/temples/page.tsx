@@ -14,6 +14,9 @@ import {
     XCircle,
     Clock,
     Globe,
+    MoreVertical,
+    Power,
+    PowerOff,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,6 +36,14 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+    DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
+import { Switch } from "@/components/ui/switch";
 import {
     fetchAllTemplesAdmin,
     deleteTempleAdmin,
@@ -82,10 +93,11 @@ export default function TemplesManagementPage() {
                     userPhone: user.phone,
                     isVerified: user.isVerified,
                     // Temple data
+                    temple: user.temple, // Explicitly include temple object
                     templeId: user.temple.id,
                     templeName: user.temple.name,
                     templeLocation: user.temple.location,
-                    ...user.temple // Spread other temple properties
+                    ...user.temple // Keep spread for compatibility with other fields if needed
                 }));
 
             setTemples(actualTemples);
@@ -124,7 +136,7 @@ export default function TemplesManagementPage() {
         poojaCommissionRate: "5"
     });
 
-    const handleToggleStatus = async (id: string, currentVerified: boolean, currentLive: boolean, templeName?: string) => {
+    const handleToggleStatus = async (id: string, currentVerified: boolean, currentActive: boolean, templeName?: string) => {
         if (!currentVerified) {
             // Opening Approval Modal
             const generatedSlug = templeName ? templeName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') : "";
@@ -137,11 +149,11 @@ export default function TemplesManagementPage() {
             setApprovalModalOpen(true);
         } else {
             // Deactivating - Direct Action
-            if (window.confirm("Are you sure you want to deactivate this temple?")) {
+            if (window.confirm("Are you sure you want to revoke verification for this temple?")) {
                 try {
-                    await toggleTempleStatusAdmin(id, false, currentLive);
-                    toast({ title: "Success", description: "Temple deactivated successfully" });
-                    loadTemples();
+                    await toggleTempleStatusAdmin(id, false, currentActive);
+                    toast({ title: "Success", description: "Temple verification revoked" });
+                    await loadTemples();
                 } catch (error) {
                     toast({ title: "Error", description: "Failed to update status", variant: "destructive" });
                 }
@@ -154,7 +166,7 @@ export default function TemplesManagementPage() {
             await toggleTempleStatusAdmin(
                 approvalData.id,
                 true, // isVerified
-                true, // liveStatus (Default to live on approval? or keep previous? Let's verify and make live usually) 
+                true, // isActive (Default to active on approval) 
                 {
                     slug: approvalData.slug,
                     productCommissionRate: parseFloat(approvalData.productCommissionRate),
@@ -168,6 +180,26 @@ export default function TemplesManagementPage() {
             toast({
                 title: "Error",
                 description: error.response?.data?.error || "Failed to approve temple",
+                variant: "destructive"
+            });
+        }
+    };
+
+    const handleToggleActive = async (id: string, currentVerified: boolean, currentActive: boolean) => {
+        console.log('Toggle Active Called:', { id, currentVerified, currentActive, newValue: !currentActive });
+        try {
+            const response = await toggleTempleStatusAdmin(id, currentVerified, !currentActive);
+            console.log('API Response:', response);
+            toast({
+                title: "Success",
+                description: `Temple ${!currentActive ? 'activated' : 'deactivated'} successfully`
+            });
+            await loadTemples();
+        } catch (error: any) {
+            console.error('Toggle Active Error:', error);
+            toast({
+                title: "Error",
+                description: error.response?.data?.error || "Failed to update status",
                 variant: "destructive"
             });
         }
@@ -279,33 +311,70 @@ export default function TemplesManagementPage() {
                                     </TableCell>
                                     <TableCell>
                                         <div className="flex flex-col gap-2">
-                                            <div className="flex items-center gap-2">
-                                                {inst.isVerified ? (
-                                                    <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-emerald-50 text-emerald-700 rounded-lg border border-emerald-200">
-                                                        <CheckCircle className="w-3.5 h-3.5" />
-                                                        <span className="text-xs font-semibold">Verified</span>
-                                                    </div>
-                                                ) : (
-                                                    <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-amber-50 text-amber-700 rounded-lg border border-amber-200">
-                                                        <Clock className="w-3.5 h-3.5" />
-                                                        <span className="text-xs font-semibold">Pending</span>
-                                                    </div>
-                                                )}
-                                            </div>
+                                            {/* Verification Status Dropdown */}
+                                            <DropdownMenu>
+                                                <DropdownMenuTrigger asChild>
+                                                    {inst.isVerified ? (
+                                                        <div className="cursor-pointer flex items-center gap-1.5 px-2.5 py-1.5 bg-emerald-50 text-emerald-700 rounded-lg border border-emerald-200 hover:bg-emerald-100 transition-colors">
+                                                            <CheckCircle className="w-3.5 h-3.5" />
+                                                            <span className="text-xs font-semibold">Verified</span>
+                                                            <MoreVertical className="w-3 h-3 ml-auto" />
+                                                        </div>
+                                                    ) : (
+                                                        <div className="cursor-pointer flex items-center gap-1.5 px-2.5 py-1.5 bg-amber-50 text-amber-700 rounded-lg border border-amber-200 hover:bg-amber-100 transition-colors">
+                                                            <Clock className="w-3.5 h-3.5" />
+                                                            <span className="text-xs font-semibold">Pending</span>
+                                                            <MoreVertical className="w-3 h-3 ml-auto" />
+                                                        </div>
+                                                    )}
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent align="end">
+                                                    {!inst.isVerified && (
+                                                        <>
+                                                            <DropdownMenuItem
+                                                                onClick={() => handleToggleStatus(inst.userId, inst.isVerified, inst.temple?.isActive || false, inst.templeName)}
+                                                                className="text-emerald-600"
+                                                            >
+                                                                <CheckCircle className="w-4 h-4 mr-2" />
+                                                                Approve Temple
+                                                            </DropdownMenuItem>
+                                                            <DropdownMenuSeparator />
+                                                        </>
+                                                    )}
+                                                    {inst.isVerified && (
+                                                        <DropdownMenuItem
+                                                            onClick={() => handleToggleStatus(inst.userId, inst.isVerified, inst.temple?.isActive || false, inst.templeName)}
+                                                            className="text-amber-600"
+                                                        >
+                                                            <XCircle className="w-4 h-4 mr-2" />
+                                                            Revoke Verification
+                                                        </DropdownMenuItem>
+                                                    )}
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
 
+                                            {/* Active/Inactive Status */}
+                                            <div className="flex items-center gap-2">
+                                                <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium ${inst.temple?.isActive
+                                                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                    : 'bg-slate-50 text-slate-500 border border-slate-200'
+                                                    }`}>
+                                                    {inst.temple?.isActive ? (
+                                                        <><Power className="w-3 h-3" /> Active</>
+                                                    ) : (
+                                                        <><PowerOff className="w-3 h-3" /> Inactive</>
+                                                    )}
+                                                </div>
+                                                <Switch
+                                                    checked={inst.temple?.isActive || false}
+                                                    onCheckedChange={() => handleToggleActive(inst.userId, inst.isVerified, inst.temple?.isActive || false)}
+                                                    disabled={!inst.isVerified}
+                                                />
+                                            </div>
                                         </div>
                                     </TableCell>
                                     <TableCell className="text-right">
                                         <div className="flex justify-end gap-1">
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                className={`h-8 w-8 ${inst.isVerified ? 'text-amber-600' : 'text-emerald-600'}`}
-                                                onClick={() => handleToggleStatus(inst.userId, inst.isVerified, inst.temple?.liveStatus || false, inst.templeName)}
-                                                title={inst.isVerified ? "Deactivate" : "Approve Temple"}
-                                            >
-                                                {inst.isVerified ? <XCircle className="w-4 h-4" /> : <CheckCircle className="w-4 h-4" />}
-                                            </Button>
                                             <Button
                                                 variant="ghost"
                                                 size="icon"

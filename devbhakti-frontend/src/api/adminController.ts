@@ -129,11 +129,11 @@ export const deleteTempleAdmin = async (id: string) => {
     return response.data;
 };
 
-export const toggleTempleStatusAdmin = async (id: string, isVerified: boolean, liveStatus: boolean, data?: { slug?: string, productCommissionRate?: number, poojaCommissionRate?: number }) => {
+export const toggleTempleStatusAdmin = async (id: string, isVerified: boolean, isActive: boolean, data?: { slug?: string, productCommissionRate?: number, poojaCommissionRate?: number, liveStatus?: boolean }) => {
     const token = localStorage.getItem("admin_token");
     const payload = {
         isVerified,
-        liveStatus,
+        isActive,
         ...data
     };
     const response = await axios.patch(`${API_URL}/admin/temples/${id}/status`, payload, {
@@ -597,6 +597,16 @@ export const deleteSellerAdmin = async (id: string) => {
 export const toggleSellerStatusAdmin = async (id: string, status: string) => {
     const token = localStorage.getItem("admin_token");
     const response = await axios.patch(`${API_URL}/admin/sellers/${id}/status`, { status }, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+
+export const fetchAllTransactionsAdmin = async () => {
+    const token = localStorage.getItem("admin_token");
+    const url = `${API_URL}/admin/finance/transactions`;
+    console.log(`GET: ${url}`);
+    const response = await axios.get(url, {
         headers: { Authorization: `Bearer ${token}` }
     });
     return response.data;

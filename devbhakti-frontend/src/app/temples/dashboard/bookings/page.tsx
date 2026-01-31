@@ -42,7 +42,7 @@ import { useToast } from "@/hooks/use-toast";
 
 const statusConfig = {
     BOOKED: {
-        color: "bg-emerald-100 text-emerald-700 border-emerald-200",
+        color: "bg-blue-100 text-blue-700 border-blue-200",
         icon: CheckCircle,
     },
     PENDING: {
@@ -50,12 +50,16 @@ const statusConfig = {
         icon: Clock,
     },
     COMPLETED: {
-        color: "bg-blue-100 text-blue-700 border-blue-200",
+        color: "bg-emerald-100 text-emerald-700 border-emerald-200",
         icon: CheckCircle2,
     },
     REJECTED: {
         color: "bg-rose-100 text-rose-700 border-rose-200",
         icon: XCircle,
+    },
+    CANCELLED: {
+        color: "bg-slate-100 text-slate-700 border-slate-200",
+        icon: X,
     },
 };
 
@@ -278,17 +282,37 @@ export default function TempleBookingsPage() {
                                                                     <Eye className="w-4 h-4 mr-2" /> View Details
                                                                 </DropdownMenuItem>
 
-                                                                {booking.status !== 'BOOKED' && (
+                                                                {booking.status === 'PENDING' && (
                                                                     <DropdownMenuItem
                                                                         onClick={() => handleUpdateStatus(booking.id, 'BOOKED')}
-                                                                        className="text-emerald-600 focus:text-emerald-600"
+                                                                        className="text-blue-600 focus:text-blue-600"
                                                                         disabled={isProcessing}
                                                                     >
                                                                         <CheckCircle2 className="w-4 h-4 mr-2" /> Accept Booking
                                                                     </DropdownMenuItem>
                                                                 )}
 
-                                                                {booking.status !== 'REJECTED' && (
+                                                                {booking.status === 'BOOKED' && (
+                                                                    <DropdownMenuItem
+                                                                        onClick={() => handleUpdateStatus(booking.id, 'COMPLETED')}
+                                                                        className="text-emerald-600 focus:text-emerald-600 font-bold"
+                                                                        disabled={isProcessing}
+                                                                    >
+                                                                        <CheckCircle2 className="w-4 h-4 mr-2" /> Mark Completed
+                                                                    </DropdownMenuItem>
+                                                                )}
+
+                                                                {['BOOKED', 'PENDING'].includes(booking.status) && (
+                                                                    <DropdownMenuItem
+                                                                        onClick={() => handleUpdateStatus(booking.id, 'CANCELLED')}
+                                                                        className="text-slate-600 focus:text-slate-600"
+                                                                        disabled={isProcessing}
+                                                                    >
+                                                                        <XCircle className="w-4 h-4 mr-2" /> Cancel Booking
+                                                                    </DropdownMenuItem>
+                                                                )}
+
+                                                                {booking.status === 'PENDING' && (
                                                                     <DropdownMenuItem
                                                                         onClick={() => handleUpdateStatus(booking.id, 'REJECTED')}
                                                                         className="text-rose-600 focus:text-rose-600"
@@ -446,10 +470,19 @@ export default function TempleBookingsPage() {
                                             {selectedBooking.status === 'PENDING' && (
                                                 <Button
                                                     onClick={() => handleUpdateStatus(selectedBooking.id, 'BOOKED')}
-                                                    className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl px-6"
+                                                    className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl px-6"
                                                     disabled={isProcessing}
                                                 >
                                                     Accept Booking
+                                                </Button>
+                                            )}
+                                            {selectedBooking.status === 'BOOKED' && (
+                                                <Button
+                                                    onClick={() => handleUpdateStatus(selectedBooking.id, 'COMPLETED')}
+                                                    className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl px-6"
+                                                    disabled={isProcessing}
+                                                >
+                                                    Mark Completed
                                                 </Button>
                                             )}
                                             <Button

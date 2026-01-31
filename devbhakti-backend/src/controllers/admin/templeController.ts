@@ -93,7 +93,11 @@ export const createTemple = async (req: Request, res: Response) => {
               viewers: data.viewers,
               rating: parseFloat(data.rating || '0'),
               reviewsCount: parseInt(data.reviewsCount || '0'),
+              slug: data.slug || undefined,
+              isActive: data.isActive === 'true',
               liveStatus: data.liveStatus === 'true',
+              productCommissionRate: data.productCommissionRate ? parseFloat(data.productCommissionRate) : 10.0,
+              poojaCommissionRate: data.poojaCommissionRate ? parseFloat(data.poojaCommissionRate) : 5.0,
               image: getFilePath(files, 'image'),
               heroImages: getFilePath(files, 'heroImages') || [],
             }
@@ -224,7 +228,16 @@ export const updateTemple = async (req: Request, res: Response) => {
 export const toggleTempleStatus = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { isVerified, liveStatus, slug, productCommissionRate, poojaCommissionRate } = req.body;
+    const { isVerified, isActive, slug, productCommissionRate, poojaCommissionRate } = req.body;
+    
+    console.log('toggleTempleStatus called:', { 
+      id, 
+      isVerified, 
+      isActive,  // Changed from liveStatus to isActive
+      slug, 
+      productCommissionRate, 
+      poojaCommissionRate 
+    });
 
     const result = await prisma.user.update({
       where: { id: String(id) },
@@ -232,7 +245,7 @@ export const toggleTempleStatus = async (req: Request, res: Response) => {
         isVerified: isVerified,
         temple: {
           update: {
-            liveStatus: liveStatus,
+            isActive: isActive !== undefined ? isActive : undefined,  // Use isActive for visibility
             slug: slug || undefined,
             productCommissionRate: productCommissionRate ? parseFloat(productCommissionRate) : undefined,
             poojaCommissionRate: poojaCommissionRate ? parseFloat(poojaCommissionRate) : undefined,
@@ -242,6 +255,7 @@ export const toggleTempleStatus = async (req: Request, res: Response) => {
       include: { temple: true }
     });
 
+    console.log('Temple status updated:', result.temple);
     res.json({ success: true, message: 'Status updated successfully', data: result });
   } catch (error: any) {
     console.error('Toggle status error:', error);

@@ -17,8 +17,16 @@ import {
     ExternalLink,
     AlertCircle,
     Check,
-    Info
+    Info,
+    History as HistoryIcon,
+    LayoutList as LayoutListIcon
 } from "lucide-react";
+import {
+    Tabs,
+    TabsContent,
+    TabsList,
+    TabsTrigger,
+} from "@/components/ui/tabs";
 import {
     Tooltip,
     TooltipContent,
@@ -35,7 +43,8 @@ import { cn } from "@/lib/utils";
 import {
     fetchWithdrawalRequestsAdmin,
     updateWithdrawalStatusAdmin,
-    fetchPlatformFinanceSummary
+    fetchPlatformFinanceSummary,
+    fetchAllTransactionsAdmin
 } from "@/api/adminController";
 import {
     Dialog,
@@ -61,6 +70,8 @@ export default function PayoutsManagementPage() {
     const [selectedRequest, setSelectedRequest] = useState<any>(null);
     const [isActionModalOpen, setIsActionModalOpen] = useState(false);
     const [platformSummary, setPlatformSummary] = useState<any>(null);
+    const [transactions, setTransactions] = useState<any[]>([]);
+    const [activeTab, setActiveTab] = useState("withdrawals");
     const [actionType, setActionType] = useState<"APPROVE" | "REJECT" | "MARK_PAID">("APPROVE");
     const [transactionId, setTransactionId] = useState("");
     const [adminNotes, setAdminNotes] = useState("");
@@ -94,6 +105,16 @@ export default function PayoutsManagementPage() {
                 }
             } catch (err) {
                 console.error("Failed to fetch platform summary:", err);
+            }
+
+            // Fetch transactions
+            try {
+                const transRes = await fetchAllTransactionsAdmin();
+                if (transRes.success) {
+                    setTransactions(transRes.data);
+                }
+            } catch (err) {
+                console.error("Failed to fetch platform transactions:", err);
             }
 
         } catch (globalError) {
@@ -157,6 +178,13 @@ export default function PayoutsManagementPage() {
             req.id.toLowerCase().includes(searchTerm.toLowerCase());
         const matchesStatus = statusFilter === "ALL" || req.status === statusFilter;
         return matchesSearch && matchesStatus;
+    });
+
+    const filteredTransactions = transactions.filter(tx => {
+        const matchesSearch = tx.temple?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            tx.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            tx.type?.toLowerCase().includes(searchTerm.toLowerCase());
+        return matchesSearch;
     });
 
     const getStatusConfig = (status: string) => {
@@ -241,138 +269,236 @@ export default function PayoutsManagementPage() {
                 </div>
             </TooltipProvider>
 
-            {/* Filters and Table */}
-            <div className="space-y-4">
-                <div className="flex flex-col md:row items-center justify-between gap-4">
-                    <div className="flex flex-1 items-center gap-4 w-full">
-                        <div className="relative flex-1">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                            <Input
-                                placeholder="Search by temple name or request ID..."
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                className="pl-10 h-11 rounded-xl border-slate-200"
-                            />
-                        </div>
-                        <Select value={statusFilter} onValueChange={setStatusFilter}>
-                            <SelectTrigger className="w-44 h-11 rounded-xl border-slate-200 font-semibold">
-                                <SelectValue placeholder="All Status" />
-                            </SelectTrigger>
-                            <SelectContent className="rounded-xl">
-                                <SelectItem value="ALL">All Status</SelectItem>
-                                <SelectItem value="PENDING">Pending</SelectItem>
-                                <SelectItem value="APPROVED">Approved</SelectItem>
-                                <SelectItem value="PAID">Paid</SelectItem>
-                                <SelectItem value="REJECTED">Rejected</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-                </div>
+            {/* Filters and Tabs */}
+            <div className="space-y-6">
+                <Tabs defaultValue="withdrawals" className="w-full" onValueChange={setActiveTab}>
+                    <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-6">
+                        <TabsList className="bg-slate-100 p-1 rounded-2xl h-12 w-full md:w-auto">
+                            <TabsTrigger value="withdrawals" className="rounded-xl px-6 data-[state=active]:bg-white data-[state=active]:shadow-sm gap-2">
+                                <LayoutListIcon className="w-4 h-4" />
+                                Payout Requests
+                            </TabsTrigger>
+                            <TabsTrigger value="transactions" className="rounded-xl px-6 data-[state=active]:bg-white data-[state=active]:shadow-sm gap-2">
+                                <HistoryIcon className="w-4 h-4" />
+                                Transaction Ledger
+                            </TabsTrigger>
+                        </TabsList>
 
-                <Card className="border-none shadow-xl rounded-[2rem] overflow-hidden bg-white">
-                    <div className="overflow-x-auto">
-                        <table className="w-full">
-                            <thead className="bg-slate-50/80">
-                                <tr>
-                                    <th className="py-5 pl-8 text-left text-[11px] font-extrabold text-slate-900 uppercase tracking-widest">Temple & Owner</th>
-                                    <th className="py-5 text-left text-[11px] font-extrabold text-slate-900 uppercase tracking-widest">Amount</th>
-                                    <th className="py-5 text-left text-[11px] font-extrabold text-slate-900 uppercase tracking-widest">Bank Details</th>
-                                    <th className="py-5 text-center text-[11px] font-extrabold text-slate-900 uppercase tracking-widest">Status</th>
-                                    <th className="py-5 pr-8 text-right text-[11px] font-extrabold text-slate-900 uppercase tracking-widest">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-50">
-                                {filteredRequests.length === 0 ? (
-                                    <tr>
-                                        <td colSpan={5} className="py-20 text-center">
-                                            <div className="flex flex-col items-center gap-2 text-slate-400">
-                                                <AlertCircle className="w-12 h-12 opacity-20" />
-                                                <p className="font-bold uppercase tracking-widest text-[10px]">No payout requests found</p>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ) : (
-                                    filteredRequests.map((req) => {
-                                        const config = getStatusConfig(req.status);
-                                        const StatusIcon = config.icon;
-                                        return (
-                                            <tr key={req.id} className="hover:bg-slate-50/50 transition-colors">
-                                                <td className="py-6 pl-8">
-                                                    <div className="flex items-center gap-4">
-                                                        <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
-                                                            <Building2 className="w-5 h-5" />
-                                                        </div>
-                                                        <div className="flex flex-col">
-                                                            <span className="text-sm font-extrabold text-slate-900">{req.temple?.name}</span>
-                                                            <span className="text-[10px] text-slate-400 font-bold">{req.temple?.user?.name} ({req.temple?.user?.phone})</span>
-                                                        </div>
-                                                    </div>
-                                                </td>
-                                                <td className="py-6">
-                                                    <span className="text-base font-extrabold text-slate-900 italic">₹{req.amount.toLocaleString()}</span>
-                                                </td>
-                                                <td className="py-6">
-                                                    <div className="flex flex-col text-[11px] text-slate-500 font-medium">
-                                                        <span>{req.bankDetails?.type || 'Manual Request'}</span>
-                                                        <span className="text-[9px] text-slate-400">{format(new Date(req.createdAt), "dd MMM, hh:mm a")}</span>
-                                                    </div>
-                                                </td>
-                                                <td className="py-6 text-center">
-                                                    <Badge className={cn(
-                                                        "rounded-full px-3 py-1 text-[10px] font-bold border",
-                                                        config.bg, config.color, config.border
-                                                    )}>
-                                                        <StatusIcon className="w-3 h-3 mr-1" />
-                                                        {req.status}
-                                                    </Badge>
-                                                </td>
-                                                <td className="py-6 pr-8 text-right">
-                                                    <div className="flex justify-end gap-2">
-                                                        {req.status === "PENDING" && (
-                                                            <>
-                                                                <Button
-                                                                    size="sm"
-                                                                    variant="outline"
-                                                                    onClick={() => { setSelectedRequest(req); setActionType("APPROVE"); setIsActionModalOpen(true); }}
-                                                                    className="h-8 rounded-lg text-blue-600 border-blue-200 hover:bg-blue-50"
-                                                                >
-                                                                    Approve
-                                                                </Button>
-                                                                <Button
-                                                                    size="sm"
-                                                                    variant="outline"
-                                                                    onClick={() => { setSelectedRequest(req); setActionType("REJECT"); setIsActionModalOpen(true); }}
-                                                                    className="h-8 rounded-lg text-red-600 border-red-200 hover:bg-red-50"
-                                                                >
-                                                                    Reject
-                                                                </Button>
-                                                            </>
-                                                        )}
-                                                        {req.status === "APPROVED" && (
-                                                            <Button
-                                                                size="sm"
-                                                                className="h-8 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white gap-1"
-                                                                onClick={() => { setSelectedRequest(req); setActionType("MARK_PAID"); setIsActionModalOpen(true); }}
-                                                            >
-                                                                <Check className="w-3.5 h-3.5" />
-                                                                Mark Paid
-                                                            </Button>
-                                                        )}
-                                                        {req.status === "PAID" && (
-                                                            <div className="text-[10px] font-bold text-slate-400">
-                                                                TXN: {req.transactionId || 'N/A'}
-                                                            </div>
-                                                        )}
+                        <div className="flex items-center gap-4 w-full md:w-auto flex-1 md:justify-end">
+                            <div className="relative flex-1 md:max-w-xs">
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                                <Input
+                                    placeholder={activeTab === "withdrawals" ? "Search requests..." : "Search transactions..."}
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    className="pl-10 h-11 rounded-xl border-slate-200"
+                                />
+                            </div>
+                            {activeTab === "withdrawals" && (
+                                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                                    <SelectTrigger className="w-40 h-11 rounded-xl border-slate-200 font-semibold">
+                                        <SelectValue placeholder="All Status" />
+                                    </SelectTrigger>
+                                    <SelectContent className="rounded-xl">
+                                        <SelectItem value="ALL">All Status</SelectItem>
+                                        <SelectItem value="PENDING">Pending</SelectItem>
+                                        <SelectItem value="APPROVED">Approved</SelectItem>
+                                        <SelectItem value="PAID">Paid</SelectItem>
+                                        <SelectItem value="REJECTED">Rejected</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            )}
+                        </div>
+                    </div>
+
+                    <TabsContent value="withdrawals" className="mt-0 outline-none">
+                        <Card className="border-none shadow-xl rounded-[2rem] overflow-hidden bg-white">
+                            <div className="overflow-x-auto">
+                                <table className="w-full">
+                                    <thead className="bg-slate-50/80">
+                                        <tr>
+                                            <th className="py-5 pl-8 text-left text-[11px] font-extrabold text-slate-900 uppercase tracking-widest">Temple & Owner</th>
+                                            <th className="py-5 text-left text-[11px] font-extrabold text-slate-900 uppercase tracking-widest">Amount</th>
+                                            <th className="py-5 text-left text-[11px] font-extrabold text-slate-900 uppercase tracking-widest">Bank Details</th>
+                                            <th className="py-5 text-center text-[11px] font-extrabold text-slate-900 uppercase tracking-widest">Status</th>
+                                            <th className="py-5 pr-8 text-right text-[11px] font-extrabold text-slate-900 uppercase tracking-widest">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-50">
+                                        {filteredRequests.length === 0 ? (
+                                            <tr>
+                                                <td colSpan={5} className="py-20 text-center">
+                                                    <div className="flex flex-col items-center gap-2 text-slate-400">
+                                                        <AlertCircle className="w-12 h-12 opacity-20" />
+                                                        <p className="font-bold uppercase tracking-widest text-[10px]">No payout requests found</p>
                                                     </div>
                                                 </td>
                                             </tr>
-                                        );
-                                    })
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
-                </Card>
+                                        ) : (
+                                            filteredRequests.map((req) => {
+                                                const config = getStatusConfig(req.status);
+                                                const StatusIcon = config.icon;
+                                                return (
+                                                    <tr key={req.id} className="hover:bg-slate-50/50 transition-colors">
+                                                        <td className="py-6 pl-8">
+                                                            <div className="flex items-center gap-4">
+                                                                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+                                                                    <Building2 className="w-5 h-5" />
+                                                                </div>
+                                                                <div className="flex flex-col">
+                                                                    <span className="text-sm font-extrabold text-slate-900">{req.temple?.name}</span>
+                                                                    <span className="text-[10px] text-slate-400 font-bold">{req.temple?.user?.name} ({req.temple?.user?.phone})</span>
+                                                                </div>
+                                                            </div>
+                                                        </td>
+                                                        <td className="py-6">
+                                                            <span className="text-base font-extrabold text-slate-900 italic">₹{req.amount.toLocaleString()}</span>
+                                                        </td>
+                                                        <td className="py-6">
+                                                            <div className="flex flex-col text-[11px] text-slate-500 font-medium">
+                                                                <span>{req.bankDetails?.type || 'Manual Request'}</span>
+                                                                <span className="text-[9px] text-slate-400">{format(new Date(req.createdAt), "dd MMM, hh:mm a")}</span>
+                                                            </div>
+                                                        </td>
+                                                        <td className="py-6 text-center">
+                                                            <Badge className={cn(
+                                                                "rounded-full px-3 py-1 text-[10px] font-bold border",
+                                                                config.bg, config.color, config.border
+                                                            )}>
+                                                                <StatusIcon className="w-3 h-3 mr-1" />
+                                                                {req.status}
+                                                            </Badge>
+                                                        </td>
+                                                        <td className="py-6 pr-8 text-right">
+                                                            <div className="flex justify-end gap-2">
+                                                                {req.status === "PENDING" && (
+                                                                    <>
+                                                                        <Button
+                                                                            size="sm"
+                                                                            variant="outline"
+                                                                            onClick={() => { setSelectedRequest(req); setActionType("APPROVE"); setIsActionModalOpen(true); }}
+                                                                            className="h-8 rounded-lg text-blue-600 border-blue-200 hover:bg-blue-50"
+                                                                        >
+                                                                            Approve
+                                                                        </Button>
+                                                                        <Button
+                                                                            size="sm"
+                                                                            variant="outline"
+                                                                            onClick={() => { setSelectedRequest(req); setActionType("REJECT"); setIsActionModalOpen(true); }}
+                                                                            className="h-8 rounded-lg text-red-600 border-red-200 hover:bg-red-50"
+                                                                        >
+                                                                            Reject
+                                                                        </Button>
+                                                                    </>
+                                                                )}
+                                                                {req.status === "APPROVED" && (
+                                                                    <Button
+                                                                        size="sm"
+                                                                        className="h-8 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white gap-1"
+                                                                        onClick={() => { setSelectedRequest(req); setActionType("MARK_PAID"); setIsActionModalOpen(true); }}
+                                                                    >
+                                                                        <Check className="w-3.5 h-3.5" />
+                                                                        Mark Paid
+                                                                    </Button>
+                                                                )}
+                                                                {req.status === "PAID" && (
+                                                                    <div className="text-[10px] font-bold text-slate-400">
+                                                                        TXN: {req.transactionId || 'N/A'}
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </Card>
+                    </TabsContent>
+
+                    <TabsContent value="transactions" className="mt-0 outline-none">
+                        <Card className="border-none shadow-xl rounded-[2rem] overflow-hidden bg-white">
+                            <div className="overflow-x-auto">
+                                <table className="w-full">
+                                    <thead className="bg-slate-50/80">
+                                        <tr>
+                                            <th className="py-5 pl-8 text-left text-[11px] font-extrabold text-slate-900 uppercase tracking-widest">Date / Description</th>
+                                            <th className="py-5 text-left text-[11px] font-extrabold text-slate-900 uppercase tracking-widest">Temple</th>
+                                            <th className="py-5 text-left text-[11px] font-extrabold text-slate-900 uppercase tracking-widest">Type</th>
+                                            <th className="py-5 text-center text-[11px] font-extrabold text-slate-900 uppercase tracking-widest">Status</th>
+                                            <th className="py-5 text-right text-[11px] font-extrabold text-slate-900 uppercase tracking-widest">Gross</th>
+                                            <th className="py-5 text-right text-[11px] font-extrabold text-slate-900 uppercase tracking-widest">Commission</th>
+                                            <th className="py-5 pr-8 text-right text-[11px] font-extrabold text-slate-900 uppercase tracking-widest">Net</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-50">
+                                        {filteredTransactions.length === 0 ? (
+                                            <tr>
+                                                <td colSpan={7} className="py-20 text-center">
+                                                    <div className="flex flex-col items-center gap-2 text-slate-400">
+                                                        <HistoryIcon className="w-12 h-12 opacity-20" />
+                                                        <p className="font-bold uppercase tracking-widest text-[10px]">No ledger entries found</p>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ) : (
+                                            filteredTransactions.map((tx) => (
+                                                <tr key={tx.id} className="hover:bg-slate-50/50 transition-colors">
+                                                    <td className="py-6 pl-8">
+                                                        <div className="flex flex-col">
+                                                            <span className="text-[10px] font-bold text-slate-400">
+                                                                {format(new Date(tx.createdAt), "dd MMM, yyyy")}
+                                                            </span>
+                                                            <span className="text-sm font-extrabold text-slate-900">{tx.description}</span>
+                                                        </div>
+                                                    </td>
+                                                    <td className="py-6">
+                                                        <span className="text-sm font-bold text-slate-600">{tx.temple?.name || "N/A"}</span>
+                                                    </td>
+                                                    <td className="py-6">
+                                                        <Badge variant="outline" className="rounded-full px-3 py-1 text-[10px] font-bold border-slate-200 text-slate-600 bg-slate-50">
+                                                            {tx.type.replace('_', ' ')}
+                                                        </Badge>
+                                                    </td>
+                                                    <td className="py-6 text-center">
+                                                        <Badge className={cn(
+                                                            "rounded-full px-3 py-1 text-[10px] font-bold border",
+                                                            tx.status === "COMPLETED" ? "bg-emerald-50 text-emerald-700 border-emerald-200" :
+                                                                tx.status === "PENDING" ? "bg-amber-50 text-amber-700 border-amber-200" :
+                                                                    "bg-red-50 text-red-700 border-red-200"
+                                                        )}>
+                                                            {tx.status}
+                                                        </Badge>
+                                                    </td>
+                                                    <td className="py-6 text-right">
+                                                        <span className="text-xs font-bold text-slate-500">
+                                                            {tx.grossAmount > 0 ? `₹${tx.grossAmount.toLocaleString()}` : "-"}
+                                                        </span>
+                                                    </td>
+                                                    <td className="py-6 text-right">
+                                                        <span className="text-xs font-bold text-emerald-600">
+                                                            {tx.commission > 0 ? `₹${tx.commission.toLocaleString()}` : "-"}
+                                                        </span>
+                                                    </td>
+                                                    <td className="py-6 pr-8 text-right">
+                                                        <span className={cn(
+                                                            "text-base font-extrabold italic",
+                                                            tx.amount < 0 ? "text-red-600" : "text-slate-900"
+                                                        )}>
+                                                            {tx.amount < 0 ? "-" : ""}₹{Math.abs(tx.amount).toLocaleString()}
+                                                        </span>
+                                                    </td>
+                                                </tr>
+                                            ))
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </Card>
+                    </TabsContent>
+                </Tabs>
             </div>
 
             {/* Action Modal */}

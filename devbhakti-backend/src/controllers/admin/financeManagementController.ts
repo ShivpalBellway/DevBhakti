@@ -35,7 +35,7 @@ export const updateWithdrawalStatus = async (req: Request, res: Response) => {
     const receiptImage = (req as any).file ? `/uploads/${(req as any).file.filename}` : undefined;
 
     const request = await prisma.withdrawalRequest.findUnique({
-      where: { id: requestId }
+      where: { id: requestId as string }
     });
 
     if (!request) {
@@ -43,7 +43,7 @@ export const updateWithdrawalStatus = async (req: Request, res: Response) => {
     }
 
     const updated = await prisma.withdrawalRequest.update({
-      where: { id: requestId },
+      where: { id: requestId as string },
       data: { 
         status, 
         adminNotes, 
@@ -57,7 +57,7 @@ export const updateWithdrawalStatus = async (req: Request, res: Response) => {
     if (status === "PAID") {
       // Check if already has a completed withdrawal ledger entry to avoid double entry
       const existingLedger = await prisma.templeLedger.findFirst({
-        where: { sourceId: requestId, type: "WITHDRAWAL" }
+        where: { sourceId: requestId as string, type: "WITHDRAWAL" }
       });
 
       if (!existingLedger) {
@@ -66,7 +66,7 @@ export const updateWithdrawalStatus = async (req: Request, res: Response) => {
             templeId: request.templeId,
             amount: -request.amount, // Negative for withdrawal
             type: "WITHDRAWAL",
-            sourceId: requestId,
+            sourceId: requestId as string,
             description: `Payout processed (ID: ${(requestId as string).slice(-6).toUpperCase()})`,
             status: "COMPLETED"
           }
@@ -113,6 +113,25 @@ export const getPlatformFinanceSummary = async (req: Request, res: Response) => 
     });
   } catch (error: any) {
     console.error("Error in getPlatformFinanceSummary:", error);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+// Get all ledger entries for platform-wide monitoring
+export const getAllPlatformTransactions = async (req: Request, res: Response) => {
+  try {
+    const transactions = await prisma.templeLedger.findMany({
+      include: {
+        temple: {
+          select: {
+            name: true,
+          }
+        }
+      },
+      orderBy: { createdAt: "desc" }
+    });
+
+    return res.status(200).json({ success: true, data: transactions });
+  } catch (error: any) {
     return res.status(500).json({ success: false, message: error.message });
   }
 };
