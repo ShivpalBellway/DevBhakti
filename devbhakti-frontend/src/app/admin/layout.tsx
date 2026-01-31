@@ -22,6 +22,7 @@ import {
   Image as ImageIcon,
   Flower2,
   Package,
+  Store,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Logo from "@/components/icons/Logo";
@@ -93,6 +94,11 @@ const sidebarItems = [
     label: "Live Darshan",
     icon: Video,
     href: "/admin/live-darshan",
+  },
+  {
+    label: "Sellers",
+    icon: Store,
+    href: "/admin/sellers",
   },
   {
     label: "Analytics",

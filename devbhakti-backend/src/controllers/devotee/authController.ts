@@ -56,11 +56,11 @@ export const sendOTP = async (req: Request, res: Response) => {
                 data: { otp, otpExpires }
             });
         } else {
-            // Strict check for Institutions: They must register first
-            if (checkRole === 'INSTITUTION') {
+            // Strict check for Institutions and Sellers: They must register/be created first
+            if (checkRole === 'INSTITUTION' || checkRole === 'SELLER') {
                 return res.status(404).json({
                     success: false,
-                    message: `No institution found with mobile number ${normalizedPhone}. Please register your temple first.`
+                    message: `No account found with mobile number ${normalizedPhone}. Please ensure you are registered.`
                 });
             }
 
@@ -143,11 +143,11 @@ export const verifyOTP = async (req: Request, res: Response) => {
             return res.status(400).json({ success: false, message: 'OTP has expired' });
         }
 
-        // Check for Admin Approval if role is INSTITUTION
-        if (user.role === 'INSTITUTION' && !user.isVerified) {
+        // Check for Admin Approval if role is INSTITUTION or SELLER
+        if ((user.role === 'INSTITUTION' || user.role === 'SELLER') && !user.isVerified) {
             return res.status(403).json({
                 success: false,
-                message: 'Your account is pending admin approval. You will be able to login once approved.'
+                message: 'Your account is inactive or pending approval. Please contact admin.'
             });
         }
 

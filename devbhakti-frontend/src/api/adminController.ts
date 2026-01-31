@@ -547,3 +547,52 @@ export const fetchPlatformFinanceSummary = async () => {
     });
     return response.data;
 };
+
+// Admin Seller Management
+export const fetchAllSellersAdmin = async () => {
+    const token = localStorage.getItem("admin_token");
+    const response = await axios.get(`${API_URL}/admin/sellers`, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data.data;
+};
+
+export const fetchSellerByIdAdmin = async (id: string) => {
+    const token = localStorage.getItem("admin_token");
+    const response = await axios.get(`${API_URL}/admin/sellers/${id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data.data;
+};
+
+export const createSellerAdmin = async (data: any) => {
+    const token = localStorage.getItem("admin_token");
+    const response = await axios.post(`${API_URL}/admin/sellers`, data, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+
+export const updateSellerAdmin = async (id: string, data: any) => {
+    const token = localStorage.getItem("admin_token");
+    const response = await axios.put(`${API_URL}/admin/sellers/${id}`, data, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+
+export const deleteSellerAdmin = async (id: string) => {
+    const token = localStorage.getItem("admin_token");
+    const response = await axios.delete(`${API_URL}/admin/sellers/${id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+
+export const toggleSellerStatusAdmin = async (id: string, status: string) => {
+    const token = localStorage.getItem("admin_token");
+    const response = await axios.patch(`${API_URL}/admin/sellers/${id}/status`, { status }, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
