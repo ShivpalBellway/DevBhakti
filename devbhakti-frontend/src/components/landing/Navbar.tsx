@@ -240,7 +240,7 @@ const Navbar: React.FC<NavbarProps> = ({ variant = "default" }) => {
                             </Link>
                           </DropdownMenuItem>
 
-                          <DropdownMenuItem asChild className="focus:bg-primary focus:text-white rounded-[1.2rem] cursor-pointer transition-all duration-300 group">
+                          {/* <DropdownMenuItem asChild className="focus:bg-primary focus:text-white rounded-[1.2rem] cursor-pointer transition-all duration-300 group">
                             <Link href={user ? "/account/poojas" : "/auth"} className="flex items-center justify-between w-full px-4 py-3">
                               <div className="flex items-center gap-3">
                                 <Church className="w-4 h-4 text-primary group-focus:text-white transition-colors" />
@@ -248,7 +248,7 @@ const Navbar: React.FC<NavbarProps> = ({ variant = "default" }) => {
                               </div>
                               <ChevronRight className="w-3 h-3 opacity-0 group-focus:opacity-100 -translate-x-2 group-focus:translate-x-0 transition-all" />
                             </Link>
-                          </DropdownMenuItem>
+                          </DropdownMenuItem> */}
 
                           <DropdownMenuItem asChild className="focus:bg-primary focus:text-white rounded-[1.2rem] cursor-pointer transition-all duration-300 group">
                             <Link href={user ? "/favorites" : "/auth"} className="flex items-center justify-between w-full px-4 py-3">
