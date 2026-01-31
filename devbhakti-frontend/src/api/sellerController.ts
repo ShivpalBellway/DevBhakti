@@ -78,3 +78,39 @@ export const fetchSellerProfile = async () => {
     });
     return response.data;
 };
+
+export const updateSellerProfile = async (formData: FormData) => {
+    const token = localStorage.getItem("seller_token");
+    const response = await axios.put(`${API_URL}/seller/profile`, formData, {
+        headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'multipart/form-data'
+        }
+    });
+    return response.data;
+};
+
+// Seller Finance Management
+export const fetchSellerFinanceSummary = async () => {
+    const token = localStorage.getItem("seller_token");
+    const response = await axios.get(`${API_URL}/seller/finance/summary`, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+
+export const fetchSellerFinanceLedger = async () => {
+    const token = localStorage.getItem("seller_token");
+    const response = await axios.get(`${API_URL}/seller/finance/ledger`, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+
+export const requestSellerWithdrawal = async (data: { amount: number; bankDetails?: any }) => {
+    const token = localStorage.getItem("seller_token");
+    const response = await axios.post(`${API_URL}/seller/finance/withdraw`, data, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};

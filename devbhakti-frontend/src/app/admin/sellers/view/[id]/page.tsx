@@ -195,6 +195,13 @@ export default function ViewSellerPage() {
                                     </p>
                                 </div>
                             </div>
+                            <div className="flex items-start gap-3 border-t pt-4">
+                                <TrendingUp className="w-5 h-5 text-amber-500 mt-0.5" />
+                                <div>
+                                    <p className="text-xs text-slate-500">Platform Commission</p>
+                                    <p className="font-bold text-slate-900">{seller.productCommissionRate}%</p>
+                                </div>
+                            </div>
                         </CardContent>
                     </Card>
                 </div>

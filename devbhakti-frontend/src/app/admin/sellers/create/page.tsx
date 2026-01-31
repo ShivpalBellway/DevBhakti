@@ -10,7 +10,9 @@ import {
     Phone,
     MapPin,
     Save,
-    Loader2
+    Loader2,
+    IndianRupee,
+    TrendingUp
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -31,6 +33,7 @@ export default function CreateSellerPage() {
         email: "",
         phone: "",
         address: "",
+        productCommissionRate: "10.0",
     });
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -122,7 +125,36 @@ export default function CreateSellerPage() {
                             </CardContent>
                         </Card>
 
-
+                        <Card className="border-slate-200 shadow-sm border-l-4 border-l-amber-500">
+                            <CardHeader className="bg-amber-50/50 border-b border-amber-100">
+                                <CardTitle className="text-lg flex items-center gap-2">
+                                    <IndianRupee className="w-5 h-5 text-amber-600" />
+                                    Financial & Commission
+                                </CardTitle>
+                                <CardDescription>Set platform fees for this seller's products.</CardDescription>
+                            </CardHeader>
+                            <CardContent className="p-6 space-y-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="productCommissionRate">Marketplace Commission (%)</Label>
+                                    <div className="relative">
+                                        <TrendingUp className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                                        <Input
+                                            id="productCommissionRate"
+                                            name="productCommissionRate"
+                                            type="number"
+                                            step="0.1"
+                                            placeholder="e.g. 10.0"
+                                            className="pl-10"
+                                            value={formData.productCommissionRate}
+                                            onChange={handleChange}
+                                            required
+                                        />
+                                        <div className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">%</div>
+                                    </div>
+                                    <p className="text-[10px] text-muted-foreground">This percentage will be automatically deducted from every successful sale.</p>
+                                </div>
+                            </CardContent>
+                        </Card>
                     </div>
 
                     <div className="space-y-6">

@@ -31,6 +31,7 @@ import templeAdminProductRoutes from './routes/temple_admin/productRoutes';
 import sellerProductRoutes from './routes/seller/productRoutes';
 import sellerOrderRoutes from './routes/seller/orderRoutes';
 import sellerGeneralRoutes from './routes/seller/sellerRoutes';
+import sellerFinanceRoutes from './routes/seller/financeRoutes';
 
 dotenv.config();
 
@@ -71,6 +72,7 @@ app.use('/api/temple-admin/finance', templeAdminFinanceRoutes);
 app.use('/api/temple-admin/products', templeAdminProductRoutes);
 app.use('/api/seller/products', sellerProductRoutes);
 app.use('/api/seller/orders', sellerOrderRoutes);
+app.use('/api/seller/finance', sellerFinanceRoutes);
 app.use('/api/seller', sellerGeneralRoutes);
 
 // Devotee Auth Routes

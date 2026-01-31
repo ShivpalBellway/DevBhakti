@@ -5,9 +5,9 @@ export const getAllBookings = async (req: Request, res: Response) => {
     try {
         const bookings = await prisma.poojaBooking.findMany({
             include: {
-                Pooja: true,
-                Temple: true,
-                User: {
+                pooja: true,
+                temple: true,
+                user: {
                     select: {
                         name: true,
                         phone: true,
