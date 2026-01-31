@@ -107,7 +107,9 @@ export const fetchAllPoojasPublic = async () => {
 // Temple Profile Management
 export const fetchMyTempleProfile = async () => {
     const token = localStorage.getItem("token");
-    const response = await axios.get(`${API_URL}/temple-admin/temples/profile`, {
+    const url = `${API_URL}/temple-admin/temples/profile`;
+    console.log(`GET: ${url}`);
+    const response = await axios.get(url, {
         headers: { Authorization: `Bearer ${token}` }
     });
     return response.data;
@@ -144,6 +146,48 @@ export const updateBookingStatus = async (id: string, status: string) => {
 export const deleteBooking = async (id: string) => {
     const token = localStorage.getItem("token");
     const response = await axios.delete(`${API_URL}/temple-admin/bookings/${id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+
+// Temple Order Management
+export const fetchTempleOrders = async (templeId: string) => {
+    const token = localStorage.getItem("token");
+    const response = await axios.get(`${API_URL}/temple-admin/orders/${templeId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+
+export const updateSubOrderStatus = async (subOrderId: string, data: { status: string; shippingLabel?: string; templeId: string }) => {
+    const token = localStorage.getItem("token");
+    const response = await axios.patch(`${API_URL}/temple-admin/orders/sub-order/${subOrderId}`, data, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+
+// Temple Finance Management
+export const fetchTempleLedger = async (templeId: string) => {
+    const token = localStorage.getItem("token");
+    const response = await axios.get(`${API_URL}/temple-admin/finance/ledger/${templeId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+
+export const fetchTempleFinanceSummary = async (templeId: string) => {
+    const token = localStorage.getItem("token");
+    const response = await axios.get(`${API_URL}/temple-admin/finance/summary/${templeId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+
+export const requestWithdrawal = async (data: { templeId: string; amount: number; bankDetails: any }) => {
+    const token = localStorage.getItem("token");
+    const response = await axios.post(`${API_URL}/temple-admin/finance/withdraw`, data, {
         headers: { Authorization: `Bearer ${token}` }
     });
     return response.data;

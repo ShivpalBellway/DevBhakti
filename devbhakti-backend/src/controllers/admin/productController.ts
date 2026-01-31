@@ -7,15 +7,23 @@ const prisma = new PrismaClient();
 export const createProduct = async (req: Request, res: Response) => {
   try {
     // Handle both JSON and FormData
-    let name, description, category, templeId, status, variants, image;
+    let name, description, category, categoryId, templeId, status, variants, image;
+    let highlights, longDescription, shippingInfo, origin, rating;
     
     if (req.is('multipart/form-data')) {
       // FormData handling
       name = req.body.name;
       description = req.body.description;
       category = req.body.category;
+      categoryId = req.body.category || null; // Use category field as categoryId
       templeId = req.body.templeId || null;
       status = req.body.status || "pending";
+      
+      highlights = req.body.highlights;
+      longDescription = req.body.longDescription;
+      shippingInfo = req.body.shippingInfo;
+      origin = req.body.origin;
+      rating = req.body.rating ? parseFloat(req.body.rating) : undefined;
       
       // Parse variants from JSON string
       variants = req.body.variants ? JSON.parse(req.body.variants) : [];
@@ -26,14 +34,34 @@ export const createProduct = async (req: Request, res: Response) => {
       }
     } else {
       // JSON handling
-      const { name: productName, description: productDescription, category: productCategory, templeId: productTempleId, status: productStatus = "pending", variants: productVariants } = req.body;
+      const { 
+        name: productName, 
+        description: productDescription, 
+        category: productCategory, 
+        categoryId: productCategoryId, 
+        templeId: productTempleId, 
+        status: productStatus = "pending", 
+        variants: productVariants,
+        highlights: productHighlights,
+        longDescription: productLongDescription,
+        shippingInfo: productShippingInfo,
+        origin: productOrigin,
+        rating: productRating
+      } = req.body;
       
       name = productName;
       description = productDescription;
       category = productCategory;
+      categoryId = productCategory || null; // Use category field as categoryId
       templeId = productTempleId || null;
       status = productStatus;
       variants = productVariants || [];
+      
+      highlights = productHighlights;
+      longDescription = productLongDescription;
+      shippingInfo = productShippingInfo;
+      origin = productOrigin;
+      rating = productRating;
     }
 
     // Validate required fields
@@ -93,8 +121,14 @@ export const createProduct = async (req: Request, res: Response) => {
         name,
         description,
         category,
+        categoryId: categoryId || null, // Use categoryId from FormData
         templeId: templeId || null, // Allow null for admin-created products
         status,
+        highlights,
+        longDescription,
+        shippingInfo,
+        origin,
+        rating,
         image: image || null,
         variants: {
           create: variants.map((variant: any) => ({
@@ -107,6 +141,13 @@ export const createProduct = async (req: Request, res: Response) => {
       },
       include: {
         variants: true,
+        categoryObj: categoryId ? {
+          select: {
+            id: true,
+            name: true,
+            description: true
+          }
+        } : false,
         temple: templeId ? {
           select: {
             id: true,
@@ -187,6 +228,13 @@ export const getAllProducts = async (req: Request, res: Response) => {
         where,
         include: {
           variants: true,
+          categoryObj: {
+            select: {
+              id: true,
+              name: true,
+              description: true
+            }
+          },
           temple: {
             select: {
               id: true,
@@ -233,9 +281,19 @@ export const getProductById = async (req: Request, res: Response) => {
     const { id } = req.params;
 
     const product = await prisma.product.findUnique({
-      where: { id },
+      where: { 
+        id,
+        status: "approved" // Only return approved products
+      },
       include: {
         variants: true,
+        categoryObj: {
+          select: {
+            id: true,
+            name: true,
+            description: true
+          }
+        },
         temple: {
           select: {
             id: true,
@@ -273,15 +331,23 @@ export const updateProduct = async (req: Request, res: Response) => {
     const { id } = req.params;
     
     // Handle both JSON and FormData
-    let name, description, category, templeId, status, variants, image, removeImage;
+    let name, description, category, categoryId, templeId, status, variants, image, removeImage;
+    let highlights, longDescription, shippingInfo, origin, rating;
     
     if (req.is('multipart/form-data')) {
       // FormData handling
       name = req.body.name;
       description = req.body.description;
       category = req.body.category;
+      categoryId = req.body.category || null; // Use category field as categoryId
       templeId = req.body.templeId || null;
       status = req.body.status;
+      
+      highlights = req.body.highlights;
+      longDescription = req.body.longDescription;
+      shippingInfo = req.body.shippingInfo;
+      origin = req.body.origin;
+      rating = req.body.rating ? parseFloat(req.body.rating) : undefined;
       
       // Parse variants from JSON string
       variants = req.body.variants ? JSON.parse(req.body.variants) : [];
@@ -295,14 +361,34 @@ export const updateProduct = async (req: Request, res: Response) => {
       removeImage = req.body.removeImage === 'true';
     } else {
       // JSON handling
-      const { name: productName, description: productDescription, category: productCategory, templeId: productTempleId, status: productStatus, variants: productVariants } = req.body;
+      const { 
+        name: productName, 
+        description: productDescription, 
+        category: productCategory, 
+        categoryId: productCategoryId, 
+        templeId: productTempleId, 
+        status: productStatus, 
+        variants: productVariants,
+        highlights: productHighlights,
+        longDescription: productLongDescription,
+        shippingInfo: productShippingInfo,
+        origin: productOrigin,
+        rating: productRating
+      } = req.body;
       
       name = productName;
       description = productDescription;
       category = productCategory;
+      categoryId = productCategory || null; // Use category field as categoryId
       templeId = productTempleId || null;
       status = productStatus;
       variants = productVariants || [];
+      
+      highlights = productHighlights;
+      longDescription = productLongDescription;
+      shippingInfo = productShippingInfo;
+      origin = productOrigin;
+      rating = productRating;
     }
 
     // Check if product exists
@@ -371,15 +457,22 @@ export const updateProduct = async (req: Request, res: Response) => {
 
     // Update product basic info
     const updateData: any = {};
-    if (name) updateData.name = name;
-    if (description) updateData.description = description;
-    if (category) updateData.category = category;
-    if (status) updateData.status = status;
-    if (templeId !== undefined) updateData.templeId = templeId === "general" ? null : templeId;
+    if (name) updateData.name = name as string;
+    if (description) updateData.description = description as string;
+    if (category) updateData.category = category as string;
+    if (categoryId !== undefined) updateData.categoryId = categoryId as string;
+    if (status) updateData.status = status as string;
+    if (templeId !== undefined) updateData.templeId = templeId === "general" ? null : (templeId as string);
     
+    if (highlights !== undefined) updateData.highlights = highlights as string;
+    if (longDescription !== undefined) updateData.longDescription = longDescription as string;
+    if (shippingInfo !== undefined) updateData.shippingInfo = shippingInfo as string;
+    if (origin !== undefined) updateData.origin = origin as string;
+    if (rating !== undefined) updateData.rating = typeof rating === 'string' ? parseFloat(rating) : rating;
+
     // Handle image update
     if (image) {
-      updateData.image = image;
+      updateData.image = image as string;
     } else if (removeImage) {
       updateData.image = null;
     }
@@ -407,6 +500,13 @@ export const updateProduct = async (req: Request, res: Response) => {
       data: updateData,
       include: {
         variants: true,
+        categoryObj: categoryId ? {
+          select: {
+            id: true,
+            name: true,
+            description: true
+          }
+        } : false,
         temple: templeId ? {
           select: {
             id: true,
@@ -559,6 +659,13 @@ export const getProductsByTemple = async (req: Request, res: Response) => {
         where,
         include: {
           variants: true,
+          categoryObj: {
+            select: {
+              id: true,
+              name: true,
+              description: true
+            }
+          },
           temple: {
             select: {
               id: true,
@@ -612,7 +719,9 @@ export const getPublicProducts = async (req: Request, res: Response) => {
     }
     
     if (category) {
-      where.category = category;
+      where.categoryObj = {
+        name: { contains: category as string, mode: "insensitive" }
+      };
     }
     
     if (templeId) {
@@ -625,6 +734,13 @@ export const getPublicProducts = async (req: Request, res: Response) => {
         include: {
           variants: {
             where: { stock: { gt: 0 } } // Only show variants with stock
+          },
+          categoryObj: {
+            select: {
+              id: true,
+              name: true,
+              description: true
+            }
           },
           temple: {
             select: {

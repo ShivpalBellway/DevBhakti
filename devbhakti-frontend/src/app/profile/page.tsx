@@ -37,6 +37,9 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Navbar from "@/components/landing/Navbar";
 import Footer from "@/components/landing/Footer";
+import { fetchMyOrders } from "@/api/productOrderController";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 
 const ProfilePage = () => {
     const { toast } = useToast();
@@ -57,10 +60,23 @@ const ProfilePage = () => {
     const [bookings, setBookings] = useState<any[]>([]);
     const [isBookingsLoading, setIsBookingsLoading] = useState(false);
     const [selectedBooking, setSelectedBooking] = useState<any | null>(null);
+    const [myOrders, setMyOrders] = useState<any[]>([]);
 
     useEffect(() => {
         loadProfile();
+        loadOrders();
     }, []);
+
+    const loadOrders = async () => {
+        try {
+            const response = await fetchMyOrders();
+            if (response.success) {
+                setMyOrders(response.data);
+            }
+        } catch (error) {
+            console.error("Failed to load orders", error);
+        }
+    };
 
     const loadProfile = async () => {
         try {
@@ -275,8 +291,8 @@ const ProfilePage = () => {
                                         <p className="text-xl font-bold text-primary">{bookings.length}</p>
                                     </div>
                                     <div className="text-center p-3 bg-orange-50/50 rounded-2xl">
-                                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1">Favorites</p>
-                                        <p className="text-xl font-bold text-primary">05</p>
+                                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1">Sacred Items</p>
+                                        <p className="text-xl font-bold text-primary">{myOrders.length.toString().padStart(2, '0')}</p>
                                     </div>
                                 </div>
                             </div>
@@ -404,6 +420,42 @@ const ProfilePage = () => {
                                                         View All Bookings <ChevronRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
                                                     </Button>
                                                 )}
+                                            </div>
+
+                                            <div className="pt-6">
+                                                <div className="flex items-center gap-3 mb-6">
+                                                    <ShoppingBag className="w-5 h-5 text-orange-600" />
+                                                    <h4 className="font-bold text-lg text-slate-800">Your Sacred Orders</h4>
+                                                </div>
+                                                <div className="space-y-4">
+                                                    {myOrders.length === 0 ? (
+                                                        <div className="text-center py-10 bg-slate-50/50 rounded-3xl border border-dashed border-slate-200">
+                                                            <p className="text-slate-400 text-sm">No recent sacred orders</p>
+                                                        </div>
+                                                    ) : (
+                                                        myOrders.slice(0, 3).map(order => (
+                                                            <div key={order.id} onClick={() => router.push("/profile/orders")} className="flex items-center justify-between p-4 border border-slate-50 rounded-2xl hover:bg-orange-50/30 transition-colors group cursor-pointer">
+                                                                <div className="flex items-center gap-4">
+                                                                    <div className="w-12 h-12 bg-white shadow-sm rounded-xl flex items-center justify-center border border-slate-100">
+                                                                        <ShoppingBag className="w-5 h-5 text-slate-400" />
+                                                                    </div>
+                                                                    <div>
+                                                                        <p className="font-bold text-slate-700">Sacred Order #{order.id.slice(-6).toUpperCase()}</p>
+                                                                        <p className="text-xs text-slate-400">Ordered on {format(new Date(order.createdAt), "dd MMM, yyyy")}</p>
+                                                                    </div>
+                                                                </div>
+                                                                <div className={cn("flex items-center gap-2 font-bold text-[10px] px-3 py-1 rounded-full uppercase tracking-wider",
+                                                                    order.status === "DELIVERED" || order.status === "COMPLETED" ? "bg-emerald-50 text-emerald-600" : "bg-orange-50 text-orange-600"
+                                                                )}>
+                                                                    {order.status}
+                                                                </div>
+                                                            </div>
+                                                        ))
+                                                    )}
+                                                </div>
+                                                <Button onClick={() => router.push("/profile/orders")} variant="ghost" className="w-full mt-4 text-primary font-bold group">
+                                                    View All Activities <ChevronRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
+                                                </Button>
                                             </div>
                                         </div>
                                     </motion.div>
@@ -615,7 +667,7 @@ const ProfilePage = () => {
                     </div>
                 )}
             </AnimatePresence>
-        </div>
+        </div >
     );
 };
 

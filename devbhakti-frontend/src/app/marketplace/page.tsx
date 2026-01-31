@@ -10,6 +10,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Slider } from "@/components/ui/slider";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { motion } from "framer-motion";
 import {
   Search,
   Star,
@@ -19,144 +21,48 @@ import {
   IndianRupee,
   Truck,
   Shield,
-  Gift,
+  Package,
   ArrowRight,
 } from "lucide-react";
-import CartDrawer, { CartItem } from "@/components/marketplace/CartDrawer";
+import CartDrawer from "@/components/marketplace/CartDrawer";
+import { useCart, CartItem } from "@/context/CartContext";
 import { useToast } from "@/hooks/use-toast";
+import { fetchPublicProducts } from "@/api/publicController";
+import { fetchActiveCategoriesAdmin } from "@/api/adminController";
 
-// Images
-import productRudraksha from "@/assets/product-rudraksha.jpg";
-import productDiya from "@/assets/product-diya.jpg";
-import productIncense from "@/assets/product-incense.jpg";
-import productGangajal from "@/assets/product-gangajal.jpg";
-import productKalash from "@/assets/product-kalash.jpg";
-import productShivaIdol from "@/assets/product-shiva-idol.jpg";
-import productCamphor from "@/assets/product-camphor.jpg";
-import productBhagavadGita from "@/assets/product-bhagavadgita.jpg";
-import productGhee from "@/assets/product-ghee.jpg";
+interface Product {
+  id: string;
+  name: string;
+  description: string;
+  category: string;
+  categoryId: string | null;
+  status: string;
+  image: string | null;
+  templeId: string | null;
+  temple?: {
+    id: string;
+    name: string;
+    location: string;
+  } | null;
+  variants: Array<{
+    id: string;
+    name: string;
+    price: number;
+    stock: number;
+    image: string | null;
+  }>;
+  createdAt: string;
+  updatedAt: string;
+}
 
-const products = [
-  {
-    id: 1,
-    name: "Sacred Rudraksha Mala",
-    description: "108 beads authentic Rudraksha mala for meditation",
-    price: 1299,
-    originalPrice: 1999,
-    image: productRudraksha,
-    rating: 4.8,
-    reviews: 256,
-    category: "Prayer Beads",
-    badge: "Bestseller",
-    inStock: true,
-  },
-  {
-    id: 2,
-    name: "Traditional Brass Diya",
-    description: "Handcrafted brass oil lamp for daily worship",
-    price: 449,
-    originalPrice: 599,
-    image: productDiya,
-    rating: 4.6,
-    reviews: 189,
-    category: "Pooja Items",
-    badge: null,
-    inStock: true,
-  },
-  {
-    id: 3,
-    name: "Premium Incense Sticks",
-    description: "Pack of 12 natural sandalwood fragrance sticks",
-    price: 199,
-    originalPrice: 299,
-    image: productIncense,
-    rating: 4.9,
-    reviews: 412,
-    category: "Incense",
-    badge: "New",
-    inStock: true,
-  },
-  {
-    id: 4,
-    name: "Holy Gangajal",
-    description: "Pure Ganga water from Haridwar",
-    price: 149,
-    originalPrice: 199,
-    image: productGangajal,
-    rating: 4.7,
-    reviews: 324,
-    category: "Holy Water",
-    badge: null,
-    inStock: true,
-  },
-  {
-    id: 5,
-    name: "Copper Kalash Set",
-    description: "Traditional copper pot set for rituals",
-    price: 899,
-    originalPrice: 1299,
-    image: productKalash,
-    rating: 4.5,
-    reviews: 98,
-    category: "Pooja Items",
-    badge: null,
-    inStock: true,
-  },
-  {
-    id: 6,
-    name: "Shiva Idol - Bronze",
-    description: "Handcrafted Nataraja bronze statue",
-    price: 2499,
-    originalPrice: 3499,
-    image: productShivaIdol,
-    rating: 4.9,
-    reviews: 156,
-    category: "Idols",
-    badge: "Premium",
-    inStock: true,
-  },
-  {
-    id: 7,
-    name: "Camphor Tablets",
-    description: "Pure camphor for aarti - Pack of 100",
-    price: 249,
-    originalPrice: 349,
-    image: productCamphor,
-    rating: 4.4,
-    reviews: 287,
-    category: "Pooja Items",
-    badge: null,
-    inStock: true,
-  },
-  {
-    id: 8,
-    name: "Bhagavad Gita - Deluxe",
-    description: "Hardcover with Sanskrit and Hindi translation",
-    price: 599,
-    originalPrice: 799,
-    image: productBhagavadGita,
-    rating: 4.8,
-    reviews: 445,
-    category: "Books",
-    badge: "Popular",
-    inStock: true,
-  },
-  {
-    id: 9,
-    name: "Prasad - Ghee",
-    description: "Pure ghee for aarti - Pack of 100",
-    price: 599,
-    originalPrice: 799,
-    image: productGhee,
-    rating: 4.8,
-    reviews: 445,
-    category: "Prasad",
-    badge: "Popular",
-    inStock: true,
-  },
-];
-
-const categories = ["All", "Prayer Beads", "Pooja Items", "Incense", "Holy Water", "Idols", "Books", "Prasad"];
+interface Category {
+  id: string;
+  name: string;
+  description: string | null;
+  image: string | null;
+  isActive: boolean;
+  sortOrder: number;
+}
 
 function MarketplaceContent() {
   const router = useRouter();
@@ -166,75 +72,110 @@ function MarketplaceContent() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [priceRange, setPriceRange] = useState([0, 5000]);
-  const [cartItems, setCartItems] = useState<CartItem[]>([]);
-  const [favorites, setFavorites] = useState<number[]>([]);
+  const { cartItems, addToCart: addToCartGlobal, updateQuantity, removeFromCart, totalAmount } = useCart();
+  const [favorites, setFavorites] = useState<string[]>([]);
   const [cartOpen, setCartOpen] = useState(false);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   // Sync with query parameters
   useEffect(() => {
     const categoryParam = searchParams.get("category");
-    if (categoryParam && categories.includes(categoryParam)) {
+    if (categoryParam) {
       setSelectedCategory(categoryParam);
     }
   }, [searchParams]);
 
+  // Load data
+  useEffect(() => {
+    loadCategories();
+    loadProducts();
+  }, [searchQuery, selectedCategory]);
+
+  const loadCategories = async () => {
+    try {
+      const data = await fetchActiveCategoriesAdmin();
+      setCategories(data);
+    } catch (err) {
+      console.error("Error loading categories:", err);
+    }
+  };
+
+  const loadProducts = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const params: any = {
+        search: searchQuery || undefined,
+      };
+
+      if (selectedCategory !== "All") {
+        // Find category by ID and use its name for API
+        const category = categories.find(c => c.id === selectedCategory);
+        if (category) {
+          params.category = category.name; // Use category name for API
+        }
+      }
+
+      const data = await fetchPublicProducts(params);
+      setProducts(data);
+    } catch (err: any) {
+      console.error("Error loading products:", err);
+      setError(err.message || "Failed to load products");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const filteredProducts = products.filter((product) => {
-    const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory =
-      selectedCategory === "All" || product.category === selectedCategory;
-    const matchesPrice = product.price >= priceRange[0] && product.price <= priceRange[1];
-    return matchesSearch && matchesCategory && matchesPrice;
+    const matchesPrice = product.variants.some(v =>
+      v.price >= priceRange[0] && v.price <= priceRange[1]
+    );
+    return matchesPrice;
   });
 
-  const toggleFavorite = (id: number) => {
+  const toggleFavorite = (id: string) => {
     setFavorites((prev) =>
       prev.includes(id) ? prev.filter((f) => f !== id) : [...prev, id]
     );
   };
 
-  const addToCart = (id: number) => {
-    const product = products.find(p => p.id === id);
-    if (!product) return;
+  const addToCart = (product: Product) => {
+    // Use first variant for cart
+    const variant = product.variants[0];
+    if (!variant) return;
 
-    setCartItems((prev) => {
-      const existing = prev.find(item => item.id === id);
-      if (existing) {
-        return prev.map(item =>
-          item.id === id ? { ...item, quantity: item.quantity + 1 } : item
-        );
-      }
-      return [...prev, {
-        id: product.id,
-        name: product.name,
-        price: product.price,
-        image: (product.image as any).src || product.image,
-        quantity: 1,
-      }];
+    addToCartGlobal({
+      productId: product.id,
+      variantId: variant.id,
+      name: product.name,
+      variantName: variant.name,
+      price: variant.price,
+      image: product.image || "",
+      quantity: 1,
+      templeId: product.templeId,
     });
 
     toast({
       title: "Added to cart",
-      description: `${product.name} has been added to your cart`,
+      description: `${product.name} added to your cart`,
     });
+    setCartOpen(true);
   };
 
-  const updateQuantity = (id: number, quantity: number) => {
-    setCartItems((prev) =>
-      prev.map(item =>
-        item.id === id ? { ...item, quantity } : item
-      )
-    );
+  const formatPrice = (price: number) => {
+    return `₹${price.toLocaleString()}`;
   };
 
-  const removeFromCart = (id: number) => {
-    setCartItems((prev) => prev.filter(item => item.id !== id));
-  };
-
-  const handleCheckout = () => {
-    setCartOpen(false);
-    // Passing state is tricky with Next router, usually use Context or query params.
-    // For now we just navigate
-    router.push("/marketplace/checkout");
+  const getPriceRange = (product: Product) => {
+    if (product.variants.length === 0) return formatPrice(0);
+    const prices = product.variants.map(v => v.price);
+    const min = Math.min(...prices);
+    const max = Math.max(...prices);
+    if (min === max) return formatPrice(min);
+    return `${formatPrice(min)} - ${formatPrice(max)}`;
   };
 
   return (
@@ -242,46 +183,68 @@ function MarketplaceContent() {
       <Navbar />
 
       {/* Hero Section */}
-      <section className="relative pt-24 pb-12 bg-gradient-to-b from-primary/10 to-background">
-        <div className="container mx-auto px-4">
+      <section className="relative pt-28 pb-16 overflow-hidden">
+        {/* Decorative background elements */}
+        <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/p6.png')] opacity-5"></div>
+        <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-[#fdf6e9] to-background -z-10"></div>
+        <div className="absolute -top-24 -right-24 w-96 h-96 bg-primary/5 rounded-full blur-3xl"></div>
+        <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-primary/5 rounded-full blur-3xl"></div>
+
+        <div className="container mx-auto px-4 relative z-10">
           <div className="text-center max-w-3xl mx-auto">
-            <h1 className="text-4xl md:text-5xl font-display font-bold text-foreground mb-4">
-              Devotional Products
-            </h1>
-            <p className="text-lg text-foreground mb-8">
-              Authentic spiritual products delivered to your doorstep
-            </p>
+            <motion.h1
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="text-4xl md:text-5xl lg:text-6xl font-display font-bold text-[#4A2c01] mb-4"
+            >
+              Sacred Marketplace
+            </motion.h1>
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+              className="text-lg text-slate-600 mb-10"
+            >
+              Discover authentic devotional items, pooja essentials, and spiritual treasures
+              delivered directly from sacred temples to your home.
+            </motion.p>
 
             {/* Search Bar */}
-            {/* <div className="relative max-w-2xl mx-auto">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-foreground" />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.2 }}
+              className="relative max-w-2xl mx-auto"
+            >
+              <Search className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-[#794A05]/50" />
               <Input
                 type="text"
-                placeholder="Search products..."
+                placeholder="Search for idols, incense, books..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-12 h-14 text-lg rounded-full border-2 border-primary/20 focus:border-primary"
+                className="pl-14 h-16 text-lg rounded-2xl border-2 border-[#794A05]/10 focus:border-[#794A05]/30 bg-white/80 backdrop-blur-sm shadow-lg shadow-[#794A05]/5 transition-all"
               />
-            </div> */}
+            </motion.div>
           </div>
 
           {/* Trust Badges */}
-          <div className="flex flex-wrap justify-center gap-8 mt-8">
-            <div className="flex items-center gap-2 text-foreground">
-              <Truck className="h-5 w-5 text-primary" />
-              <span>Quick Doorstep Delivery</span>
-            </div>
-
-            <div className="flex items-center gap-2 text-foreground">
-              <Shield className="h-5 w-5 text-primary" />
-              <span>Genuine Products</span>
-            </div>
-
-            {/* <div className="flex items-center gap-2 text-muted-foreground">
-              <Gift className="h-5 w-5 text-primary" />
-              <span>Gift Wrapping Available</span>
-            </div> */}
-
+          <div className="flex flex-wrap justify-center gap-6 mt-12">
+            {[
+              { icon: Truck, text: "Fast Devine Delivery" },
+              { icon: Shield, text: "100% Authentic & Blessed" },
+              { icon: Package, text: "Secure Packaging" }
+            ].map((badge, idx) => (
+              <motion.div
+                key={idx}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 + (idx * 0.1) }}
+                className="flex items-center gap-2 px-4 py-2 bg-white/50 backdrop-blur-sm rounded-full border border-[#794A05]/10 text-sm font-medium text-[#794A05]"
+              >
+                <badge.icon className="h-4 w-4" />
+                <span>{badge.text}</span>
+              </motion.div>
+            ))}
           </div>
         </div>
       </section>
@@ -297,24 +260,30 @@ function MarketplaceContent() {
                   Filters
                 </h3>
 
-                {/* Categories */}
-                <div className="mb-6">
-                  <h4 className="text-sm font-medium text-foreground mb-3">
-                    Categories
-                  </h4>
-                  <div className="space-y-2">
-                    {categories.map((category) => (
-                      <Button
-                        key={category}
-                        variant={selectedCategory === category ? "default" : "ghost"}
-                        size="sm"
-                        className="w-full justify-start"
-                        onClick={() => setSelectedCategory(category)}
-                      >
-                        {category}
-                      </Button>
-                    ))}
-                  </div>
+                <div className="space-y-1.5">
+                  <button
+                    onClick={() => setSelectedCategory("All")}
+                    className={`w-full text-left px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-300 flex items-center justify-between group ${selectedCategory === "All"
+                      ? "bg-[#794A05] text-white shadow-md shadow-[#794A05]/20"
+                      : "text-slate-600 hover:bg-[#794A05]/5 hover:text-[#794A05]"
+                      }`}
+                  >
+                    <span>All Products</span>
+                    {selectedCategory === "All" && <ArrowRight className="w-3.5 h-3.5" />}
+                  </button>
+                  {categories.map((category) => (
+                    <button
+                      key={category.id}
+                      onClick={() => setSelectedCategory(category.id)}
+                      className={`w-full text-left px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-300 flex items-center justify-between group ${selectedCategory === category.id
+                        ? "bg-[#794A05] text-white shadow-md shadow-[#794A05]/20"
+                        : "text-slate-600 hover:bg-[#794A05]/5 hover:text-[#794A05]"
+                        }`}
+                    >
+                      <span className="truncate">{category.name}</span>
+                      {selectedCategory === category.id && <ArrowRight className="w-3.5 h-3.5" />}
+                    </button>
+                  ))}
                 </div>
 
                 {/* Price Range */}
@@ -350,70 +319,121 @@ function MarketplaceContent() {
               </Button>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {filteredProducts.map((product) => (
-                <Card
-                  key={product.id}
-                  className="group overflow-hidden border-border/50 hover:shadow-xl hover:border-primary/30 transition-all duration-300"
-                >
-                  <div className="relative aspect-square overflow-hidden bg-muted">
-                    <img
-                      src={(product.image as any).src || product.image}
-                      alt={product.name}
-                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                    />
-                    {product.badge && (
+            {/* Loading State */}
+            {isLoading && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+                  <Card key={i} className="animate-pulse">
+                    <CardContent className="p-4">
+                      <div className="aspect-square bg-muted/30 rounded-lg mb-4"></div>
+                      <div className="h-4 bg-muted/30 rounded mb-2"></div>
+                      <div className="h-3 bg-muted/30 rounded w-3/4 mb-4"></div>
+                      <div className="h-4 bg-muted/30 rounded w-1/3"></div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+
+            {/* Error State */}
+            {error && !isLoading && (
+              <div className="text-center py-12">
+                <Package className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-foreground mb-2">Something went wrong</h3>
+                <p className="text-muted-foreground mb-4">{error}</p>
+                <Button onClick={loadProducts}>Try Again</Button>
+              </div>
+            )}
+
+            {/* No Products */}
+            {!isLoading && !error && filteredProducts.length === 0 && (
+              <div className="text-center py-12">
+                <Package className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-foreground mb-2">No products found</h3>
+                <p className="text-muted-foreground">Try adjusting your filters or search terms</p>
+              </div>
+            )}
+
+            {/* Products Grid */}
+            {!isLoading && !error && filteredProducts.length > 0 && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {filteredProducts.map((product) => (
+                  <Card
+                    key={product.id}
+                    className="group overflow-hidden border-border/50 hover:shadow-xl hover:border-primary/30 transition-all duration-300"
+                  >
+                    <div className="relative aspect-[5/4] overflow-hidden bg-muted">
+                      {product.image ? (
+                        <img
+                          src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}${product.image}`}
+                          alt={product.name}
+                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-muted/30">
+                          <Package className="w-12 h-12 text-muted-foreground" />
+                        </div>
+                      )}
+
                       <Badge className="absolute top-3 left-3 bg-primary">
-                        {product.badge}
+                        {product.variants.length} {product.variants.length === 1 ? 'Variant' : 'Variants'}
                       </Badge>
-                    )}
-                    <Button
-                      variant="secondary"
-                      size="icon"
-                      className="absolute top-3 right-3 rounded-full opacity-0 group-hover:opacity-100 transition-opacity bg-background/80 backdrop-blur-sm"
-                      onClick={() => toggleFavorite(product.id)}
-                    >
-                      <Heart
-                        className={`h-4 w-4 ${favorites.includes(product.id)
+
+                      <Button
+                        variant="secondary"
+                        size="icon"
+                        className="absolute top-3 right-3 rounded-full opacity-0 group-hover:opacity-100 transition-opacity bg-background/80 backdrop-blur-sm"
+                        onClick={() => toggleFavorite(product.id)}
+                      >
+                        <Heart
+                          className={`h-4 w-4 ${favorites.includes(product.id)
                             ? "fill-red-500 text-red-500"
                             : ""
-                          }`}
-                      />
-                    </Button>
-                  </div>
-                  <CardContent className="p-4">
-                    <p className="text-xs text-foreground mb-1">{product.category}</p>
-                    <h3 className="font-semibold text-foreground mb-1 line-clamp-1 group-hover:text-primary transition-colors">
-                      {product.name}
-                    </h3>
-                    <p className="text-sm text-foreground mb-3 line-clamp-2">
-                      {product.description}
-                    </p>
-                    <div className="flex items-center gap-1 mb-3">
-                      <Star className="h-4 w-4 text-amber-500 fill-amber-500" />
-                      <span className="text-sm font-medium">{product.rating}</span>
-                      <span className="text-xs text-foreground">
-                        ({product.reviews})
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className="flex items-center font-bold text-foreground">
-                          <IndianRupee className="h-4 w-4" />
-                          {product.price}
-                        </span>
-                        <span className="text-sm text-muted-foreground line-through">
-                          ₹{product.originalPrice}
-                        </span>
-                      </div>
-                      <Button size="sm" onClick={() => addToCart(product.id)}>
-                        Add
+                            }`}
+                        />
                       </Button>
                     </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-[#794A05]/60">
+                          {product.temple?.name || "DevBhakti Exclusive"}
+                        </p>
+                        <div className="flex items-center gap-0.5">
+                          <Star className="h-3 w-3 text-amber-500 fill-amber-500" />
+                          <span className="text-[10px] font-bold">4.5</span>
+                        </div>
+                      </div>
+
+                      <h3 className="font-display font-semibold text-[#2a1b01] mb-1 line-clamp-1 group-hover:text-[#794A05] transition-colors">
+                        <Link href={`/marketplace/product/${product.id}`}>
+                          {product.name}
+                        </Link>
+                      </h3>
+
+                      <p className="text-xs text-slate-500 mb-4 line-clamp-2 min-h-[32px]">
+                        {product.description}
+                      </p>
+
+                      <div className="flex items-center justify-between mt-auto">
+                        <div className="flex flex-col">
+                          <span className="text-[10px] text-slate-400 font-medium">Starting from</span>
+                          <span className="font-bold text-[#794A05]">
+                            {getPriceRange(product)}
+                          </span>
+                        </div>
+                        <Button
+                          size="sm"
+                          onClick={() => addToCart(product)}
+                          className="bg-[#794A05] hover:bg-[#5d3804] text-white rounded-full px-4 h-8 transition-all hover:scale-105"
+                        >
+                          Add
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -426,7 +446,10 @@ function MarketplaceContent() {
         items={cartItems}
         onUpdateQuantity={updateQuantity}
         onRemoveItem={removeFromCart}
-        onCheckout={handleCheckout}
+        onCheckout={() => {
+          setCartOpen(false);
+          router.push("/marketplace/checkout");
+        }}
       />
     </div>
   );

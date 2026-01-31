@@ -231,7 +231,7 @@ const Navbar: React.FC<NavbarProps> = ({ variant = "default" }) => {
                           <div className="py-2 mx-4 border-t border-orange-50 dark:border-zinc-800/50" />
 
                           <DropdownMenuItem asChild className="focus:bg-primary focus:text-white rounded-[1.2rem] cursor-pointer transition-all duration-300 group">
-                            <Link href="/auth" className="flex items-center justify-between w-full px-4 py-3">
+                            <Link href={user ? "/profile/orders" : "/auth"} className="flex items-center justify-between w-full px-4 py-3">
                               <div className="flex items-center gap-3">
                                 <ShoppingBag className="w-4 h-4 text-primary group-focus:text-white transition-colors" />
                                 <span className="font-medium">My Orders</span>
@@ -375,7 +375,7 @@ const Navbar: React.FC<NavbarProps> = ({ variant = "default" }) => {
                     )}
 
                     <Button variant="ghost" size="lg" asChild className="justify-start gap-4 h-14 rounded-2xl border border-border/50">
-                      <Link href={user ? "/account/orders" : "/auth"} onClick={() => setIsMobileMenuOpen(false)}>
+                      <Link href={user ? "/profile/orders" : "/auth"} onClick={() => setIsMobileMenuOpen(false)}>
                         <ShoppingBag className="w-5 h-5 text-orange-600" />
                         <span>My Orders</span>
                       </Link>

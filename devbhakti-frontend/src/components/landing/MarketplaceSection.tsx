@@ -1,66 +1,70 @@
 "use client";
-
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { ShoppingBag, Star, ArrowRight } from "lucide-react";
+import { Star, ArrowRight, Package } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import Image from "next/image";
-import productRudraksha from "@/assets/product-rudraksha.jpg";
-import productDiya from "@/assets/product-diya.jpg";
-import productIncense from "@/assets/product-incense.jpg";
-import productGangajal from "@/assets/product-gangajal.jpg";
+import { fetchPublicProducts } from "@/api/publicController";
 
-const products = [
-  {
-    name: "Sacred Rudraksha Mala",
-    temple: "Kashi Vishwanath Temple",
-    price: "₹1,299",
-    rating: 4.9,
-    image: productRudraksha,
-    badge: "Bestseller",
-  },
-  {
-    name: "Pure Brass Diya Set",
-    temple: "Tirupati Balaji Temple",
-    price: "₹599",
-    rating: 4.8,
-    image: productDiya,
-    badge: "Limited",
-  },
-  {
-    name: "Sandalwood Incense",
-    temple: "Vaishno Devi Temple",
-    price: "₹199",
-    rating: 4.7,
-    image: productIncense,
-    badge: "Popular",
-  },
-  {
-    name: "Holy Ganga Jal",
-    temple: "Haridwar Ganga Temple",
-    price: "₹149",
-    rating: 5.0,
-    image: productGangajal,
-    badge: "Premium",
-  },
-];
+interface Product {
+  id: string;
+  name: string;
+  image: string | null;
+  rating: number | null;
+  temple?: {
+    name: string;
+  } | null;
+  variants: Array<{
+    price: number;
+    stock: number;
+  }>;
+}
 
 const MarketplaceSection: React.FC = () => {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+
+  useEffect(() => {
+    const loadProducts = async () => {
+      setIsLoading(true);
+      try {
+        const data = await fetchPublicProducts({ limit: 8 });
+        setProducts(data);
+      } catch (error) {
+        console.error("Failed to load products:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    loadProducts();
+  }, []);
+
+  const formatPrice = (price: number) => {
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
+      maximumFractionDigits: 0,
+    }).format(price);
+  };
+
   return (
-    <section id="marketplace" className="py-8 bg-muted/20">
+    <section id="marketplace" className="py-12 bg-[#fdf6e9]/50">
       <div className="container mx-auto px-4">
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-end justify-between mb-10">
           <div>
-            <h2 className="text-2xl md:text-3xl font-serif font-bold text-foreground">
-              Sacred <span className="text-primary">Items</span>
+            <div className="inline-block px-3 py-1 bg-[#794A05]/10 text-[#794A05] text-[10px] font-bold uppercase tracking-widest rounded-full mb-3">
+              Sacred Marketplace
+            </div>
+            <h2 className="text-3xl md:text-4xl font-display font-bold text-[#2a1b01]">
+              Divine <span className="text-[#794A05]">Offerings</span>
             </h2>
-            <p className="text-foreground mt-1">Authentic spiritual products from temples</p>
+            <p className="text-slate-600 mt-2 max-w-md">Authentic spiritual products blessed and sourced from holy temples across India.</p>
           </div>
-          <Button variant="ghost" className="text-primary hover:bg-primary/5" asChild>
+          <Button variant="ghost" className="text-[#794A05] hover:bg-[#794A05]/5 font-bold mb-1" asChild>
             <Link href="/marketplace">
-              View All
+              View All Items
               <ArrowRight className="w-4 h-4 ml-2" />
             </Link>
           </Button>
@@ -68,55 +72,78 @@ const MarketplaceSection: React.FC = () => {
 
         {/* Horizontal Product Scroll */}
         <div className="relative">
-          <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
-            {products.map((product, index) => (
-              <motion.div
-                key={product.name}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.4, delay: index * 0.1 }}
-                className="min-w-[200px] bg-card rounded-xl p-3 border border-border/50 shadow-sm hover:shadow-md transition-all duration-300"
-              >
-                {/* Badge */}
-                <div className="absolute top-2 right-2 z-10">
-                  <span className="inline-block px-2 py-0.5 bg-primary text-primary-foreground text-xs font-medium rounded-full">
-                    {product.badge}
-                  </span>
+          {isLoading ? (
+            <div className="flex gap-6 overflow-x-hidden">
+              {[1, 2, 4, 5].map((i) => (
+                <div key={i} className="min-w-[280px] bg-white rounded-[2rem] p-4 h-[380px] animate-pulse border border-[#794A05]/5">
+                  <div className="aspect-[5/4] bg-slate-100 rounded-2xl mb-4" />
+                  <div className="h-4 bg-slate-100 rounded w-2/3 mb-2" />
+                  <div className="h-3 bg-slate-100 rounded w-1/2 mb-4" />
+                  <div className="h-6 bg-slate-100 rounded w-1/3" />
                 </div>
-                
-                {/* Product Image */}
-                <div className="aspect-square bg-muted/30 rounded-lg overflow-hidden mb-3">
-                  <img
-                    src={(product.image as any).src || product.image}
-                    alt={product.name}
-                    className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
-                  />
-                </div>
-                
-                {/* Product Info */}
-                <h4 className="font-semibold text-foreground text-sm mb-1 line-clamp-1">
-                  {product.name}
-                </h4>
-                <p className="text-xs text-foreground mb-2 line-clamp-1">
-                  {product.temple}
-                </p>
-                
-                <div className="flex items-center justify-between mb-3">
-                  <span className="font-bold text-primary text-sm">{product.price}</span>
-                  <div className="flex items-center gap-1">
-                    <Star className="w-3 h-3 fill-secondary text-secondary" />
-                    <span className="text-xs text-muted-foreground">{product.rating}</span>
-                  </div>
-                </div>
-                
-                {/* <Button variant="outline" size="sm" className="w-full text-xs">
-                  <ShoppingBag className="w-3 h-3 mr-1" />
-                  Add to Cart
-                </Button> */}
-              </motion.div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : products.length > 0 ? (
+            <div className="flex gap-6 overflow-x-auto pb-8 scrollbar-hide snap-x">
+              {products.map((product, index) => (
+                <motion.div
+                  key={product.id}
+                  initial={{ opacity: 0, y: 30 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.5, delay: index * 0.1 }}
+                  className="min-w-[280px] max-w-[280px] bg-white rounded-[2rem] p-4 border border-[#794A05]/10 shadow-sm hover:shadow-xl hover:shadow-[#794A05]/5 transition-all duration-500 group snap-start"
+                >
+                  <Link href={`/marketplace/product/${product.id}`}>
+                    {/* Product Image */}
+                    <div className="aspect-[5/4] bg-[#fdf6e9] rounded-2xl overflow-hidden mb-5 relative">
+                      {product.image ? (
+                        <img
+                          src={`${API_URL}${product.image}`}
+                          alt={product.name}
+                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-[#794A05]/20">
+                          <Package className="w-12 h-12" />
+                        </div>
+                      )}
+                      <div className="absolute top-3 left-3">
+                        <span className="px-2.5 py-1 bg-white/90 backdrop-blur-sm text-[#794A05] text-[9px] font-bold uppercase tracking-widest rounded-full shadow-sm">
+                          {product.temple?.name ? "Temple Sourced" : "Sacred Item"}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Product Info */}
+                    <div className="space-y-1 px-1">
+                      <p className="text-[10px] font-bold text-[#794A05]/60 uppercase tracking-widest truncate">
+                        {product.temple?.name || "DevBhakti Exclusive"}
+                      </p>
+                      <h4 className="font-display font-bold text-[#2a1b01] text-lg line-clamp-1 group-hover:text-[#794A05] transition-colors">
+                        {product.name}
+                      </h4>
+
+                      <div className="flex items-center justify-between pt-3">
+                        <span className="font-display font-bold text-[#794A05] text-xl">
+                          {product.variants?.[0]?.price ? formatPrice(product.variants[0].price) : "N/A"}
+                        </span>
+                        <div className="flex items-center gap-1 bg-[#794A05]/5 px-2 py-1 rounded-full">
+                          <Star className="w-3 h-3 fill-amber-500 text-amber-500" />
+                          <span className="text-[10px] font-bold text-[#794A05]">{product.rating || "4.5"}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </Link>
+                </motion.div>
+              ))}
+            </div>
+          ) : (
+            <div className="py-20 text-center bg-white rounded-[3rem] border border-dashed border-[#794A05]/20">
+              <Package className="w-12 h-12 text-[#794A05]/20 mx-auto mb-4" />
+              <p className="text-slate-400 font-medium">Coming Soon to the Sacred Marketplace</p>
+            </div>
+          )}
         </div>
       </div>
     </section>

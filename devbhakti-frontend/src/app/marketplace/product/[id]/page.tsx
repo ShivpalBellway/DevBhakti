@@ -1,0 +1,501 @@
+"use client";
+
+import React, { useState, useEffect } from "react";
+import { useParams, useRouter } from "next/navigation";
+import Link from "next/link";
+import Navbar from "@/components/landing/Navbar";
+import Footer from "@/components/landing/Footer";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { motion } from "framer-motion";
+import {
+  Star,
+  ShoppingCart,
+  Heart,
+  Package,
+  Truck,
+  Shield,
+  ArrowLeft,
+  Plus,
+  Minus,
+  IndianRupee,
+  Share2,
+  Clock,
+  RotateCcw,
+  Check,
+  ChevronRight,
+} from "lucide-react";
+import { useCart, CartItem } from "@/context/CartContext";
+import CartDrawer from "@/components/marketplace/CartDrawer";
+import { useToast } from "@/hooks/use-toast";
+import { fetchProductByIdPublic } from "@/api/publicController";
+
+interface Product {
+  id: string;
+  name: string;
+  description: string;
+  category: string;
+  categoryId: string | null;
+  status: string;
+  image: string | null;
+  templeId: string | null;
+  temple?: {
+    id: string;
+    name: string;
+    location: string;
+  } | null;
+  categoryObj?: {
+    id: string;
+    name: string;
+    description: string | null;
+  } | null;
+  variants: Array<{
+    id: string;
+    name: string;
+    price: number;
+    stock: number;
+    image: string | null;
+  }>;
+  highlights: string | null;
+  longDescription: string | null;
+  shippingInfo: string | null;
+  origin: string | null;
+  rating: number | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export default function ProductDetailsPage() {
+  const params = useParams();
+  const router = useRouter();
+  const { toast } = useToast();
+
+  const [product, setProduct] = useState<Product | null>(null);
+  const [selectedVariant, setSelectedVariant] = useState<string | null>(null);
+  const [quantity, setQuantity] = useState(1);
+  const { cartItems, addToCart: addToCartGlobal, updateQuantity, removeFromCart } = useCart();
+  const [cartOpen, setCartOpen] = useState(false);
+  const [isFavorite, setIsFavorite] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (params.id) {
+      loadProduct(params.id as string);
+    }
+  }, [params.id]);
+
+  const loadProduct = async (id: string) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const data = await fetchProductByIdPublic(id);
+      setProduct(data);
+      if (data.variants.length > 0) {
+        setSelectedVariant(data.variants[0].id);
+      }
+    } catch (err: any) {
+      console.error("Error loading product:", err);
+      setError(err.message || "Failed to load product");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const toggleFavorite = () => {
+    setIsFavorite(!isFavorite);
+    toast({
+      title: isFavorite ? "Removed from favorites" : "Added to favorites",
+      description: product?.name,
+    });
+  };
+
+  const addToCart = () => {
+    if (!product || !selectedVariant) return;
+
+    const variant = product.variants.find(v => v.id === selectedVariant);
+    if (!variant) return;
+
+    addToCartGlobal({
+      productId: product.id,
+      variantId: variant.id,
+      name: product.name,
+      variantName: variant.name,
+      price: variant.price,
+      image: variant.image || product.image || "",
+      quantity: quantity,
+      templeId: product.templeId,
+    });
+
+    toast({
+      title: "Added to cart",
+      description: `${product.name} (${variant.name}) x ${quantity} added to cart`,
+    });
+    setCartOpen(true);
+  };
+
+  const formatPrice = (price: number) => {
+    return `₹${price.toLocaleString()}`;
+  };
+
+  const currentVariant = product?.variants.find(v => v.id === selectedVariant);
+  const totalPrice = currentVariant ? currentVariant.price * quantity : 0;
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navbar />
+        <div className="container mx-auto px-4 py-8">
+          <div className="animate-pulse">
+            <div className="h-8 bg-muted/30 rounded w-64 mb-8"></div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <div className="aspect-[4/3] bg-muted/30 rounded-lg"></div>
+              <div className="space-y-4">
+                <div className="h-8 bg-muted/30 rounded w-3/4"></div>
+                <div className="h-4 bg-muted/30 rounded w-1/2"></div>
+                <div className="h-4 bg-muted/30 rounded w-1/3"></div>
+                <div className="h-12 bg-muted/30 rounded w-1/2"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
+  if (error || !product) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navbar />
+        <div className="container mx-auto px-4 py-8">
+          <div className="text-center py-12">
+            <Package className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-foreground mb-2">Product not found</h3>
+            <p className="text-muted-foreground mb-4">{error}</p>
+            <Button onClick={() => router.back()}>
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Go Back
+            </Button>
+          </div>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-[#fdf6e9]">
+      <Navbar />
+
+      <main className="pt-28 pb-20">
+        <div className="container mx-auto px-4">
+          {/* Breadcrumb */}
+          <nav className="flex items-center gap-2 text-xs font-medium uppercase tracking-[0.1em] text-[#794A05]/60 mb-8 overflow-x-auto whitespace-nowrap">
+            <Link href="/marketplace" className="hover:text-[#794A05] transition-colors">
+              Marketplace
+            </Link>
+            <span className="opacity-30">/</span>
+            <span className="text-[#4A2c01]">{product.name}</span>
+          </nav>
+
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
+            {/* Left Column: Product Images */}
+            <div className="lg:col-span-7 space-y-6">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="relative aspect-[4/3] max-h-[500px] bg-white rounded-[2.5rem] overflow-hidden shadow-2xl shadow-[#794A05]/10 border border-[#794A05]/5 group"
+              >
+                {currentVariant?.image ? (
+                  <img
+                    src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}${currentVariant.image}`}
+                    alt={product.name}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                  />
+                ) : product.image ? (
+                  <img
+                    src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}${product.image}`}
+                    alt={product.name}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <Package className="w-24 h-24 text-[#794A05]/10" />
+                  </div>
+                )}
+
+                {/* Status Badges */}
+                <div className="absolute top-6 left-6 flex flex-col gap-2">
+                  <Badge className="bg-[#794A05] text-white px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border-none">
+                    Sacred Item
+                  </Badge>
+                  {currentVariant && currentVariant.stock <= 5 && currentVariant.stock > 0 && (
+                    <Badge variant="destructive" className="bg-red-500 text-white rounded-full font-bold">
+                      Limited Stock
+                    </Badge>
+                  )}
+                </div>
+              </motion.div>
+
+              {/* Thumbnail Gallery */}
+              {product.variants.length > 1 && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 }}
+                  className="flex gap-4 p-2 overflow-x-auto pb-4 scrollbar-hide"
+                >
+                  {product.variants.map((variant) => (
+                    <button
+                      key={variant.id}
+                      onClick={() => setSelectedVariant(variant.id)}
+                      className={`flex-shrink-0 w-24 h-24 rounded-2xl overflow-hidden border-2 transition-all duration-300 transform ${selectedVariant === variant.id
+                        ? "border-[#794A05] scale-105 shadow-lg shadow-[#794A05]/20"
+                        : "border-white hover:border-[#794A05]/30 hover:scale-105"
+                        } bg-white`}
+                    >
+                      {variant.image ? (
+                        <img
+                          src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}${variant.image}`}
+                          alt={variant.name}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <Package className="w-6 h-6 text-[#794A05]/20" />
+                        </div>
+                      )}
+                    </button>
+                  ))}
+                </motion.div>
+              )}
+            </div>
+
+            {/* Right Column: Details */}
+            <div className="lg:col-span-5 space-y-8">
+              <motion.div
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                className="space-y-6"
+              >
+                {/* Product Info */}
+                <div>
+                  <div className="flex items-center justify-between mb-4">
+                    <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#794A05]/60 pr-4">
+                      {product.temple?.name || "DevBhakti Exclusive"}
+                    </span>
+                    <div className="flex items-center gap-1 bg-[#794A05]/5 px-2 py-1 rounded-full">
+                      <Star className="w-3 h-3 text-amber-500 fill-amber-500" />
+                      <span className="text-[10px] font-bold text-[#794A05]">{product.rating || "4.5"}</span>
+                    </div>
+                  </div>
+
+                  <h1 className="text-4xl lg:text-5xl font-display font-bold text-[#2a1b01] leading-tight mb-4">
+                    {product.name}
+                  </h1>
+
+                  <div className="flex items-center gap-4 py-4 border-y border-[#794A05]/10">
+                    <div className="flex flex-col">
+                      <span className="text-[10px] uppercase tracking-widest text-slate-400 font-bold mb-1">Price</span>
+                      <span className="text-4xl font-display font-bold text-[#794A05]">
+                        {currentVariant ? formatPrice(currentVariant.price) : "N/A"}
+                      </span>
+                    </div>
+                    {currentVariant && currentVariant.stock === 0 && (
+                      <div className="ml-auto">
+                        <Badge variant="outline" className="text-red-500 border-red-500 font-bold">OUT OF STOCK</Badge>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Description */}
+                <div>
+                  <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-[#4A2c01] mb-3">Divine Description</h3>
+                  <p className="text-slate-600 leading-relaxed text-sm">
+                    {product.description}
+                  </p>
+                </div>
+
+                {/* Variant Selection */}
+                {product.variants.length > 1 && (
+                  <div className="space-y-3">
+                    <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-[#4A2c01]">Select Option</h3>
+                    <div className="grid grid-cols-2 gap-2">
+                      {product.variants.map((variant) => (
+                        <button
+                          key={variant.id}
+                          onClick={() => setSelectedVariant(variant.id)}
+                          className={`p-3 rounded-xl border text-sm font-medium transition-all ${selectedVariant === variant.id
+                            ? "border-[#794A05] bg-[#794A05]/5 text-[#794A05]"
+                            : "border-slate-200 bg-white text-slate-500 hover:border-[#794A05]/30"
+                            }`}
+                        >
+                          {variant.name}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Quantity and Actions */}
+                <div className="space-y-6 pt-6">
+                  <div className="flex items-center justify-between gap-6">
+                    <div className="flex items-center bg-white border border-slate-200 rounded-2xl p-1 shadow-sm">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                        disabled={quantity <= 1}
+                        className="h-10 w-10 text-[#794A05] hover:bg-[#794A05]/5"
+                      >
+                        <Minus className="w-3 h-3" />
+                      </Button>
+                      <span className="w-12 text-center font-bold text-slate-700">{quantity}</span>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setQuantity(quantity + 1)}
+                        disabled={currentVariant?.stock ? quantity >= currentVariant.stock : true}
+                        className="h-10 w-10 text-[#794A05] hover:bg-[#794A05]/5"
+                      >
+                        <Plus className="w-3 h-3" />
+                      </Button>
+                    </div>
+
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={toggleFavorite}
+                      className={`h-12 w-12 rounded-2xl transition-all shadow-sm ${isFavorite ? "border-red-100 bg-red-50 text-red-500" : "border-slate-200 bg-white"
+                        }`}
+                    >
+                      <Heart className={`w-5 h-5 ${isFavorite ? "fill-red-500" : ""}`} />
+                    </Button>
+                  </div>
+
+                  <div className="flex flex-col gap-3">
+                    <Button
+                      size="lg"
+                      className="w-full h-14 bg-[#794A05] hover:bg-[#5d3804] text-white rounded-2xl text-md font-bold shadow-xl shadow-[#794A05]/20 transition-all hover:scale-[1.02]"
+                      onClick={addToCart}
+                      disabled={!currentVariant || currentVariant.stock === 0}
+                    >
+                      <ShoppingCart className="w-5 h-5 mr-3" />
+                      Add to Sacred Cart — {currentVariant ? formatPrice(totalPrice) : ""}
+                    </Button>
+
+                    <p className="text-[10px] text-center text-slate-400 font-medium">
+                      Part of the proceeds are contributed toward temple maintenance
+                    </p>
+                  </div>
+                </div>
+
+                {/* Trust Badges */}
+                <div className="grid grid-cols-3 gap-4 py-8 border-t border-[#794A05]/10">
+                  <div className="flex flex-col items-center text-center gap-2">
+                    <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm">
+                      <Truck className="w-4 h-4 text-[#794A05]" />
+                    </div>
+                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tighter">Fast Delivery</span>
+                  </div>
+                  <div className="flex flex-col items-center text-center gap-2">
+                    <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm">
+                      <Shield className="w-4 h-4 text-[#794A05]" />
+                    </div>
+                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tighter">Safe & Secure</span>
+                  </div>
+                  <div className="flex flex-col items-center text-center gap-2">
+                    <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm">
+                      <Package className="w-4 h-4 text-[#794A05]" />
+                    </div>
+                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tighter">Temple Blessed</span>
+                  </div>
+                </div>
+              </motion.div>
+            </div>
+          </div>
+
+          {/* Product Deep Info Section */}
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="mt-20"
+          >
+            <div className="bg-white rounded-[3rem] p-8 lg:p-12 shadow-xl shadow-[#794A05]/5 border border-[#794A05]/5">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
+                <div className="md:col-span-2 space-y-6">
+                  <div className="inline-block px-4 py-1.5 bg-[#794A05]/5 text-[#794A05] text-[10px] font-bold uppercase tracking-widest rounded-full mb-2">
+                    Detailed Information
+                  </div>
+                  <h2 className="text-3xl font-display font-bold text-[#2a1b01]">About this Sacred Offering</h2>
+                  <p className="text-slate-600 leading-relaxed">
+                    {product.longDescription || `Every product in our marketplace is carefully selected for its spiritual significance and quality. 
+                    This ${product.name} is crafted following traditional guidelines to ensure it serves as a meaningful 
+                    addition to your spiritual journey.`}
+                  </p>
+
+                  <div className="grid grid-cols-2 gap-6 pt-6">
+                    <div className="space-y-1">
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Origin</span>
+                      <p className="text-sm font-semibold text-[#4A2c01]">{product.origin || product.temple?.location || "India"}</p>
+                    </div>
+                    <div className="space-y-1">
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Category</span>
+                      <p className="text-sm font-semibold text-[#4A2c01]">{product.categoryObj?.name || product.category}</p>
+                    </div>
+                    <div className="space-y-1">
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">SKU</span>
+                      <p className="text-xs font-mono text-slate-500">{currentVariant?.id.slice(-8) || "N/A"}</p>
+                    </div>
+                    <div className="space-y-1">
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Availability</span>
+                      <p className="text-sm font-semibold text-green-600">{product.shippingInfo || "Ships in 24-48 Hours"}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-[#fdf6e9] rounded-[2rem] p-8 space-y-6">
+                  <h3 className="text-lg font-display font-bold text-[#4A2c01]">Sacred Highlights</h3>
+                  <ul className="space-y-4">
+                    {(product.highlights ? product.highlights.split(',').map(s => s.trim()) : [
+                      "Directly from Temple Source",
+                      "Blessed by Ved Pathis",
+                      "Traditional Quality Standards",
+                      "Carefully Packaged with Holy Ash",
+                      "Community Support Contribution"
+                    ]).map((item, id) => (
+                      <li key={id} className="flex items-start gap-3 text-xs text-[#794A05] font-medium">
+                        <div className="w-1.5 h-1.5 rounded-full bg-[#794A05] mt-1 flex-shrink-0" />
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      </main>
+
+      <CartDrawer
+        open={cartOpen}
+        onOpenChange={setCartOpen}
+        items={cartItems}
+        onUpdateQuantity={updateQuantity}
+        onRemoveItem={removeFromCart}
+        onCheckout={() => {
+          setCartOpen(false);
+          router.push("/marketplace/checkout");
+        }}
+      />
+
+      <Footer />
+    </div>
+  );
+}
+

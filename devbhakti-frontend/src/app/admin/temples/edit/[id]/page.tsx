@@ -52,7 +52,9 @@ export default function EditTemplePage() {
         mapUrl: "",
         rating: "0",
         reviewsCount: "0",
-        liveStatus: "false"
+        liveStatus: "false",
+        productCommissionRate: "10.0",
+        poojaCommissionRate: "5.0"
     });
 
     // Relationships State
@@ -101,7 +103,9 @@ export default function EditTemplePage() {
                     mapUrl: inst.temple?.mapUrl || "",
                     rating: String(inst.temple?.rating || "0"),
                     reviewsCount: String(inst.temple?.reviewsCount || "0"),
-                    liveStatus: String(inst.temple?.liveStatus || "false")
+                    liveStatus: String(inst.temple?.liveStatus || "false"),
+                    productCommissionRate: String(inst.temple?.productCommissionRate || "10.0"),
+                    poojaCommissionRate: String(inst.temple?.poojaCommissionRate || "5.0")
                 });
 
                 setExistingMainImage(inst.temple?.image || "");
@@ -418,6 +422,34 @@ export default function EditTemplePage() {
                                 </div>
                             </div>
                         ))}
+                    </div>
+                </div>
+
+                {/* Financial Settings */}
+                <div className="bg-card border rounded-xl p-8 shadow-sm space-y-6">
+                    <div className="flex items-center gap-2 text-primary font-bold">
+                        <Layout className="w-5 h-5" />
+                        <h2 className="text-xl">Financial & Commission Settings</h2>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-2">
+                            <label className="text-sm font-semibold text-slate-700">Marketplace Commission (%)</label>
+                            <Input
+                                type="number"
+                                step="0.1"
+                                value={formData.productCommissionRate}
+                                onChange={e => setFormData({ ...formData, productCommissionRate: e.target.value })}
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-sm font-semibold text-slate-700">Pooja Booking Commission (%)</label>
+                            <Input
+                                type="number"
+                                step="0.1"
+                                value={formData.poojaCommissionRate}
+                                onChange={e => setFormData({ ...formData, poojaCommissionRate: e.target.value })}
+                            />
+                        </div>
                     </div>
                 </div>
 

@@ -12,7 +12,8 @@ import {
     Image as ImageIcon,
     Layout,
     Building2,
-    MapPin
+    MapPin,
+    IndianRupee
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -51,7 +52,9 @@ export default function CreateTemplePage() {
         // Stats
         rating: "0",
         reviewsCount: "0",
-        liveStatus: "true"
+        liveStatus: "true",
+        productCommissionRate: "10.0",
+        poojaCommissionRate: "5.0"
     });
 
     // Relationships State
@@ -481,6 +484,39 @@ export default function CreateTemplePage() {
                                 </div>
                             </div>
                         ))}
+                    </div>
+                </div>
+
+                {/* 7. Financial Settings */}
+                <div className="bg-card border rounded-xl p-8 shadow-sm space-y-6">
+                    <div className="flex items-center gap-2 text-[#794A05] font-bold">
+                        <IndianRupee className="w-5 h-5" />
+                        <h2 className="text-xl font-serif">Financial & Commission Settings</h2>
+                    </div>
+                    <p className="text-sm text-muted-foreground mb-4 font-medium">Set the commission percentages for this temple's offerings.</p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-2">
+                            <label className="text-sm font-bold text-slate-700 uppercase tracking-widest text-[11px]">Marketplace Commission (%)</label>
+                            <Input
+                                type="number"
+                                step="0.1"
+                                value={formData.productCommissionRate}
+                                onChange={e => setFormData({ ...formData, productCommissionRate: e.target.value })}
+                                className="h-11 rounded-xl"
+                                placeholder="eg. 10.0"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-sm font-bold text-slate-700 uppercase tracking-widest text-[11px]">Pooja Booking Commission (%)</label>
+                            <Input
+                                type="number"
+                                step="0.1"
+                                value={formData.poojaCommissionRate}
+                                onChange={e => setFormData({ ...formData, poojaCommissionRate: e.target.value })}
+                                className="h-11 rounded-xl"
+                                placeholder="eg. 5.0"
+                            />
+                        </div>
                     </div>
                 </div>
 

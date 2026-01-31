@@ -67,9 +67,9 @@ const sidebarItems = [
         href: "/temples/dashboard/live-stream",
     },
     {
-        label: "Payments",
+        label: "Earnings & Settlement",
         icon: CreditCard,
-        href: "/temples/dashboard/payments",
+        href: "/temples/dashboard/finance",
     },
     {
         label: "Profile",
