@@ -129,9 +129,14 @@ export const deleteTempleAdmin = async (id: string) => {
     return response.data;
 };
 
-export const toggleTempleStatusAdmin = async (id: string, isVerified: boolean, liveStatus: boolean) => {
+export const toggleTempleStatusAdmin = async (id: string, isVerified: boolean, liveStatus: boolean, data?: { slug?: string, productCommissionRate?: number, poojaCommissionRate?: number }) => {
     const token = localStorage.getItem("admin_token");
-    const response = await axios.patch(`${API_URL}/admin/temples/${id}/status`, { isVerified, liveStatus }, {
+    const payload = {
+        isVerified,
+        liveStatus,
+        ...data
+    };
+    const response = await axios.patch(`${API_URL}/admin/temples/${id}/status`, payload, {
         headers: { Authorization: `Bearer ${token}` }
     });
     return response.data;

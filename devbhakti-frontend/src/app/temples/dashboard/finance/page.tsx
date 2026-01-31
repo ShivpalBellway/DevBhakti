@@ -178,14 +178,14 @@ export default function EarningsPage() {
                     <Card className="border-none shadow-xl bg-slate-900 text-white rounded-[1.5rem] overflow-hidden relative group">
                         <CardContent className="p-6">
                             <div className="flex items-center gap-1.5 mb-2">
-                                <p className="text-slate-400 font-bold uppercase tracking-widest text-[8px]">Total Gross Sales</p>
+                                <p className="text-slate-400 font-bold uppercase tracking-widest text-[10px]">Total Gross Sales</p>
                                 <Tooltip>
                                     <TooltipTrigger><Info className="w-3 h-3 text-slate-500 cursor-help" /></TooltipTrigger>
-                                    <TooltipContent className="bg-slate-800 text-white border-slate-700 text-[10px]">Total value of all orders before any deductions.</TooltipContent>
+                                    <TooltipContent className="bg-slate-800 text-white border-slate-700 text-[12px]">Total value of all orders before any deductions.</TooltipContent>
                                 </Tooltip>
                             </div>
-                            <h2 className="text-2xl font-extrabold flex items-baseline gap-1">
-                                <span className="text-sm font-medium text-slate-500 italic mr-1">₹</span>
+                            <h2 className="text-2xl font-extrabold flex items-center gap-1">
+                                <IndianRupee className="w-5 h-5 text-slate-400" strokeWidth={3} />
                                 {summary?.totalEarnings?.toLocaleString() || "0"}
                             </h2>
                         </CardContent>
@@ -194,14 +194,14 @@ export default function EarningsPage() {
                     <Card className="border-none shadow-xl bg-red-50 text-red-900 rounded-[1.5rem] overflow-hidden border border-red-100">
                         <CardContent className="p-6">
                             <div className="flex items-center gap-1.5 mb-2">
-                                <p className="text-red-400 font-bold uppercase tracking-widest text-[8px]">Total Commission Paid</p>
+                                <p className="text-red-400 font-bold uppercase tracking-widest text-[10px]">Total Commission Paid</p>
                                 <Tooltip>
                                     <TooltipTrigger><Info className="w-3 h-3 text-red-300 cursor-help" /></TooltipTrigger>
-                                    <TooltipContent className="bg-white text-slate-900 border-red-100 text-[10px]">Total administrative fee paid to DevBhakti platform.</TooltipContent>
+                                    <TooltipContent className="bg-white text-slate-900 border-red-100 text-[12px]">Total administrative fee paid to DevBhakti platform.</TooltipContent>
                                 </Tooltip>
                             </div>
-                            <h2 className="text-2xl font-extrabold text-red-600 flex items-baseline gap-1">
-                                <span className="text-sm font-medium text-red-300 italic mr-1">₹</span>
+                            <h2 className="text-2xl font-extrabold text-red-600 flex items-center gap-1">
+                                <IndianRupee className="w-5 h-5 text-red-400" strokeWidth={3} />
                                 {summary?.totalCommission?.toLocaleString() || "0"}
                             </h2>
                         </CardContent>
@@ -210,14 +210,14 @@ export default function EarningsPage() {
                     <Card className="border-none shadow-xl bg-white rounded-[1.5rem] overflow-hidden border border-slate-100">
                         <CardContent className="p-6">
                             <div className="flex items-center gap-1.5 mb-2">
-                                <p className="text-slate-400 font-bold uppercase tracking-widest text-[8px]">Net Balance (Ready)</p>
+                                <p className="text-slate-400 font-bold uppercase tracking-widest text-[10px]">Net Balance (Ready)</p>
                                 <Tooltip>
                                     <TooltipTrigger><Info className="w-3 h-3 text-slate-300 cursor-help" /></TooltipTrigger>
-                                    <TooltipContent className="bg-white text-slate-900 border-slate-200 text-[10px]">Funds available for withdrawal after commission and 3-day escrow.</TooltipContent>
+                                    <TooltipContent className="bg-white text-slate-900 border-slate-200 text-[12px]">Funds available for withdrawal after commission and 3-day escrow.</TooltipContent>
                                 </Tooltip>
                             </div>
-                            <h2 className="text-2xl font-extrabold text-[#794A05] flex items-baseline gap-1">
-                                <span className="text-sm font-medium text-slate-400 italic mr-1">₹</span>
+                            <h2 className="text-2xl font-extrabold text-[#794A05] flex items-center gap-1">
+                                <IndianRupee className="w-6 h-6 text-[#794A05] opacity-80" strokeWidth={3} />
                                 {summary?.availableBalance?.toLocaleString() || "0"}
                             </h2>
                         </CardContent>
@@ -226,14 +226,14 @@ export default function EarningsPage() {
                     <Card className="border-none shadow-xl bg-white rounded-[1.5rem] overflow-hidden border border-slate-100">
                         <CardContent className="p-6">
                             <div className="flex items-center gap-1.5 mb-2">
-                                <p className="text-slate-400 font-bold uppercase tracking-widest text-[8px]">In Settlement</p>
+                                <p className="text-slate-400 font-bold uppercase tracking-widest text-[10px]">In Settlement</p>
                                 <Tooltip>
                                     <TooltipTrigger><Info className="w-3 h-3 text-slate-300 cursor-help" /></TooltipTrigger>
-                                    <TooltipContent className="bg-white text-slate-900 border-slate-200 text-[10px]">Orders delivered but within 3-day hold period for potential returns/disputes.</TooltipContent>
+                                    <TooltipContent className="bg-white text-slate-900 border-slate-200 text-[12px]">Orders delivered but within 3-day hold period for potential returns/disputes.</TooltipContent>
                                 </Tooltip>
                             </div>
-                            <h2 className="text-2xl font-extrabold text-slate-600 flex items-baseline gap-1">
-                                <span className="text-sm font-medium text-slate-400 italic mr-1">₹</span>
+                            <h2 className="text-2xl font-extrabold text-slate-600 flex items-center gap-1">
+                                <IndianRupee className="w-5 h-5 text-slate-400" strokeWidth={2.5} />
                                 {summary?.inEscrow?.toLocaleString() || "0"}
                             </h2>
                             <p className="text-[8px] text-amber-600 font-bold mt-1">3-day period</p>
@@ -243,14 +243,14 @@ export default function EarningsPage() {
                     <Card className="border-none shadow-xl bg-white rounded-[1.5rem] overflow-hidden border border-slate-100">
                         <CardContent className="p-6">
                             <div className="flex items-center gap-1.5 mb-2">
-                                <p className="text-slate-400 font-bold uppercase tracking-widest text-[8px]">Pending Fulfillment</p>
+                                <p className="text-slate-400 font-bold uppercase tracking-widest text-[10px]">Pending Fulfillment</p>
                                 <Tooltip>
                                     <TooltipTrigger><Info className="w-3 h-3 text-slate-300 cursor-help" /></TooltipTrigger>
-                                    <TooltipContent className="bg-white text-slate-900 border-slate-200 text-[10px]">Revenue from orders that are yet to be shipped or delivered.</TooltipContent>
+                                    <TooltipContent className="bg-white text-slate-900 border-slate-200 text-[12px]">Revenue from orders that are yet to be shipped or delivered.</TooltipContent>
                                 </Tooltip>
                             </div>
-                            <h2 className="text-2xl font-extrabold text-slate-400 flex items-baseline gap-1">
-                                <span className="text-sm font-medium text-slate-300 italic mr-1">₹</span>
+                            <h2 className="text-2xl font-extrabold text-slate-400 flex items-center gap-1">
+                                <IndianRupee className="w-5 h-5 text-slate-300" strokeWidth={2.5} />
                                 {summary?.pendingBalance?.toLocaleString() || "0"}
                             </h2>
                         </CardContent>

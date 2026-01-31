@@ -174,7 +174,7 @@ export function TemplesList() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredTemples.map((temple) => (
                 <div key={temple.id} className="relative group/card h-full">
-                  <Link href={`/temples/${temple.id}`}>
+                  <Link href={`/temples/${temple.slug || temple.id}`}>
                     <Card className="group overflow-hidden hover:shadow-xl transition-all duration-300 border-border/50 hover:border-primary/30 h-full">
                       <div className="relative aspect-[4/3] overflow-hidden">
                         <img

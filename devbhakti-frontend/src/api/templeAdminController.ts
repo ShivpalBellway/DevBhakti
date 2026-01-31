@@ -192,3 +192,60 @@ export const requestWithdrawal = async (data: { templeId: string; amount: number
     });
     return response.data;
 };
+
+// Temple Product Management
+export const fetchMyProducts = async (params: any = {}) => {
+    const token = localStorage.getItem("token");
+    const response = await axios.get(`${API_URL}/temple-admin/products`, {
+        headers: { Authorization: `Bearer ${token}` },
+        params
+    });
+    return response.data;
+};
+
+export const fetchMyProductById = async (id: string) => {
+    const token = localStorage.getItem("token");
+    const response = await axios.get(`${API_URL}/temple-admin/products/${id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+
+export const fetchCategories = async () => {
+    // Currently using the public admin endpoint
+    const response = await axios.get(`${API_URL}/admin/categories/active`);
+    return response.data.data; // Note: admin endpoint returns { success: true, data: { categories: [...] } } or { data: [...] }?
+    // Admin controller says: return response.data.data;
+    // Let's stick to that.
+};
+
+export const createMyProduct = async (formData: FormData) => {
+    const token = localStorage.getItem("token");
+    const response = await axios.post(`${API_URL}/temple-admin/products`, formData, {
+        headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'multipart/form-data'
+        }
+    });
+    return response.data;
+};
+
+export const updateMyProduct = async (id: string, formData: FormData) => {
+    const token = localStorage.getItem("token");
+    const response = await axios.put(`${API_URL}/temple-admin/products/${id}`, formData, {
+        headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'multipart/form-data'
+        }
+    });
+    return response.data;
+};
+
+export const deleteMyProduct = async (id: string) => {
+    const token = localStorage.getItem("token");
+    const response = await axios.delete(`${API_URL}/temple-admin/products/${id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+
