@@ -73,7 +73,10 @@ export const getTempleById = async (req: Request, res: Response) => {
 
     const temple = await prisma.temple.findFirst({
       where: {
-        id: id as string,
+        OR: [
+            { id: id as string },
+            { slug: id as string }
+        ],
         user: {
           isVerified: true
         }
@@ -97,11 +100,12 @@ export const getTempleById = async (req: Request, res: Response) => {
 
     let isFavorite = false;
     if (userId) {
+      // Note: We must use the resolved temple.id here, not the slug/param
       const fav = await prisma.favorite.findUnique({
         where: {
           userId_templeId: {
             userId: userId,
-            templeId: temple.id
+            templeId: temple.id 
           }
         }
       });

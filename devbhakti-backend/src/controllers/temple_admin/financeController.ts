@@ -9,7 +9,7 @@ export const getTempleLedger = async (req: Request, res: Response) => {
     const { templeId } = req.params;
     
     const entries = await prisma.templeLedger.findMany({
-      where: { templeId },
+      where: { templeId: templeId as string },
       orderBy: { createdAt: "desc" }
     });
 
@@ -24,119 +24,141 @@ export const getTempleFinanceSummary = async (req: Request, res: Response) => {
   try {
     const { templeId } = req.params;
 
-    const ledger = await prisma.templeLedger.findMany({
-      where: { templeId }
-    });
+    // Fetch data in parallel
+    const [ledger, withdrawals] = await Promise.all([
+        prisma.templeLedger.findMany({ where: { templeId: templeId as string } }),
+        prisma.withdrawalRequest.findMany({
+             where: { templeId: templeId as string, status: { in: ["PENDING", "APPROVED", "PAID"] } } 
+        })
+    ]);
 
-    const withdrawals = await prisma.withdrawalRequest.findMany({
-      where: { templeId, status: { in: ["PENDING", "APPROVED", "PAID"] } }
-    });
+    const now = new Date();
+    // 3 Days escrow window
+    const escrowThreshold = new Date(now.getTime() - (3 * 24 * 60 * 60 * 1000));
 
-    const threeDaysAgo = new Date();
-    threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+    // --- 1. Income Analysis ---
+    // Filter valid income (exclude withdrawals and cancelled txns)
+    const validIncomeEntries = ledger.filter((e: any) => 
+        e.type !== "WITHDRAWAL" && e.status !== "CANCELLED"
+    );
 
-    // 1. Gross Earnings
-    const totalEarnings = ledger
-      .filter((e: any) => e.type !== "WITHDRAWAL" && e.status !== "CANCELLED")
-      .reduce((sum: number, e: any) => sum + (e.grossAmount || 0), 0);
-
-    const totalCommission = ledger
-      .filter((e: any) => e.type !== "WITHDRAWAL" && e.status !== "CANCELLED")
-      .reduce((sum: number, e: any) => sum + (e.commission || 0), 0);
-
+    const totalEarnings = validIncomeEntries.reduce((sum: number, e: any) => sum + (e.grossAmount || 0), 0);
+    const totalCommission = validIncomeEntries.reduce((sum: number, e: any) => sum + (e.commission || 0), 0);
     const netEarnings = totalEarnings - totalCommission;
 
-    // 2. Total Completed (regardless of escrow)
-    const totalCompletedRaw = ledger
-      .filter((e: any) => e.status === "COMPLETED" && e.type !== "WITHDRAWAL")
-      .reduce((sum: number, e: any) => sum + e.amount, 0);
+    // --- 2. Settlement Analysis ---
+    // Completed earnings Only
+    const completedIncomeEntries = validIncomeEntries.filter((e: any) => e.status === "COMPLETED");
 
-    // 3. Available (Completed AND > 3 days old)
-    const totalAvailableRaw = ledger
-      .filter((e: any) => e.status === "COMPLETED" && e.type !== "WITHDRAWAL" && new Date(e.createdAt) <= threeDaysAgo)
-      .reduce((sum: number, e: any) => sum + e.amount, 0);
+    // Settled: Completed AND older than 3 days
+    const settledIncome = completedIncomeEntries
+        .filter((e: any) => new Date(e.createdAt) <= escrowThreshold)
+        .reduce((sum: number, e: any) => sum + e.amount, 0);
 
-    // 4. In Escrow (Completed BUT < 3 days old)
-    const inEscrow = totalCompletedRaw - totalAvailableRaw;
+    // In Escrow: Completed BUT newer than 3 days
+    // Note: We use e.amount (net amount) for balance calculations, not gross.
+    const inEscrow = completedIncomeEntries
+        .filter((e: any) => new Date(e.createdAt) > escrowThreshold)
+        .reduce((sum: number, e: any) => sum + e.amount, 0);
 
-    // 5. Total Paid Withdrawals
-    const totalPaidWithdrawals = withdrawals
-      .filter((w: any) => w.status === "PAID")
-      .reduce((sum: number, w: any) => sum + w.amount, 0);
+    // Pending Fulfillment: Not even completed yet
+    const pendingFulfillment = validIncomeEntries
+        .filter((e: any) => e.status === "PENDING")
+        .reduce((sum: number, e: any) => sum + e.amount, 0);
 
-    // 6. Processing Withdrawals (LOCKED)
+    // --- 3. Payout Analysis ---
+    // Paid Withdrawals (Money already left the system)
+    const totalPaidPayouts = withdrawals
+        .filter((w: any) => w.status === "PAID")
+        .reduce((sum: number, w: any) => sum + w.amount, 0);
+
+    // Locked/Processing (Money requested but not yet paid - effectively blocked)
     const processingWithdrawals = withdrawals
-      .filter((w: any) => w.status === "PENDING" || w.status === "APPROVED")
-      .reduce((sum: number, w: any) => sum + w.amount, 0);
+        .filter((w: any) => w.status === "PENDING" || w.status === "APPROVED")
+        .reduce((sum: number, w: any) => sum + w.amount, 0);
 
-    // 7. Net Available for Payout
-    const finalAvailable = totalAvailableRaw - totalPaidWithdrawals - processingWithdrawals;
-
-    // 8. Pending Fulfillment
-    const pendingFulfillment = ledger
-      .filter((e: any) => e.status === "PENDING" && e.type !== "WITHDRAWAL")
-      .reduce((sum: number, e: any) => sum + e.amount, 0);
+    // --- 4. Final Balance ---
+    // Available = (Settled Income) - (All Payouts: Paid + Locked)
+    // We deduct Paid because it's gone. We deduct Locked because it's reserved.
+    const finalAvailable = settledIncome - totalPaidPayouts - processingWithdrawals;
 
     return res.status(200).json({
       success: true,
       data: {
-        totalEarnings, // Gross
+        totalEarnings, // Gross Sales
         totalCommission,
         netEarnings,
         availableBalance: Math.max(0, finalAvailable),
-        pendingBalance: pendingFulfillment,
-        inEscrow,
-        processingWithdrawals
+        pendingBalance: pendingFulfillment, // Future revenue
+        inEscrow, // Trapped in 3-day hold
+        processingWithdrawals // Currently requested
       }
     });
+
   } catch (error: any) {
-    return res.status(500).json({ success: false, message: error.message });
+    console.error("Finance Summary Error:", error);
+    return res.status(500).json({ success: false, message: "Failed to load financial summary" });
   }
 };
 
-// Request Withdrawal
+// Request Withdrawal with Transaction Safety
 export const requestWithdrawal = async (req: Request, res: Response) => {
   try {
     const { templeId, amount, bankDetails } = req.body;
 
-    // Check available balance
-    const threeDaysAgo = new Date();
-    threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
-
-    const ledger = await prisma.templeLedger.findMany({
-      where: { 
-        templeId, 
-        status: "COMPLETED", 
-        type: { not: "WITHDRAWAL" },
-        createdAt: { lte: threeDaysAgo } // Only funds past escrow
-      }
-    });
-
-    const totalAvailableEarnings = ledger.reduce((sum: number, e: any) => sum + e.amount, 0);
-
-    const withdrawals = await prisma.withdrawalRequest.findMany({
-      where: { templeId, status: { in: ["PENDING", "APPROVED", "PAID"] } }
-    });
-
-    const totalWithdrawnAndLocked = withdrawals.reduce((sum: number, w: any) => sum + w.amount, 0);
-
-    const netAvailable = totalAvailableEarnings - totalWithdrawnAndLocked;
-
-    if (amount > netAvailable) {
-      return res.status(400).json({ success: false, message: `Insufficient settled balance. Settled: ₹${netAvailable}` });
+    if (!amount || amount <= 0) {
+        return res.status(400).json({ success: false, message: "Invalid amount" });
     }
 
-    const request = await prisma.withdrawalRequest.create({
-      data: {
-        templeId,
-        amount,
-        bankDetails,
-        status: "PENDING"
-      }
+    // Use a transaction to prevent race conditions during balance check
+    await prisma.$transaction(async (tx) => {
+        // 1. Re-calculate Balance INSIDE transaction
+        const now = new Date();
+        const escrowThreshold = new Date(now.getTime() - (3 * 24 * 60 * 60 * 1000));
+
+        // Fetch ledgers
+        const ledger = await tx.templeLedger.findMany({
+            where: { 
+                templeId, 
+                status: "COMPLETED", 
+                type: { not: "WITHDRAWAL" },
+                createdAt: { lte: escrowThreshold }
+            }
+        });
+
+        // Sum settled income
+        const settledIncome = ledger.reduce((sum: number, e: any) => sum + e.amount, 0);
+
+        // Fetch withdrawals (Locked + Paid)
+        const withdrawals = await tx.withdrawalRequest.findMany({
+            where: { templeId, status: { in: ["PENDING", "APPROVED", "PAID"] } }
+        });
+
+        const totalDebits = withdrawals.reduce((sum: number, w: any) => sum + w.amount, 0);
+        const netAvailable = settledIncome - totalDebits;
+
+        // 2. Check sufficiency
+        if (amount > netAvailable) {
+            throw new Error(`Insufficient settled balance. Available: ₹${netAvailable}`);
+        }
+
+        // 3. Create Request
+        await tx.withdrawalRequest.create({
+            data: {
+                templeId,
+                amount,
+                bankDetails,
+                status: "PENDING"
+            }
+        });
     });
 
-    return res.status(201).json({ success: true, message: "Withdrawal request submitted", data: request });
+    return res.status(201).json({ success: true, message: "Withdrawal request submitted successfully" });
+
   } catch (error: any) {
-    return res.status(500).json({ success: false, message: error.message });
+    console.error("Withdrawal Request Error:", error);
+    // Return 400 for business logic errors (like insufficient funds), 500 for others
+    const statusCode = error.message.includes("Insufficient") ? 400 : 500;
+    return res.status(statusCode).json({ success: false, message: error.message });
   }
 };

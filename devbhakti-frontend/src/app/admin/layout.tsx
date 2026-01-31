@@ -79,11 +79,11 @@ const sidebarItems = [
       { label: "Manage CTA Cards", href: "/admin/cms/cta-cards" },
     ]
   },
-  {
-    label: "Marketplace",
-    icon: ShoppingBag,
-    href: "/admin/marketplace",
-  },
+  // {
+  //   label: "Marketplace",
+  //   icon: ShoppingBag,
+  //   href: "/admin/marketplace",
+  // },
   {
     label: "Payouts & Finance",
     icon: IndianRupee,
@@ -94,11 +94,11 @@ const sidebarItems = [
     icon: Video,
     href: "/admin/live-darshan",
   },
-  {
-    label: "Analytics",
-    icon: BarChart3,
-    href: "/admin/analytics",
-  },
+  // {
+  //   label: "Analytics",
+  //   icon: BarChart3,
+  //   href: "/admin/analytics",
+  // },
   {
     label: "Settings",
     icon: Settings,

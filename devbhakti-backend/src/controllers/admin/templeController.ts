@@ -227,7 +227,7 @@ export const updateTemple = async (req: Request, res: Response) => {
 export const toggleTempleStatus = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { isVerified, liveStatus } = req.body;
+    const { isVerified, liveStatus, slug, productCommissionRate, poojaCommissionRate } = req.body;
 
     const result = await prisma.user.update({
       where: { id: String(id) },
@@ -235,7 +235,10 @@ export const toggleTempleStatus = async (req: Request, res: Response) => {
         isVerified: isVerified,
         temple: {
           update: {
-            liveStatus: liveStatus
+            liveStatus: liveStatus,
+            slug: slug || undefined,
+            productCommissionRate: productCommissionRate ? parseFloat(productCommissionRate) : undefined,
+            poojaCommissionRate: poojaCommissionRate ? parseFloat(poojaCommissionRate) : undefined,
           }
         }
       },
@@ -245,6 +248,10 @@ export const toggleTempleStatus = async (req: Request, res: Response) => {
     res.json({ success: true, message: 'Status updated successfully', data: result });
   } catch (error: any) {
     console.error('Toggle status error:', error);
+    // Handle unique constraint error for slug
+    if (error.code === 'P2002' && error.meta?.target.includes('slug')) {
+        return res.status(400).json({ error: 'Slug is already taken. Please choose another one.' });
+    }
     res.status(500).json({ error: error.message || 'Failed to update status' });
   }
 };

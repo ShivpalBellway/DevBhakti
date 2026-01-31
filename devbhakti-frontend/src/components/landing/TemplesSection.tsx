@@ -170,7 +170,7 @@ const TemplesSection: React.FC = () => {
                 className="flex-shrink-0 w-[320px] md:w-[380px]"
               >
                 <div className="relative group/card h-full">
-                  <Link href={`/temples/${temple.id}`}>
+                  <Link href={`/temples/${temple.slug || temple.id}`}>
                     <div className="bg-card rounded-2xl overflow-hidden border-2 border-border/50 shadow-soft hover:shadow-warm transition-all duration-300 hover:-translate-y-2 h-full flex flex-col">
                       {/* Image */}
                       <div className="relative h-48 md:h-56 overflow-hidden">

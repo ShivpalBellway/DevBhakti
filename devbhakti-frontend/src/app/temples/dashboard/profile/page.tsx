@@ -362,7 +362,7 @@ export default function TempleProfilePage() {
                     </Card> */}
 
                     {/* Live Status */}
-                    <Card className="border-none shadow-md rounded-2xl">
+                    {/* <Card className="border-none shadow-md rounded-2xl">
                         <CardHeader className="bg-[#7b4623]/5 border-b pb-4">
                             <CardTitle className="text-lg font-serif text-[#7b4623] flex items-center gap-2">
                                 <div className={`w-2 h-2 rounded-full ${formData.isLive ? 'bg-red-600 animate-pulse' : 'bg-slate-400'}`} />
@@ -381,7 +381,7 @@ export default function TempleProfilePage() {
                                 />
                             </div>
                         </CardContent>
-                    </Card>
+                    </Card> */}
                 </div>
 
                 {/* Right Column - Details */}

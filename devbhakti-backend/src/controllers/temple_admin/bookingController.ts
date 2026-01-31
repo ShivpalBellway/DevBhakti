@@ -17,8 +17,8 @@ export const getTempleBookings = async (req: Request, res: Response) => {
         const bookings = await prisma.poojaBooking.findMany({
             where: { templeId: temple.id },
             include: {
-                pooja: true,
-                user: {
+                Pooja: true,
+                User: {
                     select: {
                         name: true,
                         phone: true,
@@ -54,14 +54,14 @@ export const updateBookingStatus = async (req: Request, res: Response) => {
         // Check if booking belongs to a temple owned by this user
         const booking = await prisma.poojaBooking.findUnique({
             where: { id: id as string },
-            include: { temple: true }
+            include: { Temple: true }
         });
 
         if (!booking) {
             return res.status(404).json({ success: false, message: 'Booking not found' });
         }
 
-        if (booking.temple.userId !== userId) {
+        if (booking.Temple.userId !== userId) {
             return res.status(403).json({ success: false, message: 'Unauthorized' });
         }
 
@@ -88,14 +88,14 @@ export const deleteBooking = async (req: Request, res: Response) => {
 
         const booking = await prisma.poojaBooking.findUnique({
             where: { id: id as string },
-            include: { temple: true }
+            include: { Temple: true }
         });
 
         if (!booking) {
             return res.status(404).json({ success: false, message: 'Booking not found' });
         }
 
-        if (booking.temple.userId !== userId) {
+        if (booking.Temple.userId !== userId) {
             return res.status(403).json({ success: false, message: 'Unauthorized' });
         }
 

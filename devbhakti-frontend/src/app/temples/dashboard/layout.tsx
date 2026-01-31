@@ -61,11 +61,11 @@ const sidebarItems = [
         icon: Calendar,
         href: "/temples/dashboard/bookings",
     },
-    {
-        label: "Live Stream",
-        icon: Video,
-        href: "/temples/dashboard/live-stream",
-    },
+    // {
+    //     label: "Live Stream",
+    //     icon: Video,
+    //     href: "/temples/dashboard/live-stream",
+    // },
     {
         label: "Earnings & Settlement",
         icon: CreditCard,

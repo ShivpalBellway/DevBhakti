@@ -116,16 +116,59 @@ export default function TemplesManagementPage() {
         }
     };
 
-    const handleToggleStatus = async (id: string, currentVerified: boolean, currentLive: boolean) => {
+    const [approvalModalOpen, setApprovalModalOpen] = useState(false);
+    const [approvalData, setApprovalData] = useState({
+        id: "",
+        slug: "",
+        productCommissionRate: "10",
+        poojaCommissionRate: "5"
+    });
+
+    const handleToggleStatus = async (id: string, currentVerified: boolean, currentLive: boolean, templeName?: string) => {
+        if (!currentVerified) {
+            // Opening Approval Modal
+            const generatedSlug = templeName ? templeName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') : "";
+            setApprovalData({
+                id,
+                slug: generatedSlug,
+                productCommissionRate: "10",
+                poojaCommissionRate: "5"
+            });
+            setApprovalModalOpen(true);
+        } else {
+            // Deactivating - Direct Action
+            if (window.confirm("Are you sure you want to deactivate this temple?")) {
+                try {
+                    await toggleTempleStatusAdmin(id, false, currentLive);
+                    toast({ title: "Success", description: "Temple deactivated successfully" });
+                    loadTemples();
+                } catch (error) {
+                    toast({ title: "Error", description: "Failed to update status", variant: "destructive" });
+                }
+            }
+        }
+    };
+
+    const handleConfirmApproval = async () => {
         try {
-            await toggleTempleStatusAdmin(id, !currentVerified, !currentLive);
-            toast({ title: "Success", description: `Temple ${!currentVerified ? 'Approved' : 'Deactivated'} successfully` });
+            await toggleTempleStatusAdmin(
+                approvalData.id,
+                true, // isVerified
+                true, // liveStatus (Default to live on approval? or keep previous? Let's verify and make live usually) 
+                {
+                    slug: approvalData.slug,
+                    productCommissionRate: parseFloat(approvalData.productCommissionRate),
+                    poojaCommissionRate: parseFloat(approvalData.poojaCommissionRate)
+                }
+            );
+            toast({ title: "Success", description: "Temple Approved Successfully" });
+            setApprovalModalOpen(false);
             loadTemples();
-        } catch (error) {
+        } catch (error: any) {
             toast({
                 title: "Error",
-                description: "Failed to update status",
-                variant: "destructive",
+                description: error.response?.data?.error || "Failed to approve temple",
+                variant: "destructive"
             });
         }
     };
@@ -258,7 +301,7 @@ export default function TemplesManagementPage() {
                                                 variant="ghost"
                                                 size="icon"
                                                 className={`h-8 w-8 ${inst.isVerified ? 'text-amber-600' : 'text-emerald-600'}`}
-                                                onClick={() => handleToggleStatus(inst.userId, inst.isVerified, inst.temple?.liveStatus || false)}
+                                                onClick={() => handleToggleStatus(inst.userId, inst.isVerified, inst.temple?.liveStatus || false, inst.templeName)}
                                                 title={inst.isVerified ? "Deactivate" : "Approve Temple"}
                                             >
                                                 {inst.isVerified ? <XCircle className="w-4 h-4" /> : <CheckCircle className="w-4 h-4" />}
@@ -320,6 +363,58 @@ export default function TemplesManagementPage() {
                     </TableBody>
                 </Table>
             </div>
+
+            {/* Approval Modal */}
+            <Dialog open={approvalModalOpen} onOpenChange={setApprovalModalOpen}>
+                <DialogContent className="max-w-md">
+                    <DialogHeader>
+                        <DialogTitle>Approve Temple Account</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium">Public URL Slug</label>
+                            <div className="flex items-center gap-2">
+                                <span className="text-xs text-muted-foreground bg-slate-100 px-2 py-2 rounded-md">devbhakti.in/temples/</span>
+                                <Input
+                                    className="flex-1 font-mono"
+                                    value={approvalData.slug}
+                                    onChange={(e) => setApprovalData({ ...approvalData, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '') })}
+                                    placeholder="kashi-vishwanath"
+                                />
+                            </div>
+                            <p className="text-[10px] text-muted-foreground">Unique identifier for SEO friendly URL.</p>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium">Product Fee (%)</label>
+                                <Input
+                                    type="number"
+                                    value={approvalData.productCommissionRate}
+                                    onChange={(e) => setApprovalData({ ...approvalData, productCommissionRate: e.target.value })}
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium">Pooja Fee (%)</label>
+                                <Input
+                                    type="number"
+                                    value={approvalData.poojaCommissionRate}
+                                    onChange={(e) => setApprovalData({ ...approvalData, poojaCommissionRate: e.target.value })}
+                                />
+                            </div>
+                        </div>
+
+                        <div className="bg-emerald-50 text-emerald-800 text-xs p-3 rounded-lg flex gap-2 items-start">
+                            <CheckCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                            <p>This will activate the temple account, send a welcome email, and make the temple profile public with the configured settings.</p>
+                        </div>
+                    </div>
+                    <div className="flex justify-end gap-3">
+                        <Button variant="ghost" onClick={() => setApprovalModalOpen(false)}>Cancel</Button>
+                        <Button onClick={handleConfirmApproval} className="bg-emerald-600 hover:bg-emerald-700">Approve & Live</Button>
+                    </div>
+                </DialogContent>
+            </Dialog>
 
             <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
                 <DialogContent className="max-w-6xl p-0 overflow-hidden border-none bg-transparent shadow-2xl">

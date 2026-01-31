@@ -161,7 +161,7 @@ const FavoritesPage: React.FC = () => {
                                             transition={{ duration: 0.3 }}
                                         >
                                             <div className="group relative bg-white rounded-[2.5rem] p-4 shadow-sm hover:shadow-2xl transition-all duration-500 border border-orange-50/50 h-full flex flex-col">
-                                                <Link href={`/temples/${temple.id}`}>
+                                                <Link href={`/temples/${temple.slug || temple.id}`}>
                                                     <div className="relative aspect-[4/3] overflow-hidden rounded-[2rem] mb-6">
                                                         <NextImage
                                                             src={getFullImageUrl(temple.image)}
