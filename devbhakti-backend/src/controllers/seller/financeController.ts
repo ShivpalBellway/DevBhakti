@@ -1,0 +1,173 @@
+import { Request, Response } from "express";
+import { PrismaClient } from "@prisma/client";
+
+const prisma = new PrismaClient();
+
+// Helper to get templeId from userId (Seller role)
+const getSellerStoreId = async (userId: string) => {
+    const store = await prisma.temple.findUnique({
+        where: { userId }
+    });
+    return store?.id;
+};
+
+// Get Ledger Entries for a Seller
+export const getSellerLedger = async (req: Request, res: Response) => {
+    try {
+        const userId = (req as any).user.userId;
+        const templeId = await getSellerStoreId(userId);
+
+        if (!templeId) {
+            return res.status(404).json({ success: false, message: "Seller store not found" });
+        }
+
+        const entries = await prisma.templeLedger.findMany({
+            where: { templeId },
+            orderBy: { createdAt: "desc" }
+        });
+
+        return res.status(200).json({ success: true, data: entries });
+    } catch (error: any) {
+        return res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+// Get Financial Summary for Seller Dashboard
+export const getSellerFinanceSummary = async (req: Request, res: Response) => {
+    try {
+        const userId = (req as any).user.userId;
+        const templeId = await getSellerStoreId(userId);
+
+        if (!templeId) {
+            return res.status(404).json({ success: false, message: "Seller store not found" });
+        }
+
+        // Fetch data in parallel
+        const [ledger, withdrawals] = await Promise.all([
+            prisma.templeLedger.findMany({ where: { templeId } }),
+            prisma.withdrawalRequest.findMany({
+                where: { templeId, status: { in: ["PENDING", "APPROVED", "PAID"] } }
+            })
+        ]);
+
+        const now = new Date();
+        // 3 Days escrow window
+        const escrowThreshold = new Date(now.getTime() - (3 * 24 * 60 * 60 * 1000));
+
+        // --- 1. Income Analysis ---
+        const validIncomeEntries = ledger.filter((e: any) =>
+            e.type !== "WITHDRAWAL" && e.status !== "CANCELLED"
+        );
+
+        const totalEarnings = validIncomeEntries.reduce((sum: number, e: any) => sum + (e.grossAmount || 0), 0);
+        const totalCommission = validIncomeEntries.reduce((sum: number, e: any) => sum + (e.commission || 0), 0);
+        const netEarnings = totalEarnings - totalCommission;
+
+        // --- 2. Settlement Analysis ---
+        const completedIncomeEntries = validIncomeEntries.filter((e: any) => e.status === "COMPLETED");
+
+        const settledIncome = completedIncomeEntries
+            .filter((e: any) => new Date(e.createdAt) <= escrowThreshold)
+            .reduce((sum: number, e: any) => sum + e.amount, 0);
+
+        const inEscrow = completedIncomeEntries
+            .filter((e: any) => new Date(e.createdAt) > escrowThreshold)
+            .reduce((sum: number, e: any) => sum + e.amount, 0);
+
+        const pendingFulfillment = validIncomeEntries
+            .filter((e: any) => e.status === "PENDING")
+            .reduce((sum: number, e: any) => sum + e.amount, 0);
+
+        // --- 3. Payout Analysis ---
+        const totalPaidPayouts = withdrawals
+            .filter((w: any) => w.status === "PAID")
+            .reduce((sum: number, w: any) => sum + w.amount, 0);
+
+        const processingWithdrawals = withdrawals
+            .filter((w: any) => w.status === "PENDING" || w.status === "APPROVED")
+            .reduce((sum: number, w: any) => sum + w.amount, 0);
+
+        // --- 4. Final Balance ---
+        const finalAvailable = settledIncome - totalPaidPayouts - processingWithdrawals;
+
+        const pendingOrdersCount = validIncomeEntries.filter((e: any) => e.status === "PENDING").length;
+
+        return res.status(200).json({
+            success: true,
+            data: {
+                totalEarnings, // Gross Sales
+                totalCommission,
+                netEarnings,
+                availableBalance: Math.max(0, finalAvailable),
+                pendingBalance: pendingFulfillment,
+                activeOrdersCount: pendingOrdersCount,
+                inEscrow,
+                processingWithdrawals
+            }
+        });
+
+    } catch (error: any) {
+        console.error("Seller Finance Summary Error:", error);
+        return res.status(500).json({ success: false, message: "Failed to load financial summary" });
+    }
+};
+
+// Request Withdrawal
+export const requestSellerWithdrawal = async (req: Request, res: Response) => {
+    try {
+        const userId = (req as any).user.userId;
+        const templeId = await getSellerStoreId(userId);
+        const { amount, bankDetails } = req.body;
+
+        if (!templeId) {
+            return res.status(404).json({ success: false, message: "Seller store not found" });
+        }
+
+        if (!amount || amount <= 0) {
+            return res.status(400).json({ success: false, message: "Invalid amount" });
+        }
+
+        await prisma.$transaction(async (tx) => {
+            const now = new Date();
+            const escrowThreshold = new Date(now.getTime() - (3 * 24 * 60 * 60 * 1000));
+
+            const ledger = await tx.templeLedger.findMany({
+                where: {
+                    templeId,
+                    status: "COMPLETED",
+                    type: { not: "WITHDRAWAL" },
+                    createdAt: { lte: escrowThreshold }
+                }
+            });
+
+            const settledIncome = ledger.reduce((sum: number, e: any) => sum + e.amount, 0);
+
+            const withdrawals = await tx.withdrawalRequest.findMany({
+                where: { templeId, status: { in: ["PENDING", "APPROVED", "PAID"] } }
+            });
+
+            const totalDebits = withdrawals.reduce((sum: number, w: any) => sum + w.amount, 0);
+            const netAvailable = settledIncome - totalDebits;
+
+            if (amount > netAvailable) {
+                throw new Error(`Insufficient settled balance. Available: ₹${netAvailable}`);
+            }
+
+            await tx.withdrawalRequest.create({
+                data: {
+                    templeId,
+                    amount,
+                    bankDetails,
+                    status: "PENDING"
+                }
+            });
+        });
+
+        return res.status(201).json({ success: true, message: "Withdrawal request submitted successfully" });
+
+    } catch (error: any) {
+        console.error("Seller Withdrawal Request Error:", error);
+        const statusCode = error.message.includes("Insufficient") ? 400 : 500;
+        return res.status(statusCode).json({ success: false, message: error.message });
+    }
+};

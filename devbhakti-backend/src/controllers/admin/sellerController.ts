@@ -26,7 +26,7 @@ const normalizePhone = (phone: string): string => {
 // Create Seller
 export const createSeller = async (req: Request, res: Response) => {
     try {
-        const { storeName, sellerName, email, phone, address } = req.body;
+        const { storeName, sellerName, email, phone, address, productCommissionRate } = req.body;
 
         if (!storeName || !sellerName || !email || !phone) {
             return res.status(400).json({ message: 'Missing required fields' });
@@ -71,7 +71,7 @@ export const createSeller = async (req: Request, res: Response) => {
                     category: 'store', // Identifying as store
                     userId: user.id,
                     openTime: '9:00 AM - 9:00 PM', // Default
-                    productCommissionRate: 10.0, // Default marketplace commission
+                    productCommissionRate: parseFloat(productCommissionRate as string) || 10.0,
                 }
             });
 
@@ -127,6 +127,7 @@ export const getAllSellers = async (req: Request, res: Response) => {
                 // Store details from Temple
                 storeName: store?.name || 'N/A',
                 address: store?.fullAddress || '',
+                productCommissionRate: store?.productCommissionRate || 0,
                 templeId: store?.id,
 
                 // Stats
@@ -179,6 +180,7 @@ export const getSellerById = async (req: Request, res: Response) => {
             joinDate: userAny.createdAt,
             storeName: userAny.temple?.name || 'N/A',
             address: userAny.temple?.fullAddress || '',
+            productCommissionRate: userAny.temple?.productCommissionRate || 0,
             templeId: userAny.temple?.id,
             products: userAny.temple?.products || []
         };
@@ -198,7 +200,7 @@ export const getSellerById = async (req: Request, res: Response) => {
 export const updateSeller = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
-        const { storeName, sellerName, email, phone, status, address } = req.body;
+        const { storeName, sellerName, email, phone, status, address, productCommissionRate } = req.body;
 
         const normalizedPhone = phone ? normalizePhone(phone as string) : undefined;
 
@@ -225,7 +227,8 @@ export const updateSeller = async (req: Request, res: Response) => {
                     data: {
                         name: storeName as string,
                         fullAddress: address as string,
-                        location: address as string // Sync location
+                        location: address as string, // Sync location
+                        productCommissionRate: parseFloat(productCommissionRate as string)
                     }
                 });
             }

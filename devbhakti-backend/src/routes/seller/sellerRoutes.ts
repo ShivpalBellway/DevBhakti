@@ -1,9 +1,25 @@
 import { Router } from "express";
-import { getSellerProfile } from "../../controllers/seller/sellerController";
+import { getSellerProfile, updateSellerProfile } from "../../controllers/seller/sellerController";
 import { authenticate, authorize } from "../../middleware/authMiddleware";
+import multer from 'multer';
+import path from 'path';
+
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, 'uploads/products/');
+    },
+    filename: (req, file, cb) => {
+        cb(null, `seller-profile-${Date.now()}${path.extname(file.originalname)}`);
+    }
+});
+const upload = multer({ storage });
 
 const router = Router();
 
 router.get("/profile", authenticate, authorize('SELLER'), getSellerProfile);
+router.put("/profile", authenticate, authorize('SELLER'), upload.fields([
+    { name: 'image', maxCount: 1 },
+    { name: 'heroImages', maxCount: 5 }
+]), updateSellerProfile);
 
 export default router;

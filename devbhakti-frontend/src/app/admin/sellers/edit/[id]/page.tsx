@@ -13,7 +13,9 @@ import {
     Loader2,
     CheckCircle,
     XCircle,
-    Clock
+    Clock,
+    IndianRupee,
+    TrendingUp
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -44,6 +46,7 @@ export default function EditSellerPage() {
         phone: "",
         status: "",
         address: "",
+        productCommissionRate: "",
     });
 
     useEffect(() => {
@@ -62,6 +65,7 @@ export default function EditSellerPage() {
                 phone: data.phone || "",
                 status: data.status || "inactive",
                 address: data.address || "",
+                productCommissionRate: data.productCommissionRate?.toString() || "10.0",
             });
         } catch (error: any) {
             console.error("Load Seller Error:", error);
@@ -212,6 +216,37 @@ export default function EditSellerPage() {
                                     <p className="text-xs text-muted-foreground mt-2">
                                         Inactivating a seller will prevent them from adding new products and potentially hide their existing catalog.
                                     </p>
+                                </div>
+                            </CardContent>
+                        </Card>
+
+                        <Card className="border-slate-200 shadow-sm border-l-4 border-l-amber-500">
+                            <CardHeader className="bg-amber-50/50 border-b border-amber-100">
+                                <CardTitle className="text-lg flex items-center gap-2">
+                                    <IndianRupee className="w-5 h-5 text-amber-600" />
+                                    Financial & Commission
+                                </CardTitle>
+                                <CardDescription>Update platform fees for this seller's products.</CardDescription>
+                            </CardHeader>
+                            <CardContent className="p-6 space-y-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="productCommissionRate">Marketplace Commission (%)</Label>
+                                    <div className="relative">
+                                        <TrendingUp className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                                        <Input
+                                            id="productCommissionRate"
+                                            name="productCommissionRate"
+                                            type="number"
+                                            step="0.1"
+                                            placeholder="e.g. 10.0"
+                                            className="pl-10"
+                                            value={formData.productCommissionRate}
+                                            onChange={handleChange}
+                                            required
+                                        />
+                                        <div className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">%</div>
+                                    </div>
+                                    <p className="text-[10px] text-muted-foreground">Adjust the percentage deducted from every successful sale.</p>
                                 </div>
                             </CardContent>
                         </Card>

@@ -36,15 +36,15 @@ const templeUpload = upload.fields([
 router.use(authenticate);
 router.use(authorize('ADMIN'));
 
+// Update Request Routes
+router.get('/update-requests', getPendingUpdateRequests);
+router.post('/update-requests/:id/approve', approveUpdateRequest);
+router.post('/update-requests/:id/reject', rejectUpdateRequest);
+
 router.get('/', getAllTemples);
 router.post('/', templeUpload, createTemple);
 router.put('/:id', templeUpload, updateTemple);
 router.patch('/:id/status', toggleTempleStatus);
 router.delete('/:id', deleteTemple);
-
-// Update Request Routes
-router.get('/update-requests', getPendingUpdateRequests);
-router.post('/update-requests/:id/approve', approveUpdateRequest);
-router.post('/update-requests/:id/reject', rejectUpdateRequest);
 
 export default router;

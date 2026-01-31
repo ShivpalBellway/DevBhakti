@@ -9,6 +9,7 @@ import {
     MoreVertical,
     Clock,
     CheckCircle,
+    CheckCircle2,
     XCircle,
     Eye,
     Building2,
@@ -36,10 +37,20 @@ const statusConfig = {
         color: "bg-amber-100 text-amber-700 border-amber-200",
         icon: Clock,
     },
+    COMPLETED: {
+        label: "Completed",
+        color: "bg-emerald-100 text-emerald-700 border-emerald-200",
+        icon: CheckCircle2,
+    },
     REJECTED: {
-        label: "Cancelled",
+        label: "Rejected",
         color: "bg-rose-100 text-rose-700 border-rose-200",
         icon: XCircle,
+    },
+    CANCELLED: {
+        label: "Cancelled",
+        color: "bg-slate-100 text-slate-700 border-slate-200",
+        icon: X,
     },
 };
 
@@ -117,7 +128,7 @@ export default function AdminBookingsPage() {
                     { label: "Total Bookings", value: bookings.length, color: "text-foreground" },
                     { label: "Confirmed", value: bookings.filter(b => b.status === 'BOOKED').length, color: "text-emerald-600" },
                     { label: "Pending", value: bookings.filter(b => b.status === 'PENDING').length, color: "text-amber-600" },
-                    { label: "Rejected", value: bookings.filter(b => b.status === 'REJECTED').length, color: "text-rose-600" },
+                    { label: "Completed", value: bookings.filter(b => b.status === 'COMPLETED').length, color: "text-emerald-700" },
                 ].map((stat) => (
                     <Card key={stat.label}>
                         <CardContent className="p-4">
@@ -140,7 +151,7 @@ export default function AdminBookingsPage() {
                     />
                 </div>
                 <div className="flex gap-2 flex-wrap">
-                    {["all", "BOOKED", "PENDING", "REJECTED"].map((status) => (
+                    {["all", "PENDING", "BOOKED", "COMPLETED", "CANCELLED", "REJECTED"].map((status) => (
                         <Button
                             key={status}
                             variant={statusFilter === status ? "sacred" : "outline"}

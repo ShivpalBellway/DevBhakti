@@ -106,7 +106,7 @@ export const createTemple = async (req: Request, res: Response) => {
         include: { temple: true }
       });
 
-      const templeId = user.temple!.id;
+      const templeId = (user as any).temple!.id;
 
       // 2. Connect Poojas
       if (poojaIds.length > 0) {
@@ -229,14 +229,14 @@ export const toggleTempleStatus = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const { isVerified, isActive, slug, productCommissionRate, poojaCommissionRate } = req.body;
-    
-    console.log('toggleTempleStatus called:', { 
-      id, 
-      isVerified, 
+
+    console.log('toggleTempleStatus called:', {
+      id,
+      isVerified,
       isActive,  // Changed from liveStatus to isActive
-      slug, 
-      productCommissionRate, 
-      poojaCommissionRate 
+      slug,
+      productCommissionRate,
+      poojaCommissionRate
     });
 
     const result = await prisma.user.update({
@@ -255,7 +255,7 @@ export const toggleTempleStatus = async (req: Request, res: Response) => {
       include: { temple: true }
     });
 
-    console.log('Temple status updated:', result.temple);
+    console.log('Temple status updated:', (result as any).temple);
     res.json({ success: true, message: 'Status updated successfully', data: result });
   } catch (error: any) {
     console.error('Toggle status error:', error);
@@ -313,6 +313,7 @@ export const deleteTemple = async (req: Request, res: Response) => {
 // Get Pending Update Requests
 export const getPendingUpdateRequests = async (req: Request, res: Response) => {
   try {
+    console.log("Admin: Fetching pending temple update requests...");
     const requests = await prisma.templeUpdateRequest.findMany({
       where: { status: 'PENDING' },
       include: {
@@ -326,10 +327,15 @@ export const getPendingUpdateRequests = async (req: Request, res: Response) => {
       },
       orderBy: { createdAt: 'desc' }
     });
+    console.log(`Found ${requests.length} pending requests.`);
     res.json(requests);
   } catch (error: any) {
-    console.error('Fetch update requests error:', error);
-    res.status(500).json({ error: 'Failed to fetch update requests' });
+    console.error('Fetch update requests CRITICAL ERROR:', {
+      message: error.message,
+      stack: error.stack,
+      code: error.code
+    });
+    res.status(500).json({ error: 'Failed to fetch update requests', details: error.message });
   }
 };
 
