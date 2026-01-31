@@ -27,10 +27,7 @@ export const getAllTemples = async (req: Request, res: Response) => {
   try {
     const temples = await prisma.user.findMany({
       where: {
-        OR: [
-          { role: 'INSTITUTION' },
-          { temple: { isNot: null } }
-        ]
+        role: 'INSTITUTION'
       },
       include: {
         temple: {
@@ -79,7 +76,7 @@ export const createTemple = async (req: Request, res: Response) => {
           phone: data.phone,
           password: hashedPassword,
           role: 'INSTITUTION',
-          isVerified: true,
+          isVerified: false,
           temple: {
             create: {
               templeId: `TMP-${Math.random().toString(36).substring(2, 8).toUpperCase()}`,
@@ -250,7 +247,7 @@ export const toggleTempleStatus = async (req: Request, res: Response) => {
     console.error('Toggle status error:', error);
     // Handle unique constraint error for slug
     if (error.code === 'P2002' && error.meta?.target.includes('slug')) {
-        return res.status(400).json({ error: 'Slug is already taken. Please choose another one.' });
+      return res.status(400).json({ error: 'Slug is already taken. Please choose another one.' });
     }
     res.status(500).json({ error: error.message || 'Failed to update status' });
   }
@@ -260,7 +257,7 @@ export const toggleTempleStatus = async (req: Request, res: Response) => {
 export const deleteTemple = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    
+
     // Use a transaction to delete both records safely
     await prisma.$transaction(async (tx) => {
       // First find the user to get the temple ID
@@ -268,30 +265,30 @@ export const deleteTemple = async (req: Request, res: Response) => {
         where: { id: String(id) },
         include: { temple: true }
       });
-      
+
       if (!user) {
         throw new Error('Temple account not found');
       }
-      
+
       // Delete the temple record first (if it exists)
       if (user.temple) {
         await tx.temple.delete({
           where: { id: user.temple.id }
         });
       }
-      
+
       // Then delete the user record
       await tx.user.delete({ where: { id: String(id) } });
     });
-    
+
     res.json({ message: 'Temple account deleted successfully' });
   } catch (error: any) {
     console.error('Delete error:', error);
-    
+
     // If it's a foreign key constraint error, provide more specific message
     if (error.code === 'P2002') {
-      res.status(400).json({ 
-        error: 'Cannot delete temple account. Please delete all associated poojas and events first.' 
+      res.status(400).json({
+        error: 'Cannot delete temple account. Please delete all associated poojas and events first.'
       });
     } else if (error.message === 'Temple account not found') {
       res.status(404).json({ error: 'Temple account not found' });

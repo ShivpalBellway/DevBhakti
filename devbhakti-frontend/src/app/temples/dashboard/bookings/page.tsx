@@ -49,6 +49,10 @@ const statusConfig = {
         color: "bg-amber-100 text-amber-700 border-amber-200",
         icon: Clock,
     },
+    COMPLETED: {
+        color: "bg-blue-100 text-blue-700 border-blue-200",
+        icon: CheckCircle2,
+    },
     REJECTED: {
         color: "bg-rose-100 text-rose-700 border-rose-200",
         icon: XCircle,

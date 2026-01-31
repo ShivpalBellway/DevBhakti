@@ -57,7 +57,7 @@ export const createSeller = async (req: Request, res: Response) => {
                     email: email as string,
                     phone: normalizedPhone,
                     role: 'SELLER',
-                    isVerified: true, // Auto-verify for admin created
+                    isVerified: false, // Set to false to require approval
                 }
             });
 
@@ -153,7 +153,7 @@ export const getSellerById = async (req: Request, res: Response) => {
         const { id } = req.params;
 
         const user = await prisma.user.findUnique({
-            where: { id },
+            where: { id: id as string },
             include: {
                 temple: {
                     include: {
@@ -206,7 +206,7 @@ export const updateSeller = async (req: Request, res: Response) => {
         await prisma.$transaction(async (prisma) => {
             // Update User
             await prisma.user.update({
-                where: { id },
+                where: { id: id as string },
                 data: {
                     name: sellerName as string,
                     email: email as string,
@@ -217,7 +217,7 @@ export const updateSeller = async (req: Request, res: Response) => {
 
             // Update Temple (Store)
             // First find the temple associated with this user
-            const user = await prisma.user.findUnique({ where: { id }, include: { temple: true } });
+            const user = await prisma.user.findUnique({ where: { id: id as string }, include: { temple: true } });
 
             if (user && (user as any).temple) {
                 await prisma.temple.update({
@@ -247,7 +247,7 @@ export const deleteSeller = async (req: Request, res: Response) => {
         await prisma.$transaction(async (prisma) => {
             // Check if temple exists
             const user = await prisma.user.findUnique({
-                where: { id },
+                where: { id: id as string },
                 include: { temple: true }
             });
 
@@ -258,7 +258,7 @@ export const deleteSeller = async (req: Request, res: Response) => {
             }
 
             await prisma.user.delete({
-                where: { id }
+                where: { id: id as string }
             });
         });
 
@@ -279,7 +279,7 @@ export const toggleSellerStatus = async (req: Request, res: Response) => {
         const isVerified = status === 'active';
 
         await prisma.user.update({
-            where: { id },
+            where: { id: id as string },
             data: { isVerified }
         });
 

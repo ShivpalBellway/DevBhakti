@@ -273,7 +273,9 @@ enum UserRole {
 }
 
 enum BookingStatus {
+  PENDING
   BOOKED
+  COMPLETED
   REJECTED
 }
 

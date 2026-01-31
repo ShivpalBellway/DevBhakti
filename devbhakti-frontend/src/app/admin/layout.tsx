@@ -95,7 +95,6 @@ const sidebarItems = [
     icon: Video,
     href: "/admin/live-darshan",
   },
-<<<<<<< HEAD
   {
     label: "Sellers",
     icon: Store,
@@ -106,13 +105,11 @@ const sidebarItems = [
     icon: BarChart3,
     href: "/admin/analytics",
   },
-=======
   // {
   //   label: "Analytics",
   //   icon: BarChart3,
   //   href: "/admin/analytics",
   // },
->>>>>>> f45d50b5c47d1d0546ee4b185536f3e8e2d8fdd5
   {
     label: "Settings",
     icon: Settings,

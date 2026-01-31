@@ -33,7 +33,7 @@ const sellerSidebarItems = [
         href: "/seller/dashboard/products",
         subItems: [
             { label: "All Products", href: "/seller/dashboard/products" },
-            { label: "Add New Product", href: "/seller/dashboard/products/create" },
+
         ]
     },
     {
@@ -51,11 +51,11 @@ const sellerSidebarItems = [
         icon: Store,
         href: "/seller/dashboard/profile",
     },
-    {
-        label: "Settings",
-        icon: Settings,
-        href: "/seller/dashboard/settings",
-    },
+    // {
+    //     label: "Settings",
+    //     icon: Settings,
+    //     href: "/seller/dashboard/settings",
+    // },
 ];
 
 export default function SellerDashboardLayout({ children }: { children: React.ReactNode }) {
@@ -282,7 +282,10 @@ export default function SellerDashboardLayout({ children }: { children: React.Re
                     </div>
 
                     <div className="flex items-center gap-4">
-                        <Button className="bg-sidebar-primary hover:bg-sidebar-primary/90 text-sidebar-primary-foreground gap-2 rounded-full shadow-lg">
+                        <Button
+                            onClick={() => router.push('/seller/dashboard/products/create')}
+                            className="bg-sidebar-primary hover:bg-sidebar-primary/90 text-sidebar-primary-foreground gap-2 rounded-full shadow-lg"
+                        >
                             <PlusCircle className="w-4 h-4" />
                             <span className="hidden sm:inline">Add Product</span>
                         </Button>

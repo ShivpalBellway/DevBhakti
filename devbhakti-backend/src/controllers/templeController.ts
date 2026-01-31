@@ -27,7 +27,8 @@ export const getAllTemples = async (req: Request, res: Response) => {
     const temples = await prisma.temple.findMany({
       where: {
         user: {
-          isVerified: true
+          isVerified: true,
+          role: 'INSTITUTION'
         }
       },
       include: {
@@ -74,11 +75,12 @@ export const getTempleById = async (req: Request, res: Response) => {
     const temple = await prisma.temple.findFirst({
       where: {
         OR: [
-            { id: id as string },
-            { slug: id as string }
+          { id: id as string },
+          { slug: id as string }
         ],
         user: {
-          isVerified: true
+          isVerified: true,
+          role: 'INSTITUTION'
         }
       },
       include: {
@@ -105,7 +107,7 @@ export const getTempleById = async (req: Request, res: Response) => {
         where: {
           userId_templeId: {
             userId: userId,
-            templeId: temple.id 
+            templeId: temple.id
           }
         }
       });
@@ -141,7 +143,8 @@ export const getPoojaById = async (req: Request, res: Response) => {
         id: String(id),
         temple: {
           user: {
-            isVerified: true
+            isVerified: true,
+            role: 'INSTITUTION'
           }
         }
       },
@@ -184,7 +187,8 @@ export const getAllPoojas = async (req: Request, res: Response) => {
         status: true,
         temple: {
           user: {
-            isVerified: true
+            isVerified: true,
+            role: 'INSTITUTION'
           }
         }
       },

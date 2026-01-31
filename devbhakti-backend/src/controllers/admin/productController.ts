@@ -9,7 +9,7 @@ export const createProduct = async (req: Request, res: Response) => {
     // Handle both JSON and FormData
     let name, description, category, categoryId, templeId, status, variants, image;
     let highlights, longDescription, shippingInfo, origin, rating;
-    
+
     if (req.is('multipart/form-data')) {
       // FormData handling
       name = req.body.name;
@@ -18,29 +18,29 @@ export const createProduct = async (req: Request, res: Response) => {
       categoryId = req.body.category || null; // Use category field as categoryId
       templeId = req.body.templeId || null;
       status = req.body.status || "pending";
-      
+
       highlights = req.body.highlights;
       longDescription = req.body.longDescription;
       shippingInfo = req.body.shippingInfo;
       origin = req.body.origin;
       rating = req.body.rating ? parseFloat(req.body.rating) : undefined;
-      
+
       // Parse variants from JSON string
       variants = req.body.variants ? JSON.parse(req.body.variants) : [];
-      
+
       // Handle file upload
       if (req.file) {
         image = `/uploads/products/${req.file.filename}`;
       }
     } else {
       // JSON handling
-      const { 
-        name: productName, 
-        description: productDescription, 
-        category: productCategory, 
-        categoryId: productCategoryId, 
-        templeId: productTempleId, 
-        status: productStatus = "pending", 
+      const {
+        name: productName,
+        description: productDescription,
+        category: productCategory,
+        categoryId: productCategoryId,
+        templeId: productTempleId,
+        status: productStatus = "pending",
         variants: productVariants,
         highlights: productHighlights,
         longDescription: productLongDescription,
@@ -48,7 +48,7 @@ export const createProduct = async (req: Request, res: Response) => {
         origin: productOrigin,
         rating: productRating
       } = req.body;
-      
+
       name = productName;
       description = productDescription;
       category = productCategory;
@@ -56,7 +56,7 @@ export const createProduct = async (req: Request, res: Response) => {
       templeId = productTempleId || null;
       status = productStatus;
       variants = productVariants || [];
-      
+
       highlights = productHighlights;
       longDescription = productLongDescription;
       shippingInfo = productShippingInfo;
@@ -103,7 +103,7 @@ export const createProduct = async (req: Request, res: Response) => {
     }
 
     // Validate each variant
-    const invalidVariants = variants.filter((variant: any) => 
+    const invalidVariants = variants.filter((variant: any) =>
       !variant.name || !variant.price || variant.price <= 0
     );
 
@@ -165,7 +165,7 @@ export const createProduct = async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error("Create Product Error:", error);
-    
+
     // Handle specific database errors
     if (error instanceof Error) {
       if (error.message.includes('Unique constraint')) {
@@ -175,7 +175,7 @@ export const createProduct = async (req: Request, res: Response) => {
           details: error.message
         });
       }
-      
+
       if (error.message.includes('Foreign key constraint')) {
         return res.status(400).json({
           success: false,
@@ -198,27 +198,27 @@ export const createProduct = async (req: Request, res: Response) => {
 export const getAllProducts = async (req: Request, res: Response) => {
   try {
     const { page = 1, limit = 10, search, category, status, templeId } = req.query;
-    
+
     const skip = (Number(page) - 1) * Number(limit);
-    
+
     // Build where clause
     const where: any = {};
-    
+
     if (search) {
       where.OR = [
         { name: { contains: search as string, mode: "insensitive" } },
         { description: { contains: search as string, mode: "insensitive" } }
       ];
     }
-    
+
     if (category) {
       where.category = category;
     }
-    
+
     if (status) {
       where.status = status;
     }
-    
+
     if (templeId) {
       where.templeId = templeId;
     }
@@ -265,7 +265,7 @@ export const getAllProducts = async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error("Get All Products Error:", error);
-    
+
     res.status(500).json({
       success: false,
       message: "Failed to retrieve products",
@@ -281,9 +281,15 @@ export const getProductById = async (req: Request, res: Response) => {
     const { id } = req.params;
 
     const product = await prisma.product.findUnique({
-      where: { 
-        id,
-        status: "approved" // Only return approved products
+      where: {
+        id: id as string,
+        status: "approved", // Only return approved products
+        temple: {
+          user: {
+            isVerified: true,
+            role: { in: ['INSTITUTION', 'SELLER'] }
+          }
+        }
       },
       include: {
         variants: true,
@@ -329,11 +335,11 @@ export const getProductById = async (req: Request, res: Response) => {
 export const updateProduct = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    
+
     // Handle both JSON and FormData
     let name, description, category, categoryId, templeId, status, variants, image, removeImage;
     let highlights, longDescription, shippingInfo, origin, rating;
-    
+
     if (req.is('multipart/form-data')) {
       // FormData handling
       name = req.body.name;
@@ -342,32 +348,32 @@ export const updateProduct = async (req: Request, res: Response) => {
       categoryId = req.body.category || null; // Use category field as categoryId
       templeId = req.body.templeId || null;
       status = req.body.status;
-      
+
       highlights = req.body.highlights;
       longDescription = req.body.longDescription;
       shippingInfo = req.body.shippingInfo;
       origin = req.body.origin;
       rating = req.body.rating ? parseFloat(req.body.rating) : undefined;
-      
+
       // Parse variants from JSON string
       variants = req.body.variants ? JSON.parse(req.body.variants) : [];
-      
+
       // Handle file upload
       if (req.file) {
         image = `/uploads/products/${req.file.filename}`;
       }
-      
+
       // Handle image removal flag
       removeImage = req.body.removeImage === 'true';
     } else {
       // JSON handling
-      const { 
-        name: productName, 
-        description: productDescription, 
-        category: productCategory, 
-        categoryId: productCategoryId, 
-        templeId: productTempleId, 
-        status: productStatus, 
+      const {
+        name: productName,
+        description: productDescription,
+        category: productCategory,
+        categoryId: productCategoryId,
+        templeId: productTempleId,
+        status: productStatus,
         variants: productVariants,
         highlights: productHighlights,
         longDescription: productLongDescription,
@@ -375,7 +381,7 @@ export const updateProduct = async (req: Request, res: Response) => {
         origin: productOrigin,
         rating: productRating
       } = req.body;
-      
+
       name = productName;
       description = productDescription;
       category = productCategory;
@@ -383,7 +389,7 @@ export const updateProduct = async (req: Request, res: Response) => {
       templeId = productTempleId || null;
       status = productStatus;
       variants = productVariants || [];
-      
+
       highlights = productHighlights;
       longDescription = productLongDescription;
       shippingInfo = productShippingInfo;
@@ -393,7 +399,7 @@ export const updateProduct = async (req: Request, res: Response) => {
 
     // Check if product exists
     const existingProduct = await prisma.product.findUnique({
-      where: { id },
+      where: { id: id as string },
       include: { variants: true }
     });
 
@@ -443,7 +449,7 @@ export const updateProduct = async (req: Request, res: Response) => {
     }
 
     // Validate each variant
-    const invalidVariants = variants.filter((variant: any) => 
+    const invalidVariants = variants.filter((variant: any) =>
       !variant.name || !variant.price || variant.price <= 0
     );
 
@@ -463,7 +469,7 @@ export const updateProduct = async (req: Request, res: Response) => {
     if (categoryId !== undefined) updateData.categoryId = categoryId as string;
     if (status) updateData.status = status as string;
     if (templeId !== undefined) updateData.templeId = templeId === "general" ? null : (templeId as string);
-    
+
     if (highlights !== undefined) updateData.highlights = highlights as string;
     if (longDescription !== undefined) updateData.longDescription = longDescription as string;
     if (shippingInfo !== undefined) updateData.shippingInfo = shippingInfo as string;
@@ -481,7 +487,7 @@ export const updateProduct = async (req: Request, res: Response) => {
     if (variants && Array.isArray(variants)) {
       // Delete existing variants
       await prisma.productVariant.deleteMany({
-        where: { productId: id }
+        where: { productId: id as string }
       });
 
       // Create new variants
@@ -524,7 +530,7 @@ export const updateProduct = async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error("Update Product Error:", error);
-    
+
     // Handle specific database errors
     if (error instanceof Error) {
       if (error.message.includes('Unique constraint')) {
@@ -534,7 +540,7 @@ export const updateProduct = async (req: Request, res: Response) => {
           details: error.message
         });
       }
-      
+
       if (error.message.includes('Foreign key constraint')) {
         return res.status(400).json({
           success: false,
@@ -572,7 +578,7 @@ export const deleteProduct = async (req: Request, res: Response) => {
 
     // Delete product (variants will be deleted due to cascade)
     await prisma.product.delete({
-      where: { id }
+      where: { id: id as string }
     });
 
     res.status(200).json({
@@ -648,7 +654,7 @@ export const getProductsByTemple = async (req: Request, res: Response) => {
     const { page = 1, limit = 10, status } = req.query;
 
     const skip = (Number(page) - 1) * Number(limit);
-    
+
     const where: any = { templeId };
     if (status) {
       where.status = status;
@@ -706,24 +712,32 @@ export const getProductsByTemple = async (req: Request, res: Response) => {
 export const getPublicProducts = async (req: Request, res: Response) => {
   try {
     const { page = 1, limit = 10, search, category, templeId } = req.query;
-    
+
     const skip = (Number(page) - 1) * Number(limit);
-    
-    const where: any = { status: "approved" };
-    
+
+    const where: any = {
+      status: "approved",
+      temple: {
+        user: {
+          isVerified: true,
+          role: { in: ['INSTITUTION', 'SELLER'] }
+        }
+      }
+    };
+
     if (search) {
       where.OR = [
         { name: { contains: search as string, mode: "insensitive" } },
         { description: { contains: search as string, mode: "insensitive" } }
       ];
     }
-    
+
     if (category) {
       where.categoryObj = {
         name: { contains: category as string, mode: "insensitive" }
       };
     }
-    
+
     if (templeId) {
       where.templeId = templeId;
     }

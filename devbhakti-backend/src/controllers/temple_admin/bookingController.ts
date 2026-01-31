@@ -17,8 +17,8 @@ export const getTempleBookings = async (req: Request, res: Response) => {
         const bookings = await prisma.poojaBooking.findMany({
             where: { templeId: temple.id },
             include: {
-                Pooja: true,
-                User: {
+                pooja: true,
+                user: {
                     select: {
                         name: true,
                         phone: true,
@@ -47,21 +47,21 @@ export const updateBookingStatus = async (req: Request, res: Response) => {
         const { status } = req.body;
         const { userId } = (req as any).user;
 
-        if (!['BOOKED', 'REJECTED'].includes(status)) {
+        if (!['PENDING', 'BOOKED', 'COMPLETED', 'REJECTED'].includes(status)) {
             return res.status(400).json({ success: false, message: 'Invalid status' });
         }
 
         // Check if booking belongs to a temple owned by this user
         const booking = await prisma.poojaBooking.findUnique({
             where: { id: id as string },
-            include: { Temple: true }
+            include: { temple: true }
         });
 
         if (!booking) {
             return res.status(404).json({ success: false, message: 'Booking not found' });
         }
 
-        if (booking.Temple.userId !== userId) {
+        if (booking.temple.userId !== userId) {
             return res.status(403).json({ success: false, message: 'Unauthorized' });
         }
 
@@ -88,14 +88,14 @@ export const deleteBooking = async (req: Request, res: Response) => {
 
         const booking = await prisma.poojaBooking.findUnique({
             where: { id: id as string },
-            include: { Temple: true }
+            include: { temple: true }
         });
 
         if (!booking) {
             return res.status(404).json({ success: false, message: 'Booking not found' });
         }
 
-        if (booking.Temple.userId !== userId) {
+        if (booking.temple.userId !== userId) {
             return res.status(403).json({ success: false, message: 'Unauthorized' });
         }
 
