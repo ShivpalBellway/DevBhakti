@@ -127,7 +127,7 @@ export const getMyTempleProfile = async (req: Request, res: Response) => {
   console.log("Fetching temple profile for user...");
   try {
     const userId = (req as any).user?.userId;
-    
+
     if (!userId) {
       console.error("No userId found in request - Authentication failure suspected");
       return res.status(401).json({ success: false, message: 'Unauthenticated' });
@@ -149,7 +149,7 @@ export const getMyTempleProfile = async (req: Request, res: Response) => {
 
     if (!temple) {
       console.log(`No temple found for userId: ${userId}`);
-      return res.status(404).json({ success: false, message: 'Temple record not found for this account' });
+      return res.status(200).json({ success: false, message: 'Temple record not found for this account. Please register your temple.' });
     }
 
     console.log("Temple profile fetched successfully");
@@ -176,7 +176,7 @@ export const updateMyTempleProfile = async (req: Request, res: Response) => {
 
     // Define sensitive fields
     const sensitiveFields = ['name', 'location', 'category', 'fullAddress', 'image', 'heroImages', 'gallery'];
-    
+
     // Check if any sensitive field is being updated
     const updateData: any = {};
     const sensitiveChanges: any = {};
@@ -256,10 +256,10 @@ export const updateMyTempleProfile = async (req: Request, res: Response) => {
         });
       }
 
-      return res.json({ 
-        success: true, 
+      return res.json({
+        success: true,
         message: 'Sensitive fields update request submitted for admin approval. Non-sensitive fields (if any) updated.',
-        pendingApproval: true 
+        pendingApproval: true
       });
     }
 

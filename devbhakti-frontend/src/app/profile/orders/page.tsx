@@ -67,8 +67,9 @@ export default function MyOrdersPage() {
     return (
         <div className="min-h-screen bg-[#FDFCF6]">
             <Navbar />
-            <main className="pt-28 pb-20 container mx-auto px-4">
-                <div className="max-w-4xl mx-auto">
+            <main className="pt-28 pb-20 container mx-auto px-4 relative">
+                <div className="absolute inset-0 pattern-sacred opacity-40 pointer-events-none" />
+                <div className="max-w-4xl mx-auto relative z-10">
                     <div className="flex items-center gap-4 mb-8">
                         <Button variant="ghost" size="icon" onClick={() => router.push("/profile")} className="rounded-full">
                             <ArrowLeft className="w-5 h-5 text-[#794A05]" />

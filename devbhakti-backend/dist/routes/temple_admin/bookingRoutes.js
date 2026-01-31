@@ -1,0 +1,12 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const bookingController_1 = require("../../controllers/temple_admin/bookingController");
+const authMiddleware_1 = require("../../middleware/authMiddleware");
+const router = (0, express_1.Router)();
+router.use(authMiddleware_1.authenticate);
+router.use((0, authMiddleware_1.authorize)('INSTITUTION'));
+router.get('/', bookingController_1.getTempleBookings);
+router.patch('/:id/status', bookingController_1.updateBookingStatus);
+router.delete('/:id', bookingController_1.deleteBooking);
+exports.default = router;

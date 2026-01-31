@@ -1,45 +1,40 @@
-import { Request, Response } from 'express';
-import { prisma } from '../../lib/prisma';
-
-export const getMyPoojas = async (req: Request, res: Response) => {
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.togglePoojaStatus = exports.deleteMyPooja = exports.updateMyPooja = exports.createMyPooja = exports.getMyPoojas = void 0;
+const prisma_1 = require("../../lib/prisma");
+const getMyPoojas = async (req, res) => {
     try {
-        const userId = (req as any).user.userId;
-
-        const temple = await prisma.temple.findUnique({
+        const userId = req.user.userId;
+        const temple = await prisma_1.prisma.temple.findUnique({
             where: { userId }
         });
-
         if (!temple) {
             return res.status(200).json({ success: true, data: [], message: 'No temple associated with this account. Please complete your profile.' });
         }
-
-        const poojas = await prisma.pooja.findMany({
+        const poojas = await prisma_1.prisma.pooja.findMany({
             where: { templeId: temple.id },
             orderBy: { createdAt: 'desc' }
         });
-
         res.json({ success: true, data: poojas });
-    } catch (error: any) {
+    }
+    catch (error) {
         console.error('Fetch Poojas Error:', error);
         res.status(500).json({ success: false, message: error.message });
     }
 };
-
-export const createMyPooja = async (req: Request, res: Response) => {
+exports.getMyPoojas = getMyPoojas;
+const createMyPooja = async (req, res) => {
     try {
-        const userId = (req as any).user.userId;
+        const userId = req.user.userId;
         const file = req.file;
         const data = req.body;
-
-        const temple = await prisma.temple.findUnique({
+        const temple = await prisma_1.prisma.temple.findUnique({
             where: { userId }
         });
-
         if (!temple) {
             return res.status(404).json({ success: false, message: 'Temple not found' });
         }
-
-        const pooja = await prisma.pooja.create({
+        const pooja = await prisma_1.prisma.pooja.create({
             data: {
                 name: data.name,
                 category: data.category,
@@ -60,34 +55,30 @@ export const createMyPooja = async (req: Request, res: Response) => {
                 status: data.status === 'false' ? false : true
             }
         });
-
         res.status(201).json({ success: true, data: pooja });
-    } catch (error: any) {
+    }
+    catch (error) {
         console.error('Create Pooja Error:', error);
         res.status(500).json({ success: false, message: error.message });
     }
 };
-
-export const updateMyPooja = async (req: Request, res: Response) => {
+exports.createMyPooja = createMyPooja;
+const updateMyPooja = async (req, res) => {
     try {
         const { id } = req.params;
-        const userId = (req as any).user.userId;
+        const userId = req.user.userId;
         const file = req.file;
         const data = req.body;
-
-        const temple = await prisma.temple.findUnique({
+        const temple = await prisma_1.prisma.temple.findUnique({
             where: { userId }
         });
-
-        const existingPooja = await prisma.pooja.findFirst({
+        const existingPooja = await prisma_1.prisma.pooja.findFirst({
             where: { id: String(id), templeId: temple?.id }
         });
-
         if (!existingPooja) {
             return res.status(404).json({ success: false, message: 'Pooja not found or unauthorized' });
         }
-
-        const updatedPooja = await prisma.pooja.update({
+        const updatedPooja = await prisma_1.prisma.pooja.update({
             where: { id: String(id) },
             data: {
                 name: data.name,
@@ -108,64 +99,58 @@ export const updateMyPooja = async (req: Request, res: Response) => {
                 ...(file && { image: `/uploads/poojas/${file.filename}` })
             }
         });
-
         res.json({ success: true, data: updatedPooja });
-    } catch (error: any) {
+    }
+    catch (error) {
         console.error('Update Pooja Error:', error);
         res.status(500).json({ success: false, message: error.message });
     }
 };
-
-export const deleteMyPooja = async (req: Request, res: Response) => {
+exports.updateMyPooja = updateMyPooja;
+const deleteMyPooja = async (req, res) => {
     try {
         const { id } = req.params;
-        const userId = (req as any).user.userId;
-
-        const temple = await prisma.temple.findUnique({
+        const userId = req.user.userId;
+        const temple = await prisma_1.prisma.temple.findUnique({
             where: { userId }
         });
-
-        const pooja = await prisma.pooja.findFirst({
+        const pooja = await prisma_1.prisma.pooja.findFirst({
             where: { id: String(id), templeId: temple?.id }
         });
-
         if (!pooja) {
             return res.status(404).json({ success: false, message: 'Pooja not found or unauthorized' });
         }
-
-        await prisma.pooja.delete({ where: { id: String(id) } });
+        await prisma_1.prisma.pooja.delete({ where: { id: String(id) } });
         res.json({ success: true, message: 'Pooja deleted successfully' });
-    } catch (error: any) {
+    }
+    catch (error) {
         console.error('Delete Pooja Error:', error);
         res.status(500).json({ success: false, message: error.message });
     }
 };
-
-export const togglePoojaStatus = async (req: Request, res: Response) => {
+exports.deleteMyPooja = deleteMyPooja;
+const togglePoojaStatus = async (req, res) => {
     try {
         const { id } = req.params;
-        const userId = (req as any).user.userId;
-
-        const temple = await prisma.temple.findUnique({
+        const userId = req.user.userId;
+        const temple = await prisma_1.prisma.temple.findUnique({
             where: { userId }
         });
-
-        const pooja = await prisma.pooja.findFirst({
+        const pooja = await prisma_1.prisma.pooja.findFirst({
             where: { id: String(id), templeId: temple?.id }
         });
-
         if (!pooja) {
             return res.status(404).json({ success: false, message: 'Pooja not found or unauthorized' });
         }
-
-        const updatedPooja = await prisma.pooja.update({
+        const updatedPooja = await prisma_1.prisma.pooja.update({
             where: { id: String(id) },
             data: { status: !pooja.status }
         });
-
         res.json({ success: true, data: updatedPooja });
-    } catch (error: any) {
+    }
+    catch (error) {
         console.error('Toggle Pooja Status Error:', error);
         res.status(500).json({ success: false, message: error.message });
     }
 };
+exports.togglePoojaStatus = togglePoojaStatus;

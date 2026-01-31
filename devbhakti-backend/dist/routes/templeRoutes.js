@@ -1,0 +1,11 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const templeController_1 = require("../controllers/templeController");
+const router = (0, express_1.Router)();
+router.get('/', templeController_1.getAllTemples);
+router.get('/poojas', templeController_1.getAllPoojas);
+router.get('/:id', templeController_1.getTempleById);
+router.get('/poojas/:id', templeController_1.getPoojaById);
+router.post('/register', templeController_1.registerTemple);
+exports.default = router;
