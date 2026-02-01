@@ -34,6 +34,7 @@ export const getCart = async (req: Request, res: Response) => {
         });
 
         if (!cart) {
+<<<<<<< HEAD
             cart = await (prisma.cart.create({
                 data: { userId },
                 include: {
@@ -63,6 +64,16 @@ export const getCart = async (req: Request, res: Response) => {
 
         // Transform data to match frontend structure
         const formattedItems = (cart as any).items?.map((item: any) => ({
+=======
+            cart = await prisma.cart.create({
+                data: { userId },
+                include: { items: true } // Initially empty
+            });
+        }
+
+        // Transform data to match frontend structure
+        const formattedItems = cart.items?.map(item => ({
+>>>>>>> a039abdbf46f6d92de19b9fd663d531b9bf8c5e3
             id: item.id,
             productId: item.productId,
             variantId: item.variantId,

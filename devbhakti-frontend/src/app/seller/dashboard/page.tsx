@@ -174,15 +174,16 @@ export default function SellerDashboard() {
                                 <div>
                                     <p className="text-2xl font-bold text-slate-900">{stat.value}</p>
                                     <p className="text-sm font-medium text-slate-500 mt-1">{stat.title}</p>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    </motion.div>
-                ))}
-            </div>
+                                </div >
+                            </CardContent >
+                        </Card >
+                    </motion.div >
+                ))
+                }
+            </div >
 
             {/* Revenue Chart Section */}
-            <motion.div
+            < motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.4, delay: 0.3 }}
@@ -233,12 +234,12 @@ export default function SellerDashboard() {
                         </ResponsiveContainer>
                     </CardContent>
                 </Card>
-            </motion.div>
+            </motion.div >
 
             {/* Main content grid */}
-            <div className="grid lg:grid-cols-3 gap-6">
+            < div className="grid lg:grid-cols-3 gap-6" >
                 {/* Recent Activity */}
-                <motion.div
+                < motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.4, delay: 0.4 }}
@@ -291,10 +292,10 @@ export default function SellerDashboard() {
                             </div>
                         </CardContent>
                     </Card>
-                </motion.div>
+                </motion.div >
 
                 {/* Store Info */}
-                <motion.div
+                < motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.4, delay: 0.5 }}
@@ -324,7 +325,7 @@ export default function SellerDashboard() {
                                         <div className="flex justify-between items-center text-sm font-bold">
                                             <span className="text-slate-400">Total Products</span>
                                             <span className="text-slate-900">{totalProductsCount}</span>
-                                        </div>
+                                        </div >
                                         <div className="flex justify-between items-center text-sm font-bold">
                                             <span className="text-slate-400">Total Orders</span>
                                             <span className="text-slate-900">{recentOrders.length}</span>
@@ -333,8 +334,8 @@ export default function SellerDashboard() {
                                             <span className="text-slate-400">Net Revenue</span>
                                             <span className="text-[#794A05]">₹{(statsData?.netEarnings || 0).toLocaleString()}</span>
                                         </div>
-                                    </div>
-                                </div>
+                                    </div >
+                                </div >
                                 <div className="p-4 bg-emerald-50 rounded-2xl border border-emerald-100">
                                     <div className="flex items-center gap-2 mb-1">
                                         <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
@@ -342,11 +343,11 @@ export default function SellerDashboard() {
                                     </div>
                                     <p className="text-xs text-emerald-800 font-bold">₹{(statsData?.availableBalance || 0).toLocaleString()} ready for withdrawal</p>
                                 </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-                </motion.div>
-            </div>
-        </div>
+                            </div >
+                        </CardContent >
+                    </Card >
+                </motion.div >
+            </div >
+        </div >
     );
 }

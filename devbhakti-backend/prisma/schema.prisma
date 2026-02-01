@@ -22,7 +22,10 @@ model User {
   profileImage String?
   favorites    Favorite[]
   temple       Temple?
+<<<<<<< HEAD
   sellerProfile SellerProfile?
+=======
+>>>>>>> a039abdbf46f6d92de19b9fd663d531b9bf8c5e3
   bookings     PoojaBooking[]
   cart         Cart?
   orders       Order[]
@@ -94,6 +97,7 @@ model Temple {
   updateRequests TempleUpdateRequest[]
 }
 
+<<<<<<< HEAD
 model SellerProfile {
   id             String                @id @default(cuid())
   name           String
@@ -133,6 +137,8 @@ model SellerProfile {
   withdrawals    WithdrawalRequest[]
 }
 
+=======
+>>>>>>> a039abdbf46f6d92de19b9fd663d531b9bf8c5e3
 model TempleUpdateRequest {
   id            String   @id @default(cuid())
   templeId      String
@@ -238,14 +244,20 @@ model Product {
   status      String           @default("pending")
   image       String?
   templeId    String?
+<<<<<<< HEAD
   sellerId    String?          // Add sellerId
+=======
+>>>>>>> a039abdbf46f6d92de19b9fd663d531b9bf8c5e3
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt
   categoryId  String?
   favorites   Favorite[]
   categoryObj ProductCategory? @relation(fields: [categoryId], references: [id])
   temple      Temple?          @relation(fields: [templeId], references: [id], onDelete: Cascade)
+<<<<<<< HEAD
   seller      SellerProfile?   @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+=======
+>>>>>>> a039abdbf46f6d92de19b9fd663d531b9bf8c5e3
   variants    ProductVariant[]
   orderItems  OrderItem[]
   cartItems   CartItem[]
@@ -365,9 +377,13 @@ model SubOrder {
   orderId         String
   order           Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
   templeId        String?
+<<<<<<< HEAD
   sellerId        String?        // Add sellerId
   temple          Temple?        @relation(fields: [templeId], references: [id])
   seller          SellerProfile? @relation(fields: [sellerId], references: [id])
+=======
+  temple          Temple?        @relation(fields: [templeId], references: [id])
+>>>>>>> a039abdbf46f6d92de19b9fd663d531b9bf8c5e3
   totalAmount     Float
   status          String         @default("PENDING")
   
@@ -397,10 +413,15 @@ model OrderItem {
 
 model TempleLedger {
   id              String   @id @default(cuid())
+<<<<<<< HEAD
   templeId        String?
   sellerId        String?  // Add sellerId
   temple          Temple?   @relation(fields: [templeId], references: [id])
   seller          SellerProfile? @relation(fields: [sellerId], references: [id])
+=======
+  templeId        String
+  temple          Temple   @relation(fields: [templeId], references: [id])
+>>>>>>> a039abdbf46f6d92de19b9fd663d531b9bf8c5e3
   amount          Float    // Net Earning (after commission)
   grossAmount     Float    @default(0) // Original Order Value
   commission      Float    @default(0) // Commission Deducted
@@ -426,10 +447,15 @@ enum LedgerStatus {
 
 model WithdrawalRequest {
   id              String   @id @default(cuid())
+<<<<<<< HEAD
   templeId        String?
   sellerId        String?  // Add sellerId
   temple          Temple?   @relation(fields: [templeId], references: [id])
   seller          SellerProfile? @relation(fields: [sellerId], references: [id])
+=======
+  templeId        String
+  temple          Temple   @relation(fields: [templeId], references: [id])
+>>>>>>> a039abdbf46f6d92de19b9fd663d531b9bf8c5e3
   amount          Float
   status          WithdrawalStatus @default(PENDING)
   bankDetails     Json?    

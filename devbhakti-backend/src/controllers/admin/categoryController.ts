@@ -1,25 +1,44 @@
 import { Request, Response } from "express";
+<<<<<<< HEAD
 import { prisma } from "../../lib/prisma";
 
 
+=======
+import { PrismaClient } from "@prisma/client";
+
+const prisma = new PrismaClient();
+>>>>>>> a039abdbf46f6d92de19b9fd663d531b9bf8c5e3
 
 // Get All Categories
 export const getAllCategories = async (req: Request, res: Response) => {
   try {
     const { page = 1, limit = 10, search, isActive } = req.query;
+<<<<<<< HEAD
 
     const skip = (Number(page) - 1) * Number(limit);
 
     // Build where clause
     const where: any = {};
 
+=======
+    
+    const skip = (Number(page) - 1) * Number(limit);
+    
+    // Build where clause
+    const where: any = {};
+    
+>>>>>>> a039abdbf46f6d92de19b9fd663d531b9bf8c5e3
     if (search && typeof search === 'string') {
       where.OR = [
         { name: { contains: search, mode: "insensitive" } },
         { description: { contains: search, mode: "insensitive" } }
       ];
     }
+<<<<<<< HEAD
 
+=======
+    
+>>>>>>> a039abdbf46f6d92de19b9fd663d531b9bf8c5e3
     if (isActive !== undefined) {
       where.isActive = isActive === "true";
     }
@@ -54,7 +73,11 @@ export const getAllCategories = async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error("Get All Categories Error:", error);
+<<<<<<< HEAD
 
+=======
+    
+>>>>>>> a039abdbf46f6d92de19b9fd663d531b9bf8c5e3
     res.status(500).json({
       success: false,
       message: "Failed to retrieve categories",
@@ -84,7 +107,11 @@ export const getActiveCategories = async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error("Get Active Categories Error:", error);
+<<<<<<< HEAD
 
+=======
+    
+>>>>>>> a039abdbf46f6d92de19b9fd663d531b9bf8c5e3
     res.status(500).json({
       success: false,
       message: "Failed to retrieve active categories",
@@ -100,7 +127,11 @@ export const getCategoryById = async (req: Request, res: Response) => {
     const { id } = req.params;
 
     const category = await prisma.productCategory.findUnique({
+<<<<<<< HEAD
       where: { id: id as string },
+=======
+      where: { id },
+>>>>>>> a039abdbf46f6d92de19b9fd663d531b9bf8c5e3
       include: {
         _count: {
           select: { products: true }
@@ -123,7 +154,11 @@ export const getCategoryById = async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error("Get Category Error:", error);
+<<<<<<< HEAD
 
+=======
+    
+>>>>>>> a039abdbf46f6d92de19b9fd663d531b9bf8c5e3
     res.status(500).json({
       success: false,
       message: "Failed to retrieve category",
@@ -190,7 +225,11 @@ export const createCategory = async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error("Create Category Error:", error);
+<<<<<<< HEAD
 
+=======
+    
+>>>>>>> a039abdbf46f6d92de19b9fd663d531b9bf8c5e3
     res.status(500).json({
       success: false,
       message: "Failed to create category",
@@ -208,7 +247,11 @@ export const updateCategory = async (req: Request, res: Response) => {
 
     // Check if category exists
     const existingCategory = await prisma.productCategory.findUnique({
+<<<<<<< HEAD
       where: { id: id as string }
+=======
+      where: { id }
+>>>>>>> a039abdbf46f6d92de19b9fd663d531b9bf8c5e3
     });
 
     if (!existingCategory) {
@@ -227,7 +270,11 @@ export const updateCategory = async (req: Request, res: Response) => {
             equals: name.trim(),
             mode: "insensitive"
           },
+<<<<<<< HEAD
           id: { not: id as string }
+=======
+          id: { not: id }
+>>>>>>> a039abdbf46f6d92de19b9fd663d531b9bf8c5e3
         }
       });
 
@@ -254,7 +301,11 @@ export const updateCategory = async (req: Request, res: Response) => {
     if (req.file) updateData.image = imagePath;
 
     const category = await prisma.productCategory.update({
+<<<<<<< HEAD
       where: { id: id as string },
+=======
+      where: { id },
+>>>>>>> a039abdbf46f6d92de19b9fd663d531b9bf8c5e3
       data: updateData
     });
 
@@ -265,7 +316,11 @@ export const updateCategory = async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error("Update Category Error:", error);
+<<<<<<< HEAD
 
+=======
+    
+>>>>>>> a039abdbf46f6d92de19b9fd663d531b9bf8c5e3
     res.status(500).json({
       success: false,
       message: "Failed to update category",
@@ -282,7 +337,11 @@ export const deleteCategory = async (req: Request, res: Response) => {
 
     // Check if category exists
     const category = await prisma.productCategory.findUnique({
+<<<<<<< HEAD
       where: { id: id as string },
+=======
+      where: { id },
+>>>>>>> a039abdbf46f6d92de19b9fd663d531b9bf8c5e3
       include: {
         _count: {
           select: { products: true }
@@ -308,7 +367,11 @@ export const deleteCategory = async (req: Request, res: Response) => {
     }
 
     await prisma.productCategory.delete({
+<<<<<<< HEAD
       where: { id: id as string }
+=======
+      where: { id }
+>>>>>>> a039abdbf46f6d92de19b9fd663d531b9bf8c5e3
     });
 
     res.status(200).json({
@@ -317,7 +380,11 @@ export const deleteCategory = async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error("Delete Category Error:", error);
+<<<<<<< HEAD
 
+=======
+    
+>>>>>>> a039abdbf46f6d92de19b9fd663d531b9bf8c5e3
     res.status(500).json({
       success: false,
       message: "Failed to delete category",
@@ -333,7 +400,11 @@ export const toggleCategoryStatus = async (req: Request, res: Response) => {
     const { id } = req.params;
 
     const category = await prisma.productCategory.findUnique({
+<<<<<<< HEAD
       where: { id: id as string }
+=======
+      where: { id }
+>>>>>>> a039abdbf46f6d92de19b9fd663d531b9bf8c5e3
     });
 
     if (!category) {
@@ -345,7 +416,11 @@ export const toggleCategoryStatus = async (req: Request, res: Response) => {
     }
 
     const updatedCategory = await prisma.productCategory.update({
+<<<<<<< HEAD
       where: { id: id as string },
+=======
+      where: { id },
+>>>>>>> a039abdbf46f6d92de19b9fd663d531b9bf8c5e3
       data: {
         isActive: !category.isActive
       }
@@ -358,7 +433,11 @@ export const toggleCategoryStatus = async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error("Toggle Category Status Error:", error);
+<<<<<<< HEAD
 
+=======
+    
+>>>>>>> a039abdbf46f6d92de19b9fd663d531b9bf8c5e3
     res.status(500).json({
       success: false,
       message: "Failed to toggle category status",

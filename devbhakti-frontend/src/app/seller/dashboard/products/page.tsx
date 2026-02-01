@@ -125,7 +125,11 @@ export default function SellerProductsPage() {
                     </p>
                 </div>
                 <div className="flex gap-3">
+<<<<<<< HEAD
                     {/* <Button variant="outline" className="hidden md:flex gap-2 rounded-xl">
+=======
+                    <Button variant="outline" className="hidden md:flex gap-2 rounded-xl">
+>>>>>>> a039abdbf46f6d92de19b9fd663d531b9bf8c5e3
                         <Download className="w-4 h-4" />
                         Export
                     </Button>
@@ -135,7 +139,11 @@ export default function SellerProductsPage() {
                     >
                         <Plus className="w-5 h-5 mr-2" />
                         Add New Product
+<<<<<<< HEAD
                     </Button> */}
+=======
+                    </Button>
+>>>>>>> a039abdbf46f6d92de19b9fd663d531b9bf8c5e3
                 </div>
             </div>
 

@@ -52,16 +52,22 @@ import { cn } from "@/lib/utils";
 import { fetchSellerOrders, updateSellerSubOrderStatus, fetchSellerProfile } from "@/api/sellerController";
 import { BASE_URL } from "@/config/apiConfig";
 
+<<<<<<< HEAD
 import { useSearchParams } from "next/navigation";
 
+=======
+>>>>>>> a039abdbf46f6d92de19b9fd663d531b9bf8c5e3
 export default function SellerOrdersPage() {
     const [orders, setOrders] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState("");
     const [selectedOrder, setSelectedOrder] = useState<any>(null);
     const { toast } = useToast();
+<<<<<<< HEAD
     const searchParams = useSearchParams();
     const statusFilter = searchParams.get("status")?.toUpperCase();
+=======
+>>>>>>> a039abdbf46f6d92de19b9fd663d531b9bf8c5e3
 
     useEffect(() => {
         loadOrders();
@@ -76,6 +82,14 @@ export default function SellerOrdersPage() {
             }
         } catch (error) {
             console.error("Load orders error:", error);
+<<<<<<< HEAD
+=======
+            // Since backend is not implemented yet, we can show an empty state or mock data
+            // toast({
+            //     title: "Notice",
+            //     description: "Order backend is being initialized.",
+            // });
+>>>>>>> a039abdbf46f6d92de19b9fd663d531b9bf8c5e3
         } finally {
             setIsLoading(false);
         }
@@ -109,6 +123,7 @@ export default function SellerOrdersPage() {
         }
     };
 
+<<<<<<< HEAD
     const filteredOrders = orders.filter((o) => {
         const matchesSearch = o.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
             o.order?.user?.name?.toLowerCase().includes(searchQuery.toLowerCase());
@@ -117,6 +132,12 @@ export default function SellerOrdersPage() {
 
         return matchesSearch && matchesStatus;
     });
+=======
+    const filteredOrders = orders.filter((o) =>
+        o.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        o.order?.user?.name?.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+>>>>>>> a039abdbf46f6d92de19b9fd663d531b9bf8c5e3
 
     const getStatusStyle = (status: string) => {
         switch (status) {
@@ -145,7 +166,11 @@ export default function SellerOrdersPage() {
                 <div>
                     <h1 className="text-3xl font-serif font-bold text-slate-900 flex items-center gap-3">
                         <ShoppingBag className="w-8 h-8 text-[#794A05]" />
+<<<<<<< HEAD
                         {statusFilter ? `${statusFilter.charAt(0) + statusFilter.slice(1).toLowerCase()} Orders` : "Seller Order Management"}
+=======
+                        Seller Order Management
+>>>>>>> a039abdbf46f6d92de19b9fd663d531b9bf8c5e3
                     </h1>
                     <p className="text-slate-500 mt-1 font-medium">
                         Track and fulfill marketplace orders for your store products.
