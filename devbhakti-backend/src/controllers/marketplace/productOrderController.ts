@@ -11,7 +11,6 @@ export const createOrder = async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, message: "Cart is empty" });
     }
 
-<<<<<<< HEAD
     // 1. Fetch all products to group by templeId or sellerId
     const productIds = items.map((item: any) => item.productId);
     const products = await prisma.product.findMany({
@@ -23,17 +22,6 @@ export const createOrder = async (req: Request, res: Response) => {
     products.forEach((p) => {
       productMap.set(p.id, { templeId: p.templeId, sellerId: p.sellerId });
     });
-=======
-    // 1. Fetch all products to group by templeId
-    const productIds = items.map((item: any) => item.productId);
-    const products = await prisma.product.findMany({
-      where: { id: { in: productIds } },
-      select: { id: true, templeId: true },
-    });
-
-    const productMap = new Map();
-    products.forEach((p) => productMap.set(p.id, p.templeId));
->>>>>>> a039abdbf46f6d92de19b9fd663d531b9bf8c5e3
 
     // 2. Create Master Order
     const order = await prisma.order.create({
@@ -47,7 +35,6 @@ export const createOrder = async (req: Request, res: Response) => {
       },
     });
 
-<<<<<<< HEAD
     // 3. Group items by templeId or sellerId
     const groups: Record<string, any[]> = {};
     items.forEach((item: any) => {
@@ -67,27 +54,10 @@ export const createOrder = async (req: Request, res: Response) => {
 
       if (key.startsWith("temple_")) {
         templeId = key.replace("temple_", "");
-=======
-    // 3. Group items by templeId
-    const groups: Record<string, any[]> = {};
-    items.forEach((item: any) => {
-      const templeId = productMap.get(item.productId) || "admin"; // Use "admin" as key for null
-      if (!groups[templeId]) groups[templeId] = [];
-      groups[templeId].push(item);
-    });
-
-    // 4. Create SubOrders and OrderItems
-    for (const [templeId, groupItems] of Object.entries(groups)) {
-      const subOrderTotal = groupItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-      
-      let commissionRate = 0;
-      if (templeId !== "admin") {
->>>>>>> a039abdbf46f6d92de19b9fd663d531b9bf8c5e3
         const temple = await prisma.temple.findUnique({
           where: { id: templeId },
           select: { productCommissionRate: true }
         });
-<<<<<<< HEAD
         commissionRate = temple?.productCommissionRate ?? 10;
       } else if (key.startsWith("seller_")) {
         sellerId = key.replace("seller_", "");
@@ -96,9 +66,6 @@ export const createOrder = async (req: Request, res: Response) => {
           select: { productCommissionRate: true }
         });
         commissionRate = seller?.productCommissionRate ?? 10;
-=======
-        commissionRate = temple?.productCommissionRate || 10; // Default to 10 if not found
->>>>>>> a039abdbf46f6d92de19b9fd663d531b9bf8c5e3
       }
 
       const commissionAmount = (subOrderTotal * commissionRate) / 100;
@@ -107,12 +74,8 @@ export const createOrder = async (req: Request, res: Response) => {
       const subOrder = await prisma.subOrder.create({
         data: {
           orderId: order.id,
-<<<<<<< HEAD
           templeId,
           sellerId,
-=======
-          templeId: templeId === "admin" ? null : templeId,
->>>>>>> a039abdbf46f6d92de19b9fd663d531b9bf8c5e3
           totalAmount: subOrderTotal,
           commissionAmount,
           netEarning,
@@ -129,20 +92,12 @@ export const createOrder = async (req: Request, res: Response) => {
         },
       });
 
-<<<<<<< HEAD
       // Create a pending ledger entry (if not admin)
       if (templeId || sellerId) {
         await prisma.templeLedger.create({
           data: {
             templeId,
             sellerId,
-=======
-      // Create a pending ledger entry for the temple (if not admin)
-      if (templeId !== "admin") {
-        await prisma.templeLedger.create({
-          data: {
-            templeId,
->>>>>>> a039abdbf46f6d92de19b9fd663d531b9bf8c5e3
             amount: netEarning,
             grossAmount: subOrderTotal,
             commission: commissionAmount,
@@ -181,11 +136,7 @@ export const createOrder = async (req: Request, res: Response) => {
 export const getMyOrders = async (req: any, res: Response) => {
   try {
     const userId = (req.user?.userId || req.params.userId) as string;
-<<<<<<< HEAD
 
-=======
-    
->>>>>>> a039abdbf46f6d92de19b9fd663d531b9bf8c5e3
     if (!userId) {
       return res.status(400).json({ success: false, message: "User ID required" });
     }
@@ -204,12 +155,9 @@ export const getMyOrders = async (req: any, res: Response) => {
             },
             temple: {
               select: { name: true }
-<<<<<<< HEAD
             },
             seller: {
               select: { name: true }
-=======
->>>>>>> a039abdbf46f6d92de19b9fd663d531b9bf8c5e3
             }
           }
         }
@@ -236,12 +184,8 @@ export const getOrderById = async (req: Request, res: Response) => {
                 product: true
               }
             },
-<<<<<<< HEAD
             temple: true,
             seller: true
-=======
-            temple: true
->>>>>>> a039abdbf46f6d92de19b9fd663d531b9bf8c5e3
           }
         },
         user: {

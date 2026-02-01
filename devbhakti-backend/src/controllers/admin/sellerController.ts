@@ -1,12 +1,5 @@
 import { Request, Response } from 'express';
-<<<<<<< HEAD
 import { prisma } from "../../lib/prisma";
-=======
-import { PrismaClient } from '@prisma/client';
-
-
-const prisma = new PrismaClient();
->>>>>>> a039abdbf46f6d92de19b9fd663d531b9bf8c5e3
 
 // Helper to normalize phone number to +91XXXXXXXXXX format
 const normalizePhone = (phone: string): string => {
@@ -52,11 +45,7 @@ export const createSeller = async (req: Request, res: Response) => {
             return res.status(400).json({ message: 'User with this email or phone already exists' });
         }
 
-<<<<<<< HEAD
         // Transaction to create User and associated SellerProfile (Store)
-=======
-        // Transaction to create User and associated Temple (Store)
->>>>>>> a039abdbf46f6d92de19b9fd663d531b9bf8c5e3
         const result = await prisma.$transaction(async (prisma) => {
             // 1. Create User
             const user = await prisma.user.create({
@@ -69,13 +58,8 @@ export const createSeller = async (req: Request, res: Response) => {
                 }
             });
 
-<<<<<<< HEAD
             // 2. Create SellerProfile (Store entity)
             const sellerProfile = await prisma.sellerProfile.create({
-=======
-            // 2. Create Temple (Store entity)
-            const temple = await prisma.temple.create({
->>>>>>> a039abdbf46f6d92de19b9fd663d531b9bf8c5e3
                 data: {
                     name: storeName as string,
                     location: (address as string) || '', // Using address as location
@@ -88,11 +72,7 @@ export const createSeller = async (req: Request, res: Response) => {
                 }
             });
 
-<<<<<<< HEAD
             return { user, sellerProfile };
-=======
-            return { user, temple };
->>>>>>> a039abdbf46f6d92de19b9fd663d531b9bf8c5e3
         });
 
         res.status(201).json({
@@ -114,11 +94,7 @@ export const getAllSellers = async (req: Request, res: Response) => {
                 role: 'SELLER'
             },
             include: {
-<<<<<<< HEAD
                 sellerProfile: {
-=======
-                temple: {
->>>>>>> a039abdbf46f6d92de19b9fd663d531b9bf8c5e3
                     include: {
                         products: {
                             select: { id: true }
@@ -136,11 +112,7 @@ export const getAllSellers = async (req: Request, res: Response) => {
 
         // Transform data for frontend
         const formattedSellers = sellers.map((user: any) => {
-<<<<<<< HEAD
             const store = user.sellerProfile;
-=======
-            const store = user.temple;
->>>>>>> a039abdbf46f6d92de19b9fd663d531b9bf8c5e3
             return {
                 id: user.id,
                 name: user.name,
@@ -149,19 +121,11 @@ export const getAllSellers = async (req: Request, res: Response) => {
                 status: user.isVerified ? 'active' : 'inactive',
                 joinDate: user.createdAt,
 
-<<<<<<< HEAD
                 // Store details from SellerProfile
                 storeName: store?.name || 'N/A',
                 address: store?.fullAddress || '',
                 productCommissionRate: store?.productCommissionRate || 0,
                 sellerId: store?.id,
-=======
-                // Store details from Temple
-                storeName: store?.name || 'N/A',
-                address: store?.fullAddress || '',
-                productCommissionRate: store?.productCommissionRate || 0,
-                templeId: store?.id,
->>>>>>> a039abdbf46f6d92de19b9fd663d531b9bf8c5e3
 
                 // Stats
                 totalProducts: store?.products?.length || 0,
@@ -189,11 +153,7 @@ export const getSellerById = async (req: Request, res: Response) => {
         const user = await prisma.user.findUnique({
             where: { id: id as string },
             include: {
-<<<<<<< HEAD
                 sellerProfile: {
-=======
-                temple: {
->>>>>>> a039abdbf46f6d92de19b9fd663d531b9bf8c5e3
                     include: {
                         products: true
                     }
@@ -215,19 +175,11 @@ export const getSellerById = async (req: Request, res: Response) => {
             phone: userAny.phone,
             status: userAny.isVerified ? 'active' : 'inactive',
             joinDate: userAny.createdAt,
-<<<<<<< HEAD
             storeName: userAny.sellerProfile?.name || 'N/A',
             address: userAny.sellerProfile?.fullAddress || '',
             productCommissionRate: userAny.sellerProfile?.productCommissionRate || 0,
             sellerId: userAny.sellerProfile?.id,
             products: userAny.sellerProfile?.products || []
-=======
-            storeName: userAny.temple?.name || 'N/A',
-            address: userAny.temple?.fullAddress || '',
-            productCommissionRate: userAny.temple?.productCommissionRate || 0,
-            templeId: userAny.temple?.id,
-            products: userAny.temple?.products || []
->>>>>>> a039abdbf46f6d92de19b9fd663d531b9bf8c5e3
         };
 
         res.json({
@@ -249,11 +201,7 @@ export const updateSeller = async (req: Request, res: Response) => {
 
         const normalizedPhone = phone ? normalizePhone(phone as string) : undefined;
 
-<<<<<<< HEAD
         // Transaction to update User and SellerProfile
-=======
-        // Transaction to update User and Temple
->>>>>>> a039abdbf46f6d92de19b9fd663d531b9bf8c5e3
         await prisma.$transaction(async (prisma) => {
             // Update User
             await prisma.user.update({
@@ -266,7 +214,6 @@ export const updateSeller = async (req: Request, res: Response) => {
                 }
             });
 
-<<<<<<< HEAD
             // Update SellerProfile (Store)
             // First find the sellerProfile associated with this user
             const user = await prisma.user.findUnique({ where: { id: id as string }, include: { sellerProfile: true } });
@@ -274,15 +221,6 @@ export const updateSeller = async (req: Request, res: Response) => {
             if (user && (user as any).sellerProfile) {
                 await prisma.sellerProfile.update({
                     where: { id: (user as any).sellerProfile.id },
-=======
-            // Update Temple (Store)
-            // First find the temple associated with this user
-            const user = await prisma.user.findUnique({ where: { id: id as string }, include: { temple: true } });
-
-            if (user && (user as any).temple) {
-                await prisma.temple.update({
-                    where: { id: (user as any).temple.id },
->>>>>>> a039abdbf46f6d92de19b9fd663d531b9bf8c5e3
                     data: {
                         name: storeName as string,
                         fullAddress: address as string,
@@ -305,7 +243,6 @@ export const updateSeller = async (req: Request, res: Response) => {
 export const deleteSeller = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
-<<<<<<< HEAD
         console.log(`[DeleteSeller] Attempting to delete seller with ID: ${id}`);
 
         // First, fetch seller with all related data for stats
@@ -395,28 +332,10 @@ export const deleteSeller = async (req: Request, res: Response) => {
 
             // 7. Finally, delete user
             await tx.user.delete({
-=======
-
-        await prisma.$transaction(async (prisma) => {
-            // Check if temple exists
-            const user = await prisma.user.findUnique({
-                where: { id: id as string },
-                include: { temple: true }
-            });
-
-            if (user && (user as any).temple) {
-                await prisma.temple.delete({
-                    where: { id: (user as any).temple.id }
-                });
-            }
-
-            await prisma.user.delete({
->>>>>>> a039abdbf46f6d92de19b9fd663d531b9bf8c5e3
                 where: { id: id as string }
             });
         });
 
-<<<<<<< HEAD
         res.json({
             message: 'Seller and all related data deleted successfully',
             deletedData: {
@@ -427,9 +346,6 @@ export const deleteSeller = async (req: Request, res: Response) => {
                 withdrawalsDeleted: stats.withdrawals
             }
         });
-=======
-        res.json({ message: 'Seller deleted successfully' });
->>>>>>> a039abdbf46f6d92de19b9fd663d531b9bf8c5e3
 
     } catch (error: any) {
         console.error('Delete Seller Error:', error);

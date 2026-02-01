@@ -1,11 +1,5 @@
 import { Request, Response } from "express";
-<<<<<<< HEAD
 import { prisma } from "../../lib/prisma";
-=======
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
->>>>>>> a039abdbf46f6d92de19b9fd663d531b9bf8c5e3
 
 // Create Product
 export const createProduct = async (req: Request, res: Response) => {
@@ -85,11 +79,7 @@ export const createProduct = async (req: Request, res: Response) => {
     // If templeId is provided, check if temple exists
     if (templeId) {
       const temple = await prisma.temple.findUnique({
-<<<<<<< HEAD
         where: { id: templeId as string }
-=======
-        where: { id: templeId }
->>>>>>> a039abdbf46f6d92de19b9fd663d531b9bf8c5e3
       });
 
       if (!temple) {
@@ -253,11 +243,7 @@ export const getAllProducts = async (req: Request, res: Response) => {
         },
         orderBy: { createdAt: "desc" },
         skip,
-<<<<<<< HEAD
         take: Number(limit) as number
-=======
-        take: Number(limit)
->>>>>>> a039abdbf46f6d92de19b9fd663d531b9bf8c5e3
       }),
       prisma.product.count({ where })
     ]);
@@ -295,7 +281,6 @@ export const getProductById = async (req: Request, res: Response) => {
     const product = await prisma.product.findUnique({
       where: {
         id: id as string,
-<<<<<<< HEAD
         status: "approved",
         OR: [
           {
@@ -315,15 +300,6 @@ export const getProductById = async (req: Request, res: Response) => {
             }
           }
         ]
-=======
-        status: "approved", // Only return approved products
-        temple: {
-          user: {
-            isVerified: true,
-            role: { in: ['INSTITUTION', 'SELLER'] }
-          }
-        }
->>>>>>> a039abdbf46f6d92de19b9fd663d531b9bf8c5e3
       },
       include: {
         variants: true,
@@ -341,7 +317,6 @@ export const getProductById = async (req: Request, res: Response) => {
             location: true,
             description: true
           }
-<<<<<<< HEAD
         },
         seller: {
           select: {
@@ -350,8 +325,6 @@ export const getProductById = async (req: Request, res: Response) => {
             location: true,
             description: true
           }
-=======
->>>>>>> a039abdbf46f6d92de19b9fd663d531b9bf8c5e3
         }
       }
     });
@@ -472,11 +445,7 @@ export const updateProduct = async (req: Request, res: Response) => {
     // If templeId is provided, check if temple exists
     if (templeId && templeId !== "general") {
       const temple = await prisma.temple.findUnique({
-<<<<<<< HEAD
         where: { id: templeId as string }
-=======
-        where: { id: templeId }
->>>>>>> a039abdbf46f6d92de19b9fd663d531b9bf8c5e3
       });
 
       if (!temple) {
@@ -551,11 +520,7 @@ export const updateProduct = async (req: Request, res: Response) => {
     }
 
     const updatedProduct = await prisma.product.update({
-<<<<<<< HEAD
       where: { id: id as string },
-=======
-      where: { id },
->>>>>>> a039abdbf46f6d92de19b9fd663d531b9bf8c5e3
       data: updateData,
       include: {
         variants: true,
@@ -619,11 +584,7 @@ export const deleteProduct = async (req: Request, res: Response) => {
 
     // Check if product exists
     const product = await prisma.product.findUnique({
-<<<<<<< HEAD
       where: { id: id as string }
-=======
-      where: { id }
->>>>>>> a039abdbf46f6d92de19b9fd663d531b9bf8c5e3
     });
 
     if (!product) {
@@ -665,11 +626,7 @@ export const toggleProductStatus = async (req: Request, res: Response) => {
     }
 
     const product = await prisma.product.findUnique({
-<<<<<<< HEAD
       where: { id: id as string }
-=======
-      where: { id }
->>>>>>> a039abdbf46f6d92de19b9fd663d531b9bf8c5e3
     });
 
     if (!product) {
@@ -680,11 +637,7 @@ export const toggleProductStatus = async (req: Request, res: Response) => {
     }
 
     const updatedProduct = await prisma.product.update({
-<<<<<<< HEAD
       where: { id: id as string },
-=======
-      where: { id },
->>>>>>> a039abdbf46f6d92de19b9fd663d531b9bf8c5e3
       data: { status },
       include: {
         variants: true,
@@ -782,7 +735,6 @@ export const getPublicProducts = async (req: Request, res: Response) => {
 
     const where: any = {
       status: "approved",
-<<<<<<< HEAD
       OR: [
         {
           temple: {
@@ -801,14 +753,6 @@ export const getPublicProducts = async (req: Request, res: Response) => {
           }
         }
       ]
-=======
-      temple: {
-        user: {
-          isVerified: true,
-          role: { in: ['INSTITUTION', 'SELLER'] }
-        }
-      }
->>>>>>> a039abdbf46f6d92de19b9fd663d531b9bf8c5e3
     };
 
     if (search) {
