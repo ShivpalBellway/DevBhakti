@@ -1,0 +1,431 @@
+"use client";
+
+import React, { useState, useEffect } from "react";
+import {
+    IndianRupee,
+    TrendingUp,
+    Clock,
+    ArrowUpRight,
+    ArrowDownRight,
+    History,
+    Wallet,
+    Loader2,
+    Calendar,
+    Search,
+    Download,
+    CheckCircle2,
+    AlertCircle,
+    Info
+} from "lucide-react";
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { useToast } from "@/hooks/use-toast";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
+import {
+    fetchTempleLedger,
+    fetchTempleFinanceSummary,
+    fetchMyTempleProfile,
+    requestWithdrawal
+} from "@/api/templeAdminController";
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogDescription,
+    DialogFooter,
+} from "@/components/ui/dialog";
+
+export default function EarningsPage() {
+    const [isLoading, setIsLoading] = useState(true);
+    const [summary, setSummary] = useState<any>(null);
+    const [ledger, setLedger] = useState<any[]>([]);
+    const [templeId, setTempleId] = useState<string | null>(null);
+    const [searchQuery, setSearchQuery] = useState("");
+    const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false);
+    const [withdrawAmount, setWithdrawAmount] = useState("");
+    const { toast } = useToast();
+
+    useEffect(() => {
+        loadFinancials();
+    }, []);
+
+    const loadFinancials = async () => {
+        setIsLoading(true);
+        console.log("Loading temple financials...");
+        try {
+            // 1. Fetch Profile
+            let profile;
+            try {
+                const profileRes = await fetchMyTempleProfile();
+                if (profileRes.success && profileRes.data.id) {
+                    profile = profileRes.data;
+                    const id = profile.id;
+                    setTempleId(id);
+
+                    // 2. Fetch Finance Summary & Ledger in parallel
+                    const [summaryRes, ledgerRes] = await Promise.allSettled([
+                        fetchTempleFinanceSummary(id),
+                        fetchTempleLedger(id)
+                    ]);
+
+                    if (summaryRes.status === 'fulfilled' && summaryRes.value.success) {
+                        setSummary(summaryRes.value.data);
+                    } else {
+                        console.warn("Could not load finance summary");
+                    }
+
+                    if (ledgerRes.status === 'fulfilled' && ledgerRes.value.success) {
+                        setLedger(ledgerRes.value.data);
+                    } else {
+                        console.warn("Could not load ledger data");
+                    }
+                }
+            } catch (err: any) {
+                console.error("Temple profile fetch failed:", err);
+                // If it's a 404 or something, we just don't set templeId
+                // No intrusive toast for simple background fetch failure
+            }
+        } catch (globalError) {
+            console.error("Critical error in loadFinancials:", globalError);
+            toast({
+                title: "Information",
+                description: "Financial dashboard is currently unavailable or your temple is pending approval.",
+                variant: "default",
+            });
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleWithdrawalRequest = async () => {
+        if (!templeId || !withdrawAmount) return;
+        const amount = parseFloat(withdrawAmount);
+        if (isNaN(amount) || amount <= 0) {
+            toast({ title: "Invalid amount", variant: "destructive" });
+            return;
+        }
+
+        try {
+            const res = await requestWithdrawal({
+                templeId,
+                amount,
+                bankDetails: { type: "MANUAL_BANK_TRANSFER" } // Placeholder
+            });
+            if (res.success) {
+                toast({ title: "Success", description: "Withdrawal request submitted for approval" });
+                setIsWithdrawModalOpen(false);
+                setWithdrawAmount("");
+                loadFinancials(); // Refresh
+            }
+        } catch (error: any) {
+            toast({
+                title: "Request Failed",
+                description: error.response?.data?.message || "Failed to submit request",
+                variant: "destructive",
+            });
+        }
+    };
+
+    const filteredLedger = ledger.filter(entry =>
+        entry.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        entry.type.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+
+    if (isLoading) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
+                <Loader2 className="w-10 h-10 animate-spin text-[#794A05]" />
+                <p className="text-[#794A05] font-medium font-serif">Calculating Sacred Earnings...</p>
+            </div>
+        );
+    }
+
+    return (
+        <div className="space-y-8 pb-12">
+            {/* Header */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                <div>
+                    <h1 className="text-3xl font-serif font-bold text-slate-900 flex items-center gap-3">
+                        <Wallet className="w-8 h-8 text-[#794A05]" />
+                        Earnings & Settlements
+                    </h1>
+                    <p className="text-slate-500 mt-1 font-medium">
+                        Track your revenue, commissions, and manage your payouts.
+                    </p>
+                </div>
+                <Button
+                    onClick={() => setIsWithdrawModalOpen(true)}
+                    className="bg-[#794A05] hover:bg-[#5D3804] text-white rounded-xl px-6 h-12 font-bold shadow-lg shadow-[#794A05]/20 gap-2"
+                >
+                    <ArrowUpRight className="w-4 h-4" />
+                    Request Payout
+                </Button>
+            </div>
+
+            {/* Summary Cards */}
+            <TooltipProvider>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                    <Card className="border-none shadow-xl bg-slate-900 text-white rounded-[1.5rem] overflow-hidden relative group">
+                        <CardContent className="p-6">
+                            <div className="flex items-center gap-1.5 mb-2">
+                                <p className="text-slate-400 font-bold uppercase tracking-widest text-[10px]">Total Gross Sales</p>
+                                <Tooltip>
+                                    <TooltipTrigger><Info className="w-3 h-3 text-slate-500 cursor-help" /></TooltipTrigger>
+                                    <TooltipContent className="bg-slate-800 text-white border-slate-700 text-[12px]">Total value of all orders before any deductions.</TooltipContent>
+                                </Tooltip>
+                            </div>
+                            <h2 className="text-2xl font-extrabold flex items-center gap-1">
+                                <IndianRupee className="w-5 h-5 text-slate-400" strokeWidth={3} />
+                                {summary?.totalEarnings?.toLocaleString() || "0"}
+                            </h2>
+                        </CardContent>
+                    </Card>
+
+                    <Card className="border-none shadow-xl bg-red-50 text-red-900 rounded-[1.5rem] overflow-hidden border border-red-100">
+                        <CardContent className="p-6">
+                            <div className="flex items-center gap-1.5 mb-2">
+                                <p className="text-red-400 font-bold uppercase tracking-widest text-[10px]">Total Commission Paid</p>
+                                <Tooltip>
+                                    <TooltipTrigger><Info className="w-3 h-3 text-red-300 cursor-help" /></TooltipTrigger>
+                                    <TooltipContent className="bg-white text-slate-900 border-red-100 text-[12px]">Total administrative fee paid to DevBhakti platform.</TooltipContent>
+                                </Tooltip>
+                            </div>
+                            <h2 className="text-2xl font-extrabold text-red-600 flex items-center gap-1">
+                                <IndianRupee className="w-5 h-5 text-red-400" strokeWidth={3} />
+                                {summary?.totalCommission?.toLocaleString() || "0"}
+                            </h2>
+                        </CardContent>
+                    </Card>
+
+                    <Card className="border-none shadow-xl bg-white rounded-[1.5rem] overflow-hidden border border-slate-100">
+                        <CardContent className="p-6">
+                            <div className="flex items-center gap-1.5 mb-2">
+                                <p className="text-slate-400 font-bold uppercase tracking-widest text-[10px]">Net Balance (Ready)</p>
+                                <Tooltip>
+                                    <TooltipTrigger><Info className="w-3 h-3 text-slate-300 cursor-help" /></TooltipTrigger>
+                                    <TooltipContent className="bg-white text-slate-900 border-slate-200 text-[12px]">Funds available for withdrawal after commission and 3-day escrow.</TooltipContent>
+                                </Tooltip>
+                            </div>
+                            <h2 className="text-2xl font-extrabold text-[#794A05] flex items-center gap-1">
+                                <IndianRupee className="w-6 h-6 text-[#794A05] opacity-80" strokeWidth={3} />
+                                {summary?.availableBalance?.toLocaleString() || "0"}
+                            </h2>
+                        </CardContent>
+                    </Card>
+
+                    <Card className="border-none shadow-xl bg-white rounded-[1.5rem] overflow-hidden border border-slate-100">
+                        <CardContent className="p-6">
+                            <div className="flex items-center gap-1.5 mb-2">
+                                <p className="text-slate-400 font-bold uppercase tracking-widest text-[10px]">In Settlement</p>
+                                <Tooltip>
+                                    <TooltipTrigger><Info className="w-3 h-3 text-slate-300 cursor-help" /></TooltipTrigger>
+                                    <TooltipContent className="bg-white text-slate-900 border-slate-200 text-[12px]">Orders delivered but within 3-day hold period for potential returns/disputes.</TooltipContent>
+                                </Tooltip>
+                            </div>
+                            <h2 className="text-2xl font-extrabold text-slate-600 flex items-center gap-1">
+                                <IndianRupee className="w-5 h-5 text-slate-400" strokeWidth={2.5} />
+                                {summary?.inEscrow?.toLocaleString() || "0"}
+                            </h2>
+                            <p className="text-[8px] text-amber-600 font-bold mt-1">3-day period</p>
+                        </CardContent>
+                    </Card>
+
+                    <Card className="border-none shadow-xl bg-white rounded-[1.5rem] overflow-hidden border border-slate-100">
+                        <CardContent className="p-6">
+                            <div className="flex items-center gap-1.5 mb-2">
+                                <p className="text-slate-400 font-bold uppercase tracking-widest text-[10px]">Pending Fulfillment</p>
+                                <Tooltip>
+                                    <TooltipTrigger><Info className="w-3 h-3 text-slate-300 cursor-help" /></TooltipTrigger>
+                                    <TooltipContent className="bg-white text-slate-900 border-slate-200 text-[12px]">Revenue from orders that are yet to be shipped or delivered.</TooltipContent>
+                                </Tooltip>
+                            </div>
+                            <h2 className="text-2xl font-extrabold text-slate-400 flex items-center gap-1">
+                                <IndianRupee className="w-5 h-5 text-slate-300" strokeWidth={2.5} />
+                                {summary?.pendingBalance?.toLocaleString() || "0"}
+                            </h2>
+                        </CardContent>
+                    </Card>
+                </div>
+            </TooltipProvider>
+
+            {/* Processing Payouts Info (If any) */}
+            {summary?.processingWithdrawals > 0 && (
+                <div className="bg-amber-50 border border-amber-200 rounded-3xl p-6 flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                        <div className="p-3 bg-amber-100 rounded-2xl">
+                            <Clock className="w-6 h-6 text-amber-600" />
+                        </div>
+                        <div>
+                            <h4 className="font-bold text-slate-900">Payout in Progress</h4>
+                            <p className="text-xs text-slate-500 font-medium">₹{summary.processingWithdrawals.toLocaleString()} is currently being processed by our finance team.</p>
+                        </div>
+                    </div>
+                    <Badge className="bg-amber-100 text-amber-700 border-none font-bold">LOCKED</Badge>
+                </div>
+            )}
+
+            {/* Ledger Table */}
+            <div className="space-y-4">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <h3 className="text-xl font-serif font-bold text-slate-900 flex items-center gap-2">
+                        <History className="w-5 h-5 text-[#794A05]" />
+                        Transaction Ledger
+                    </h3>
+                    <div className="relative w-full md:w-80">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                        <Input
+                            placeholder="Search transactions..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="pl-10 h-10 rounded-xl border-slate-200"
+                        />
+                    </div>
+                </div>
+
+                <Card className="border-none shadow-xl rounded-[2rem] overflow-hidden bg-white premium-scrollbar">
+                    <div className="overflow-x-auto">
+                        <table className="w-full">
+                            <thead className="bg-slate-50/80">
+                                <tr>
+                                    <th className="py-5 pl-8 text-left text-[11px] font-extrabold text-slate-900 uppercase tracking-widest">Date / Description</th>
+                                    <th className="py-5 text-left text-[11px] font-extrabold text-slate-900 uppercase tracking-widest">Type</th>
+                                    <th className="py-5 text-center text-[11px] font-extrabold text-slate-900 uppercase tracking-widest">Status</th>
+                                    <th className="py-5 text-right text-[11px] font-extrabold text-slate-900 uppercase tracking-widest">Gross</th>
+                                    <th className="py-5 text-right text-[11px] font-extrabold text-slate-900 uppercase tracking-widest">Commission</th>
+                                    <th className="py-5 pr-8 text-right text-[11px] font-extrabold text-slate-900 uppercase tracking-widest">Net Earning</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-50">
+                                {filteredLedger.length === 0 ? (
+                                    <tr>
+                                        <td colSpan={5} className="py-20 text-center">
+                                            <div className="flex flex-col items-center gap-2 text-slate-400">
+                                                <History className="w-12 h-12 opacity-20" />
+                                                <p className="font-bold uppercase tracking-widest text-[10px]">No transactions recorded yet</p>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ) : (
+                                    filteredLedger.map((entry) => (
+                                        <tr key={entry.id} className="hover:bg-slate-50/50 transition-colors">
+                                            <td className="py-6 pl-8">
+                                                <div className="flex flex-col">
+                                                    <span className="text-[10px] font-bold text-slate-400">
+                                                        {format(new Date(entry.createdAt), "dd MMM, yyyy")}
+                                                    </span>
+                                                    <span className="text-sm font-extrabold text-slate-900">{entry.description}</span>
+                                                </div>
+                                            </td>
+                                            <td className="py-6">
+                                                <Badge variant="outline" className="rounded-full px-3 py-1 text-[10px] font-bold border-slate-200 text-slate-600 bg-slate-50">
+                                                    {entry.type.replace('_', ' ')}
+                                                </Badge>
+                                            </td>
+                                            <td className="py-6 text-center">
+                                                <Badge className={cn(
+                                                    "rounded-full px-3 py-1 text-[10px] font-bold border",
+                                                    entry.status === "COMPLETED" ? "bg-emerald-50 text-emerald-700 border-emerald-200" :
+                                                        entry.status === "PENDING" ? "bg-amber-50 text-amber-700 border-amber-200" :
+                                                            "bg-red-50 text-red-700 border-red-200"
+                                                )}>
+                                                    {entry.status}
+                                                </Badge>
+                                            </td>
+                                            <td className="py-6 text-right">
+                                                <span className="text-xs font-bold text-slate-500 group-hover:text-slate-900">
+                                                    {entry.grossAmount > 0 ? `₹${entry.grossAmount.toLocaleString()}` : "-"}
+                                                </span>
+                                            </td>
+                                            <td className="py-6 text-right">
+                                                <span className="text-xs font-bold text-red-400">
+                                                    {entry.commission > 0 ? `-₹${entry.commission.toLocaleString()}` : "-"}
+                                                </span>
+                                            </td>
+                                            <td className="py-6 pr-8 text-right">
+                                                <span className={cn(
+                                                    "text-base font-extrabold",
+                                                    entry.amount < 0 ? "text-red-600" : "text-emerald-700"
+                                                )}>
+                                                    {entry.amount < 0 ? "-" : "+"}
+                                                    ₹{Math.abs(entry.amount).toLocaleString()}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    ))
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+                </Card>
+            </div>
+
+            {/* Withdrawal Modal */}
+            <Dialog open={isWithdrawModalOpen} onOpenChange={setIsWithdrawModalOpen}>
+                <DialogContent className="max-w-md rounded-[2.5rem] p-8 border-none shadow-2xl bg-white overflow-hidden">
+                    <div className="absolute top-0 left-0 w-full h-2 bg-[#794A05]" />
+                    <DialogHeader>
+                        <DialogTitle className="text-2xl font-serif font-bold text-slate-900">Request Payout</DialogTitle>
+                        <DialogDescription className="text-slate-500 font-medium">
+                            Transfer your earnings to your registered bank account.
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="py-8 space-y-6">
+                        <div className="bg-slate-50 p-6 rounded-3xl border border-slate-100">
+                            <p className="text-xs font-extrabold text-slate-400 uppercase tracking-widest mb-1">Available Balanced</p>
+                            <p className="text-3xl font-extrabold text-slate-900">₹{summary?.availableBalance?.toLocaleString() || "0"}</p>
+                        </div>
+
+                        <div className="space-y-2">
+                            <label className="text-xs font-extrabold text-slate-900 uppercase tracking-widest pl-1">Amount to Withdraw</label>
+                            <div className="relative">
+                                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-medium">₹</span>
+                                <Input
+                                    type="number"
+                                    placeholder="Enter amount"
+                                    value={withdrawAmount}
+                                    onChange={(e) => setWithdrawAmount(e.target.value)}
+                                    className="h-12 pl-8 rounded-2xl border-slate-200 focus:border-[#794A05]"
+                                />
+                            </div>
+                            <p className="text-[10px] text-slate-400 font-bold pl-1 italic">*Minimum withdrawal amount is ₹500</p>
+                        </div>
+
+                        <div className="flex gap-4 p-4 bg-amber-50 rounded-2xl border border-amber-100">
+                            <AlertCircle className="w-5 h-5 text-[#794A05] flex-shrink-0" />
+                            <p className="text-xs text-[#794A05] font-medium leading-relaxed">
+                                Payouts are usually processed within 24-48 sacred hours to your verified bank account.
+                            </p>
+                        </div>
+                    </div>
+
+                    <DialogFooter>
+                        <Button
+                            variant="ghost"
+                            onClick={() => setIsWithdrawModalOpen(false)}
+                            className="rounded-xl font-bold"
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            onClick={handleWithdrawalRequest}
+                            className="bg-[#794A05] hover:bg-[#5D3804] text-white rounded-xl px-8 font-bold"
+                        >
+                            Confirm Withdrawal
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+        </div>
+    );
+}

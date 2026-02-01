@@ -1,0 +1,448 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String         @id @default(cuid())
+  name         String?
+  email        String?        @unique
+  password     String?
+  phone        String?
+  role         UserRole       @default(DEVOTEE)
+  isVerified   Boolean        @default(false)
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  otp          String?
+  otpExpires   DateTime?
+  profileImage String?
+  favorites    Favorite[]
+  temple       Temple?
+  sellerProfile SellerProfile?
+  bookings     PoojaBooking[]
+  cart         Cart?
+  orders       Order[]
+}
+
+model Cart {
+  id        String     @id @default(cuid())
+  userId    String     @unique
+  user      User       @relation(fields: [userId], references: [id])
+  items     CartItem[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+}
+
+model CartItem {
+  id        String         @id @default(cuid())
+  cartId    String
+  cart      Cart           @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product        @relation(fields: [productId], references: [id])
+  variantId String
+  variant   ProductVariant @relation(fields: [variantId], references: [id])
+  quantity  Int
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+}
+
+model Temple {
+  id             String                @id @default(cuid())
+  name           String
+  slug           String?               @unique
+  location       String
+  fullAddress    String?
+  description    String
+  history        String?
+  image          String?
+  heroImages     String[]
+  gallery        String[]
+  rating         Float                 @default(0)
+  reviewsCount   Int                   @default(0)
+  category       String
+  liveStatus     Boolean               @default(false)
+  openTime       String
+  phone          String?
+  website        String?
+  mapUrl         String?
+  viewers        String?
+  isLive         Boolean               @default(false)
+  isActive       Boolean               @default(true)  // Active/Inactive status for visibility
+  userId         String                @unique
+  
+  // Financial Configuration
+  productCommissionRate Float @default(10.0) // Percentage
+  poojaCommissionRate   Float @default(5.0)  // Percentage
+  
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+  templeId       String?               @unique
+  events         Event[]
+  favorites      Favorite[]
+  poojas         Pooja[]
+  products       Product[]
+  bookings       PoojaBooking[]
+  subOrders      SubOrder[]
+  ledgerEntries  TempleLedger[]
+  withdrawals    WithdrawalRequest[]
+
+  user           User                  @relation(fields: [userId], references: [id])
+  updateRequests TempleUpdateRequest[]
+}
+
+model SellerProfile {
+  id             String                @id @default(cuid())
+  name           String
+  location       String?
+  fullAddress    String?
+  description    String?
+  image          String?
+  heroImages     String[]
+  category       String?
+  
+  openTime       String?
+  phone          String?
+  website        String?
+
+  // Bank Details
+  bankName          String?
+  accountNumber     String?
+  accountHolderName String?
+  ifscCode          String?
+  upiId             String?
+  
+  isActive       Boolean               @default(true)
+  isVerified     Boolean               @default(false)
+  
+  userId         String                @unique
+  user           User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Financial Configuration
+  productCommissionRate Float @default(10.0) // Percentage
+  
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+  
+  products       Product[]
+  subOrders      SubOrder[]
+  ledgerEntries  TempleLedger[]
+  withdrawals    WithdrawalRequest[]
+}
+
+model TempleUpdateRequest {
+  id            String   @id @default(cuid())
+  templeId      String
+  requestedData Json
+  oldData       Json
+  status        String   @default("PENDING")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  temple        Temple   @relation(fields: [templeId], references: [id], onDelete: Cascade)
+}
+
+model Pooja {
+  id            String         @id @default(cuid())
+  name          String
+  category      String
+  price         Float
+  duration      String
+  description   String[]
+  time          String
+  image         String?
+  about         String?
+  benefits      String[]
+  bullets       String[]
+  process       String?
+  processSteps  Json?
+  templeId      String
+  templeDetails String?
+  packages      Json?
+  faqs          Json?
+  reviews       Json?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  status        Boolean        @default(true)
+  favorites     Favorite[]
+  bookings      PoojaBooking[]
+  temple        Temple         @relation(fields: [templeId], references: [id])
+}
+
+model Event {
+  id          String   @id @default(cuid())
+  name        String
+  date        String
+  description String?
+  templeId    String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  status      Boolean  @default(true)
+  temple      Temple   @relation(fields: [templeId], references: [id], onDelete: Cascade)
+}
+
+model Banner {
+  id        String   @id @default(cuid())
+  image     String
+  link      String?
+  active    Boolean  @default(true)
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Feature {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  image       String
+  icon        String
+  active      Boolean  @default(true)
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Testimonial {
+  id        String   @id @default(cuid())
+  title     String
+  subtitle  String
+  videoSrc  String
+  thumbnail String
+  category  String
+  active    Boolean  @default(true)
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ProductCategory {
+  id          String    @id @default(cuid())
+  name        String    @unique
+  description String?
+  image       String?
+  isActive    Boolean   @default(true)
+  sortOrder   Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  products    Product[]
+}
+
+model Product {
+  id          String           @id @default(cuid())
+  name        String
+  description String
+  category    String
+  status      String           @default("pending")
+  image       String?
+  templeId    String?
+  sellerId    String?          // Add sellerId
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  categoryId  String?
+  favorites   Favorite[]
+  categoryObj ProductCategory? @relation(fields: [categoryId], references: [id])
+  temple      Temple?          @relation(fields: [templeId], references: [id], onDelete: Cascade)
+  seller      SellerProfile?   @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+  variants    ProductVariant[]
+  orderItems  OrderItem[]
+  cartItems   CartItem[]
+  
+  // Advanced Details
+  highlights      String?   // Bullet points (comma-separated)
+  longDescription String?   @db.Text
+  shippingInfo    String?   @default("Ships in 24-48 Hours")
+  origin          String?   @default("India")
+  rating          Float?    @default(4.5)
+}
+
+model ProductVariant {
+  id        String   @id @default(cuid())
+  name      String
+  price     Float
+  stock     Int      @default(0)
+  image     String?
+  productId String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  cartItems CartItem[]
+}
+
+model Favorite {
+  id        String   @id @default(cuid())
+  userId    String
+  templeId  String?
+  poojaId   String?
+  createdAt DateTime @default(now())
+  productId String?
+  pooja     Pooja?   @relation(fields: [poojaId], references: [id], onDelete: Cascade)
+  product   Product? @relation(fields: [productId], references: [id], onDelete: Cascade)
+  temple    Temple?  @relation(fields: [templeId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, templeId])
+  @@unique([userId, poojaId])
+  @@unique([userId, productId])
+}
+
+model CTACard {
+  id         String   @id @default(cuid())
+  title      String
+  points     String[]
+  icon       String
+  buttonText String
+  buttonLink String
+  cardType   String
+  active     Boolean  @default(true)
+  order      Int      @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model PoojaBooking {
+  id            String        @id @default(cuid())
+  userId        String
+  user          User          @relation(fields: [userId], references: [id])
+  poojaId       String
+  pooja         Pooja         @relation(fields: [poojaId], references: [id])
+  templeId      String
+  temple        Temple        @relation(fields: [templeId], references: [id])
+  
+  packageName   String
+  packagePrice  Float
+  
+  devoteeName   String
+  devoteePhone  String
+  devoteeEmail  String?
+  bookingDate   String?
+  address       String?
+  specialRequests String?
+  
+  status        BookingStatus @default(BOOKED)
+  
+  // Financial Tracking
+  commissionAmount Float @default(0)
+  netEarning       Float @default(0)
+  
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+}
+
+enum UserRole {
+  ADMIN
+  DEVOTEE
+  INSTITUTION
+  SELLER
+}
+
+enum BookingStatus {
+  PENDING
+  BOOKED
+  COMPLETED
+  REJECTED
+  CANCELLED
+}
+
+model Order {
+  id              String         @id @default(cuid())
+  userId          String
+  user            User           @relation(fields: [userId], references: [id])
+  totalAmount     Float
+  status          String         @default("PENDING")
+  paymentStatus   String         @default("PENDING")
+  paymentMethod   String?
+  shippingAddress Json?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  subOrders       SubOrder[]
+}
+
+model SubOrder {
+  id              String         @id @default(cuid())
+  orderId         String
+  order           Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  templeId        String?
+  sellerId        String?        // Add sellerId
+  temple          Temple?        @relation(fields: [templeId], references: [id])
+  seller          SellerProfile? @relation(fields: [sellerId], references: [id])
+  totalAmount     Float
+  status          String         @default("PENDING")
+  
+  // Financial Tracking
+  commissionAmount Float @default(0)
+  netEarning       Float @default(0)
+  
+  shippingLabel   String?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  items           OrderItem[]
+}
+
+model OrderItem {
+  id              String         @id @default(cuid())
+  subOrderId      String
+  subOrder        SubOrder       @relation(fields: [subOrderId], references: [id], onDelete: Cascade)
+  productId       String
+  product         Product        @relation(fields: [productId], references: [id])
+  variantId       String
+  variantName     String
+  price           Float
+  quantity        Int
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+}
+
+model TempleLedger {
+  id              String   @id @default(cuid())
+  templeId        String?
+  sellerId        String?  // Add sellerId
+  temple          Temple?   @relation(fields: [templeId], references: [id])
+  seller          SellerProfile? @relation(fields: [sellerId], references: [id])
+  amount          Float    // Net Earning (after commission)
+  grossAmount     Float    @default(0) // Original Order Value
+  commission      Float    @default(0) // Commission Deducted
+  type            LedgerType
+  sourceId        String?  // SubOrder ID or PoojaBooking ID
+  description     String?
+  status          LedgerStatus @default(PENDING)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+enum LedgerType {
+  MARKETPLACE_EARNING
+  POOJA_EARNING
+  WITHDRAWAL
+}
+
+enum LedgerStatus {
+  PENDING
+  COMPLETED
+  CANCELLED
+}
+
+model WithdrawalRequest {
+  id              String   @id @default(cuid())
+  templeId        String?
+  sellerId        String?  // Add sellerId
+  temple          Temple?   @relation(fields: [templeId], references: [id])
+  seller          SellerProfile? @relation(fields: [sellerId], references: [id])
+  amount          Float
+  status          WithdrawalStatus @default(PENDING)
+  bankDetails     Json?    
+  transactionId   String?
+  receiptImage    String?
+  adminNotes      String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+enum WithdrawalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  PAID
+}
