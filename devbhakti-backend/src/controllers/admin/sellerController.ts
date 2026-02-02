@@ -155,7 +155,10 @@ export const getSellerById = async (req: Request, res: Response) => {
             include: {
                 sellerProfile: {
                     include: {
-                        products: true
+                        products: true,
+                        subOrders: {
+                            select: { id: true, totalAmount: true }
+                        }
                     }
                 }
             }
@@ -179,7 +182,13 @@ export const getSellerById = async (req: Request, res: Response) => {
             address: userAny.sellerProfile?.fullAddress || '',
             productCommissionRate: userAny.sellerProfile?.productCommissionRate || 0,
             sellerId: userAny.sellerProfile?.id,
-            products: userAny.sellerProfile?.products || []
+            products: userAny.sellerProfile?.products || [],
+
+            // Add missing fields
+            logo: userAny.sellerProfile?.image || userAny.profileImage || '',
+            totalProducts: userAny.sellerProfile?.products?.length || 0,
+            totalOrders: userAny.sellerProfile?.subOrders?.length || 0,
+            totalSales: userAny.sellerProfile?.subOrders?.reduce((sum: number, order: any) => sum + order.totalAmount, 0) || 0
         };
 
         res.json({

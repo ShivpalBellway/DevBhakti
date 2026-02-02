@@ -94,6 +94,19 @@ export default function ViewSellerPage() {
                     >
                         <ChevronLeft className="w-5 h-5" />
                     </Button>
+
+                    {seller.logo ? (
+                        <img
+                            src={seller.logo}
+                            alt={seller.storeName}
+                            className="w-14 h-14 rounded-full object-cover border border-slate-200 shadow-sm"
+                        />
+                    ) : (
+                        <div className="w-14 h-14 rounded-full bg-indigo-50 flex items-center justify-center border border-indigo-100 text-indigo-500 shadow-sm">
+                            <Store className="w-7 h-7" />
+                        </div>
+                    )}
+
                     <div>
                         <h1 className="text-2xl font-bold tracking-tight text-slate-900">{seller.storeName}</h1>
                         <div className="flex items-center gap-2 mt-1">

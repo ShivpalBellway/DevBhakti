@@ -204,7 +204,7 @@ export default function SellerLoginPage() {
                                 <Button
                                     type="submit"
                                     disabled={loading}
-                                    className="w-full h-14 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-2xl text-lg font-bold shadow-lg shadow-emerald-600/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                                    className="w-full h-14 bg-gradient-to-r from-[#7b4623] to-[#a65d2e] hover:from-[#5d351a] hover:to-[#7b4623] text-white rounded-2xl text-lg font-bold shadow-lg shadow-[#7b4623]/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
                                 >
                                     {loading ? (
                                         <div className="flex items-center gap-2">
