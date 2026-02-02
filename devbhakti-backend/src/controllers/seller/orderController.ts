@@ -125,7 +125,8 @@ export const getSellerCustomers = async (req: Request, res: Response) => {
     try {
         const userId = (req as any).user.userId;
 
-        const store = await prisma.temple.findUnique({
+        // Find the store (SellerProfile) associated with this user
+        const store = await prisma.sellerProfile.findUnique({
             where: { userId }
         });
 
@@ -133,9 +134,9 @@ export const getSellerCustomers = async (req: Request, res: Response) => {
             return res.status(404).json({ success: false, message: "Store not found" });
         }
 
-        // Find all sub-orders for this store
+        // Find all sub-orders for this seller
         const subOrders = await prisma.subOrder.findMany({
-            where: { templeId: store.id },
+            where: { sellerId: store.id },
             include: {
                 order: {
                     include: {
@@ -149,7 +150,8 @@ export const getSellerCustomers = async (req: Request, res: Response) => {
                         }
                     }
                 }
-            }
+            },
+            orderBy: { createdAt: 'desc' }
         });
 
         // Extract unique customers and their order summary
