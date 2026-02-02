@@ -82,13 +82,14 @@ export default function TempleDetail() {
     // Auto-scroll hero banner
     useEffect(() => {
         if (!temple) return;
-        const heroImages = temple.heroImages && temple.heroImages.length > 0 ? temple.heroImages : [temple.image];
+        const images = [temple.image, ...(temple.heroImages || [])].filter((img, idx, self) => img && self.indexOf(img) === idx);
+        const heroImagesCount = images.length;
 
-        if (heroImages.length <= 1 || !isAutoScrolling) return;
+        if (heroImagesCount <= 1 || !isAutoScrolling) return;
 
         const interval = setInterval(() => {
-            setActiveImageIndex((prev) => (prev + 1) % heroImages.length);
-        }, 5000);
+            setActiveImageIndex((prev) => (prev + 1) % heroImagesCount);
+        }, 3000);
 
         return () => clearInterval(interval);
     }, [temple, isAutoScrolling]);
@@ -117,7 +118,7 @@ export default function TempleDetail() {
         );
     }
 
-    const heroImages = temple.heroImages && temple.heroImages.length > 0 ? temple.heroImages : [temple.image];
+    const heroImages = temple ? [temple.image, ...(temple.heroImages || [])].filter((img, idx, self) => img && self.indexOf(img) === idx) : [];
 
     // Navigation functions
     const goToNext = () => {
@@ -222,31 +223,6 @@ export default function TempleDetail() {
                             <ChevronRight className="h-6 w-6" />
                         </Button>
                     </>
-                )}
-
-                {/* Image Indicators (Thumbnails) */}
-                {heroImages.length > 1 && (
-                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-20 bg-black/40 p-4 rounded-lg">
-                        {heroImages.map((img, index) => (
-                            <button
-                                key={index}
-                                onClick={() => goToImage(index)}
-                                className={`relative w-16 h-16 md:w-20 md:h-20 rounded-lg overflow-hidden border-2 transition-all duration-300 ${index === activeImageIndex
-                                    ? "border-primary scale-110 shadow-lg shadow-primary/50"
-                                    : "border-transparent  hover:opacity-100 hover:scale-105"
-                                    }`}
-                            >
-                                <img
-                                    src={getFullImageUrl(img)}
-                                    alt={`${temple.name} ${index + 1}`}
-                                    className="w-full h-full object-cover"
-                                />
-                                {index === activeImageIndex && (
-                                    <div className="absolute inset-0 bg-primary/20" />
-                                )}
-                            </button>
-                        ))}
-                    </div>
                 )}
 
                 {/* Live Badge */}

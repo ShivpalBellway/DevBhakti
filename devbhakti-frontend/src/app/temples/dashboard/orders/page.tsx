@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useSearchParams } from "next/navigation";
 
 import {
     ShoppingBag,
@@ -125,10 +126,18 @@ export default function TempleOrdersPage() {
         }
     };
 
-    const filteredOrders = orders.filter((o) =>
-        o.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        o.order?.user?.name?.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    const searchParams = useSearchParams();
+    const statusFilter = searchParams.get("status");
+
+    const filteredOrders = orders.filter((o) => {
+        const matchesSearch =
+            o.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            o.order?.user?.name?.toLowerCase().includes(searchQuery.toLowerCase());
+
+        const matchesStatus = statusFilter ? o.status === statusFilter : true;
+
+        return matchesSearch && matchesStatus;
+    });
 
     const getStatusStyle = (status: string) => {
         switch (status) {

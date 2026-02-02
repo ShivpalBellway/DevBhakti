@@ -13,6 +13,8 @@ import {
   CheckCircle,
   XCircle,
   Clock,
+  ShieldCheck,
+  Store,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -64,7 +66,7 @@ export default function ProductsManagementPage() {
       console.error("Load Products Error:", error);
       const errorMessage = error?.response?.data?.message || error?.message || "Failed to load products";
       const errorDetails = error?.response?.data?.details;
-      
+
       toast({
         title: "Error Loading Products",
         description: errorDetails ? `${errorMessage}: ${errorDetails}` : errorMessage,
@@ -85,7 +87,7 @@ export default function ProductsManagementPage() {
         console.error("Delete Product Error:", error);
         const errorMessage = error?.response?.data?.message || error?.message || "Failed to delete product";
         const errorDetails = error?.response?.data?.details;
-        
+
         toast({
           title: "Error Deleting Product",
           description: errorDetails ? `${errorMessage}: ${errorDetails}` : errorMessage,
@@ -99,16 +101,16 @@ export default function ProductsManagementPage() {
     try {
       const newStatus = currentStatus === "approved" ? "pending" : "approved";
       await toggleProductStatusAdmin(id, newStatus);
-      toast({ 
-        title: "Success", 
-        description: `Product ${newStatus === "approved" ? "Approved" : "Set to Pending"} successfully` 
+      toast({
+        title: "Success",
+        description: `Product ${newStatus === "approved" ? "Approved" : "Set to Pending"} successfully`
       });
       loadProducts();
     } catch (error: any) {
       console.error("Toggle Status Error:", error);
       const errorMessage = error?.response?.data?.message || error?.message || "Failed to update status";
       const errorDetails = error?.response?.data?.details;
-      
+
       toast({
         title: "Error Updating Status",
         description: errorDetails ? `${errorMessage}: ${errorDetails}` : errorMessage,
@@ -182,7 +184,7 @@ export default function ProductsManagementPage() {
             <TableRow>
               <TableHead>Product</TableHead>
               <TableHead>Category</TableHead>
-              <TableHead>Temple</TableHead>
+              <TableHead>Owner/Vendor</TableHead>
               <TableHead>Variants & Pricing</TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="text-right">Actions</TableHead>
@@ -211,7 +213,7 @@ export default function ProductsManagementPage() {
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center overflow-hidden">
                         {product.image ? (
-                          <img 
+                          <img
                             src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}${product.image}`}
                             alt={product.name}
                             className="w-full h-full object-cover"
@@ -234,17 +236,28 @@ export default function ProductsManagementPage() {
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    <div className="flex items-center gap-1.5 text-slate-700">
-                      {product.temple ? (
-                        <>
-                          <Building2 className="w-3.5 h-3.5 text-primary" />
-                          <span className="text-sm">{product.temple.name}</span>
-                        </>
+                    <div className="flex items-center gap-1.5 ">
+                      {!product.temple ? (
+                        <div className="flex items-center gap-1.5 text-amber-600 bg-amber-50 px-2 py-1 rounded-md border border-amber-100">
+                          <ShieldCheck className="w-3.5 h-3.5" />
+                          <span className="text-xs font-bold uppercase tracking-wider">Devbhakti Exclusive</span>
+                        </div>
+                      ) : product.temple?.user?.role === "SELLER" ? (
+                        <div className="flex items-center gap-1.5 text-blue-600 bg-blue-50 px-2 py-1 rounded-md border border-blue-100">
+                          <Store className="w-3.5 h-3.5" />
+                          <div className="flex flex-col">
+                            <span className="text-[10px] font-bold uppercase leading-none mb-0.5">Seller</span>
+                            <span className="text-sm font-medium leading-none text-slate-700">{product.temple.name}</span>
+                          </div>
+                        </div>
                       ) : (
-                        <>
-                          <Package className="w-3.5 h-3.5 text-slate-400" />
-                          <span className="text-sm text-slate-500">General Product</span>
-                        </>
+                        <div className="flex items-center gap-1.5 text-primary bg-primary/5 px-2 py-1 rounded-md border border-primary/10">
+                          <Building2 className="w-3.5 h-3.5" />
+                          <div className="flex flex-col">
+                            <span className="text-[10px] font-bold uppercase leading-none mb-0.5">Temple</span>
+                            <span className="text-sm font-medium leading-none text-slate-700">{product.temple.name}</span>
+                          </div>
+                        </div>
                       )}
                     </div>
                   </TableCell>
@@ -326,7 +339,7 @@ export default function ProductsManagementPage() {
               <div className="flex items-center gap-4">
                 <div className="w-20 h-20 rounded-lg bg-slate-100 flex items-center justify-center overflow-hidden">
                   {selectedProduct.image ? (
-                    <img 
+                    <img
                       src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}${selectedProduct.image}`}
                       alt={selectedProduct.name}
                       className="w-full h-full object-cover"
@@ -352,8 +365,12 @@ export default function ProductsManagementPage() {
                   <p className="text-slate-900">{selectedProduct.category}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-slate-700">Temple</label>
-                  <p className="text-slate-900">{selectedProduct.temple?.name || "General Product"}</p>
+                  <label className="text-sm font-medium text-slate-700">Owner/Vendor</label>
+                  <p className="text-slate-900">
+                    {!selectedProduct.temple
+                      ? "DevBhakti Exclusive (Admin)"
+                      : `${selectedProduct.temple?.user?.role === 'SELLER' ? 'Seller' : 'Temple'}: ${selectedProduct.temple.name}`}
+                  </p>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-slate-700">Status</label>

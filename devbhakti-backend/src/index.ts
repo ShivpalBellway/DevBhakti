@@ -23,6 +23,7 @@ import templeAdminBookingRoutes from './routes/temple_admin/bookingRoutes';
 import cartRoutes from './routes/devotee/cartRoutes';
 import publicOrderRoutes from './routes/marketplace/productOrderRoutes';
 import adminOrderRoutes from './routes/admin/productOrderRoutes';
+import adminDashboardRoutes from './routes/admin/dashboardRoutes';
 import templeAdminOrderRoutes from './routes/temple_admin/productOrderRoutes';
 
 import adminFinanceManagementRoutes from './routes/admin/financeManagementRoutes';
@@ -60,6 +61,7 @@ app.use('/api/admin/cms', adminCmsRoutes);
 app.use('/api/admin/orders', adminOrderRoutes);
 app.use('/api/admin/finance', adminFinanceManagementRoutes);
 app.use('/api/admin/sellers', adminSellerRoutes);
+app.use('/api/admin/dashboard', adminDashboardRoutes);
 
 
 // Temple Admin Routes

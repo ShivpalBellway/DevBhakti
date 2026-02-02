@@ -32,11 +32,6 @@ const statusConfig = {
         color: "bg-emerald-100 text-emerald-700 border-emerald-200",
         icon: CheckCircle,
     },
-    PENDING: {
-        label: "Pending",
-        color: "bg-amber-100 text-amber-700 border-amber-200",
-        icon: Clock,
-    },
     COMPLETED: {
         label: "Completed",
         color: "bg-emerald-100 text-emerald-700 border-emerald-200",
@@ -127,8 +122,8 @@ export default function AdminBookingsPage() {
                 {[
                     { label: "Total Bookings", value: bookings.length, color: "text-foreground" },
                     { label: "Confirmed", value: bookings.filter(b => b.status === 'BOOKED').length, color: "text-emerald-600" },
-                    { label: "Pending", value: bookings.filter(b => b.status === 'PENDING').length, color: "text-amber-600" },
                     { label: "Completed", value: bookings.filter(b => b.status === 'COMPLETED').length, color: "text-emerald-700" },
+                    { label: "Cancelled/Rejected", value: bookings.filter(b => b.status === 'CANCELLED' || b.status === 'REJECTED').length, color: "text-rose-600" },
                 ].map((stat) => (
                     <Card key={stat.label}>
                         <CardContent className="p-4">
@@ -151,7 +146,7 @@ export default function AdminBookingsPage() {
                     />
                 </div>
                 <div className="flex gap-2 flex-wrap">
-                    {["all", "PENDING", "BOOKED", "COMPLETED", "CANCELLED", "REJECTED"].map((status) => (
+                    {["all", "BOOKED", "COMPLETED", "CANCELLED", "REJECTED"].map((status) => (
                         <Button
                             key={status}
                             variant={statusFilter === status ? "sacred" : "outline"}
@@ -159,7 +154,7 @@ export default function AdminBookingsPage() {
                             onClick={() => setStatusFilter(status)}
                             className="capitalize"
                         >
-                            {status === "all" ? "All" : status.toLowerCase()}
+                            {status === "all" ? "All" : status === "BOOKED" ? "Confirmed" : status.toLowerCase()}
                         </Button>
                     ))}
                 </div>
@@ -192,7 +187,7 @@ export default function AdminBookingsPage() {
                                         <td colSpan={8} className="p-8 text-center text-muted-foreground">No bookings found</td>
                                     </tr>
                                 ) : filteredBookings.map((booking, index) => {
-                                    const status = statusConfig[booking.status as keyof typeof statusConfig] || statusConfig.PENDING;
+                                    const status = statusConfig[booking.status as keyof typeof statusConfig] || statusConfig.BOOKED;
                                     return (
                                         <motion.tr
                                             key={booking.id}
@@ -301,8 +296,8 @@ export default function AdminBookingsPage() {
                             <div className="p-8 space-y-8 max-h-[70vh] overflow-y-auto">
                                 <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
                                     <div className="flex items-center gap-3">
-                                        <div className={`p-2 rounded-xl ${(statusConfig[selectedBooking.status as keyof typeof statusConfig] || statusConfig.PENDING).color}`}>
-                                            {React.createElement((statusConfig[selectedBooking.status as keyof typeof statusConfig] || statusConfig.PENDING).icon, { className: "w-5 h-5" })}
+                                        <div className={`p-2 rounded-xl ${(statusConfig[selectedBooking.status as keyof typeof statusConfig] || statusConfig.BOOKED).color}`}>
+                                            {React.createElement((statusConfig[selectedBooking.status as keyof typeof statusConfig] || statusConfig.BOOKED).icon, { className: "w-5 h-5" })}
                                         </div>
                                         <div>
                                             <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Status</p>

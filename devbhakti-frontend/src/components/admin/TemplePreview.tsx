@@ -32,7 +32,7 @@ export default function TemplePreview({ temple }: TemplePreviewProps) {
     const heroImages = temple.heroImages && temple.heroImages.length > 0 ? temple.heroImages : [temple.image];
 
     return (
-        <div className="max-h-[85vh] overflow-y-auto custom-scrollbar bg-slate-50/50 rounded-xl">
+        <div className="max-h-[85vh] overflow-y-auto premium-scrollbar bg-slate-50/50 rounded-xl">
             {/* Hero Image Carousel Simplified */}
             <div className="relative h-64 md:h-80 overflow-hidden rounded-t-xl">
                 <img

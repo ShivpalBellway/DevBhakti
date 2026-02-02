@@ -416,8 +416,10 @@ const ProfilePage = () => {
                                                     )}
                                                 </div>
                                                 {bookings.length > 5 && (
-                                                    <Button variant="ghost" className="w-full mt-4 text-primary font-bold group rounded-2xl hover:bg-orange-50">
-                                                        View All Bookings <ChevronRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
+                                                    <Button variant="ghost" className="w-full mt-4 text-primary font-bold group rounded-2xl hover:bg-orange-50" asChild>
+                                                        <Link href="/profile/bookings">
+                                                            View All Bookings <ChevronRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
+                                                        </Link>
                                                     </Button>
                                                 )}
                                             </div>

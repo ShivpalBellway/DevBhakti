@@ -240,15 +240,15 @@ const Navbar: React.FC<NavbarProps> = ({ variant = "default" }) => {
                             </Link>
                           </DropdownMenuItem>
 
-                          {/* <DropdownMenuItem asChild className="focus:bg-primary focus:text-white rounded-[1.2rem] cursor-pointer transition-all duration-300 group">
-                            <Link href={user ? "/account/poojas" : "/auth"} className="flex items-center justify-between w-full px-4 py-3">
+                          <DropdownMenuItem asChild className="focus:bg-primary focus:text-white rounded-[1.2rem] cursor-pointer transition-all duration-300 group">
+                            <Link href={user ? "/profile/bookings" : "/auth"} className="flex items-center justify-between w-full px-4 py-3">
                               <div className="flex items-center gap-3">
                                 <Church className="w-4 h-4 text-primary group-focus:text-white transition-colors" />
-                                <span className="font-medium">My Poojas</span>
+                                <span className="font-medium">My Pooja Bookings</span>
                               </div>
                               <ChevronRight className="w-3 h-3 opacity-0 group-focus:opacity-100 -translate-x-2 group-focus:translate-x-0 transition-all" />
                             </Link>
-                          </DropdownMenuItem> */}
+                          </DropdownMenuItem>
 
                           <DropdownMenuItem asChild className="focus:bg-primary focus:text-white rounded-[1.2rem] cursor-pointer transition-all duration-300 group">
                             <Link href={user ? "/favorites" : "/auth"} className="flex items-center justify-between w-full px-4 py-3">
@@ -381,9 +381,9 @@ const Navbar: React.FC<NavbarProps> = ({ variant = "default" }) => {
                       </Link>
                     </Button>
                     <Button variant="ghost" size="lg" asChild className="justify-start gap-4 h-14 rounded-2xl border border-border/50">
-                      <Link href={user ? "/account/poojas" : "/auth"} onClick={() => setIsMobileMenuOpen(false)}>
+                      <Link href={user ? "/profile/bookings" : "/auth"} onClick={() => setIsMobileMenuOpen(false)}>
                         <Church className="w-5 h-5 text-orange-600" />
-                        <span>My Poojas</span>
+                        <span>My Pooja Bookings</span>
                       </Link>
                     </Button>
                     <Button variant="ghost" size="lg" asChild className="justify-start gap-4 h-14 rounded-2xl border border-border/50">

@@ -45,7 +45,7 @@ const sidebarItems = [
     href: "/admin/users",
   },
   {
-    label: "Bookings",
+    label: "Pooja Bookings",
     icon: Calendar,
     href: "/admin/bookings",
   },
@@ -86,9 +86,13 @@ const sidebarItems = [
   //   href: "/admin/marketplace",
   // },
   {
-    label: "Payouts & Finance",
+    label: "Finance & Payouts",
     icon: IndianRupee,
-    href: "/admin/payments",
+    href: "#",
+    subItems: [
+      { label: "Transaction Ledger", href: "/admin/finance/ledger" },
+      { label: "Withdrawal Requests", href: "/admin/finance/withdrawals" }
+    ]
   },
   {
     label: "Live Darshan",
@@ -214,7 +218,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 py-4 px-3 space-y-1 overflow-y-auto custom-scrollbar">
+        <nav className="flex-1 py-4 px-3 space-y-1 overflow-y-auto premium-scrollbar">
           {sidebarItems.map((item) => {
             const hasSubItems = item.subItems && item.subItems.length > 0;
             const isOpen = openMenus.includes(item.label);

@@ -611,3 +611,11 @@ export const fetchAllTransactionsAdmin = async () => {
     });
     return response.data;
 };
+
+export const fetchAdminDashboardStats = async () => {
+    const token = localStorage.getItem("admin_token");
+    const response = await axios.get(`${API_URL}/admin/dashboard/stats`, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
