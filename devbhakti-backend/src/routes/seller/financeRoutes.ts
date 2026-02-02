@@ -2,7 +2,8 @@ import { Router } from "express";
 import {
     getSellerLedger,
     getSellerFinanceSummary,
-    requestSellerWithdrawal
+    requestSellerWithdrawal,
+    getSellerWithdrawals
 } from "../../controllers/seller/financeController";
 import { authenticate, authorize } from "../../middleware/authMiddleware";
 
@@ -14,5 +15,6 @@ router.use(authorize('SELLER'));
 router.get("/ledger", getSellerLedger);
 router.get("/summary", getSellerFinanceSummary);
 router.post("/withdraw", requestSellerWithdrawal);
+router.get("/withdrawals", getSellerWithdrawals);
 
 export default router;

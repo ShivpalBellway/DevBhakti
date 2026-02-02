@@ -1,8 +1,5 @@
 import { Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
-
-
-const prisma = new PrismaClient();
+import { prisma } from "../../lib/prisma";
 
 // Helper to normalize phone number to +91XXXXXXXXXX format
 const normalizePhone = (phone: string): string => {
@@ -48,7 +45,7 @@ export const createSeller = async (req: Request, res: Response) => {
             return res.status(400).json({ message: 'User with this email or phone already exists' });
         }
 
-        // Transaction to create User and associated Temple (Store)
+        // Transaction to create User and associated SellerProfile (Store)
         const result = await prisma.$transaction(async (prisma) => {
             // 1. Create User
             const user = await prisma.user.create({
@@ -61,8 +58,8 @@ export const createSeller = async (req: Request, res: Response) => {
                 }
             });
 
-            // 2. Create Temple (Store entity)
-            const temple = await prisma.temple.create({
+            // 2. Create SellerProfile (Store entity)
+            const sellerProfile = await prisma.sellerProfile.create({
                 data: {
                     name: storeName as string,
                     location: (address as string) || '', // Using address as location
@@ -75,7 +72,7 @@ export const createSeller = async (req: Request, res: Response) => {
                 }
             });
 
-            return { user, temple };
+            return { user, sellerProfile };
         });
 
         res.status(201).json({
@@ -97,7 +94,7 @@ export const getAllSellers = async (req: Request, res: Response) => {
                 role: 'SELLER'
             },
             include: {
-                temple: {
+                sellerProfile: {
                     include: {
                         products: {
                             select: { id: true }
@@ -115,7 +112,7 @@ export const getAllSellers = async (req: Request, res: Response) => {
 
         // Transform data for frontend
         const formattedSellers = sellers.map((user: any) => {
-            const store = user.temple;
+            const store = user.sellerProfile;
             return {
                 id: user.id,
                 name: user.name,
@@ -124,11 +121,11 @@ export const getAllSellers = async (req: Request, res: Response) => {
                 status: user.isVerified ? 'active' : 'inactive',
                 joinDate: user.createdAt,
 
-                // Store details from Temple
+                // Store details from SellerProfile
                 storeName: store?.name || 'N/A',
                 address: store?.fullAddress || '',
                 productCommissionRate: store?.productCommissionRate || 0,
-                templeId: store?.id,
+                sellerId: store?.id,
 
                 // Stats
                 totalProducts: store?.products?.length || 0,
@@ -156,7 +153,7 @@ export const getSellerById = async (req: Request, res: Response) => {
         const user = await prisma.user.findUnique({
             where: { id: id as string },
             include: {
-                temple: {
+                sellerProfile: {
                     include: {
                         products: true
                     }
@@ -178,11 +175,11 @@ export const getSellerById = async (req: Request, res: Response) => {
             phone: userAny.phone,
             status: userAny.isVerified ? 'active' : 'inactive',
             joinDate: userAny.createdAt,
-            storeName: userAny.temple?.name || 'N/A',
-            address: userAny.temple?.fullAddress || '',
-            productCommissionRate: userAny.temple?.productCommissionRate || 0,
-            templeId: userAny.temple?.id,
-            products: userAny.temple?.products || []
+            storeName: userAny.sellerProfile?.name || 'N/A',
+            address: userAny.sellerProfile?.fullAddress || '',
+            productCommissionRate: userAny.sellerProfile?.productCommissionRate || 0,
+            sellerId: userAny.sellerProfile?.id,
+            products: userAny.sellerProfile?.products || []
         };
 
         res.json({
@@ -204,7 +201,7 @@ export const updateSeller = async (req: Request, res: Response) => {
 
         const normalizedPhone = phone ? normalizePhone(phone as string) : undefined;
 
-        // Transaction to update User and Temple
+        // Transaction to update User and SellerProfile
         await prisma.$transaction(async (prisma) => {
             // Update User
             await prisma.user.update({
@@ -217,13 +214,13 @@ export const updateSeller = async (req: Request, res: Response) => {
                 }
             });
 
-            // Update Temple (Store)
-            // First find the temple associated with this user
-            const user = await prisma.user.findUnique({ where: { id: id as string }, include: { temple: true } });
+            // Update SellerProfile (Store)
+            // First find the sellerProfile associated with this user
+            const user = await prisma.user.findUnique({ where: { id: id as string }, include: { sellerProfile: true } });
 
-            if (user && (user as any).temple) {
-                await prisma.temple.update({
-                    where: { id: (user as any).temple.id },
+            if (user && (user as any).sellerProfile) {
+                await prisma.sellerProfile.update({
+                    where: { id: (user as any).sellerProfile.id },
                     data: {
                         name: storeName as string,
                         fullAddress: address as string,
@@ -246,26 +243,109 @@ export const updateSeller = async (req: Request, res: Response) => {
 export const deleteSeller = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
+        console.log(`[DeleteSeller] Attempting to delete seller with ID: ${id}`);
 
-        await prisma.$transaction(async (prisma) => {
-            // Check if temple exists
-            const user = await prisma.user.findUnique({
-                where: { id: id as string },
-                include: { temple: true }
-            });
+        // First, fetch seller with all related data for stats
+        const user = await prisma.user.findUnique({
+            where: { id: id as string },
+            include: {
+                sellerProfile: {
+                    include: {
+                        products: true,
+                        subOrders: true,
+                        ledgerEntries: true,
+                        withdrawals: true
+                    }
+                }
+            }
+        });
 
-            if (user && (user as any).temple) {
-                await prisma.temple.delete({
-                    where: { id: (user as any).temple.id }
+        if (!user || user.role !== 'SELLER') {
+            return res.status(404).json({ message: 'Seller not found' });
+        }
+
+        const sellerProfile = (user as any).sellerProfile;
+
+        if (!sellerProfile) {
+            return res.status(404).json({ message: 'Seller profile not found' });
+        }
+
+        // Collect stats
+        const stats = {
+            products: sellerProfile?.products?.length || 0,
+            orders: sellerProfile?.subOrders?.length || 0,
+            ledgerEntries: sellerProfile?.ledgerEntries?.length || 0,
+            withdrawals: sellerProfile?.withdrawals?.length || 0
+        };
+
+        // Delete all related data in a transaction (in correct order to avoid FK constraints)
+        await prisma.$transaction(async (tx) => {
+            const sellerId = sellerProfile.id;
+
+            // 1. Delete product variants first (they depend on products)
+            const productIds = sellerProfile.products.map((p: any) => p.id);
+            if (productIds.length > 0) {
+                await tx.productVariant.deleteMany({
+                    where: { productId: { in: productIds } }
+                });
+
+                // Delete cart items
+                await tx.cartItem.deleteMany({
+                    where: { productId: { in: productIds } }
+                });
+
+                // Delete order items
+                await tx.orderItem.deleteMany({
+                    where: { productId: { in: productIds } }
+                });
+
+                // Delete favorites
+                await tx.favorite.deleteMany({
+                    where: { productId: { in: productIds } }
                 });
             }
 
-            await prisma.user.delete({
+            // 2. Delete products
+            await tx.product.deleteMany({
+                where: { sellerId }
+            });
+
+            // 3. Delete sub-orders
+            await tx.subOrder.deleteMany({
+                where: { sellerId }
+            });
+
+            // 4. Delete ledger entries
+            await tx.templeLedger.deleteMany({
+                where: { sellerId }
+            });
+
+            // 5. Delete withdrawal requests
+            await tx.withdrawalRequest.deleteMany({
+                where: { sellerId }
+            });
+
+            // 6. Delete seller profile
+            await tx.sellerProfile.delete({
+                where: { id: sellerId }
+            });
+
+            // 7. Finally, delete user
+            await tx.user.delete({
                 where: { id: id as string }
             });
         });
 
-        res.json({ message: 'Seller deleted successfully' });
+        res.json({
+            message: 'Seller and all related data deleted successfully',
+            deletedData: {
+                seller: user.name,
+                productsDeleted: stats.products,
+                ordersDeleted: stats.orders,
+                ledgerEntriesDeleted: stats.ledgerEntries,
+                withdrawalsDeleted: stats.withdrawals
+            }
+        });
 
     } catch (error: any) {
         console.error('Delete Seller Error:', error);

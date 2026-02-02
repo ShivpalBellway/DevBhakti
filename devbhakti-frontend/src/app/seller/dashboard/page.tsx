@@ -11,8 +11,21 @@ import {
     Store,
     ArrowUpRight,
     LayoutDashboard,
-    Clock
+    Clock,
+    ArrowUp,
+    ArrowDown,
+    Wallet,
+    CreditCard
 } from "lucide-react";
+import {
+    AreaChart,
+    Area,
+    XAxis,
+    YAxis,
+    CartesianGrid,
+    Tooltip,
+    ResponsiveContainer
+} from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { fetchSellerFinanceSummary, fetchSellerOrders, fetchSellerProducts } from "@/api/sellerController";
 import { format } from "date-fns";
@@ -23,7 +36,8 @@ export default function SellerDashboard() {
     const [user, setUser] = useState<any>(null);
     const [statsData, setStatsData] = useState<any>(null);
     const [recentOrders, setRecentOrders] = useState<any[]>([]);
-    const [productsCount, setProductsCount] = useState(0);
+    const [totalProductsCount, setTotalProductsCount] = useState(0);
+    const [activeProductsCount, setActiveProductsCount] = useState(0);
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
@@ -37,15 +51,17 @@ export default function SellerDashboard() {
     const loadDashboardData = async () => {
         setIsLoading(true);
         try {
-            const [summaryRes, ordersRes, productsRes] = await Promise.all([
+            const [summaryRes, ordersRes, productsRes, activeProductsRes] = await Promise.all([
                 fetchSellerFinanceSummary(),
                 fetchSellerOrders(),
-                fetchSellerProducts()
+                fetchSellerProducts(),
+                fetchSellerProducts({ status: 'approved' })
             ]);
 
             if (summaryRes.success) setStatsData(summaryRes.data);
             if (ordersRes.success) setRecentOrders(ordersRes.data);
-            if (productsRes.success) setProductsCount(productsRes.data.length);
+            if (productsRes.success) setTotalProductsCount(productsRes.data.pagination.total);
+            if (activeProductsRes.success) setActiveProductsCount(activeProductsRes.data.pagination.total);
         } catch (error) {
             console.error("Failed to load dashboard data", error);
         } finally {
@@ -57,34 +73,42 @@ export default function SellerDashboard() {
         {
             title: "Total Revenue",
             value: `₹${(statsData?.totalEarnings || 0).toLocaleString()}`,
-            change: "+12%", // Placeholder for now
+            change: "+12.5%",
             trend: "up",
             icon: IndianRupee,
-            color: "bg-amber-500",
+            color: "text-emerald-600",
+            bg: "bg-emerald-50",
+            border: "border-emerald-100"
         },
         {
             title: "Pending Orders",
             value: statsData?.activeOrdersCount || 0,
-            change: "Action Required",
-            trend: "up",
+            change: "Needs Attention",
+            trend: "down",
             icon: ShoppingBag,
-            color: "bg-blue-500",
+            color: "text-blue-600",
+            bg: "bg-blue-50",
+            border: "border-blue-100"
         },
         {
             title: "Active Products",
-            value: productsCount,
-            change: "Live",
+            value: activeProductsCount,
+            change: "Live Now",
             trend: "up",
             icon: Package,
-            color: "bg-indigo-500",
+            color: "text-amber-600",
+            bg: "bg-amber-50",
+            border: "border-amber-100"
         },
         {
             title: "Available Balance",
             value: `₹${(statsData?.availableBalance || 0).toLocaleString()}`,
             change: "Withdrawable",
             trend: "up",
-            icon: TrendingUp,
-            color: "bg-emerald-500",
+            icon: Wallet,
+            color: "text-violet-600",
+            bg: "bg-violet-50",
+            border: "border-violet-100"
         },
     ];
 
@@ -136,30 +160,86 @@ export default function SellerDashboard() {
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.4, delay: index * 0.1 }}
                     >
-                        <Card className="border-none shadow-xl hover:shadow-2xl transition-all duration-300 rounded-[1.5rem] overflow-hidden group">
+                        <Card className={`border shadow-sm hover:shadow-md transition-all duration-300 rounded-2xl overflow-hidden ${stat.border}`}>
                             <CardContent className="p-6">
                                 <div className="flex items-center justify-between mb-4">
-                                    <div className={`w-12 h-12 rounded-2xl ${stat.color} bg-opacity-10 flex items-center justify-center transition-transform group-hover:scale-110`}>
-                                        <stat.icon className={cn("w-6 h-6", stat.color.replace('bg-', 'text-'))} />
+                                    <div className={`w-12 h-12 rounded-xl ${stat.bg} ${stat.color} flex items-center justify-center`}>
+                                        <stat.icon className="w-6 h-6" />
                                     </div>
-                                    <Badge variant="outline" className="border-slate-100 text-[10px] font-bold uppercase tracking-tighter">
+                                    <Badge variant="secondary" className={`flex items-center gap-1 ${stat.bg} ${stat.color} border-0`}>
+                                        {stat.trend === 'up' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />}
                                         {stat.change}
                                     </Badge>
                                 </div>
                                 <div>
-                                    <p className="text-2xl font-black text-slate-900">{stat.value}</p>
-                                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">{stat.title}</p>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    </motion.div>
-                ))}
-            </div>
+                                    <p className="text-2xl font-bold text-slate-900">{stat.value}</p>
+                                    <p className="text-sm font-medium text-slate-500 mt-1">{stat.title}</p>
+                                </div >
+                            </CardContent >
+                        </Card >
+                    </motion.div >
+                ))
+                }
+            </div >
+
+            {/* Revenue Chart Section */}
+            < motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: 0.3 }}
+            >
+                <Card className="border-none shadow-lg rounded-[2rem] overflow-hidden bg-white">
+                    <CardHeader>
+                        <CardTitle className="text-xl font-serif font-bold text-slate-800">Revenue Overview</CardTitle>
+                        <p className="text-sm text-slate-500">Daily revenue performance for the last 30 days</p>
+                    </CardHeader>
+                    <CardContent className="h-[300px] w-full">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <AreaChart data={statsData?.revenueHistory || []}>
+                                <defs>
+                                    <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor="#d97706" stopOpacity={0.1} />
+                                        <stop offset="95%" stopColor="#d97706" stopOpacity={0} />
+                                    </linearGradient>
+                                </defs>
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                                <XAxis
+                                    dataKey="name"
+                                    tickLine={false}
+                                    axisLine={false}
+                                    tick={{ fill: '#64748b', fontSize: 12 }}
+                                    dy={10}
+                                    minTickGap={30}
+                                />
+                                <YAxis
+                                    tickLine={false}
+                                    axisLine={false}
+                                    tick={{ fill: '#64748b', fontSize: 12 }}
+                                    tickFormatter={(value) => `₹${value}`}
+                                    dx={-10}
+                                />
+                                <Tooltip
+                                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                                    itemStyle={{ color: '#d97706', fontWeight: 600 }}
+                                />
+                                <Area
+                                    type="monotone"
+                                    dataKey="revenue"
+                                    stroke="#d97706"
+                                    strokeWidth={3}
+                                    fillOpacity={1}
+                                    fill="url(#colorRevenue)"
+                                />
+                            </AreaChart>
+                        </ResponsiveContainer>
+                    </CardContent>
+                </Card>
+            </motion.div >
 
             {/* Main content grid */}
-            <div className="grid lg:grid-cols-3 gap-6">
+            < div className="grid lg:grid-cols-3 gap-6" >
                 {/* Recent Activity */}
-                <motion.div
+                < motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.4, delay: 0.4 }}
@@ -212,10 +292,10 @@ export default function SellerDashboard() {
                             </div>
                         </CardContent>
                     </Card>
-                </motion.div>
+                </motion.div >
 
                 {/* Store Info */}
-                <motion.div
+                < motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.4, delay: 0.5 }}
@@ -244,8 +324,8 @@ export default function SellerDashboard() {
                                     <div className="space-y-3">
                                         <div className="flex justify-between items-center text-sm font-bold">
                                             <span className="text-slate-400">Total Products</span>
-                                            <span className="text-slate-900">{productsCount}</span>
-                                        </div>
+                                            <span className="text-slate-900">{totalProductsCount}</span>
+                                        </div >
                                         <div className="flex justify-between items-center text-sm font-bold">
                                             <span className="text-slate-400">Total Orders</span>
                                             <span className="text-slate-900">{recentOrders.length}</span>
@@ -254,8 +334,8 @@ export default function SellerDashboard() {
                                             <span className="text-slate-400">Net Revenue</span>
                                             <span className="text-[#794A05]">₹{(statsData?.netEarnings || 0).toLocaleString()}</span>
                                         </div>
-                                    </div>
-                                </div>
+                                    </div >
+                                </div >
                                 <div className="p-4 bg-emerald-50 rounded-2xl border border-emerald-100">
                                     <div className="flex items-center gap-2 mb-1">
                                         <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
@@ -263,11 +343,11 @@ export default function SellerDashboard() {
                                     </div>
                                     <p className="text-xs text-emerald-800 font-bold">₹{(statsData?.availableBalance || 0).toLocaleString()} ready for withdrawal</p>
                                 </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-                </motion.div>
-            </div>
-        </div>
+                            </div >
+                        </CardContent >
+                    </Card >
+                </motion.div >
+            </div >
+        </div >
     );
 }

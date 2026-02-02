@@ -22,10 +22,32 @@ model User {
   profileImage String?
   favorites    Favorite[]
   temple       Temple?
+  sellerProfile SellerProfile?
   bookings     PoojaBooking[]
+  cart         Cart?
   orders       Order[]
+}
 
-  @@unique([phone, role])
+model Cart {
+  id        String     @id @default(cuid())
+  userId    String     @unique
+  user      User       @relation(fields: [userId], references: [id])
+  items     CartItem[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+}
+
+model CartItem {
+  id        String         @id @default(cuid())
+  cartId    String
+  cart      Cart           @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product        @relation(fields: [productId], references: [id])
+  variantId String
+  variant   ProductVariant @relation(fields: [variantId], references: [id])
+  quantity  Int
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
 }
 
 model Temple {
@@ -72,6 +94,44 @@ model Temple {
   updateRequests TempleUpdateRequest[]
 }
 
+model SellerProfile {
+  id             String                @id @default(cuid())
+  name           String
+  location       String?
+  fullAddress    String?
+  description    String?
+  image          String?
+  heroImages     String[]
+  category       String?
+  
+  openTime       String?
+  phone          String?
+  website        String?
+
+  // Bank Details
+  bankName          String?
+  accountNumber     String?
+  accountHolderName String?
+  ifscCode          String?
+  upiId             String?
+  
+  isActive       Boolean               @default(true)
+  isVerified     Boolean               @default(false)
+  
+  userId         String                @unique
+  user           User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Financial Configuration
+  productCommissionRate Float @default(10.0) // Percentage
+  
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+  
+  products       Product[]
+  subOrders      SubOrder[]
+  ledgerEntries  TempleLedger[]
+  withdrawals    WithdrawalRequest[]
+}
 model TempleUpdateRequest {
   id            String   @id @default(cuid())
   templeId      String
@@ -177,14 +237,17 @@ model Product {
   status      String           @default("pending")
   image       String?
   templeId    String?
+  sellerId    String?          // Add sellerId
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt
   categoryId  String?
   favorites   Favorite[]
   categoryObj ProductCategory? @relation(fields: [categoryId], references: [id])
   temple      Temple?          @relation(fields: [templeId], references: [id], onDelete: Cascade)
+  seller      SellerProfile?   @relation(fields: [sellerId], references: [id], onDelete: Cascade)
   variants    ProductVariant[]
   orderItems  OrderItem[]
+  cartItems   CartItem[]
   
   // Advanced Details
   highlights      String?   // Bullet points (comma-separated)
@@ -204,6 +267,7 @@ model ProductVariant {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  cartItems CartItem[]
 }
 
 model Favorite {
@@ -300,7 +364,9 @@ model SubOrder {
   orderId         String
   order           Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
   templeId        String?
+  sellerId        String?        // Add sellerId
   temple          Temple?        @relation(fields: [templeId], references: [id])
+  seller          SellerProfile? @relation(fields: [sellerId], references: [id])
   totalAmount     Float
   status          String         @default("PENDING")
   
@@ -330,8 +396,10 @@ model OrderItem {
 
 model TempleLedger {
   id              String   @id @default(cuid())
-  templeId        String
-  temple          Temple   @relation(fields: [templeId], references: [id])
+  templeId        String?
+  sellerId        String?  // Add sellerId
+  temple          Temple?   @relation(fields: [templeId], references: [id])
+  seller          SellerProfile? @relation(fields: [sellerId], references: [id])
   amount          Float    // Net Earning (after commission)
   grossAmount     Float    @default(0) // Original Order Value
   commission      Float    @default(0) // Commission Deducted
@@ -357,8 +425,10 @@ enum LedgerStatus {
 
 model WithdrawalRequest {
   id              String   @id @default(cuid())
-  templeId        String
-  temple          Temple   @relation(fields: [templeId], references: [id])
+  templeId        String?
+  sellerId        String?  // Add sellerId
+  temple          Temple?   @relation(fields: [templeId], references: [id])
+  seller          SellerProfile? @relation(fields: [sellerId], references: [id])
   amount          Float
   status          WithdrawalStatus @default(PENDING)
   bankDetails     Json?    

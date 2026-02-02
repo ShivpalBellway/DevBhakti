@@ -1,21 +1,19 @@
 import { Request, Response } from "express";
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
+import { prisma } from "../../lib/prisma";
 
 // Get My Products
 export const getMyProducts = async (req: Request, res: Response) => {
     try {
         const userId = (req as any).user.userId;
 
-        // Get Store (linked via Temple model with category 'store')
-        const store = await prisma.temple.findUnique({ where: { userId } });
+        // Get Seller Store
+        const store = await prisma.sellerProfile.findUnique({ where: { userId } });
         if (!store) return res.status(404).json({ success: false, message: "Store not found" });
 
         const { page = 1, limit = 10, search, status } = req.query;
         const skip = (Number(page) - 1) * Number(limit);
 
-        const where: any = { templeId: store.id };
+        const where: any = { sellerId: store.id };
 
         if (search) {
             where.OR = [
@@ -67,15 +65,15 @@ export const getMyProductById = async (req: Request, res: Response) => {
         const userId = (req as any).user.userId;
         const { id } = req.params;
 
-        const store = await prisma.temple.findUnique({ where: { userId } });
+        const store = await prisma.sellerProfile.findUnique({ where: { userId } });
         if (!store) return res.status(404).json({ success: false, message: "Store not found" });
 
         const product = await prisma.product.findFirst({
-            where: { id: id as string, templeId: store.id },
+            where: { id: id as string, sellerId: store.id },
             include: {
                 variants: true,
                 categoryObj: { select: { id: true, name: true } },
-                temple: { select: { id: true, name: true } }
+                seller: { select: { id: true, name: true } }
             }
         });
 
@@ -94,7 +92,7 @@ export const getMyProductById = async (req: Request, res: Response) => {
 export const createProduct = async (req: Request, res: Response) => {
     try {
         const userId = (req as any).user.userId;
-        const store = await prisma.temple.findUnique({ where: { userId } });
+        const store = await prisma.sellerProfile.findUnique({ where: { userId } });
         if (!store) return res.status(404).json({ success: false, message: "Store not found" });
 
         let name, description, category, categoryId, variants, image;
@@ -136,7 +134,7 @@ export const createProduct = async (req: Request, res: Response) => {
                 description,
                 category,
                 categoryId,
-                templeId: store.id,
+                sellerId: store.id,
                 status: "pending",
                 highlights,
                 longDescription,
@@ -169,11 +167,11 @@ export const updateProduct = async (req: Request, res: Response) => {
         const userId = (req as any).user.userId;
         const { id } = req.params;
 
-        const store = await prisma.temple.findUnique({ where: { userId } });
+        const store = await prisma.sellerProfile.findUnique({ where: { userId } });
         if (!store) return res.status(404).json({ success: false, message: "Store not found" });
 
         const existingProduct = await prisma.product.findFirst({
-            where: { id: id as string, templeId: store.id }
+            where: { id: id as string, sellerId: store.id }
         });
         if (!existingProduct) return res.status(404).json({ success: false, message: "Product not found or access denied" });
 
@@ -252,11 +250,11 @@ export const deleteProduct = async (req: Request, res: Response) => {
         const userId = (req as any).user.userId;
         const { id } = req.params;
 
-        const store = await prisma.temple.findUnique({ where: { userId } });
+        const store = await prisma.sellerProfile.findUnique({ where: { userId } });
         if (!store) return res.status(404).json({ success: false, message: "Store not found" });
 
         const existingProduct = await prisma.product.findFirst({
-            where: { id: id as string, templeId: store.id }
+            where: { id: id as string, sellerId: store.id }
         });
         if (!existingProduct) return res.status(404).json({ success: false, message: "Product not found or access denied" });
 

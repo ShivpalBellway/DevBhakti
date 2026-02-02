@@ -1,15 +1,13 @@
 import { Request, Response } from "express";
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
+import { prisma } from "../../lib/prisma";
 
 // Get orders specifically for a Seller (Store)
 export const getSellerOrders = async (req: Request, res: Response) => {
     try {
         const userId = (req as any).user.userId;
 
-        // Find the store associated with this user
-        const store = await prisma.temple.findUnique({
+        // Find the store (SellerProfile) associated with this user
+        const store = await prisma.sellerProfile.findUnique({
             where: { userId }
         });
 
@@ -18,7 +16,7 @@ export const getSellerOrders = async (req: Request, res: Response) => {
         }
 
         const subOrders = await prisma.subOrder.findMany({
-            where: { templeId: store.id },
+            where: { sellerId: store.id },
             include: {
                 order: {
                     include: {
@@ -48,7 +46,7 @@ export const updateSellerOrderStatus = async (req: Request, res: Response) => {
         const subOrderId = req.params.subOrderId as string;
         const { status, shippingLabel } = req.body;
 
-        const store = await prisma.temple.findUnique({
+        const store = await prisma.sellerProfile.findUnique({
             where: { userId }
         });
 
@@ -61,7 +59,7 @@ export const updateSellerOrderStatus = async (req: Request, res: Response) => {
             where: { id: subOrderId }
         });
 
-        if (!existing || existing.templeId !== store.id) {
+        if (!existing || existing.sellerId !== store.id) {
             return res.status(403).json({ success: false, message: "Unauthorized or order not found" });
         }
 

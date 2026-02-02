@@ -122,3 +122,11 @@ export const requestSellerWithdrawal = async (data: { amount: number; bankDetail
     });
     return response.data;
 };
+
+export const fetchSellerWithdrawals = async () => {
+    const token = localStorage.getItem("seller_token");
+    const response = await axios.get(`${API_URL}/seller/finance/withdrawals`, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
