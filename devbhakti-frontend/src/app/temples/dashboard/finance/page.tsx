@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import {
     IndianRupee,
     TrendingUp,
@@ -33,17 +34,9 @@ import { cn } from "@/lib/utils";
 import {
     fetchTempleLedger,
     fetchTempleFinanceSummary,
-    fetchMyTempleProfile,
-    requestWithdrawal
+    fetchMyTempleProfile
 } from "@/api/templeAdminController";
-import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-    DialogDescription,
-    DialogFooter,
-} from "@/components/ui/dialog";
+
 
 export default function EarningsPage() {
     const [isLoading, setIsLoading] = useState(true);
@@ -51,9 +44,8 @@ export default function EarningsPage() {
     const [ledger, setLedger] = useState<any[]>([]);
     const [templeId, setTempleId] = useState<string | null>(null);
     const [searchQuery, setSearchQuery] = useState("");
-    const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false);
-    const [withdrawAmount, setWithdrawAmount] = useState("");
     const { toast } = useToast();
+    const router = useRouter();
 
     useEffect(() => {
         loadFinancials();
@@ -107,34 +99,7 @@ export default function EarningsPage() {
         }
     };
 
-    const handleWithdrawalRequest = async () => {
-        if (!templeId || !withdrawAmount) return;
-        const amount = parseFloat(withdrawAmount);
-        if (isNaN(amount) || amount <= 0) {
-            toast({ title: "Invalid amount", variant: "destructive" });
-            return;
-        }
 
-        try {
-            const res = await requestWithdrawal({
-                templeId,
-                amount,
-                bankDetails: { type: "MANUAL_BANK_TRANSFER" } // Placeholder
-            });
-            if (res.success) {
-                toast({ title: "Success", description: "Withdrawal request submitted for approval" });
-                setIsWithdrawModalOpen(false);
-                setWithdrawAmount("");
-                loadFinancials(); // Refresh
-            }
-        } catch (error: any) {
-            toast({
-                title: "Request Failed",
-                description: error.response?.data?.message || "Failed to submit request",
-                variant: "destructive",
-            });
-        }
-    };
 
     const filteredLedger = ledger.filter(entry =>
         entry.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -164,7 +129,7 @@ export default function EarningsPage() {
                     </p>
                 </div>
                 <Button
-                    onClick={() => setIsWithdrawModalOpen(true)}
+                    onClick={() => router.push("/temples/dashboard/finance/withdraw")}
                     className="bg-[#794A05] hover:bg-[#5D3804] text-white rounded-xl px-6 h-12 font-bold shadow-lg shadow-[#794A05]/20 gap-2"
                 >
                     <ArrowUpRight className="w-4 h-4" />
@@ -369,63 +334,7 @@ export default function EarningsPage() {
                 </Card>
             </div>
 
-            {/* Withdrawal Modal */}
-            <Dialog open={isWithdrawModalOpen} onOpenChange={setIsWithdrawModalOpen}>
-                <DialogContent className="max-w-md rounded-[2.5rem] p-8 border-none shadow-2xl bg-white overflow-hidden">
-                    <div className="absolute top-0 left-0 w-full h-2 bg-[#794A05]" />
-                    <DialogHeader>
-                        <DialogTitle className="text-2xl font-serif font-bold text-slate-900">Request Payout</DialogTitle>
-                        <DialogDescription className="text-slate-500 font-medium">
-                            Transfer your earnings to your registered bank account.
-                        </DialogDescription>
-                    </DialogHeader>
 
-                    <div className="py-8 space-y-6">
-                        <div className="bg-slate-50 p-6 rounded-3xl border border-slate-100">
-                            <p className="text-xs font-extrabold text-slate-400 uppercase tracking-widest mb-1">Available Balanced</p>
-                            <p className="text-3xl font-extrabold text-slate-900">₹{summary?.availableBalance?.toLocaleString() || "0"}</p>
-                        </div>
-
-                        <div className="space-y-2">
-                            <label className="text-xs font-extrabold text-slate-900 uppercase tracking-widest pl-1">Amount to Withdraw</label>
-                            <div className="relative">
-                                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-medium">₹</span>
-                                <Input
-                                    type="number"
-                                    placeholder="Enter amount"
-                                    value={withdrawAmount}
-                                    onChange={(e) => setWithdrawAmount(e.target.value)}
-                                    className="h-12 pl-8 rounded-2xl border-slate-200 focus:border-[#794A05]"
-                                />
-                            </div>
-                            <p className="text-[10px] text-slate-400 font-bold pl-1 italic">*Minimum withdrawal amount is ₹500</p>
-                        </div>
-
-                        <div className="flex gap-4 p-4 bg-amber-50 rounded-2xl border border-amber-100">
-                            <AlertCircle className="w-5 h-5 text-[#794A05] flex-shrink-0" />
-                            <p className="text-xs text-[#794A05] font-medium leading-relaxed">
-                                Payouts are usually processed within 24-48 sacred hours to your verified bank account.
-                            </p>
-                        </div>
-                    </div>
-
-                    <DialogFooter>
-                        <Button
-                            variant="ghost"
-                            onClick={() => setIsWithdrawModalOpen(false)}
-                            className="rounded-xl font-bold"
-                        >
-                            Cancel
-                        </Button>
-                        <Button
-                            onClick={handleWithdrawalRequest}
-                            className="bg-[#794A05] hover:bg-[#5D3804] text-white rounded-xl px-8 font-bold"
-                        >
-                            Confirm Withdrawal
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
         </div>
     );
 }

@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import {
-    Calendar,
+
     Search,
     Filter,
     MoreVertical,
@@ -18,13 +18,28 @@ import {
     X,
     Church,
     Phone,
-    Mail
+    Mail,
+    Ban,
+    PlayCircle,
+    Calendar as CalendarIcon
 } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Calendar } from "@/components/ui/calendar";
+import AvailabilityManager from "@/components/temple/AvailabilityManager";
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+    Dialog,
+    DialogContent,
+    DialogTrigger // Added DialogTrigger
+} from "@/components/ui/dialog";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -37,10 +52,13 @@ import { AnimatePresence } from "framer-motion";
 import {
     fetchMyTempleBookings,
     updateBookingStatus,
-    deleteBooking
+    deleteBooking,
+    setTempleAvailability,
+    getTempleAvailability
 } from "@/api/templeAdminController";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 
 const statusConfig = {
     BOOKED: {
@@ -67,11 +85,65 @@ export default function TempleBookingsPage() {
     const [loading, setLoading] = useState(true);
     const [selectedBooking, setSelectedBooking] = useState<any | null>(null);
     const [isProcessing, setIsProcessing] = useState(false);
+    const [date, setDate] = useState<Date | undefined>(undefined);
+    const [isTodayClosed, setIsTodayClosed] = useState(false);
     const { toast } = useToast();
 
     useEffect(() => {
         loadBookings();
+        checkTodayAvailability();
     }, []);
+
+    const checkTodayAvailability = async () => {
+        try {
+            const todayStr = new Date().toISOString().split('T')[0];
+            const res = await getTempleAvailability({
+                month: todayStr.split('-')[1],
+                year: todayStr.split('-')[0]
+            });
+            if (res.success && res.data) {
+                // Find global rule for today (poojaId: null)
+                const todayRule = res.data.find((r: any) => r.date === todayStr && r.poojaId === null);
+                if (todayRule && todayRule.isClosed) {
+                    setIsTodayClosed(true);
+                } else {
+                    setIsTodayClosed(false);
+                }
+            }
+        } catch (error) {
+            console.error("Failed to check availability", error);
+        }
+    };
+
+    const handleToggleToday = async () => {
+        setIsProcessing(true);
+        try {
+            const todayStr = new Date().toISOString().split('T')[0];
+            const newStatus = !isTodayClosed;
+
+            // Set global availability (poojaId: null)
+            const res = await setTempleAvailability({
+                date: todayStr,
+                isClosed: newStatus,
+                poojaId: undefined // Global
+            });
+
+            if (res.success) {
+                setIsTodayClosed(newStatus);
+                toast({
+                    title: newStatus ? "Bookings Stopped" : "Bookings Resumed",
+                    description: newStatus
+                        ? "No new bookings will be accepted for today."
+                        : "You are now accepting bookings for today.",
+                    variant: newStatus ? "destructive" : "default"
+                });
+            }
+        } catch (error) {
+            toast({ title: "Error", description: "Failed to update availability", variant: "destructive" });
+        } finally {
+            setIsProcessing(false);
+        }
+    };
 
     const loadBookings = async () => {
         setLoading(true);
@@ -137,12 +209,24 @@ export default function TempleBookingsPage() {
 
         const matchesStatus = statusFilter ? b.status === statusFilter : true;
 
-        return matchesSearch && matchesStatus;
+        const bookingDate = new Date(b.createdAt);
+        const matchesDate = date
+            ? bookingDate.toDateString() === date.toDateString()
+            : true;
+
+        return matchesSearch && matchesStatus && matchesDate;
     });
+
+    const isToday = (dateString: string) => {
+        return new Date(dateString).toDateString() === new Date().toDateString();
+    };
 
     const stats = {
         total: bookings.length,
-        today: bookings.filter(b => new Date(b.createdAt).toDateString() === new Date().toDateString()).length,
+        todayCount: bookings.filter(b => isToday(b.createdAt)).length,
+        todayRevenue: bookings
+            .filter(b => isToday(b.createdAt))
+            .reduce((acc, b) => acc + (b.packagePrice || 0), 0),
         completed: bookings.filter(b => b.status === "COMPLETED").length,
         revenue: bookings.reduce((acc, b) => acc + (b.packagePrice || 0), 0)
     };
@@ -159,7 +243,37 @@ export default function TempleBookingsPage() {
                         Manage ritual and ceremony bookings for your temple.
                     </p>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-2 flex-wrap">
+                    <Dialog>
+                        <DialogTrigger asChild>
+                            <Button variant="outline" className="gap-2">
+                                <CalendarIcon className="w-4 h-4" />
+                                Manage Calendar
+                            </Button>
+                        </DialogTrigger>
+                        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                            <AvailabilityManager />
+                        </DialogContent>
+                    </Dialog>
+
+                    <Button
+                        variant={isTodayClosed ? "destructive" : "outline"}
+                        onClick={handleToggleToday}
+                        disabled={isProcessing}
+                        className={isTodayClosed ? "bg-red-50 text-red-600 hover:bg-red-100 border-red-200" : "text-amber-600 border-amber-200 hover:bg-amber-50"}
+                    >
+                        {isTodayClosed ? (
+                            <>
+                                <PlayCircle className="w-4 h-4 mr-2" />
+                                Resume Today
+                            </>
+                        ) : (
+                            <>
+                                <Ban className="w-4 h-4 mr-2" />
+                                Stop Today
+                            </>
+                        )}
+                    </Button>
                     <Button variant="outline" onClick={() => loadBookings()} disabled={loading}>
                         Refresh
                     </Button>
@@ -171,20 +285,37 @@ export default function TempleBookingsPage() {
             </div>
 
             {/* Stats */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {[
-                    { label: "Total Bookings", value: stats.total.toString(), color: "text-foreground" },
-                    { label: "Today's Rituals", value: stats.today.toString(), color: "text-primary" },
-                    { label: "Completed", value: stats.completed.toString(), color: "text-emerald-600" },
-                    { label: "Total Revenue", value: `₹${stats.revenue.toLocaleString()}`, color: "text-emerald-700" },
-                ].map((stat) => (
-                    <Card key={stat.label}>
-                        <CardContent className="p-4">
-                            <p className={`text-2xl font-bold ${stat.color}`}>{stat.value}</p>
-                            <p className="text-sm text-muted-foreground">{stat.label}</p>
-                        </CardContent>
-                    </Card>
-                ))}
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                <Card>
+                    <CardContent className="p-4">
+                        <p className="text-2xl font-bold text-foreground">{stats.total}</p>
+                        <p className="text-sm text-muted-foreground">Total Bookings</p>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardContent className="p-4">
+                        <p className="text-2xl font-bold text-primary">{stats.todayCount}</p>
+                        <p className="text-sm text-muted-foreground">Bookings Today</p>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardContent className="p-4">
+                        <p className="text-2xl font-bold text-emerald-600">₹{stats.todayRevenue.toLocaleString()}</p>
+                        <p className="text-sm text-muted-foreground">Today's Earnings</p>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardContent className="p-4">
+                        <p className="text-2xl font-bold text-emerald-600">{stats.completed}</p>
+                        <p className="text-sm text-muted-foreground">Completed</p>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardContent className="p-4">
+                        <p className="text-2xl font-bold text-emerald-700">₹{stats.revenue.toLocaleString()}</p>
+                        <p className="text-sm text-muted-foreground">Total Revenue</p>
+                    </CardContent>
+                </Card>
             </div>
 
             {/* Filters */}
@@ -197,6 +328,39 @@ export default function TempleBookingsPage() {
                         onChange={(e) => setSearchQuery(e.target.value)}
                         className="pl-10"
                     />
+                </div>
+                <div className="w-full md:w-auto">
+                    <Popover>
+                        <PopoverTrigger asChild>
+                            <Button
+                                variant={"outline"}
+                                className={cn(
+                                    "w-full md:w-[240px] justify-start text-left font-normal",
+                                    !date && "text-muted-foreground"
+                                )}
+                            >
+                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                {date ? format(date, "PPP") : <span>Filter by date</span>}
+                            </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="end">
+                            <Calendar
+                                mode="single"
+                                selected={date}
+                                onSelect={setDate}
+                                initialFocus
+                            />
+                        </PopoverContent>
+                    </Popover>
+                    {date && (
+                        <Button
+                            variant="ghost"
+                            className="ml-2 px-2 text-xs h-8 text-muted-foreground hover:text-foreground"
+                            onClick={() => setDate(undefined)}
+                        >
+                            <X className="w-3 h-3 mr-1" /> Clear Date
+                        </Button>
+                    )}
                 </div>
             </div>
 

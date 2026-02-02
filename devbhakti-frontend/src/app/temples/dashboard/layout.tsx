@@ -90,6 +90,11 @@ const sidebarItems = [
         href: "/temples/dashboard/finance",
     },
     {
+        label: "Bank Details",
+        icon: Building2,
+        href: "/temples/dashboard/bank",
+    },
+    {
         label: "Profile",
         icon: Settings,
         href: "/temples/dashboard/profile",

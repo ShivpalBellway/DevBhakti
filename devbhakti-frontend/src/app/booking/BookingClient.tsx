@@ -61,6 +61,40 @@ function BookingForm() {
     specialRequests: "",
   });
 
+  const [availabilityStatus, setAvailabilityStatus] = useState<{ available: boolean, message: string } | null>(null);
+
+  useEffect(() => {
+    const checkDate = async () => {
+      if (!selectedDate || !selectedTemple) {
+        setAvailabilityStatus(null);
+        return;
+      }
+
+      try {
+        const query = new URLSearchParams({
+          templeId: selectedTemple,
+          date: selectedDate,
+          ...(selectedPooja ? { poojaId: selectedPooja } : {})
+        });
+
+        const response = await fetch(`${API_URL}/bookings/check-availability?${query}`);
+        const data = await response.json();
+
+        if (data.success) {
+          setAvailabilityStatus({ available: data.available, message: data.message });
+        }
+      } catch (error) {
+        console.error("Availability check failed", error);
+      }
+    };
+
+    const timeoutId = setTimeout(() => {
+      checkDate();
+    }, 500); // 500ms debounce
+
+    return () => clearTimeout(timeoutId);
+  }, [selectedDate, selectedTemple, selectedPooja]);
+
   useEffect(() => {
     const loadData = async () => {
       try {
@@ -125,9 +159,15 @@ function BookingForm() {
       toast({ title: "Please select temple and pooja service", variant: "destructive" });
       return;
     }
-    if (step === 2 && (!selectedDate || !selectedPackage)) {
-      toast({ title: "Please select date and package", variant: "destructive" });
-      return;
+    if (step === 2) {
+      if (!selectedDate || !selectedPackage) {
+        toast({ title: "Please select date and package", variant: "destructive" });
+        return;
+      }
+      if (availabilityStatus && !availabilityStatus.available) {
+        toast({ title: "Selected date is unavailable", description: availabilityStatus.message, variant: "destructive" });
+        return;
+      }
     }
     if (step === 3 && (!formData.name || !formData.phone || !formData.email)) {
       toast({ title: "Please fill all required fields", variant: "destructive" });
@@ -325,6 +365,21 @@ function BookingForm() {
                     min={new Date().toISOString().split("T")[0]}
                     className="max-w-xs"
                   />
+                  {availabilityStatus && !availabilityStatus.available && (
+                    <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm flex items-start gap-2 animate-in fade-in slide-in-from-top-1">
+                      <div className="mt-0.5">⚠️</div>
+                      <div>
+                        <p font-bold>Date Unavailable</p>
+                        <p>{availabilityStatus.message}</p>
+                      </div>
+                    </div>
+                  )}
+                  {availabilityStatus && availabilityStatus.available && selectedDate && (
+                    <div className="mt-2 text-green-600 text-sm flex items-center gap-2 animate-in fade-in">
+                      <CheckCircle2 className="w-4 h-4" />
+                      {availabilityStatus.message}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
 

@@ -77,6 +77,13 @@ model Temple {
   // Financial Configuration
   productCommissionRate Float @default(10.0) // Percentage
   poojaCommissionRate   Float @default(5.0)  // Percentage
+
+  // Bank Details
+  bankName          String?
+  accountNumber     String?
+  accountHolderName String?
+  ifscCode          String?
+  upiId             String?
   
   createdAt      DateTime              @default(now())
   updatedAt      DateTime              @updatedAt
@@ -92,6 +99,24 @@ model Temple {
 
   user           User                  @relation(fields: [userId], references: [id])
   updateRequests TempleUpdateRequest[]
+  availability   BookingAvailability[]
+}
+
+model BookingAvailability {
+  id          String   @id @default(cuid())
+  templeId    String
+  poojaId     String?
+  date        String   // Format: YYYY-MM-DD
+  maxBookings Int      @default(20)
+  isClosed    Boolean  @default(false)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  temple      Temple   @relation(fields: [templeId], references: [id], onDelete: Cascade)
+  pooja       Pooja?   @relation(fields: [poojaId], references: [id], onDelete: Cascade)
+
+  @@unique([templeId, poojaId, date])
 }
 
 model SellerProfile {
@@ -167,6 +192,7 @@ model Pooja {
   status        Boolean        @default(true)
   favorites     Favorite[]
   bookings      PoojaBooking[]
+  availability  BookingAvailability[]
   temple        Temple         @relation(fields: [templeId], references: [id])
 }
 
