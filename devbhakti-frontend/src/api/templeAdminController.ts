@@ -151,6 +151,23 @@ export const deleteBooking = async (id: string) => {
     return response.data;
 };
 
+export const setTempleAvailability = async (data: { poojaId?: string; date: string; maxBookings?: number; isClosed?: boolean }) => {
+    const token = localStorage.getItem("token");
+    const response = await axios.post(`${API_URL}/temple-admin/bookings/availability`, data, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+
+export const getTempleAvailability = async (params: { month?: string; year?: string; poojaId?: string }) => {
+    const token = localStorage.getItem("token");
+    const response = await axios.get(`${API_URL}/temple-admin/bookings/availability`, {
+        headers: { Authorization: `Bearer ${token}` },
+        params
+    });
+    return response.data;
+};
+
 // Temple Order Management
 export const fetchTempleOrders = async (templeId: string) => {
     const token = localStorage.getItem("token");

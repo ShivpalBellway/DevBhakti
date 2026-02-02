@@ -41,6 +41,63 @@ export const createBooking = async (req: Request, res: Response) => {
         const commissionAmount = (packagePrice * commissionRate) / 100;
         const netEarning = packagePrice - commissionAmount;
 
+        // --- AVAILABILITY CHECK ---
+
+        // 1. Global Temple Availability
+        // We use 'findFirst' because 'poojaId: null' might be tricky with some prisma versions in composite unique constraints if not handled perfectly, 
+        // but finding by composite unique key is standard. 
+        // Note: Prisma treats null in unique constraint fields differently depending on DB. 
+        // For safety/simplicity in this context, we can use findFirst.
+        const globalAvailability = await prisma.bookingAvailability.findFirst({
+            where: {
+                templeId: pooja.templeId,
+                poojaId: null,
+                date: bookingDate
+            }
+        });
+
+        if (globalAvailability) {
+            if (globalAvailability.isClosed) {
+                return res.status(400).json({ success: false, message: 'Bookings are closed for this date.' });
+            }
+            const totalTempleBookings = await prisma.poojaBooking.count({
+                where: {
+                    templeId: pooja.templeId,
+                    bookingDate: bookingDate,
+                    status: { not: 'CANCELLED' }
+                }
+            });
+            if (totalTempleBookings >= globalAvailability.maxBookings) {
+                return res.status(400).json({ success: false, message: 'Temple is fully booked for this date.' });
+            }
+        }
+
+        // 2. Specific Pooja Availability
+        const poojaAvailability = await prisma.bookingAvailability.findFirst({
+            where: {
+                templeId: pooja.templeId,
+                poojaId: poojaId,
+                date: bookingDate
+            }
+        });
+
+        if (poojaAvailability) {
+            if (poojaAvailability.isClosed) {
+                return res.status(400).json({ success: false, message: 'This ritual is unavailable on this date.' });
+            }
+            const totalPoojaBookings = await prisma.poojaBooking.count({
+                where: {
+                    poojaId: poojaId,
+                    bookingDate: bookingDate,
+                    status: { not: 'CANCELLED' }
+                }
+            });
+            if (totalPoojaBookings >= poojaAvailability.maxBookings) {
+                return res.status(400).json({ success: false, message: 'Daily limit reached for this ritual.' });
+            }
+        }
+        // --------------------------
+
         // Create booking and ledger entry in a transaction
         const booking = await prisma.$transaction(async (tx) => {
             const newBooking = await tx.poojaBooking.create({
@@ -111,6 +168,98 @@ export const getMyBookings = async (req: Request, res: Response) => {
         });
     } catch (error) {
         console.error('Error fetching my bookings:', error);
+        res.status(500).json({ success: false, message: 'Internal server error' });
+    }
+};
+
+export const checkAvailability = async (req: Request, res: Response) => {
+    try {
+        const { templeId, poojaId, date } = req.query;
+
+        if (!templeId || !date) {
+            return res.status(400).json({ success: false, message: 'Temple ID and Date are required' });
+        }
+
+        // 1. Global Availability Check
+        const globalAvailability = await prisma.bookingAvailability.findFirst({
+            where: {
+                templeId: templeId as string,
+                poojaId: null,
+                date: date as string
+            }
+        });
+
+        if (globalAvailability) {
+            if (globalAvailability.isClosed) {
+                return res.json({
+                    success: true,
+                    available: false,
+                    message: "Bookings are stopped for this date. Please try the next available date."
+                });
+            }
+
+            const totalTempleBookings = await prisma.poojaBooking.count({
+                where: {
+                    templeId: templeId as string,
+                    bookingDate: date as string,
+                    status: { not: 'CANCELLED' }
+                }
+            });
+
+            if (totalTempleBookings >= globalAvailability.maxBookings) {
+                return res.json({
+                    success: true,
+                    available: false,
+                    message: "Daily booking limit reached. Please choose another date."
+                });
+            }
+        }
+
+        // 2. Specific Pooja Availability Check (if poojaId provided)
+        if (poojaId) {
+            const poojaAvailability = await prisma.bookingAvailability.findFirst({
+                where: {
+                    templeId: templeId as string,
+                    poojaId: poojaId as string,
+                    date: date as string
+                }
+            });
+
+            if (poojaAvailability) {
+                if (poojaAvailability.isClosed) {
+                    return res.json({
+                        success: true,
+                        available: false,
+                        message: "This ritual is unavailable on this date. Please try another day."
+                    });
+                }
+
+                const totalPoojaBookings = await prisma.poojaBooking.count({
+                    where: {
+                        poojaId: poojaId as string,
+                        bookingDate: date as string,
+                        status: { not: 'CANCELLED' }
+                    }
+                });
+
+                if (totalPoojaBookings >= poojaAvailability.maxBookings) {
+                    return res.json({
+                        success: true,
+                        available: false,
+                        message: "Slots full for this ritual on selected date. Please choose another date."
+                    });
+                }
+            }
+        }
+
+        return res.json({
+            success: true,
+            available: true,
+            message: "Slot available"
+        });
+
+    } catch (error) {
+        console.error('Error checking availability:', error);
         res.status(500).json({ success: false, message: 'Internal server error' });
     }
 };
