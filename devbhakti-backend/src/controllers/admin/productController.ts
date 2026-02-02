@@ -237,7 +237,12 @@ export const getAllProducts = async (req: Request, res: Response) => {
             select: {
               id: true,
               name: true,
-              location: true
+              location: true,
+              user: {
+                select: {
+                  role: true
+                }
+              }
             }
           }
         },
@@ -645,7 +650,12 @@ export const toggleProductStatus = async (req: Request, res: Response) => {
           select: {
             id: true,
             name: true,
-            location: true
+            location: true,
+            user: {
+              select: {
+                role: true
+              }
+            }
           }
         }
       }

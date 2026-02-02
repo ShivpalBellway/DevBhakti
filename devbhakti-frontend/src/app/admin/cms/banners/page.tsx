@@ -184,7 +184,7 @@ export default function BannersPage() {
                                 <TableHead className="w-[100px]">Preview</TableHead>
                                 <TableHead>Status</TableHead>
                                 <TableHead>Order</TableHead>
-                                <TableHead>Link</TableHead>
+                                {/* <TableHead>Link</TableHead> */}
                                 <TableHead className="text-right">Actions</TableHead>
                             </TableRow>
                         </TableHeader>
@@ -207,7 +207,7 @@ export default function BannersPage() {
                                         </Badge>
                                     </TableCell>
                                     <TableCell>{banner.order}</TableCell>
-                                    <TableCell className="max-w-[200px] truncate">{banner.link || "-"}</TableCell>
+                                    {/* <TableCell className="max-w-[200px] truncate">{banner.link || "-"}</TableCell> */}
                                     <TableCell className="text-right">
                                         <div className="flex justify-end gap-2">
                                             <Button
@@ -250,15 +250,15 @@ export default function BannersPage() {
                         </DialogDescription>
                     </DialogHeader>
                     <form onSubmit={handleSubmit} className="space-y-4 py-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="link">Redirect Link (Optional)</Label>
-                            <Input
-                                id="link"
-                                placeholder="e.g. /poojas/mahashivratri"
-                                value={formData.link}
-                                onChange={(e) => setFormData({ ...formData, link: e.target.value })}
-                            />
-                        </div>
+                        {/* <div className="space-y-2">
+                             <Label htmlFor="link">Redirect Link (Optional)</Label>
+                             <Input
+                                 id="link"
+                                 placeholder="e.g. /poojas/mahashivratri"
+                                 value={formData.link}
+                                 onChange={(e) => setFormData({ ...formData, link: e.target.value })}
+                             />
+                         </div> */}
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
                                 <Label htmlFor="status">Status</Label>

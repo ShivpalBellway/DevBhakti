@@ -20,6 +20,7 @@ import {
     Phone,
     Mail
 } from "lucide-react";
+import { useSearchParams } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -39,15 +40,12 @@ import {
     deleteBooking
 } from "@/api/templeAdminController";
 import { useToast } from "@/hooks/use-toast";
+import { format } from "date-fns";
 
 const statusConfig = {
     BOOKED: {
         color: "bg-blue-100 text-blue-700 border-blue-200",
         icon: CheckCircle,
-    },
-    PENDING: {
-        color: "bg-amber-100 text-amber-700 border-amber-200",
-        icon: Clock,
     },
     COMPLETED: {
         color: "bg-emerald-100 text-emerald-700 border-emerald-200",
@@ -128,16 +126,24 @@ export default function TempleBookingsPage() {
         }
     };
 
-    const filteredBookings = bookings.filter((b) =>
-        b.devoteeName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        b.pooja?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        b.id?.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    const searchParams = useSearchParams();
+    const statusFilter = searchParams.get("status");
+
+    const filteredBookings = bookings.filter((b) => {
+        const matchesSearch =
+            b.devoteeName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            b.pooja?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            b.id?.toLowerCase().includes(searchQuery.toLowerCase());
+
+        const matchesStatus = statusFilter ? b.status === statusFilter : true;
+
+        return matchesSearch && matchesStatus;
+    });
 
     const stats = {
         total: bookings.length,
         today: bookings.filter(b => new Date(b.createdAt).toDateString() === new Date().toDateString()).length,
-        pending: bookings.filter(b => b.status === "PENDING").length,
+        completed: bookings.filter(b => b.status === "COMPLETED").length,
         revenue: bookings.reduce((acc, b) => acc + (b.packagePrice || 0), 0)
     };
 
@@ -169,8 +175,8 @@ export default function TempleBookingsPage() {
                 {[
                     { label: "Total Bookings", value: stats.total.toString(), color: "text-foreground" },
                     { label: "Today's Rituals", value: stats.today.toString(), color: "text-primary" },
-                    { label: "Pending Requests", value: stats.pending.toString(), color: "text-amber-600" },
-                    { label: "Total Revenue", value: `₹${stats.revenue.toLocaleString()}`, color: "text-emerald-600" },
+                    { label: "Completed", value: stats.completed.toString(), color: "text-emerald-600" },
+                    { label: "Total Revenue", value: `₹${stats.revenue.toLocaleString()}`, color: "text-emerald-700" },
                 ].map((stat) => (
                     <Card key={stat.label}>
                         <CardContent className="p-4">
@@ -282,16 +288,6 @@ export default function TempleBookingsPage() {
                                                                     <Eye className="w-4 h-4 mr-2" /> View Details
                                                                 </DropdownMenuItem>
 
-                                                                {booking.status === 'PENDING' && (
-                                                                    <DropdownMenuItem
-                                                                        onClick={() => handleUpdateStatus(booking.id, 'BOOKED')}
-                                                                        className="text-blue-600 focus:text-blue-600"
-                                                                        disabled={isProcessing}
-                                                                    >
-                                                                        <CheckCircle2 className="w-4 h-4 mr-2" /> Accept Booking
-                                                                    </DropdownMenuItem>
-                                                                )}
-
                                                                 {booking.status === 'BOOKED' && (
                                                                     <DropdownMenuItem
                                                                         onClick={() => handleUpdateStatus(booking.id, 'COMPLETED')}
@@ -302,23 +298,13 @@ export default function TempleBookingsPage() {
                                                                     </DropdownMenuItem>
                                                                 )}
 
-                                                                {['BOOKED', 'PENDING'].includes(booking.status) && (
+                                                                {booking.status === 'BOOKED' && (
                                                                     <DropdownMenuItem
                                                                         onClick={() => handleUpdateStatus(booking.id, 'CANCELLED')}
                                                                         className="text-slate-600 focus:text-slate-600"
                                                                         disabled={isProcessing}
                                                                     >
                                                                         <XCircle className="w-4 h-4 mr-2" /> Cancel Booking
-                                                                    </DropdownMenuItem>
-                                                                )}
-
-                                                                {booking.status === 'PENDING' && (
-                                                                    <DropdownMenuItem
-                                                                        onClick={() => handleUpdateStatus(booking.id, 'REJECTED')}
-                                                                        className="text-rose-600 focus:text-rose-600"
-                                                                        disabled={isProcessing}
-                                                                    >
-                                                                        <XCircle className="w-4 h-4 mr-2" /> Reject Booking
                                                                     </DropdownMenuItem>
                                                                 )}
 
@@ -359,16 +345,16 @@ export default function TempleBookingsPage() {
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
                             onClick={() => setSelectedBooking(null)}
-                            className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
+                            className="absolute inset-0 bg-transparent"
                         />
                         <motion.div
                             initial={{ opacity: 0, scale: 0.9, y: 20 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                            className="bg-white w-full max-w-xl rounded-[2.5rem] shadow-2xl overflow-hidden relative"
+                            className="bg-white w-full max-w-3xl rounded-[2.5rem] shadow-2xl overflow-hidden relative border border-slate-100"
                         >
                             {/* Modal Header */}
-                            <div className="bg-gradient-to-r from-orange-600 to-orange-500 p-8 text-white">
+                            <div className="bg-gradient-to-r from-primary to-secondary p-8 text-white">
                                 <button
                                     onClick={() => setSelectedBooking(null)}
                                     className="absolute top-6 right-6 p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
@@ -444,17 +430,17 @@ export default function TempleBookingsPage() {
                                 </div>
 
                                 {/* Extended Details */}
-                                <div className="grid grid-cols-1 gap-6 pt-6 border-t border-slate-100">
+                                <div className="grid grid-cols-2 gap-6 pt-6 border-t border-slate-100">
                                     <div>
                                         <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1">Delivery Address</p>
-                                        <p className="text-slate-700 font-medium bg-slate-50 p-3 rounded-xl border border-dashed border-slate-200">
-                                            {selectedBooking.address || "No address provided"}
+                                        <p className="text-sm text-slate-700 font-medium bg-slate-50 p-3 rounded-xl border border-dashed border-slate-200 min-h-[80px]">
+                                            {selectedBooking.address || "No physical address provided."}
                                         </p>
                                     </div>
                                     <div>
                                         <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1">Special Requests / Gotra</p>
-                                        <p className="text-slate-700 font-medium bg-slate-50 p-3 rounded-xl border border-dashed border-slate-200">
-                                            {selectedBooking.specialRequests || "No special requests"}
+                                        <p className="text-sm text-slate-700 font-medium bg-slate-50 p-3 rounded-xl border border-dashed border-slate-200 min-h-[80px] italic">
+                                            "{selectedBooking.specialRequests || "No specific instructions."}"
                                         </p>
                                     </div>
                                 </div>
@@ -467,19 +453,10 @@ export default function TempleBookingsPage() {
                                             <p className="text-2xl font-bold text-primary">₹{selectedBooking.packagePrice}</p>
                                         </div>
                                         <div className="flex gap-2">
-                                            {selectedBooking.status === 'PENDING' && (
-                                                <Button
-                                                    onClick={() => handleUpdateStatus(selectedBooking.id, 'BOOKED')}
-                                                    className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl px-6"
-                                                    disabled={isProcessing}
-                                                >
-                                                    Accept Booking
-                                                </Button>
-                                            )}
                                             {selectedBooking.status === 'BOOKED' && (
                                                 <Button
                                                     onClick={() => handleUpdateStatus(selectedBooking.id, 'COMPLETED')}
-                                                    className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl px-6"
+                                                    className="bg-gradient-to-r from-gold to-gold hover:bg-gold text-white rounded-xl px-6"
                                                     disabled={isProcessing}
                                                 >
                                                     Mark Completed

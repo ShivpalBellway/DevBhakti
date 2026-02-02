@@ -11,6 +11,9 @@ import {
   X,
   Upload,
   Image as ImageIcon,
+  ShieldCheck,
+  Store,
+  Building2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -34,7 +37,8 @@ import {
   fetchProductByIdAdmin,
   updateProductAdmin,
   fetchAllTemplesAdmin,
-  fetchActiveCategoriesAdmin
+  fetchActiveCategoriesAdmin,
+  fetchAllSellersAdmin
 } from "@/api/adminController";
 
 interface Variant {
@@ -71,9 +75,9 @@ export default function EditProductPage() {
 
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [temples, setTemples] = useState<any[]>([]);
+  const [vendors, setVendors] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
-  const [isLoadingTemples, setIsLoadingTemples] = useState(true);
+  const [isLoadingVendors, setIsLoadingVendors] = useState(true);
   const [isLoadingCategories, setIsLoadingCategories] = useState(true);
   const [productImage, setProductImage] = useState<File | null>(null);
   const [productImagePreview, setProductImagePreview] = useState<string>("");
@@ -98,49 +102,56 @@ export default function EditProductPage() {
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
-    loadTemples();
+    loadVendors();
     loadCategories();
     if (params.id) {
       loadProduct(params.id as string);
     }
   }, [params.id]);
 
-  const loadTemples = async () => {
-    setIsLoadingTemples(true);
+  const loadVendors = async () => {
+    setIsLoadingVendors(true);
     try {
-      const data = await fetchAllTemplesAdmin();
-      // Transform temples data to match expected format
-      const transformedTemples = [
-        { id: "general", name: "General Products (No Temple)" },
-        ...data
-          .filter((user: any) => user.temple) // Only include users with temple data
-          .map((user: any) => ({
-            id: user.temple.id, // Use temple.id (primary key) for product relation
-            name: user.temple.name, // Use temple.name from temple table
-            templeId: user.temple.templeId, // Keep templeId for reference
-            user: {
-              id: user.id,
-              name: user.name,
-              email: user.email,
-              phone: user.phone
-            }
-          }))
+      const [templesData, sellersData] = await Promise.all([
+        fetchAllTemplesAdmin(),
+        fetchAllSellersAdmin()
+      ]);
+
+      const formattedTemples = templesData
+        .filter((user: any) => user.temple)
+        .map((user: any) => ({
+          id: user.temple.id,
+          name: user.temple.name,
+          role: "TEMPLE",
+          icon: <Building2 className="w-4 h-4 text-primary" />
+        }));
+
+      const formattedSellers = sellersData
+        .filter((seller: any) => seller.templeId)
+        .map((seller: any) => ({
+          id: seller.templeId,
+          name: seller.storeName,
+          role: "SELLER",
+          icon: <Store className="w-4 h-4 text-blue-600" />
+        }));
+
+      const allVendors = [
+        { id: "general", name: "DevBhakti Exclusive", role: "ADMIN", icon: <ShieldCheck className="w-4 h-4 text-amber-600" /> },
+        ...formattedTemples,
+        ...formattedSellers
       ];
-      setTemples(transformedTemples);
+
+      setVendors(allVendors);
     } catch (error: any) {
-      console.error("Load Temples Error:", error);
-      const errorMessage = error?.response?.data?.message || error?.message || "Failed to load temples";
-
-      // Fallback to general option only
-      setTemples([{ id: "general", name: "General Products (No Temple)" }]);
-
+      console.error("Load Vendors Error:", error);
+      setVendors([{ id: "general", name: "DevBhakti Exclusive", role: "ADMIN", icon: <ShieldCheck className="w-4 h-4 text-amber-600" /> }]);
       toast({
         title: "Warning",
-        description: `Could not load temples: ${errorMessage}. Only general products available.`,
+        description: "Could not load all vendors. Some options might be missing.",
         variant: "destructive",
       });
     } finally {
-      setIsLoadingTemples(false);
+      setIsLoadingVendors(false);
     }
   };
 
@@ -519,23 +530,28 @@ export default function EditProductPage() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="temple">Temple (Optional)</Label>
+                  <Label htmlFor="temple">Product Owner / Vendor *</Label>
                   <Select
                     value={formData.templeId}
                     onValueChange={(value) => setFormData({ ...formData, templeId: value })}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Select temple (optional)" />
+                      <SelectValue placeholder="Select Owner/Vendor" />
                     </SelectTrigger>
                     <SelectContent>
-                      {temples.map((temple) => (
-                        <SelectItem key={temple.id} value={temple.id}>
-                          {temple.name}
+                      {vendors.map((vendor) => (
+                        <SelectItem key={vendor.id} value={vendor.id}>
+                          <div className="flex items-center gap-2">
+                            {vendor.icon}
+                            <span>{vendor.name}</span>
+                            <span className="text-[10px] font-bold uppercase py-0.5 px-1 bg-slate-100 rounded text-slate-500 ml-auto">
+                              {vendor.role}
+                            </span>
+                          </div>
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
-                  {errors.templeId && <p className="text-sm text-red-500">{errors.templeId}</p>}
                 </div>
 
                 <div className="space-y-2">

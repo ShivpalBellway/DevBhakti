@@ -84,7 +84,7 @@ const MarketplaceSection: React.FC = () => {
               ))}
             </div>
           ) : products.length > 0 ? (
-            <div className="flex gap-6 overflow-x-auto pb-8 scrollbar-hide snap-x">
+            <div className="flex gap-6 overflow-x-auto pb-8 premium-scrollbar scrollbar-hide snap-x">
               {products.map((product, index) => (
                 <motion.div
                   key={product.id}

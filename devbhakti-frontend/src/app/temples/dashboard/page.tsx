@@ -15,7 +15,12 @@ import {
     IndianRupee
 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { fetchMyTempleBookings, fetchTempleOrders, fetchMyTempleProfile } from "@/api/templeAdminController";
+import { format } from "date-fns";
+import { Loader2 } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 const stats = [
     {
@@ -95,6 +100,102 @@ const upcomingBookings = [
 
 export default function TempleDashboardPage() {
     const router = useRouter();
+    const [bookings, setBookings] = useState<any[]>([]);
+    const [orders, setOrders] = useState<any[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        loadDashboardData();
+    }, []);
+
+    const loadDashboardData = async () => {
+        setIsLoading(true);
+        try {
+            const [profileRes, bookingsRes] = await Promise.all([
+                fetchMyTempleProfile(),
+                fetchMyTempleBookings()
+            ]);
+
+            if (bookingsRes.success) {
+                setBookings(bookingsRes.data);
+            }
+
+            if (profileRes.success && profileRes.data.id) {
+                const ordersRes = await fetchTempleOrders(profileRes.data.id);
+                if (ordersRes.success) {
+                    setOrders(ordersRes.data);
+                }
+            }
+        } catch (error) {
+            console.error("Dashboard data load error:", error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    // Calculate dynamic stats
+    const uniqueDevotees = new Set([
+        ...bookings.map(b => b.devoteePhone || b.devoteeEmail || b.devoteeName).filter(Boolean),
+        ...orders.map(o => o.order?.user?.phone || o.order?.user?.email || o.order?.user?.name).filter(Boolean)
+    ]).size;
+
+    const poojaRevenue = bookings.reduce((acc, b) => acc + (b.packagePrice || 0), 0);
+    const productRevenue = orders.reduce((acc, o) => acc + (o.totalAmount || 0), 0);
+    const totalSales = poojaRevenue + productRevenue;
+
+    const dynamicStats = [
+        {
+            title: "Total Devotees",
+            value: uniqueDevotees.toString(),
+            change: "+12.5%", // These could be calculated if we had history
+            trend: "up",
+            icon: Users,
+            color: "bg-blue-500",
+        },
+        {
+            title: "Total Bookings",
+            value: bookings.length.toString(),
+            change: "+8.2%",
+            trend: "up",
+            icon: Calendar,
+            color: "bg-orange-500",
+        },
+        {
+            title: "Marketplace Sales",
+            value: `₹${productRevenue.toLocaleString()}`,
+            change: "+15.3%",
+            trend: "up",
+            icon: ShoppingBag,
+            color: "bg-emerald-500",
+        },
+        {
+            title: "Donations (Static)",
+            value: "₹0",
+            change: "0%",
+            trend: "up",
+            icon: Heart,
+            color: "bg-rose-500",
+        },
+    ];
+
+    const recentOrdersData = [...orders]
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+        .slice(0, 5);
+
+    const upcomingBookingsData = [...bookings]
+        .filter(b => b.status === 'BOOKED')
+        .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
+        .slice(0, 5);
+
+    if (isLoading) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
+                <Loader2 className="w-10 h-10 animate-spin text-primary" />
+                <p className="text-primary font-medium font-serif">Loading Dashboard Stats...</p>
+            </div>
+        );
+    }
+
     return (
         <div className="space-y-6">
             {/* Page header */}
@@ -109,36 +210,36 @@ export default function TempleDashboardPage() {
 
             {/* Stats Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                {stats.map((stat, index) => (
+                {dynamicStats.map((stat, index) => (
                     <motion.div
                         key={stat.title}
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.4, delay: index * 0.1 }}
                     >
-                        <Card className="hover:shadow-warm transition-shadow duration-300">
+                        <Card className="hover:shadow-warm transition-shadow duration-300 border-none shadow-sm">
                             <CardContent className="p-6">
                                 <div className="flex items-center justify-between">
                                     <div
-                                        className={`w-12 h-12 rounded-xl ${stat.color} flex items-center justify-center`}
+                                        className={`w-12 h-12 rounded-xl ${stat.color} flex items-center justify-center bg-opacity-10`}
                                     >
-                                        <stat.icon className="w-6 h-6 text-white" />
+                                        <stat.icon className={`w-6 h-6 ${stat.color.replace('bg-', 'text-')}`} />
                                     </div>
                                     <div
-                                        className={`flex items-center gap-1 text-sm font-medium ${stat.trend === "up" ? "text-green-600" : "text-red-600"
+                                        className={`flex items-center gap-1 text-xs font-bold px-2 py-1 rounded-full ${stat.trend === "up" ? "bg-emerald-50 text-emerald-600" : "bg-rose-50 text-rose-600"
                                             }`}
                                     >
                                         {stat.trend === "up" ? (
-                                            <TrendingUp className="w-4 h-4" />
+                                            <TrendingUp className="w-3 h-3" />
                                         ) : (
-                                            <TrendingDown className="w-4 h-4" />
+                                            <TrendingDown className="w-3 h-3" />
                                         )}
                                         {stat.change}
                                     </div>
                                 </div>
                                 <div className="mt-4">
-                                    <p className="text-2xl font-bold text-foreground">{stat.value}</p>
-                                    <p className="text-sm text-muted-foreground">{stat.title}</p>
+                                    <p className="text-2xl font-bold text-slate-900">{stat.value}</p>
+                                    <p className="text-sm font-medium text-slate-500 uppercase tracking-wider">{stat.title}</p>
                                 </div>
                             </CardContent>
                         </Card>
@@ -154,36 +255,47 @@ export default function TempleDashboardPage() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.4, delay: 0.4 }}
                 >
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between">
-                            <CardTitle className="text-lg font-semibold">Recent Marketplace Orders</CardTitle>
-                            <button className="text-sm text-primary hover:underline flex items-center gap-1">
+                    <Card className="border-none shadow-sm h-full">
+                        <CardHeader className="flex flex-row items-center justify-between pb-2">
+                            <CardTitle className="text-lg font-bold text-slate-800">Recent Shop Orders</CardTitle>
+                            <button
+                                onClick={() => router.push('/temples/dashboard/orders')}
+                                className="text-xs font-bold text-primary hover:text-primary/80 flex items-center gap-1 uppercase tracking-wider"
+                            >
                                 View all
-                                <ArrowUpRight className="w-4 h-4" />
+                                <ArrowUpRight className="w-3 h-3" />
                             </button>
                         </CardHeader>
                         <CardContent>
-                            <div className="space-y-4">
-                                {recentOrders.map((order, index) => (
+                            <div className="space-y-3">
+                                {recentOrdersData.length > 0 ? recentOrdersData.map((subOrder, index) => (
                                     <div
                                         key={index}
-                                        className="flex items-center justify-between p-3 rounded-lg hover:bg-muted/50 transition-colors border border-transparent hover:border-border"
+                                        className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-100/50 hover:bg-white hover:border-primary/20 hover:shadow-md transition-all cursor-pointer group"
+                                        onClick={() => router.push('/temples/dashboard/orders')}
                                     >
                                         <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                                                <ShoppingBag className="w-5 h-5 text-primary" />
+                                            <div className="w-10 h-10 rounded-lg bg-emerald-500/10 flex items-center justify-center group-hover:bg-emerald-500 transition-colors">
+                                                <ShoppingBag className="w-5 h-5 text-emerald-600 group-hover:text-white" />
                                             </div>
                                             <div>
-                                                <p className="text-sm font-medium text-foreground">{order.product}</p>
-                                                <p className="text-xs text-muted-foreground">By {order.user}</p>
+                                                <p className="text-sm font-bold text-slate-900">Order #{subOrder.id?.slice(-4).toUpperCase()}</p>
+                                                <p className="text-xs text-slate-500">By {subOrder.order?.user?.name || 'Customer'}</p>
                                             </div>
                                         </div>
                                         <div className="text-right">
-                                            <p className="text-sm font-bold text-foreground">{order.amount}</p>
-                                            <p className="text-xs text-muted-foreground">{order.status}</p>
+                                            <p className="text-sm font-black text-slate-900">₹{subOrder.totalAmount?.toLocaleString()}</p>
+                                            <p className={cn(
+                                                "text-[10px] font-bold px-1.5 py-0.5 rounded-full inline-block mt-1",
+                                                subOrder.status === 'DELIVERED' ? 'bg-emerald-100 text-emerald-700' :
+                                                    subOrder.status === 'PENDING' ? 'bg-amber-100 text-amber-700' :
+                                                        'bg-blue-100 text-blue-700'
+                                            )}>{subOrder.status}</p>
                                         </div>
                                     </div>
-                                ))}
+                                )) : (
+                                    <div className="py-8 text-center text-slate-400 text-sm italic">No recent orders found.</div>
+                                )}
                             </div>
                         </CardContent>
                     </Card>
@@ -195,36 +307,44 @@ export default function TempleDashboardPage() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.4, delay: 0.5 }}
                 >
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between">
-                            <CardTitle className="text-lg font-semibold">Upcoming Pooja Bookings</CardTitle>
-                            <button className="text-sm text-primary hover:underline flex items-center gap-1">
+                    <Card className="border-none shadow-sm h-full">
+                        <CardHeader className="flex flex-row items-center justify-between pb-2">
+                            <CardTitle className="text-lg font-bold text-slate-800">Upcoming Poojas</CardTitle>
+                            <button
+                                onClick={() => router.push('/temples/dashboard/bookings')}
+                                className="text-xs font-bold text-primary hover:text-primary/80 flex items-center gap-1 uppercase tracking-wider"
+                            >
                                 View all
-                                <ArrowUpRight className="w-4 h-4" />
+                                <ArrowUpRight className="w-3 h-3" />
                             </button>
                         </CardHeader>
                         <CardContent>
-                            <div className="space-y-4">
-                                {upcomingBookings.map((booking, index) => (
+                            <div className="space-y-3">
+                                {upcomingBookingsData.length > 0 ? upcomingBookingsData.map((booking, index) => (
                                     <div
                                         key={index}
-                                        className="flex items-center justify-between p-3 rounded-lg hover:bg-muted/50 transition-colors border border-transparent hover:border-border"
+                                        className="flex items-center justify-between p-3 rounded-xl bg-orange-50/50 border border-orange-100/50 hover:bg-white hover:border-primary/20 hover:shadow-md transition-all cursor-pointer group"
+                                        onClick={() => router.push('/temples/dashboard/bookings')}
                                     >
                                         <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 rounded-lg bg-orange-100 flex items-center justify-center">
-                                                <Calendar className="w-5 h-5 text-orange-600" />
+                                            <div className="w-10 h-10 rounded-lg bg-orange-600/10 flex items-center justify-center group-hover:bg-orange-600 transition-colors">
+                                                <Calendar className="w-5 h-5 text-orange-600 group-hover:text-white" />
                                             </div>
                                             <div>
-                                                <p className="text-sm font-medium text-foreground">{booking.pooja}</p>
-                                                <p className="text-xs text-muted-foreground">For {booking.user}</p>
+                                                <p className="text-sm font-bold text-slate-900">{booking.pooja?.name || 'Sacred Pooja'}</p>
+                                                <p className="text-xs text-slate-500">For {booking.devoteeName || 'Devotee'}</p>
                                             </div>
                                         </div>
                                         <div className="text-right">
-                                            <p className="text-sm font-medium text-foreground">{booking.date}</p>
-                                            <p className="text-xs text-muted-foreground">{booking.time}</p>
+                                            <p className="text-sm font-bold text-slate-900">
+                                                {booking.createdAt ? format(new Date(booking.createdAt), "MMM d, yyyy") : 'TBD'}
+                                            </p>
+                                            <p className="text-xs font-bold text-orange-600 mt-1 uppercase tracking-tighter">Scheduled</p>
                                         </div>
                                     </div>
-                                ))}
+                                )) : (
+                                    <div className="py-8 text-center text-slate-400 text-sm italic">No upcoming bookings found.</div>
+                                )}
                             </div>
                         </CardContent>
                     </Card>

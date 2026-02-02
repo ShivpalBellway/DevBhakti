@@ -17,13 +17,17 @@ import {
     Building2,
     Video,
     CreditCard,
-    Flower2
+    Flower2,
+    ChevronDown,
+    ChevronUp
 } from "lucide-react";
+import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import Logo from "@/components/icons/Logo";
 import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
+import { fetchMyTempleBookings, fetchTempleOrders, fetchMyTempleProfile } from "@/api/templeAdminController";
 
 const sidebarItems = [
     {
@@ -55,11 +59,25 @@ const sidebarItems = [
         label: "Order Management",
         icon: ShoppingBag,
         href: "/temples/dashboard/orders",
+        subItems: [
+            { label: "All Orders", href: "/temples/dashboard/orders" },
+            { label: "Pending", href: "/temples/dashboard/orders?status=PENDING" },
+            { label: "Accepted", href: "/temples/dashboard/orders?status=ACCEPTED" },
+            { label: "Shipped", href: "/temples/dashboard/orders?status=SHIPPED" },
+            { label: "Delivered", href: "/temples/dashboard/orders?status=DELIVERED" },
+            { label: "Cancelled", href: "/temples/dashboard/orders?status=CANCELLED" },
+        ]
     },
     {
         label: "Pooja Bookings",
         icon: Calendar,
         href: "/temples/dashboard/bookings",
+        subItems: [
+            { label: "All Bookings", href: "/temples/dashboard/bookings" },
+            { label: "Booked Poojas", href: "/temples/dashboard/bookings?status=BOOKED" },
+            { label: "Completed", href: "/temples/dashboard/bookings?status=COMPLETED" },
+            { label: "Cancelled", href: "/temples/dashboard/bookings?status=CANCELLED" },
+        ]
     },
     // {
     //     label: "Live Stream",
@@ -77,6 +95,105 @@ const sidebarItems = [
         href: "/temples/dashboard/profile",
     },
 ];
+const SidebarNavItem = ({ item, pathname, sidebarOpen }: { item: any, pathname: string, sidebarOpen: boolean }) => {
+    const searchParams = useSearchParams();
+    const subItems = item.subItems;
+    const hasSubItems = subItems && subItems.length > 0;
+    const [isOpen, setIsOpen] = useState(false);
+
+    // Helper to check if a link is active including query params
+    const isLinkActive = (href: string) => {
+        if (!href) return false;
+        const [basePath, queryStr] = href.split('?');
+        const isPathMatch = pathname === basePath;
+
+        if (!queryStr) {
+            // For base paths, we only match if there are NO meaningful search params active for this section
+            // or if it's an exact match
+            return isPathMatch && Array.from(searchParams.entries()).length === 0;
+        }
+
+        const params = new URLSearchParams(queryStr);
+        return isPathMatch && Array.from(params.entries()).every(([key, value]) => searchParams.get(key) === value);
+    };
+
+    const isSubActive = hasSubItems && subItems.some((sub: any) => isLinkActive(sub.href));
+    const isActive = isLinkActive(item.href) || isSubActive;
+
+    // Auto-expand if sub-item is active
+    useEffect(() => {
+        if (isSubActive) setIsOpen(true);
+    }, [isSubActive]);
+
+    if (hasSubItems && sidebarOpen) {
+        return (
+            <div className="space-y-1">
+                <button
+                    onClick={() => setIsOpen(!isOpen)}
+                    className={cn(
+                        "w-full flex items-center justify-between px-3 py-2.5 rounded-lg transition-all duration-200 group",
+                        isActive && !isOpen
+                            ? "bg-primary text-white shadow-md shadow-primary/20"
+                            : "text-sidebar-foreground hover:bg-sidebar-accent"
+                    )}
+                >
+                    <div className="flex items-center gap-3">
+                        <item.icon className={cn("w-5 h-5 flex-shrink-0", isActive && !isOpen ? "text-white" : "text-sidebar-foreground/70 group-hover:text-sidebar-foreground")} />
+                        <span className="font-medium text-sm">{item.label}</span>
+                    </div>
+                    {isOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4 opacity-40" />}
+                </button>
+
+                {isOpen && (
+                    <div className="ml-9 space-y-1 border-l border-sidebar-border/50 pl-2">
+                        {subItems.map((sub: any) => {
+                            const isCurrent = isLinkActive(sub.href);
+                            return (
+                                <Link
+                                    key={sub.href}
+                                    href={sub.href}
+                                    className={cn(
+                                        "flex items-center justify-between py-2 px-3 text-xs rounded-md transition-colors",
+                                        isCurrent
+                                            ? "text-primary font-bold bg-primary/5"
+                                            : "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent"
+                                    )}
+                                >
+                                    <span>{sub.label}</span>
+                                    {sub.count !== undefined && (
+                                        <span className={cn(
+                                            "px-1.5 py-0.5 rounded-full text-[10px] min-w-[20px] text-center",
+                                            isCurrent ? "bg-primary text-white" : "bg-sidebar-accent text-sidebar-foreground/50"
+                                        )}>
+                                            {sub.count}
+                                        </span>
+                                    )}
+                                </Link>
+                            );
+                        })}
+                    </div>
+                )}
+            </div>
+        );
+    }
+
+    return (
+        <Link
+            href={item.href}
+            className={cn(
+                "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200",
+                isActive
+                    ? "bg-primary text-white shadow-md shadow-primary/20"
+                    : "text-sidebar-foreground hover:bg-sidebar-accent"
+            )}
+        >
+            <item.icon className={cn("w-5 h-5 flex-shrink-0", isActive ? "text-white" : "text-sidebar-foreground/70")} />
+            {sidebarOpen && (
+                <span className="font-medium text-sm">{item.label}</span>
+            )}
+        </Link>
+    );
+};
 
 export default function TempleAdminLayout({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
@@ -84,6 +201,55 @@ export default function TempleAdminLayout({ children }: { children: React.ReactN
     const [sidebarOpen, setSidebarOpen] = useState(true);
     const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
     const [user, setUser] = useState<any>(null);
+    const [counts, setCounts] = useState({
+        bookings: { total: 0, booked: 0, completed: 0, cancelled: 0 },
+        orders: { total: 0, pending: 0, accepted: 0, shipped: 0, delivered: 0, cancelled: 0 }
+    });
+
+    const loadCounts = async () => {
+        try {
+            const [bookingsRes, profileRes] = await Promise.all([
+                fetchMyTempleBookings(),
+                fetchMyTempleProfile()
+            ]);
+
+            let newCounts = { ...counts };
+
+            if (bookingsRes.success) {
+                const data = bookingsRes.data;
+                newCounts.bookings = {
+                    total: data.length,
+                    booked: data.filter((b: any) => b.status === 'BOOKED').length,
+                    completed: data.filter((b: any) => b.status === 'COMPLETED').length,
+                    cancelled: data.filter((b: any) => b.status === 'CANCELLED' || b.status === 'REJECTED').length
+                };
+            }
+
+            if (profileRes.success && profileRes.data.id) {
+                const ordersRes = await fetchTempleOrders(profileRes.data.id);
+                if (ordersRes.success) {
+                    const data = ordersRes.data;
+                    newCounts.orders = {
+                        total: data.length,
+                        pending: data.filter((o: any) => o.status === 'PENDING').length,
+                        accepted: data.filter((o: any) => o.status === 'ACCEPTED').length,
+                        shipped: data.filter((o: any) => o.status === 'SHIPPED').length,
+                        delivered: data.filter((o: any) => o.status === 'DELIVERED').length,
+                        cancelled: data.filter((o: any) => o.status === 'CANCELLED').length,
+                    };
+                }
+            }
+            setCounts(newCounts);
+        } catch (error) {
+            console.error("Failed to load counts", error);
+        }
+    };
+
+    useEffect(() => {
+        if (isAuthenticated) {
+            loadCounts();
+        }
+    }, [isAuthenticated]);
 
     useEffect(() => {
         const token = localStorage.getItem("token");
@@ -183,30 +349,35 @@ export default function TempleAdminLayout({ children }: { children: React.ReactN
                 {/* Navigation */}
                 <nav className="flex-1 py-4 px-3 space-y-1 overflow-y-auto custom-scrollbar">
                     {sidebarItems.map((item) => {
-                        const hasSubItems = (item as any).subItems && (item as any).subItems.length > 0;
-                        const isActive = pathname === item.href || ((item as any).subItems?.some((sub: any) => pathname === sub.href));
-
-                        if (hasSubItems) {
-                            // Sub-item logic if needed in future
-                            return null;
+                        // Dynamically inject counts into subItems
+                        let itemWithCounts = { ...item };
+                        if (item.label === "Pooja Bookings" && item.subItems) {
+                            itemWithCounts.subItems = item.subItems.map(sub => {
+                                if (sub.label === "All Bookings") return { ...sub, count: counts.bookings.total };
+                                if (sub.label === "Booked Poojas") return { ...sub, count: counts.bookings.booked };
+                                if (sub.label === "Completed") return { ...sub, count: counts.bookings.completed };
+                                if (sub.label === "Cancelled") return { ...sub, count: counts.bookings.cancelled };
+                                return sub;
+                            });
+                        } else if (item.label === "Order Management" && item.subItems) {
+                            itemWithCounts.subItems = item.subItems.map(sub => {
+                                if (sub.label === "All Orders") return { ...sub, count: counts.orders.total };
+                                if (sub.label === "Pending") return { ...sub, count: counts.orders.pending };
+                                if (sub.label === "Accepted") return { ...sub, count: counts.orders.accepted };
+                                if (sub.label === "Shipped") return { ...sub, count: counts.orders.shipped };
+                                if (sub.label === "Delivered") return { ...sub, count: counts.orders.delivered };
+                                if (sub.label === "Cancelled") return { ...sub, count: counts.orders.cancelled };
+                                return sub;
+                            });
                         }
 
                         return (
-                            <Link
-                                key={item.href}
-                                href={item.href}
-                                className={cn(
-                                    "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200",
-                                    isActive
-                                        ? "bg-primary text-white shadow-md shadow-primary/20"
-                                        : "text-sidebar-foreground hover:bg-sidebar-accent"
-                                )}
-                            >
-                                <item.icon className={cn("w-5 h-5 flex-shrink-0", isActive ? "text-white" : "text-sidebar-foreground/70")} />
-                                {sidebarOpen && (
-                                    <span className="font-medium text-sm">{item.label}</span>
-                                )}
-                            </Link>
+                            <SidebarNavItem
+                                key={item.label}
+                                item={itemWithCounts}
+                                pathname={pathname}
+                                sidebarOpen={sidebarOpen}
+                            />
                         );
                     })}
                 </nav>

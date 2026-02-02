@@ -12,6 +12,7 @@ import Logo from "@/components/icons/Logo";
 import { sendOTP, verifyOTP, updateProfile } from "@/api/authController";
 
 import { useRouter } from "next/navigation";
+import { useToast } from "@/hooks/use-toast";
 
 
 const AuthForm: React.FC = () => {
@@ -20,6 +21,7 @@ const AuthForm: React.FC = () => {
   const initialType = (searchParams.get("type") === "institution" || searchParams.get("type") === "temple") ? "institution" : "devotee";
 
   const router = useRouter();
+  const { toast } = useToast();
   const [mode, setMode] = useState<"login" | "register">(initialMode);
   const [userType, setUserType] = useState<"devotee" | "institution">(initialType);
 
@@ -69,7 +71,11 @@ const AuthForm: React.FC = () => {
 
 
     } catch (error: any) {
-      alert(error.response?.data?.message || "Failed to send OTP");
+      toast({
+        title: "OTP Failed",
+        description: error.response?.data?.message || "Failed to send OTP",
+        variant: "destructive"
+      });
     } finally {
       setLoading(false);
     }
@@ -93,11 +99,21 @@ const AuthForm: React.FC = () => {
         await updateProfile(imageFormData);
       }
 
-      alert("Login successful!");
-      window.location.href = "/";
+      toast({
+        title: "Login Successful",
+        description: `Welcome back to DevBhakti!`,
+      });
+
+      setTimeout(() => {
+        window.location.href = "/";
+      }, 1000);
 
     } catch (error: any) {
-      alert(error.response?.data?.message || "Invalid OTP");
+      toast({
+        title: "OTP Error",
+        description: error.response?.data?.message || "Invalid OTP",
+        variant: "destructive"
+      });
     } finally {
       setLoading(false);
     }
