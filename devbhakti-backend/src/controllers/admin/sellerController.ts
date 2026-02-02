@@ -155,7 +155,12 @@ export const getSellerById = async (req: Request, res: Response) => {
             include: {
                 sellerProfile: {
                     include: {
-                        products: true,
+                        products: {
+                            include: {
+                                variants: true,
+                                categoryObj: true
+                            }
+                        },
                         subOrders: {
                             select: { id: true, totalAmount: true }
                         }

@@ -50,7 +50,8 @@ export const getSellerFinanceSummary = async (req: Request, res: Response) => {
 
         const now = new Date();
         // 3 Days escrow window
-        const escrowThreshold = new Date(now.getTime() - (3 * 24 * 60 * 60 * 1000));
+        // const escrowThreshold = new Date(now.getTime() - (3 * 24 * 60 * 60 * 1000)); // Original
+        const escrowThreshold = new Date(now.getTime()); // Testing: 0 Days
 
         // --- 1. Income Analysis ---
         const validIncomeEntries = ledger.filter((e: any) =>
@@ -143,7 +144,8 @@ export const requestSellerWithdrawal = async (req: Request, res: Response) => {
 
         await prisma.$transaction(async (tx) => {
             const now = new Date();
-            const escrowThreshold = new Date(now.getTime() - (3 * 24 * 60 * 60 * 1000));
+            // const escrowThreshold = new Date(now.getTime() - (3 * 24 * 60 * 60 * 1000)); // Original 3 Days
+            const escrowThreshold = new Date(now.getTime()); // Testing: 0 Days (Immediate)
 
             const ledger = await tx.templeLedger.findMany({
                 where: {

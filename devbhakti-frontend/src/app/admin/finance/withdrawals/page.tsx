@@ -141,7 +141,8 @@ export default function WithdrawalRequestsPage() {
     };
 
     const filteredRequests = requests.filter(req => {
-        const matchesSearch = req.temple?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        const nameToCheck = req.temple?.name || req.seller?.name || "";
+        const matchesSearch = nameToCheck.toLowerCase().includes(searchTerm.toLowerCase()) ||
             req.id.toLowerCase().includes(searchTerm.toLowerCase());
         const matchesStatus = statusFilter === "ALL" || req.status === statusFilter;
         return matchesSearch && matchesStatus;
@@ -292,8 +293,10 @@ export default function WithdrawalRequestsPage() {
                                                             <Building2 className="w-5 h-5" />
                                                         </div>
                                                         <div className="flex flex-col">
-                                                            <span className="text-sm font-extrabold text-slate-900">{req.temple?.name}</span>
-                                                            <span className="text-[10px] text-slate-400 font-bold uppercase tracking-tight">{req.temple?.user?.name}</span>
+                                                            <span className="text-sm font-extrabold text-slate-900">{req.temple?.name || req.seller?.name || "Unknown"}</span>
+                                                            <span className="text-[10px] text-slate-400 font-bold uppercase tracking-tight">
+                                                                {req.temple?.user?.name || req.seller?.user?.name || "N/A"}
+                                                            </span>
                                                         </div>
                                                     </div>
                                                 </td>
@@ -305,7 +308,9 @@ export default function WithdrawalRequestsPage() {
                                                 </td>
                                                 <td className="py-6">
                                                     <div className="flex flex-col text-[11px] text-slate-500 font-medium">
-                                                        <span className="font-bold text-slate-700">{req.bankDetails?.type || 'Standard Payout'}</span>
+                                                        <span className="font-bold text-slate-700">
+                                                            {req.bankDetails?.bankName ? `${req.bankDetails.bankName} - ${req.bankDetails.accountNumber}` : req.bankDetails?.type || 'Standard Payout'}
+                                                        </span>
                                                         <span className="text-[10px] text-slate-400 font-bold tracking-tighter uppercase">{format(new Date(req.createdAt), "dd MMM yyyy, hh:mm a")}</span>
                                                     </div>
                                                 </td>
