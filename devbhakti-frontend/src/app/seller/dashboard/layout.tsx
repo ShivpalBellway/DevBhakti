@@ -62,14 +62,14 @@ const sellerSidebarGroups = [
         title: "Business",
         items: [
             { label: "Customers", icon: Users, href: "/seller/dashboard/customers" },
-            { label: "Payments", icon: IndianRupee, href: "/seller/dashboard/payments" },
+          
 
         ]
     },
     {
         title: "Finance",
         items: [
-
+{ label: "Transaction Ledger", icon: IndianRupee, href: "/seller/dashboard/payments" },
             { label: "Withdraw Request", icon: Wallet, href: "/seller/dashboard/payments/withdraw" },
             { label: "Payout History", icon: CalendarCheck, href: "/seller/dashboard/payments/history" },
             { label: "Bank Details", icon: Building2, href: "/seller/dashboard/payments/bank-details" }

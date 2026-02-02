@@ -14,7 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { fetchSellerFinanceSummary, requestSellerWithdrawal } from "@/api/sellerController";
+import { fetchSellerFinanceSummary, requestSellerWithdrawal, fetchSellerProfile } from "@/api/sellerController";
 
 export default function SellerWithdrawPage() {
     const router = useRouter();
@@ -30,18 +30,30 @@ export default function SellerWithdrawPage() {
 
     useEffect(() => {
         loadData();
-        const saved = localStorage.getItem("seller_bank_details");
-        if (saved) {
-            setBankDetails(JSON.parse(saved));
-        }
     }, []);
 
     const loadData = async () => {
         setIsLoading(true);
         try {
-            const summaryRes = await fetchSellerFinanceSummary();
+            const [summaryRes, profileRes] = await Promise.all([
+                fetchSellerFinanceSummary(),
+                fetchSellerProfile()
+            ]);
 
             if (summaryRes.success) setSummary(summaryRes.data);
+
+            if (profileRes.success && profileRes.data) {
+                const profile = profileRes.data;
+                if (profile.bankName && profile.accountNumber) {
+                    setBankDetails({
+                        bankName: profile.bankName,
+                        accountNumber: profile.accountNumber,
+                        accountHolderName: profile.accountHolderName,
+                        ifscCode: profile.ifscCode,
+                        upiId: profile.upiId
+                    });
+                }
+            }
         } catch (error) {
             console.error("Failed to load finance data", error);
         } finally {
@@ -93,107 +105,111 @@ export default function SellerWithdrawPage() {
     };
 
     return (
-        <div className="max-w-6xl space-y-8 pb-12">
-            {/* Header */}
-            <div className="flex items-center gap-4">
-                <Button variant="ghost" size="icon" onClick={() => router.back()} className="h-10 w-10">
-                    <ArrowLeft className="w-5 h-5" />
-                </Button>
-                <div>
-                    <h1 className="text-2xl font-serif font-bold text-slate-900 flex items-center gap-2">
-                        <Wallet className="w-6 h-6 text-[#794A05]" />
-                        Request Payout
-                    </h1>
-                    <p className="text-slate-500 text-sm font-medium">
-                        Transfer your earnings to your bank account.
-                    </p>
-                </div>
-            </div>
-
-            <Card className="border-none shadow-xl rounded-[2rem] overflow-hidden bg-white">
-                <div className="bg-[#794A05] h-2 w-full" />
-                <CardHeader className="pt-8 px-8 pb-0">
-                    <CardTitle className="flex items-center justify-between">
-                        <span className="text-sm font-extrabold text-slate-400 uppercase tracking-widest">Available Balance</span>
-                        <div className="w-10 h-10 rounded-full bg-[#794A05]/10 flex items-center justify-center">
-                            <TrendingUp className="w-5 h-5 text-[#794A05]" />
+        <div className="min-h-[80vh] flex flex-col items-center justify-center p-4">
+            <div className="w-full max-w-4xl space-y-8 pb-12">
+                {/* Header */}
+                <div className="flex flex-col items-center text-center gap-4">
+                    <div className="flex flex-col items-center">
+                        <div className="w-14 h-14 rounded-2xl bg-[#794A05]/10 flex items-center justify-center mb-4">
+                            <Wallet className="w-8 h-8 text-[#794A05]" />
                         </div>
-                    </CardTitle>
-                    <div className="mt-2">
-                        <span className="text-4xl font-extrabold text-slate-900 flex items-center gap-1">
-                            <IndianRupee className="w-6 h-6 text-slate-300" />
-                            {summary.availableBalance.toLocaleString()}
-                        </span>
-                    </div>
-                </CardHeader>
-
-                <CardContent className="p-8 space-y-8">
-                    {/* Amount Input */}
-                    <div className="space-y-4">
-                        <label className="text-xs font-extrabold text-slate-900 uppercase tracking-widest pl-1">Withdrawal Amount</label>
-                        <div className="relative">
-                            <span className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-2xl">₹</span>
-                            <Input
-                                type="number"
-                                placeholder="0.00"
-                                value={withdrawAmount}
-                                onChange={(e) => setWithdrawAmount(e.target.value)}
-                                className="h-20 pl-12 rounded-[1.5rem] border-slate-100 bg-slate-50 focus:bg-white focus:border-[#794A05] focus:ring-[#794A05]/10 text-3xl font-extrabold transition-all"
-                            />
-                        </div>
-                        <div className="flex items-center justify-between px-2">
-                            <p className="text-[11px] text-slate-400 font-bold italic">Min. transfer: ₹500</p>
-                            <button
-                                onClick={() => setWithdrawAmount(summary.availableBalance.toString())}
-                                className="text-[11px] font-extrabold text-[#794A05] uppercase hover:underline tracking-wider"
-                            >
-                                Withdraw Full Amount
-                            </button>
-                        </div>
-                    </div>
-
-                    {/* Bank Info Display */}
-                    <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100 flex items-center gap-4">
-                        <div className="w-10 h-10 bg-white rounded-xl shadow-sm flex items-center justify-center border border-slate-100">
-                            <Landmark className="w-5 h-5 text-slate-400" />
-                        </div>
-                        <div>
-                            <p className="text-xs font-bold text-slate-900 uppercase tracking-wide">
-                                {bankDetails ? bankDetails.bankName : "No Account Linked"}
-                            </p>
-                            <p className="text-xs text-slate-500 font-mono mt-0.5">
-                                {bankDetails ?
-                                    `${bankDetails.ifscCode} • ${bankDetails.accountNumber.slice(-4).padStart(bankDetails.accountNumber.length, '•')}`
-                                    : "Please add bank details"}
-                            </p>
-                        </div>
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => router.push("/seller/dashboard/payments/bank-details")}
-                            className="ml-auto text-[10px] uppercase font-bold text-[#794A05]"
-                        >
-                            {bankDetails ? "Change" : "Add"}
-                        </Button>
-                    </div>
-
-                    {/* Info Alert */}
-                    <div className="flex gap-4 p-5 bg-amber-50 rounded-2xl border border-amber-100/50">
-                        <AlertCircle className="w-5 h-5 text-[#794A05] flex-shrink-0" />
-                        <p className="text-xs text-[#794A05] font-bold leading-relaxed">
-                            Payouts are processed within 24 hours. Please ensure your bank details are correct to avoid delays.
+                        <h1 className="text-2xl font-serif font-bold text-slate-900">
+                            Request Payout
+                        </h1>
+                        <p className="text-slate-500 text-sm font-medium mt-1">
+                            Transfer your earnings to your bank account safely.
                         </p>
                     </div>
+                </div>
 
-                    <Button
-                        onClick={handleWithdrawal}
-                        disabled={isSubmitting || summary.availableBalance <= 0}
-                        className="w-full bg-[#794A05] hover:bg-[#5D3804] text-white rounded-xl h-14 font-bold text-lg shadow-xl shadow-[#794A05]/20 gap-2 transition-all active:scale-95"
-                    >
-                        {isSubmitting ? "Processing..." : "Confirm Withdrawal"}
-                    </Button>
-                </CardContent>
-            </Card>
+                <Card className="border-none shadow-xl rounded-[2rem] overflow-hidden bg-white">
+                    <div className="bg-[#794A05] h-2 w-full" />
+                    <CardHeader className="pt-8 px-8 pb-0">
+                        <CardTitle className="flex items-center justify-between">
+                            <span className="text-sm font-extrabold text-slate-400 uppercase tracking-widest">Available Balance</span>
+                            <div className="w-10 h-10 rounded-full bg-[#794A05]/10 flex items-center justify-center">
+                                <TrendingUp className="w-5 h-5 text-[#794A05]" />
+                            </div>
+                        </CardTitle>
+                        <div className="mt-2">
+                            <span className="text-4xl font-extrabold text-slate-900 flex items-center gap-1">
+                                <IndianRupee className="w-6 h-6 text-slate-300" />
+                                {summary.availableBalance.toLocaleString()}
+                            </span>
+                        </div>
+                    </CardHeader>
+
+                    <CardContent className="p-8 space-y-8">
+                        {/* Amount Input */}
+                        <div className="space-y-4">
+                            <label className="text-xs font-extrabold text-slate-900 uppercase tracking-widest pl-1">Withdrawal Amount</label>
+                            <div className="relative">
+                                <span className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-2xl">₹</span>
+                                <Input
+                                    type="number"
+                                    placeholder="0.00"
+                                    value={withdrawAmount}
+                                    onChange={(e) => setWithdrawAmount(e.target.value)}
+                                    className="h-20 pl-12 rounded-[1.5rem] border-slate-100 bg-slate-50 focus:bg-white focus:border-[#794A05] focus:ring-[#794A05]/10 text-3xl font-extrabold transition-all"
+                                />
+                            </div>
+                            <div className="flex items-center justify-between px-2">
+                                <p className="text-[11px] text-slate-400 font-bold italic">Min. transfer: ₹500</p>
+                                <button
+                                    onClick={() => setWithdrawAmount(summary.availableBalance.toString())}
+                                    className="text-[11px] font-extrabold text-[#794A05] uppercase hover:underline tracking-wider"
+                                >
+                                    Withdraw Full Amount
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Bank Info Display */}
+                        <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100 flex items-center gap-4">
+                            <div className="w-10 h-10 bg-white rounded-xl shadow-sm flex items-center justify-center border border-slate-100">
+                                <Landmark className="w-5 h-5 text-slate-400" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                                <p className="text-xs font-bold text-slate-900 uppercase tracking-wide truncate">
+                                    {bankDetails ? bankDetails.bankName : "No Account Linked"}
+                                </p>
+                                <p className="text-xs text-slate-500 font-medium truncate mt-0.5">
+                                    {bankDetails ? bankDetails.accountHolderName : "Please add bank details"}
+                                </p>
+                                <p className="text-[10px] text-slate-400 font-mono mt-0.5">
+                                    {bankDetails ?
+                                        `${bankDetails.ifscCode} • ${bankDetails.accountNumber.slice(-4).padStart(bankDetails.accountNumber.length, '•')}`
+                                        : "---"}
+                                </p>
+                            </div>
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => router.push("/seller/dashboard/payments/bank-details")}
+                                className="text-[10px] uppercase font-bold text-[#794A05] hover:bg-[#794A05]/5 shrink-0"
+                            >
+                                {bankDetails ? "Change" : "Add"}
+                            </Button>
+                        </div>
+
+                        {/* Info Alert */}
+                        <div className="flex gap-4 p-5 bg-amber-50 rounded-2xl border border-amber-100/50">
+                            <AlertCircle className="w-5 h-5 text-[#794A05] flex-shrink-0" />
+                            <p className="text-xs text-[#794A05] font-bold leading-relaxed">
+                                Payouts are processed within 24 hours. Please ensure your bank details are correct to avoid delays.
+                            </p>
+                        </div>
+
+                        <Button
+                            onClick={handleWithdrawal}
+                            disabled={isSubmitting || summary.availableBalance <= 0}
+                            className="w-full bg-[#794A05] hover:bg-[#5D3804] text-white rounded-xl h-14 font-bold text-lg shadow-xl shadow-[#794A05]/20 gap-2 transition-all active:scale-95"
+                        >
+                            {isSubmitting ? "Processing..." : "Confirm Withdrawal"}
+                        </Button>
+                    </CardContent>
+                </Card>
+            </div>
         </div>
     );
 }
