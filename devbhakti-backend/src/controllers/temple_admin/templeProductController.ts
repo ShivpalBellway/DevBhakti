@@ -71,7 +71,7 @@ export const getMyProductById = async (req: Request, res: Response) => {
     if (!temple) return res.status(404).json({ success: false, message: "Temple not found" });
 
     const product = await prisma.product.findFirst({
-      where: { id, templeId: temple.id },
+      where: { id: id as string, templeId: temple.id },
       include: {
         variants: true,
         categoryObj: { select: { id: true, name: true } },
@@ -175,7 +175,7 @@ export const updateProduct = async (req: Request, res: Response) => {
   
       // Verify ownership
       const existingProduct = await prisma.product.findFirst({
-        where: { id, templeId: temple.id }
+        where: { id: id as string, templeId: temple.id }
       });
       if (!existingProduct) return res.status(404).json({ success: false, message: "Product not found or access denied" });
   
@@ -224,7 +224,7 @@ export const updateProduct = async (req: Request, res: Response) => {
   
       // Handle Variants
       if (variants && variants.length > 0) {
-        await prisma.productVariant.deleteMany({ where: { productId: id } });
+        await prisma.productVariant.deleteMany({ where: { productId: id as string } });
         updateData.variants = {
             create: variants.map((v: any) => ({
                 name: v.name,
@@ -236,7 +236,7 @@ export const updateProduct = async (req: Request, res: Response) => {
       }
   
       const updatedProduct = await prisma.product.update({
-        where: { id },
+        where: { id: id as string },
         data: updateData,
         include: { variants: true }
       });
@@ -259,11 +259,11 @@ export const deleteProduct = async (req: Request, res: Response) => {
         if (!temple) return res.status(404).json({ success: false, message: "Temple not found" });
 
         const existingProduct = await prisma.product.findFirst({
-            where: { id, templeId: temple.id }
+            where: { id: id as string, templeId: temple.id }
         });
         if (!existingProduct) return res.status(404).json({ success: false, message: "Product not found or access denied" });
 
-        await prisma.product.delete({ where: { id } });
+        await prisma.product.delete({ where: { id: id as string } });
 
         res.status(200).json({ success: true, message: "Product deleted successfully" });
     } catch (error) {

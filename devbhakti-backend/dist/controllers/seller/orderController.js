@@ -1,0 +1,174 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.getSellerCustomers = exports.updateSellerOrderStatus = exports.getSellerOrders = void 0;
+const prisma_1 = require("../../lib/prisma");
+// Get orders specifically for a Seller (Store)
+const getSellerOrders = async (req, res) => {
+    try {
+        const userId = req.user.userId;
+        // Find the store (SellerProfile) associated with this user
+        const store = await prisma_1.prisma.sellerProfile.findUnique({
+            where: { userId }
+        });
+        if (!store) {
+            return res.status(404).json({ success: false, message: "Store not found" });
+        }
+        const subOrders = await prisma_1.prisma.subOrder.findMany({
+            where: { sellerId: store.id },
+            include: {
+                order: {
+                    include: {
+                        user: { select: { name: true, phone: true } }
+                    }
+                },
+                items: {
+                    include: {
+                        product: { select: { name: true, image: true } }
+                    }
+                }
+            },
+            orderBy: { createdAt: "desc" }
+        });
+        return res.status(200).json({ success: true, data: subOrders });
+    }
+    catch (error) {
+        console.error("Seller Orders Error:", error);
+        return res.status(500).json({ success: false, message: error.message });
+    }
+};
+exports.getSellerOrders = getSellerOrders;
+// Seller updates their own sub-order status
+const updateSellerOrderStatus = async (req, res) => {
+    try {
+        const userId = req.user.userId;
+        const subOrderId = req.params.subOrderId;
+        const { status, shippingLabel } = req.body;
+        const store = await prisma_1.prisma.sellerProfile.findUnique({
+            where: { userId }
+        });
+        if (!store) {
+            return res.status(404).json({ success: false, message: "Store not found" });
+        }
+        // Verify this sub-order belongs to the store
+        const existing = await prisma_1.prisma.subOrder.findUnique({
+            where: { id: subOrderId }
+        });
+        if (!existing || existing.sellerId !== store.id) {
+            return res.status(403).json({ success: false, message: "Unauthorized or order not found" });
+        }
+        const updated = await prisma_1.prisma.subOrder.update({
+            where: { id: subOrderId },
+            data: { status, shippingLabel, updatedAt: new Date() }
+        });
+        // Sync Ledger Status
+        if (status === "DELIVERED") {
+            await prisma_1.prisma.templeLedger.updateMany({
+                where: { sourceId: subOrderId, type: "MARKETPLACE_EARNING" },
+                data: { status: "COMPLETED" }
+            });
+        }
+        else if (status === "CANCELLED") {
+            await prisma_1.prisma.templeLedger.updateMany({
+                where: { sourceId: subOrderId, type: "MARKETPLACE_EARNING" },
+                data: { status: "CANCELLED" }
+            });
+        }
+        // Check if all sub-orders of the parent order are delivered/completed
+        const parentOrder = await prisma_1.prisma.order.findUnique({
+            where: { id: updated.orderId },
+            include: { subOrders: true }
+        });
+        if (parentOrder) {
+            const allDone = parentOrder.subOrders.every(so => so.status === "DELIVERED");
+            if (allDone) {
+                await prisma_1.prisma.order.update({
+                    where: { id: parentOrder.id },
+                    data: { status: "COMPLETED" }
+                });
+            }
+            else {
+                const anyShipped = parentOrder.subOrders.some(so => so.status === "SHIPPED");
+                const anyAccepted = parentOrder.subOrders.some(so => so.status === "ACCEPTED");
+                let newOrderStatus = parentOrder.status;
+                if (anyShipped) {
+                    newOrderStatus = "PARTIALLY_SHIPPED";
+                }
+                else if (anyAccepted) {
+                    newOrderStatus = "PROCESSING";
+                }
+                if (newOrderStatus !== parentOrder.status) {
+                    await prisma_1.prisma.order.update({
+                        where: { id: parentOrder.id },
+                        data: { status: newOrderStatus }
+                    });
+                }
+            }
+        }
+        return res.status(200).json({ success: true, message: "Order status updated", data: updated });
+    }
+    catch (error) {
+        console.error("Update Seller Order Error:", error);
+        return res.status(500).json({ success: false, message: error.message });
+    }
+};
+exports.updateSellerOrderStatus = updateSellerOrderStatus;
+// Get unique customers for a Seller
+const getSellerCustomers = async (req, res) => {
+    try {
+        const userId = req.user.userId;
+        // Find the store (SellerProfile) associated with this user
+        const store = await prisma_1.prisma.sellerProfile.findUnique({
+            where: { userId }
+        });
+        if (!store) {
+            return res.status(404).json({ success: false, message: "Store not found" });
+        }
+        // Find all sub-orders for this seller
+        const subOrders = await prisma_1.prisma.subOrder.findMany({
+            where: { sellerId: store.id },
+            include: {
+                order: {
+                    include: {
+                        user: {
+                            select: {
+                                id: true,
+                                name: true,
+                                email: true,
+                                phone: true,
+                            }
+                        }
+                    }
+                }
+            },
+            orderBy: { createdAt: 'desc' }
+        });
+        // Extract unique customers and their order summary
+        const customerMap = new Map();
+        subOrders.forEach(so => {
+            const customer = so.order.user;
+            if (customer) {
+                if (!customerMap.has(customer.id)) {
+                    customerMap.set(customer.id, {
+                        ...customer,
+                        totalOrders: 0,
+                        totalSpent: 0,
+                        lastOrderDate: so.createdAt
+                    });
+                }
+                const stats = customerMap.get(customer.id);
+                stats.totalOrders += 1;
+                stats.totalSpent += so.totalAmount;
+                if (new Date(so.createdAt) > new Date(stats.lastOrderDate)) {
+                    stats.lastOrderDate = so.createdAt;
+                }
+            }
+        });
+        const customers = Array.from(customerMap.values());
+        return res.status(200).json({ success: true, data: customers });
+    }
+    catch (error) {
+        console.error("Seller Customers Error:", error);
+        return res.status(500).json({ success: false, message: error.message });
+    }
+};
+exports.getSellerCustomers = getSellerCustomers;

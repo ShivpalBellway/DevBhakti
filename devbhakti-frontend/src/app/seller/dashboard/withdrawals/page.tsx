@@ -212,30 +212,29 @@ export default function SellerWithdrawalsPage() {
                                             <td className="px-8 py-6">
                                                 <p className="text-base font-black text-[#794A05]">₹{Math.abs(item.amount).toLocaleString()}</p>
                                             </td>
-                                            <td className="px-8 py-6">
-                                                <td className="px-8 py-6 text-center">
-                                                    <Badge className={
-                                                        item.status === 'PAID' ? "bg-emerald-50 text-emerald-700 border-emerald-100 font-black uppercase text-[9px]" :
-                                                            item.status === 'REJECTED' ? "bg-red-50 text-red-700 border-red-100 font-black uppercase text-[9px]" :
-                                                                item.status === 'APPROVED' ? "bg-blue-50 text-blue-700 border-blue-100 font-black uppercase text-[9px]" :
-                                                                    "bg-amber-50 text-amber-700 border-amber-100 font-black uppercase text-[9px]"
-                                                    }>
-                                                        {item.status}
-                                                    </Badge>
-                                                </td>
-                                                <td className="px-8 py-6 text-right">
-                                                    <Button
-                                                        size="sm"
-                                                        variant="outline"
-                                                        className="rounded-xl h-9 font-bold text-xs"
-                                                        onClick={() => {
-                                                            setSelectedTransaction(item);
-                                                            setIsDetailModalOpen(true);
-                                                        }}
-                                                    >
-                                                        View Details
-                                                    </Button>
-                                                </td>
+                                            <td className="px-8 py-6 text-center">
+                                                <Badge className={
+                                                    item.status === 'PAID' ? "bg-emerald-50 text-emerald-700 border-emerald-100 font-black uppercase text-[9px]" :
+                                                        item.status === 'REJECTED' ? "bg-red-50 text-red-700 border-red-100 font-black uppercase text-[9px]" :
+                                                            item.status === 'APPROVED' ? "bg-blue-50 text-blue-700 border-blue-100 font-black uppercase text-[9px]" :
+                                                                "bg-amber-50 text-amber-700 border-amber-100 font-black uppercase text-[9px]"
+                                                }>
+                                                    {item.status}
+                                                </Badge>
+                                            </td>
+                                            <td className="px-8 py-6 text-right">
+                                                <Button
+                                                    size="sm"
+                                                    variant="outline"
+                                                    className="rounded-xl h-9 font-bold text-xs"
+                                                    onClick={() => {
+                                                        setSelectedTransaction(item);
+                                                        setIsDetailModalOpen(true);
+                                                    }}
+                                                >
+                                                    View Details
+                                                </Button>
+                                            </td>
                                         </tr>
                                     ))
                                 )}

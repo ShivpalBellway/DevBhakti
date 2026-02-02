@@ -277,10 +277,10 @@ export default function TempleBookingsPage() {
                     <Button variant="outline" onClick={() => loadBookings()} disabled={loading}>
                         Refresh
                     </Button>
-                    <Button variant="sacred">
+                    {/* <Button variant="sacred">
                         <Plus className="w-4 h-4 mr-2" />
                         New Booking
-                    </Button>
+                    </Button> */}
                 </div>
             </div>
 

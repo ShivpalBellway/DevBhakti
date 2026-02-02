@@ -71,10 +71,10 @@ export default function TempleUsersPage() {
                         Manage and connect with devotees of your temple.
                     </p>
                 </div>
-                <Button variant="sacred">
+                {/* <Button variant="sacred">
                     <UserPlus className="w-4 h-4 mr-2" />
                     Add Devotee
-                </Button>
+                </Button> */}
             </div>
 
             {/* Stats */}
