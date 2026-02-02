@@ -15,6 +15,13 @@ export const getAllWithdrawalRequests = async (req: Request, res: Response) => {
             location: true,
             user: { select: { name: true, phone: true } }
           }
+        },
+        seller: {
+          select: {
+            name: true,
+            location: true,
+            user: { select: { name: true, phone: true } }
+          }
         }
       },
       orderBy: { createdAt: "desc" }

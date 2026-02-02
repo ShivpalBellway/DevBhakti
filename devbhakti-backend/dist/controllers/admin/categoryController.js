@@ -1,8 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.toggleCategoryStatus = exports.deleteCategory = exports.updateCategory = exports.createCategory = exports.getCategoryById = exports.getActiveCategories = exports.getAllCategories = void 0;
-const client_1 = require("@prisma/client");
-const prisma = new client_1.PrismaClient();
+const prisma_1 = require("../../lib/prisma");
 // Get All Categories
 const getAllCategories = async (req, res) => {
     try {
@@ -20,7 +19,7 @@ const getAllCategories = async (req, res) => {
             where.isActive = isActive === "true";
         }
         const [categories, total] = await Promise.all([
-            prisma.productCategory.findMany({
+            prisma_1.prisma.productCategory.findMany({
                 where,
                 orderBy: { sortOrder: "asc" },
                 skip,
@@ -31,7 +30,7 @@ const getAllCategories = async (req, res) => {
                     }
                 }
             }),
-            prisma.productCategory.count({ where })
+            prisma_1.prisma.productCategory.count({ where })
         ]);
         res.status(200).json({
             success: true,
@@ -61,7 +60,7 @@ exports.getAllCategories = getAllCategories;
 // Get Active Categories (for dropdown)
 const getActiveCategories = async (req, res) => {
     try {
-        const categories = await prisma.productCategory.findMany({
+        const categories = await prisma_1.prisma.productCategory.findMany({
             where: { isActive: true },
             orderBy: { sortOrder: "asc" },
             select: {
@@ -91,8 +90,8 @@ exports.getActiveCategories = getActiveCategories;
 const getCategoryById = async (req, res) => {
     try {
         const { id } = req.params;
-        const category = await prisma.productCategory.findUnique({
-            where: { id },
+        const category = await prisma_1.prisma.productCategory.findUnique({
+            where: { id: id },
             include: {
                 _count: {
                     select: { products: true }
@@ -138,7 +137,7 @@ const createCategory = async (req, res) => {
             });
         }
         // Check if category already exists
-        const existingCategory = await prisma.productCategory.findFirst({
+        const existingCategory = await prisma_1.prisma.productCategory.findFirst({
             where: {
                 name: {
                     equals: name.trim(),
@@ -158,7 +157,7 @@ const createCategory = async (req, res) => {
         if (req.file) {
             imagePath = `/uploads/categories/${req.file.filename}`;
         }
-        const category = await prisma.productCategory.create({
+        const category = await prisma_1.prisma.productCategory.create({
             data: {
                 name: name.trim(),
                 description: description && typeof description === 'string' ? description.trim() : null,
@@ -190,8 +189,8 @@ const updateCategory = async (req, res) => {
         const { id } = req.params;
         const { name, description, isActive, sortOrder } = req.body;
         // Check if category exists
-        const existingCategory = await prisma.productCategory.findUnique({
-            where: { id }
+        const existingCategory = await prisma_1.prisma.productCategory.findUnique({
+            where: { id: id }
         });
         if (!existingCategory) {
             return res.status(404).json({
@@ -202,7 +201,7 @@ const updateCategory = async (req, res) => {
         }
         // Check if name is being changed and if it conflicts with existing category
         if (name && typeof name === 'string' && name.trim() !== existingCategory.name) {
-            const duplicateCategory = await prisma.productCategory.findFirst({
+            const duplicateCategory = await prisma_1.prisma.productCategory.findFirst({
                 where: {
                     name: {
                         equals: name.trim(),
@@ -235,8 +234,8 @@ const updateCategory = async (req, res) => {
             updateData.sortOrder = parseInt(sortOrder) || 0;
         if (req.file)
             updateData.image = imagePath;
-        const category = await prisma.productCategory.update({
-            where: { id },
+        const category = await prisma_1.prisma.productCategory.update({
+            where: { id: id },
             data: updateData
         });
         res.status(200).json({
@@ -261,8 +260,8 @@ const deleteCategory = async (req, res) => {
     try {
         const { id } = req.params;
         // Check if category exists
-        const category = await prisma.productCategory.findUnique({
-            where: { id },
+        const category = await prisma_1.prisma.productCategory.findUnique({
+            where: { id: id },
             include: {
                 _count: {
                     select: { products: true }
@@ -284,8 +283,8 @@ const deleteCategory = async (req, res) => {
                 details: `Category has ${category._count.products} products. Please delete or reassign products first.`
             });
         }
-        await prisma.productCategory.delete({
-            where: { id }
+        await prisma_1.prisma.productCategory.delete({
+            where: { id: id }
         });
         res.status(200).json({
             success: true,
@@ -307,8 +306,8 @@ exports.deleteCategory = deleteCategory;
 const toggleCategoryStatus = async (req, res) => {
     try {
         const { id } = req.params;
-        const category = await prisma.productCategory.findUnique({
-            where: { id }
+        const category = await prisma_1.prisma.productCategory.findUnique({
+            where: { id: id }
         });
         if (!category) {
             return res.status(404).json({
@@ -317,8 +316,8 @@ const toggleCategoryStatus = async (req, res) => {
                 details: `Category with ID ${id} does not exist`
             });
         }
-        const updatedCategory = await prisma.productCategory.update({
-            where: { id },
+        const updatedCategory = await prisma_1.prisma.productCategory.update({
+            where: { id: id },
             data: {
                 isActive: !category.isActive
             }

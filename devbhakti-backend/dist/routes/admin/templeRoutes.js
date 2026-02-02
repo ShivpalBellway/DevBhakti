@@ -26,13 +26,13 @@ const templeUpload = upload.fields([
 // All routes here require ADMIN role
 router.use(authMiddleware_1.authenticate);
 router.use((0, authMiddleware_1.authorize)('ADMIN'));
+// Update Request Routes
+router.get('/update-requests', templeController_1.getPendingUpdateRequests);
+router.post('/update-requests/:id/approve', templeController_1.approveUpdateRequest);
+router.post('/update-requests/:id/reject', templeController_1.rejectUpdateRequest);
 router.get('/', templeController_1.getAllTemples);
 router.post('/', templeUpload, templeController_1.createTemple);
 router.put('/:id', templeUpload, templeController_1.updateTemple);
 router.patch('/:id/status', templeController_1.toggleTempleStatus);
 router.delete('/:id', templeController_1.deleteTemple);
-// Update Request Routes
-router.get('/update-requests', templeController_1.getPendingUpdateRequests);
-router.post('/update-requests/:id/approve', templeController_1.approveUpdateRequest);
-router.post('/update-requests/:id/reject', templeController_1.rejectUpdateRequest);
 exports.default = router;

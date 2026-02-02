@@ -44,7 +44,7 @@ const updateBookingStatus = async (req, res) => {
         const { id } = req.params;
         const { status } = req.body;
         const { userId } = req.user;
-        if (!['BOOKED', 'REJECTED'].includes(status)) {
+        if (!['PENDING', 'BOOKED', 'COMPLETED', 'REJECTED', 'CANCELLED'].includes(status)) {
             return res.status(400).json({ success: false, message: 'Invalid status' });
         }
         // Check if booking belongs to a temple owned by this user
@@ -62,6 +62,19 @@ const updateBookingStatus = async (req, res) => {
             where: { id: id },
             data: { status }
         });
+        // Sync Ledger Status
+        if (status === "COMPLETED") {
+            await prisma_1.prisma.templeLedger.updateMany({
+                where: { sourceId: id, type: "POOJA_EARNING" },
+                data: { status: "COMPLETED" }
+            });
+        }
+        else if (status === "CANCELLED" || status === "REJECTED") {
+            await prisma_1.prisma.templeLedger.updateMany({
+                where: { sourceId: id, type: "POOJA_EARNING" },
+                data: { status: "CANCELLED" }
+            });
+        }
         res.json({
             success: true,
             message: `Booking status updated to ${status}`,

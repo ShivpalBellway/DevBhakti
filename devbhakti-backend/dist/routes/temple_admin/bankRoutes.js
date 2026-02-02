@@ -1,0 +1,11 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const bankController_1 = require("../../controllers/temple_admin/bankController");
+const authMiddleware_1 = require("../../middleware/authMiddleware");
+const router = (0, express_1.Router)();
+router.use(authMiddleware_1.authenticate);
+router.use((0, authMiddleware_1.authorize)('INSTITUTION'));
+router.get('/', bankController_1.getBankDetails);
+router.put('/', bankController_1.updateBankDetails);
+exports.default = router;

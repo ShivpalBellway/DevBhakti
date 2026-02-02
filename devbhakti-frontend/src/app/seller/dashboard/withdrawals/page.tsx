@@ -26,7 +26,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { fetchSellerFinanceSummary, fetchSellerFinanceLedger, requestSellerWithdrawal } from "@/api/sellerController";
+import { fetchSellerFinanceSummary, fetchSellerWithdrawalHistory, requestSellerWithdrawal } from "@/api/sellerController";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 
@@ -38,6 +38,8 @@ export default function SellerWithdrawalsPage() {
     const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false);
     const [withdrawAmount, setWithdrawAmount] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [selectedTransaction, setSelectedTransaction] = useState<any>(null);
+    const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
 
     useEffect(() => {
         loadData();
@@ -46,16 +48,14 @@ export default function SellerWithdrawalsPage() {
     const loadData = async () => {
         setIsLoading(true);
         try {
-            const [summaryRes, ledgerRes] = await Promise.all([
+            const [summaryRes, historyRes] = await Promise.all([
                 fetchSellerFinanceSummary(),
-                fetchSellerFinanceLedger()
+                fetchSellerWithdrawalHistory()
             ]);
 
             if (summaryRes.success) setSummary(summaryRes.data);
-            if (ledgerRes.success) {
-                // Filter ledger for withdrawal history entries
-                setWithdrawHistory(ledgerRes.data.filter((e: any) => e.type === "WITHDRAWAL"));
-            }
+            if (historyRes.success) setWithdrawHistory(historyRes.data);
+
         } catch (error) {
             console.error("Failed to load withdrawal data", error);
         } finally {
@@ -187,8 +187,8 @@ export default function SellerWithdrawalsPage() {
                                     <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Transaction Ref</th>
                                     <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Date</th>
                                     <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Amount</th>
-                                    <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Status</th>
-                                    <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Account</th>
+                                    <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-center">Status</th>
+                                    <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-right">Actions</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-50">
@@ -212,25 +212,28 @@ export default function SellerWithdrawalsPage() {
                                             <td className="px-8 py-6">
                                                 <p className="text-base font-black text-[#794A05]">₹{Math.abs(item.amount).toLocaleString()}</p>
                                             </td>
-                                            <td className="px-8 py-6">
+                                            <td className="px-8 py-6 text-center">
                                                 <Badge className={
-                                                    item.status === 'COMPLETED' ? "bg-emerald-50 text-emerald-700 border-emerald-100 font-black uppercase text-[9px]" :
-                                                        item.status === 'CANCELLED' ? "bg-red-50 text-red-700 border-red-100 font-black uppercase text-[9px]" :
-                                                            "bg-amber-50 text-amber-700 border-amber-100 font-black uppercase text-[9px]"
+                                                    item.status === 'PAID' ? "bg-emerald-50 text-emerald-700 border-emerald-100 font-black uppercase text-[9px]" :
+                                                        item.status === 'REJECTED' ? "bg-red-50 text-red-700 border-red-100 font-black uppercase text-[9px]" :
+                                                            item.status === 'APPROVED' ? "bg-blue-50 text-blue-700 border-blue-100 font-black uppercase text-[9px]" :
+                                                                "bg-amber-50 text-amber-700 border-amber-100 font-black uppercase text-[9px]"
                                                 }>
                                                     {item.status}
                                                 </Badge>
                                             </td>
-                                            <td className="px-8 py-6">
-                                                <div className="flex items-center gap-2">
-                                                    <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-400">
-                                                        <Wallet className="w-4 h-4" />
-                                                    </div>
-                                                    <div>
-                                                        <p className="text-[10px] font-bold text-slate-700">Stored Bank Account</p>
-                                                        <p className="text-[9px] text-slate-400 tracking-widest uppercase font-medium">**********4582</p>
-                                                    </div>
-                                                </div>
+                                            <td className="px-8 py-6 text-right">
+                                                <Button
+                                                    size="sm"
+                                                    variant="outline"
+                                                    className="rounded-xl h-9 font-bold text-xs"
+                                                    onClick={() => {
+                                                        setSelectedTransaction(item);
+                                                        setIsDetailModalOpen(true);
+                                                    }}
+                                                >
+                                                    View Details
+                                                </Button>
                                             </td>
                                         </tr>
                                     ))
@@ -283,6 +286,80 @@ export default function SellerWithdrawalsPage() {
                             {isSubmitting ? "Processing..." : "Confirm Transfer"}
                         </Button>
                     </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Transaction Detail Modal */}
+            <Dialog open={isDetailModalOpen} onOpenChange={setIsDetailModalOpen}>
+                <DialogContent className="sm:max-w-lg bg-white rounded-[2rem] p-0 overflow-hidden border-none">
+                    <div className={
+                        selectedTransaction?.status === 'PAID' ? "bg-emerald-600 h-24 relative overflow-hidden" :
+                            selectedTransaction?.status === 'REJECTED' ? "bg-red-600 h-24 relative overflow-hidden" :
+                                "bg-amber-500 h-24 relative overflow-hidden"
+                    }>
+                        <div className="absolute inset-0 bg-black/10" />
+                        <div className="absolute bottom-6 left-8 text-white">
+                            <p className="text-xs font-bold opacity-80 uppercase tracking-widest">Transaction Status</p>
+                            <h2 className="text-2xl font-black">{selectedTransaction?.status}</h2>
+                        </div>
+                    </div>
+
+                    <div className="p-8 space-y-6">
+                        <div className="flex justify-between items-start border-b border-slate-50 pb-6">
+                            <div>
+                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Requested Amount</p>
+                                <p className="text-3xl font-black text-slate-900">₹{selectedTransaction?.amount?.toLocaleString()}</p>
+                            </div>
+                            <div className="text-right">
+                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Request Date</p>
+                                <p className="text-sm font-bold text-slate-700">{selectedTransaction && format(new Date(selectedTransaction.createdAt), "dd MMM yyyy")}</p>
+                                <p className="text-xs font-medium text-slate-400">{selectedTransaction && format(new Date(selectedTransaction.createdAt), "hh:mm a")}</p>
+                            </div>
+                        </div>
+
+                        {selectedTransaction?.adminNotes && (
+                            <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-1">
+                                    <AlertCircle className="w-3 h-3" /> Admin Note
+                                </p>
+                                <p className="text-sm font-medium text-slate-700 italic">"{selectedTransaction.adminNotes}"</p>
+                            </div>
+                        )}
+
+                        {selectedTransaction?.status === 'PAID' && (
+                            <div className="space-y-4">
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="bg-emerald-50 p-4 rounded-xl border border-emerald-100">
+                                        <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-1">Transaction ID</p>
+                                        <p className="text-sm font-bold text-slate-900 font-mono">{selectedTransaction.transactionId || "N/A"}</p>
+                                    </div>
+                                    <div className="bg-emerald-50 p-4 rounded-xl border border-emerald-100">
+                                        <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-1">Transfer Date</p>
+                                        <p className="text-sm font-bold text-slate-900">{selectedTransaction.updatedAt ? format(new Date(selectedTransaction.updatedAt), "dd MMM yyyy") : "N/A"}</p>
+                                    </div>
+                                </div>
+
+                                {selectedTransaction.receiptImage && (
+                                    <div className="space-y-2">
+                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Payment Proof</p>
+                                        <div className="border rounded-2xl overflow-hidden bg-slate-100">
+                                            <img
+                                                src={`http://localhost:5000${selectedTransaction.receiptImage}`}
+                                                alt="Payment Receipt"
+                                                className="w-full h-auto object-cover"
+                                            />
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        <div className="flex justify-end pt-2">
+                            <Button variant="outline" onClick={() => setIsDetailModalOpen(false)} className="rounded-xl font-bold">
+                                Close Details
+                            </Button>
+                        </div>
+                    </div>
                 </DialogContent>
             </Dialog>
         </div>

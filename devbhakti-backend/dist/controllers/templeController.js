@@ -25,12 +25,14 @@ const getUserIdFromRequest = (req) => {
 const getAllTemples = async (req, res) => {
     try {
         const userId = getUserIdFromRequest(req);
-        // Fetch only temples where user is verified
+        // Fetch only temples where user is verified AND temple is active
         const temples = await prisma_1.prisma.temple.findMany({
             where: {
                 user: {
-                    isVerified: true
-                }
+                    isVerified: true,
+                    role: 'INSTITUTION'
+                },
+                isActive: true
             },
             include: {
                 poojas: {
@@ -72,10 +74,15 @@ const getTempleById = async (req, res) => {
         const userId = getUserIdFromRequest(req);
         const temple = await prisma_1.prisma.temple.findFirst({
             where: {
-                id: id,
+                OR: [
+                    { id: id },
+                    { slug: id }
+                ],
                 user: {
-                    isVerified: true
-                }
+                    isVerified: true,
+                    role: 'INSTITUTION'
+                },
+                isActive: true
             },
             include: {
                 poojas: {
@@ -94,6 +101,7 @@ const getTempleById = async (req, res) => {
         }
         let isFavorite = false;
         if (userId) {
+            // Note: We must use the resolved temple.id here, not the slug/param
             const fav = await prisma_1.prisma.favorite.findUnique({
                 where: {
                     userId_templeId: {
@@ -133,7 +141,8 @@ const getPoojaById = async (req, res) => {
                 id: String(id),
                 temple: {
                     user: {
-                        isVerified: true
+                        isVerified: true,
+                        role: 'INSTITUTION'
                     }
                 }
             },
@@ -173,7 +182,8 @@ const getAllPoojas = async (req, res) => {
                 status: true,
                 temple: {
                     user: {
-                        isVerified: true
+                        isVerified: true,
+                        role: 'INSTITUTION'
                     }
                 }
             },

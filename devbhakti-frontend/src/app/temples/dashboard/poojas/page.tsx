@@ -197,7 +197,7 @@ export default function TemplePoojasListPage() {
                                             >
                                                 <Edit2 className="w-4 h-4" />
                                             </Button>
-                                            <Button
+                                            {/* <Button
                                                 variant="ghost"
                                                 size="icon"
                                                 onClick={() => handleDelete(pooja.id)}
@@ -205,7 +205,7 @@ export default function TemplePoojasListPage() {
                                                 title="Delete Pooja"
                                             >
                                                 <Trash2 className="w-4 h-4" />
-                                            </Button>
+                                            </Button> */}
                                         </div>
                                     </TableCell>
                                 </TableRow>

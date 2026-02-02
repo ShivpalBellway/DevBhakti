@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getPlatformFinanceSummary = exports.updateWithdrawalStatus = exports.getAllWithdrawalRequests = void 0;
+exports.getAllPlatformTransactions = exports.getPlatformFinanceSummary = exports.updateWithdrawalStatus = exports.getAllWithdrawalRequests = void 0;
 const client_1 = require("@prisma/client");
 const prisma = new client_1.PrismaClient();
 // Get all withdrawal requests for admin
@@ -10,6 +10,13 @@ const getAllWithdrawalRequests = async (req, res) => {
         const requests = await prisma.withdrawalRequest.findMany({
             include: {
                 temple: {
+                    select: {
+                        name: true,
+                        location: true,
+                        user: { select: { name: true, phone: true } }
+                    }
+                },
+                seller: {
                     select: {
                         name: true,
                         location: true,
@@ -108,3 +115,23 @@ const getPlatformFinanceSummary = async (req, res) => {
     }
 };
 exports.getPlatformFinanceSummary = getPlatformFinanceSummary;
+// Get all ledger entries for platform-wide monitoring
+const getAllPlatformTransactions = async (req, res) => {
+    try {
+        const transactions = await prisma.templeLedger.findMany({
+            include: {
+                temple: {
+                    select: {
+                        name: true,
+                    }
+                }
+            },
+            orderBy: { createdAt: "desc" }
+        });
+        return res.status(200).json({ success: true, data: transactions });
+    }
+    catch (error) {
+        return res.status(500).json({ success: false, message: error.message });
+    }
+};
+exports.getAllPlatformTransactions = getAllPlatformTransactions;

@@ -9,6 +9,7 @@ const path_1 = __importDefault(require("path"));
 const financeManagementController_1 = require("../../controllers/admin/financeManagementController");
 const router = (0, express_1.Router)();
 router.get("/platform-summary", financeManagementController_1.getPlatformFinanceSummary);
+router.get("/transactions", financeManagementController_1.getAllPlatformTransactions);
 // Multer setup for receipt uploads
 const storage = multer_1.default.diskStorage({
     destination: (req, file, cb) => {

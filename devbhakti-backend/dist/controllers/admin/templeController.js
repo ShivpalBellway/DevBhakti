@@ -30,10 +30,7 @@ const getAllTemples = async (req, res) => {
     try {
         const temples = await prisma.user.findMany({
             where: {
-                OR: [
-                    { role: 'INSTITUTION' },
-                    { temple: { isNot: null } }
-                ]
+                role: 'INSTITUTION'
             },
             include: {
                 temple: {
@@ -79,7 +76,7 @@ const createTemple = async (req, res) => {
                     phone: data.phone,
                     password: hashedPassword,
                     role: 'INSTITUTION',
-                    isVerified: true,
+                    isVerified: false,
                     temple: {
                         create: {
                             templeId: `TMP-${Math.random().toString(36).substring(2, 8).toUpperCase()}`,
@@ -96,7 +93,11 @@ const createTemple = async (req, res) => {
                             viewers: data.viewers,
                             rating: parseFloat(data.rating || '0'),
                             reviewsCount: parseInt(data.reviewsCount || '0'),
+                            slug: data.slug || undefined,
+                            isActive: data.isActive === 'true',
                             liveStatus: data.liveStatus === 'true',
+                            productCommissionRate: data.productCommissionRate ? parseFloat(data.productCommissionRate) : 10.0,
+                            poojaCommissionRate: data.poojaCommissionRate ? parseFloat(data.poojaCommissionRate) : 5.0,
                             image: getFilePath(files, 'image'),
                             heroImages: getFilePath(files, 'heroImages') || [],
                         }
@@ -216,23 +217,39 @@ exports.updateTemple = updateTemple;
 const toggleTempleStatus = async (req, res) => {
     try {
         const { id } = req.params;
-        const { isVerified, liveStatus } = req.body;
+        const { isVerified, isActive, slug, productCommissionRate, poojaCommissionRate } = req.body;
+        console.log('toggleTempleStatus called:', {
+            id,
+            isVerified,
+            isActive, // Changed from liveStatus to isActive
+            slug,
+            productCommissionRate,
+            poojaCommissionRate
+        });
         const result = await prisma.user.update({
             where: { id: String(id) },
             data: {
                 isVerified: isVerified,
                 temple: {
                     update: {
-                        liveStatus: liveStatus
+                        isActive: isActive !== undefined ? isActive : undefined, // Use isActive for visibility
+                        slug: slug || undefined,
+                        productCommissionRate: productCommissionRate ? parseFloat(productCommissionRate) : undefined,
+                        poojaCommissionRate: poojaCommissionRate ? parseFloat(poojaCommissionRate) : undefined,
                     }
                 }
             },
             include: { temple: true }
         });
+        console.log('Temple status updated:', result.temple);
         res.json({ success: true, message: 'Status updated successfully', data: result });
     }
     catch (error) {
         console.error('Toggle status error:', error);
+        // Handle unique constraint error for slug
+        if (error.code === 'P2002' && error.meta?.target.includes('slug')) {
+            return res.status(400).json({ error: 'Slug is already taken. Please choose another one.' });
+        }
         res.status(500).json({ error: error.message || 'Failed to update status' });
     }
 };
@@ -279,6 +296,7 @@ exports.deleteTemple = deleteTemple;
 // Get Pending Update Requests
 const getPendingUpdateRequests = async (req, res) => {
     try {
+        console.log("Admin: Fetching pending temple update requests...");
         const requests = await prisma.templeUpdateRequest.findMany({
             where: { status: 'PENDING' },
             include: {
@@ -292,11 +310,16 @@ const getPendingUpdateRequests = async (req, res) => {
             },
             orderBy: { createdAt: 'desc' }
         });
+        console.log(`Found ${requests.length} pending requests.`);
         res.json(requests);
     }
     catch (error) {
-        console.error('Fetch update requests error:', error);
-        res.status(500).json({ error: 'Failed to fetch update requests' });
+        console.error('Fetch update requests CRITICAL ERROR:', {
+            message: error.message,
+            stack: error.stack,
+            code: error.code
+        });
+        res.status(500).json({ error: 'Failed to fetch update requests', details: error.message });
     }
 };
 exports.getPendingUpdateRequests = getPendingUpdateRequests;

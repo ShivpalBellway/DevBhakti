@@ -1,8 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getPublicProducts = exports.getProductsByTemple = exports.toggleProductStatus = exports.deleteProduct = exports.updateProduct = exports.getProductById = exports.getAllProducts = exports.createProduct = void 0;
-const client_1 = require("@prisma/client");
-const prisma = new client_1.PrismaClient();
+const prisma_1 = require("../../lib/prisma");
 // Create Product
 const createProduct = async (req, res) => {
     try {
@@ -60,7 +59,7 @@ const createProduct = async (req, res) => {
         }
         // If templeId is provided, check if temple exists
         if (templeId) {
-            const temple = await prisma.temple.findUnique({
+            const temple = await prisma_1.prisma.temple.findUnique({
                 where: { id: templeId }
             });
             if (!temple) {
@@ -89,7 +88,7 @@ const createProduct = async (req, res) => {
             });
         }
         // Create product with variants
-        const product = await prisma.product.create({
+        const product = await prisma_1.prisma.product.create({
             data: {
                 name,
                 description,
@@ -187,7 +186,7 @@ const getAllProducts = async (req, res) => {
             where.templeId = templeId;
         }
         const [products, total] = await Promise.all([
-            prisma.product.findMany({
+            prisma_1.prisma.product.findMany({
                 where,
                 include: {
                     variants: true,
@@ -202,7 +201,12 @@ const getAllProducts = async (req, res) => {
                         select: {
                             id: true,
                             name: true,
-                            location: true
+                            location: true,
+                            user: {
+                                select: {
+                                    role: true
+                                }
+                            }
                         }
                     }
                 },
@@ -210,7 +214,7 @@ const getAllProducts = async (req, res) => {
                 skip,
                 take: Number(limit)
             }),
-            prisma.product.count({ where })
+            prisma_1.prisma.product.count({ where })
         ]);
         res.status(200).json({
             success: true,
@@ -241,10 +245,28 @@ exports.getAllProducts = getAllProducts;
 const getProductById = async (req, res) => {
     try {
         const { id } = req.params;
-        const product = await prisma.product.findUnique({
+        const product = await prisma_1.prisma.product.findUnique({
             where: {
-                id,
-                status: "approved" // Only return approved products
+                id: id,
+                status: "approved",
+                OR: [
+                    {
+                        temple: {
+                            user: {
+                                isVerified: true,
+                                role: { in: ['INSTITUTION', 'SELLER'] }
+                            }
+                        }
+                    },
+                    {
+                        seller: {
+                            user: {
+                                isVerified: true
+                            },
+                            isActive: true
+                        }
+                    }
+                ]
             },
             include: {
                 variants: true,
@@ -256,6 +278,14 @@ const getProductById = async (req, res) => {
                     }
                 },
                 temple: {
+                    select: {
+                        id: true,
+                        name: true,
+                        location: true,
+                        description: true
+                    }
+                },
+                seller: {
                     select: {
                         id: true,
                         name: true,
@@ -331,8 +361,8 @@ const updateProduct = async (req, res) => {
             rating = productRating;
         }
         // Check if product exists
-        const existingProduct = await prisma.product.findUnique({
-            where: { id },
+        const existingProduct = await prisma_1.prisma.product.findUnique({
+            where: { id: id },
             include: { variants: true }
         });
         if (!existingProduct) {
@@ -356,7 +386,7 @@ const updateProduct = async (req, res) => {
         }
         // If templeId is provided, check if temple exists
         if (templeId && templeId !== "general") {
-            const temple = await prisma.temple.findUnique({
+            const temple = await prisma_1.prisma.temple.findUnique({
                 where: { id: templeId }
             });
             if (!temple) {
@@ -418,7 +448,7 @@ const updateProduct = async (req, res) => {
         // Handle variants update
         if (variants && Array.isArray(variants)) {
             // Delete existing variants
-            await prisma.productVariant.deleteMany({
+            await prisma_1.prisma.productVariant.deleteMany({
                 where: { productId: id }
             });
             // Create new variants
@@ -431,8 +461,8 @@ const updateProduct = async (req, res) => {
                 }))
             };
         }
-        const updatedProduct = await prisma.product.update({
-            where: { id },
+        const updatedProduct = await prisma_1.prisma.product.update({
+            where: { id: id },
             data: updateData,
             include: {
                 variants: true,
@@ -491,8 +521,8 @@ const deleteProduct = async (req, res) => {
     try {
         const { id } = req.params;
         // Check if product exists
-        const product = await prisma.product.findUnique({
-            where: { id }
+        const product = await prisma_1.prisma.product.findUnique({
+            where: { id: id }
         });
         if (!product) {
             return res.status(404).json({
@@ -501,8 +531,8 @@ const deleteProduct = async (req, res) => {
             });
         }
         // Delete product (variants will be deleted due to cascade)
-        await prisma.product.delete({
-            where: { id }
+        await prisma_1.prisma.product.delete({
+            where: { id: id }
         });
         res.status(200).json({
             success: true,
@@ -529,8 +559,8 @@ const toggleProductStatus = async (req, res) => {
                 message: "Invalid status. Must be: pending, approved, or rejected"
             });
         }
-        const product = await prisma.product.findUnique({
-            where: { id }
+        const product = await prisma_1.prisma.product.findUnique({
+            where: { id: id }
         });
         if (!product) {
             return res.status(404).json({
@@ -538,8 +568,8 @@ const toggleProductStatus = async (req, res) => {
                 message: "Product not found"
             });
         }
-        const updatedProduct = await prisma.product.update({
-            where: { id },
+        const updatedProduct = await prisma_1.prisma.product.update({
+            where: { id: id },
             data: { status },
             include: {
                 variants: true,
@@ -547,7 +577,12 @@ const toggleProductStatus = async (req, res) => {
                     select: {
                         id: true,
                         name: true,
-                        location: true
+                        location: true,
+                        user: {
+                            select: {
+                                role: true
+                            }
+                        }
                     }
                 }
             }
@@ -578,7 +613,7 @@ const getProductsByTemple = async (req, res) => {
             where.status = status;
         }
         const [products, total] = await Promise.all([
-            prisma.product.findMany({
+            prisma_1.prisma.product.findMany({
                 where,
                 include: {
                     variants: true,
@@ -601,7 +636,7 @@ const getProductsByTemple = async (req, res) => {
                 skip,
                 take: Number(limit)
             }),
-            prisma.product.count({ where })
+            prisma_1.prisma.product.count({ where })
         ]);
         res.status(200).json({
             success: true,
@@ -630,7 +665,27 @@ const getPublicProducts = async (req, res) => {
     try {
         const { page = 1, limit = 10, search, category, templeId } = req.query;
         const skip = (Number(page) - 1) * Number(limit);
-        const where = { status: "approved" };
+        const where = {
+            status: "approved",
+            OR: [
+                {
+                    temple: {
+                        user: {
+                            isVerified: true,
+                            role: { in: ['INSTITUTION', 'SELLER'] }
+                        }
+                    }
+                },
+                {
+                    seller: {
+                        user: {
+                            isVerified: true
+                        },
+                        isActive: true
+                    }
+                }
+            ]
+        };
         if (search) {
             where.OR = [
                 { name: { contains: search, mode: "insensitive" } },
@@ -646,7 +701,7 @@ const getPublicProducts = async (req, res) => {
             where.templeId = templeId;
         }
         const [products, total] = await Promise.all([
-            prisma.product.findMany({
+            prisma_1.prisma.product.findMany({
                 where,
                 include: {
                     variants: {
@@ -671,7 +726,7 @@ const getPublicProducts = async (req, res) => {
                 skip,
                 take: Number(limit)
             }),
-            prisma.product.count({ where })
+            prisma_1.prisma.product.count({ where })
         ]);
         res.status(200).json({
             success: true,
