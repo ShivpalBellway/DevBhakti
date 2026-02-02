@@ -29,40 +29,9 @@ import { useCart, CartItem } from "@/context/CartContext";
 import { useToast } from "@/hooks/use-toast";
 import { fetchPublicProducts } from "@/api/publicController";
 import { fetchActiveCategoriesAdmin } from "@/api/adminController";
+import { fetchUserFavorites, addFavorite, removeFavorite } from "@/api/userController";
 
-interface Product {
-  id: string;
-  name: string;
-  description: string;
-  category: string;
-  categoryId: string | null;
-  status: string;
-  image: string | null;
-  templeId: string | null;
-  temple?: {
-    id: string;
-    name: string;
-    location: string;
-  } | null;
-  variants: Array<{
-    id: string;
-    name: string;
-    price: number;
-    stock: number;
-    image: string | null;
-  }>;
-  createdAt: string;
-  updatedAt: string;
-}
-
-interface Category {
-  id: string;
-  name: string;
-  description: string | null;
-  image: string | null;
-  isActive: boolean;
-  sortOrder: number;
-}
+// ... (existing interfaces)
 
 function MarketplaceContent() {
   const router = useRouter();
@@ -92,6 +61,7 @@ function MarketplaceContent() {
   useEffect(() => {
     loadCategories();
     loadProducts();
+    loadFavorites();
   }, [searchQuery, selectedCategory]);
 
   const loadCategories = async () => {
@@ -103,7 +73,24 @@ function MarketplaceContent() {
     }
   };
 
+  const loadFavorites = async () => {
+    try {
+      const res = await fetchUserFavorites();
+      if (res.success && res.data) {
+        // Filter only product favorites and map to IDs
+        // Assuming response data structure from backend: { productId: "...", ... }
+        const productIds = res.data
+          .filter((f: any) => f.productId)
+          .map((f: any) => f.productId);
+        setFavorites(productIds);
+      }
+    } catch (error) {
+      console.error("Error loading favorites", error);
+    }
+  };
+
   const loadProducts = async () => {
+    // ... items
     setIsLoading(true);
     setError(null);
     try {
@@ -136,10 +123,29 @@ function MarketplaceContent() {
     return matchesPrice;
   });
 
-  const toggleFavorite = (id: string) => {
+  const toggleFavorite = async (id: string) => {
+    const isFav = favorites.includes(id);
+
+    // Optimistic Update
     setFavorites((prev) =>
-      prev.includes(id) ? prev.filter((f) => f !== id) : [...prev, id]
+      isFav ? prev.filter((f) => f !== id) : [...prev, id]
     );
+
+    try {
+      if (isFav) {
+        await removeFavorite({ productId: id });
+        toast({ title: "Removed from favorites" });
+      } else {
+        await addFavorite({ productId: id });
+        toast({ title: "Added to favorites" });
+      }
+    } catch (error) {
+      // Revert on error
+      setFavorites((prev) =>
+        isFav ? [...prev, id] : prev.filter((f) => f !== id)
+      );
+      toast({ title: "Action failed", variant: "destructive" });
+    }
   };
 
   const addToCart = (product: Product) => {

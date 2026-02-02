@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { fetchMyOrders } from "@/api/productOrderController";
+import { fetchMyOrders, fetchOrderInvoice } from "@/api/productOrderController";
 import Navbar from "@/components/landing/Navbar";
 import Footer from "@/components/landing/Footer";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,7 +17,8 @@ import {
     Clock,
     ArrowLeft,
     Search,
-    IndianRupee
+    IndianRupee,
+    Download
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
@@ -64,6 +65,21 @@ export default function MyOrdersPage() {
         }
     };
 
+    const handleInvoice = async (order: any) => {
+        try {
+            const invoiceHtml = await fetchOrderInvoice(order.id);
+            const printWindow = window.open('', '_blank');
+            if (printWindow) {
+                printWindow.document.write(invoiceHtml);
+                printWindow.document.close();
+            }
+        } catch (error) {
+            console.error("Failed to fetch invoice", error);
+            // Fallback or alert
+            alert("Could not load invoice. Please try again.");
+        }
+    };
+
     return (
         <div className="min-h-screen bg-[#FDFCF6]">
             <Navbar />
@@ -96,7 +112,7 @@ export default function MyOrdersPage() {
                             </Button>
                         </Card>
                     ) : (
-                        <div className="space-y-6">
+                        <div className="space-y-4">
                             {orders.map((order, idx) => (
                                 <motion.div
                                     initial={{ opacity: 0, y: 20 }}
@@ -108,73 +124,95 @@ export default function MyOrdersPage() {
                                         expandedOrderId === order.id ? "ring-2 ring-orange-200 overflow-visible" : "overflow-hidden hover:border-orange-200"
                                     )}
                                 >
-                                    <div className="p-6 md:p-8">
-                                        <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+                                    <div className="p-0">
+                                        {/* Card Header Section */}
+                                        <div className="px-6 py-5 border-b border-slate-50 flex flex-wrap items-center justify-between gap-4 bg-slate-50/30">
                                             <div className="flex items-center gap-3">
-                                                <div className="p-3 bg-orange-50 rounded-2xl">
-                                                    <Package className="w-6 h-6 text-[#794A05]" />
+                                                <div className="w-10 h-10 rounded-full bg-orange-100/50 flex items-center justify-center border border-orange-100">
+                                                    <Package className="w-5 h-5 text-orange-700" />
                                                 </div>
                                                 <div>
-                                                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Order ID</p>
-                                                    <p className="font-mono text-sm font-bold text-slate-900">#{order.id.slice(-8).toUpperCase()}</p>
+                                                    <div className="flex items-center gap-3">
+                                                        <h3 className="text-base font-bold text-slate-900 tracking-tight">
+                                                            Order #{order.id.slice(-8).toUpperCase()}
+                                                        </h3>
+                                                        <Badge variant="secondary" className={cn("text-[10px] uppercase font-bold tracking-wider px-2 h-5", getStatusColor(order.status))}>
+                                                            {order.status}
+                                                        </Badge>
+                                                    </div>
+                                                    <p className="text-xs font-medium text-slate-500 mt-0.5 flex items-center gap-1">
+                                                        <Clock className="w-3 h-3" />
+                                                        {format(new Date(order.createdAt), "dd MMM yyyy")} &bull; {format(new Date(order.createdAt), "hh:mm a")}
+                                                    </p>
                                                 </div>
                                             </div>
                                             <div className="flex flex-col items-end">
-                                                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Status</p>
-                                                <Badge variant="outline" className={cn("rounded-full px-3 py-0.5 font-bold text-[10px]", getStatusColor(order.status))}>
-                                                    {order.status}
-                                                </Badge>
+                                                <span className="text-xl font-bold text-slate-900 tracking-tight">₹{order.totalAmount.toLocaleString()}</span>
+                                                <span className="text-xs font-medium text-slate-500">{order.subOrders.reduce((acc: number, so: any) => acc + so.items.length, 0)} Items</span>
                                             </div>
                                         </div>
 
-                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 py-6 border-y border-slate-50">
-                                            <div>
-                                                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Order Date</p>
-                                                <p className="text-sm font-medium text-slate-700">{format(new Date(order.createdAt), "dd MMM yyyy, hh:mm a")}</p>
-                                            </div>
-                                            <div>
-                                                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Final Amount</p>
-                                                <p className="text-lg font-bold text-[#794A05]">₹{order.totalAmount.toLocaleString()}</p>
-                                            </div>
-                                            <div>
-                                                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Items Count</p>
-                                                <p className="text-sm font-medium text-slate-700">
-                                                    {order.subOrders.reduce((acc: number, so: any) => acc + so.items.length, 0)} Items
-                                                </p>
-                                            </div>
-                                        </div>
-
-                                        <div className="mt-6 flex items-center justify-between">
-                                            <div className="flex -space-x-3 overflow-hidden">
-                                                {order.subOrders.flatMap((so: any) => so.items).slice(0, 3).map((item: any, i: number) => (
-                                                    <div key={i} className="inline-block h-10 w-10 rounded-full ring-2 ring-white bg-slate-100 overflow-hidden">
+                                        {/* Card Body Section */}
+                                        <div className="px-6 py-5">
+                                            {/* Products Row */}
+                                            <div className="flex items-center gap-3 mb-6 overflow-x-auto pb-2 scrollbar-none">
+                                                {order.subOrders.flatMap((so: any) => so.items).map((item: any, i: number) => (
+                                                    <div key={i} className="group relative flex-shrink-0 w-20 h-24 bg-slate-50 rounded-xl border border-slate-100 overflow-hidden shadow-sm hover:shadow-md transition-all">
                                                         <img
                                                             src={item.product?.image ? (item.product.image.startsWith('http') ? item.product.image : `${BASE_URL.replace('/api', '')}/${item.product.image.replace(/^\//, '')}`) : "/placeholder.png"}
-                                                            alt=""
-                                                            className="w-full h-full object-cover"
+                                                            alt={item.product?.name}
+                                                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                                                         />
+                                                        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent p-1.5 translate-y-full group-hover:translate-y-0 transition-transform">
+                                                            <p className="text-[9px] font-medium text-white line-clamp-1">{item.product?.name}</p>
+                                                        </div>
+                                                        <div className="absolute top-1 right-1 bg-black/50 backdrop-blur-sm text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full">
+                                                            x{item.quantity}
+                                                        </div>
                                                     </div>
                                                 ))}
-                                                {order.subOrders.flatMap((so: any) => so.items).length > 3 && (
-                                                    <div className="flex items-center justify-center h-10 w-10 rounded-full ring-2 ring-white bg-slate-50 text-[10px] font-bold text-slate-400 font-mono">
-                                                        +{order.subOrders.flatMap((so: any) => so.items).length - 3}
-                                                    </div>
-                                                )}
                                             </div>
-                                            <Button
-                                                onClick={() => toggleExpand(order.id)}
-                                                variant="ghost"
-                                                className={cn(
-                                                    "text-primary font-bold hover:bg-orange-50 rounded-full group transition-all",
-                                                    expandedOrderId === order.id && "bg-orange-50"
-                                                )}
-                                            >
-                                                {expandedOrderId === order.id ? "Hide Details" : "View Details"}
-                                                <ChevronRight className={cn(
-                                                    "w-4 h-4 ml-1 transition-transform",
-                                                    expandedOrderId === order.id ? "rotate-90" : "group-hover:translate-x-1"
-                                                )} />
-                                            </Button>
+
+                                            {/* Action Footer */}
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center gap-2">
+                                                    {order.status === 'DELIVERED' && (
+                                                        <div className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-full text-xs font-bold border border-emerald-100">
+                                                            <CheckCircle2 className="w-3.5 h-3.5" />
+                                                            Delivered
+                                                        </div>
+                                                    )}
+                                                </div>
+
+                                                <div className="flex items-center gap-3">
+                                                    <Button
+                                                        variant="outline"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handleInvoice(order);
+                                                        }}
+                                                        className="rounded-full px-4 h-8 font-bold text-xs border-slate-200 hover:bg-slate-50 gap-2 text-slate-700"
+                                                    >
+                                                        <Download className="w-3.5 h-3.5" />
+                                                        Invoice
+                                                    </Button>
+                                                    <Button
+                                                        onClick={() => toggleExpand(order.id)}
+                                                        className={cn(
+                                                            "rounded-full px-4 h-8 font-bold text-xs transition-all",
+                                                            expandedOrderId === order.id
+                                                                ? "bg-slate-100 text-slate-900 hover:bg-slate-200"
+                                                                : "bg-slate-900 text-white hover:bg-slate-800 shadow-lg shadow-slate-900/20"
+                                                        )}
+                                                    >
+                                                        {expandedOrderId === order.id ? "Hide Details" : "View Details"}
+                                                        <ChevronRight className={cn(
+                                                            "w-3.5 h-3.5 ml-1.5 transition-transform duration-300",
+                                                            expandedOrderId === order.id ? "-rotate-90" : "group-hover:translate-x-1"
+                                                        )} />
+                                                    </Button>
+                                                </div>
+                                            </div>
                                         </div>
 
                                         {/* Expanded Content with Animation */}

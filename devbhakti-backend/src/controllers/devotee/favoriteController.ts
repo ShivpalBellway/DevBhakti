@@ -8,9 +8,9 @@ export const addFavorite = async (req: Request, res: Response) => {
         const { templeId, poojaId, productId } = req.body;
 
         if (!templeId && !poojaId && !productId) {
-            return res.status(400).json({ 
-                success: false, 
-                message: 'Temple ID, Pooja ID, or Product ID is required' 
+            return res.status(400).json({
+                success: false,
+                message: 'Temple ID, Pooja ID, or Product ID is required'
             });
         }
 
@@ -23,23 +23,23 @@ export const addFavorite = async (req: Request, res: Response) => {
             }
         });
 
-        res.status(201).json({ 
-            success: true, 
-            message: 'Item added to favorites', 
-            data: favorite 
+        res.status(201).json({
+            success: true,
+            message: 'Item added to favorites',
+            data: favorite
         });
     } catch (error: any) {
         if (error.code === 'P2002') {
-            return res.status(400).json({ 
-                success: false, 
-                message: 'Item already in favorites' 
+            return res.status(400).json({
+                success: false,
+                message: 'Item already in favorites'
             });
         }
         console.error('Add favorite error:', error);
-        res.status(500).json({ 
-            success: false, 
+        res.status(500).json({
+            success: false,
             message: 'Internal server error',
-            error: error.message 
+            error: error.message
         });
     }
 };
@@ -51,9 +51,9 @@ export const removeFavorite = async (req: Request, res: Response) => {
         const { templeId, poojaId, productId } = req.body;
 
         if (!templeId && !poojaId && !productId) {
-            return res.status(400).json({ 
-                success: false, 
-                message: 'Temple ID, Pooja ID, or Product ID is required' 
+            return res.status(400).json({
+                success: false,
+                message: 'Temple ID, Pooja ID, or Product ID is required'
             });
         }
 
@@ -80,10 +80,10 @@ export const removeFavorite = async (req: Request, res: Response) => {
             });
         }
         console.error('Remove favorite error:', error);
-        res.status(500).json({ 
-            success: false, 
+        res.status(500).json({
+            success: false,
             message: 'Internal server error',
-            error: error.message 
+            error: error.message
         });
     }
 };
@@ -107,23 +107,23 @@ export const getFavorites = async (req: Request, res: Response) => {
                             }
                         }
                     }
-                }
-                // product: true // Future: Add product relation when marketplace is ready
+                },
+                product: true
             },
             orderBy: {
                 createdAt: 'desc'
             }
         });
 
-        res.json({ 
-            success: true, 
-            message: 'Favorites fetched successfully', 
-            data: favorites 
+        res.json({
+            success: true,
+            message: 'Favorites fetched successfully',
+            data: favorites
         });
     } catch (error: any) {
         console.error('Get favorites error:', error);
-        res.status(500).json({ 
-            success: false, 
+        res.status(500).json({
+            success: false,
             message: 'Internal server error',
             error: error.message
         });

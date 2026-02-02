@@ -31,6 +31,7 @@ import { useCart, CartItem } from "@/context/CartContext";
 import CartDrawer from "@/components/marketplace/CartDrawer";
 import { useToast } from "@/hooks/use-toast";
 import { fetchProductByIdPublic } from "@/api/publicController";
+import { fetchUserFavorites, addFavorite, removeFavorite } from "@/api/userController";
 
 interface Product {
   id: string;
@@ -84,8 +85,21 @@ export default function ProductDetailsPage() {
   useEffect(() => {
     if (params.id) {
       loadProduct(params.id as string);
+      checkFavoriteStatus(params.id as string);
     }
   }, [params.id]);
+
+  const checkFavoriteStatus = async (productId: string) => {
+    try {
+      const res = await fetchUserFavorites();
+      if (res.success && res.data) {
+        const isFav = res.data.some((f: any) => f.productId === productId);
+        setIsFavorite(isFav);
+      }
+    } catch (error) {
+      console.error("Error checking favorite status", error);
+    }
+  };
 
   const loadProduct = async (id: string) => {
     setIsLoading(true);
@@ -104,12 +118,25 @@ export default function ProductDetailsPage() {
     }
   };
 
-  const toggleFavorite = () => {
+  const toggleFavorite = async () => {
+    if (!product) return;
+
+    // Optimistic Update
     setIsFavorite(!isFavorite);
-    toast({
-      title: isFavorite ? "Removed from favorites" : "Added to favorites",
-      description: product?.name,
-    });
+
+    try {
+      if (isFavorite) {
+        await removeFavorite({ productId: product.id });
+        toast({ title: "Removed from favorites", description: product.name });
+      } else {
+        await addFavorite({ productId: product.id });
+        toast({ title: "Added to favorites", description: product.name });
+      }
+    } catch (error) {
+      // Revert
+      setIsFavorite(!isFavorite);
+      toast({ title: "Action failed", variant: "destructive" });
+    }
   };
 
   const addToCart = () => {
@@ -498,4 +525,3 @@ export default function ProductDetailsPage() {
     </div>
   );
 }
-
