@@ -15,6 +15,8 @@ import {
     Package,
     Store,
     User,
+    Users,
+    ArrowDownToLine,
     PlusCircle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -42,9 +44,19 @@ const sellerSidebarItems = [
         href: "/seller/dashboard/orders",
     },
     {
+        label: "Customers",
+        icon: Users,
+        href: "/seller/dashboard/customers",
+    },
+    {
         label: "Payments",
         icon: IndianRupee,
         href: "/seller/dashboard/payments",
+    },
+    {
+        label: "Payouts / Withdraw",
+        icon: ArrowDownToLine,
+        href: "/seller/dashboard/withdrawals",
     },
     {
         label: "Store Profile",
@@ -67,13 +79,24 @@ export default function SellerDashboardLayout({ children }: { children: React.Re
 
     useEffect(() => {
         // Check if user is logged in via localStorage
-        const checkAuth = () => {
+        const checkAuth = async () => {
             const token = localStorage.getItem("seller_token");
             const storedUser = localStorage.getItem("seller_user");
 
             if (token && storedUser) {
                 setIsAuthenticated(true);
                 setUser(JSON.parse(storedUser));
+
+                // Fetch full profile to get the store image
+                try {
+                    const { fetchSellerProfile } = await import("@/api/sellerController");
+                    const response = await fetchSellerProfile();
+                    if (response.success) {
+                        setStoreProfile(response.data);
+                    }
+                } catch (error) {
+                    console.error("Failed to fetch store profile for logo", error);
+                }
             } else {
                 setIsAuthenticated(false);
                 router.push("/seller");
@@ -82,6 +105,9 @@ export default function SellerDashboardLayout({ children }: { children: React.Re
 
         checkAuth();
     }, [router]);
+
+    const [storeProfile, setStoreProfile] = useState<any>(null);
+    const { BASE_URL } = require("@/config/apiConfig");
 
     const handleLogout = () => {
         localStorage.removeItem("seller_token");
@@ -134,21 +160,42 @@ export default function SellerDashboardLayout({ children }: { children: React.Re
                     sidebarOpen ? "w-64" : "w-20"
                 )}
             >
-                {/* Logo */}
-                <div className="flex items-center justify-between h-16 px-4 border-b border-sidebar-border">
+                {/* Logo Section */}
+                <div className="flex items-center justify-between h-20 px-4 border-b border-sidebar-border bg-sidebar-primary/5">
                     {sidebarOpen ? (
-                        <div className="flex items-center gap-2 text-sidebar-foreground font-serif font-bold text-xl">
-                            <Store className="w-6 h-6 text-sidebar-primary" />
-                            <span>SellerPanel</span>
-                        </div>
+                        <Link href="/seller/dashboard" className="flex items-center gap-3 transition-all active:scale-95">
+                            {storeProfile?.image ? (
+                                <img
+                                    src={`${BASE_URL}${storeProfile.image}`}
+                                    className="w-10 h-10 shadow-lg rounded-xl object-cover bg-white"
+                                    alt="Store Logo"
+                                />
+                            ) : (
+                                <Logo size="sm" className="w-10 h-10 shadow-lg rounded-xl overflow-hidden bg-white" />
+                            )}
+                            <div className="flex flex-col">
+                                <span className="text-sidebar-foreground font-serif font-black text-lg tracking-tight leading-none italic truncate max-w-[120px]">
+                                    {storeProfile?.name || "DevBhakti"}
+                                </span>
+                                <span className="text-[10px] text-sidebar-primary font-bold uppercase tracking-widest mt-0.5">Seller Portal</span>
+                            </div>
+                        </Link>
                     ) : (
-                        <Store className="w-8 h-8 text-sidebar-primary mx-auto" />
+                        storeProfile?.image ? (
+                            <img
+                                src={`${BASE_URL}${storeProfile.image}`}
+                                className="w-10 h-10 mx-auto shadow-md rounded-xl object-cover bg-white"
+                                alt="Store Logo"
+                            />
+                        ) : (
+                            <Logo size="sm" className="w-10 h-10 mx-auto shadow-md rounded-xl bg-white" />
+                        )
                     )}
                     <button
                         onClick={() => setSidebarOpen(!sidebarOpen)}
-                        className="p-1.5 rounded-lg hover:bg-sidebar-accent text-sidebar-foreground transition-colors"
+                        className="p-1.5 rounded-lg hover:bg-sidebar-accent text-sidebar-foreground transition-colors absolute -right-3 top-7 bg-sidebar border border-sidebar-border shadow-md"
                     >
-                        <Menu className="w-5 h-5" />
+                        <Menu className="w-4 h-4" />
                     </button>
                 </div>
 
@@ -273,12 +320,23 @@ export default function SellerDashboardLayout({ children }: { children: React.Re
             >
                 {/* Header */}
                 <header className="sticky top-0 z-40 h-16 bg-white/80 backdrop-blur-md border-b border-sidebar-border flex items-center justify-between px-6 shadow-sm">
-                    <div className="flex items-center gap-2 text-sm text-slate-500">
-                        <Link href="/seller/dashboard" className="hover:text-sidebar-primary transition-colors font-medium">
-                            Seller Portal
-                        </Link>
-                        <ChevronRight className="w-4 h-4" />
-                        <span className="text-slate-900 font-medium">Dashboard</span>
+                    <div className="flex items-center gap-4 text-sm text-slate-500">
+                        {storeProfile?.image ? (
+                            <img
+                                src={`${BASE_URL}${storeProfile.image}`}
+                                className="w-8 h-8 sm:hidden shadow-sm rounded-lg object-cover bg-white"
+                                alt="Store Logo"
+                            />
+                        ) : (
+                            <Logo size="sm" className="w-8 h-8 sm:hidden shadow-sm rounded-lg bg-white" />
+                        )}
+                        <div className="flex items-center gap-2">
+                            <Link href="/seller/dashboard" className="hover:text-sidebar-primary transition-colors font-bold text-slate-900 hidden sm:block">
+                                {storeProfile?.name || "DevBhakti Seller"}
+                            </Link>
+                            <ChevronRight className="w-4 h-4 hidden sm:block" />
+                            <span className="text-slate-500 font-medium">Dashboard</span>
+                        </div>
                     </div>
 
                     <div className="flex items-center gap-4">

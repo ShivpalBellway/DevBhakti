@@ -71,6 +71,14 @@ export const updateSellerSubOrderStatus = async (subOrderId: string, data: { sta
     return response.data;
 };
 
+export const fetchSellerCustomers = async () => {
+    const token = localStorage.getItem("seller_token");
+    const response = await axios.get(`${API_URL}/seller/orders/customers`, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+
 export const fetchSellerProfile = async () => {
     const token = localStorage.getItem("seller_token");
     const response = await axios.get(`${API_URL}/seller/profile`, {
