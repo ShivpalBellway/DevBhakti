@@ -70,11 +70,44 @@ export default function SellersManagementPage() {
         }
     };
 
-    const handleDelete = async (id: string) => {
-        if (window.confirm("Are you sure you want to delete this seller?")) {
+    const handleDelete = async (sellerId: string) => {
+        // Find seller to get stats
+        const seller = sellers.find(s => s.id === sellerId);
+        if (!seller) return;
+
+        const warningMessage = `⚠️ DELETE SELLER: ${seller.storeName}
+
+This action will permanently delete:
+• Seller Profile: ${seller.name}
+• ${seller.totalProducts || 0} Products
+• ${seller.totalOrders || 0} Orders
+• All ledger entries and financial records
+• All withdrawal requests
+
+❌ THIS ACTION CANNOT BE UNDONE!
+
+Are you sure you want to proceed?`;
+
+        if (window.confirm(warningMessage)) {
             try {
-                await deleteSellerAdmin(id);
-                toast({ title: "Success", description: "Seller deleted successfully" });
+                const response = await deleteSellerAdmin(sellerId);
+
+                // Show detailed success message
+                const deletedData = response?.deletedData;
+                let successMessage = "Seller deleted successfully";
+
+                if (deletedData) {
+                    successMessage = `Deleted: ${deletedData.seller}\n` +
+                        `• ${deletedData.productsDeleted} products\n` +
+                        `• ${deletedData.ordersDeleted} orders\n` +
+                        `• ${deletedData.ledgerEntriesDeleted} ledger entries\n` +
+                        `• ${deletedData.withdrawalsDeleted} withdrawal requests`;
+                }
+
+                toast({
+                    title: "✅ Seller Deleted",
+                    description: successMessage
+                });
                 loadSellers(); // Refresh list
             } catch (error: any) {
                 toast({

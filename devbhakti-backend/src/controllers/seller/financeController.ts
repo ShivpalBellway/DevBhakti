@@ -1,11 +1,9 @@
 import { Request, Response } from "express";
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "../../lib/prisma";
 
-const prisma = new PrismaClient();
-
-// Helper to get templeId from userId (Seller role)
+// Helper to get sellerId from userId (Seller role)
 const getSellerStoreId = async (userId: string) => {
-    const store = await prisma.temple.findUnique({
+    const store = await prisma.sellerProfile.findUnique({
         where: { userId }
     });
     return store?.id;
@@ -15,14 +13,14 @@ const getSellerStoreId = async (userId: string) => {
 export const getSellerLedger = async (req: Request, res: Response) => {
     try {
         const userId = (req as any).user.userId;
-        const templeId = await getSellerStoreId(userId);
+        const sellerId = await getSellerStoreId(userId);
 
-        if (!templeId) {
+        if (!sellerId) {
             return res.status(404).json({ success: false, message: "Seller store not found" });
         }
 
         const entries = await prisma.templeLedger.findMany({
-            where: { templeId },
+            where: { sellerId },
             orderBy: { createdAt: "desc" }
         });
 
@@ -36,17 +34,17 @@ export const getSellerLedger = async (req: Request, res: Response) => {
 export const getSellerFinanceSummary = async (req: Request, res: Response) => {
     try {
         const userId = (req as any).user.userId;
-        const templeId = await getSellerStoreId(userId);
+        const sellerId = await getSellerStoreId(userId);
 
-        if (!templeId) {
+        if (!sellerId) {
             return res.status(404).json({ success: false, message: "Seller store not found" });
         }
 
         // Fetch data in parallel
         const [ledger, withdrawals] = await Promise.all([
-            prisma.templeLedger.findMany({ where: { templeId } }),
+            prisma.templeLedger.findMany({ where: { sellerId } }),
             prisma.withdrawalRequest.findMany({
-                where: { templeId, status: { in: ["PENDING", "APPROVED", "PAID"] } }
+                where: { sellerId, status: { in: ["PENDING", "APPROVED", "PAID"] } }
             })
         ]);
 
@@ -92,6 +90,21 @@ export const getSellerFinanceSummary = async (req: Request, res: Response) => {
 
         const pendingOrdersCount = validIncomeEntries.filter((e: any) => e.status === "PENDING").length;
 
+
+        // --- 5. Revenue History (Last 30 Days) ---
+        const revenueHistory = [];
+        for (let i = 29; i >= 0; i--) {
+            const d = new Date(now.getTime() - (i * 24 * 60 * 60 * 1000));
+            const dateStr = d.toISOString().split('T')[0]; // YYYY-MM-DD
+            const displayDate = d.toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
+
+            const dailySum = validIncomeEntries
+                .filter((e: any) => new Date(e.createdAt).toISOString().split('T')[0] === dateStr)
+                .reduce((sum: number, e: any) => sum + (e.amount || 0), 0);
+
+            revenueHistory.push({ date: dateStr, name: displayDate, revenue: dailySum });
+        }
+
         return res.status(200).json({
             success: true,
             data: {
@@ -102,7 +115,8 @@ export const getSellerFinanceSummary = async (req: Request, res: Response) => {
                 pendingBalance: pendingFulfillment,
                 activeOrdersCount: pendingOrdersCount,
                 inEscrow,
-                processingWithdrawals
+                processingWithdrawals,
+                revenueHistory
             }
         });
 
@@ -116,10 +130,10 @@ export const getSellerFinanceSummary = async (req: Request, res: Response) => {
 export const requestSellerWithdrawal = async (req: Request, res: Response) => {
     try {
         const userId = (req as any).user.userId;
-        const templeId = await getSellerStoreId(userId);
+        const sellerId = await getSellerStoreId(userId);
         const { amount, bankDetails } = req.body;
 
-        if (!templeId) {
+        if (!sellerId) {
             return res.status(404).json({ success: false, message: "Seller store not found" });
         }
 
@@ -133,7 +147,7 @@ export const requestSellerWithdrawal = async (req: Request, res: Response) => {
 
             const ledger = await tx.templeLedger.findMany({
                 where: {
-                    templeId,
+                    sellerId,
                     status: "COMPLETED",
                     type: { not: "WITHDRAWAL" },
                     createdAt: { lte: escrowThreshold }
@@ -143,7 +157,7 @@ export const requestSellerWithdrawal = async (req: Request, res: Response) => {
             const settledIncome = ledger.reduce((sum: number, e: any) => sum + e.amount, 0);
 
             const withdrawals = await tx.withdrawalRequest.findMany({
-                where: { templeId, status: { in: ["PENDING", "APPROVED", "PAID"] } }
+                where: { sellerId, status: { in: ["PENDING", "APPROVED", "PAID"] } }
             });
 
             const totalDebits = withdrawals.reduce((sum: number, w: any) => sum + w.amount, 0);
@@ -155,7 +169,7 @@ export const requestSellerWithdrawal = async (req: Request, res: Response) => {
 
             await tx.withdrawalRequest.create({
                 data: {
-                    templeId,
+                    sellerId,
                     amount,
                     bankDetails,
                     status: "PENDING"
@@ -169,5 +183,27 @@ export const requestSellerWithdrawal = async (req: Request, res: Response) => {
         console.error("Seller Withdrawal Request Error:", error);
         const statusCode = error.message.includes("Insufficient") ? 400 : 500;
         return res.status(statusCode).json({ success: false, message: error.message });
+    }
+};
+
+// Get Withdrawal History
+export const getSellerWithdrawals = async (req: Request, res: Response) => {
+    try {
+        const userId = (req as any).user.userId;
+        const sellerId = await getSellerStoreId(userId);
+
+        if (!sellerId) {
+            return res.status(404).json({ success: false, message: "Seller store not found" });
+        }
+
+        const withdrawals = await prisma.withdrawalRequest.findMany({
+            where: { sellerId },
+            orderBy: { createdAt: "desc" }
+        });
+
+        return res.status(200).json({ success: true, data: withdrawals });
+    } catch (error: any) {
+        console.error("Seller Withdrawal History Error:", error);
+        return res.status(500).json({ success: false, message: "Failed to load withdrawal history" });
     }
 };

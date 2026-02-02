@@ -15,47 +15,72 @@ import {
     Package,
     Store,
     User,
-    PlusCircle
+    Users,
+    ArrowDownToLine,
+    PlusCircle,
+    Clock,
+    CheckCircle,
+    Truck,
+    PackageCheck,
+    XCircle,
+    Wallet,
+    Building2,
+    CalendarCheck
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Logo from "@/components/icons/Logo";
 import { cn } from "@/lib/utils";
+import { fetchSellerProfile } from "@/api/sellerController";
+import { BASE_URL } from "@/config/apiConfig";
 
-const sellerSidebarItems = [
+const sellerSidebarGroups = [
     {
-        label: "Dashboard",
-        icon: LayoutDashboard,
-        href: "/seller/dashboard",
+        title: "Overview",
+        items: [
+            { label: "Dashboard", icon: LayoutDashboard, href: "/seller/dashboard" }
+        ]
     },
     {
-        label: "My Products",
-        icon: Package,
-        href: "/seller/dashboard/products",
-        subItems: [
-            { label: "All Products", href: "/seller/dashboard/products" },
+        title: "Inventory",
+        items: [
+            { label: "Product List", icon: Package, href: "/seller/dashboard/products" },
+            { label: "Add Product", icon: PlusCircle, href: "/seller/dashboard/products/create" }
+        ]
+    },
+    {
+        title: "Orders",
+        items: [
+            { label: "All Orders", icon: ShoppingBag, href: "/seller/dashboard/orders" },
+            { label: "Pending", icon: Clock, href: "/seller/dashboard/orders?status=pending" },
+            { label: "Accepted", icon: CheckCircle, href: "/seller/dashboard/orders?status=accepted" },
+            { label: "Shipped", icon: Truck, href: "/seller/dashboard/orders?status=shipped" },
+            { label: "Delivered", icon: PackageCheck, href: "/seller/dashboard/orders?status=delivered" },
+            { label: "Cancelled", icon: XCircle, href: "/seller/dashboard/orders?status=cancelled" },
+        ]
+    },
+    {
+        title: "Business",
+        items: [
+            { label: "Customers", icon: Users, href: "/seller/dashboard/customers" },
+            { label: "Payments", icon: IndianRupee, href: "/seller/dashboard/payments" },
 
         ]
     },
     {
-        label: "Orders",
-        icon: ShoppingBag,
-        href: "/seller/dashboard/orders",
+        title: "Finance",
+        items: [
+
+            { label: "Withdraw Request", icon: Wallet, href: "/seller/dashboard/payments/withdraw" },
+            { label: "Payout History", icon: CalendarCheck, href: "/seller/dashboard/payments/history" },
+            { label: "Bank Details", icon: Building2, href: "/seller/dashboard/payments/bank-details" }
+        ]
     },
     {
-        label: "Payments",
-        icon: IndianRupee,
-        href: "/seller/dashboard/payments",
-    },
-    {
-        label: "Store Profile",
-        icon: Store,
-        href: "/seller/dashboard/profile",
-    },
-    // {
-    //     label: "Settings",
-    //     icon: Settings,
-    //     href: "/seller/dashboard/settings",
-    // },
+        title: "Profile",
+        items: [
+            { label: "Store Profile", icon: Store, href: "/seller/dashboard/profile" }
+        ]
+    }
 ];
 
 export default function SellerDashboardLayout({ children }: { children: React.ReactNode }) {
@@ -64,16 +89,25 @@ export default function SellerDashboardLayout({ children }: { children: React.Re
     const [sidebarOpen, setSidebarOpen] = useState(true);
     const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
     const [user, setUser] = useState<any>(null);
+    const [storeProfile, setStoreProfile] = useState<any>(null);
 
     useEffect(() => {
-        // Check if user is logged in via localStorage
-        const checkAuth = () => {
+        const checkAuth = async () => {
             const token = localStorage.getItem("seller_token");
             const storedUser = localStorage.getItem("seller_user");
 
             if (token && storedUser) {
                 setIsAuthenticated(true);
                 setUser(JSON.parse(storedUser));
+
+                try {
+                    const response = await fetchSellerProfile();
+                    if (response.success) {
+                        setStoreProfile(response.data);
+                    }
+                } catch (error) {
+                    console.error("Failed to fetch store profile", error);
+                }
             } else {
                 setIsAuthenticated(false);
                 router.push("/seller");
@@ -89,30 +123,7 @@ export default function SellerDashboardLayout({ children }: { children: React.Re
         router.push("/seller");
     };
 
-    const [openMenus, setOpenMenus] = useState<string[]>([]);
 
-    const toggleMenu = (label: string) => {
-        if (openMenus.includes(label)) {
-            setOpenMenus(openMenus.filter((item) => item !== label));
-        } else {
-            setOpenMenus([...openMenus, label]);
-        }
-    };
-
-    useEffect(() => {
-        // Open menus if a sub-item is active
-        sellerSidebarItems.forEach(item => {
-            if (item.subItems) {
-                if (item.subItems.some(sub => pathname === sub.href)) {
-                    if (!openMenus.includes(item.label)) {
-                        setOpenMenus(prev => [...prev, item.label]);
-                    }
-                }
-            }
-        });
-    }, [pathname]);
-
-    // Show nothing while checking auth to prevent flicker
     if (isAuthenticated === null) {
         return (
             <div className="min-h-screen bg-background flex items-center justify-center">
@@ -121,150 +132,137 @@ export default function SellerDashboardLayout({ children }: { children: React.Re
         );
     }
 
-    if (!isAuthenticated) {
-        return null;
-    }
+    if (!isAuthenticated) return null;
 
     return (
         <div className="min-h-screen bg-background flex">
-            {/* Sidebar - Using Admin Deep Indigo theme */}
+            {/* Sidebar */}
             <aside
                 className={cn(
-                    "fixed inset-y-0 left-0 z-50 flex flex-col bg-sidebar transition-all duration-300 shadow-xl",
+                    "fixed inset-y-0 left-0 z-50 flex flex-col bg-sidebar border-r border-sidebar-border transition-all duration-300 shadow-xl",
                     sidebarOpen ? "w-64" : "w-20"
                 )}
             >
-                {/* Logo */}
-                <div className="flex items-center justify-between h-16 px-4 border-b border-sidebar-border">
+                {/* Logo Section */}
+                <div className="flex items-center justify-between h-20 px-4 border-b border-sidebar-border bg-sidebar-primary/5">
                     {sidebarOpen ? (
-                        <div className="flex items-center gap-2 text-sidebar-foreground font-serif font-bold text-xl">
-                            <Store className="w-6 h-6 text-sidebar-primary" />
-                            <span>SellerPanel</span>
-                        </div>
+                        <Link href="/seller/dashboard" className="flex items-center gap-3 transition-all active:scale-95">
+                            {storeProfile?.image ? (
+                                <img
+                                    src={`${BASE_URL}${storeProfile.image}`}
+                                    className="w-10 h-10 shadow-lg rounded-xl object-cover bg-white"
+                                    alt="Store Logo"
+                                />
+                            ) : (
+                                <Logo size="sm" className="w-10 h-10 shadow-lg rounded-xl overflow-hidden bg-white" />
+                            )}
+                            <div className="flex flex-col">
+                                <span className="text-sidebar-foreground font-serif font-black text-lg tracking-tight leading-none italic truncate max-w-[120px]">
+                                    {storeProfile?.name || "DevBhakti"}
+                                </span>
+                                <span className="text-[10px] text-sidebar-primary font-bold uppercase tracking-widest mt-0.5">Seller Portal</span>
+                            </div>
+                        </Link>
                     ) : (
-                        <Store className="w-8 h-8 text-sidebar-primary mx-auto" />
+                        storeProfile?.image ? (
+                            <img
+                                src={`${BASE_URL}${storeProfile.image}`}
+                                className="w-10 h-10 mx-auto shadow-md rounded-xl object-cover bg-white"
+                                alt="Store Logo"
+                            />
+                        ) : (
+                            <Logo size="sm" className="w-10 h-10 mx-auto shadow-md rounded-xl bg-white" />
+                        )
                     )}
                     <button
                         onClick={() => setSidebarOpen(!sidebarOpen)}
-                        className="p-1.5 rounded-lg hover:bg-sidebar-accent text-sidebar-foreground transition-colors"
+                        className="p-1.5 rounded-lg hover:bg-sidebar-accent text-sidebar-foreground transition-colors absolute -right-3 top-7 bg-sidebar border border-sidebar-border shadow-md"
                     >
-                        <Menu className="w-5 h-5" />
+                        <Menu className="w-4 h-4" />
                     </button>
                 </div>
 
                 {/* Navigation */}
-                <nav className="flex-1 py-4 px-3 space-y-1 overflow-y-auto premium-scrollbar">
-                    {sellerSidebarItems.map((item) => {
-                        const hasSubItems = item.subItems && item.subItems.length > 0;
-                        const isOpen = openMenus.includes(item.label);
-                        const isActive = pathname === item.href || (item.subItems?.some(sub => pathname === sub.href));
-
-                        if (hasSubItems) {
-                            return (
-                                <div key={item.label} className="space-y-1">
-                                    <button
-                                        onClick={() => toggleMenu(item.label)}
-                                        className={cn(
-                                            "w-full flex items-center justify-between px-3 py-2.5 rounded-lg transition-all duration-200 group",
-                                            isActive
-                                                ? "bg-sidebar-primary/10 text-sidebar-primary"
-                                                : "text-sidebar-foreground hover:bg-sidebar-accent"
-                                        )}
-                                    >
-                                        <div className="flex items-center gap-3">
-                                            <item.icon className={cn("w-5 h-5 flex-shrink-0 transition-colors", isActive ? "text-sidebar-primary" : "text-sidebar-foreground/70")} />
-                                            {sidebarOpen && (
-                                                <span className="font-medium text-sm">{item.label}</span>
+                <nav className="flex-1 py-6 px-3 space-y-6 overflow-y-auto premium-scrollbar">
+                    {sellerSidebarGroups.map((group, groupIndex) => (
+                        <div key={group.title}>
+                            {sidebarOpen && (
+                                <h3 className="px-3 mb-2 text-[10px] font-black uppercase tracking-widest text-sidebar-foreground/40">
+                                    {group.title}
+                                </h3>
+                            )}
+                            <div className="space-y-1">
+                                {group.items.map((item) => {
+                                    const isActive = pathname === item.href;
+                                    return (
+                                        <Link
+                                            key={item.href}
+                                            href={item.href}
+                                            className={cn(
+                                                "flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 group relative overflow-hidden",
+                                                isActive
+                                                    ? "bg-sidebar-primary text-sidebar-primary-foreground font-medium shadow-sm"
+                                                    : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground"
                                             )}
-                                        </div>
-                                        {sidebarOpen && (
-                                            <ChevronRight className={cn(
-                                                "w-4 h-4 transition-transform duration-200 opacity-50",
-                                                isOpen && "rotate-90"
-                                            )} />
-                                        )}
-                                    </button>
-
-                                    {isOpen && sidebarOpen && (
-                                        <div className="ml-9 space-y-1 border-l border-sidebar-border pl-2">
-                                            {item.subItems!.map((sub) => {
-                                                const isSubActive = pathname === sub.href;
-                                                return (
-                                                    <Link
-                                                        key={sub.href}
-                                                        href={sub.href}
-                                                        className={cn(
-                                                            "block px-3 py-2 rounded-md text-sm transition-colors",
-                                                            isSubActive
-                                                                ? "text-sidebar-primary font-medium bg-sidebar-primary/5"
-                                                                : "text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent"
-                                                        )}
-                                                    >
-                                                        {sub.label}
-                                                    </Link>
-                                                );
-                                            })}
-                                        </div>
-                                    )}
-                                </div>
-                            );
-                        }
-
-                        return (
-                            <Link
-                                key={item.href}
-                                href={item.href}
-                                className={cn(
-                                    "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group",
-                                    isActive
-                                        ? "bg-sidebar-primary text-sidebar-primary-foreground"
-                                        : "text-sidebar-foreground hover:bg-sidebar-accent"
-                                )}
-                            >
-                                <item.icon className={cn("w-5 h-5 flex-shrink-0 transition-colors", isActive ? "text-sidebar-primary-foreground" : "text-sidebar-foreground/70")} />
-                                {sidebarOpen && (
-                                    <span className="font-medium text-sm">{item.label}</span>
-                                )}
-                            </Link>
-                        );
-                    })}
+                                        >
+                                            <item.icon
+                                                className={cn(
+                                                    "w-5 h-5 flex-shrink-0 transition-colors",
+                                                    isActive ? "text-sidebar-primary-foreground" : "text-sidebar-foreground/60 group-hover:text-sidebar-foreground"
+                                                )}
+                                            />
+                                            {sidebarOpen && (
+                                                <span className="text-sm">{item.label}</span>
+                                            )}
+                                        </Link>
+                                    );
+                                })}
+                            </div>
+                            {sidebarOpen && groupIndex < sellerSidebarGroups.length - 1 && (
+                                <div className="mx-3 mt-4 h-px bg-sidebar-border/50" />
+                            )}
+                        </div>
+                    ))}
                 </nav>
 
-                {/* User section */}
+                {/* User Profile */}
                 <div className="p-4 border-t border-sidebar-border">
-                    <div className={cn(
-                        "flex items-center gap-3 p-2 rounded-xl transition-colors",
-                        sidebarOpen ? "" : "justify-center"
-                    )}>
-                        <div className="w-10 h-10 rounded-full bg-sidebar-accent flex items-center justify-center text-sidebar-foreground font-bold shadow-lg">
+                    <Link
+                        href="/seller/dashboard/profile"
+                        className={cn(
+                            "flex items-center gap-3 p-2 rounded-xl transition-colors hover:bg-sidebar-accent cursor-pointer block",
+                            sidebarOpen ? "" : "justify-center"
+                        )}
+                    >
+                        <div className="w-10 h-10 rounded-full bg-sidebar-accent flex items-center justify-center text-sidebar-foreground font-bold shadow-sm border border-sidebar-border">
                             {user?.name ? user.name.charAt(0).toUpperCase() : "S"}
                         </div>
                         {sidebarOpen && (
                             <div className="flex-1 min-w-0">
-                                <p className="text-sm font-semibold text-sidebar-foreground truncate">
+                                <p className="text-sm font-bold text-sidebar-foreground truncate">
                                     {user?.name || "Seller"}
                                 </p>
-                                <p className="text-xs text-sidebar-foreground/60 truncate">
+                                <p className="text-xs text-sidebar-foreground/60 truncate font-medium">
                                     {user?.phone || ""}
                                 </p>
                             </div>
                         )}
-                    </div>
+                    </Link>
                     <Button
                         variant="ghost"
                         onClick={handleLogout}
                         className={cn(
-                            "w-full mt-3 text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground transition-all",
+                            "w-full mt-3 text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-all",
                             !sidebarOpen && "p-2"
                         )}
                     >
                         <LogOut className="w-4 h-4" />
-                        {sidebarOpen && <span className="ml-2">Sign Out</span>}
+                        {sidebarOpen && <span className="ml-2 font-medium">Sign Out</span>}
                     </Button>
                 </div>
             </aside>
 
-            {/* Main content */}
+            {/* Main Content Area */}
             <div
                 className={cn(
                     "flex-1 transition-all duration-300",
@@ -273,30 +271,42 @@ export default function SellerDashboardLayout({ children }: { children: React.Re
             >
                 {/* Header */}
                 <header className="sticky top-0 z-40 h-16 bg-white/80 backdrop-blur-md border-b border-sidebar-border flex items-center justify-between px-6 shadow-sm">
-                    <div className="flex items-center gap-2 text-sm text-slate-500">
-                        <Link href="/seller/dashboard" className="hover:text-sidebar-primary transition-colors font-medium">
-                            Seller Portal
-                        </Link>
-                        <ChevronRight className="w-4 h-4" />
-                        <span className="text-slate-900 font-medium">Dashboard</span>
+                    <div className="flex items-center gap-4 text-sm text-slate-500">
+                        {storeProfile?.image ? (
+                            <img
+                                src={`${BASE_URL}${storeProfile.image}`}
+                                className="w-8 h-8 sm:hidden shadow-sm rounded-lg object-cover bg-white"
+                                alt="Store Logo"
+                            />
+                        ) : (
+                            <Logo size="sm" className="w-8 h-8 sm:hidden shadow-sm rounded-lg bg-white" />
+                        )}
+                        <div className="flex items-center gap-2">
+                            <Link href="/seller/dashboard" className="hover:text-sidebar-primary transition-colors font-bold text-slate-900 hidden sm:block">
+                                {storeProfile?.name || "DevBhakti Seller"}
+                            </Link>
+                            <ChevronRight className="w-4 h-4 hidden sm:block" />
+                            <span className="text-slate-500 font-medium">Dashboard</span>
+                        </div>
                     </div>
 
                     <div className="flex items-center gap-4">
                         <Button
                             onClick={() => router.push('/seller/dashboard/products/create')}
-                            className="bg-sidebar-primary hover:bg-sidebar-primary/90 text-sidebar-primary-foreground gap-2 rounded-full shadow-lg"
+                            className="bg-sidebar-primary hover:bg-sidebar-primary/90 text-sidebar-primary-foreground gap-2 rounded-full shadow-lg hover:shadow-xl transition-all"
                         >
                             <PlusCircle className="w-4 h-4" />
-                            <span className="hidden sm:inline">Add Product</span>
+                            <span className="hidden sm:inline font-bold">Add Product</span>
                         </Button>
-                        <Button variant="ghost" size="icon" className="relative text-slate-600 hover:text-sidebar-primary hover:bg-sidebar-primary/10 rounded-full">
+                        <div className="w-px h-8 bg-slate-200" />
+                        <Button variant="ghost" size="icon" className="relative text-slate-400 hover:text-sidebar-primary hover:bg-sidebar-accent rounded-full transition-colors">
                             <Bell className="w-5 h-5" />
-                            <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white" />
+                            <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full ring-2 ring-white" />
                         </Button>
                     </div>
                 </header>
 
-                {/* Page content */}
+                {/* Page Content */}
                 <main className="p-6">
                     {children}
                 </main>

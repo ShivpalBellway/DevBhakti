@@ -1,25 +1,23 @@
 import { Request, Response } from "express";
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
+import { prisma } from "../../lib/prisma";
 
 // Get All Categories
 export const getAllCategories = async (req: Request, res: Response) => {
   try {
     const { page = 1, limit = 10, search, isActive } = req.query;
-    
+
     const skip = (Number(page) - 1) * Number(limit);
-    
+
     // Build where clause
     const where: any = {};
-    
+
     if (search && typeof search === 'string') {
       where.OR = [
         { name: { contains: search, mode: "insensitive" } },
         { description: { contains: search, mode: "insensitive" } }
       ];
     }
-    
+
     if (isActive !== undefined) {
       where.isActive = isActive === "true";
     }
@@ -54,7 +52,7 @@ export const getAllCategories = async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error("Get All Categories Error:", error);
-    
+
     res.status(500).json({
       success: false,
       message: "Failed to retrieve categories",
@@ -84,7 +82,7 @@ export const getActiveCategories = async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error("Get Active Categories Error:", error);
-    
+
     res.status(500).json({
       success: false,
       message: "Failed to retrieve active categories",
@@ -100,7 +98,7 @@ export const getCategoryById = async (req: Request, res: Response) => {
     const { id } = req.params;
 
     const category = await prisma.productCategory.findUnique({
-      where: { id },
+      where: { id: id as string },
       include: {
         _count: {
           select: { products: true }
@@ -123,7 +121,7 @@ export const getCategoryById = async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error("Get Category Error:", error);
-    
+
     res.status(500).json({
       success: false,
       message: "Failed to retrieve category",
@@ -190,7 +188,7 @@ export const createCategory = async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error("Create Category Error:", error);
-    
+
     res.status(500).json({
       success: false,
       message: "Failed to create category",
@@ -208,7 +206,7 @@ export const updateCategory = async (req: Request, res: Response) => {
 
     // Check if category exists
     const existingCategory = await prisma.productCategory.findUnique({
-      where: { id }
+      where: { id: id as string }
     });
 
     if (!existingCategory) {
@@ -227,7 +225,7 @@ export const updateCategory = async (req: Request, res: Response) => {
             equals: name.trim(),
             mode: "insensitive"
           },
-          id: { not: id }
+          id: { not: id as string }
         }
       });
 
@@ -254,7 +252,7 @@ export const updateCategory = async (req: Request, res: Response) => {
     if (req.file) updateData.image = imagePath;
 
     const category = await prisma.productCategory.update({
-      where: { id },
+      where: { id: id as string },
       data: updateData
     });
 
@@ -265,7 +263,7 @@ export const updateCategory = async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error("Update Category Error:", error);
-    
+
     res.status(500).json({
       success: false,
       message: "Failed to update category",
@@ -282,7 +280,7 @@ export const deleteCategory = async (req: Request, res: Response) => {
 
     // Check if category exists
     const category = await prisma.productCategory.findUnique({
-      where: { id },
+      where: { id: id as string },
       include: {
         _count: {
           select: { products: true }
@@ -308,7 +306,7 @@ export const deleteCategory = async (req: Request, res: Response) => {
     }
 
     await prisma.productCategory.delete({
-      where: { id }
+      where: { id: id as string }
     });
 
     res.status(200).json({
@@ -317,7 +315,7 @@ export const deleteCategory = async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error("Delete Category Error:", error);
-    
+
     res.status(500).json({
       success: false,
       message: "Failed to delete category",
@@ -333,7 +331,7 @@ export const toggleCategoryStatus = async (req: Request, res: Response) => {
     const { id } = req.params;
 
     const category = await prisma.productCategory.findUnique({
-      where: { id }
+      where: { id: id as string }
     });
 
     if (!category) {
@@ -345,7 +343,7 @@ export const toggleCategoryStatus = async (req: Request, res: Response) => {
     }
 
     const updatedCategory = await prisma.productCategory.update({
-      where: { id },
+      where: { id: id as string },
       data: {
         isActive: !category.isActive
       }
@@ -358,7 +356,7 @@ export const toggleCategoryStatus = async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error("Toggle Category Status Error:", error);
-    
+
     res.status(500).json({
       success: false,
       message: "Failed to toggle category status",

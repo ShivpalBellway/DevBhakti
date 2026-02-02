@@ -1,7 +1,5 @@
 import { Request, Response } from "express";
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
+import { prisma } from "../../lib/prisma";
 
 // Create Product
 export const createProduct = async (req: Request, res: Response) => {
@@ -81,7 +79,7 @@ export const createProduct = async (req: Request, res: Response) => {
     // If templeId is provided, check if temple exists
     if (templeId) {
       const temple = await prisma.temple.findUnique({
-        where: { id: templeId }
+        where: { id: templeId as string }
       });
 
       if (!temple) {
@@ -250,7 +248,7 @@ export const getAllProducts = async (req: Request, res: Response) => {
         },
         orderBy: { createdAt: "desc" },
         skip,
-        take: Number(limit)
+        take: Number(limit) as number
       }),
       prisma.product.count({ where })
     ]);
@@ -288,13 +286,25 @@ export const getProductById = async (req: Request, res: Response) => {
     const product = await prisma.product.findUnique({
       where: {
         id: id as string,
-        status: "approved", // Only return approved products
-        temple: {
-          user: {
-            isVerified: true,
-            role: { in: ['INSTITUTION', 'SELLER'] }
+        status: "approved",
+        OR: [
+          {
+            temple: {
+              user: {
+                isVerified: true,
+                role: { in: ['INSTITUTION', 'SELLER'] }
+              }
+            }
+          },
+          {
+            seller: {
+              user: {
+                isVerified: true
+              },
+              isActive: true
+            }
           }
-        }
+        ]
       },
       include: {
         variants: true,
@@ -306,6 +316,14 @@ export const getProductById = async (req: Request, res: Response) => {
           }
         },
         temple: {
+          select: {
+            id: true,
+            name: true,
+            location: true,
+            description: true
+          }
+        },
+        seller: {
           select: {
             id: true,
             name: true,
@@ -432,7 +450,7 @@ export const updateProduct = async (req: Request, res: Response) => {
     // If templeId is provided, check if temple exists
     if (templeId && templeId !== "general") {
       const temple = await prisma.temple.findUnique({
-        where: { id: templeId }
+        where: { id: templeId as string }
       });
 
       if (!temple) {
@@ -507,7 +525,7 @@ export const updateProduct = async (req: Request, res: Response) => {
     }
 
     const updatedProduct = await prisma.product.update({
-      where: { id },
+      where: { id: id as string },
       data: updateData,
       include: {
         variants: true,
@@ -571,7 +589,7 @@ export const deleteProduct = async (req: Request, res: Response) => {
 
     // Check if product exists
     const product = await prisma.product.findUnique({
-      where: { id }
+      where: { id: id as string }
     });
 
     if (!product) {
@@ -613,7 +631,7 @@ export const toggleProductStatus = async (req: Request, res: Response) => {
     }
 
     const product = await prisma.product.findUnique({
-      where: { id }
+      where: { id: id as string }
     });
 
     if (!product) {
@@ -624,7 +642,7 @@ export const toggleProductStatus = async (req: Request, res: Response) => {
     }
 
     const updatedProduct = await prisma.product.update({
-      where: { id },
+      where: { id: id as string },
       data: { status },
       include: {
         variants: true,
@@ -727,12 +745,24 @@ export const getPublicProducts = async (req: Request, res: Response) => {
 
     const where: any = {
       status: "approved",
-      temple: {
-        user: {
-          isVerified: true,
-          role: { in: ['INSTITUTION', 'SELLER'] }
+      OR: [
+        {
+          temple: {
+            user: {
+              isVerified: true,
+              role: { in: ['INSTITUTION', 'SELLER'] }
+            }
+          }
+        },
+        {
+          seller: {
+            user: {
+              isVerified: true
+            },
+            isActive: true
+          }
         }
-      }
+      ]
     };
 
     if (search) {

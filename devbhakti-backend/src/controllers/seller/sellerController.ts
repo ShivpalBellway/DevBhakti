@@ -1,7 +1,5 @@
 import { Request, Response } from "express";
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
+import { prisma } from "../../lib/prisma";
 
 const getFilePath = (files: any, fieldName: string) => {
     if (files && files[fieldName] && files[fieldName][0]) {
@@ -20,19 +18,23 @@ const getFilePaths = (files: any, fieldName: string) => {
 export const getSellerProfile = async (req: Request, res: Response) => {
     try {
         const userId = (req as any).user.userId;
-        const store = await prisma.temple.findUnique({
+        console.log(`Fetching seller profile for userId: ${userId}`);
+
+        const store = await prisma.sellerProfile.findUnique({
             where: { userId },
             include: { user: { select: { name: true, phone: true } } }
         });
 
         if (!store) {
+            console.log(`Seller profile not found for userId: ${userId}`);
             return res.status(404).json({ success: false, message: "Store not found" });
         }
 
+        console.log(`Seller profile found: ${store.id}`);
         return res.status(200).json({ success: true, data: store });
     } catch (error: any) {
         console.error("Seller Profile Error:", error);
-        return res.status(500).json({ success: false, message: error.message });
+        return res.status(500).json({ success: false, message: error.message, stack: error.stack });
     }
 };
 
@@ -42,7 +44,7 @@ export const updateSellerProfile = async (req: Request, res: Response) => {
         const files = req.files as any;
         const data = req.body;
 
-        const store = await prisma.temple.findUnique({
+        const store = await prisma.sellerProfile.findUnique({
             where: { userId }
         });
 
@@ -50,17 +52,21 @@ export const updateSellerProfile = async (req: Request, res: Response) => {
             return res.status(404).json({ success: false, message: "Store not found" });
         }
 
-        const updateData: any = {
-            name: data.name,
-            category: data.category,
-            openTime: data.openTime,
-            description: data.description,
-            location: data.location,
-            fullAddress: data.fullAddress,
-            phone: data.phone,
-            website: data.website,
-            updatedAt: new Date()
-        };
+        // Initialize updateData with strictly defined fields from request
+        const updateData: any = { updatedAt: new Date() };
+
+        // Helper to add if present
+        const fields = [
+            'name', 'category', 'openTime', 'description',
+            'location', 'fullAddress', 'phone', 'website',
+            'bankName', 'accountNumber', 'accountHolderName', 'ifscCode', 'upiId'
+        ];
+
+        fields.forEach(field => {
+            if (data[field] !== undefined) {
+                updateData[field] = data[field];
+            }
+        });
 
         // Handle files
         const newImage = getFilePath(files, 'image');
@@ -73,7 +79,7 @@ export const updateSellerProfile = async (req: Request, res: Response) => {
             updateData.heroImages = newHeroImages;
         }
 
-        const updated = await prisma.temple.update({
+        const updated = await prisma.sellerProfile.update({
             where: { id: store.id },
             data: updateData
         });
