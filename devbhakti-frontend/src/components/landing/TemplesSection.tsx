@@ -13,6 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { fetchPublicTemples } from "@/api/publicController";
 import { fetchUserFavorites, addFavorite, removeFavorite } from "@/api/userController";
 import { API_URL } from "@/config/apiConfig";
+import { getTempleUrl } from "@/lib/utils/templeUtils";
 
 const TemplesSection: React.FC = () => {
   const scrollContainerRef = React.useRef<HTMLDivElement>(null);
@@ -170,7 +171,7 @@ const TemplesSection: React.FC = () => {
                 className="flex-shrink-0 w-[320px] md:w-[380px]"
               >
                 <div className="relative group/card h-full">
-                  <Link href={`/temples/${temple.slug || temple.id}`}>
+                  <Link href={getTempleUrl(temple)}>
                     <div className="bg-card rounded-2xl overflow-hidden border-2 border-border/50 shadow-soft hover:shadow-warm transition-all duration-300 hover:-translate-y-2 h-full flex flex-col">
                       {/* Image */}
                       <div className="relative h-48 md:h-56 overflow-hidden">

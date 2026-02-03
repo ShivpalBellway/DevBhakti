@@ -26,6 +26,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { fetchPublicPoojaById } from "@/api/publicController";
 import { API_URL } from "@/config/apiConfig";
 import { toast } from "@/hooks/use-toast";
+import { getTempleUrl } from "@/lib/utils/templeUtils";
 import { useRouter } from "next/navigation";
 
 interface PoojaDetailClientProps {
@@ -348,7 +349,7 @@ const PoojaDetailClient = ({ id }: PoojaDetailClientProps) => {
                                                                 </Link>
                                                             </Button>
                                                             <Button variant="outline" className="w-full border-primary/5 text-[#5d4037] bg-[#FFF8F0]/30 hover:bg-[#FFF8F0]/50 rounded-full py-6 font-bold transition-all" asChild>
-                                                                <Link href={`/temples/${pooja.temple.id}`}>Explore Temple</Link>
+                                                                <Link href={getTempleUrl(pooja.temple)}>Explore Temple</Link>
                                                             </Button>
                                                         </div>
                                                     </div>

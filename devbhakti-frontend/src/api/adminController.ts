@@ -129,7 +129,7 @@ export const deleteTempleAdmin = async (id: string) => {
     return response.data;
 };
 
-export const toggleTempleStatusAdmin = async (id: string, isVerified: boolean, isActive: boolean, data?: { slug?: string, productCommissionRate?: number, poojaCommissionRate?: number, liveStatus?: boolean }) => {
+export const toggleTempleStatusAdmin = async (id: string, isVerified: boolean, isActive: boolean, data?: { slug?: string, subdomain?: string, urlType?: string, productCommissionRate?: number, poojaCommissionRate?: number, liveStatus?: boolean }) => {
     const token = localStorage.getItem("admin_token");
     const payload = {
         isVerified,

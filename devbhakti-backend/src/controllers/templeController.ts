@@ -77,7 +77,8 @@ export const getTempleById = async (req: Request, res: Response) => {
       where: {
         OR: [
           { id: id as string },
-          { slug: id as string }
+          { slug: id as string },
+          { subdomain: id as string }
         ],
         user: {
           isVerified: true,

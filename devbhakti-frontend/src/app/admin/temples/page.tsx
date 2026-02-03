@@ -132,6 +132,8 @@ export default function TemplesManagementPage() {
     const [approvalData, setApprovalData] = useState({
         id: "",
         slug: "",
+        subdomain: "", // Added subdomain
+        urlType: "slug", // "slug" or "subdomain"
         productCommissionRate: "10",
         poojaCommissionRate: "5"
     });
@@ -143,6 +145,8 @@ export default function TemplesManagementPage() {
             setApprovalData({
                 id,
                 slug: generatedSlug,
+                subdomain: generatedSlug, // Default subdomain same as slug
+                urlType: "slug",
                 productCommissionRate: "10",
                 poojaCommissionRate: "5"
             });
@@ -169,6 +173,8 @@ export default function TemplesManagementPage() {
                 true, // isActive (Default to active on approval) 
                 {
                     slug: approvalData.slug,
+                    subdomain: approvalData.subdomain,
+                    urlType: approvalData.urlType,
                     productCommissionRate: parseFloat(approvalData.productCommissionRate),
                     poojaCommissionRate: parseFloat(approvalData.poojaCommissionRate)
                 }
@@ -440,18 +446,77 @@ export default function TemplesManagementPage() {
                         <DialogTitle>Approve Temple Account</DialogTitle>
                     </DialogHeader>
                     <div className="space-y-4 py-4">
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium">Public URL Slug</label>
-                            <div className="flex items-center gap-2">
-                                <span className="text-xs text-muted-foreground bg-slate-100 px-2 py-2 rounded-md">devbhakti.in/temples/</span>
-                                <Input
-                                    className="flex-1 font-mono"
-                                    value={approvalData.slug}
-                                    onChange={(e) => setApprovalData({ ...approvalData, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '') })}
-                                    placeholder="kashi-vishwanath"
-                                />
+                        {/* URL Configuration Section */}
+                        <div className="space-y-4 p-4 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl border-2 border-blue-200">
+                            <label className="text-sm font-bold text-slate-800 uppercase tracking-widest text-[11px]">🌐 Public URL Configuration</label>
+
+                            {/* URL Type Selection */}
+                            <div className="flex items-center gap-6 mb-2">
+                                <label className="flex items-center gap-2 cursor-pointer">
+                                    <input
+                                        type="radio"
+                                        name="urlTypeApproval"
+                                        value="slug"
+                                        checked={approvalData.urlType === "slug"}
+                                        onChange={e => setApprovalData({ ...approvalData, urlType: e.target.value })}
+                                        className="w-4 h-4 text-blue-600"
+                                    />
+                                    <span className="text-[13px] font-semibold text-slate-700">Slug</span>
+                                </label>
+                                <label className="flex items-center gap-2 cursor-pointer">
+                                    <input
+                                        type="radio"
+                                        name="urlTypeApproval"
+                                        value="subdomain"
+                                        checked={approvalData.urlType === "subdomain"}
+                                        onChange={e => setApprovalData({ ...approvalData, urlType: e.target.value })}
+                                        className="w-4 h-4 text-blue-600"
+                                    />
+                                    <span className="text-[13px] font-semibold text-slate-700">Subdomain</span>
+                                </label>
                             </div>
-                            <p className="text-[10px] text-muted-foreground">Unique identifier for SEO friendly URL.</p>
+
+                            {/* Slug Field */}
+                            {approvalData.urlType === "slug" && (
+                                <div className="space-y-2">
+                                    <div className="flex items-center gap-1">
+                                        <span className="text-[10px] text-muted-foreground bg-white px-2 py-2 rounded-l-md border border-r-0 font-mono">devbhakti.in/temples/</span>
+                                        <Input
+                                            value={approvalData.slug}
+                                            onChange={e => {
+                                                const val = e.target.value.toLowerCase().replace(/[^a-z0-9-]+/g, '-');
+                                                setApprovalData({ ...approvalData, slug: val, subdomain: val });
+                                            }}
+                                            placeholder="temple-slug"
+                                            className="rounded-l-none font-mono h-8 text-xs"
+                                        />
+                                    </div>
+                                    <p className="text-[10px] font-mono text-blue-600 truncate">
+                                        Preview: https://devbhakti.in/temples/{approvalData.slug || "---"}
+                                    </p>
+                                </div>
+                            )}
+
+                            {/* Subdomain Field */}
+                            {approvalData.urlType === "subdomain" && (
+                                <div className="space-y-2">
+                                    <div className="flex items-center gap-1">
+                                        <Input
+                                            value={approvalData.subdomain}
+                                            onChange={e => {
+                                                const val = e.target.value.toLowerCase().replace(/[^a-z0-9-]+/g, '-');
+                                                setApprovalData({ ...approvalData, subdomain: val, slug: val });
+                                            }}
+                                            placeholder="subdomain"
+                                            className="rounded-r-none font-mono h-8 text-xs"
+                                        />
+                                        <span className="text-[10px] text-muted-foreground bg-white px-2 py-2 rounded-r-md border border-l-0 font-mono">.devbhakti.in</span>
+                                    </div>
+                                    <p className="text-[10px] font-mono text-blue-600 truncate">
+                                        Preview: https://{approvalData.subdomain || "---"}.devbhakti.in
+                                    </p>
+                                </div>
+                            )}
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">

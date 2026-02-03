@@ -52,6 +52,9 @@ export default function EditTemplePage() {
         mapUrl: "",
         rating: "0",
         reviewsCount: "0",
+        slug: "",
+        subdomain: "",
+        urlType: "slug",
         liveStatus: "false",
         productCommissionRate: "10.0",
         poojaCommissionRate: "5.0"
@@ -103,6 +106,9 @@ export default function EditTemplePage() {
                     mapUrl: inst.temple?.mapUrl || "",
                     rating: String(inst.temple?.rating || "0"),
                     reviewsCount: String(inst.temple?.reviewsCount || "0"),
+                    slug: inst.temple?.slug || "",
+                    subdomain: inst.temple?.subdomain || "",
+                    urlType: inst.temple?.urlType || "slug",
                     liveStatus: String(inst.temple?.liveStatus || "false"),
                     productCommissionRate: String(inst.temple?.productCommissionRate || "10.0"),
                     poojaCommissionRate: String(inst.temple?.poojaCommissionRate || "5.0")
@@ -225,7 +231,7 @@ export default function EditTemplePage() {
     }
 
     return (
-        <div className="max-w-5xl mx-auto space-y-6 pb-20">
+        <div className="max-w-7xl mx-auto space-y-6 pb-20">
             <div className="flex items-center gap-4">
                 <Button variant="ghost" size="icon" onClick={() => router.back()}>
                     <ArrowLeft className="w-5 h-5" />
@@ -294,12 +300,134 @@ export default function EditTemplePage() {
                             <Input value={formData.category} onChange={e => setFormData({ ...formData, category: e.target.value })} required />
                         </div>
                         <div className="space-y-2">
-                            <label className="text-sm font-semibold text-slate-700">Open Time</label>
-                            <Input value={formData.openTime} onChange={e => setFormData({ ...formData, openTime: e.target.value })} />
+                            <label className="text-sm font-semibold text-slate-700">Operating Hours</label>
+                            <div className="flex items-center gap-3">
+                                <div className="flex items-center gap-2 max-w-[140px]">
+                                    <Input
+                                        type="number"
+                                        min="1"
+                                        max="12"
+                                        value={formData.openTime.split(' - ')[0]?.replace(' AM', '') || ''}
+                                        onChange={e => {
+                                            const amTime = e.target.value;
+                                            const pmTime = formData.openTime.split(' - ')[1] || '11 PM';
+                                            setFormData({ ...formData, openTime: `${amTime} AM - ${pmTime}` });
+                                        }}
+                                        placeholder="6"
+                                        className="text-center w-16"
+                                    />
+                                    <span className="text-sm font-bold text-slate-600 whitespace-nowrap">AM</span>
+                                </div>
+                                <span className="text-slate-400 font-bold">to</span>
+                                <div className="flex items-center gap-2 max-w-[140px]">
+                                    <Input
+                                        type="number"
+                                        min="1"
+                                        max="12"
+                                        value={formData.openTime.split(' - ')[1]?.replace(' PM', '') || ''}
+                                        onChange={e => {
+                                            const pmTime = e.target.value;
+                                            const amTime = formData.openTime.split(' - ')[0] || '6 AM';
+                                            setFormData({ ...formData, openTime: `${amTime} - ${pmTime} PM` });
+                                        }}
+                                        placeholder="10"
+                                        className="text-center w-16"
+                                    />
+                                    <span className="text-sm font-bold text-slate-600 whitespace-nowrap">PM</span>
+                                </div>
+                            </div>
+                            <p className="text-[10px] text-muted-foreground italic">Example: 6 AM to 10 PM</p>
                         </div>
                         <div className="space-y-2">
                             <label className="text-sm font-semibold text-slate-700">Viewers Count</label>
                             <Input value={formData.viewers} onChange={e => setFormData({ ...formData, viewers: e.target.value })} />
+                        </div>
+
+                        {/* URL Configuration Section */}
+                        <div className="space-y-4 md:col-span-2 p-6 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl border-2 border-blue-200">
+                            <label className="text-sm font-bold text-slate-800 uppercase tracking-widest text-[11px]">🌐 Public URL Configuration</label>
+
+                            {/* URL Type Selection */}
+                            <div className="flex items-center gap-6 mb-4">
+                                <label className="flex items-center gap-2 cursor-pointer">
+                                    <input
+                                        type="radio"
+                                        name="urlType"
+                                        value="slug"
+                                        checked={formData.urlType === "slug"}
+                                        onChange={e => setFormData({ ...formData, urlType: e.target.value })}
+                                        className="w-4 h-4 text-blue-600"
+                                    />
+                                    <span className="text-sm font-semibold text-slate-700">Path-based URL</span>
+                                </label>
+                                <label className="flex items-center gap-2 cursor-pointer">
+                                    <input
+                                        type="radio"
+                                        name="urlType"
+                                        value="subdomain"
+                                        checked={formData.urlType === "subdomain"}
+                                        onChange={e => setFormData({ ...formData, urlType: e.target.value })}
+                                        className="w-4 h-4 text-blue-600"
+                                    />
+                                    <span className="text-sm font-semibold text-slate-700">Subdomain URL</span>
+                                </label>
+                            </div>
+
+                            {/* Slug Field (Path-based) */}
+                            {formData.urlType === "slug" && (
+                                <div className="space-y-2">
+                                    <label className="text-sm font-semibold text-slate-700">URL Slug *</label>
+                                    <div className="flex items-center gap-1">
+                                        <span className="text-xs text-muted-foreground bg-white px-3 py-2 rounded-l-md border border-r-0 font-mono">devbhakti.in/temples/</span>
+                                        <Input
+                                            value={formData.slug}
+                                            onChange={e => {
+                                                const val = e.target.value.toLowerCase().replace(/[^a-z0-9-]+/g, '-');
+                                                setFormData({ ...formData, slug: val, subdomain: val });
+                                            }}
+                                            placeholder="kashi-vishwanath"
+                                            className="rounded-l-none font-mono"
+                                            required={formData.urlType === "slug"}
+                                        />
+                                    </div>
+                                    <div className="bg-white p-3 rounded-lg border border-blue-200">
+                                        <p className="text-xs text-slate-500 mb-1">Preview:</p>
+                                        <p className="text-sm font-mono text-blue-600">
+                                            https://devbhakti.in/temples/{formData.slug || "your-temple-slug"}
+                                        </p>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Subdomain Field */}
+                            {formData.urlType === "subdomain" && (
+                                <div className="space-y-2">
+                                    <label className="text-sm font-semibold text-slate-700">Subdomain *</label>
+                                    <div className="flex items-center gap-1">
+                                        <Input
+                                            value={formData.subdomain}
+                                            onChange={e => {
+                                                const val = e.target.value.toLowerCase().replace(/[^a-z0-9-]+/g, '-');
+                                                setFormData({ ...formData, subdomain: val, slug: val });
+                                            }}
+                                            placeholder="kashi-vishwanath"
+                                            className="rounded-r-none font-mono"
+                                            required={formData.urlType === "subdomain"}
+                                        />
+                                        <span className="text-xs text-muted-foreground bg-white px-3 py-2 rounded-r-md border border-l-0 font-mono">.devbhakti.in</span>
+                                    </div>
+                                    <div className="bg-white p-3 rounded-lg border border-blue-200">
+                                        <p className="text-xs text-slate-500 mb-1">Preview:</p>
+                                        <p className="text-sm font-mono text-blue-600">
+                                            https://{formData.subdomain || "your-temple"}.devbhakti.in
+                                        </p>
+                                    </div>
+                                </div>
+                            )}
+
+                            <p className="text-[10px] text-slate-600 italic mt-2">
+                                💡 Alphanumeric and hyphens only. Both slug and subdomain will be stored for flexibility.
+                            </p>
                         </div>
                     </div>
 
@@ -406,7 +534,7 @@ export default function EditTemplePage() {
                 </div>
 
                 {/* Events Section */}
-                <div className="bg-card border rounded-xl p-8 shadow-sm space-y-6">
+                {/* <div className="bg-card border rounded-xl p-8 shadow-sm space-y-6">
                     <div className="flex items-center justify-between">
                         <h2 className="text-xl font-bold flex items-center gap-2"><Calendar className="w-5 h-5 text-primary" /> Upcoming Events</h2>
                         <Button type="button" variant="outline" size="sm" onClick={addEvent}><Plus className="w-4 h-4 mr-2" /> Add Event</Button>
@@ -423,7 +551,7 @@ export default function EditTemplePage() {
                             </div>
                         ))}
                     </div>
-                </div>
+                </div> */}
 
                 {/* Financial Settings */}
                 <div className="bg-card border rounded-xl p-8 shadow-sm space-y-6">

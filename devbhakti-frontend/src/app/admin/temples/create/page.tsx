@@ -52,7 +52,9 @@ export default function CreateTemplePage() {
         // Stats
         rating: "0",
         reviewsCount: "0",
-        slug: "", // Added slug field
+        slug: "", // For slug-based URLs
+        subdomain: "", // For subdomain-based URLs
+        urlType: "slug", // "slug" or "subdomain"
         isActive: "true", // Added isActive for visibility
         liveStatus: "false", // Future feature
         productCommissionRate: "10.0",
@@ -164,7 +166,7 @@ export default function CreateTemplePage() {
     };
 
     return (
-        <div className="max-w-5xl mx-auto space-y-6 pb-20">
+        <div className="max-w-7xl mx-auto space-y-6 pb-20">
             {/* Header */}
             <div className="flex items-center gap-4">
                 <Button variant="ghost" size="icon" onClick={() => router.back()}>
@@ -261,11 +263,42 @@ export default function CreateTemplePage() {
                         </div>
                         <div className="space-y-2">
                             <label className="text-sm font-semibold text-slate-700">Operating Hours</label>
-                            <Input
-                                value={formData.openTime}
-                                onChange={e => setFormData({ ...formData, openTime: e.target.value })}
-                                placeholder="4:00 AM - 11:30 PM"
-                            />
+                            <div className="flex items-center gap-3">
+                                <div className="flex items-center gap-2 max-w-[140px]">
+                                    <Input
+                                        type="number"
+                                        min="1"
+                                        max="12"
+                                        value={formData.openTime.split(' - ')[0]?.replace(' AM', '') || ''}
+                                        onChange={e => {
+                                            const amTime = e.target.value;
+                                            const pmTime = formData.openTime.split(' - ')[1] || '11 PM';
+                                            setFormData({ ...formData, openTime: `${amTime} AM - ${pmTime}` });
+                                        }}
+                                        placeholder="6"
+                                        className="text-center w-16"
+                                    />
+                                    <span className="text-sm font-bold text-slate-600 whitespace-nowrap">AM</span>
+                                </div>
+                                <span className="text-slate-400 font-bold">to</span>
+                                <div className="flex items-center gap-2 max-w-[150px]">
+                                    <Input
+                                        type="number"
+                                        min="1"
+                                        max="12"
+                                        value={formData.openTime.split(' - ')[1]?.replace(' PM', '') || ''}
+                                        onChange={e => {
+                                            const pmTime = e.target.value;
+                                            const amTime = formData.openTime.split(' - ')[0] || '6 AM';
+                                            setFormData({ ...formData, openTime: `${amTime} - ${pmTime} PM` });
+                                        }}
+                                        placeholder="10"
+                                        className="text-center w-22"
+                                    />
+                                    <span className="text-sm font-bold text-slate-600 whitespace-nowrap">PM</span>
+                                </div>
+                            </div>
+                            <p className="text-[10px] text-muted-foreground italic">Example: 6 AM to 10 PM</p>
                         </div>
                         <div className="space-y-2">
                             <label className="text-sm font-semibold text-slate-700">Viewers Count (Social Proof)</label>
@@ -275,22 +308,91 @@ export default function CreateTemplePage() {
                                 placeholder="e.g. 10K+"
                             />
                         </div>
-                        <div className="space-y-2">
-                            <label className="text-sm font-semibold text-slate-700 uppercase tracking-widest text-[11px] text-primary">Public URL Slug *</label>
-                            <div className="flex items-center gap-1">
-                                <span className="text-xs text-muted-foreground bg-slate-100 px-2 py-2 rounded-l-md border border-r-0">devbhakti.in/temples/</span>
-                                <Input
-                                    value={formData.slug}
-                                    onChange={e => {
-                                        const val = e.target.value.toLowerCase().replace(/[^a-z0-9-]+/g, '-');
-                                        setFormData({ ...formData, slug: val });
-                                    }}
-                                    placeholder="kashi-vishwanath-temple"
-                                    className="rounded-l-none"
-                                    required
-                                />
+                        {/* URL Configuration Section */}
+                        <div className="space-y-4 md:col-span-2 p-6 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl border-2 border-blue-200">
+                            <label className="text-sm font-bold text-slate-800 uppercase tracking-widest text-[11px]">🌐 Public URL Configuration</label>
+
+                            {/* URL Type Selection */}
+                            <div className="flex items-center gap-6 mb-4">
+                                <label className="flex items-center gap-2 cursor-pointer">
+                                    <input
+                                        type="radio"
+                                        name="urlType"
+                                        value="slug"
+                                        checked={formData.urlType === "slug"}
+                                        onChange={e => setFormData({ ...formData, urlType: e.target.value })}
+                                        className="w-4 h-4 text-blue-600"
+                                    />
+                                    <span className="text-sm font-semibold text-slate-700">Path-based URL</span>
+                                </label>
+                                <label className="flex items-center gap-2 cursor-pointer">
+                                    <input
+                                        type="radio"
+                                        name="urlType"
+                                        value="subdomain"
+                                        checked={formData.urlType === "subdomain"}
+                                        onChange={e => setFormData({ ...formData, urlType: e.target.value })}
+                                        className="w-4 h-4 text-blue-600"
+                                    />
+                                    <span className="text-sm font-semibold text-slate-700">Subdomain URL</span>
+                                </label>
                             </div>
-                            <p className="text-[10px] text-muted-foreground italic">Alphanumeric and hyphens only. This will be the public URL.</p>
+
+                            {/* Slug Field (Path-based) */}
+                            {formData.urlType === "slug" && (
+                                <div className="space-y-2">
+                                    <label className="text-sm font-semibold text-slate-700">URL Slug *</label>
+                                    <div className="flex items-center gap-1">
+                                        <span className="text-xs text-muted-foreground bg-white px-3 py-2 rounded-l-md border border-r-0 font-mono">devbhakti.in/temples/</span>
+                                        <Input
+                                            value={formData.slug}
+                                            onChange={e => {
+                                                const val = e.target.value.toLowerCase().replace(/[^a-z0-9-]+/g, '-');
+                                                setFormData({ ...formData, slug: val, subdomain: val });
+                                            }}
+                                            placeholder="kashi-vishwanath"
+                                            className="rounded-l-none font-mono"
+                                            required={formData.urlType === "slug"}
+                                        />
+                                    </div>
+                                    <div className="bg-white p-3 rounded-lg border border-blue-200">
+                                        <p className="text-xs text-slate-500 mb-1">Preview:</p>
+                                        <p className="text-sm font-mono text-blue-600">
+                                            https://devbhakti.in/temples/{formData.slug || "your-temple-slug"}
+                                        </p>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Subdomain Field */}
+                            {formData.urlType === "subdomain" && (
+                                <div className="space-y-2">
+                                    <label className="text-sm font-semibold text-slate-700">Subdomain *</label>
+                                    <div className="flex items-center gap-1">
+                                        <Input
+                                            value={formData.subdomain}
+                                            onChange={e => {
+                                                const val = e.target.value.toLowerCase().replace(/[^a-z0-9-]+/g, '-');
+                                                setFormData({ ...formData, subdomain: val, slug: val });
+                                            }}
+                                            placeholder="kashi-vishwanath"
+                                            className="rounded-r-none font-mono"
+                                            required={formData.urlType === "subdomain"}
+                                        />
+                                        <span className="text-xs text-muted-foreground bg-white px-3 py-2 rounded-r-md border border-l-0 font-mono">.devbhakti.in</span>
+                                    </div>
+                                    <div className="bg-white p-3 rounded-lg border border-blue-200">
+                                        <p className="text-xs text-slate-500 mb-1">Preview:</p>
+                                        <p className="text-sm font-mono text-blue-600">
+                                            https://{formData.subdomain || "your-temple"}.devbhakti.in
+                                        </p>
+                                    </div>
+                                </div>
+                            )}
+
+                            <p className="text-[10px] text-slate-600 italic mt-2">
+                                💡 Alphanumeric and hyphens only. Both slug and subdomain will be stored for flexibility.
+                            </p>
                         </div>
                     </div>
 
@@ -451,7 +553,7 @@ export default function CreateTemplePage() {
                 </div>
 
                 {/* 6. Inline Events Section */}
-                <div className="bg-card border rounded-xl p-8 shadow-sm space-y-6">
+                {/*    <div className="bg-card border rounded-xl p-8 shadow-sm space-y-6">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2 text-primary font-bold">
                             <Calendar className="w-5 h-5" />
@@ -504,7 +606,7 @@ export default function CreateTemplePage() {
                             </div>
                         ))}
                     </div>
-                </div>
+                </div> */}
 
                 {/* 7. Financial Settings */}
                 <div className="bg-card border rounded-xl p-8 shadow-sm space-y-6">
