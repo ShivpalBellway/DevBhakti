@@ -94,6 +94,8 @@ export const createTemple = async (req: Request, res: Response) => {
               rating: parseFloat(data.rating || '0'),
               reviewsCount: parseInt(data.reviewsCount || '0'),
               slug: data.slug || undefined,
+              subdomain: data.subdomain || undefined, // Added
+              urlType: data.urlType || 'slug', // Added
               isActive: data.isActive === 'true',
               liveStatus: data.liveStatus === 'true',
               productCommissionRate: data.productCommissionRate ? parseFloat(data.productCommissionRate) : 10.0,
@@ -176,6 +178,9 @@ export const updateTemple = async (req: Request, res: Response) => {
               viewers: data.viewers,
               rating: parseFloat(data.rating || '0'),
               reviewsCount: parseInt(data.reviewsCount || '0'),
+              slug: data.slug || undefined, // Added
+              subdomain: data.subdomain || undefined, // Added
+              urlType: data.urlType || 'slug', // Added
               liveStatus: data.liveStatus === 'true',
               // Merge image updates
               ...(files?.image && { image: getFilePath(files, 'image') }),
@@ -228,7 +233,7 @@ export const updateTemple = async (req: Request, res: Response) => {
 export const toggleTempleStatus = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { isVerified, isActive, slug, productCommissionRate, poojaCommissionRate } = req.body;
+    const { isVerified, isActive, slug, subdomain, urlType, productCommissionRate, poojaCommissionRate } = req.body;
 
     console.log('toggleTempleStatus called:', {
       id,
@@ -247,6 +252,8 @@ export const toggleTempleStatus = async (req: Request, res: Response) => {
           update: {
             isActive: isActive !== undefined ? isActive : undefined,  // Use isActive for visibility
             slug: slug || undefined,
+            subdomain: subdomain || undefined, // Added
+            urlType: urlType || undefined, // Added
             productCommissionRate: productCommissionRate ? parseFloat(productCommissionRate) : undefined,
             poojaCommissionRate: poojaCommissionRate ? parseFloat(poojaCommissionRate) : undefined,
           }

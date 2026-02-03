@@ -47,13 +47,14 @@ export default function TempleDetail() {
             setUser(JSON.parse(savedUser));
             checkIfFavorite();
         }
-    }, [params?.id]);
+    }, [params?.id, params?.subdomain]);
 
     const checkIfFavorite = async () => {
+        const templeId = params?.id || params?.subdomain;
         try {
             const res = await fetchUserFavorites();
             if (res.success) {
-                const isFav = res.data.some((f: any) => f.templeId === params?.id);
+                const isFav = res.data.some((f: any) => f.templeId === templeId);
                 setIsFavorite(isFav);
             }
         } catch (error) {
@@ -63,15 +64,16 @@ export default function TempleDetail() {
 
     useEffect(() => {
         const loadTemple = async () => {
-            if (params?.id) {
+            const templeId = params?.id || params?.subdomain;
+            if (templeId) {
                 setLoading(true);
-                const data = await fetchPublicTempleById(params.id as string);
+                const data = await fetchPublicTempleById(templeId as string);
                 setTemple(data);
                 setLoading(false);
             }
         };
         loadTemple();
-    }, [params?.id]);
+    }, [params?.id, params?.subdomain]);
 
     const getFullImageUrl = (path: string) => {
         if (!path) return "/placeholder.jpg";
@@ -137,6 +139,7 @@ export default function TempleDetail() {
     };
 
     const toggleFavorite = async () => {
+        const templeId = params?.id || params?.subdomain;
         if (!user) {
             router.push("/auth");
             return;
@@ -144,11 +147,11 @@ export default function TempleDetail() {
 
         try {
             if (isFavorite) {
-                await removeFavorite({ templeId: params?.id as string });
+                await removeFavorite({ templeId: templeId as string });
                 setIsFavorite(false);
                 toast({ title: "Removed from favorites" });
             } else {
-                await addFavorite({ templeId: params?.id as string });
+                await addFavorite({ templeId: templeId as string });
                 setIsFavorite(true);
                 toast({ title: "Added to favorites" });
             }

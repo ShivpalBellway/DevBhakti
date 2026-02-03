@@ -10,6 +10,7 @@ import liveDarshanPreview from "@/assets/live-darshan-preview.jpg";
 
 import { fetchPublicTemples } from "@/api/publicController";
 import { API_URL } from "@/config/apiConfig";
+import { getTempleUrl } from "@/lib/utils/templeUtils";
 
 const LiveDarshanSection: React.FC = () => {
   const [liveTemples, setLiveTemples] = React.useState<any[]>([]);
@@ -46,7 +47,7 @@ const LiveDarshanSection: React.FC = () => {
             transition={{ duration: 0.5 }}
             className="order-2 lg:order-1"
           >
-            <Link href={`/temples/${liveTemples[0]?.slug || liveTemples[0]?.id}`}>
+            <Link href={getTempleUrl(liveTemples[0])}>
               <div className="relative rounded-2xl overflow-hidden bg-sidebar-accent aspect-video shadow-elevated group cursor-pointer">
                 {/* Video preview image */}
                 <img
@@ -93,7 +94,7 @@ const LiveDarshanSection: React.FC = () => {
                   transition={{ duration: 0.4, delay: 0.3 + index * 0.1 }}
                 >
                   <Link
-                    href={`/temples/${temple.slug || temple.id}`}
+                    href={getTempleUrl(temple)}
                     className="flex items-center justify-between bg-sidebar-accent/50 rounded-xl p-4 cursor-pointer hover:bg-sidebar-accent transition-colors"
                   >
                     <div className="flex items-center gap-3">

@@ -172,7 +172,7 @@ export default function TempleLoginModal({ onClose }: TempleLoginModalProps) {
                         <Button
                             type="submit"
                             disabled={loading}
-                            className="w-full h-12 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold shadow-lg transition-all active:scale-[0.98]"
+                            className="w-full h-12 bg-primary hover:bg-secondary text-white rounded-xl font-bold shadow-lg transition-all active:scale-[0.98]"
                         >
                             {loading ? "Verifying..." : "Verify & Login"}
                         </Button>

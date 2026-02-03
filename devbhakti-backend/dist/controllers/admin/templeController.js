@@ -94,6 +94,8 @@ const createTemple = async (req, res) => {
                             rating: parseFloat(data.rating || '0'),
                             reviewsCount: parseInt(data.reviewsCount || '0'),
                             slug: data.slug || undefined,
+                            subdomain: data.subdomain || undefined, // Added
+                            urlType: data.urlType || 'slug', // Added
                             isActive: data.isActive === 'true',
                             liveStatus: data.liveStatus === 'true',
                             productCommissionRate: data.productCommissionRate ? parseFloat(data.productCommissionRate) : 10.0,
@@ -169,6 +171,9 @@ const updateTemple = async (req, res) => {
                             viewers: data.viewers,
                             rating: parseFloat(data.rating || '0'),
                             reviewsCount: parseInt(data.reviewsCount || '0'),
+                            slug: data.slug || undefined, // Added
+                            subdomain: data.subdomain || undefined, // Added
+                            urlType: data.urlType || 'slug', // Added
                             liveStatus: data.liveStatus === 'true',
                             // Merge image updates
                             ...(files?.image && { image: getFilePath(files, 'image') }),
@@ -217,7 +222,7 @@ exports.updateTemple = updateTemple;
 const toggleTempleStatus = async (req, res) => {
     try {
         const { id } = req.params;
-        const { isVerified, isActive, slug, productCommissionRate, poojaCommissionRate } = req.body;
+        const { isVerified, isActive, slug, subdomain, urlType, productCommissionRate, poojaCommissionRate } = req.body;
         console.log('toggleTempleStatus called:', {
             id,
             isVerified,
@@ -234,6 +239,8 @@ const toggleTempleStatus = async (req, res) => {
                     update: {
                         isActive: isActive !== undefined ? isActive : undefined, // Use isActive for visibility
                         slug: slug || undefined,
+                        subdomain: subdomain || undefined, // Added
+                        urlType: urlType || undefined, // Added
                         productCommissionRate: productCommissionRate ? parseFloat(productCommissionRate) : undefined,
                         poojaCommissionRate: poojaCommissionRate ? parseFloat(poojaCommissionRate) : undefined,
                     }

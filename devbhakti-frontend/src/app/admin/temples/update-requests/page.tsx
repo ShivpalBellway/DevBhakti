@@ -115,6 +115,35 @@ export default function TempleUpdateRequestsPage() {
             );
         }
 
+        // Special handling for URL type
+        if (key === 'urlType') {
+            return (
+                <Badge className={value === 'subdomain' ? 'bg-blue-100 text-blue-700 border-blue-200' : 'bg-purple-100 text-purple-700 border-purple-200'}>
+                    {value === 'subdomain' ? '🌐 Subdomain URL' : '📁 Path-based URL'}
+                </Badge>
+            );
+        }
+
+        // Special handling for subdomain
+        if (key === 'subdomain') {
+            return (
+                <div className="flex flex-col gap-1">
+                    <span className="text-sm font-mono font-semibold text-blue-600">{value}</span>
+                    <span className="text-xs font-mono text-slate-500">→ {value}.devbhakti.in</span>
+                </div>
+            );
+        }
+
+        // Special handling for slug
+        if (key === 'slug') {
+            return (
+                <div className="flex flex-col gap-1">
+                    <span className="text-sm font-mono font-semibold text-purple-600">{value}</span>
+                    <span className="text-xs font-mono text-slate-500">→ devbhakti.in/temples/{value}</span>
+                </div>
+            );
+        }
+
         return <span className="text-sm font-medium text-slate-700">{String(value)}</span>;
     };
 
