@@ -374,10 +374,10 @@ export default function TempleBookingsPage() {
                                     <th className="text-left p-4 text-sm font-medium text-muted-foreground">Booking ID</th>
                                     <th className="text-left p-4 text-sm font-medium text-muted-foreground">Devotee</th>
                                     <th className="text-left p-4 text-sm font-medium text-muted-foreground">Pooja/Ritual</th>
-                                    <th className="text-left p-4 text-sm font-medium text-muted-foreground">Date</th>
+                                    <th className="text-left p-4 text-sm font-medium text-muted-foreground">Booking Date</th>
                                     <th className="text-left p-4 text-sm font-medium text-muted-foreground">Amount</th>
-                                    <th className="text-left p-4 text-sm font-medium text-muted-foreground">Status</th>
-                                    <th className="text-right p-4 text-sm font-medium text-muted-foreground">Actions</th>
+                                    <th className="text-left p-4 text-sm font-medium text-muted-foreground w-[150px]">Status</th>
+                                    <th className="text-right p-4 text-sm font-medium text-muted-foreground w-[100px]">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -415,20 +415,25 @@ export default function TempleBookingsPage() {
                                                     </div>
                                                 </td>
                                                 <td className="p-4">
-                                                    <span className="text-sm text-foreground">
-                                                        {new Date(booking.createdAt).toLocaleDateString()}
-                                                    </span>
+                                                    <div className="flex flex-col">
+                                                        <span className="text-sm text-foreground font-medium">
+                                                            {booking.bookingDate ? format(new Date(booking.bookingDate), "dd MMM yyyy") : "N/A"}
+                                                        </span>
+                                                        <span className="text-[10px] text-muted-foreground">
+                                                            Booked on {format(new Date(booking.createdAt), "dd MMM")}
+                                                        </span>
+                                                    </div>
                                                 </td>
                                                 <td className="p-4">
                                                     <span className="text-sm font-bold text-foreground">₹{booking.packagePrice}</span>
                                                 </td>
-                                                <td className="p-4">
-                                                    <Badge variant="outline" className={status.color}>
+                                                <td className="p-4 w-[150px]">
+                                                    <Badge variant="outline" className={cn("whitespace-nowrap", status.color)}>
                                                         <status.icon className="w-3 h-3 mr-1" />
                                                         {booking.status}
                                                     </Badge>
                                                 </td>
-                                                <td className="p-4 text-right">
+                                                <td className="p-4 text-right w-[100px]">
                                                     <div className="flex items-center justify-end gap-2">
                                                         <Button
                                                             variant="ghost"
@@ -548,9 +553,12 @@ export default function TempleBookingsPage() {
                                             <p className="font-bold text-slate-700">{selectedBooking.status}</p>
                                         </div>
                                     </div>
-                                    <Badge variant="outline" className="px-3 py-1 bg-white">
-                                        {new Date(selectedBooking.createdAt).toLocaleDateString()}
-                                    </Badge>
+                                    <div className="flex flex-col items-end">
+                                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Ritual Date</p>
+                                        <Badge variant="outline" className="px-3 py-1 bg-white font-bold text-primary">
+                                            {selectedBooking.bookingDate ? format(new Date(selectedBooking.bookingDate), "PPPP") : "N/A"}
+                                        </Badge>
+                                    </div>
                                 </div>
 
                                 {/* Information Grid */}

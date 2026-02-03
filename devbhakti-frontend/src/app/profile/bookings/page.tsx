@@ -1,7 +1,9 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { fetchMyBookings } from "@/api/userController";
+import { fetchMyBookings, downloadBookingReceipt } from "@/api/userController";
+import { useToast } from "@/hooks/use-toast";
+import { Loader2, Download } from "lucide-react";
 import Navbar from "@/components/landing/Navbar";
 import Footer from "@/components/landing/Footer";
 import { Card, CardContent } from "@/components/ui/card";
@@ -29,6 +31,8 @@ export default function MyBookingsPage() {
     const [bookings, setBookings] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [expandedBookingId, setExpandedBookingId] = useState<string | null>(null);
+    const [downloadingId, setDownloadingId] = useState<string | null>(null);
+    const { toast } = useToast();
     const router = useRouter();
 
     useEffect(() => {
@@ -50,6 +54,37 @@ export default function MyBookingsPage() {
 
     const toggleExpand = (bookingId: string) => {
         setExpandedBookingId(expandedBookingId === bookingId ? null : bookingId);
+    };
+
+    const handleDownloadReceipt = async (booking: any) => {
+        setDownloadingId(booking.id);
+        try {
+            const res = await downloadBookingReceipt(booking.id);
+            if (res.success) {
+                const url = window.URL.createObjectURL(new Blob([res.data]));
+                const link = document.createElement('a');
+                link.href = url;
+                link.setAttribute('download', `Receipt-${booking.id.slice(-6)}.pdf`);
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+            } else {
+                toast({
+                    title: "Download Failed",
+                    description: "Could not download receipt. Please try again.",
+                    variant: "destructive"
+                });
+            }
+        } catch (e) {
+            console.error(e);
+            toast({
+                title: "Error",
+                description: "An unexpected error occurred during download.",
+                variant: "destructive"
+            });
+        } finally {
+            setDownloadingId(null);
+        }
     };
 
     const getStatusColor = (status: string) => {
@@ -162,20 +197,40 @@ export default function MyBookingsPage() {
                                                 <div className="w-1 h-1 rounded-full bg-slate-300" />
                                                 <span className="font-bold text-primary">{booking.packageName}</span>
                                             </div>
-                                            <Button
-                                                onClick={() => toggleExpand(booking.id)}
-                                                variant="ghost"
-                                                className={cn(
-                                                    "text-primary font-bold hover:bg-orange-50 rounded-full group transition-all",
-                                                    expandedBookingId === booking.id && "bg-orange-50"
-                                                )}
-                                            >
-                                                {expandedBookingId === booking.id ? "Hide Details" : "View Details"}
-                                                <ChevronRight className={cn(
-                                                    "w-4 h-4 ml-1 transition-transform",
-                                                    expandedBookingId === booking.id ? "rotate-90" : "group-hover:translate-x-1"
-                                                )} />
-                                            </Button>
+                                            <div className="flex items-center gap-2">
+                                                <Button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleDownloadReceipt(booking);
+                                                    }}
+                                                    disabled={downloadingId === booking.id}
+                                                    variant="outline"
+                                                    className="border-primary/20 text-primary hover:bg-primary/5 rounded-full px-4 h-9 text-xs font-bold transition-all"
+                                                >
+                                                    {downloadingId === booking.id ? (
+                                                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                                    ) : (
+                                                        <>
+                                                            <Download className="w-3.5 h-3.5 mr-1.5" />
+                                                            Receipt
+                                                        </>
+                                                    )}
+                                                </Button>
+                                                <Button
+                                                    onClick={() => toggleExpand(booking.id)}
+                                                    variant="ghost"
+                                                    className={cn(
+                                                        "text-primary font-bold hover:bg-orange-50 rounded-full group transition-all h-9 px-4 text-xs",
+                                                        expandedBookingId === booking.id && "bg-orange-50"
+                                                    )}
+                                                >
+                                                    {expandedBookingId === booking.id ? "Hide Details" : "View Details"}
+                                                    <ChevronRight className={cn(
+                                                        "w-4 h-4 ml-1 transition-transform",
+                                                        expandedBookingId === booking.id ? "rotate-90" : "group-hover:translate-x-1"
+                                                    )} />
+                                                </Button>
+                                            </div>
                                         </div>
 
                                         <AnimatePresence>

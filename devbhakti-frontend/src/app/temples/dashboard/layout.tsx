@@ -138,12 +138,12 @@ const SidebarNavItem = ({ item, pathname, sidebarOpen }: { item: any, pathname: 
                     className={cn(
                         "w-full flex items-center justify-between px-3 py-2.5 rounded-lg transition-all duration-200 group",
                         isActive && !isOpen
-                            ? "bg-primary text-white shadow-md shadow-primary/20"
+                            ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-md shadow-sidebar-primary/20"
                             : "text-sidebar-foreground hover:bg-sidebar-accent"
                     )}
                 >
                     <div className="flex items-center gap-3">
-                        <item.icon className={cn("w-5 h-5 flex-shrink-0", isActive && !isOpen ? "text-white" : "text-sidebar-foreground/70 group-hover:text-sidebar-foreground")} />
+                        <item.icon className={cn("w-5 h-5 flex-shrink-0", isActive && !isOpen ? "text-sidebar-primary-foreground" : "text-sidebar-foreground/70 group-hover:text-sidebar-foreground")} />
                         <span className="font-medium text-sm">{item.label}</span>
                     </div>
                     {isOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4 opacity-40" />}
@@ -160,7 +160,7 @@ const SidebarNavItem = ({ item, pathname, sidebarOpen }: { item: any, pathname: 
                                     className={cn(
                                         "flex items-center justify-between py-2 px-3 text-xs rounded-md transition-colors",
                                         isCurrent
-                                            ? "text-primary font-bold bg-primary/5"
+                                            ? "text-sidebar-primary font-bold bg-sidebar-primary/5"
                                             : "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent"
                                     )}
                                 >
@@ -168,7 +168,7 @@ const SidebarNavItem = ({ item, pathname, sidebarOpen }: { item: any, pathname: 
                                     {sub.count !== undefined && (
                                         <span className={cn(
                                             "px-1.5 py-0.5 rounded-full text-[10px] min-w-[20px] text-center",
-                                            isCurrent ? "bg-primary text-white" : "bg-sidebar-accent text-sidebar-foreground/50"
+                                            isCurrent ? "bg-sidebar-primary text-sidebar-primary-foreground" : "bg-sidebar-accent text-sidebar-foreground/50"
                                         )}>
                                             {sub.count}
                                         </span>
@@ -188,11 +188,11 @@ const SidebarNavItem = ({ item, pathname, sidebarOpen }: { item: any, pathname: 
             className={cn(
                 "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200",
                 isActive
-                    ? "bg-primary text-white shadow-md shadow-primary/20"
+                    ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-md shadow-sidebar-primary/20"
                     : "text-sidebar-foreground hover:bg-sidebar-accent"
             )}
         >
-            <item.icon className={cn("w-5 h-5 flex-shrink-0", isActive ? "text-white" : "text-sidebar-foreground/70")} />
+            <item.icon className={cn("w-5 h-5 flex-shrink-0", isActive ? "text-sidebar-primary-foreground" : "text-sidebar-foreground/70")} />
             {sidebarOpen && (
                 <span className="font-medium text-sm">{item.label}</span>
             )}
@@ -315,8 +315,8 @@ export default function TempleAdminLayout({ children }: { children: React.ReactN
         return (
             <div className="min-h-screen bg-[#FDFCF6] flex items-center justify-center">
                 <div className="flex flex-col items-center gap-4">
-                    <div className="w-12 h-12 border-4 border-[#7b4623]/20 border-t-[#7b4623] rounded-full animate-spin" />
-                    <p className="text-[#7b4623] font-serif font-medium animate-pulse">Entering Sacred Portal...</p>
+                    <div className="w-12 h-12 border-4 border-sidebar-primary/20 border-t-sidebar-primary rounded-full animate-spin" />
+                    <p className="text-sidebar-primary font-serif font-medium animate-pulse">Entering Sacred Portal...</p>
                 </div>
             </div>
         );

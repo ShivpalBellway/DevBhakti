@@ -46,3 +46,19 @@ export const fetchMyBookings = async () => {
     });
     return response.data;
 };
+
+export const downloadBookingReceipt = async (bookingId: string) => {
+    const token = localStorage.getItem("token");
+    if (!token) return { success: false };
+
+    try {
+        const response = await axios.get(`${API_URL}/bookings/${bookingId}/receipt`, {
+            headers: { Authorization: `Bearer ${token}` },
+            responseType: 'blob'
+        });
+        return { success: true, data: response.data };
+    } catch (error) {
+        console.error("Download failed", error);
+        return { success: false };
+    }
+};

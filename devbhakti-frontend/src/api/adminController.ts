@@ -330,6 +330,14 @@ export const fetchAllProductsAdmin = async () => {
     return response.data.data.products;
 };
 
+export const fetchProductOwnersAdmin = async () => {
+    const token = localStorage.getItem("admin_token");
+    const response = await axios.get(`${API_URL}/admin/products/owners`, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+
 export const fetchProductByIdAdmin = async (id: string) => {
     const token = localStorage.getItem("admin_token");
     const response = await axios.get(`${API_URL}/admin/products/${id}`, {

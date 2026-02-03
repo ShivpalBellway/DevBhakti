@@ -1,5 +1,8 @@
 import { Request, Response } from 'express';
 import { prisma } from '../../lib/prisma';
+import PDFDocument from 'pdfkit';
+import path from 'path';
+import fs from 'fs';
 
 export const createBooking = async (req: Request, res: Response) => {
     try {
@@ -260,6 +263,121 @@ export const checkAvailability = async (req: Request, res: Response) => {
 
     } catch (error) {
         console.error('Error checking availability:', error);
+        res.status(500).json({ success: false, message: 'Internal server error' });
+    }
+};
+
+export const getBookingReceipt = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+        const { userId } = (req as any).user;
+
+        const booking = await prisma.poojaBooking.findFirst({
+            where: { id, userId },
+            include: {
+                pooja: true,
+                temple: true
+            }
+        });
+
+        if (!booking) {
+            return res.status(404).json({ success: false, message: 'Booking not found or access denied' });
+        }
+
+        const doc = new PDFDocument({ margin: 50, size: 'A4' });
+        const filename = `receipt-${booking.id.slice(-6)}.pdf`;
+
+        res.setHeader('Content-disposition', 'attachment; filename="' + filename + '"');
+        res.setHeader('Content-type', 'application/pdf');
+
+        doc.pipe(res);
+
+        // --- Colors ---
+        const primaryColor = '#88542B';
+        const textColor = '#1e293b';
+        const lightGray = '#f8fafc';
+        const borderColor = '#e2e8f0';
+
+        // --- Header Section ---
+        const logoPath = path.join(__dirname, '../../../assets/logo.png');
+        if (fs.existsSync(logoPath)) {
+            doc.image(logoPath, 50, 45, { width: 60 });
+            doc.fillColor(primaryColor).fontSize(24).font('Helvetica-Bold').text('DevBhakti', 120, 55);
+            doc.fillColor(textColor).fontSize(10).font('Helvetica').text('Sacred Offerings & Temple Services', 120, 85);
+        } else {
+            doc.fillColor(primaryColor).fontSize(28).font('Helvetica-Bold').text('DevBhakti', { align: 'center' });
+            doc.fillColor(textColor).fontSize(12).font('Helvetica').text('Sacred Offerings & Temple Services', { align: 'center' });
+        }
+
+        // Receipt Info (Top Right)
+        doc.fillColor(textColor).fontSize(10).font('Helvetica-Bold').text('BOOKING RECEIPT', 400, 55, { align: 'right' });
+        doc.font('Helvetica').fontSize(9).text(`No: #${booking.id.slice(0, 8).toUpperCase()}`, 400, 70, { align: 'right' });
+        doc.text(`Date: ${new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}`, 400, 82, { align: 'right' });
+
+        doc.moveDown(4);
+        doc.strokeColor(borderColor).lineWidth(1).moveTo(50, doc.y).lineTo(550, doc.y).stroke();
+        doc.moveDown(2);
+
+        // --- Devotee & Booking Details ---
+        const topOfDetails = doc.y;
+
+        // Devotee Column
+        doc.fillColor(primaryColor).fontSize(11).font('Helvetica-Bold').text('DEVOTEE DETAILS', 50, topOfDetails);
+        doc.moveDown(0.5);
+        doc.fillColor(textColor).font('Helvetica-Bold').fontSize(12).text(booking.devoteeName);
+        doc.font('Helvetica').fontSize(10).text(`Phone: ${booking.devoteePhone}`);
+        if (booking.devoteeEmail) doc.text(`Email: ${booking.devoteeEmail}`);
+
+        // Booking Status Column (Right)
+        doc.fillColor(primaryColor).fontSize(11).font('Helvetica-Bold').text('BOOKING STATUS', 350, topOfDetails);
+        doc.moveDown(0.5);
+        const status = (booking as any).status || 'BOOKED';
+        doc.fillColor(status === 'BOOKED' ? '#059669' : '#d97706').fontSize(10).font('Helvetica-Bold').text(status, 350, doc.y);
+        doc.fillColor(textColor).font('Helvetica').fontSize(10).text(`Payment Method: Online`, 350, doc.y + 2);
+
+        doc.moveDown(4);
+
+        // --- Ritual Table ---
+        doc.fillColor(lightGray).rect(50, doc.y, 500, 25).fill();
+        doc.fillColor(primaryColor).fontSize(10).font('Helvetica-Bold').text('RITUAL DESCRIPTION', 60, doc.y + 7);
+        doc.text('AMOUNT', 400, doc.y, { align: 'right', width: 140 });
+
+        doc.moveDown(2);
+        const tableY = doc.y;
+
+        // Table Content
+        doc.fillColor(textColor).font('Helvetica-Bold').fontSize(11).text(`${(booking as any).pooja?.name || 'Pooja Service'}`, 60, tableY);
+        doc.font('Helvetica').fontSize(9).text(`Temple: ${(booking as any).temple?.name || 'N/A'}`, 60, doc.y + 2);
+        doc.text(`Package: ${booking.packageName}`, 60, doc.y + 2);
+        doc.text(`Scheduled Date: ${new Date(booking.bookingDate as any).toLocaleDateString()}`, 60, doc.y + 2);
+
+        doc.font('Helvetica-Bold').fontSize(11).text(`Rs. ${booking.packagePrice}`, 400, tableY, { align: 'right', width: 140 });
+
+        doc.moveDown(5);
+        doc.strokeColor(borderColor).lineWidth(1).moveTo(50, doc.y).lineTo(550, doc.y).stroke();
+        doc.moveDown(1);
+
+        // --- Summary Section ---
+        const summaryY = doc.y;
+        doc.fillColor(textColor).font('Helvetica').fontSize(10).text('Subtotal:', 350, summaryY);
+        doc.font('Helvetica-Bold').text(`Rs. ${booking.packagePrice}`, 400, summaryY, { align: 'right', width: 140 });
+
+        doc.moveDown(1);
+        doc.font('Helvetica-Bold').fontSize(13).text('Total Amount Paid:', 280, doc.y);
+        doc.fillColor(primaryColor).text(`Rs. ${booking.packagePrice}`, 400, doc.y - 13, { align: 'right', width: 140 });
+
+        // --- Footer ---
+        doc.moveDown(8);
+        doc.fillColor('#94a3b8').fontSize(9).font('Helvetica-Oblique').text('May the divine blessings bring peace, prosperity, and happiness to your life.', { align: 'center' });
+        doc.moveDown(0.5);
+        doc.text('This is a computer-generated receipt and does not require a physical signature.', { align: 'center' });
+        doc.moveDown(1.5);
+        doc.fillColor(primaryColor).font('Helvetica-Bold').fontSize(10).text('www.devbhakti.com', { align: 'center' });
+
+        doc.end();
+
+    } catch (error) {
+        console.error('Error generating receipt:', error);
         res.status(500).json({ success: false, message: 'Internal server error' });
     }
 };

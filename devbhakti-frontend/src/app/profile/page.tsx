@@ -31,7 +31,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { updateProfile, fetchProfile } from "@/api/authController";
-import { fetchMyBookings } from "@/api/userController";
+import { fetchMyBookings, downloadBookingReceipt } from "@/api/userController";
 import { BASE_URL } from "@/config/apiConfig";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -657,12 +657,36 @@ const ProfilePage = () => {
                                 </div>
 
                                 <div className="pt-4 flex gap-3">
-                                    <Button className="flex-1 rounded-2xl h-12 font-bold shadow-lg shadow-primary/20">
+                                    <Button
+                                        onClick={async () => {
+                                            if (!selectedBooking) return;
+                                            try {
+                                                const res = await downloadBookingReceipt(selectedBooking.id);
+                                                if (res.success) {
+                                                    const url = window.URL.createObjectURL(new Blob([res.data]));
+                                                    const link = document.createElement('a');
+                                                    link.href = url;
+                                                    link.setAttribute('download', `Receipt-${selectedBooking.id.slice(-6)}.pdf`);
+                                                    document.body.appendChild(link);
+                                                    link.click();
+                                                    link.remove();
+                                                } else {
+                                                    toast({
+                                                        title: "Download Failed",
+                                                        description: "Could not download receipt. Please try again.",
+                                                        variant: "destructive"
+                                                    });
+                                                }
+                                            } catch (e) {
+                                                console.error(e);
+                                            }
+                                        }}
+                                        className="flex-1 rounded-2xl h-12 font-bold shadow-lg shadow-primary/20">
                                         Download Receipt
                                     </Button>
-                                    <Button variant="outline" className="flex-1 rounded-2xl h-12 font-bold border-slate-200">
+                                    {/* <Button variant="outline" className="flex-1 rounded-2xl h-12 font-bold border-slate-200">
                                         Need Help?
-                                    </Button>
+                                    </Button> */}
                                 </div>
                             </div>
                         </motion.div>

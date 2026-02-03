@@ -190,8 +190,8 @@ export default function TempleDashboardPage() {
     if (isLoading) {
         return (
             <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
-                <Loader2 className="w-10 h-10 animate-spin text-primary" />
-                <p className="text-primary font-medium font-serif">Loading Dashboard Stats...</p>
+                <Loader2 className="w-10 h-10 animate-spin text-sidebar-primary" />
+                <p className="text-sidebar-primary font-medium font-serif">Loading Dashboard Stats...</p>
             </div>
         );
     }
@@ -260,7 +260,7 @@ export default function TempleDashboardPage() {
                             <CardTitle className="text-lg font-bold text-slate-800">Recent Shop Orders</CardTitle>
                             <button
                                 onClick={() => router.push('/temples/dashboard/orders')}
-                                className="text-xs font-bold text-primary hover:text-primary/80 flex items-center gap-1 uppercase tracking-wider"
+                                className="text-xs font-bold text-sidebar-primary hover:text-sidebar-primary/80 flex items-center gap-1 uppercase tracking-wider"
                             >
                                 View all
                                 <ArrowUpRight className="w-3 h-3" />
@@ -271,7 +271,7 @@ export default function TempleDashboardPage() {
                                 {recentOrdersData.length > 0 ? recentOrdersData.map((subOrder, index) => (
                                     <div
                                         key={index}
-                                        className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-100/50 hover:bg-white hover:border-primary/20 hover:shadow-md transition-all cursor-pointer group"
+                                        className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-100/50 hover:bg-white hover:border-sidebar-primary/20 hover:shadow-md transition-all cursor-pointer group"
                                         onClick={() => router.push('/temples/dashboard/orders')}
                                     >
                                         <div className="flex items-center gap-3">
@@ -312,7 +312,7 @@ export default function TempleDashboardPage() {
                             <CardTitle className="text-lg font-bold text-slate-800">Upcoming Poojas</CardTitle>
                             <button
                                 onClick={() => router.push('/temples/dashboard/bookings')}
-                                className="text-xs font-bold text-primary hover:text-primary/80 flex items-center gap-1 uppercase tracking-wider"
+                                className="text-xs font-bold text-sidebar-primary hover:text-sidebar-primary/80 flex items-center gap-1 uppercase tracking-wider"
                             >
                                 View all
                                 <ArrowUpRight className="w-3 h-3" />
@@ -323,7 +323,7 @@ export default function TempleDashboardPage() {
                                 {upcomingBookingsData.length > 0 ? upcomingBookingsData.map((booking, index) => (
                                     <div
                                         key={index}
-                                        className="flex items-center justify-between p-3 rounded-xl bg-orange-50/50 border border-orange-100/50 hover:bg-white hover:border-primary/20 hover:shadow-md transition-all cursor-pointer group"
+                                        className="flex items-center justify-between p-3 rounded-xl bg-orange-50/50 border border-orange-100/50 hover:bg-white hover:border-sidebar-primary/20 hover:shadow-md transition-all cursor-pointer group"
                                         onClick={() => router.push('/temples/dashboard/bookings')}
                                     >
                                         <div className="flex items-center gap-3">
@@ -372,7 +372,7 @@ export default function TempleDashboardPage() {
                                 <button
                                     key={action.label}
                                     onClick={() => router.push(action.href)}
-                                    className="flex flex-col items-center gap-3 p-4 rounded-xl border border-border hover:border-primary/30 hover:bg-muted/50 transition-all group"
+                                    className="flex flex-col items-center gap-3 p-4 rounded-xl border border-border hover:border-sidebar-primary/30 hover:bg-muted/50 transition-all group"
                                 >
                                     <div
                                         className={`w-12 h-12 rounded-xl ${action.color} flex items-center justify-center group-hover:scale-110 transition-transform`}

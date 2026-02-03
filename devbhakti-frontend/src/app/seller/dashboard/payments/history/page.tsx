@@ -14,6 +14,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { fetchSellerWithdrawalHistory } from "@/api/sellerController";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
+import { BASE_URL } from "@/config/apiConfig";
 import {
     Dialog,
     DialogContent,
@@ -185,24 +186,27 @@ export default function PayoutHistoryPage() {
                                 </div>
 
                                 {selectedTransaction.receiptImage && (
-                                    <div className="space-y-3 pt-2 border-t border-slate-100">
+                                    <div className="space-y-3 pt-4 border-t border-slate-100">
                                         <div className="flex items-center justify-between">
                                             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Payment Proof</p>
                                             <Button
                                                 variant="outline"
                                                 size="sm"
-                                                onClick={() => window.open(`http://localhost:5000${selectedTransaction.receiptImage}`, '_blank')}
-                                                className="h-7 text-[10px] font-bold gap-1 rounded-lg"
+                                                onClick={() => window.open(`${BASE_URL}${selectedTransaction.receiptImage}`, '_blank')}
+                                                className="h-8 text-[11px] font-bold gap-2 rounded-xl border-slate-200 hover:bg-slate-50 transition-colors"
                                             >
-                                                <Download className="w-3 h-3" /> Download Receipt
+                                                <Download className="w-3.5 h-3.5" /> Download Receipt
                                             </Button>
                                         </div>
-                                        <div className="border rounded-2xl overflow-hidden bg-slate-50 border-slate-200">
+                                        <div className="border rounded-[1.5rem] overflow-hidden bg-slate-50/50 border-slate-100 p-2 group relative cursor-pointer" onClick={() => window.open(`${BASE_URL}${selectedTransaction.receiptImage}`, '_blank')}>
                                             <img
-                                                src={`http://localhost:5000${selectedTransaction.receiptImage}`}
+                                                src={`${BASE_URL}${selectedTransaction.receiptImage}`}
                                                 alt="Payment Receipt"
-                                                className="w-full h-64 object-contain p-2"
+                                                className="w-full h-auto max-h-72 object-contain rounded-xl shadow-sm transition-transform duration-500 group-hover:scale-[1.02]"
                                             />
+                                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors flex items-center justify-center">
+                                                <Download className="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                                            </div>
                                         </div>
                                     </div>
                                 )}

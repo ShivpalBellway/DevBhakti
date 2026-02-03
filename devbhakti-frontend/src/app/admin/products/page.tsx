@@ -15,7 +15,25 @@ import {
   Clock,
   ShieldCheck,
   Store,
+  Calendar as CalendarIcon,
+  X,
+  Filter,
 } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -40,6 +58,7 @@ import {
   fetchAllProductsAdmin,
   deleteProductAdmin,
   toggleProductStatusAdmin,
+  fetchProductOwnersAdmin,
 } from "@/api/adminController";
 
 export default function ProductsManagementPage() {
@@ -49,11 +68,26 @@ export default function ProductsManagementPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [date, setDate] = useState<Date | undefined>(undefined);
+  const [selectedOwner, setSelectedOwner] = useState<string>("all");
+  const [owners, setOwners] = useState<any[]>([]);
   const { toast } = useToast();
 
   useEffect(() => {
     loadProducts();
+    loadOwners();
   }, []);
+
+  const loadOwners = async () => {
+    try {
+      const res = await fetchProductOwnersAdmin();
+      if (res.success) {
+        setOwners(res.data);
+      }
+    } catch (error) {
+      console.error("Failed to load owners", error);
+    }
+  };
 
   const loadProducts = async () => {
     setIsLoading(true);
@@ -119,13 +153,27 @@ export default function ProductsManagementPage() {
     }
   };
 
-  const filteredProducts = products.filter(
-    (product) =>
+  const filteredProducts = products.filter((product) => {
+    const matchesSearch =
       product.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       product.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      product.templeName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      product.category?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+      product.temple?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      product.seller?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      product.category?.toLowerCase().includes(searchTerm.toLowerCase());
+
+    const matchesOwner =
+      selectedOwner === "all"
+        ? true
+        : selectedOwner === "admin"
+          ? (!product.temple && !product.seller)
+          : (product.temple?.id === selectedOwner || product.seller?.id === selectedOwner);
+
+    const matchesDate = date
+      ? new Date(product.createdAt).toDateString() === date.toDateString()
+      : true;
+
+    return matchesSearch && matchesOwner && matchesDate;
+  });
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -166,8 +214,8 @@ export default function ProductsManagementPage() {
         </Button>
       </div>
 
-      <div className="flex flex-col md:flex-row gap-4">
-        <div className="relative flex-1">
+      <div className="flex flex-col md:flex-row gap-4 items-end">
+        <div className="relative flex-1 w-full">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
             placeholder="Search by product name, category, or temple..."
@@ -175,6 +223,73 @@ export default function ProductsManagementPage() {
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
+        </div>
+
+        <div className="flex gap-2 w-full md:w-auto">
+          <div className="w-full md:w-[200px]">
+            <Select value={selectedOwner} onValueChange={setSelectedOwner}>
+              <SelectTrigger className="h-10">
+                <SelectValue placeholder="Filter by Owner" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Owners</SelectItem>
+                <SelectItem value="admin">DevBhakti Exclusive</SelectItem>
+                {owners.map((owner) => (
+                  <SelectItem key={owner.id} value={owner.id}>
+                    <span className="flex items-center gap-2">
+                      <span className={cn(
+                        "text-[10px] px-1.5 py-0.5 rounded-md font-bold uppercase tracking-wider",
+                        owner.type === 'Temple' ? "bg-amber-100 text-amber-700" : "bg-blue-100 text-blue-700"
+                      )}>
+                        {owner.type}
+                      </span>
+                      {owner.name}
+                    </span>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="flex gap-2">
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    "w-[180px] h-10 justify-start text-left font-normal",
+                    !date && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {date ? format(date, "PPP") : <span>Filter by date</span>}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="end">
+                <Calendar
+                  mode="single"
+                  selected={date}
+                  onSelect={setDate}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
+            {(date || selectedOwner !== "all" || searchTerm) && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => {
+                  setDate(undefined);
+                  setSelectedOwner("all");
+                  setSearchTerm("");
+                }}
+                className="h-10 w-10 text-muted-foreground"
+                title="Clear all filters"
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            )}
+          </div>
         </div>
       </div>
 

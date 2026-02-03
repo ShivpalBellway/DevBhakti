@@ -244,6 +244,18 @@ export const getAllProducts = async (req: Request, res: Response) => {
                 }
               }
             }
+          },
+          seller: {
+            select: {
+              id: true,
+              name: true,
+              location: true,
+              user: {
+                select: {
+                  role: true
+                }
+              }
+            }
           }
         },
         orderBy: { createdAt: "desc" },
@@ -802,6 +814,13 @@ export const getPublicProducts = async (req: Request, res: Response) => {
               name: true,
               location: true
             }
+          },
+          seller: {
+            select: {
+              id: true,
+              name: true,
+              location: true
+            }
           }
         },
         orderBy: { createdAt: "desc" },
@@ -828,6 +847,57 @@ export const getPublicProducts = async (req: Request, res: Response) => {
     res.status(500).json({
       success: false,
       message: "Internal server error"
+    });
+  }
+};
+
+// Get All Potential Product Owners (Temples & Sellers)
+export const getProductOwners = async (req: Request, res: Response) => {
+  try {
+    const [temples, sellers] = await Promise.all([
+      prisma.temple.findMany({
+        select: {
+          id: true,
+          name: true,
+          userId: true,
+          user: { select: { role: true } }
+        }
+      }),
+      prisma.sellerProfile.findMany({
+        select: {
+          id: true,
+          name: true,
+          userId: true,
+          user: { select: { role: true } }
+        }
+      })
+    ]);
+
+    const owners = [
+      ...temples.map(t => ({
+        id: t.id,
+        name: t.name,
+        type: 'Temple',
+        userId: t.userId
+      })),
+      ...sellers.map(s => ({
+        id: s.id,
+        name: s.name,
+        type: 'Seller',
+        userId: s.userId
+      }))
+    ].sort((a, b) => a.name.localeCompare(b.name));
+
+    res.status(200).json({
+      success: true,
+      data: owners
+    });
+  } catch (error: any) {
+    console.error("Get Product Owners Error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch owners",
+      details: error.message
     });
   }
 };

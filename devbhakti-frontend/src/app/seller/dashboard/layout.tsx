@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
     LayoutDashboard,
     ShoppingBag,
@@ -62,14 +62,14 @@ const sellerSidebarGroups = [
         title: "Business",
         items: [
             { label: "Customers", icon: Users, href: "/seller/dashboard/customers" },
-          
+
 
         ]
     },
     {
         title: "Finance",
         items: [
-{ label: "Transaction Ledger", icon: IndianRupee, href: "/seller/dashboard/payments" },
+            { label: "Transaction Ledger", icon: IndianRupee, href: "/seller/dashboard/payments" },
             { label: "Withdraw Request", icon: Wallet, href: "/seller/dashboard/payments/withdraw" },
             { label: "Payout History", icon: CalendarCheck, href: "/seller/dashboard/payments/history" },
             { label: "Bank Details", icon: Building2, href: "/seller/dashboard/payments/bank-details" }
@@ -86,6 +86,7 @@ const sellerSidebarGroups = [
 export default function SellerDashboardLayout({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
     const router = useRouter();
+    const searchParams = useSearchParams();
     const [sidebarOpen, setSidebarOpen] = useState(true);
     const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
     const [user, setUser] = useState<any>(null);
@@ -193,7 +194,12 @@ export default function SellerDashboardLayout({ children }: { children: React.Re
                             )}
                             <div className="space-y-1">
                                 {group.items.map((item) => {
-                                    const isActive = pathname === item.href;
+                                    const itemPathname = item.href.split('?')[0];
+                                    const itemStatus = new URLSearchParams(item.href.split('?')[1] || "").get("status");
+                                    const currentStatus = searchParams.get("status");
+
+                                    const isActive = pathname === itemPathname && currentStatus === itemStatus;
+
                                     return (
                                         <Link
                                             key={item.href}

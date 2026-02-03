@@ -17,7 +17,25 @@ import {
     MoreVertical,
     Power,
     PowerOff,
+    Calendar as CalendarIcon,
+    X,
+    Filter,
 } from "lucide-react";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
+import { Calendar } from "@/components/ui/calendar";
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from "@/components/ui/popover";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -59,6 +77,8 @@ export default function TemplesManagementPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState("");
     const [selectedTemple, setSelectedTemple] = useState<any>(null);
+    const [selectedTempleFilter, setSelectedTempleFilter] = useState<string>("all");
+    const [date, setDate] = useState<Date | undefined>(undefined);
     const [isPreviewOpen, setIsPreviewOpen] = useState(false);
     const [updateRequestsCount, setUpdateRequestsCount] = useState(0);
     const { toast } = useToast();
@@ -205,13 +225,24 @@ export default function TemplesManagementPage() {
         }
     };
 
-    const filteredTemples = temples.filter(
-        (inst) =>
+    const filteredTemples = temples.filter((inst) => {
+        const matchesSearch =
             inst.userName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
             inst.userEmail?.toLowerCase().includes(searchTerm.toLowerCase()) ||
             inst.templeName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            inst.templeLocation?.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+            inst.templeLocation?.toLowerCase().includes(searchTerm.toLowerCase());
+
+        const matchesTemple =
+            selectedTempleFilter === "all"
+                ? true
+                : inst.templeId === selectedTempleFilter;
+
+        const matchesDate = date
+            ? new Date(inst.temple?.createdAt || inst.createdAt).toDateString() === date.toDateString()
+            : true;
+
+        return matchesSearch && matchesTemple && matchesDate;
+    });
 
     return (
         <div className="space-y-6">
@@ -237,15 +268,73 @@ export default function TemplesManagementPage() {
                 </div>
             </div>
 
-            <div className="flex flex-col md:flex-row gap-4">
-                <div className="relative flex-1">
+            <div className="flex flex-col md:flex-row gap-4 items-end">
+                <div className="relative flex-1 w-full">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                     <Input
-                        placeholder="Search by owner or temple name..."
+                        placeholder="Search by owner, temple, or location..."
                         className="pl-10 h-10"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                     />
+                </div>
+
+                <div className="flex gap-2 w-full md:w-auto">
+                    <div className="w-full md:w-[200px]">
+                        <Select value={selectedTempleFilter} onValueChange={setSelectedTempleFilter}>
+                            <SelectTrigger className="h-10">
+                                <SelectValue placeholder="Select Temple" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">All Temples</SelectItem>
+                                {temples.map((inst) => (
+                                    <SelectItem key={inst.templeId} value={inst.templeId}>
+                                        {inst.templeName}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                    <div className="flex gap-2">
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <Button
+                                    variant="outline"
+                                    className={cn(
+                                        "w-[180px] h-10 justify-start text-left font-normal",
+                                        !date && "text-muted-foreground"
+                                    )}
+                                >
+                                    <CalendarIcon className="mr-2 h-4 w-4" />
+                                    {date ? format(date, "PPP") : <span>Filter by date</span>}
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="end">
+                                <Calendar
+                                    mode="single"
+                                    selected={date}
+                                    onSelect={setDate}
+                                    initialFocus
+                                />
+                            </PopoverContent>
+                        </Popover>
+                        {(date || selectedTempleFilter !== "all" || searchTerm) && (
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => {
+                                    setDate(undefined);
+                                    setSelectedTempleFilter("all");
+                                    setSearchTerm("");
+                                }}
+                                className="h-10 w-10 text-muted-foreground"
+                                title="Clear all filters"
+                            >
+                                <X className="w-4 h-4" />
+                            </Button>
+                        )}
+                    </div>
                 </div>
             </div>
 
