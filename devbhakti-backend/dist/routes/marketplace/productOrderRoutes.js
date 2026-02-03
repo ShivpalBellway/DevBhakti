@@ -8,4 +8,5 @@ router.post("/", productOrderController_1.createOrder);
 router.get("/my-orders", authMiddleware_1.authenticate, productOrderController_1.getMyOrders);
 router.get("/user/:userId", productOrderController_1.getMyOrders); // Keep for compatibility
 router.get("/:id", productOrderController_1.getOrderById);
+router.get("/:id/invoice", productOrderController_1.getOrderInvoice);
 exports.default = router;

@@ -17,7 +17,13 @@ export function middleware(request: NextRequest) {
         'lvh.me'
     ];
     
-    const isMainDomain = mainDomains.includes(baseHostname) || baseHostname === 'www.devbhakti.in';
+    // Check if hostname is an IP address (IPv4 or IPv6)
+    const isIpAddress = /^(\d{1,3}\.){3}\d{1,3}$/.test(baseHostname) || 
+                        /^([0-9a-f]{0,4}:){2,7}[0-9a-f]{0,4}$/i.test(baseHostname);
+    
+    const isMainDomain = mainDomains.includes(baseHostname) || 
+                         baseHostname === 'www.devbhakti.in' || 
+                         isIpAddress;
 
     if (!isMainDomain) {
         const parts = baseHostname.split('.');

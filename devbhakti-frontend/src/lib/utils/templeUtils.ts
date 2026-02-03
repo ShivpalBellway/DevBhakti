@@ -42,8 +42,12 @@ export const getMainDomainUrl = (path: string = ''): string => {
     const hostname = window.location.hostname;
     const port = window.location.port ? `:${window.location.port}` : '';
     
-    // If not on a subdomain, just return path
-    if (hostname === 'localhost' || hostname === 'lvh.me' || hostname === 'devbhakti.in') {
+    // Check if hostname is an IP address
+    const isIpAddress = /^(\d{1,3}\.){3}\d{1,3}$/.test(hostname) || 
+                        /^([0-9a-f]{0,4}:){2,7}[0-9a-f]{0,4}$/i.test(hostname);
+    
+    // If not on a subdomain or is IP address, just return path
+    if (hostname === 'localhost' || hostname === 'lvh.me' || hostname === 'devbhakti.in' || isIpAddress) {
         return path;
     }
     

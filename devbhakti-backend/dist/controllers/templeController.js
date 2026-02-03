@@ -76,7 +76,8 @@ const getTempleById = async (req, res) => {
             where: {
                 OR: [
                     { id: id },
-                    { slug: id }
+                    { slug: id },
+                    { subdomain: id }
                 ],
                 user: {
                     isVerified: true,

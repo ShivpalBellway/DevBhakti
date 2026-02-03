@@ -12,6 +12,11 @@ out/
 .env
 .env.*
 
+# Build outputs
+devbhakti-backend/dist/
+devbhakti-frontend/.next/
+devbhakti-frontend/out/
+
 # Uploads
 # uploads/
 

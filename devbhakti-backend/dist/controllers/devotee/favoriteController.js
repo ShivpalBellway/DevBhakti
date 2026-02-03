@@ -105,8 +105,8 @@ const getFavorites = async (req, res) => {
                             }
                         }
                     }
-                }
-                // product: true // Future: Add product relation when marketplace is ready
+                },
+                product: true
             },
             orderBy: {
                 createdAt: 'desc'
