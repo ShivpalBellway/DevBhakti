@@ -1,5 +1,4 @@
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+import { API_URL } from "@/config/apiConfig";
 
 const getAuthHeaders = () => {
     const token = localStorage.getItem('token');

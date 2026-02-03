@@ -1,10 +1,12 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Star, ArrowRight, Package } from "lucide-react";
+import { Star, ArrowRight, Package, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { fetchPublicProducts } from "@/api/publicController";
+import { fetchUserFavorites, addFavorite, removeFavorite } from "@/api/userController";
+import { useToast } from "@/hooks/use-toast";
 
 interface Product {
   id: string;
@@ -22,23 +24,64 @@ interface Product {
 
 const MarketplaceSection: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
+  const [favorites, setFavorites] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const { toast } = useToast();
   const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
   useEffect(() => {
-    const loadProducts = async () => {
+    const loadData = async () => {
       setIsLoading(true);
       try {
-        const data = await fetchPublicProducts({ limit: 8 });
-        setProducts(data);
+        const [productsData, favoritesRes] = await Promise.all([
+          fetchPublicProducts({ limit: 8 }),
+          fetchUserFavorites()
+        ]);
+
+        setProducts(productsData);
+
+        if (favoritesRes.success && favoritesRes.data) {
+          const productIds = favoritesRes.data
+            .filter((f: any) => f.productId)
+            .map((f: any) => f.productId);
+          setFavorites(productIds);
+        }
       } catch (error) {
-        console.error("Failed to load products:", error);
+        console.error("Failed to load marketplace data:", error);
       } finally {
         setIsLoading(false);
       }
     };
-    loadProducts();
+    loadData();
   }, []);
+
+  const toggleFavorite = async (e: React.MouseEvent, id: string) => {
+    e.preventDefault(); // Prevent navigation to product page
+    e.stopPropagation();
+
+    const isFav = favorites.includes(id);
+
+    // Optimistic Update
+    setFavorites((prev) =>
+      isFav ? prev.filter((f) => f !== id) : [...prev, id]
+    );
+
+    try {
+      if (isFav) {
+        await removeFavorite({ productId: id });
+        toast({ title: "Removed from favorites" });
+      } else {
+        await addFavorite({ productId: id });
+        toast({ title: "Added to favorites" });
+      }
+    } catch (error) {
+      // Revert
+      setFavorites((prev) =>
+        isFav ? [...prev, id] : prev.filter((f) => f !== id)
+      );
+      toast({ title: "Action failed", variant: "destructive" });
+    }
+  };
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('en-IN', {
@@ -92,7 +135,7 @@ const MarketplaceSection: React.FC = () => {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ duration: 0.5, delay: index * 0.1 }}
-                  className="min-w-[280px] max-w-[280px] bg-white rounded-[2rem] p-4 border border-[#794A05]/10 shadow-sm hover:shadow-xl hover:shadow-[#794A05]/5 transition-all duration-500 group snap-start"
+                  className="min-w-[280px] max-w-[280px] bg-white rounded-[2rem] p-4 border border-[#794A05]/10 shadow-sm hover:shadow-xl hover:shadow-[#794A05]/5 transition-all duration-500 group snap-start relative"
                 >
                   <Link href={`/marketplace/product/${product.id}`}>
                     {/* Product Image */}
@@ -113,6 +156,16 @@ const MarketplaceSection: React.FC = () => {
                           {product.temple?.name ? "Temple Sourced" : "Sacred Item"}
                         </span>
                       </div>
+
+                      {/* Favorite Button */}
+                      <button
+                        onClick={(e) => toggleFavorite(e, product.id)}
+                        className="absolute top-3 right-3 p-2 bg-white/90 backdrop-blur-sm rounded-full shadow-sm hover:bg-white transition-all transform hover:scale-110 active:scale-95 z-10"
+                      >
+                        <Heart
+                          className={`w-4 h-4 transition-colors ${favorites.includes(product.id) ? "fill-red-500 text-red-500" : "text-[#794A05]"}`}
+                        />
+                      </button>
                     </div>
 
                     {/* Product Info */}
