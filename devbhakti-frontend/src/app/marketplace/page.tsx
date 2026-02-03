@@ -31,7 +31,43 @@ import { fetchPublicProducts } from "@/api/publicController";
 import { fetchActiveCategoriesAdmin } from "@/api/adminController";
 import { fetchUserFavorites, addFavorite, removeFavorite } from "@/api/userController";
 
-// ... (existing interfaces)
+interface Product {
+  id: string;
+  name: string;
+  description: string;
+  category: string;
+  status: string;
+  image: string | null;
+  templeId?: string | null;
+  categoryId?: string | null;
+  highlights?: string | null;
+  longDescription?: string | null;
+  shippingInfo?: string | null;
+  origin?: string | null;
+  rating?: number | null;
+  sellerId?: string | null;
+  temple?: {
+    name: string;
+  } | null;
+  variants: Array<{
+    id: string;
+    name: string;
+    price: number;
+    stock: number;
+  }>;
+}
+
+interface Category {
+  id: string;
+  name: string;
+  description: string | null;
+  image: string | null;
+  isActive: boolean;
+  sortOrder: number;
+  _count: {
+    products: number;
+  };
+}
 
 function MarketplaceContent() {
   const router = useRouter();
