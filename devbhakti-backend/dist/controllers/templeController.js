@@ -140,15 +140,38 @@ const getPoojaById = async (req, res) => {
         const pooja = await prisma_1.prisma.pooja.findFirst({
             where: {
                 id: String(id),
-                temple: {
-                    user: {
-                        isVerified: true,
-                        role: 'INSTITUTION'
+                OR: [
+                    { isMaster: true },
+                    {
+                        temple: {
+                            user: {
+                                isVerified: true,
+                                role: 'INSTITUTION'
+                            }
+                        }
                     }
-                }
+                ]
             },
             include: {
-                temple: true
+                temple: true,
+                templeCopies: {
+                    where: {
+                        status: true,
+                        temple: {
+                            user: { isVerified: true }
+                        }
+                    },
+                    include: {
+                        temple: {
+                            select: {
+                                id: true,
+                                name: true,
+                                location: true,
+                                image: true
+                            }
+                        }
+                    }
+                }
             }
         });
         if (!pooja) {
@@ -178,16 +201,18 @@ exports.getPoojaById = getPoojaById;
 const getAllPoojas = async (req, res) => {
     try {
         const userId = getUserIdFromRequest(req);
+        const { templeId } = req.query;
+        const where = {
+            status: true
+        };
+        if (templeId) {
+            where.templeId = String(templeId);
+        }
+        else {
+            where.isMaster = true; // Global list only shows Master templates
+        }
         const poojas = await prisma_1.prisma.pooja.findMany({
-            where: {
-                status: true,
-                temple: {
-                    user: {
-                        isVerified: true,
-                        role: 'INSTITUTION'
-                    }
-                }
-            },
+            where,
             include: {
                 temple: {
                     select: {
@@ -195,6 +220,9 @@ const getAllPoojas = async (req, res) => {
                         location: true,
                         image: true
                     }
+                },
+                _count: {
+                    select: { templeCopies: true }
                 }
             }
         });

@@ -2,6 +2,8 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.toggleSellerStatus = exports.deleteSeller = exports.updateSeller = exports.getSellerById = exports.getAllSellers = exports.createSeller = void 0;
 const prisma_1 = require("../../lib/prisma");
+const shiprocketService_1 = require("../../services/shiprocketService");
+const client_1 = require("@prisma/client");
 // Helper to normalize phone number to +91XXXXXXXXXX format
 const normalizePhone = (phone) => {
     // Remove all non-numeric characters
@@ -38,9 +40,9 @@ const createSeller = async (req, res) => {
             return res.status(400).json({ message: 'User with this email or phone already exists' });
         }
         // Transaction to create User and associated SellerProfile (Store)
-        const result = await prisma_1.prisma.$transaction(async (prisma) => {
+        const result = await prisma_1.prisma.$transaction(async (tx) => {
             // 1. Create User
-            const user = await prisma.user.create({
+            const user = await tx.user.create({
                 data: {
                     name: sellerName,
                     email: email,
@@ -50,7 +52,7 @@ const createSeller = async (req, res) => {
                 }
             });
             // 2. Create SellerProfile (Store entity)
-            const sellerProfile = await prisma.sellerProfile.create({
+            const sellerProfile = await tx.sellerProfile.create({
                 data: {
                     name: storeName,
                     location: address || '', // Using address as location
@@ -60,12 +62,48 @@ const createSeller = async (req, res) => {
                     userId: user.id,
                     openTime: '9:00 AM - 9:00 PM', // Default
                     productCommissionRate: parseFloat(productCommissionRate) || 10.0,
+                    pickupLocation: `PICKUP_${Math.random().toString(36).substring(2, 7).toUpperCase()}`
                 }
             });
+            // 3. Handle Commission Slabs
+            const commissionSlabs = req.body.commissionSlabs;
+            if (commissionSlabs && Array.isArray(commissionSlabs)) {
+                await tx.commissionSlab.createMany({
+                    data: commissionSlabs.map((s) => ({
+                        minAmount: parseFloat(s.minAmount),
+                        maxAmount: s.maxAmount ? parseFloat(s.maxAmount) : null,
+                        platformFee: parseFloat(s.platformFee || 0),
+                        percentage: parseFloat(s.percentage || 0),
+                        slabType: client_1.SlabType.SELLER,
+                        targetId: sellerProfile.id,
+                        category: client_1.CommissionCategory.MARKETPLACE,
+                        isActive: true
+                    }))
+                });
+            }
             return { user, sellerProfile };
         });
+        // 3. Register Pickup Location with Shiprocket
+        try {
+            const pickupData = {
+                pickup_location: result.sellerProfile.pickupLocation,
+                name: sellerName,
+                email: email,
+                phone: normalizedPhone,
+                address: address || '',
+                city: "Delhi", // Defaulting for now, ideally parsed from address
+                state: "Delhi",
+                country: "India",
+                pin_code: "110001" // Defaulting for now
+            };
+            await (0, shiprocketService_1.createShiprocketPickupLocation)(pickupData);
+            console.log("Shiprocket Pickup Location Created Successfully");
+        }
+        catch (srError) {
+            console.error("Failed to create Shiprocket Pickup Location:", srError);
+        }
         res.status(201).json({
-            message: 'Seller created successfully',
+            message: 'Seller created successfully and synced with Shiprocket',
             data: result
         });
     }
@@ -155,6 +193,10 @@ const getSellerById = async (req, res) => {
         if (!user || user.role !== 'SELLER') {
             return res.status(404).json({ message: 'Seller not found' });
         }
+        // Fetch slabs separately for the seller profile
+        const slabs = user.sellerProfile ? await prisma_1.prisma.commissionSlab.findMany({
+            where: { targetId: user.sellerProfile.id, slabType: client_1.SlabType.SELLER, isActive: true }
+        }) : [];
         // Cast to any to avoid partial type issues for now
         const userAny = user;
         const formattedSeller = {
@@ -173,7 +215,8 @@ const getSellerById = async (req, res) => {
             logo: userAny.sellerProfile?.image || userAny.profileImage || '',
             totalProducts: userAny.sellerProfile?.products?.length || 0,
             totalOrders: userAny.sellerProfile?.subOrders?.length || 0,
-            totalSales: userAny.sellerProfile?.subOrders?.reduce((sum, order) => sum + order.totalAmount, 0) || 0
+            totalSales: userAny.sellerProfile?.subOrders?.reduce((sum, order) => sum + order.totalAmount, 0) || 0,
+            commissionSlabs: slabs
         };
         res.json({
             status: 'success',
@@ -193,9 +236,9 @@ const updateSeller = async (req, res) => {
         const { storeName, sellerName, email, phone, status, address, productCommissionRate } = req.body;
         const normalizedPhone = phone ? normalizePhone(phone) : undefined;
         // Transaction to update User and SellerProfile
-        await prisma_1.prisma.$transaction(async (prisma) => {
+        await prisma_1.prisma.$transaction(async (tx) => {
             // Update User
-            await prisma.user.update({
+            await tx.user.update({
                 where: { id: id },
                 data: {
                     name: sellerName,
@@ -205,11 +248,11 @@ const updateSeller = async (req, res) => {
                 }
             });
             // Update SellerProfile (Store)
-            // First find the sellerProfile associated with this user
-            const user = await prisma.user.findUnique({ where: { id: id }, include: { sellerProfile: true } });
+            const user = await tx.user.findUnique({ where: { id: id }, include: { sellerProfile: true } });
             if (user && user.sellerProfile) {
-                await prisma.sellerProfile.update({
-                    where: { id: user.sellerProfile.id },
+                const sellerProfileId = user.sellerProfile.id;
+                await tx.sellerProfile.update({
+                    where: { id: sellerProfileId },
                     data: {
                         name: storeName,
                         fullAddress: address,
@@ -217,6 +260,29 @@ const updateSeller = async (req, res) => {
                         productCommissionRate: parseFloat(productCommissionRate)
                     }
                 });
+                // Handle Commission Slabs Update
+                const commissionSlabs = req.body.commissionSlabs;
+                if (commissionSlabs && Array.isArray(commissionSlabs)) {
+                    // Delete old slabs
+                    await tx.commissionSlab.deleteMany({
+                        where: { targetId: sellerProfileId, slabType: client_1.SlabType.SELLER }
+                    });
+                    // Create new slabs
+                    if (commissionSlabs.length > 0) {
+                        await tx.commissionSlab.createMany({
+                            data: commissionSlabs.map((s) => ({
+                                minAmount: parseFloat(s.minAmount),
+                                maxAmount: s.maxAmount ? parseFloat(s.maxAmount) : null,
+                                platformFee: parseFloat(s.platformFee || 0),
+                                percentage: parseFloat(s.percentage || 0),
+                                slabType: client_1.SlabType.SELLER,
+                                targetId: sellerProfileId,
+                                category: client_1.CommissionCategory.MARKETPLACE,
+                                isActive: true
+                            }))
+                        });
+                    }
+                }
             }
         });
         res.json({ message: 'Seller updated successfully' });

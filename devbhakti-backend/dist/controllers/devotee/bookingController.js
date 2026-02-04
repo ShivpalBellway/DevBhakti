@@ -1,7 +1,16 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.checkAvailability = exports.getMyBookings = exports.createBooking = void 0;
+exports.getUnavailableDates = exports.getBookingReceipt = exports.checkAvailability = exports.getMyBookings = exports.createBooking = void 0;
 const prisma_1 = require("../../lib/prisma");
+const pdfkit_1 = __importDefault(require("pdfkit"));
+const path_1 = __importDefault(require("path"));
+const fs_1 = __importDefault(require("fs"));
+const razorpay_1 = __importDefault(require("../../lib/razorpay"));
+const commissionSlabController_1 = require("../admin/commissionSlabController");
+const client_1 = require("@prisma/client");
 const createBooking = async (req, res) => {
     try {
         const { userId } = req.user;
@@ -9,24 +18,36 @@ const createBooking = async (req, res) => {
         if (!poojaId || !packageName || !packagePrice || !devoteeName || !devoteePhone) {
             return res.status(400).json({ success: false, message: 'All fields are required' });
         }
-        // Get pooja and temple commission rate
+        // Get pooja and calculate commission using new slab system
         const pooja = await prisma_1.prisma.pooja.findUnique({
             where: { id: poojaId },
             include: {
-                temple: {
-                    select: {
-                        id: true,
-                        poojaCommissionRate: true
-                    }
-                }
+                temple: true
             }
         });
         if (!pooja) {
             return res.status(404).json({ success: false, message: 'Pooja not found' });
         }
-        const commissionRate = pooja.temple?.poojaCommissionRate || 5.0;
-        const commissionAmount = (packagePrice * commissionRate) / 100;
-        const netEarning = packagePrice - commissionAmount;
+        // --- PRICE VERIFICATION ---
+        // Ensure the price matches the database record to prevent spoofing
+        let verifiedPrice = pooja.price;
+        // If packages exist, find the one provided in req.body
+        if (pooja.packages && Array.isArray(pooja.packages)) {
+            const pkg = pooja.packages.find(p => p.name === packageName);
+            if (pkg) {
+                verifiedPrice = parseFloat(pkg.price);
+            }
+            else {
+                return res.status(400).json({ success: false, message: `Package '${packageName}' not found in this pooja` });
+            }
+        }
+        // Optional: If price in body is significantly different, you might want to log it or use verifiedPrice
+        const finalPrice = verifiedPrice || parseFloat(packagePrice);
+        // Calculate commission via Slab System using verified price
+        const commissionData = await (0, commissionSlabController_1.getCommissionForAmount)(finalPrice, client_1.SlabType.TEMPLE, pooja.templeId || undefined, client_1.CommissionCategory.POOJA);
+        const commissionAmount = commissionData.totalCommission;
+        // Since platform fee is added on top and charged to user, temple gets full price
+        const netEarning = finalPrice;
         // --- AVAILABILITY CHECK ---
         // 1. Global Temple Availability
         // We use 'findFirst' because 'poojaId: null' might be tricky with some prisma versions in composite unique constraints if not handled perfectly, 
@@ -36,7 +57,7 @@ const createBooking = async (req, res) => {
         const globalAvailability = await prisma_1.prisma.bookingAvailability.findFirst({
             where: {
                 templeId: pooja.templeId,
-                poojaId: null,
+                poojaId: undefined, // Using undefined to represent NULL in some prisma versions or use { equals: null }
                 date: bookingDate
             }
         });
@@ -78,6 +99,8 @@ const createBooking = async (req, res) => {
                 return res.status(400).json({ success: false, message: 'Daily limit reached for this ritual.' });
             }
         }
+        // (Existing availability check code stays here...)
+        // ...rest of availability check...
         // --------------------------
         // Create booking and ledger entry in a transaction
         const booking = await prisma_1.prisma.$transaction(async (tx) => {
@@ -87,13 +110,13 @@ const createBooking = async (req, res) => {
                     poojaId,
                     templeId: pooja.templeId,
                     packageName,
-                    packagePrice,
+                    packagePrice: finalPrice, // Use verified price
                     devoteeName,
                     devoteePhone,
-                    devoteeEmail,
-                    bookingDate,
-                    address,
-                    specialRequests,
+                    devoteeEmail: devoteeEmail,
+                    bookingDate: bookingDate,
+                    address: address,
+                    specialRequests: specialRequests,
                     status: 'BOOKED',
                     commissionAmount,
                     netEarning
@@ -104,7 +127,7 @@ const createBooking = async (req, res) => {
                 data: {
                     templeId: pooja.templeId,
                     amount: netEarning,
-                    grossAmount: packagePrice,
+                    grossAmount: finalPrice, // Use verified price
                     commission: commissionAmount,
                     type: "POOJA_EARNING",
                     sourceId: newBooking.id,
@@ -116,8 +139,13 @@ const createBooking = async (req, res) => {
         });
         res.status(201).json({
             success: true,
-            message: 'Pooja booked successfully',
-            data: booking
+            message: 'Pooja initiated. Complete payment to confirm.',
+            data: booking,
+            razorpayOrder: await razorpay_1.default.orders.create({
+                amount: Math.round(packagePrice * 100),
+                currency: "INR",
+                receipt: `pooja_rcpt_${booking.id.slice(-10)}`,
+            })
         });
     }
     catch (error) {
@@ -160,7 +188,7 @@ const checkAvailability = async (req, res) => {
         const globalAvailability = await prisma_1.prisma.bookingAvailability.findFirst({
             where: {
                 templeId: templeId,
-                poojaId: null,
+                poojaId: undefined,
                 date: date
             }
         });
@@ -232,3 +260,156 @@ const checkAvailability = async (req, res) => {
     }
 };
 exports.checkAvailability = checkAvailability;
+const getBookingReceipt = async (req, res) => {
+    try {
+        const id = req.params.id;
+        const { userId } = req.user;
+        const booking = await prisma_1.prisma.poojaBooking.findFirst({
+            where: { id, userId },
+            include: {
+                pooja: true,
+                temple: true
+            }
+        });
+        if (!booking) {
+            return res.status(404).json({ success: false, message: 'Booking not found or access denied' });
+        }
+        const doc = new pdfkit_1.default({ margin: 50, size: 'A4' });
+        const filename = `receipt-${booking.id.slice(-6)}.pdf`;
+        res.setHeader('Content-disposition', 'attachment; filename="' + filename + '"');
+        res.setHeader('Content-type', 'application/pdf');
+        doc.pipe(res);
+        // --- Colors ---
+        const primaryColor = '#88542B';
+        const textColor = '#1e293b';
+        const lightGray = '#f8fafc';
+        const borderColor = '#e2e8f0';
+        // --- Header Section ---
+        const logoPath = path_1.default.join(__dirname, '../../../assets/logo.png');
+        if (fs_1.default.existsSync(logoPath)) {
+            doc.image(logoPath, 50, 45, { width: 60 });
+            doc.fillColor(primaryColor).fontSize(24).font('Helvetica-Bold').text('DevBhakti', 120, 55);
+            doc.fillColor(textColor).fontSize(10).font('Helvetica').text('Sacred Offerings & Temple Services', 120, 85);
+        }
+        else {
+            doc.fillColor(primaryColor).fontSize(28).font('Helvetica-Bold').text('DevBhakti', { align: 'center' });
+            doc.fillColor(textColor).fontSize(12).font('Helvetica').text('Sacred Offerings & Temple Services', { align: 'center' });
+        }
+        // Receipt Info (Top Right)
+        doc.fillColor(textColor).fontSize(10).font('Helvetica-Bold').text('BOOKING RECEIPT', 400, 55, { align: 'right' });
+        doc.font('Helvetica').fontSize(9).text(`No: #${booking.id.slice(0, 8).toUpperCase()}`, 400, 70, { align: 'right' });
+        doc.text(`Date: ${new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}`, 400, 82, { align: 'right' });
+        doc.moveDown(4);
+        doc.strokeColor(borderColor).lineWidth(1).moveTo(50, doc.y).lineTo(550, doc.y).stroke();
+        doc.moveDown(2);
+        // --- Devotee & Booking Details ---
+        const topOfDetails = doc.y;
+        // Devotee Column
+        doc.fillColor(primaryColor).fontSize(11).font('Helvetica-Bold').text('DEVOTEE DETAILS', 50, topOfDetails);
+        doc.moveDown(0.5);
+        doc.fillColor(textColor).font('Helvetica-Bold').fontSize(12).text(booking.devoteeName);
+        doc.font('Helvetica').fontSize(10).text(`Phone: ${booking.devoteePhone}`);
+        if (booking.devoteeEmail)
+            doc.text(`Email: ${booking.devoteeEmail}`);
+        // Booking Status Column (Right)
+        doc.fillColor(primaryColor).fontSize(11).font('Helvetica-Bold').text('BOOKING STATUS', 350, topOfDetails);
+        doc.moveDown(0.5);
+        const status = booking.status || 'BOOKED';
+        doc.fillColor(status === 'BOOKED' ? '#059669' : '#d97706').fontSize(10).font('Helvetica-Bold').text(status, 350, doc.y);
+        doc.fillColor(textColor).font('Helvetica').fontSize(10).text(`Payment Method: Online`, 350, doc.y + 2);
+        doc.moveDown(4);
+        // --- Ritual Table ---
+        doc.fillColor(lightGray).rect(50, doc.y, 500, 25).fill();
+        doc.fillColor(primaryColor).fontSize(10).font('Helvetica-Bold').text('RITUAL DESCRIPTION', 60, doc.y + 7);
+        doc.text('AMOUNT', 400, doc.y, { align: 'right', width: 140 });
+        doc.moveDown(2);
+        const tableY = doc.y;
+        // Table Content
+        doc.fillColor(textColor).font('Helvetica-Bold').fontSize(11).text(`${booking.pooja?.name || 'Pooja Service'}`, 60, tableY);
+        doc.font('Helvetica').fontSize(9).text(`Temple: ${booking.temple?.name || 'N/A'}`, 60, doc.y + 2);
+        doc.text(`Package: ${booking.packageName}`, 60, doc.y + 2);
+        doc.text(`Scheduled Date: ${new Date(booking.bookingDate).toLocaleDateString()}`, 60, doc.y + 2);
+        doc.font('Helvetica-Bold').fontSize(11).text(`Rs. ${booking.packagePrice}`, 400, tableY, { align: 'right', width: 140 });
+        doc.moveDown(5);
+        doc.strokeColor(borderColor).lineWidth(1).moveTo(50, doc.y).lineTo(550, doc.y).stroke();
+        doc.moveDown(1);
+        // --- Summary Section ---
+        const summaryY = doc.y;
+        doc.fillColor(textColor).font('Helvetica').fontSize(10).text('Subtotal:', 350, summaryY);
+        doc.font('Helvetica-Bold').text(`Rs. ${booking.packagePrice}`, 400, summaryY, { align: 'right', width: 140 });
+        doc.moveDown(1);
+        doc.font('Helvetica-Bold').fontSize(13).text('Total Amount Paid:', 280, doc.y);
+        doc.fillColor(primaryColor).text(`Rs. ${booking.packagePrice}`, 400, doc.y - 13, { align: 'right', width: 140 });
+        // --- Footer ---
+        doc.moveDown(8);
+        doc.fillColor('#94a3b8').fontSize(9).font('Helvetica-Oblique').text('May the divine blessings bring peace, prosperity, and happiness to your life.', { align: 'center' });
+        doc.moveDown(0.5);
+        doc.text('This is a computer-generated receipt and does not require a physical signature.', { align: 'center' });
+        doc.moveDown(1.5);
+        doc.fillColor(primaryColor).font('Helvetica-Bold').fontSize(10).text('www.devbhakti.com', { align: 'center' });
+        doc.end();
+    }
+    catch (error) {
+        console.error('Error generating receipt:', error);
+        res.status(500).json({ success: false, message: 'Internal server error' });
+    }
+};
+exports.getBookingReceipt = getBookingReceipt;
+const getUnavailableDates = async (req, res) => {
+    try {
+        const { templeId, poojaId } = req.query;
+        if (!templeId) {
+            return res.status(400).json({ success: false, message: 'Temple ID is required' });
+        }
+        // 1. Fetch closed dates from BookingAvailability (Global or Specific)
+        const closedRecords = await prisma_1.prisma.bookingAvailability.findMany({
+            where: {
+                templeId: templeId,
+                isClosed: true,
+                OR: [
+                    { poojaId: null },
+                    { poojaId: poojaId ? poojaId : undefined }
+                ]
+            },
+            select: { date: true }
+        });
+        // 2. Fetch limit records (Global or Specific)
+        const limitRecords = await prisma_1.prisma.bookingAvailability.findMany({
+            where: {
+                templeId: templeId,
+                isClosed: false,
+                OR: [
+                    { poojaId: null },
+                    { poojaId: poojaId ? poojaId : undefined }
+                ]
+            }
+        });
+        const unavailableFromLimits = [];
+        for (const record of limitRecords) {
+            const count = await prisma_1.prisma.poojaBooking.count({
+                where: {
+                    templeId: templeId,
+                    poojaId: record.poojaId || undefined,
+                    bookingDate: record.date,
+                    status: { not: 'CANCELLED' }
+                }
+            });
+            if (count >= record.maxBookings) {
+                unavailableFromLimits.push(record.date);
+            }
+        }
+        const unavailableDates = Array.from(new Set([
+            ...closedRecords.map(r => r.date),
+            ...unavailableFromLimits
+        ]));
+        return res.json({
+            success: true,
+            data: unavailableDates
+        });
+    }
+    catch (error) {
+        console.error('Error fetching unavailable dates:', error);
+        res.status(500).json({ success: false, message: 'Internal server error' });
+    }
+};
+exports.getUnavailableDates = getUnavailableDates;

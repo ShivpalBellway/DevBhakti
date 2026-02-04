@@ -1,8 +1,67 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getOrderInvoice = exports.getOrderById = exports.getMyOrders = exports.createOrder = void 0;
+exports.getOrderInvoice = exports.getOrderById = exports.getMyOrders = exports.createOrder = exports.calculateFees = void 0;
+const prisma_1 = require("../../lib/prisma");
+const shiprocketService_1 = require("../../services/shiprocketService");
+const razorpay_1 = __importDefault(require("../../lib/razorpay"));
 const client_1 = require("@prisma/client");
-const prisma = new client_1.PrismaClient();
+const commissionSlabController_1 = require("../admin/commissionSlabController");
+const calculateFees = async (req, res) => {
+    try {
+        const { items } = req.body; // Array of { productId, price, quantity, templeId, sellerId }
+        if (!items || items.length === 0) {
+            return res.json({ success: true, platformFee: 0, vendorBreakdown: [] });
+        }
+        // Group items by vendor
+        const groups = {};
+        for (const item of items) {
+            let vendorId = item.templeId || item.sellerId || "admin";
+            let vendorType = item.templeId ? client_1.SlabType.TEMPLE : (item.sellerId ? client_1.SlabType.SELLER : client_1.SlabType.GLOBAL);
+            const key = `${vendorType}_${vendorId}`;
+            if (!groups[key]) {
+                groups[key] = { amount: 0, type: vendorType, id: vendorId === "admin" ? null : vendorId };
+            }
+            groups[key].amount += item.price * item.quantity;
+        }
+        let totalPlatformFee = 0;
+        const vendorBreakdown = [];
+        for (const key in groups) {
+            const group = groups[key];
+            // Skip commission for admin products
+            if (group.id === null) {
+                vendorBreakdown.push({
+                    vendorId: "admin",
+                    amount: group.amount,
+                    fee: 0
+                });
+                continue;
+            }
+            const commission = await (0, commissionSlabController_1.getCommissionForAmount)(group.amount, group.type, group.id, client_1.CommissionCategory.MARKETPLACE);
+            totalPlatformFee += commission.totalCommission;
+            vendorBreakdown.push({
+                vendorId: group.id,
+                vendorType: group.type,
+                amount: group.amount,
+                fee: commission.totalCommission,
+                percentage: commission.percentage,
+                fixedFee: commission.platformFee
+            });
+        }
+        return res.json({
+            success: true,
+            totalPlatformFee,
+            vendorBreakdown
+        });
+    }
+    catch (error) {
+        console.error("Calculate Fees Error:", error);
+        return res.status(500).json({ success: false, message: error.message });
+    }
+};
+exports.calculateFees = calculateFees;
 const createOrder = async (req, res) => {
     try {
         const { items, totalAmount, paymentMethod, shippingAddress, userId } = req.body;
@@ -11,24 +70,38 @@ const createOrder = async (req, res) => {
         }
         // 1. Fetch all products to group by templeId or sellerId
         const productIds = items.map((item) => item.productId);
-        const products = await prisma.product.findMany({
+        const products = await prisma_1.prisma.product.findMany({
             where: { id: { in: productIds } },
-            select: { id: true, templeId: true, sellerId: true },
+            select: {
+                id: true,
+                templeId: true,
+                sellerId: true,
+                name: true,
+                weight: true,
+                length: true,
+                width: true,
+                height: true
+            },
         });
         const productMap = new Map();
         products.forEach((p) => {
-            productMap.set(p.id, { templeId: p.templeId, sellerId: p.sellerId });
+            productMap.set(p.id, p);
         });
         // 2. Create Master Order
-        const order = await prisma.order.create({
+        const order = await prisma_1.prisma.order.create({
             data: {
                 userId,
                 totalAmount,
                 paymentMethod,
                 shippingAddress,
                 status: "PENDING",
-                paymentStatus: "PENDING", // Since we are using static success for now
+                paymentStatus: "PENDING",
             },
+            include: {
+                user: {
+                    select: { name: true, email: true, phone: true }
+                }
+            }
         });
         // 3. Group items by templeId or sellerId
         const groups = {};
@@ -42,28 +115,29 @@ const createOrder = async (req, res) => {
         // 4. Create SubOrders and OrderItems
         for (const [key, groupItems] of Object.entries(groups)) {
             const subOrderTotal = groupItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-            let commissionRate = 10; // Default to 10
             let templeId = null;
             let sellerId = null;
+            let vendorType = client_1.SlabType.GLOBAL;
+            let vendorId = null;
             if (key.startsWith("temple_")) {
                 templeId = key.replace("temple_", "");
-                const temple = await prisma.temple.findUnique({
-                    where: { id: templeId },
-                    select: { productCommissionRate: true }
-                });
-                commissionRate = temple?.productCommissionRate ?? 10;
+                vendorId = templeId;
+                vendorType = client_1.SlabType.TEMPLE;
             }
             else if (key.startsWith("seller_")) {
                 sellerId = key.replace("seller_", "");
-                const seller = await prisma.sellerProfile.findUnique({
-                    where: { id: sellerId },
-                    select: { productCommissionRate: true }
-                });
-                commissionRate = seller?.productCommissionRate ?? 10;
+                vendorId = sellerId;
+                vendorType = client_1.SlabType.SELLER;
             }
-            const commissionAmount = (subOrderTotal * commissionRate) / 100;
-            const netEarning = subOrderTotal - commissionAmount;
-            const subOrder = await prisma.subOrder.create({
+            // Calculate commission using Slabs
+            let commissionAmount = 0;
+            if (vendorId) {
+                const commissionResult = await (0, commissionSlabController_1.getCommissionForAmount)(subOrderTotal, vendorType, vendorId, client_1.CommissionCategory.MARKETPLACE);
+                commissionAmount = commissionResult.totalCommission;
+            }
+            // Since platform fee is added on top and charged to user, vendor gets full price
+            const netEarning = subOrderTotal;
+            const subOrder = await prisma_1.prisma.subOrder.create({
                 data: {
                     orderId: order.id,
                     templeId,
@@ -85,7 +159,7 @@ const createOrder = async (req, res) => {
             });
             // Create a pending ledger entry (if not admin)
             if (templeId || sellerId) {
-                await prisma.templeLedger.create({
+                await prisma_1.prisma.templeLedger.create({
                     data: {
                         templeId,
                         sellerId,
@@ -99,13 +173,86 @@ const createOrder = async (req, res) => {
                     }
                 });
             }
-            // 5. Update Stock (Optional but recommended)
+            // 5. Update Stock
             for (const item of groupItems) {
-                await prisma.productVariant.update({
+                await prisma_1.prisma.productVariant.update({
                     where: { id: item.variantId },
                     data: { stock: { decrement: item.quantity } },
                 });
             }
+            // 6. Sync with Shiprocket (Async - don't block order success)
+            try {
+                const srItems = groupItems.map(item => {
+                    const pInfo = productMap.get(item.productId);
+                    return {
+                        name: pInfo?.name || item.productId,
+                        sku: item.variantId,
+                        units: item.quantity,
+                        selling_price: item.price,
+                        discount: 0,
+                        tax: 0,
+                    };
+                });
+                // Calculate package dimensions (Total weight, Max dimensions)
+                const totalWeight = groupItems.reduce((acc, item) => {
+                    const pInfo = productMap.get(item.productId);
+                    return acc + (Number(pInfo?.weight || 0.5) * item.quantity);
+                }, 0);
+                const maxLength = Math.max(...groupItems.map(item => Number(productMap.get(item.productId)?.length || 10)));
+                const maxWidth = Math.max(...groupItems.map(item => Number(productMap.get(item.productId)?.width || 10)));
+                const maxHeight = Math.max(...groupItems.map(item => Number(productMap.get(item.productId)?.height || 10)));
+                const pickupLocation = key.startsWith("temple_")
+                    ? (await prisma_1.prisma.temple.findUnique({ where: { id: templeId }, select: { pickupLocation: true } }))?.pickupLocation
+                    : (await prisma_1.prisma.sellerProfile.findUnique({ where: { id: sellerId }, select: { pickupLocation: true } }))?.pickupLocation;
+                const shiprocketData = {
+                    order_id: subOrder.id,
+                    order_date: new Date().toISOString().split('T')[0],
+                    pickup_location: pickupLocation || "Primary",
+                    billing_customer_name: shippingAddress.fullName.split(' ')[0],
+                    billing_last_name: shippingAddress.fullName.split(' ').slice(1).join(' ') || "User",
+                    billing_address: shippingAddress.street,
+                    billing_city: shippingAddress.city,
+                    billing_pincode: shippingAddress.pincode,
+                    billing_state: shippingAddress.state || "Delhi",
+                    billing_country: "India",
+                    billing_email: order.user.email || "customer@devbhakti.in",
+                    billing_phone: shippingAddress.phone || order.user.phone || "9999999999",
+                    shipping_is_billing: true,
+                    order_items: srItems,
+                    payment_method: "Prepaid",
+                    sub_total: subOrderTotal,
+                    length: maxLength,
+                    width: maxWidth,
+                    height: maxHeight,
+                    weight: totalWeight
+                };
+                const srResponse = await (0, shiprocketService_1.createShiprocketOrder)(shiprocketData);
+                if (srResponse && srResponse.order_id) {
+                    await prisma_1.prisma.subOrder.update({
+                        where: { id: subOrder.id },
+                        data: {
+                            shiprocketOrderId: srResponse.order_id.toString()
+                        }
+                    });
+                }
+            }
+            catch (srError) {
+                console.error("Shiprocket Sync Error for SubOrder", subOrder.id, srError);
+            }
+        }
+        // 7. Handle Razorpay Order Creation
+        if (paymentMethod === "RAZORPAY") {
+            const razorpayOrder = await razorpay_1.default.orders.create({
+                amount: Math.round(totalAmount * 100), // Amount in paise
+                currency: "INR",
+                receipt: `order_rcpt_${order.id.slice(-10)}`,
+            });
+            return res.status(201).json({
+                success: true,
+                message: "Order initiated. Complete payment to confirm.",
+                data: order,
+                razorpayOrder
+            });
         }
         return res.status(201).json({
             success: true,
@@ -129,7 +276,7 @@ const getMyOrders = async (req, res) => {
         if (!userId) {
             return res.status(400).json({ success: false, message: "User ID required" });
         }
-        const orders = await prisma.order.findMany({
+        const orders = await prisma_1.prisma.order.findMany({
             where: { userId },
             include: {
                 subOrders: {
@@ -162,7 +309,7 @@ exports.getMyOrders = getMyOrders;
 const getOrderById = async (req, res) => {
     try {
         const { id } = req.params;
-        const order = await prisma.order.findUnique({
+        const order = await prisma_1.prisma.order.findUnique({
             where: { id },
             include: {
                 subOrders: {
@@ -194,7 +341,7 @@ exports.getOrderById = getOrderById;
 const getOrderInvoice = async (req, res) => {
     try {
         const { id } = req.params;
-        const order = await prisma.order.findUnique({
+        const order = await prisma_1.prisma.order.findUnique({
             where: { id },
             include: {
                 subOrders: {

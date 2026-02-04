@@ -5,6 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.updateMyTempleProfile = exports.getMyTempleProfile = exports.registerTemple = void 0;
 const prisma_1 = require("../../lib/prisma");
+const shiprocketService_1 = require("../../services/shiprocketService");
 const bcrypt_1 = __importDefault(require("bcrypt"));
 const getFilePath = (files, fieldName) => {
     if (files && files[fieldName] && files[fieldName][0]) {
@@ -95,11 +96,30 @@ const registerTemple = async (req, res) => {
                             date: ev.date,
                             description: ev.description
                         }))
-                    }
+                    },
+                    pickupLocation: `TEMPLE_${Math.random().toString(36).substring(2, 7).toUpperCase()}`
                 }
             });
             return { user, temple };
         });
+        // 3. Register Pickup Location with Shiprocket
+        try {
+            const pickupData = {
+                pickup_location: result.temple.pickupLocation,
+                name: data.name,
+                email: data.email,
+                phone: data.phone,
+                address: data.fullAddress || '',
+                city: data.location || "Delhi",
+                state: "Delhi",
+                country: "India",
+                pin_code: "110001"
+            };
+            await (0, shiprocketService_1.createShiprocketPickupLocation)(pickupData);
+        }
+        catch (srError) {
+            console.error("Shiprocket Pickup sync error:", srError);
+        }
         res.status(201).json({
             success: true,
             message: 'Temple registration submitted successfully. Please wait for admin approval.',

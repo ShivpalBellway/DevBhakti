@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getPublicProducts = exports.getProductsByTemple = exports.toggleProductStatus = exports.deleteProduct = exports.updateProduct = exports.getProductById = exports.getAllProducts = exports.createProduct = void 0;
+exports.getProductOwners = exports.getPublicProducts = exports.getProductsByTemple = exports.toggleProductStatus = exports.deleteProduct = exports.updateProduct = exports.getPublicProductById = exports.getProductById = exports.getAllProducts = exports.createProduct = void 0;
 const prisma_1 = require("../../lib/prisma");
 // Create Product
 const createProduct = async (req, res) => {
@@ -24,8 +24,17 @@ const createProduct = async (req, res) => {
             // Parse variants from JSON string
             variants = req.body.variants ? JSON.parse(req.body.variants) : [];
             // Handle file upload
-            if (req.file) {
-                image = `/uploads/products/${req.file.filename}`;
+            const files = req.files;
+            if (files) {
+                const productFile = files.find(f => f.fieldname === 'image');
+                if (productFile)
+                    image = `/uploads/products/${productFile.filename}`;
+                variants = variants.map((v, index) => {
+                    const variantFile = files.find(f => f.fieldname === `variant_image_${index}`);
+                    if (variantFile)
+                        v.image = `/uploads/products/${variantFile.filename}`;
+                    return v;
+                });
             }
         }
         else {
@@ -48,85 +57,72 @@ const createProduct = async (req, res) => {
         if (!name || !description || !category) {
             return res.status(400).json({
                 success: false,
-                message: "Missing required fields: name, description, category are required",
-                details: {
-                    name: !name ? "Product name is required" : null,
-                    description: !description ? "Product description is required" : null,
-                    category: !category ? "Product category is required" : null,
-                    templeId: !templeId ? "Temple selection is optional for admin" : null
-                }
+                message: "Missing required fields: name, description, category are required"
             });
         }
-        // If templeId is provided, check if temple exists
-        if (templeId) {
-            const temple = await prisma_1.prisma.temple.findUnique({
-                where: { id: templeId }
-            });
-            if (!temple) {
-                return res.status(404).json({
-                    success: false,
-                    message: "Temple not found",
-                    details: `Temple with ID ${templeId} does not exist`
-                });
+        const createData = {
+            name,
+            description,
+            status,
+            highlights,
+            longDescription,
+            shippingInfo,
+            origin,
+            rating,
+            image: image || null,
+            variants: {
+                create: variants.map((variant) => ({
+                    name: variant.name,
+                    price: parseFloat(variant.price),
+                    stock: parseInt(variant.stock) || 0,
+                    image: variant.image || null
+                }))
+            }
+        };
+        // Handle Category
+        if (categoryId) {
+            const categoryRecord = await prisma_1.prisma.productCategory.findUnique({ where: { id: categoryId } });
+            if (categoryRecord) {
+                createData.categoryId = categoryId;
+                createData.category = categoryRecord.name;
+            }
+            else {
+                createData.category = category;
             }
         }
-        // Validate variants
-        if (!variants || !Array.isArray(variants) || variants.length === 0) {
-            return res.status(400).json({
-                success: false,
-                message: "At least one product variant is required",
-                details: "Products must have at least one variant with name and price"
-            });
+        else {
+            createData.category = category;
         }
-        // Validate each variant
-        const invalidVariants = variants.filter((variant) => !variant.name || !variant.price || variant.price <= 0);
-        if (invalidVariants.length > 0) {
-            return res.status(400).json({
-                success: false,
-                message: "Invalid variant data found",
-                details: "Each variant must have a name and a price greater than 0"
-            });
-        }
-        // Create product with variants
-        const product = await prisma_1.prisma.product.create({
-            data: {
-                name,
-                description,
-                category,
-                categoryId: categoryId || null, // Use categoryId from FormData
-                templeId: templeId || null, // Allow null for admin-created products
-                status,
-                highlights,
-                longDescription,
-                shippingInfo,
-                origin,
-                rating,
-                image: image || null,
-                variants: {
-                    create: variants.map((variant) => ({
-                        name: variant.name,
-                        price: parseFloat(variant.price),
-                        stock: parseInt(variant.stock) || 0,
-                        image: variant.image || null
-                    }))
+        // Handle Vendor (Temple or Seller)
+        if (templeId && templeId !== "general") {
+            // Check Temple
+            const temple = await prisma_1.prisma.temple.findUnique({ where: { id: templeId } });
+            if (temple) {
+                createData.templeId = temple.id;
+            }
+            else {
+                // Check Seller
+                const seller = await prisma_1.prisma.sellerProfile.findUnique({ where: { id: templeId } });
+                if (seller) {
+                    createData.sellerId = seller.id;
                 }
-            },
+                else {
+                    return res.status(400).json({
+                        success: false,
+                        message: "Invalid vendor reference",
+                        details: "The specified owner (Temple or Seller) does not exist"
+                    });
+                }
+            }
+        }
+        // Create product
+        const product = await prisma_1.prisma.product.create({
+            data: createData,
             include: {
                 variants: true,
-                categoryObj: categoryId ? {
-                    select: {
-                        id: true,
-                        name: true,
-                        description: true
-                    }
-                } : false,
-                temple: templeId ? {
-                    select: {
-                        id: true,
-                        name: true,
-                        location: true
-                    }
-                } : false
+                categoryObj: true,
+                temple: true,
+                seller: true
             }
         });
         res.status(201).json({
@@ -137,28 +133,16 @@ const createProduct = async (req, res) => {
     }
     catch (error) {
         console.error("Create Product Error:", error);
-        // Handle specific database errors
-        if (error instanceof Error) {
-            if (error.message.includes('Unique constraint')) {
-                return res.status(409).json({
-                    success: false,
-                    message: "Product with this name already exists",
-                    details: error.message
-                });
-            }
-            if (error.message.includes('Foreign key constraint')) {
-                return res.status(400).json({
-                    success: false,
-                    message: "Invalid temple reference",
-                    details: "The specified temple does not exist"
-                });
-            }
+        if (error.code === 'P2002') {
+            return res.status(409).json({
+                success: false,
+                message: "Product already exists",
+                details: "A product with this name already exists."
+            });
         }
         res.status(500).json({
             success: false,
             message: "Internal server error while creating product",
-            details: error instanceof Error ? error.message : "Unknown error occurred",
-            error: process.env.NODE_ENV === 'development' ? error : undefined
         });
     }
 };
@@ -208,6 +192,18 @@ const getAllProducts = async (req, res) => {
                                 }
                             }
                         }
+                    },
+                    seller: {
+                        select: {
+                            id: true,
+                            name: true,
+                            location: true,
+                            user: {
+                                select: {
+                                    role: true
+                                }
+                            }
+                        }
                     }
                 },
                 orderBy: { createdAt: "desc" },
@@ -241,32 +237,13 @@ const getAllProducts = async (req, res) => {
     }
 };
 exports.getAllProducts = getAllProducts;
-// Get Product by ID
+// Get Product by ID (Admin - View ANY product)
 const getProductById = async (req, res) => {
     try {
         const { id } = req.params;
         const product = await prisma_1.prisma.product.findUnique({
             where: {
-                id: id,
-                status: "approved",
-                OR: [
-                    {
-                        temple: {
-                            user: {
-                                isVerified: true,
-                                role: { in: ['INSTITUTION', 'SELLER'] }
-                            }
-                        }
-                    },
-                    {
-                        seller: {
-                            user: {
-                                isVerified: true
-                            },
-                            isActive: true
-                        }
-                    }
-                ]
+                id: id
             },
             include: {
                 variants: true,
@@ -315,6 +292,80 @@ const getProductById = async (req, res) => {
     }
 };
 exports.getProductById = getProductById;
+// Get Public Product by ID (Strict filters)
+const getPublicProductById = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const product = await prisma_1.prisma.product.findUnique({
+            where: {
+                id: id,
+                status: "approved",
+                OR: [
+                    {
+                        temple: {
+                            user: {
+                                isVerified: true,
+                                role: { in: ['INSTITUTION', 'SELLER'] }
+                            }
+                        }
+                    },
+                    {
+                        seller: {
+                            user: {
+                                isVerified: true
+                            },
+                            isActive: true
+                        }
+                    }
+                ]
+            },
+            include: {
+                variants: {
+                    where: { stock: { gt: 0 } }
+                },
+                categoryObj: {
+                    select: {
+                        id: true,
+                        name: true,
+                        description: true
+                    }
+                },
+                temple: {
+                    select: {
+                        id: true,
+                        name: true,
+                        location: true
+                    }
+                },
+                seller: {
+                    select: {
+                        id: true,
+                        name: true,
+                        location: true
+                    }
+                }
+            }
+        });
+        if (!product) {
+            return res.status(404).json({
+                success: false,
+                message: "Product not found or not approved"
+            });
+        }
+        res.status(200).json({
+            success: true,
+            data: product
+        });
+    }
+    catch (error) {
+        console.error("Get Public Product Error:", error);
+        res.status(500).json({
+            success: false,
+            message: "Internal server error"
+        });
+    }
+};
+exports.getPublicProductById = getPublicProductById;
 // Update Product
 const updateProduct = async (req, res) => {
     try {
@@ -338,8 +389,17 @@ const updateProduct = async (req, res) => {
             // Parse variants from JSON string
             variants = req.body.variants ? JSON.parse(req.body.variants) : [];
             // Handle file upload
-            if (req.file) {
-                image = `/uploads/products/${req.file.filename}`;
+            const files = req.files;
+            if (files) {
+                const productFile = files.find(f => f.fieldname === 'image');
+                if (productFile)
+                    image = `/uploads/products/${productFile.filename}`;
+                variants = variants.map((v, index) => {
+                    const variantFile = files.find(f => f.fieldname === `variant_image_${index}`);
+                    if (variantFile)
+                        v.image = `/uploads/products/${variantFile.filename}`;
+                    return v;
+                });
             }
             // Handle image removal flag
             removeImage = req.body.removeImage === 'true';
@@ -376,58 +436,62 @@ const updateProduct = async (req, res) => {
         if (!name || !description || !category) {
             return res.status(400).json({
                 success: false,
-                message: "Missing required fields: name, description, category are required",
-                details: {
-                    name: !name ? "Product name is required" : null,
-                    description: !description ? "Product description is required" : null,
-                    category: !category ? "Product category is required" : null
-                }
+                message: "Missing required fields: name, description, category are required"
             });
         }
-        // If templeId is provided, check if temple exists
-        if (templeId && templeId !== "general") {
-            const temple = await prisma_1.prisma.temple.findUnique({
-                where: { id: templeId }
+        const updateData = {};
+        // Validate and handle categoryId
+        if (categoryId) {
+            const categoryRecord = await prisma_1.prisma.productCategory.findUnique({
+                where: { id: categoryId }
             });
-            if (!temple) {
-                return res.status(404).json({
+            if (!categoryRecord) {
+                return res.status(400).json({
                     success: false,
-                    message: "Temple not found",
-                    details: `Temple with ID ${templeId} does not exist`
+                    message: "Invalid category",
+                    details: `Category with ID ${categoryId} does not exist`
                 });
             }
+            updateData.categoryId = categoryId;
+            updateData.category = categoryRecord.name; // Keep display name in sync
         }
-        // Validate variants
-        if (!variants || !Array.isArray(variants) || variants.length === 0) {
-            return res.status(400).json({
-                success: false,
-                message: "At least one product variant is required",
-                details: "Products must have at least one variant with name and price"
-            });
+        else if (category) {
+            updateData.category = category;
         }
-        // Validate each variant
-        const invalidVariants = variants.filter((variant) => !variant.name || !variant.price || variant.price <= 0);
-        if (invalidVariants.length > 0) {
-            return res.status(400).json({
-                success: false,
-                message: "Invalid variant data found",
-                details: "Each variant must have a name and a price greater than 0"
-            });
+        // Smart Vendor Logic: Check if ID is Temple or Seller
+        if (templeId && templeId !== "general") {
+            // First check Temple
+            const temple = await prisma_1.prisma.temple.findUnique({ where: { id: templeId } });
+            if (temple) {
+                updateData.templeId = temple.id;
+                updateData.sellerId = null; // Clear seller if assigned to temple
+            }
+            else {
+                // Then check Seller
+                const seller = await prisma_1.prisma.sellerProfile.findUnique({ where: { id: templeId } });
+                if (seller) {
+                    updateData.sellerId = seller.id;
+                    updateData.templeId = null; // Clear temple if assigned to seller
+                }
+                else {
+                    return res.status(400).json({
+                        success: false,
+                        message: "Invalid vendor reference",
+                        details: "The specified owner (Temple or Seller) does not exist"
+                    });
+                }
+            }
         }
-        // Update product basic info
-        const updateData = {};
+        else if (templeId === "general") {
+            updateData.templeId = null;
+            updateData.sellerId = null;
+        }
         if (name)
             updateData.name = name;
         if (description)
             updateData.description = description;
-        if (category)
-            updateData.category = category;
-        if (categoryId !== undefined)
-            updateData.categoryId = categoryId;
         if (status)
             updateData.status = status;
-        if (templeId !== undefined)
-            updateData.templeId = templeId === "general" ? null : templeId;
         if (highlights !== undefined)
             updateData.highlights = highlights;
         if (longDescription !== undefined)
@@ -438,48 +502,41 @@ const updateProduct = async (req, res) => {
             updateData.origin = origin;
         if (rating !== undefined)
             updateData.rating = typeof rating === 'string' ? parseFloat(rating) : rating;
-        // Handle image update
         if (image) {
             updateData.image = image;
         }
         else if (removeImage) {
             updateData.image = null;
         }
-        // Handle variants update
+        // Handle variants update safely
         if (variants && Array.isArray(variants)) {
-            // Delete existing variants
-            await prisma_1.prisma.productVariant.deleteMany({
-                where: { productId: id }
-            });
-            // Create new variants
-            updateData.variants = {
-                create: variants.map((variant) => ({
-                    name: variant.name,
-                    price: parseFloat(variant.price),
-                    stock: parseInt(variant.stock) || 0,
-                    image: variant.image || null
-                }))
-            };
+            // For now we keep the clear-and-create for simplicity but we'll catch relations error
+            try {
+                await prisma_1.prisma.productVariant.deleteMany({
+                    where: { productId: id }
+                });
+                updateData.variants = {
+                    create: variants.map((variant) => ({
+                        name: variant.name,
+                        price: parseFloat(variant.price),
+                        stock: parseInt(variant.stock) || 0,
+                        image: variant.image || null
+                    }))
+                };
+            }
+            catch (err) {
+                console.warn("Could not delete variants due to existing relations:", err.message);
+                // Fallback or handle appropriately if we had orders
+            }
         }
         const updatedProduct = await prisma_1.prisma.product.update({
             where: { id: id },
             data: updateData,
             include: {
                 variants: true,
-                categoryObj: categoryId ? {
-                    select: {
-                        id: true,
-                        name: true,
-                        description: true
-                    }
-                } : false,
-                temple: templeId ? {
-                    select: {
-                        id: true,
-                        name: true,
-                        location: true
-                    }
-                } : false
+                categoryObj: true,
+                temple: true,
+                seller: true
             }
         });
         res.status(200).json({
@@ -490,28 +547,24 @@ const updateProduct = async (req, res) => {
     }
     catch (error) {
         console.error("Update Product Error:", error);
-        // Handle specific database errors
-        if (error instanceof Error) {
-            if (error.message.includes('Unique constraint')) {
-                return res.status(409).json({
-                    success: false,
-                    message: "Product with this name already exists",
-                    details: error.message
-                });
-            }
-            if (error.message.includes('Foreign key constraint')) {
-                return res.status(400).json({
-                    success: false,
-                    message: "Invalid temple reference",
-                    details: "The specified temple does not exist"
-                });
-            }
+        if (error.code === 'P2002') {
+            return res.status(409).json({
+                success: false,
+                message: "Unique constraint violation",
+                details: "A product with this name already exists or similar conflict."
+            });
+        }
+        if (error.code === 'P2003') {
+            return res.status(400).json({
+                success: false,
+                message: "Relationship error",
+                details: "Could not update references or variants are tied to existing orders/carts."
+            });
         }
         res.status(500).json({
             success: false,
             message: "Internal server error while updating product",
-            details: error instanceof Error ? error.message : "Unknown error occurred",
-            error: process.env.NODE_ENV === 'development' ? error : undefined
+            details: error.message
         });
     }
 };
@@ -683,6 +736,12 @@ const getPublicProducts = async (req, res) => {
                         },
                         isActive: true
                     }
+                },
+                {
+                    AND: [
+                        { templeId: null },
+                        { sellerId: null }
+                    ]
                 }
             ]
         };
@@ -720,6 +779,13 @@ const getPublicProducts = async (req, res) => {
                             name: true,
                             location: true
                         }
+                    },
+                    seller: {
+                        select: {
+                            id: true,
+                            name: true,
+                            location: true
+                        }
                     }
                 },
                 orderBy: { createdAt: "desc" },
@@ -750,3 +816,53 @@ const getPublicProducts = async (req, res) => {
     }
 };
 exports.getPublicProducts = getPublicProducts;
+// Get All Potential Product Owners (Temples & Sellers)
+const getProductOwners = async (req, res) => {
+    try {
+        const [temples, sellers] = await Promise.all([
+            prisma_1.prisma.temple.findMany({
+                select: {
+                    id: true,
+                    name: true,
+                    userId: true,
+                    user: { select: { role: true } }
+                }
+            }),
+            prisma_1.prisma.sellerProfile.findMany({
+                select: {
+                    id: true,
+                    name: true,
+                    userId: true,
+                    user: { select: { role: true } }
+                }
+            })
+        ]);
+        const owners = [
+            ...temples.map(t => ({
+                id: t.id,
+                name: t.name,
+                type: 'Temple',
+                userId: t.userId
+            })),
+            ...sellers.map(s => ({
+                id: s.id,
+                name: s.name,
+                type: 'Seller',
+                userId: s.userId
+            }))
+        ].sort((a, b) => a.name.localeCompare(b.name));
+        res.status(200).json({
+            success: true,
+            data: owners
+        });
+    }
+    catch (error) {
+        console.error("Get Product Owners Error:", error);
+        res.status(500).json({
+            success: false,
+            message: "Failed to fetch owners",
+            details: error.message
+        });
+    }
+};
+exports.getProductOwners = getProductOwners;

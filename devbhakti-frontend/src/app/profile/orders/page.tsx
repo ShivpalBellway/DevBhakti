@@ -364,13 +364,18 @@ export default function MyOrdersPage() {
                                                                 <div className="w-14 h-14 rounded-2xl bg-white/10 flex items-center justify-center border border-white/5 backdrop-blur-sm">
                                                                     <Package className="w-7 h-7 text-orange-400" />
                                                                 </div>
-                                                                <div>
+                                                                {/* <div>
                                                                     <p className="text-[10px] text-white/50 font-bold uppercase tracking-widest mb-1">Shipping Status</p>
                                                                     <p className="font-serif font-bold text-lg flex items-center gap-2">
                                                                         <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
                                                                         {order.status === 'DELIVERED' ? 'Successfully Delivered' : 'Processing Your Order'}
                                                                     </p>
-                                                                </div>
+                                                                </div> */}
+
+                                                                <p className="font-serif font-bold text-lg flex items-center gap-2">
+                                                                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse inline-block" />
+                                                                    {order.status === 'DELIVERED' ? 'Successfully Delivered' : 'Processing Your Order'}
+                                                                </p>
                                                             </div>
                                                             <div className="text-right hidden sm:block">
                                                                 <p className="text-[10px] text-white/50 font-bold uppercase tracking-widest mb-1">Final Payment</p>

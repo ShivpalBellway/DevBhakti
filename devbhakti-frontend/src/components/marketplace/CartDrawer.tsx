@@ -38,7 +38,7 @@ const CartDrawer: React.FC<CartDrawerProps> = ({
       }
       setIsCalculating(true);
       try {
-        const response = await fetch(`${API_URL}/api/orders/calculate-fees`, {
+        const response = await fetch(`${API_URL}/orders/calculate-fees`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({

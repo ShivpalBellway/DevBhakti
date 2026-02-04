@@ -56,7 +56,7 @@ export default function CheckoutPage() {
             if (cartItems.length === 0) return;
             setIsCalculatingFees(true);
             try {
-                const response = await axios.post(`${API_URL}/api/orders/calculate-fees`, {
+                const response = await axios.post(`${API_URL}/orders/calculate-fees`, {
                     items: cartItems.map(item => ({
                         productId: item.productId,
                         price: item.price,

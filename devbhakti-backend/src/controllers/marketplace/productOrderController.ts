@@ -2,10 +2,8 @@ import { Request, Response } from "express";
 import { prisma } from "../../lib/prisma";
 import { createShiprocketOrder } from "../../services/shiprocketService";
 import razorpay from "../../lib/razorpay";
-import { PrismaClient, SlabType, CommissionCategory } from "@prisma/client";
+import { SlabType, CommissionCategory } from "@prisma/client";
 import { getCommissionForAmount } from "../admin/commissionSlabController";
-
-const prisma = new PrismaClient();
 
 export const calculateFees = async (req: Request, res: Response) => {
   try {
@@ -17,11 +15,11 @@ export const calculateFees = async (req: Request, res: Response) => {
 
     // Group items by vendor
     const groups: Record<string, { amount: number, type: SlabType, id: string | null }> = {};
-    
+
     for (const item of items) {
       let vendorId = item.templeId || item.sellerId || "admin";
       let vendorType = item.templeId ? SlabType.TEMPLE : (item.sellerId ? SlabType.SELLER : SlabType.GLOBAL);
-      
+
       const key = `${vendorType}_${vendorId}`;
       if (!groups[key]) {
         groups[key] = { amount: 0, type: vendorType, id: vendorId === "admin" ? null : vendorId };
@@ -45,13 +43,13 @@ export const calculateFees = async (req: Request, res: Response) => {
       }
 
       const commission = await getCommissionForAmount(
-        group.amount, 
-        group.type, 
-        group.id, 
+        group.amount,
+        group.type,
+        group.id,
         CommissionCategory.MARKETPLACE
       );
       totalPlatformFee += commission.totalCommission;
-      
+
       vendorBreakdown.push({
         vendorId: group.id,
         vendorType: group.type,
@@ -132,10 +130,10 @@ export const createOrder = async (req: Request, res: Response) => {
     for (const [key, groupItems] of Object.entries(groups)) {
       const subOrderTotal = groupItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
-      let templeId = null;
-      let sellerId = null;
-      let vendorType = SlabType.GLOBAL;
-      let vendorId = null;
+      let templeId: string | null = null;
+      let sellerId: string | null = null;
+      let vendorType: SlabType = SlabType.GLOBAL;
+      let vendorId: string | null = null;
 
       if (key.startsWith("temple_")) {
         templeId = key.replace("temple_", "");
@@ -151,9 +149,9 @@ export const createOrder = async (req: Request, res: Response) => {
       let commissionAmount = 0;
       if (vendorId) {
         const commissionResult = await getCommissionForAmount(
-          subOrderTotal, 
-          vendorType, 
-          vendorId, 
+          subOrderTotal,
+          vendorType,
+          vendorId,
           CommissionCategory.MARKETPLACE
         );
         commissionAmount = commissionResult.totalCommission;

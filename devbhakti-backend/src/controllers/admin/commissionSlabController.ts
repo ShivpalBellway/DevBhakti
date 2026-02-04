@@ -11,11 +11,11 @@ export const getAllSlabs = async (req: Request, res: Response) => {
     const { type, targetId, category } = req.query;
 
     const where: any = { isActive: true };
-    
+
     if (type) {
       where.slabType = type as SlabType;
     }
-    
+
     if (targetId) {
       where.targetId = targetId as string;
     }
@@ -91,11 +91,11 @@ export const createSlab = async (req: Request, res: Response) => {
  */
 export const updateSlab = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const { minAmount, maxAmount, platformFee, percentage, isActive } = req.body;
 
     const updateData: any = {};
-    
+
     if (minAmount !== undefined) updateData.minAmount = parseFloat(minAmount);
     if (maxAmount !== undefined) updateData.maxAmount = maxAmount ? parseFloat(maxAmount) : null;
     if (platformFee !== undefined) updateData.platformFee = parseFloat(platformFee);
@@ -127,7 +127,7 @@ export const updateSlab = async (req: Request, res: Response) => {
  */
 export const deleteSlab = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
 
     const slab = await prisma.commissionSlab.update({
       where: { id },

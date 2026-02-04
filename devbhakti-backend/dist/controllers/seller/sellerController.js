@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.updateSellerProfile = exports.getSellerProfile = void 0;
 const prisma_1 = require("../../lib/prisma");
+const shiprocketService_1 = require("../../services/shiprocketService");
 const getFilePath = (files, fieldName) => {
     if (files && files[fieldName] && files[fieldName][0]) {
         return `/uploads/products/${files[fieldName][0].filename}`;
@@ -52,7 +53,8 @@ const updateSellerProfile = async (req, res) => {
         const fields = [
             'name', 'category', 'openTime', 'description',
             'location', 'fullAddress', 'phone', 'website',
-            'bankName', 'accountNumber', 'accountHolderName', 'ifscCode', 'upiId'
+            'bankName', 'accountNumber', 'accountHolderName', 'ifscCode', 'upiId',
+            'pickupLocation'
         ];
         fields.forEach(field => {
             if (data[field] !== undefined) {
@@ -72,6 +74,33 @@ const updateSellerProfile = async (req, res) => {
             where: { id: store.id },
             data: updateData
         });
+        // Automate Shiprocket Sync if address or pickup nickname changed
+        if (data.fullAddress || data.pickupLocation) {
+            try {
+                const pickupData = {
+                    pickup_location: updated.pickupLocation || `PICKUP_${updated.id.substring(0, 5)}`,
+                    name: updated.name,
+                    email: req.user.email || 'seller@devbhakti.in',
+                    phone: updated.phone || '+919999999999',
+                    address: updated.fullAddress || '',
+                    city: updated.location || "Delhi",
+                    state: "Delhi",
+                    country: "India",
+                    pin_code: "110001"
+                };
+                await (0, shiprocketService_1.createShiprocketPickupLocation)(pickupData);
+                // If it's a new random nickname, save it
+                if (!updated.pickupLocation) {
+                    await prisma_1.prisma.sellerProfile.update({
+                        where: { id: updated.id },
+                        data: { pickupLocation: pickupData.pickup_location }
+                    });
+                }
+            }
+            catch (err) {
+                console.error("Seller Shiprocket automation error:", err);
+            }
+        }
         return res.status(200).json({ success: true, message: "Profile updated successfully", data: updated });
     }
     catch (error) {

@@ -88,7 +88,7 @@ export const createBooking = async (req: Request, res: Response) => {
             }
             const totalTempleBookings = await prisma.poojaBooking.count({
                 where: {
-                    templeId: pooja.templeId,
+                    templeId: pooja.templeId as string,
                     bookingDate: bookingDate,
                     status: { not: 'CANCELLED' }
                 }
@@ -132,7 +132,7 @@ export const createBooking = async (req: Request, res: Response) => {
                 data: {
                     userId,
                     poojaId,
-                    templeId: pooja.templeId,
+                    templeId: pooja.templeId as string,
                     packageName,
                     packagePrice: finalPrice, // Use verified price
                     devoteeName,
@@ -299,7 +299,7 @@ export const checkAvailability = async (req: Request, res: Response) => {
 
 export const getBookingReceipt = async (req: Request, res: Response) => {
     try {
-        const { id } = req.params;
+        const id = req.params.id as string;
         const { userId } = (req as any).user;
 
         const booking = await prisma.poojaBooking.findFirst({

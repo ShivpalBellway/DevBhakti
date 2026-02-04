@@ -100,8 +100,18 @@ const createProduct = async (req, res) => {
             shippingInfo = req.body.shippingInfo;
             origin = req.body.origin;
             variants = req.body.variants ? JSON.parse(req.body.variants) : [];
-            if (req.file)
-                image = `/uploads/products/${req.file.filename}`;
+            const files = req.files;
+            if (files) {
+                const productFile = files.find(f => f.fieldname === 'image');
+                if (productFile)
+                    image = `/uploads/products/${productFile.filename}`;
+                variants = variants.map((v, index) => {
+                    const variantFile = files.find(f => f.fieldname === `variant_image_${index}`);
+                    if (variantFile)
+                        v.image = `/uploads/products/${variantFile.filename}`;
+                    return v;
+                });
+            }
         }
         else {
             const body = req.body;
@@ -175,8 +185,18 @@ const updateProduct = async (req, res) => {
             shippingInfo = req.body.shippingInfo;
             origin = req.body.origin;
             variants = req.body.variants ? JSON.parse(req.body.variants) : [];
-            if (req.file)
-                image = `/uploads/products/${req.file.filename}`;
+            const files = req.files;
+            if (files) {
+                const productFile = files.find(f => f.fieldname === 'image');
+                if (productFile)
+                    image = `/uploads/products/${productFile.filename}`;
+                variants = variants.map((v, index) => {
+                    const variantFile = files.find(f => f.fieldname === `variant_image_${index}`);
+                    if (variantFile)
+                        v.image = `/uploads/products/${variantFile.filename}`;
+                    return v;
+                });
+            }
             removeImage = req.body.removeImage === 'true';
         }
         else {

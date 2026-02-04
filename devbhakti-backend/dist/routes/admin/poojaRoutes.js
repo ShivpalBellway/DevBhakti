@@ -11,5 +11,6 @@ router.use((0, authMiddleware_1.authorize)('ADMIN'));
 router.get('/', poojaController_1.getAllPoojas);
 router.post('/', uploadMiddleware_1.uploadPoojaImage.single('image'), poojaController_1.createPooja);
 router.put('/:id', uploadMiddleware_1.uploadPoojaImage.single('image'), poojaController_1.updatePooja);
+router.post('/:id/promote', poojaController_1.promoteToMaster);
 router.delete('/:id', poojaController_1.deletePooja);
 exports.default = router;

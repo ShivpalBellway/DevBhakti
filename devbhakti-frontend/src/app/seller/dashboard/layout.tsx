@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
@@ -83,7 +83,7 @@ const sellerSidebarGroups = [
     }
 ];
 
-export default function SellerDashboardLayout({ children }: { children: React.ReactNode }) {
+function SellerDashboardContent({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
     const router = useRouter();
     const searchParams = useSearchParams();
@@ -320,3 +320,16 @@ export default function SellerDashboardLayout({ children }: { children: React.Re
         </div>
     );
 }
+
+export default function SellerDashboardLayout({ children }: { children: React.ReactNode }) {
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen bg-background flex items-center justify-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-sidebar-primary"></div>
+            </div>
+        }>
+            <SellerDashboardContent>{children}</SellerDashboardContent>
+        </Suspense>
+    );
+}
+

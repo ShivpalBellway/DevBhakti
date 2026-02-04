@@ -19,7 +19,10 @@ const storage = multer_1.default.diskStorage({
         cb(null, `receipt-${Date.now()}${path_1.default.extname(file.originalname)}`);
     },
 });
-const upload = (0, multer_1.default)({ storage });
+const upload = (0, multer_1.default)({
+    storage,
+    limits: { fileSize: 3 * 1024 * 1024 } // 3MB limit
+});
 router.get("/withdrawals", financeManagementController_1.getAllWithdrawalRequests);
 router.patch("/withdrawals/:requestId", upload.single("receiptImage"), financeManagementController_1.updateWithdrawalStatus);
 exports.default = router;

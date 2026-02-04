@@ -16,7 +16,8 @@ const getCart = async (req, res) => {
                                 id: true,
                                 name: true,
                                 image: true,
-                                templeId: true
+                                templeId: true,
+                                sellerId: true
                             }
                         },
                         variant: {
@@ -43,7 +44,8 @@ const getCart = async (req, res) => {
                                     id: true,
                                     name: true,
                                     image: true,
-                                    templeId: true
+                                    templeId: true,
+                                    sellerId: true
                                 }
                             },
                             variant: {
@@ -70,6 +72,7 @@ const getCart = async (req, res) => {
             image: item.product.image,
             quantity: item.quantity,
             templeId: item.product.templeId,
+            sellerId: item.product.sellerId,
             stock: item.variant.stock
         })) || [];
         res.json({
