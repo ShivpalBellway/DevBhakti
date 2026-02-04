@@ -66,7 +66,8 @@ import {
     fetchAllTemplesAdmin,
     deleteTempleAdmin,
     toggleTempleStatusAdmin,
-    fetchTempleUpdateRequests
+    fetchTempleUpdateRequests,
+    fetchCommissionSlabsAdmin
 } from "@/api/adminController";
 import { useToast } from "@/hooks/use-toast";
 import TemplePreview from "@/components/admin/TemplePreview";
@@ -82,6 +83,17 @@ export default function TemplesManagementPage() {
     const [isPreviewOpen, setIsPreviewOpen] = useState(false);
     const [updateRequestsCount, setUpdateRequestsCount] = useState(0);
     const { toast } = useToast();
+
+    // Slabs State
+    const [approvalModalOpen, setApprovalModalOpen] = useState(false);
+    const [globalSlabs, setGlobalSlabs] = useState<any[]>([]);
+    const [approvalData, setApprovalData] = useState<any>({
+        id: "",
+        slug: "",
+        subdomain: "",
+        urlType: "slug",
+        slabs: []
+    });
 
     useEffect(() => {
         loadTemples();
@@ -148,31 +160,30 @@ export default function TemplesManagementPage() {
         }
     };
 
-    const [approvalModalOpen, setApprovalModalOpen] = useState(false);
-    const [approvalData, setApprovalData] = useState({
-        id: "",
-        slug: "",
-        subdomain: "", // Added subdomain
-        urlType: "slug", // "slug" or "subdomain"
-        productCommissionRate: "10",
-        poojaCommissionRate: "5"
-    });
-
     const handleToggleStatus = async (id: string, currentVerified: boolean, currentActive: boolean, templeName?: string) => {
         if (!currentVerified) {
-            // Opening Approval Modal
-            const generatedSlug = templeName ? templeName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') : "";
-            setApprovalData({
-                id,
-                slug: generatedSlug,
-                subdomain: generatedSlug, // Default subdomain same as slug
-                urlType: "slug",
-                productCommissionRate: "10",
-                poojaCommissionRate: "5"
-            });
-            setApprovalModalOpen(true);
+            try {
+                const response = await fetchCommissionSlabsAdmin('GLOBAL');
+                const slabs = response.success ? response.data : [];
+
+                const generatedSlug = templeName ? templeName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') : "";
+                setApprovalData({
+                    id,
+                    slug: generatedSlug,
+                    subdomain: generatedSlug,
+                    urlType: "slug",
+                    slabs: slabs.map((s: any) => ({
+                        minAmount: s.minAmount,
+                        maxAmount: s.maxAmount,
+                        platformFee: s.platformFee.toString(),
+                        percentage: s.percentage.toString()
+                    }))
+                });
+                setApprovalModalOpen(true);
+            } catch (error) {
+                toast({ title: "Error", description: "Failed to load commission slabs" });
+            }
         } else {
-            // Deactivating - Direct Action
             if (window.confirm("Are you sure you want to revoke verification for this temple?")) {
                 try {
                     await toggleTempleStatusAdmin(id, false, currentActive);
@@ -190,13 +201,17 @@ export default function TemplesManagementPage() {
             await toggleTempleStatusAdmin(
                 approvalData.id,
                 true, // isVerified
-                true, // isActive (Default to active on approval) 
+                true, // isActive
                 {
                     slug: approvalData.slug,
                     subdomain: approvalData.subdomain,
                     urlType: approvalData.urlType,
-                    productCommissionRate: parseFloat(approvalData.productCommissionRate),
-                    poojaCommissionRate: parseFloat(approvalData.poojaCommissionRate)
+                    commissionSlabs: approvalData.slabs.map((s: any) => ({
+                        minAmount: parseFloat(s.minAmount),
+                        maxAmount: s.maxAmount ? parseFloat(s.maxAmount) : null,
+                        platformFee: parseFloat(s.platformFee),
+                        percentage: parseFloat(s.percentage)
+                    }))
                 }
             );
             toast({ title: "Success", description: "Temple Approved Successfully" });
@@ -210,6 +225,8 @@ export default function TemplesManagementPage() {
             });
         }
     };
+
+
 
     const handleToggleActive = async (id: string, currentVerified: boolean, currentActive: boolean) => {
         console.log('Toggle Active Called:', { id, currentVerified, currentActive, newValue: !currentActive });
@@ -294,7 +311,7 @@ export default function TemplesManagementPage() {
                             <SelectContent>
                                 <SelectItem value="all">All Temples</SelectItem>
                                 {temples.map((inst) => (
-                                    <SelectItem key={inst.templeId} value={inst.templeId}>
+                                    <SelectItem key={inst.userId} value={inst.templeId || inst.userId}>
                                         {inst.templeName}
                                     </SelectItem>
                                 ))}
@@ -608,22 +625,51 @@ export default function TemplesManagementPage() {
                             )}
                         </div>
 
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                                <label className="text-sm font-medium">Product Fee (%)</label>
-                                <Input
-                                    type="number"
-                                    value={approvalData.productCommissionRate}
-                                    onChange={(e) => setApprovalData({ ...approvalData, productCommissionRate: e.target.value })}
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <label className="text-sm font-medium">Pooja Fee (%)</label>
-                                <Input
-                                    type="number"
-                                    value={approvalData.poojaCommissionRate}
-                                    onChange={(e) => setApprovalData({ ...approvalData, poojaCommissionRate: e.target.value })}
-                                />
+                        {/* Slab management */}
+                        <div className="space-y-4">
+                            <label className="text-sm font-bold text-slate-800 uppercase tracking-widest text-[11px]">💰 Platform Fee Slabs</label>
+                            <div className="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                                {approvalData.slabs?.map((slab: any, index: number) => (
+                                    <div key={index} className="grid grid-cols-2 gap-3 items-center pb-3 border-b border-slate-200 last:border-0 last:pb-0">
+                                        <div className="text-[11px] font-semibold text-slate-600">
+                                            ₹{slab.minAmount} - {slab.maxAmount ? `₹${slab.maxAmount}` : '∞'}
+                                        </div>
+                                        <div className="flex gap-2">
+                                            <div className="relative flex-1">
+                                                <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] text-slate-400">₹</span>
+                                                <Input
+                                                    type="number"
+                                                    value={slab.platformFee}
+                                                    onChange={(e) => {
+                                                        const newSlabs = [...approvalData.slabs];
+                                                        newSlabs[index].platformFee = e.target.value;
+                                                        setApprovalData({ ...approvalData, slabs: newSlabs });
+                                                    }}
+                                                    className="pl-5 h-8 text-xs font-mono"
+                                                    placeholder="Fee"
+                                                />
+                                            </div>
+                                            <div className="relative flex-1">
+                                                <Input
+                                                    type="number"
+                                                    step="0.01"
+                                                    value={slab.percentage}
+                                                    onChange={(e) => {
+                                                        const newSlabs = [...approvalData.slabs];
+                                                        newSlabs[index].percentage = e.target.value;
+                                                        setApprovalData({ ...approvalData, slabs: newSlabs });
+                                                    }}
+                                                    className="pr-5 h-8 text-xs text-right font-mono"
+                                                    placeholder="%"
+                                                />
+                                                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-slate-400 font-mono">%</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                                {approvalData.slabs?.length === 0 && (
+                                    <p className="text-[10px] text-center text-slate-400 py-2 italic font-mono">No slabs defined. Using system defaults.</p>
+                                )}
                             </div>
                         </div>
 

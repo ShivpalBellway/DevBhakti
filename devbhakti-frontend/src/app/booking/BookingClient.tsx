@@ -73,6 +73,7 @@ function BookingForm() {
   });
 
   const [availabilityStatus, setAvailabilityStatus] = useState<{ available: boolean, message: string } | null>(null);
+  const [platformFee, setPlatformFee] = useState(0);
   const [unavailableDates, setUnavailableDates] = useState<string[]>([]);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
 
@@ -168,10 +169,34 @@ function BookingForm() {
     loadData();
   }, [searchParams]);
 
-  // Filter poojas based on selected temple, or show all if no temple selected (for selection)
+  // Filter poojas based on selected temple
+  // We've updated the backend to return temple-specific poojas if templeId is provided
+  useEffect(() => {
+    const loadTemplePoojas = async () => {
+      if (!selectedTemple) return;
+
+      try {
+        const response = await fetch(`${API_URL}/temples/poojas?templeId=${selectedTemple}`);
+        const data = await response.json();
+        if (data.success) {
+          // Merge or replace? For the selector, we just need the ones for this temple
+          setAllPoojas(prev => {
+            // Filter out existing poojas for this temple to avoid duplicates
+            const others = prev.filter(p => p.templeId !== selectedTemple);
+            return [...others, ...data.data];
+          });
+        }
+      } catch (error) {
+        console.error("Failed to load temple poojas:", error);
+      }
+    };
+
+    loadTemplePoojas();
+  }, [selectedTemple]);
+
   const availablePoojas = selectedTemple
     ? allPoojas.filter(p => p.templeId === selectedTemple)
-    : allPoojas;
+    : allPoojas.filter(p => p.isMaster);
 
   const selectedPoojaData = allPoojas.find(p => p.id === selectedPooja);
 
@@ -185,7 +210,41 @@ function BookingForm() {
     ];
 
   const selectedPackageData = poojaPackages.find((p: any) => (p.id === selectedPackage || p.name === selectedPackage));
-  const totalAmount = selectedPackageData?.price || selectedPoojaData?.price || 0;
+
+  // Calculate Base Price and Total Amount (inclusive of platform fee)
+  const basePrice = selectedPackageData?.price || selectedPoojaData?.price || 0;
+  const totalAmount = basePrice + (platformFee || 0);
+
+  // Fetch Commission Slab based Platform Fee
+  useEffect(() => {
+    const fetchFee = async () => {
+      if (!basePrice || !selectedTemple) {
+        setPlatformFee(0);
+        return;
+      }
+
+      try {
+        const response = await fetch(`${API_URL}/bookings/calculate-commission`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            amount: basePrice,
+            vendorType: 'TEMPLE',
+            vendorId: selectedTemple,
+            category: 'POOJA'
+          })
+        });
+        const data = await response.json();
+        if (data.success) {
+          setPlatformFee(data.data.totalCommission);
+        }
+      } catch (err) {
+        console.error("Fee calculation error:", err);
+      }
+    };
+
+    fetchFee();
+  }, [basePrice, selectedTemple]);
 
   const handleNext = () => {
     if (step === 1 && (!selectedTemple || !selectedPooja)) {
@@ -709,7 +768,13 @@ function BookingForm() {
                   <div className="flex justify-between py-2 border-b border-border">
                     <span className="text-muted-foreground">Package Price</span>
                     <span className="font-medium flex items-center">
-                      <IndianRupee className="h-4 w-4" />{selectedPackageData?.price}
+                      <IndianRupee className="h-4 w-4" />{basePrice}
+                    </span>
+                  </div>
+                  <div className="flex justify-between py-2 border-b border-border text-primary font-semibold">
+                    <span className="flex items-center gap-1">Platform Fee <Badge variant="outline" className="text-[10px] h-4 py-0">Slab-based</Badge></span>
+                    <span className="flex items-center">
+                      + <IndianRupee className="h-4 w-4" />{platformFee}
                     </span>
                   </div>
                   <div className="flex justify-between py-3 text-lg font-bold">
@@ -777,6 +842,10 @@ function BookingForm() {
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Package</span>
                     <span className="font-medium">{selectedPackageData?.name}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Platform Fee</span>
+                    <span className="font-medium text-primary">₹{platformFee}</span>
                   </div>
                   <div className="flex justify-between border-t border-border pt-2 mt-2">
                     <span className="text-muted-foreground font-bold">Total Amount</span>

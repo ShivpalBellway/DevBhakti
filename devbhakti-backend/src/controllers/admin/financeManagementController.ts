@@ -92,13 +92,16 @@ export const getPlatformFinanceSummary = async (req: Request, res: Response) => 
   console.log("Fetching platform finance summary...");
   try {
     const ledger = await prisma.templeLedger.findMany({
-      where: { type: { not: "WITHDRAWAL" }, status: "COMPLETED" }
+      where: { 
+        type: { not: "WITHDRAWAL" }, 
+        status: { not: "CANCELLED" }
+      }
     });
 
     const totalRevenue = ledger.reduce((sum: number, e: any) => sum + (Number(e.grossAmount) || 0), 0);
     const totalCommission = ledger.reduce((sum: number, e: any) => sum + (Number(e.commission) || 0), 0);
     
-    console.log(`Calculated Summary: Revenue=${totalRevenue}, Commission=${totalCommission}`);
+    console.log(`Calculated Summary: Volume=${totalRevenue}, Commission=${totalCommission}`);
     
     const pendingRequests = await prisma.withdrawalRequest.count({
       where: { status: "PENDING" }

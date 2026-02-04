@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, UserRole, BookingStatus, SlabType, CommissionCategory, LedgerStatus } from '@prisma/client';
 import bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
@@ -150,6 +150,7 @@ export const updateTemple = async (req: Request, res: Response) => {
     const poojaIds = data.poojaIds ? JSON.parse(data.poojaIds) : [];
     const inlineEvents = data.inlineEvents ? JSON.parse(data.inlineEvents) : [];
     const existingHeroImages = data.existingHeroImages ? JSON.parse(data.existingHeroImages) : [];
+    const commissionSlabs = data.commissionSlabs ? JSON.parse(data.commissionSlabs) : null;
 
     if (data.phone) {
       data.phone = normalizePhone(data.phone);
@@ -178,11 +179,12 @@ export const updateTemple = async (req: Request, res: Response) => {
               viewers: data.viewers,
               rating: parseFloat(data.rating || '0'),
               reviewsCount: parseInt(data.reviewsCount || '0'),
-              slug: data.slug || undefined, // Added
-              subdomain: data.subdomain || undefined, // Added
-              urlType: data.urlType || 'slug', // Added
+              slug: data.slug || undefined, 
+              subdomain: data.subdomain || undefined, 
+              urlType: data.urlType || 'slug',
               liveStatus: data.liveStatus === 'true',
-              // Merge image updates
+              productCommissionRate: data.productCommissionRate ? parseFloat(data.productCommissionRate) : undefined,
+              poojaCommissionRate: data.poojaCommissionRate ? parseFloat(data.poojaCommissionRate) : undefined,
               ...(files?.image && { image: getFilePath(files, 'image') }),
               heroImages: [
                 ...existingHeroImages,
@@ -196,12 +198,62 @@ export const updateTemple = async (req: Request, res: Response) => {
 
       const templeId = user.temple!.id;
 
-      // 2. Sync Poojas
+      // 2. Sync Poojas (Master-Template Logic)
+      const currentPoojas = await tx.pooja.findMany({
+        where: { templeId: templeId },
+        select: { id: true, masterPoojaId: true }
+      });
+
+      // Clear existing links
+      await tx.pooja.updateMany({
+        where: { templeId: templeId },
+        data: { templeId: null }
+      });
+
       if (poojaIds.length > 0) {
-        await tx.pooja.updateMany({
-          where: { id: { in: poojaIds } },
-          data: { templeId: templeId }
+        // Fetch all selected poojas in one query to avoid N+1 inside transaction
+        const selectedPoojasData = await tx.pooja.findMany({
+          where: { id: { in: poojaIds } }
         });
+
+        for (const poojaRecord of selectedPoojasData) {
+          if (poojaRecord.isMaster) {
+            const existingCopy = currentPoojas.find(cp => cp.masterPoojaId === poojaRecord.id);
+            if (existingCopy) {
+              await tx.pooja.update({
+                where: { id: existingCopy.id },
+                data: { templeId: templeId }
+              });
+            } else {
+              await tx.pooja.create({
+                data: {
+                  name: poojaRecord.name,
+                  category: poojaRecord.category,
+                  price: poojaRecord.price,
+                  duration: poojaRecord.duration,
+                  description: poojaRecord.description as string[],
+                  time: poojaRecord.time,
+                  image: poojaRecord.image,
+                  about: poojaRecord.about,
+                  benefits: poojaRecord.benefits as string[],
+                  bullets: poojaRecord.bullets as string[],
+                  process: poojaRecord.process,
+                  processSteps: poojaRecord.processSteps || undefined,
+                  templeId: templeId,
+                  isMaster: false,
+                  masterPoojaId: poojaRecord.id,
+                  packages: poojaRecord.packages || undefined,
+                  faqs: poojaRecord.faqs || undefined
+                }
+              });
+            }
+          } else {
+            await tx.pooja.update({
+              where: { id: poojaRecord.id },
+              data: { templeId: templeId }
+            });
+          }
+        }
       }
 
       // 3. Sync Events
@@ -219,7 +271,32 @@ export const updateTemple = async (req: Request, res: Response) => {
         }
       }
 
+      // 4. Update Commission Slabs
+      if (commissionSlabs) {
+        await tx.commissionSlab.deleteMany({
+          where: { targetId: templeId, slabType: SlabType.TEMPLE }
+        });
+
+        if (commissionSlabs.length > 0) {
+          await tx.commissionSlab.createMany({
+            data: commissionSlabs.map((s: any) => ({
+              minAmount: parseFloat(s.minAmount),
+              maxAmount: s.maxAmount ? parseFloat(s.maxAmount) : null,
+              platformFee: parseFloat(s.platformFee),
+              percentage: parseFloat(s.percentage),
+              slabType: SlabType.TEMPLE,
+              targetId: templeId,
+              category: s.category || CommissionCategory.MARKETPLACE,
+              isActive: true
+            }))
+          });
+        }
+      }
+
       return user;
+    }, {
+      maxWait: 10000,
+      timeout: 20000 
     });
 
     res.json(result);
@@ -233,40 +310,71 @@ export const updateTemple = async (req: Request, res: Response) => {
 export const toggleTempleStatus = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { isVerified, isActive, slug, subdomain, urlType, productCommissionRate, poojaCommissionRate } = req.body;
+    const { isVerified, isActive, slug, subdomain, urlType, productCommissionRate, poojaCommissionRate, commissionSlabs } = req.body;
 
     console.log('toggleTempleStatus called:', {
       id,
       isVerified,
-      isActive,  // Changed from liveStatus to isActive
+      isActive,
       slug,
-      productCommissionRate,
-      poojaCommissionRate
+      commissionSlabsCount: commissionSlabs?.length
     });
 
-    const result = await prisma.user.update({
-      where: { id: String(id) },
-      data: {
-        isVerified: isVerified,
-        temple: {
-          update: {
-            isActive: isActive !== undefined ? isActive : undefined,  // Use isActive for visibility
-            slug: slug || undefined,
-            subdomain: subdomain || undefined, // Added
-            urlType: urlType || undefined, // Added
-            productCommissionRate: productCommissionRate ? parseFloat(productCommissionRate) : undefined,
-            poojaCommissionRate: poojaCommissionRate ? parseFloat(poojaCommissionRate) : undefined,
+    const result = await prisma.$transaction(async (tx) => {
+      // 1. Update User & Temple status
+      const user = await tx.user.update({
+        where: { id: String(id) },
+        data: {
+          isVerified: isVerified !== undefined ? isVerified : undefined,
+          temple: {
+            update: {
+              isActive: isActive !== undefined ? isActive : undefined,
+              slug: slug || undefined,
+              subdomain: subdomain || undefined,
+              urlType: urlType || undefined,
+              productCommissionRate: productCommissionRate ? parseFloat(productCommissionRate) : undefined,
+              poojaCommissionRate: poojaCommissionRate ? parseFloat(poojaCommissionRate) : undefined,
+            }
           }
+        },
+        include: { temple: true }
+      });
+
+      if (!user.temple) throw new Error("Temple profile not found for this user");
+
+      // 2. Handle Commission Slabs
+      if (commissionSlabs && Array.isArray(commissionSlabs)) {
+        // Delete existing TEMPLE slabs for this temple
+        await (tx as any).commissionSlab.deleteMany({
+          where: {
+            slabType: 'TEMPLE',
+            targetId: user.temple.id
+          }
+        });
+
+        // Create new ones
+        if (commissionSlabs.length > 0) {
+          await (tx as any).commissionSlab.createMany({
+            data: commissionSlabs.map((s: any) => ({
+              minAmount: parseFloat(s.minAmount),
+              maxAmount: s.maxAmount ? parseFloat(s.maxAmount) : null,
+              platformFee: parseFloat(s.platformFee),
+              percentage: parseFloat(s.percentage),
+              slabType: 'TEMPLE',
+              targetId: user.temple!.id,
+              isActive: true
+            }))
+          });
         }
-      },
-      include: { temple: true }
+      }
+
+      return user;
     });
 
-    console.log('Temple status updated:', (result as any).temple);
-    res.json({ success: true, message: 'Status updated successfully', data: result });
+    console.log('Temple status and slabs updated');
+    res.json({ success: true, message: 'Status and commission slabs updated successfully', data: result });
   } catch (error: any) {
     console.error('Toggle status error:', error);
-    // Handle unique constraint error for slug
     if (error.code === 'P2002' && error.meta?.target.includes('slug')) {
       return res.status(400).json({ error: 'Slug is already taken. Please choose another one.' });
     }

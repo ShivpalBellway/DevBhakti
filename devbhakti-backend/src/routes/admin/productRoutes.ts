@@ -8,6 +8,7 @@ import {
   toggleProductStatus,
   getProductsByTemple,
   getPublicProducts,
+  getPublicProductById,
   getProductOwners
 } from "../../controllers/admin/productController";
 import { uploadProductImage } from "../../middleware/uploadMiddleware";
@@ -19,6 +20,7 @@ router.post("/", uploadProductImage.any(), createProduct); // Create Product wit
 router.get("/", getAllProducts); // Get All Products (Admin)
 router.get("/owners", getProductOwners); // Get All Product Owners (Temples/Sellers)
 router.get("/public", getPublicProducts); // Get Public Products (Landing Page)
+router.get("/public/:id", getPublicProductById); // Get Public Product by ID (Landing Page)
 router.get("/temple/:templeId", getProductsByTemple); // Get Products by Temple
 router.get("/:id", getProductById); // Get Product by ID
 router.put("/:id", uploadProductImage.any(), updateProduct); // Update Product with image upload

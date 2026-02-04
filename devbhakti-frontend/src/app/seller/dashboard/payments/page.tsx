@@ -121,10 +121,10 @@ export default function SellerPaymentsPage() {
                     <Card className="border-none shadow-xl bg-slate-900 text-white rounded-[1.5rem] overflow-hidden relative group">
                         <CardContent className="p-6">
                             <div className="flex items-center gap-1.5 mb-2">
-                                <p className="text-slate-400 font-bold uppercase tracking-widest text-[10px]">Total Gross Sales</p>
+                                <p className="text-slate-400 font-bold uppercase tracking-widest text-[10px]">Total Sales</p>
                                 <Tooltip>
                                     <TooltipTrigger><Info className="w-3 h-3 text-slate-500 cursor-help" /></TooltipTrigger>
-                                    <TooltipContent className="bg-slate-800 text-white border-slate-700 text-[12px]">Total value of all orders before any deductions.</TooltipContent>
+                                    <TooltipContent className="bg-slate-800 text-white border-slate-700 text-[12px]">Total value of all orders.</TooltipContent>
                                 </Tooltip>
                             </div>
                             <h2 className="text-2xl font-extrabold flex items-center gap-1">
@@ -134,6 +134,7 @@ export default function SellerPaymentsPage() {
                         </CardContent>
                     </Card>
 
+                    {/* Hiding Commission Card as it's charged to users now
                     <Card className="border-none shadow-xl bg-red-50 text-red-900 rounded-[1.5rem] overflow-hidden border border-red-100">
                         <CardContent className="p-6">
                             <div className="flex items-center gap-1.5 mb-2">
@@ -149,6 +150,7 @@ export default function SellerPaymentsPage() {
                             </h2>
                         </CardContent>
                     </Card>
+                    */}
 
                     <Card className="border-none shadow-xl bg-white rounded-[1.5rem] overflow-hidden border border-slate-100">
                         <CardContent className="p-6">
@@ -247,8 +249,10 @@ export default function SellerPaymentsPage() {
                                     <th className="py-5 pl-8 text-left text-[11px] font-extrabold text-slate-900 uppercase tracking-widest">Date / Description</th>
                                     <th className="py-5 text-left text-[11px] font-extrabold text-slate-900 uppercase tracking-widest">Type</th>
                                     <th className="py-5 text-center text-[11px] font-extrabold text-slate-900 uppercase tracking-widest">Status</th>
+                                    {/* Hiding Gross/Commission columns for cleaner look
                                     <th className="py-5 text-right text-[11px] font-extrabold text-slate-900 uppercase tracking-widest">Gross</th>
                                     <th className="py-5 text-right text-[11px] font-extrabold text-slate-900 uppercase tracking-widest">Commission</th>
+                                    */}
                                     <th className="py-5 pr-8 text-right text-[11px] font-extrabold text-slate-900 uppercase tracking-widest">Net Earning</th>
                                 </tr>
                             </thead>
@@ -288,6 +292,7 @@ export default function SellerPaymentsPage() {
                                                     {entry.status}
                                                 </Badge>
                                             </td>
+                                            {/* Hiding cells for Gross/Commission
                                             <td className="py-6 text-right">
                                                 <span className="text-xs font-bold text-slate-500">
                                                     {entry.grossAmount > 0 ? `₹${entry.grossAmount.toLocaleString()}` : "-"}
@@ -298,6 +303,7 @@ export default function SellerPaymentsPage() {
                                                     {entry.commission > 0 ? `-₹${entry.commission.toLocaleString()}` : "-"}
                                                 </span>
                                             </td>
+                                            */}
                                             <td className="py-6 pr-8 text-right">
                                                 <span className={cn(
                                                     "text-base font-extrabold",

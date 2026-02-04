@@ -48,6 +48,11 @@ interface Product {
     name: string;
     location: string;
   } | null;
+  seller?: {
+    id: string;
+    name: string;
+    location: string;
+  } | null;
   categoryObj?: {
     id: string;
     name: string;
@@ -336,7 +341,7 @@ export default function ProductDetailsPage() {
                 <div>
                   <div className="flex items-center justify-between mb-4">
                     <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#794A05]/60 pr-4">
-                      {product.temple?.name || "DevBhakti Exclusive"}
+                      {product.temple?.name || product.seller?.name || "DevBhakti Exclusive"}
                     </span>
                     <div className="flex items-center gap-1 bg-[#794A05]/5 px-2 py-1 rounded-full">
                       <Star className="w-3 h-3 text-amber-500 fill-amber-500" />
@@ -496,7 +501,7 @@ export default function ProductDetailsPage() {
                   <div className="grid grid-cols-2 gap-6 pt-6">
                     <div className="space-y-1">
                       <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Origin</span>
-                      <p className="text-sm font-semibold text-[#4A2c01]">{product.origin || product.temple?.location || "India"}</p>
+                      <p className="text-sm font-semibold text-[#4A2c01]">{product.origin || product.temple?.location || product.seller?.location || "India"}</p>
                     </div>
                     <div className="space-y-1">
                       <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Category</span>

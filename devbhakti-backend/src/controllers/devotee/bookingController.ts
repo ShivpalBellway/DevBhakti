@@ -4,6 +4,8 @@ import PDFDocument from 'pdfkit';
 import path from 'path';
 import fs from 'fs';
 import razorpay from '../../lib/razorpay';
+import { getCommissionForAmount } from '../admin/commissionSlabController';
+import { CommissionCategory, SlabType } from '@prisma/client';
 
 export const createBooking = async (req: Request, res: Response) => {
     try {
@@ -24,16 +26,11 @@ export const createBooking = async (req: Request, res: Response) => {
             return res.status(400).json({ success: false, message: 'All fields are required' });
         }
 
-        // Get pooja and temple commission rate
+        // Get pooja and calculate commission using new slab system
         const pooja = await prisma.pooja.findUnique({
             where: { id: poojaId },
             include: {
-                temple: {
-                    select: {
-                        id: true,
-                        poojaCommissionRate: true
-                    }
-                }
+                temple: true
             }
         });
 
@@ -41,9 +38,34 @@ export const createBooking = async (req: Request, res: Response) => {
             return res.status(404).json({ success: false, message: 'Pooja not found' });
         }
 
-        const commissionRate = pooja.temple?.poojaCommissionRate || 5.0;
-        const commissionAmount = (packagePrice * commissionRate) / 100;
-        const netEarning = packagePrice - commissionAmount;
+        // --- PRICE VERIFICATION ---
+        // Ensure the price matches the database record to prevent spoofing
+        let verifiedPrice = pooja.price;
+
+        // If packages exist, find the one provided in req.body
+        if (pooja.packages && Array.isArray(pooja.packages)) {
+            const pkg = (pooja.packages as any[]).find(p => p.name === packageName);
+            if (pkg) {
+                verifiedPrice = parseFloat(pkg.price);
+            } else {
+                return res.status(400).json({ success: false, message: `Package '${packageName}' not found in this pooja` });
+            }
+        }
+
+        // Optional: If price in body is significantly different, you might want to log it or use verifiedPrice
+        const finalPrice = verifiedPrice || parseFloat(packagePrice);
+
+        // Calculate commission via Slab System using verified price
+        const commissionData = await getCommissionForAmount(
+            finalPrice,
+            SlabType.TEMPLE,
+            pooja.templeId || undefined,
+            CommissionCategory.POOJA
+        );
+
+        const commissionAmount = commissionData.totalCommission;
+        // Since platform fee is added on top and charged to user, temple gets full price
+        const netEarning = finalPrice;
 
         // --- AVAILABILITY CHECK ---
 
@@ -100,6 +122,8 @@ export const createBooking = async (req: Request, res: Response) => {
                 return res.status(400).json({ success: false, message: 'Daily limit reached for this ritual.' });
             }
         }
+        // (Existing availability check code stays here...)
+        // ...rest of availability check...
         // --------------------------
 
         // Create booking and ledger entry in a transaction
@@ -110,7 +134,7 @@ export const createBooking = async (req: Request, res: Response) => {
                     poojaId,
                     templeId: pooja.templeId,
                     packageName,
-                    packagePrice,
+                    packagePrice: finalPrice, // Use verified price
                     devoteeName,
                     devoteePhone,
                     devoteeEmail: devoteeEmail as string | null,
@@ -128,7 +152,7 @@ export const createBooking = async (req: Request, res: Response) => {
                 data: {
                     templeId: pooja.templeId,
                     amount: netEarning,
-                    grossAmount: packagePrice,
+                    grossAmount: finalPrice, // Use verified price
                     commission: commissionAmount,
                     type: "POOJA_EARNING",
                     sourceId: newBooking.id,

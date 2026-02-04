@@ -19,7 +19,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { createTempleAdmin, fetchAllPoojasAdmin } from "@/api/adminController";
+import { createTempleAdmin, fetchAllPoojasAdmin, fetchCommissionSlabsAdmin } from "@/api/adminController";
 import { Badge } from "@/components/ui/badge";
 
 export default function CreateTemplePage() {
@@ -57,13 +57,13 @@ export default function CreateTemplePage() {
         urlType: "slug", // "slug" or "subdomain"
         isActive: "true", // Added isActive for visibility
         liveStatus: "false", // Future feature
-        productCommissionRate: "10.0",
         poojaCommissionRate: "5.0"
     });
 
     // Relationships State
     const [selectedPoojaIds, setSelectedPoojaIds] = useState<string[]>([]);
     const [inlineEvents, setInlineEvents] = useState<any[]>([]);
+    const [slabs, setSlabs] = useState<any[]>([]);
 
     // Images State
     const [mainImage, setMainImage] = useState<File | null>(null);
@@ -73,7 +73,19 @@ export default function CreateTemplePage() {
 
     useEffect(() => {
         loadPoojas();
+        loadDefaultSlabs();
     }, []);
+
+    const loadDefaultSlabs = async () => {
+        try {
+            const response = await fetchCommissionSlabsAdmin('GLOBAL');
+            if (response.success) {
+                setSlabs(response.data);
+            }
+        } catch (error) {
+            console.error("Failed to load global slabs structure");
+        }
+    };
 
     const loadPoojas = async () => {
         try {
@@ -129,6 +141,20 @@ export default function CreateTemplePage() {
         );
     };
 
+    const handleAddSlab = () => {
+        setSlabs([...slabs, { minAmount: 0, maxAmount: null, platformFee: 0, percentage: 0 }]);
+    };
+
+    const handleRemoveSlab = (index: number) => {
+        setSlabs(slabs.filter((_, i) => i !== index));
+    };
+
+    const handleSlabChange = (index: number, field: string, value: any) => {
+        const newSlabs = [...slabs];
+        newSlabs[index] = { ...newSlabs[index], [field]: value };
+        setSlabs(newSlabs);
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsLoading(true);
@@ -144,6 +170,7 @@ export default function CreateTemplePage() {
             // Append relationships
             fd.append("poojaIds", JSON.stringify(selectedPoojaIds));
             fd.append("inlineEvents", JSON.stringify(inlineEvents));
+            fd.append("commissionSlabs", JSON.stringify(slabs));
 
             // Append images
             if (mainImage) fd.append("image", mainImage);
@@ -608,35 +635,81 @@ export default function CreateTemplePage() {
                     </div>
                 </div> */}
 
-                {/* 7. Financial Settings */}
+                {/* 7. Marketplace Commission Slabs */}
                 <div className="bg-card border rounded-xl p-8 shadow-sm space-y-6">
-                    <div className="flex items-center gap-2 text-[#794A05] font-bold">
-                        <IndianRupee className="w-5 h-5" />
-                        <h2 className="text-xl font-serif">Financial & Commission Settings</h2>
+                    <div className="flex items-center gap-2 text-primary font-bold">
+                        <Layout className="w-5 h-5" />
+                        <h2 className="text-xl font-serif">Marketplace Commission Slabs</h2>
                     </div>
-                    <p className="text-sm text-muted-foreground mb-4 font-medium">Set the commission percentages for this temple's offerings.</p>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="space-y-2">
-                            <label className="text-sm font-bold text-slate-700 uppercase tracking-widest text-[11px]">Marketplace Commission (%)</label>
-                            <Input
-                                type="number"
-                                step="0.1"
-                                value={formData.productCommissionRate}
-                                onChange={e => setFormData({ ...formData, productCommissionRate: e.target.value })}
-                                className="h-11 rounded-xl"
-                                placeholder="eg. 10.0"
-                            />
+
+                    <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                            <p className="text-sm text-slate-500">Define amount-based commission rates for this temple. Amount ranges are fixed to maintain consistency.</p>
                         </div>
+
+                        {slabs.length === 0 ? (
+                            <div className="p-8 text-center border-2 border-dashed rounded-xl text-slate-400">
+                                Loading default slab structure...
+                            </div>
+                        ) : (
+                            <div className="space-y-3">
+                                {slabs.map((slab, index) => (
+                                    <div key={index} className="grid grid-cols-1 md:grid-cols-4 gap-4 p-4 bg-slate-50 rounded-xl border border-slate-100 relative group">
+                                        <div className="space-y-1">
+                                            <label className="text-[10px] font-bold uppercase text-slate-400">Min Amount</label>
+                                            <Input
+                                                type="number"
+                                                value={slab.minAmount}
+                                                readOnly
+                                                className="h-9 bg-slate-100 cursor-not-allowed border-dashed"
+                                            />
+                                        </div>
+                                        <div className="space-y-1">
+                                            <label className="text-[10px] font-bold uppercase text-slate-400">Max Amount</label>
+                                            <Input
+                                                type="number"
+                                                value={slab.maxAmount || ''}
+                                                placeholder="∞"
+                                                readOnly
+                                                className="h-9 bg-slate-100 cursor-not-allowed border-dashed"
+                                            />
+                                        </div>
+                                        <div className="space-y-1">
+                                            <label className="text-[10px] font-bold uppercase text-slate-400">Fixed Fee (₹)</label>
+                                            <Input
+                                                type="number"
+                                                value={slab.platformFee}
+                                                onChange={e => handleSlabChange(index, 'platformFee', e.target.value)}
+                                                className="h-9 text-[#794A05] font-bold bg-white border-primary/20 focus:border-primary shadow-sm"
+                                            />
+                                        </div>
+                                        <div className="space-y-1">
+                                            <label className="text-[10px] font-bold uppercase text-slate-400">Percentage (%)</label>
+                                            <Input
+                                                type="number"
+                                                step="0.1"
+                                                value={slab.percentage}
+                                                onChange={e => handleSlabChange(index, 'percentage', e.target.value)}
+                                                className="h-9 bg-white border-primary/20 focus:border-primary shadow-sm"
+                                            />
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t">
                         <div className="space-y-2">
-                            <label className="text-sm font-bold text-slate-700 uppercase tracking-widest text-[11px]">Pooja Booking Commission (%)</label>
+                            <label className="text-sm font-semibold text-slate-700">Pooja Booking Commission (%)</label>
                             <Input
                                 type="number"
                                 step="0.1"
                                 value={formData.poojaCommissionRate}
                                 onChange={e => setFormData({ ...formData, poojaCommissionRate: e.target.value })}
                                 className="h-11 rounded-xl"
-                                placeholder="eg. 5.0"
                             />
+                            <p className="text-[10px] text-slate-400 italic">This rate applies to all pooja bookings for this temple.</p>
                         </div>
                     </div>
                 </div>

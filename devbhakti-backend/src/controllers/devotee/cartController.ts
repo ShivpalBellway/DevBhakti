@@ -16,7 +16,8 @@ export const getCart = async (req: Request, res: Response) => {
                                 id: true,
                                 name: true,
                                 image: true,
-                                templeId: true
+                                templeId: true,
+                                sellerId: true
                             }
                         },
                         variant: {
@@ -44,7 +45,8 @@ export const getCart = async (req: Request, res: Response) => {
                                     id: true,
                                     name: true,
                                     image: true,
-                                    templeId: true
+                                    templeId: true,
+                                    sellerId: true
                                 }
                             },
                             variant: {
@@ -72,6 +74,7 @@ export const getCart = async (req: Request, res: Response) => {
             image: item.product.image,
             quantity: item.quantity,
             templeId: item.product.templeId,
+            sellerId: item.product.sellerId,
             stock: item.variant.stock
         })) || [];
 

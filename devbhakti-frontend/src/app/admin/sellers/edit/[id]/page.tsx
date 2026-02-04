@@ -15,7 +15,9 @@ import {
     XCircle,
     Clock,
     IndianRupee,
-    TrendingUp
+    TrendingUp,
+    Plus,
+    Trash2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,7 +32,7 @@ import {
     SelectValue
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { fetchSellerByIdAdmin, updateSellerAdmin } from "@/api/adminController";
+import { fetchSellerByIdAdmin, updateSellerAdmin, fetchCommissionSlabsAdmin } from "@/api/adminController";
 
 export default function EditSellerPage() {
     const router = useRouter();
@@ -38,6 +40,7 @@ export default function EditSellerPage() {
     const { toast } = useToast();
     const [isLoading, setIsLoading] = useState(false);
     const [isFetching, setIsFetching] = useState(true);
+    const [slabs, setSlabs] = useState<any[]>([]);
 
     const [formData, setFormData] = useState({
         storeName: "",
@@ -67,6 +70,14 @@ export default function EditSellerPage() {
                 address: data.address || "",
                 productCommissionRate: data.productCommissionRate?.toString() || "10.0",
             });
+
+            // Set slabs if they exist in the response
+            if (data.commissionSlabs && data.commissionSlabs.length > 0) {
+                setSlabs(data.commissionSlabs);
+            } else {
+                // Fallback to global slabs as template if no seller slabs exist
+                loadDefaultSlabs();
+            }
         } catch (error: any) {
             console.error("Load Seller Error:", error);
             toast({
@@ -79,6 +90,18 @@ export default function EditSellerPage() {
         }
     };
 
+    const loadDefaultSlabs = async () => {
+        try {
+            const response = await fetchCommissionSlabsAdmin('GLOBAL');
+            if (response.success) {
+                const marketplaceSlabs = response.data.filter((s: any) => s.category === 'MARKETPLACE');
+                setSlabs(marketplaceSlabs);
+            }
+        } catch (error) {
+            console.error("Failed to load global slabs structure");
+        }
+    };
+
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
@@ -88,12 +111,29 @@ export default function EditSellerPage() {
         setFormData(prev => ({ ...prev, status: value }));
     };
 
+    const handleAddSlab = () => {
+        setSlabs([...slabs, { minAmount: 0, maxAmount: null, platformFee: 0, percentage: 0, category: 'MARKETPLACE' }]);
+    };
+
+    const handleRemoveSlab = (index: number) => {
+        setSlabs(slabs.filter((_, i) => i !== index));
+    };
+
+    const handleSlabChange = (index: number, field: string, value: any) => {
+        const newSlabs = [...slabs];
+        newSlabs[index] = { ...newSlabs[index], [field]: value };
+        setSlabs(newSlabs);
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsLoading(true);
 
         try {
-            await updateSellerAdmin(id as string, formData);
+            await updateSellerAdmin(id as string, {
+                ...formData,
+                commissionSlabs: slabs
+            });
             toast({
                 title: "Success",
                 description: "Seller updated successfully",
@@ -221,32 +261,105 @@ export default function EditSellerPage() {
                         </Card>
 
                         <Card className="border-slate-200 shadow-sm border-l-4 border-l-amber-500">
-                            <CardHeader className="bg-amber-50/50 border-b border-amber-100">
-                                <CardTitle className="text-lg flex items-center gap-2">
-                                    <IndianRupee className="w-5 h-5 text-amber-600" />
-                                    Financial & Commission
-                                </CardTitle>
-                                <CardDescription>Update platform fees for this seller's products.</CardDescription>
-                            </CardHeader>
-                            <CardContent className="p-6 space-y-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="productCommissionRate">Marketplace Commission (%)</Label>
-                                    <div className="relative">
-                                        <TrendingUp className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                                        <Input
-                                            id="productCommissionRate"
-                                            name="productCommissionRate"
-                                            type="number"
-                                            step="0.1"
-                                            placeholder="e.g. 10.0"
-                                            className="pl-10"
-                                            value={formData.productCommissionRate}
-                                            onChange={handleChange}
-                                            required
-                                        />
-                                        <div className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">%</div>
+                            <CardHeader className="bg-amber-50/50 border-b border-amber-100 pb-3">
+                                <div className="flex justify-between items-center">
+                                    <div>
+                                        <CardTitle className="text-lg flex items-center gap-2 text-amber-900">
+                                            <IndianRupee className="w-5 h-5 text-amber-600" />
+                                            Marketplace Commission Slabs
+                                        </CardTitle>
+                                        <CardDescription className="text-amber-800/70">Manage multi-tier commission structures for this seller.</CardDescription>
                                     </div>
-                                    <p className="text-[10px] text-muted-foreground">Adjust the percentage deducted from every successful sale.</p>
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={handleAddSlab}
+                                        className="bg-white hover:bg-amber-50 border-amber-200 text-amber-700 h-8 font-medium shadow-sm transition-all"
+                                    >
+                                        <Plus className="w-3.5 h-3.5 mr-1.5" />
+                                        Add Slab
+                                    </Button>
+                                </div>
+                            </CardHeader>
+                            <CardContent className="p-0">
+                                <div className="overflow-x-auto">
+                                    <table className="w-full text-sm text-left">
+                                        <thead>
+                                            <tr className="bg-slate-50/50 text-slate-500 border-b border-slate-100">
+                                                <th className="px-4 py-3 font-semibold">Min (₹)</th>
+                                                <th className="px-4 py-3 font-semibold">Max (₹)</th>
+                                                <th className="px-4 py-3 font-semibold">Fixed (₹)</th>
+                                                <th className="px-4 py-3 font-semibold">%</th>
+                                                <th className="px-4 py-3 w-10"></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-slate-50">
+                                            {slabs.map((slab, index) => (
+                                                <tr key={index} className="group hover:bg-slate-50/30 transition-colors">
+                                                    <td className="px-3 py-2">
+                                                        <Input
+                                                            type="number"
+                                                            value={slab.minAmount}
+                                                            onChange={(e) => handleSlabChange(index, "minAmount", e.target.value)}
+                                                            className="h-8 py-0 focus-visible:ring-amber-500 text-sm font-medium border-slate-200"
+                                                            required
+                                                        />
+                                                    </td>
+                                                    <td className="px-3 py-2">
+                                                        <Input
+                                                            type="number"
+                                                            value={slab.maxAmount || ""}
+                                                            placeholder="∞"
+                                                            onChange={(e) => handleSlabChange(index, "maxAmount", e.target.value)}
+                                                            className="h-8 py-0 focus-visible:ring-amber-500 text-sm font-medium border-slate-200"
+                                                        />
+                                                    </td>
+                                                    <td className="px-3 py-2">
+                                                        <Input
+                                                            type="number"
+                                                            value={slab.platformFee}
+                                                            onChange={(e) => handleSlabChange(index, "platformFee", e.target.value)}
+                                                            className="h-8 py-0 focus-visible:ring-amber-500 text-sm font-medium border-slate-200"
+                                                            required
+                                                        />
+                                                    </td>
+                                                    <td className="px-3 py-2">
+                                                        <Input
+                                                            type="number"
+                                                            value={slab.percentage}
+                                                            onChange={(e) => handleSlabChange(index, "percentage", e.target.value)}
+                                                            className="h-8 py-0 focus-visible:ring-amber-500 text-sm font-medium border-slate-200"
+                                                            required
+                                                        />
+                                                    </td>
+                                                    <td className="px-3 py-2">
+                                                        <Button
+                                                            type="button"
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            onClick={() => handleRemoveSlab(index)}
+                                                            className="h-8 w-8 text-slate-300 hover:text-red-500 hover:bg-red-50 transition-colors opacity-0 group-hover:opacity-100"
+                                                        >
+                                                            <Trash2 className="w-4 h-4" />
+                                                        </Button>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                            {slabs.length === 0 && (
+                                                <tr>
+                                                    <td colSpan={5} className="py-8 text-center text-slate-400 italic">
+                                                        No custom slabs defined. Using global defaults.
+                                                    </td>
+                                                </tr>
+                                            )}
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div className="px-4 py-3 bg-amber-50/30 border-t border-amber-100/50">
+                                    <p className="text-[11px] leading-relaxed text-amber-700/70 font-medium">
+                                        Commission tiers help define different platform fees based on order value. Leave Max empty for the highest tier.
+                                    </p>
                                 </div>
                             </CardContent>
                         </Card>

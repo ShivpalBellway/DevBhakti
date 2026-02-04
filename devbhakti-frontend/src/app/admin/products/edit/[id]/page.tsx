@@ -130,9 +130,9 @@ export default function EditProductPage() {
         }));
 
       const formattedSellers = sellersData
-        .filter((seller: any) => seller.templeId)
+        .filter((seller: any) => seller.sellerId)
         .map((seller: any) => ({
-          id: seller.templeId,
+          id: seller.sellerId,
           name: seller.storeName,
           role: "SELLER",
           icon: <Store className="w-4 h-4 text-blue-600" />
@@ -187,7 +187,7 @@ export default function EditProductPage() {
         name: data.name,
         description: data.description,
         category: data.categoryId || "",
-        templeId: data.templeId || "general",
+        templeId: data.templeId || data.sellerId || "general",
         status: data.status,
         highlights: data.highlights || "",
         longDescription: data.longDescription || "",
@@ -331,10 +331,8 @@ export default function EditProductPage() {
       formDataToSend.append('category', formData.category);
       formDataToSend.append('status', formData.status);
 
-      // Add templeId (null for general products)
-      if (formData.templeId !== "general") {
-        formDataToSend.append('templeId', formData.templeId);
-      }
+      // Add templeId (send 'general' if explicitly selected or default to it)
+      formDataToSend.append('templeId', formData.templeId || "general");
 
       // Add product image if new one is uploaded
       if (productImage) {

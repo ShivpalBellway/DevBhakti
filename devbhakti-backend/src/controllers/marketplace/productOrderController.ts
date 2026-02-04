@@ -2,6 +2,76 @@ import { Request, Response } from "express";
 import { prisma } from "../../lib/prisma";
 import { createShiprocketOrder } from "../../services/shiprocketService";
 import razorpay from "../../lib/razorpay";
+import { PrismaClient, SlabType, CommissionCategory } from "@prisma/client";
+import { getCommissionForAmount } from "../admin/commissionSlabController";
+
+const prisma = new PrismaClient();
+
+export const calculateFees = async (req: Request, res: Response) => {
+  try {
+    const { items } = req.body; // Array of { productId, price, quantity, templeId, sellerId }
+
+    if (!items || items.length === 0) {
+      return res.json({ success: true, platformFee: 0, vendorBreakdown: [] });
+    }
+
+    // Group items by vendor
+    const groups: Record<string, { amount: number, type: SlabType, id: string | null }> = {};
+    
+    for (const item of items) {
+      let vendorId = item.templeId || item.sellerId || "admin";
+      let vendorType = item.templeId ? SlabType.TEMPLE : (item.sellerId ? SlabType.SELLER : SlabType.GLOBAL);
+      
+      const key = `${vendorType}_${vendorId}`;
+      if (!groups[key]) {
+        groups[key] = { amount: 0, type: vendorType, id: vendorId === "admin" ? null : vendorId };
+      }
+      groups[key].amount += item.price * item.quantity;
+    }
+
+    let totalPlatformFee = 0;
+    const vendorBreakdown = [];
+
+    for (const key in groups) {
+      const group = groups[key];
+      // Skip commission for admin products
+      if (group.id === null) {
+        vendorBreakdown.push({
+          vendorId: "admin",
+          amount: group.amount,
+          fee: 0
+        });
+        continue;
+      }
+
+      const commission = await getCommissionForAmount(
+        group.amount, 
+        group.type, 
+        group.id, 
+        CommissionCategory.MARKETPLACE
+      );
+      totalPlatformFee += commission.totalCommission;
+      
+      vendorBreakdown.push({
+        vendorId: group.id,
+        vendorType: group.type,
+        amount: group.amount,
+        fee: commission.totalCommission,
+        percentage: commission.percentage,
+        fixedFee: commission.platformFee
+      });
+    }
+
+    return res.json({
+      success: true,
+      totalPlatformFee,
+      vendorBreakdown
+    });
+  } catch (error: any) {
+    console.error("Calculate Fees Error:", error);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
 
 export const createOrder = async (req: Request, res: Response) => {
   try {
@@ -62,28 +132,35 @@ export const createOrder = async (req: Request, res: Response) => {
     for (const [key, groupItems] of Object.entries(groups)) {
       const subOrderTotal = groupItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
-      let commissionRate = 10; // Default to 10
       let templeId = null;
       let sellerId = null;
+      let vendorType = SlabType.GLOBAL;
+      let vendorId = null;
 
       if (key.startsWith("temple_")) {
         templeId = key.replace("temple_", "");
-        const temple = await prisma.temple.findUnique({
-          where: { id: templeId },
-          select: { productCommissionRate: true }
-        });
-        commissionRate = temple?.productCommissionRate ?? 10;
+        vendorId = templeId;
+        vendorType = SlabType.TEMPLE;
       } else if (key.startsWith("seller_")) {
         sellerId = key.replace("seller_", "");
-        const seller = await prisma.sellerProfile.findUnique({
-          where: { id: sellerId },
-          select: { productCommissionRate: true }
-        });
-        commissionRate = seller?.productCommissionRate ?? 10;
+        vendorId = sellerId;
+        vendorType = SlabType.SELLER;
       }
 
-      const commissionAmount = (subOrderTotal * commissionRate) / 100;
-      const netEarning = subOrderTotal - commissionAmount;
+      // Calculate commission using Slabs
+      let commissionAmount = 0;
+      if (vendorId) {
+        const commissionResult = await getCommissionForAmount(
+          subOrderTotal, 
+          vendorType, 
+          vendorId, 
+          CommissionCategory.MARKETPLACE
+        );
+        commissionAmount = commissionResult.totalCommission;
+      }
+
+      // Since platform fee is added on top and charged to user, vendor gets full price
+      const netEarning = subOrderTotal;
 
       const subOrder = await prisma.subOrder.create({
         data: {

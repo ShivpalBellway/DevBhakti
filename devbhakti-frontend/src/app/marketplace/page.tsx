@@ -51,6 +51,9 @@ interface Product {
   temple?: {
     name: string;
   } | null;
+  seller?: {
+    name: string;
+  } | null;
   variants: Array<{
     id: string;
     name: string;
@@ -456,7 +459,7 @@ function MarketplaceContent() {
                     <CardContent className="p-4">
                       <div className="flex items-center justify-between mb-2">
                         <p className="text-[10px] font-bold uppercase tracking-wider text-[#794A05]/60">
-                          {product.temple?.name || "DevBhakti Exclusive"}
+                          {product.temple?.name || product.seller?.name || "DevBhakti Exclusive"}
                         </p>
                         <div className="flex items-center gap-0.5">
                           <Star className="h-3 w-3 text-amber-500 fill-amber-500" />
