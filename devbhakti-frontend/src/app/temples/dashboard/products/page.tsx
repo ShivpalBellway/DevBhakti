@@ -35,8 +35,9 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { fetchMyProducts, deleteMyProduct } from "@/api/templeAdminController";
 import { useToast } from "@/hooks/use-toast";
+import { BASE_URL } from "@/config/apiConfig";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+
 
 export default function TempleProductsPage() {
     const router = useRouter();
@@ -218,7 +219,7 @@ export default function TempleProductsPage() {
                                         <div className="relative aspect-video bg-slate-50 overflow-hidden cursor-pointer" onClick={() => handleView(product)}>
                                             {product.image ? (
                                                 <img
-                                                    src={`${API_URL}${product.image}`}
+                                                    src={`${BASE_URL}${product.image}`}
                                                     alt={product.name}
                                                     className="w-full h-full object-contain p-4 group-hover:scale-105 transition-transform duration-500"
                                                 />
@@ -312,7 +313,7 @@ export default function TempleProductsPage() {
                             <div className="w-full md:w-2/5 bg-slate-100 relative min-h-[300px]">
                                 {selectedProduct.image ? (
                                     <img
-                                        src={`${API_URL}${selectedProduct.image}`}
+                                        src={`${BASE_URL}${selectedProduct.image}`}
                                         alt={selectedProduct.name}
                                         className="w-full h-full object-contain p-4 absolute inset-0"
                                     />
@@ -380,7 +381,7 @@ export default function TempleProductsPage() {
                                                             <tr key={variant.id} className="hover:bg-slate-50/50">
                                                                 <td className="px-4 py-3">
                                                                     {variant.image ? (
-                                                                        <img src={`${API_URL}${variant.image}`} alt={variant.name} className="w-12 h-12 object-cover rounded-md border" />
+                                                                        <img src={`${BASE_URL}${variant.image}`} alt={variant.name} className="w-12 h-12 object-cover rounded-md border" />
                                                                     ) : (
                                                                         <div className="w-12 h-12 border-2 border-dashed border-slate-200 rounded-md flex items-center justify-center">
                                                                             <Package className="w-5 h-5 text-slate-300" />

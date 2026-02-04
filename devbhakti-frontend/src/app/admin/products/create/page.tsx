@@ -468,7 +468,8 @@ export default function CreateProductPage() {
                       onChange={handleProductImageChange}
                       className="cursor-pointer"
                     />
-                    <p className="text-xs text-slate-500 mt-1">
+                    <p className="text-[10px] font-semibold text-primary mt-1">Recommended: 800x800 px (Square)</p>
+                    <p className="text-xs text-slate-500 mt-0.5">
                       JPG, PNG, GIF up to 5MB
                     </p>
                   </div>
@@ -686,6 +687,7 @@ export default function CreateProductPage() {
                         )}
                         <div className="flex-1">
                           <Input type="file" accept="image/*" onChange={(e) => handleVariantImageChange(variant.id, e)} className="cursor-pointer text-xs" />
+                          <p className="text-[10px] font-semibold text-primary mt-0.5">Recommended: 800x800 px</p>
                           <p className="text-[10px] text-muted-foreground mt-0.5">Max 5MB</p>
                         </div>
                       </div>

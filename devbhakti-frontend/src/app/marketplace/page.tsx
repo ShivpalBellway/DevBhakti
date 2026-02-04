@@ -31,6 +31,7 @@ import { useToast } from "@/hooks/use-toast";
 import { fetchPublicProducts } from "@/api/publicController";
 import { fetchActiveCategoriesAdmin } from "@/api/adminController";
 import { fetchUserFavorites, addFavorite, removeFavorite } from "@/api/userController";
+import { BASE_URL } from "@/config/apiConfig";
 
 interface Product {
   id: string;
@@ -417,39 +418,41 @@ function MarketplaceContent() {
                 {filteredProducts.map((product) => (
                   <Card
                     key={product.id}
-                    className="group overflow-hidden border-border/50 hover:shadow-xl hover:border-primary/30 transition-all duration-300"
+                    className="group overflow-hidden border-border/50 hover:shadow-xl hover:border-primary/30 transition-all duration-300 cursor-pointer"
                   >
-                    <div className="relative aspect-[5/4] overflow-hidden bg-muted">
-                      {product.image ? (
-                        <img
-                          src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}${product.image}`}
-                          alt={product.name}
-                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-muted/30">
-                          <Package className="w-12 h-12 text-muted-foreground" />
-                        </div>
-                      )}
+                    <Link href={`/marketplace/product/${product.id}`}>
+                      <div className="relative aspect-[5/4] overflow-hidden bg-muted">
+                        {product.image ? (
+                          <img
+                            src={`${BASE_URL}${product.image}`}
+                            alt={product.name}
+                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center bg-muted/30">
+                            <Package className="w-12 h-12 text-muted-foreground" />
+                          </div>
+                        )}
 
-                      <Badge className="absolute top-3 left-3 bg-primary">
-                        {product.variants.length} {product.variants.length === 1 ? 'Variant' : 'Variants'}
-                      </Badge>
+                        <Badge className="absolute top-3 left-3 bg-primary">
+                          {product.variants.length} {product.variants.length === 1 ? 'Variant' : 'Variants'}
+                        </Badge>
 
-                      <Button
-                        variant="secondary"
-                        size="icon"
-                        className="absolute top-3 right-3 rounded-full opacity-0 group-hover:opacity-100 transition-opacity bg-background/80 backdrop-blur-sm"
-                        onClick={() => toggleFavorite(product.id)}
-                      >
-                        <Heart
-                          className={`h-4 w-4 ${favorites.includes(product.id)
-                            ? "fill-red-500 text-red-500"
-                            : ""
-                            }`}
-                        />
-                      </Button>
-                    </div>
+                        <Button
+                          variant="secondary"
+                          size="icon"
+                          className="absolute top-3 right-3 rounded-full opacity-0 group-hover:opacity-100 transition-opacity bg-background/80 backdrop-blur-sm"
+                          onClick={() => toggleFavorite(product.id)}
+                        >
+                          <Heart
+                            className={`h-4 w-4 ${favorites.includes(product.id)
+                              ? "fill-red-500 text-red-500"
+                              : ""
+                              }`}
+                          />
+                        </Button>
+                      </div>
+                    </Link>
                     <CardContent className="p-4">
                       <div className="flex items-center justify-between mb-2">
                         <p className="text-[10px] font-bold uppercase tracking-wider text-[#794A05]/60">

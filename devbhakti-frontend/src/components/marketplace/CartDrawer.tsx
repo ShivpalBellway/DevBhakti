@@ -5,6 +5,7 @@ import { Separator } from "@/components/ui/separator";
 import { Minus, Plus, Trash2, IndianRupee, ShoppingBag } from "lucide-react";
 
 import { useCart, CartItem } from "@/context/CartContext";
+import { BASE_URL } from "@/config/apiConfig";
 
 interface CartDrawerProps {
   open: boolean;
@@ -49,7 +50,7 @@ const CartDrawer: React.FC<CartDrawerProps> = ({
               {items.map((item) => (
                 <div key={item.variantId} className="flex gap-4 p-3 bg-muted/50 rounded-lg">
                   <img
-                    src={item.image.startsWith('http') ? item.image : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}${item.image}`}
+                    src={item.image.startsWith('http') ? item.image : `${BASE_URL}${item.image}`}
                     alt={item.name}
                     className="w-20 h-20 object-cover rounded-md"
                   />

@@ -7,6 +7,7 @@ import Link from "next/link";
 import { fetchPublicProducts } from "@/api/publicController";
 import { fetchUserFavorites, addFavorite, removeFavorite } from "@/api/userController";
 import { useToast } from "@/hooks/use-toast";
+import { BASE_URL } from "@/config/apiConfig";
 
 interface Product {
   id: string;
@@ -27,7 +28,6 @@ const MarketplaceSection: React.FC = () => {
   const [favorites, setFavorites] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
   useEffect(() => {
     const loadData = async () => {
@@ -142,7 +142,7 @@ const MarketplaceSection: React.FC = () => {
                     <div className="aspect-[5/4] bg-[#fdf6e9] rounded-2xl overflow-hidden mb-5 relative">
                       {product.image ? (
                         <img
-                          src={`${API_URL}${product.image}`}
+                          src={`${BASE_URL}${product.image}`}
                           alt={product.name}
                           className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                         />

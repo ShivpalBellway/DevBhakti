@@ -1,5 +1,5 @@
-import { Request, Response } from "express";
 import { prisma } from "../../lib/prisma";
+import { createShiprocketPickupLocation } from "../../services/shiprocketService";
 
 const getFilePath = (files: any, fieldName: string) => {
     if (files && files[fieldName] && files[fieldName][0]) {
@@ -59,7 +59,8 @@ export const updateSellerProfile = async (req: Request, res: Response) => {
         const fields = [
             'name', 'category', 'openTime', 'description',
             'location', 'fullAddress', 'phone', 'website',
-            'bankName', 'accountNumber', 'accountHolderName', 'ifscCode', 'upiId'
+            'bankName', 'accountNumber', 'accountHolderName', 'ifscCode', 'upiId',
+            'pickupLocation'
         ];
 
         fields.forEach(field => {
@@ -83,6 +84,34 @@ export const updateSellerProfile = async (req: Request, res: Response) => {
             where: { id: store.id },
             data: updateData
         });
+
+        // Automate Shiprocket Sync if address or pickup nickname changed
+        if (data.fullAddress || data.pickupLocation) {
+            try {
+                const pickupData = {
+                    pickup_location: updated.pickupLocation || `PICKUP_${updated.id.substring(0, 5)}`,
+                    name: updated.name,
+                    email: (req as any).user.email || 'seller@devbhakti.in',
+                    phone: updated.phone || '+919999999999',
+                    address: updated.fullAddress || '',
+                    city: updated.location || "Delhi",
+                    state: "Delhi",
+                    country: "India",
+                    pin_code: "110001"
+                };
+                await createShiprocketPickupLocation(pickupData);
+
+                // If it's a new random nickname, save it
+                if (!updated.pickupLocation) {
+                    await prisma.sellerProfile.update({
+                        where: { id: updated.id },
+                        data: { pickupLocation: pickupData.pickup_location }
+                    });
+                }
+            } catch (err) {
+                console.error("Seller Shiprocket automation error:", err);
+            }
+        }
 
         return res.status(200).json({ success: true, message: "Profile updated successfully", data: updated });
     } catch (error: any) {

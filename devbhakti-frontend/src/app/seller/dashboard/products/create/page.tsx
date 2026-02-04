@@ -13,7 +13,8 @@ import {
     Image as ImageIcon,
     Layers,
     Info,
-    CheckCircle2
+    CheckCircle2,
+    Truck
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -87,6 +88,10 @@ export default function CreateSellerProductPage() {
         shippingInfo: "Ships in 24-48 Hours",
         origin: "India",
         rating: "4.5",
+        weight: "",
+        length: "",
+        width: "",
+        height: "",
     });
 
     const [variants, setVariants] = useState<Variant[]>([
@@ -155,6 +160,10 @@ export default function CreateSellerProductPage() {
             fd.append("shippingInfo", formData.shippingInfo);
             fd.append("origin", formData.origin);
             fd.append("rating", formData.rating);
+            fd.append("weight", formData.weight);
+            fd.append("length", formData.length);
+            fd.append("width", formData.width);
+            fd.append("height", formData.height);
             const variantsData = variants.filter(v => v.name.trim() && v.price > 0).map((v, index) => {
                 if (v.imageFile) {
                     fd.append(`variant_image_${index}`, v.imageFile);
@@ -302,7 +311,8 @@ export default function CreateSellerProductPage() {
                                     )}
                                     <div className="flex-1">
                                         <Input type="file" accept="image/*" onChange={handleProductImageChange} className="cursor-pointer" />
-                                        <p className="text-xs text-muted-foreground mt-1">JPG, PNG, GIF up to 5MB</p>
+                                        <p className="text-[10px] font-semibold text-primary mt-1">Recommended: 800x800 px (Square)</p>
+                                        <p className="text-[10px] text-muted-foreground">JPG, PNG, GIF up to 5MB</p>
                                     </div>
                                 </div>
                             </div>
@@ -313,9 +323,35 @@ export default function CreateSellerProductPage() {
                                     <Input id="origin" value={formData.origin} onChange={(e) => setFormData({ ...formData, origin: e.target.value })} />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor="shippingInfo">Shipping</Label>
+                                    <Label htmlFor="shippingInfo">Shipping Label (UI)</Label>
                                     <Input id="shippingInfo" value={formData.shippingInfo} onChange={(e) => setFormData({ ...formData, shippingInfo: e.target.value })} />
                                 </div>
+                            </div>
+
+                            <div className="bg-blue-50/50 dark:bg-blue-950/30 p-4 rounded-xl border border-blue-100 dark:border-blue-900 space-y-4">
+                                <div className="flex items-center gap-2 text-blue-700 dark:text-blue-300">
+                                    <Truck className="w-5 h-5" />
+                                    <h3 className="font-bold text-sm uppercase tracking-wider">Shiprocket Dimensions (Required)</h3>
+                                </div>
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                    <div className="space-y-2">
+                                        <Label htmlFor="weight">Weight (kg) *</Label>
+                                        <Input id="weight" type="number" step="0.01" value={formData.weight} onChange={(e) => setFormData({ ...formData, weight: e.target.value })} placeholder="0.5" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="length">Length (cm) *</Label>
+                                        <Input id="length" type="number" value={formData.length} onChange={(e) => setFormData({ ...formData, length: e.target.value })} placeholder="10" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="width">Width (cm) *</Label>
+                                        <Input id="width" type="number" value={formData.width} onChange={(e) => setFormData({ ...formData, width: e.target.value })} placeholder="10" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="height">Height (cm) *</Label>
+                                        <Input id="height" type="number" value={formData.height} onChange={(e) => setFormData({ ...formData, height: e.target.value })} placeholder="10" />
+                                    </div>
+                                </div>
+                                <p className="text-[10px] text-blue-600/70 font-medium">Note: Exact dimensions help in accurate shipping charges.</p>
                             </div>
 
                             <div className="space-y-2">
@@ -363,7 +399,8 @@ export default function CreateSellerProductPage() {
                                                 )}
                                                 <div className="flex-1">
                                                     <Input type="file" accept="image/*" onChange={(e) => handleVariantImageChange(variant.id, e)} className="cursor-pointer text-xs" />
-                                                    <p className="text-[10px] text-muted-foreground mt-0.5">Max 5MB</p>
+                                                    <p className="text-[10px] font-semibold text-primary mt-0.5">Recommended: 800x800 px</p>
+                                                    <p className="text-[10px] text-muted-foreground">Max 5MB</p>
                                                 </div>
                                             </div>
                                         </div>

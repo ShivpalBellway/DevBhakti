@@ -93,6 +93,7 @@ model Temple {
   products              Product[]
   subOrders             SubOrder[]
   user                  User                  @relation(fields: [userId], references: [id])
+  pickupLocation        String? 
   ledgerEntries         TempleLedger[]
   updateRequests        TempleUpdateRequest[]
   withdrawals           WithdrawalRequest[]
@@ -138,6 +139,7 @@ model SellerProfile {
   upiId                 String?
   products              Product[]
   user                  User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  pickupLocation        String?
   subOrders             SubOrder[]
   ledgerEntries         TempleLedger[]
   withdrawals           WithdrawalRequest[]
@@ -168,7 +170,12 @@ model Pooja {
   bullets       String[]
   process       String?
   processSteps  Json?
-  templeId      String
+  
+  // New Fields for Master-Template System
+  isMaster      Boolean               @default(false) 
+  masterPoojaId String?               // Reference to the original pooja if this is a temple copy
+  
+  templeId      String?               // Optional only for Master Poojas
   templeDetails String?
   packages      Json?
   faqs          Json?
@@ -178,8 +185,10 @@ model Pooja {
   status        Boolean               @default(true)
   availability  BookingAvailability[]
   favorites     Favorite[]
-  temple        Temple                @relation(fields: [templeId], references: [id])
+  temple        Temple?               @relation(fields: [templeId], references: [id])
   bookings      PoojaBooking[]
+  masterPooja   Pooja?                @relation("MasterPoojaRelation", fields: [masterPoojaId], references: [id])
+  templeCopies  Pooja[]               @relation("MasterPoojaRelation")
 }
 
 model Event {
@@ -257,6 +266,10 @@ model Product {
   shippingInfo    String?          @default("Ships in 24-48 Hours")
   origin          String?          @default("India")
   rating          Float?           @default(4.5)
+  weight          Float?           @default(0.5)
+  length          Float?           @default(10)
+  width           Float?           @default(10)
+  height          Float?           @default(10)
   sellerId        String?
   cartItems       CartItem[]
   favorites       Favorite[]
@@ -271,7 +284,6 @@ model ProductVariant {
   id        String     @id @default(cuid())
   name      String
   price     Float
-  costPrice Float?
   stock     Int        @default(0)
   image     String?
   productId String
@@ -358,6 +370,7 @@ model SubOrder {
   commissionAmount Float          @default(0)
   netEarning       Float          @default(0)
   shippingLabel    String?
+  shiprocketOrderId String?
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt
   sellerId         String?
@@ -412,6 +425,33 @@ model WithdrawalRequest {
   sellerId      String?
   seller        SellerProfile?   @relation(fields: [sellerId], references: [id])
   temple        Temple?          @relation(fields: [templeId], references: [id])
+}
+
+model CommissionSlab {
+  id          String   @id @default(cuid())
+  minAmount   Float    // Minimum order amount for this slab (e.g., 0, 500, 2000)
+  maxAmount   Float?   // Maximum order amount (null for last slab like 4000+)
+  platformFee Float    @default(0) // Fixed platform fee (e.g., ₹20)
+  percentage  Float    @default(0) // Percentage commission (e.g., 5%)
+  slabType    SlabType @default(GLOBAL) // GLOBAL, TEMPLE, or SELLER
+  category    CommissionCategory @default(MARKETPLACE) // MARKETPLACE vs POOJA
+  targetId    String?  // Specific Temple/Seller ID (null for GLOBAL)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([slabType, targetId, category])
+}
+
+enum SlabType {
+  GLOBAL
+  TEMPLE
+  SELLER
+}
+
+enum CommissionCategory {
+  MARKETPLACE
+  POOJA
 }
 
 enum UserRole {

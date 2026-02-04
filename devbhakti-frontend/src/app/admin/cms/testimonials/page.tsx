@@ -350,7 +350,7 @@ export default function TestimonialsPage() {
                                     ) : (
                                         <>
                                             <ImageIcon className="w-8 h-8 text-muted-foreground" />
-                                            <div className="text-xs text-center">Click to upload thumbnail</div>
+                                            <div className="text-xs text-center">Upload Thumbnail (400x600 Recommended)</div>
                                         </>
                                     )}
                                     <input

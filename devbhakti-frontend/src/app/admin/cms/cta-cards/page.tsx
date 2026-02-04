@@ -330,7 +330,7 @@ export default function CTACardsPage() {
                                 <div className="border-2 border-dashed rounded-lg px-6 py-4 flex flex-col items-center justify-center gap-2 hover:bg-muted/50 transition-colors cursor-pointer relative bg-slate-50 w-full">
                                     <Upload className="w-6 h-6 text-muted-foreground" />
                                     <div className="text-sm font-medium text-center text-muted-foreground">
-                                        Click to upload new icon
+                                        Click to upload icon (200x200 Recommended)
                                     </div>
                                     <Input
                                         type="file"

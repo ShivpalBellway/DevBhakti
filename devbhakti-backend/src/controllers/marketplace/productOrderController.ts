@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
+import { prisma } from "../../lib/prisma";
+import { createShiprocketOrder } from "../../services/shiprocketService";
+import razorpay from "../../lib/razorpay";
 
 export const createOrder = async (req: Request, res: Response) => {
   try {
@@ -15,12 +15,21 @@ export const createOrder = async (req: Request, res: Response) => {
     const productIds = items.map((item: any) => item.productId);
     const products = await prisma.product.findMany({
       where: { id: { in: productIds } },
-      select: { id: true, templeId: true, sellerId: true },
+      select: {
+        id: true,
+        templeId: true,
+        sellerId: true,
+        name: true,
+        weight: true,
+        length: true,
+        width: true,
+        height: true
+      },
     });
 
     const productMap = new Map();
     products.forEach((p) => {
-      productMap.set(p.id, { templeId: p.templeId, sellerId: p.sellerId });
+      productMap.set(p.id, p);
     });
 
     // 2. Create Master Order
@@ -31,8 +40,13 @@ export const createOrder = async (req: Request, res: Response) => {
         paymentMethod,
         shippingAddress,
         status: "PENDING",
-        paymentStatus: "PENDING", // Since we are using static success for now
+        paymentStatus: "PENDING",
       },
+      include: {
+        user: {
+          select: { name: true, email: true, phone: true }
+        }
+      }
     });
 
     // 3. Group items by templeId or sellerId
@@ -109,13 +123,93 @@ export const createOrder = async (req: Request, res: Response) => {
         });
       }
 
-      // 5. Update Stock (Optional but recommended)
+      // 5. Update Stock
       for (const item of groupItems) {
         await prisma.productVariant.update({
           where: { id: item.variantId },
           data: { stock: { decrement: item.quantity } },
         });
       }
+
+      // 6. Sync with Shiprocket (Async - don't block order success)
+      try {
+        const srItems = groupItems.map(item => {
+          const pInfo = productMap.get(item.productId);
+          return {
+            name: pInfo?.name || item.productId,
+            sku: item.variantId,
+            units: item.quantity,
+            selling_price: item.price,
+            discount: 0,
+            tax: 0,
+          };
+        });
+
+        // Calculate package dimensions (Total weight, Max dimensions)
+        const totalWeight = groupItems.reduce((acc, item) => {
+          const pInfo = productMap.get(item.productId);
+          return acc + (Number(pInfo?.weight || 0.5) * item.quantity);
+        }, 0);
+
+        const maxLength = Math.max(...groupItems.map(item => Number(productMap.get(item.productId)?.length || 10)));
+        const maxWidth = Math.max(...groupItems.map(item => Number(productMap.get(item.productId)?.width || 10)));
+        const maxHeight = Math.max(...groupItems.map(item => Number(productMap.get(item.productId)?.height || 10)));
+
+        const pickupLocation = key.startsWith("temple_")
+          ? (await prisma.temple.findUnique({ where: { id: templeId! }, select: { pickupLocation: true } }))?.pickupLocation
+          : (await prisma.sellerProfile.findUnique({ where: { id: sellerId! }, select: { pickupLocation: true } }))?.pickupLocation;
+
+        const shiprocketData = {
+          order_id: subOrder.id,
+          order_date: new Date().toISOString().split('T')[0],
+          pickup_location: pickupLocation || "Primary",
+          billing_customer_name: shippingAddress.fullName.split(' ')[0],
+          billing_last_name: shippingAddress.fullName.split(' ').slice(1).join(' ') || "User",
+          billing_address: shippingAddress.street,
+          billing_city: shippingAddress.city,
+          billing_pincode: shippingAddress.pincode,
+          billing_state: shippingAddress.state || "Delhi",
+          billing_country: "India",
+          billing_email: order.user.email || "customer@devbhakti.in",
+          billing_phone: shippingAddress.phone || order.user.phone || "9999999999",
+          shipping_is_billing: true,
+          order_items: srItems,
+          payment_method: "Prepaid",
+          sub_total: subOrderTotal,
+          length: maxLength,
+          width: maxWidth,
+          height: maxHeight,
+          weight: totalWeight
+        };
+
+        const srResponse = await createShiprocketOrder(shiprocketData);
+        if (srResponse && srResponse.order_id) {
+          await prisma.subOrder.update({
+            where: { id: subOrder.id },
+            data: {
+              shiprocketOrderId: srResponse.order_id.toString()
+            }
+          });
+        }
+      } catch (srError) {
+        console.error("Shiprocket Sync Error for SubOrder", subOrder.id, srError);
+      }
+    }
+
+    // 7. Handle Razorpay Order Creation
+    if (paymentMethod === "RAZORPAY") {
+      const razorpayOrder = await razorpay.orders.create({
+        amount: Math.round(totalAmount * 100), // Amount in paise
+        currency: "INR",
+        receipt: `order_rcpt_${order.id.slice(-10)}`,
+      });
+
+      return res.status(201).json({
+        success: true,
+        message: "Order initiated. Complete payment to confirm.",
+        data: order,
+        razorpayOrder
+      });
     }
 
     return res.status(201).json({

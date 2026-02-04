@@ -3,6 +3,7 @@ import { prisma } from '../../lib/prisma';
 import PDFDocument from 'pdfkit';
 import path from 'path';
 import fs from 'fs';
+import razorpay from '../../lib/razorpay';
 
 export const createBooking = async (req: Request, res: Response) => {
     try {
@@ -53,9 +54,9 @@ export const createBooking = async (req: Request, res: Response) => {
         // For safety/simplicity in this context, we can use findFirst.
         const globalAvailability = await prisma.bookingAvailability.findFirst({
             where: {
-                templeId: pooja.templeId,
-                poojaId: null,
-                date: bookingDate
+                templeId: pooja.templeId as string,
+                poojaId: undefined, // Using undefined to represent NULL in some prisma versions or use { equals: null }
+                date: bookingDate as string
             }
         });
 
@@ -78,9 +79,9 @@ export const createBooking = async (req: Request, res: Response) => {
         // 2. Specific Pooja Availability
         const poojaAvailability = await prisma.bookingAvailability.findFirst({
             where: {
-                templeId: pooja.templeId,
-                poojaId: poojaId,
-                date: bookingDate
+                templeId: pooja.templeId as string,
+                poojaId: poojaId as string,
+                date: bookingDate as string
             }
         });
 
@@ -112,10 +113,10 @@ export const createBooking = async (req: Request, res: Response) => {
                     packagePrice,
                     devoteeName,
                     devoteePhone,
-                    devoteeEmail,
-                    bookingDate,
-                    address,
-                    specialRequests,
+                    devoteeEmail: devoteeEmail as string | null,
+                    bookingDate: bookingDate as string,
+                    address: address as string | null,
+                    specialRequests: specialRequests as string | null,
                     status: 'BOOKED',
                     commissionAmount,
                     netEarning
@@ -141,8 +142,13 @@ export const createBooking = async (req: Request, res: Response) => {
 
         res.status(201).json({
             success: true,
-            message: 'Pooja booked successfully',
-            data: booking
+            message: 'Pooja initiated. Complete payment to confirm.',
+            data: booking,
+            razorpayOrder: await razorpay.orders.create({
+                amount: Math.round(packagePrice * 100),
+                currency: "INR",
+                receipt: `pooja_rcpt_${booking.id.slice(-10)}`,
+            })
         });
     } catch (error) {
         console.error('Error creating booking:', error);
@@ -187,7 +193,7 @@ export const checkAvailability = async (req: Request, res: Response) => {
         const globalAvailability = await prisma.bookingAvailability.findFirst({
             where: {
                 templeId: templeId as string,
-                poojaId: null,
+                poojaId: undefined,
                 date: date as string
             }
         });

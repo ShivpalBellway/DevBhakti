@@ -120,7 +120,7 @@ export default function AdminPoojasListPage() {
                             <TableHead className="w-[80px]">Image</TableHead>
                             <TableHead>Pooja Name</TableHead>
                             <TableHead>Temple</TableHead>
-                            <TableHead>Category</TableHead>
+                            <TableHead>Category/Purpose</TableHead>
                             <TableHead>Price</TableHead>
                             {/* <TableHead>Duration</TableHead> */}
                             <TableHead className="text-right">Actions</TableHead>

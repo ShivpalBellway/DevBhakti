@@ -572,7 +572,8 @@ export default function EditProductPage() {
                       onChange={handleProductImageChange}
                       className="cursor-pointer"
                     />
-                    <p className="text-xs text-slate-500 mt-1">
+                    <p className="text-[10px] font-semibold text-primary mt-1">Recommended: 800x800 px (Square)</p>
+                    <p className="text-xs text-slate-500 mt-0.5">
                       JPG, PNG, GIF up to 5MB
                     </p>
                     {existingImage && !productImagePreview && (
@@ -782,6 +783,8 @@ export default function EditProductPage() {
                           onChange={(e) => handleVariantImageChange(variant.id, e)}
                           className="max-w-[150px] text-xs h-8"
                         />
+                        <p className="text-[10px] font-semibold text-primary mt-1">Recommended: 800x800 px</p>
+                        <p className="text-[10px] text-muted-foreground mt-0.5">Max 5MB</p>
                       </div>
                     </div>
 

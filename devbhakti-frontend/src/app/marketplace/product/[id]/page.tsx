@@ -32,6 +32,7 @@ import CartDrawer from "@/components/marketplace/CartDrawer";
 import { useToast } from "@/hooks/use-toast";
 import { fetchProductByIdPublic } from "@/api/publicController";
 import { fetchUserFavorites, addFavorite, removeFavorite } from "@/api/userController";
+import { BASE_URL } from "@/config/apiConfig";
 
 interface Product {
   id: string;
@@ -240,13 +241,13 @@ export default function ProductDetailsPage() {
               >
                 {(userHasSelectedVariant && currentVariant?.image) ? (
                   <img
-                    src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}${currentVariant.image}`}
+                    src={`${BASE_URL}${currentVariant.image}`}
                     alt={product.name}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                   />
                 ) : product.image ? (
                   <img
-                    src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}${product.image}`}
+                    src={`${BASE_URL}${product.image}`}
                     alt={product.name}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                   />
@@ -288,7 +289,7 @@ export default function ProductDetailsPage() {
                       } bg-white`}
                   >
                     <img
-                      src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}${product.image}`}
+                      src={`${BASE_URL}${product.image}`}
                       alt={product.name}
                       className="w-full h-full object-cover"
                     />
@@ -310,7 +311,7 @@ export default function ProductDetailsPage() {
                   >
                     {variant.image ? (
                       <img
-                        src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}${variant.image}`}
+                        src={`${BASE_URL}${variant.image}`}
                         alt={variant.name}
                         className="w-full h-full object-cover"
                       />

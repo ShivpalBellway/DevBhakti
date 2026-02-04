@@ -249,11 +249,11 @@ const PoojaListClient: React.FC = () => {
                                                         </Badge>
                                                     )}
                                                 </div>
-                                                <div className="absolute bottom-4 right-4 animate-in fade-in slide-in-from-bottom-2 duration-700">
+                                                {/* <div className="absolute bottom-4 right-4 animate-in fade-in slide-in-from-bottom-2 duration-700">
                                                     <div className="bg-black/40 backdrop-blur-md text-white px-4 py-2 rounded-2xl text-sm font-medium border border-white/20">
                                                         Starts from ₹{pooja.price}
                                                     </div>
-                                                </div>
+                                                </div> */}
                                             </div>
 
                                             <div className="px-3 flex-grow">
@@ -293,10 +293,10 @@ const PoojaListClient: React.FC = () => {
 
                                             <div className="mt-auto px-3 pb-2">
                                                 <div className="flex items-center justify-between gap-4 pt-6 border-t border-orange-50">
-                                                    <div className="flex flex-col">
+                                                    {/* <div className="flex flex-col">
                                                         <span className="text-xs text-zinc-400 uppercase font-bold tracking-widest">Start From</span>
                                                         <span className="text-2xl font-bold text-zinc-900 font-display">₹{pooja.price}</span>
-                                                    </div>
+                                                    </div> */}
                                                     <div className="flex flex-col gap-2 w-full">
                                                         <Button
                                                             className="w-full rounded-xl bg-primary hover:bg-primary/90 group/book transition-all duration-300"

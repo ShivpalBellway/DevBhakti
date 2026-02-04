@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { prisma } from '../../lib/prisma';
+import { createShiprocketPickupLocation } from '../../services/shiprocketService';
 import bcrypt from 'bcrypt';
 
 const getFilePath = (files: any, fieldName: string) => {
@@ -102,12 +103,31 @@ export const registerTemple = async (req: Request, res: Response) => {
               date: ev.date,
               description: ev.description
             }))
-          }
+          },
+          pickupLocation: `TEMPLE_${Math.random().toString(36).substring(2, 7).toUpperCase()}`
         }
       });
 
       return { user, temple };
     });
+
+    // 3. Register Pickup Location with Shiprocket
+    try {
+      const pickupData = {
+        pickup_location: (result.temple as any).pickupLocation,
+        name: data.name,
+        email: data.email,
+        phone: data.phone,
+        address: data.fullAddress || '',
+        city: data.location || "Delhi",
+        state: "Delhi",
+        country: "India",
+        pin_code: "110001"
+      };
+      await createShiprocketPickupLocation(pickupData);
+    } catch (srError) {
+      console.error("Shiprocket Pickup sync error:", srError);
+    }
 
     res.status(201).json({
       success: true,

@@ -13,7 +13,8 @@ import {
     Loader2,
     Image as ImageIcon,
     X,
-    Plus
+    Plus,
+    Truck
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -50,6 +51,7 @@ export default function TempleProfilePage() {
         mapUrl: "",
         viewers: "",
         isLive: false,
+        pickupLocation: "",
     });
 
     const [mainImagePreview, setMainImagePreview] = useState<string | null>(null);
@@ -83,6 +85,7 @@ export default function TempleProfilePage() {
                     mapUrl: data.mapUrl || "",
                     viewers: data.viewers || "",
                     isLive: data.isLive || false,
+                    pickupLocation: data.pickupLocation || "",
                 });
                 if (data.image) setMainImagePreview(getImageUrl(data.image));
                 if (data.heroImages && Array.isArray(data.heroImages)) {
@@ -266,8 +269,8 @@ export default function TempleProfilePage() {
                                     </>
                                 ) : (
                                     <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-400 gap-2 cursor-pointer" onClick={() => mainImageRef.current?.click()}>
-                                        <Camera className="w-10 h-10" />
                                         <span className="text-sm font-medium">Upload Temple Image</span>
+                                        <span className="text-[10px] text-slate-500">Recommended: 1200x900 px (4:3)</span>
                                     </div>
                                 )}
                                 <input
@@ -305,9 +308,10 @@ export default function TempleProfilePage() {
                                 ))}
                                 <div
                                     onClick={() => heroImagesRef.current?.click()}
-                                    className="aspect-video rounded-lg border-2 border-dashed border-slate-200 bg-slate-50 flex items-center justify-center text-slate-400 hover:bg-slate-100 transition-colors cursor-pointer"
+                                    className="aspect-video rounded-lg border-2 border-dashed border-slate-200 bg-slate-50 flex flex-col items-center justify-center text-slate-400 hover:bg-slate-100 transition-colors cursor-pointer relative"
                                 >
                                     <Plus className="w-6 h-6" />
+                                    <span className="text-[9px] font-bold text-slate-500 absolute bottom-2">1920x1080 px</span>
                                 </div>
                             </div>
                             <input
@@ -322,7 +326,7 @@ export default function TempleProfilePage() {
                     </Card>
 
                     {/* Gallery */}
-                 {/*     <Card className="border-none shadow-md rounded-2xl">
+                    {/*     <Card className="border-none shadow-md rounded-2xl">
                         <CardHeader className="bg-[#7b4623]/5 border-b pb-4">
                             <CardTitle className="text-lg font-serif text-[#7b4623] flex items-center gap-2">
                                 <ImageIcon className="w-5 h-5" />
@@ -420,7 +424,7 @@ export default function TempleProfilePage() {
                                         className="h-11 border-slate-200 focus:border-[#7b4623] focus:ring-[#7b4623]/10 text-slate-900"
                                     />
                                 </div>
-                              {/*  <div className="space-y-2">
+                                {/*  <div className="space-y-2">
                                     <Label className="text-slate-600">Phone Number</Label>
                                     <Input
                                         value={formData.phone}
@@ -503,6 +507,27 @@ export default function TempleProfilePage() {
                                     onChange={e => setFormData({ ...formData, mapUrl: e.target.value })}
                                     className="h-11 border-slate-200 focus:border-[#7b4623] focus:ring-[#7b4623]/10"
                                 />
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    <Card className="border-none shadow-md rounded-2xl bg-[#0070F3]/5 border-dashed border-[#0070F3]/20">
+                        <CardHeader className="border-b pb-4">
+                            <CardTitle className="text-xl font-serif text-[#0070F3] flex items-center gap-2">
+                                <Truck className="w-5 h-5" />
+                                Shiprocket Fulfillment
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="pt-6 space-y-4">
+                            <div className="space-y-2">
+                                <Label className="text-[#0070F3] font-bold uppercase text-[10px] tracking-widest">Pickup Location Nickname *</Label>
+                                <Input
+                                    value={formData.pickupLocation}
+                                    onChange={e => setFormData({ ...formData, pickupLocation: e.target.value })}
+                                    className="h-11 border-[#0070F3]/20 focus:border-[#0070F3] focus:ring-[#0070F3]/10 bg-white"
+                                    placeholder="e.g. TEMPLE_MAIN_GATE"
+                                />
+                                <p className="text-[10px] text-slate-500 italic">Enter the nickname exactly as it appears in your Shiprocket Dashboard.</p>
                             </div>
                         </CardContent>
                     </Card>

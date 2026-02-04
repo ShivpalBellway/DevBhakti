@@ -17,7 +17,8 @@ import {
     Store,
     Info,
     CheckCircle2,
-    TrendingUp
+    TrendingUp,
+    Truck
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -49,6 +50,7 @@ export default function SellerProfilePage() {
         fullAddress: "",
         phone: "",
         website: "",
+        shiprocketPickupNickname: "",
     });
 
     const [mainImagePreview, setMainImagePreview] = useState<string | null>(null);
@@ -76,6 +78,7 @@ export default function SellerProfilePage() {
                     fullAddress: data.fullAddress || "",
                     phone: data.phone || data.user?.phone || "",
                     website: data.website || "",
+                    shiprocketPickupNickname: data.shiprocketPickupNickname || "",
                 });
 
                 if (data.image) setMainImagePreview(`${BASE_URL}${data.image}`);
@@ -236,7 +239,8 @@ export default function SellerProfilePage() {
                                         </div>
                                         <div>
                                             <p className="text-sm font-extrabold text-slate-900">Upload Store Logo</p>
-                                            <p className="text-[10px] uppercase font-bold tracking-widest mt-1">Recommended: 800x800 px</p>
+                                            <p className="text-[10px] uppercase font-bold tracking-widest mt-1">Recommended: 800x800 px (Square)</p>
+                                            <p className="text-[10px] text-slate-500 font-medium lowercase italic">Supported: JPG, PNG, WEBP</p>
                                         </div>
                                     </div>
                                 )}
@@ -312,6 +316,7 @@ export default function SellerProfilePage() {
                                         <Plus className="w-5 h-5" />
                                     </div>
                                     <span className="text-[10px] font-bold uppercase tracking-widest">Add Photo</span>
+                                    <span className="text-[9px] text-slate-400 mt-1 uppercase font-bold tracking-tighter">Recommended: 1200x900 px</span>
                                 </button>
                             </div>
                             <input
@@ -446,15 +451,26 @@ export default function SellerProfilePage() {
                                 />
                             </div>
 
-                            <div className="p-6 bg-slate-50 rounded-3xl border border-dashed border-slate-200 flex items-start gap-4">
-                                <div className="w-10 h-10 rounded-2xl bg-slate-200 flex items-center justify-center shrink-0 shadow-inner">
-                                    <Info className="w-5 h-5 text-slate-500" />
+                            <div className="p-6 bg-[#0070F3]/5 rounded-3xl border border-dashed border-[#0070F3]/20 flex flex-col gap-4">
+                                <div className="flex items-start gap-4">
+                                    <div className="w-10 h-10 rounded-2xl bg-[#0070F3]/10 flex items-center justify-center shrink-0 shadow-inner">
+                                        <Truck className="w-5 h-5 text-[#0070F3]" />
+                                    </div>
+                                    <div className="flex-1">
+                                        <h4 className="font-bold text-slate-900 text-sm">Shiprocket Integration</h4>
+                                        <p className="text-xs text-slate-500 font-medium leading-relaxed mt-1">
+                                            Enter the exact <b>Pickup Location Nickname</b> from your Shiprocket Dashboard.
+                                        </p>
+                                    </div>
                                 </div>
-                                <div>
-                                    <h4 className="font-bold text-slate-900 text-sm">Logistics Information</h4>
-                                    <p className="text-xs text-slate-500 font-medium leading-relaxed mt-1">
-                                        This address will be used as the default pickup point for courier partners. Ensure it is accurate for timely order fulfillment.
-                                    </p>
+                                <div className="space-y-3">
+                                    <Label className="text-xs font-extrabold text-[#0070F3] tracking-widest uppercase ml-1">Shiprocket Pickup Nickname *</Label>
+                                    <Input
+                                        value={formData.shiprocketPickupNickname}
+                                        onChange={e => setFormData({ ...formData, shiprocketPickupNickname: e.target.value })}
+                                        className="h-12 border-[#0070F3]/10 bg-white focus:border-[#0070F3] focus:ring-[#0070F3]/10 text-slate-900 rounded-2xl text-sm font-bold transition-all"
+                                        placeholder="e.g. PRIMARY_WAREHOUSE"
+                                    />
                                 </div>
                             </div>
                         </CardContent>

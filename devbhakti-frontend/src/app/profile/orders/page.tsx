@@ -286,6 +286,32 @@ export default function MyOrdersPage() {
                                                             </div>
                                                         </div>
 
+                                                        {/* Tracking Information (If available) */}
+                                                        {order.subOrders.some((so: any) => so.awbCode) && (
+                                                            <div className="p-6 bg-blue-50/50 rounded-3xl border border-blue-100 flex items-center justify-between">
+                                                                <div className="flex items-center gap-4">
+                                                                    <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center border border-blue-200">
+                                                                        <Truck className="w-6 h-6 text-blue-600" />
+                                                                    </div>
+                                                                    <div>
+                                                                        <p className="text-[10px] text-blue-500 font-bold uppercase tracking-widest">Shiprocket Tracking</p>
+                                                                        <p className="text-sm font-bold text-slate-900">Your order is synced for shipping</p>
+                                                                    </div>
+                                                                </div>
+                                                                <div className="flex gap-3">
+                                                                    {order.subOrders.map((sub: any) => sub.awbCode && (
+                                                                        <Button
+                                                                            key={sub.id}
+                                                                            onClick={() => window.open(sub.trackingUrl || `https://shiprocket.co/tracking/${sub.awbCode}`, '_blank')}
+                                                                            className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs h-10 px-6 shadow-lg shadow-blue-500/20"
+                                                                        >
+                                                                            Track Pkg #{sub.id.slice(-4)}
+                                                                        </Button>
+                                                                    ))}
+                                                                </div>
+                                                            </div>
+                                                        )}
+
                                                         {/* Breakdowns - Product List */}
                                                         <div className="space-y-4">
                                                             <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] pl-1">Package Breakdown</h4>

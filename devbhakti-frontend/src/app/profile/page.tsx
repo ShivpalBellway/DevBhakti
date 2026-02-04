@@ -270,10 +270,12 @@ const ProfilePage = () => {
                                             <button
                                                 onClick={() => fileInputRef.current?.click()}
                                                 className="absolute bottom-1 right-1 w-10 h-10 bg-orange-600 text-white rounded-full flex items-center justify-center shadow-lg border-2 border-white hover:bg-orange-700 transition-transform hover:scale-110 active:scale-90 z-20"
+                                                title="Recommended: 500x500 px"
                                             >
                                                 <Camera className="w-5 h-5" />
                                             </button>
                                             <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept="image/*" />
+                                            <p className="text-[10px] text-slate-400 mt-2 font-bold uppercase tracking-widest">Recommended: 500x500 px</p>
                                         </>
                                     )}
                                 </div>

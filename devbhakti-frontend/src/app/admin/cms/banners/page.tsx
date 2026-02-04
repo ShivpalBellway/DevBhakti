@@ -287,7 +287,7 @@ export default function BannersPage() {
                             <div className="border-2 border-dashed rounded-lg p-6 flex flex-col items-center justify-center gap-2 hover:bg-muted/50 transition-colors cursor-pointer relative">
                                 <Upload className="w-8 h-8 text-muted-foreground" />
                                 <div className="text-sm font-medium">Click to upload or drag and drop</div>
-                                <div className="text-xs text-muted-foreground">PNG, JPG or WEBP (Max 5MB)</div>
+                                <div className="text-xs text-muted-foreground">PNG, JPG or WEBP (1920x600 px Recommended)</div>
                                 <Input
                                     type="file"
                                     className="absolute inset-0 opacity-0 cursor-pointer"

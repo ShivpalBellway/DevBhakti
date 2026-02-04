@@ -25,6 +25,8 @@ import publicOrderRoutes from './routes/marketplace/productOrderRoutes';
 import adminOrderRoutes from './routes/admin/productOrderRoutes';
 import adminDashboardRoutes from './routes/admin/dashboardRoutes';
 import templeAdminOrderRoutes from './routes/temple_admin/productOrderRoutes';
+import shiprocketWebhookRoutes from './routes/shiprocketRoutes';
+import paymentRoutes from './routes/paymentRoutes';
 
 import adminFinanceManagementRoutes from './routes/admin/financeManagementRoutes';
 import templeAdminFinanceRoutes from './routes/temple_admin/financeRoutes';
@@ -85,6 +87,8 @@ app.use('/api/favorites', favoriteRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/orders', publicOrderRoutes);
 app.use('/api/cart', cartRoutes);
+app.use('/api/shiprocket-webhook', shiprocketWebhookRoutes);
+app.use('/api/payments', paymentRoutes);
 
 
 // General Routes (Temporary)

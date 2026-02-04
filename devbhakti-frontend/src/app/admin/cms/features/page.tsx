@@ -330,7 +330,7 @@ export default function FeaturesPage() {
                                 <Label>Icon Image (Small)</Label>
                                 <div className="border-2 border-dashed rounded-lg p-4 flex flex-col items-center justify-center gap-1 hover:bg-muted/50 transition-colors cursor-pointer relative">
                                     <Upload className="w-6 h-6 text-muted-foreground" />
-                                    <div className="text-xs font-medium text-center">Upload Icon</div>
+                                    <div className="text-xs font-medium text-center">Upload Icon (200x200)</div>
                                     <Input
                                         type="file"
                                         className="absolute inset-0 opacity-0 cursor-pointer"
@@ -355,7 +355,7 @@ export default function FeaturesPage() {
                                 <Label>Background Image</Label>
                                 <div className="border-2 border-dashed rounded-lg p-4 flex flex-col items-center justify-center gap-1 hover:bg-muted/50 transition-colors cursor-pointer relative">
                                     <Upload className="w-6 h-6 text-muted-foreground" />
-                                    <div className="text-xs font-medium text-center">Upload BG</div>
+                                    <div className="text-xs font-medium text-center">Upload BG (800x600)</div>
                                     <Input
                                         type="file"
                                         className="absolute inset-0 opacity-0 cursor-pointer"

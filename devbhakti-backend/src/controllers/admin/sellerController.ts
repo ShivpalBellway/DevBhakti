@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { prisma } from "../../lib/prisma";
+import { createShiprocketPickupLocation } from '../../services/shiprocketService';
 
 // Helper to normalize phone number to +91XXXXXXXXXX format
 const normalizePhone = (phone: string): string => {
@@ -69,14 +70,34 @@ export const createSeller = async (req: Request, res: Response) => {
                     userId: user.id,
                     openTime: '9:00 AM - 9:00 PM', // Default
                     productCommissionRate: parseFloat(productCommissionRate as string) || 10.0,
+                    pickupLocation: `PICKUP_${Math.random().toString(36).substring(2, 7).toUpperCase()}`
                 }
             });
 
             return { user, sellerProfile };
         });
 
+        // 3. Register Pickup Location with Shiprocket
+        try {
+            const pickupData = {
+                pickup_location: (result.sellerProfile as any).pickupLocation,
+                name: sellerName as string,
+                email: email as string,
+                phone: normalizedPhone,
+                address: (address as string) || '',
+                city: "Delhi", // Defaulting for now, ideally parsed from address
+                state: "Delhi",
+                country: "India",
+                pin_code: "110001" // Defaulting for now
+            };
+            await createShiprocketPickupLocation(pickupData);
+            console.log("Shiprocket Pickup Location Created Successfully");
+        } catch (srError) {
+            console.error("Failed to create Shiprocket Pickup Location:", srError);
+        }
+
         res.status(201).json({
-            message: 'Seller created successfully',
+            message: 'Seller created successfully and synced with Shiprocket',
             data: result
         });
 

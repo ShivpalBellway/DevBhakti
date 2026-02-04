@@ -1,11 +1,7 @@
 import axios from "axios";
+import { API_URL } from "@/config/apiConfig";
 
 // Using the same base URL logic or constant as other controllers
-// Assuming others use process.env.NEXT_PUBLIC_API_URL or a simplified hardcoded/relative path if proxy is set.
-// Looking at adminController.ts content from previous summary (it was long, I didn't see the top imports),
-// I'll assume standard axios config. I will use a local instance for now or direct axios calls with headers.
-
-const API_URL = "http://localhost:5000/api"; // Should match backend
 
 // Helper to get token
 const getAuthHeaders = () => {

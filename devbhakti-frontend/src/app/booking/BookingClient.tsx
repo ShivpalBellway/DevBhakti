@@ -52,6 +52,7 @@ function BookingForm() {
   const router = useRouter();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(true);
+  const RAZORPAY_KEY = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "rzp_test_placeholder";
 
   const [allTemples, setAllTemples] = useState<any[]>([]);
   const [allPoojas, setAllPoojas] = useState<any[]>([]);
@@ -240,9 +241,56 @@ function BookingForm() {
 
       const res = await response.json();
 
-      if (res.success) {
-        setStep(5); // Show confirmation
-        toast({ title: "Booking Confirmed!", description: "You will receive confirmation via email and SMS." });
+      if (res.success && res.razorpayOrder) {
+        const options = {
+          key: RAZORPAY_KEY,
+          amount: res.razorpayOrder.amount,
+          currency: res.razorpayOrder.currency,
+          name: "DevBhakti",
+          description: "Pooja Booking Payment",
+          order_id: res.razorpayOrder.id,
+          handler: async function (responseData: any) {
+            try {
+              const verifyRes = await fetch(`${API_URL}/payments/verify`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                  razorpay_order_id: responseData.razorpay_order_id,
+                  razorpay_payment_id: responseData.razorpay_payment_id,
+                  razorpay_signature: responseData.razorpay_signature,
+                  orderType: "POOJA",
+                  referenceId: res.data.id,
+                })
+              });
+
+              const verifyData = await verifyRes.json();
+
+              if (verifyData.success) {
+                setStep(5); // Show confirmation
+                toast({ title: "Booking Confirmed!", description: "You will receive confirmation via email and SMS." });
+              }
+            } catch (error) {
+              console.error("Verification error:", error);
+              toast({
+                title: "Verification Failed",
+                description: "Please contact support if amount was deducted.",
+                variant: "destructive",
+              });
+            }
+          },
+          prefill: {
+            name: formData.name,
+            contact: formData.phone,
+            email: formData.email,
+          },
+          theme: { color: "#794A05" },
+        };
+
+        const rzp = new (window as any).Razorpay(options);
+        rzp.open();
       } else {
         toast({ title: "Booking Failed", description: res.message || "Something went wrong", variant: "destructive" });
       }
@@ -359,7 +407,7 @@ function BookingForm() {
                               {pooja.name}
                             </Label>
                             <p className="text-sm text-muted-foreground line-clamp-1">{pooja.description?.[0] || pooja.about}</p>
-                            <Badge variant="secondary" className="mt-1">{pooja.duration}</Badge>
+                            {/* <Badge variant="secondary" className="mt-1">{pooja.duration}</Badge> */}
                           </div>
                         </div>
                         <div className="flex items-center text-primary font-bold text-lg">
@@ -678,29 +726,16 @@ function BookingForm() {
                   <CardTitle>Payment Method</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <RadioGroup defaultValue="upi" className="space-y-3">
-                    <div className="flex items-center space-x-3 p-4 border rounded-lg">
-                      <RadioGroupItem value="upi" id="upi" />
-                      <Label htmlFor="upi" className="cursor-pointer flex-1">
-                        <span className="font-semibold">UPI Payment</span>
-                        <p className="text-sm text-muted-foreground">Pay using Google Pay, PhonePe, Paytm etc.</p>
-                      </Label>
+                  <div className="flex items-center space-x-3 p-4 border-2 border-primary bg-primary/5 rounded-lg cursor-pointer">
+                    <div className="w-5 h-5 rounded-full border-4 border-primary"></div>
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-primary">Online Payment</span>
+                        <img src="https://razorpay.com/favicon.png" alt="Razorpay" className="w-5 h-5 grayscale opacity-70" />
+                      </div>
+                      <p className="text-sm text-muted-foreground">Pay via UPI, Cards, or Net Banking</p>
                     </div>
-                    <div className="flex items-center space-x-3 p-4 border rounded-lg">
-                      <RadioGroupItem value="card" id="card" />
-                      <Label htmlFor="card" className="cursor-pointer flex-1">
-                        <span className="font-semibold">Credit/Debit Card</span>
-                        <p className="text-sm text-muted-foreground">Visa, Mastercard, RuPay</p>
-                      </Label>
-                    </div>
-                    <div className="flex items-center space-x-3 p-4 border rounded-lg">
-                      <RadioGroupItem value="netbanking" id="netbanking" />
-                      <Label htmlFor="netbanking" className="cursor-pointer flex-1">
-                        <span className="font-semibold">Net Banking</span>
-                        <p className="text-sm text-muted-foreground">All major banks supported</p>
-                      </Label>
-                    </div>
-                  </RadioGroup>
+                  </div>
                 </CardContent>
               </Card>
             </div>

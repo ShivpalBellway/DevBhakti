@@ -12,13 +12,15 @@ import { Separator } from "@/components/ui/separator";
 import { IndianRupee, MapPin, Truck, ShieldCheck, ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import axios from "axios";
+import { API_URL } from "@/config/apiConfig";
 
 export default function CheckoutPage() {
     const router = useRouter();
     const { cartItems, totalAmount, clearCart } = useCart();
     const { toast } = useToast();
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+    const [paymentMethod, setPaymentMethod] = useState<"COD" | "RAZORPAY">("COD");
+    const RAZORPAY_KEY = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "rzp_test_placeholder";
 
     const [address, setAddress] = useState({
         fullName: "",
@@ -74,21 +76,70 @@ export default function CheckoutPage() {
                     templeId: item.templeId
                 })),
                 totalAmount,
-                paymentMethod: "COD",
+                paymentMethod,
                 shippingAddress: address,
             };
 
-            const response = await axios.post(`${API_URL}/api/orders`, orderData, {
+            const response = await axios.post(`${API_URL}/orders`, orderData, {
                 headers: { Authorization: `Bearer ${token}` }
             });
 
             if (response.data.success) {
-                toast({
-                    title: "Order Placed Successfully!",
-                    description: "Your sacred items will be delivered soon.",
-                });
-                clearCart();
-                router.push("/marketplace/order-success");
+                if (paymentMethod === "RAZORPAY" && response.data.razorpayOrder) {
+                    const options = {
+                        key: RAZORPAY_KEY,
+                        amount: response.data.razorpayOrder.amount,
+                        currency: response.data.razorpayOrder.currency,
+                        name: "DevBhakti",
+                        description: "Sacred Marketplace Order",
+                        order_id: response.data.razorpayOrder.id,
+                        handler: async function (responseData: any) {
+                            try {
+                                const verifyRes = await axios.post(`${API_URL}/payments/verify`, {
+                                    razorpay_order_id: responseData.razorpay_order_id,
+                                    razorpay_payment_id: responseData.razorpay_payment_id,
+                                    razorpay_signature: responseData.razorpay_signature,
+                                    orderType: "MARKETPLACE",
+                                    referenceId: response.data.data.id,
+                                }, {
+                                    headers: { Authorization: `Bearer ${token}` }
+                                });
+
+                                if (verifyRes.data.success) {
+                                    toast({
+                                        title: "Payment Successful!",
+                                        description: "Your order is confirmed.",
+                                    });
+                                    clearCart();
+                                    router.push("/marketplace/order-success");
+                                }
+                            } catch (error) {
+                                console.error("Verification error:", error);
+                                toast({
+                                    title: "Verification Failed",
+                                    description: "Please contact support if amount was deducted.",
+                                    variant: "destructive",
+                                });
+                            }
+                        },
+                        prefill: {
+                            name: address.fullName,
+                            contact: address.phone,
+                            email: user.email || "",
+                        },
+                        theme: { color: "#794A05" },
+                    };
+
+                    const rzp = new (window as any).Razorpay(options);
+                    rzp.open();
+                } else {
+                    toast({
+                        title: "Order Placed Successfully!",
+                        description: "Your sacred items will be delivered soon.",
+                    });
+                    clearCart();
+                    router.push("/marketplace/order-success");
+                }
             }
         } catch (error: any) {
             console.error("Order error:", error);
@@ -181,14 +232,33 @@ export default function CheckoutPage() {
                             <CardHeader className="bg-[#794A05]/5 border-b border-[#794A05]/10">
                                 <CardTitle className="text-[#794A05]">Payment Method</CardTitle>
                             </CardHeader>
-                            <CardContent className="p-6">
-                                <div className="flex items-center gap-3 p-4 border-2 border-[#794A05] bg-[#794A05]/5 rounded-xl">
-                                    <div className="w-5 h-5 rounded-full border-4 border-[#794A05]"></div>
-                                    <div>
-                                        <p className="font-bold text-[#794A05]">Cash on Delivery</p>
-                                        <p className="text-xs text-slate-500">Pay when you receive your sacred items</p>
+                            <CardContent className="p-6 space-y-4">
+                                <div
+                                    className={`flex items-center gap-3 p-4 border-2 transition-all cursor-pointer ${paymentMethod === "RAZORPAY" ? "border-[#794A05] bg-[#794A05]/5" : "border-slate-100 bg-white"}`}
+                                    onClick={() => setPaymentMethod("RAZORPAY")}
+                                >
+                                    <div className={`w-5 h-5 rounded-full border-4 ${paymentMethod === "RAZORPAY" ? "border-[#794A05]" : "border-slate-200"}`}></div>
+                                    <div className="flex-1">
+                                        <div className="flex items-center justify-between">
+                                            <p className={`font-bold ${paymentMethod === "RAZORPAY" ? "text-[#794A05]" : "text-slate-700"}`}>Online Payment</p>
+                                            <div className="flex gap-1">
+                                                <img src="https://razorpay.com/favicon.png" alt="Razorpay" className="w-4 h-4 grayscale opacity-70" />
+                                            </div>
+                                        </div>
+                                        <p className="text-xs text-slate-500">UPI, Cards, NetBanking via Razorpay</p>
                                     </div>
                                 </div>
+
+                                {/* <div
+                                    className={`flex items-center gap-3 p-4 border-2 transition-all cursor-pointer ${paymentMethod === "COD" ? "border-[#794A05] bg-[#794A05]/5" : "border-slate-100 bg-white"}`}
+                                    onClick={() => setPaymentMethod("COD")}
+                                >
+                                    <div className={`w-5 h-5 rounded-full border-4 ${paymentMethod === "COD" ? "border-[#794A05]" : "border-slate-200"}`}></div>
+                                    <div>
+                                        <p className={`font-bold ${paymentMethod === "COD" ? "text-[#794A05]" : "text-slate-700"}`}>Cash on Delivery</p>
+                                        <p className="text-xs text-slate-500">Pay when you receive your sacred items</p>
+                                    </div>
+                                </div> */}
                             </CardContent>
                         </Card>
                     </div>

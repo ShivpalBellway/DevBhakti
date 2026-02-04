@@ -217,7 +217,7 @@ export default function TempleCreatePoojaPage() {
                             <p className="text-sm font-semibold">Cover Image</p>
                             <p className="text-xs text-muted-foreground leading-relaxed">
                                 Upload a high-quality image.<br />
-                                Recommended: 800x800px or larger. Max 5MB.
+                                <span className="text-primary font-semibold">Recommended: 1024x1024 px (Square).</span> Max 5MB.
                             </p>
                             <Button type="button" variant="outline" size="sm" className="mt-2 rounded-full" onClick={() => (document.getElementById('image-upload') as any).click()}>
                                 Select Image
