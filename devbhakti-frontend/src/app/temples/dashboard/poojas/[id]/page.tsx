@@ -130,12 +130,12 @@ export default function TempleViewPoojaPage() {
 
                             <div className="space-y-4 pt-4 border-t border-white/10 text-sm">
                                 <div className="flex items-center gap-3">
-                                    <div className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center">
+                                    {/* <div className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center">
                                         <Clock className="w-4 h-4" />
-                                    </div>
+                                    </div> */}
                                     <div>
-                                        <p className="text-white/60 text-[10px] uppercase">Expected Duration</p>
-                                        <p className="font-semibold">{pooja.duration}</p>
+                                        {/* <p className="text-white/60 text-[10px] uppercase">Expected Duration</p>
+                                        <p className="font-semibold">{pooja.duration}</p> */}
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-3">

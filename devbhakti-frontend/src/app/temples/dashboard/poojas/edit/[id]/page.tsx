@@ -25,7 +25,7 @@ export default function TempleEditPoojaPage() {
     const [formData, setFormData] = useState({
         name: "",
         price: 0,
-        duration: "",
+
         category: "",
         time: "",
         about: "",
@@ -64,7 +64,7 @@ export default function TempleEditPoojaPage() {
                 setFormData({
                     name: pooja.name,
                     price: pooja.price,
-                    duration: pooja.duration || "",
+
                     category: pooja.category || "",
                     time: pooja.time || "",
                     about: pooja.about || "",
@@ -133,7 +133,7 @@ export default function TempleEditPoojaPage() {
         const submissionData = new FormData();
         submissionData.append('name', formData.name);
         submissionData.append('price', formData.price.toString());
-        submissionData.append('duration', formData.duration);
+
         submissionData.append('category', formData.category);
         submissionData.append('time', formData.time);
         submissionData.append('about', formData.about);
@@ -195,7 +195,7 @@ export default function TempleEditPoojaPage() {
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="category">Category *</Label>
+                            <Label htmlFor="category">Category/Purpose *</Label>
                             <Input
                                 id="category"
                                 value={formData.category}
@@ -215,16 +215,7 @@ export default function TempleEditPoojaPage() {
                                 required
                             />
                         </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="duration">Duration *</Label>
-                            <Input
-                                id="duration"
-                                value={formData.duration}
-                                onChange={(e) => setFormData({ ...formData, duration: e.target.value })}
-                                className="rounded-xl h-11 border-slate-200 focus:border-[#7b4623] focus:ring-[#7b4623]/10"
-                                required
-                            />
-                        </div>
+
                     </div>
                 </div>
 

@@ -36,7 +36,7 @@ export const getAllTemples = async (req: Request, res: Response) => {
               select: { poojas: true, events: true },
             },
             poojas: {
-              select: { id: true, name: true, category: true, price: true, duration: true }
+              select: { id: true, name: true, category: true, price: true }
             },
             events: true
           }

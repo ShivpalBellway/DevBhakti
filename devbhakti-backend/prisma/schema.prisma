@@ -271,6 +271,7 @@ model ProductVariant {
   id        String     @id @default(cuid())
   name      String
   price     Float
+  costPrice Float?
   stock     Int        @default(0)
   image     String?
   productId String

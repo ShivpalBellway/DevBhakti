@@ -18,7 +18,9 @@ import {
     ArrowLeft,
     Search,
     IndianRupee,
-    Download
+    Download,
+    Store,
+    Calendar as CalendarIcon
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
@@ -83,16 +85,16 @@ export default function MyOrdersPage() {
     return (
         <div className="min-h-screen bg-[#FDFCF6]">
             <Navbar />
-            <main className="pt-28 pb-20 container mx-auto px-4 relative">
-                <div className="absolute inset-0 pattern-sacred opacity-40 pointer-events-none" />
+            <main className="pt-24 pb-16 container mx-auto px-4 relative">
+                <div className="absolute inset-0 pattern-sacred opacity-30 pointer-events-none" />
                 <div className="max-w-4xl mx-auto relative z-10">
-                    <div className="flex items-center gap-4 mb-8">
-                        <Button variant="ghost" size="icon" onClick={() => router.push("/profile")} className="rounded-full">
-                            <ArrowLeft className="w-5 h-5 text-[#794A05]" />
+                    <div className="flex items-center gap-3 mb-6">
+                        <Button variant="ghost" size="icon" onClick={() => router.push("/profile")} className="rounded-xl h-9 w-9 bg-white/50 border border-slate-100 hover:bg-white shadow-sm transition-all hover:scale-105 active:scale-95">
+                            <ArrowLeft className="w-4 h-4 text-[#794A05]" />
                         </Button>
                         <div>
-                            <h1 className="text-3xl font-serif font-bold text-slate-900">My Sacred Orders</h1>
-                            <p className="text-slate-500">Track your spiritual items and their blessings</p>
+                            <h1 className="text-2xl font-serif font-bold text-slate-900 tracking-tight">Your Sacred Journey</h1>
+                            <p className="text-[13px] text-slate-500 font-medium">Tracking your spiritual essentials & blessings</p>
                         </div>
                     </div>
 
@@ -124,94 +126,109 @@ export default function MyOrdersPage() {
                                         expandedOrderId === order.id ? "ring-2 ring-orange-200 overflow-visible" : "overflow-hidden hover:border-orange-200"
                                     )}
                                 >
-                                    <div className="p-0">
-                                        {/* Card Header Section */}
-                                        <div className="px-6 py-5 border-b border-slate-50 flex flex-wrap items-center justify-between gap-4 bg-slate-50/30">
+                                    <div className="p-6 md:p-8">
+                                        <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
                                             <div className="flex items-center gap-3">
-                                                <div className="w-10 h-10 rounded-full bg-orange-100/50 flex items-center justify-center border border-orange-100">
-                                                    <Package className="w-5 h-5 text-orange-700" />
+                                                <div className="p-3 bg-orange-50 rounded-2xl">
+                                                    <Package className="w-6 h-6 text-[#794A05]" />
                                                 </div>
                                                 <div>
-                                                    <div className="flex items-center gap-3">
-                                                        <h3 className="text-base font-bold text-slate-900 tracking-tight">
-                                                            Order #{order.id.slice(-8).toUpperCase()}
-                                                        </h3>
-                                                        <Badge variant="secondary" className={cn("text-[10px] uppercase font-bold tracking-wider px-2 h-5", getStatusColor(order.status))}>
-                                                            {order.status}
-                                                        </Badge>
-                                                    </div>
-                                                    <p className="text-xs font-medium text-slate-500 mt-0.5 flex items-center gap-1">
-                                                        <Clock className="w-3 h-3" />
-                                                        {format(new Date(order.createdAt), "dd MMM yyyy")} &bull; {format(new Date(order.createdAt), "hh:mm a")}
-                                                    </p>
+                                                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Order ID</p>
+                                                    <p className="font-mono text-sm font-bold text-slate-900">#{order.id.slice(-8).toUpperCase()}</p>
                                                 </div>
                                             </div>
                                             <div className="flex flex-col items-end">
-                                                <span className="text-xl font-bold text-slate-900 tracking-tight">₹{order.totalAmount.toLocaleString()}</span>
-                                                <span className="text-xs font-medium text-slate-500">{order.subOrders.reduce((acc: number, so: any) => acc + so.items.length, 0)} Items</span>
+                                                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Status</p>
+                                                <Badge variant="outline" className={cn("rounded-full px-3 py-0.5 font-bold text-[10px]", getStatusColor(order.status))}>
+                                                    {order.status}
+                                                </Badge>
                                             </div>
                                         </div>
 
-                                        {/* Card Body Section */}
-                                        <div className="px-6 py-5">
-                                            {/* Products Row */}
-                                            <div className="flex items-center gap-3 mb-6 overflow-x-auto pb-2 scrollbar-none">
-                                                {order.subOrders.flatMap((so: any) => so.items).map((item: any, i: number) => (
-                                                    <div key={i} className="group relative flex-shrink-0 w-20 h-24 bg-slate-50 rounded-xl border border-slate-100 overflow-hidden shadow-sm hover:shadow-md transition-all">
-                                                        <img
-                                                            src={item.product?.image ? (item.product.image.startsWith('http') ? item.product.image : `${BASE_URL.replace('/api', '')}/${item.product.image.replace(/^\//, '')}`) : "/placeholder.png"}
-                                                            alt={item.product?.name}
-                                                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                                                        />
-                                                        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent p-1.5 translate-y-full group-hover:translate-y-0 transition-transform">
-                                                            <p className="text-[9px] font-medium text-white line-clamp-1">{item.product?.name}</p>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 py-6 border-y border-slate-50">
+                                            <div className="flex items-start gap-5 col-span-1 md:col-span-1 lg:col-span-1">
+                                                <div className="flex -space-x-12 overflow-hidden">
+                                                    {order.subOrders.flatMap((so: any) => so.items).slice(0, 3).map((item: any, i: number) => (
+                                                        <div key={i} className="w-50 h-32 rounded-2xl bg-white border-2 border-slate-50 overflow-hidden flex-shrink-0 shadow-md relative group-hover:scale-105 transition-transform duration-500" style={{ zIndex: 10 - i }}>
+                                                            <img
+                                                                src={item.product?.image ? (item.product.image.startsWith('http') ? item.product.image : `${BASE_URL.replace('/api', '')}/${item.product.image.replace(/^\//, '')}`) : "/placeholder.png"}
+                                                                alt=""
+                                                                className="w-full h-full object-cover"
+                                                            />
+                                                            {item.quantity > 1 && (
+                                                                <div className="absolute top-0 right-0 bg-orange-600 text-white text-[9px] font-black px-1.5 py-0.5 rounded-bl-xl shadow-sm z-20">
+                                                                    {item.quantity}
+                                                                </div>
+                                                            )}
                                                         </div>
-                                                        <div className="absolute top-1 right-1 bg-black/50 backdrop-blur-sm text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full">
-                                                            x{item.quantity}
-                                                        </div>
-                                                    </div>
-                                                ))}
-                                            </div>
-
-                                            {/* Action Footer */}
-                                            <div className="flex items-center justify-between">
-                                                <div className="flex items-center gap-2">
-                                                    {order.status === 'DELIVERED' && (
-                                                        <div className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-full text-xs font-bold border border-emerald-100">
-                                                            <CheckCircle2 className="w-3.5 h-3.5" />
-                                                            Delivered
+                                                    ))}
+                                                    {order.subOrders.flatMap((so: any) => so.items).length > 3 && (
+                                                        <div className="w-28 h-32 rounded-2xl bg-slate-900 flex items-center justify-center text-white text-sm font-black border-2 border-white shadow-lg relative z-0">
+                                                            +{order.subOrders.flatMap((so: any) => so.items).length - 3}
                                                         </div>
                                                     )}
                                                 </div>
-
-                                                <div className="flex items-center gap-3">
-                                                    <Button
-                                                        variant="outline"
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            handleInvoice(order);
-                                                        }}
-                                                        className="rounded-full px-4 h-8 font-bold text-xs border-slate-200 hover:bg-slate-50 gap-2 text-slate-700"
-                                                    >
-                                                        <Download className="w-3.5 h-3.5" />
-                                                        Invoice
-                                                    </Button>
-                                                    <Button
-                                                        onClick={() => toggleExpand(order.id)}
-                                                        className={cn(
-                                                            "rounded-full px-4 h-8 font-bold text-xs transition-all",
-                                                            expandedOrderId === order.id
-                                                                ? "bg-slate-100 text-slate-900 hover:bg-slate-200"
-                                                                : "bg-slate-900 text-white hover:bg-slate-800 shadow-lg shadow-slate-900/20"
-                                                        )}
-                                                    >
-                                                        {expandedOrderId === order.id ? "Hide Details" : "View Details"}
-                                                        <ChevronRight className={cn(
-                                                            "w-3.5 h-3.5 ml-1.5 transition-transform duration-300",
-                                                            expandedOrderId === order.id ? "-rotate-90" : "group-hover:translate-x-1"
-                                                        )} />
-                                                    </Button>
+                                                <div>
+                                                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1.5">Products</p>
+                                                    <p className="text-sm font-black text-slate-900 line-clamp-1">
+                                                        {order.subOrders.flatMap((so: any) => so.items)[0]?.product?.name}
+                                                        {order.subOrders.flatMap((so: any) => so.items).length > 1 ? " & more" : ""}
+                                                    </p>
+                                                    <p className="text-[11px] text-[#794A05] font-bold mt-0.5">{order.subOrders.reduce((acc: number, so: any) => acc + so.items.length, 0)} Items</p>
                                                 </div>
+                                            </div>
+                                            <div>
+                                                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2.5">Shipping To</p>
+                                                <div className="flex items-start gap-2.5 bg-slate-50/50 p-2.5 rounded-2xl border border-slate-100/50">
+                                                    <Truck className="w-4 h-4 text-[#794A05] mt-0.5" />
+                                                    <div>
+                                                        <p className="text-sm font-bold text-slate-800 leading-tight">{order.shippingAddress?.fullName || "Not provided"}</p>
+                                                        <p className="text-[10px] text-slate-500 font-medium mt-0.5">{order.shippingAddress?.city}, {order.shippingAddress?.pincode}</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div className="lg:text-right">
+                                                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Order Value</p>
+                                                <p className="text-3xl font-black text-[#794A05] tracking-tighter drop-shadow-sm">₹{order.totalAmount?.toLocaleString()}</p>
+                                                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Inclusive of Taxes</p>
+                                            </div>
+                                        </div>
+
+                                        <div className="mt-6 flex items-center justify-between">
+                                            <div className="flex items-center gap-4 text-xs font-medium text-slate-500">
+                                                <div className="flex items-center gap-1.5">
+                                                    <Clock className="w-3.5 h-3.5" />
+                                                    {format(new Date(order.createdAt), "dd MMM yyyy")}
+                                                </div>
+                                                <div className="w-1 h-1 rounded-full bg-slate-300" />
+                                                <span className="font-bold text-primary">{order.paymentStatus || "PAID"}</span>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <Button
+                                                    variant="outline"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleInvoice(order);
+                                                    }}
+                                                    className="border-primary/20 text-primary hover:bg-primary/5 rounded-full px-4 h-9 text-xs font-bold transition-all"
+                                                >
+                                                    <Download className="w-3.5 h-3.5 mr-1.5" />
+                                                    Invoice
+                                                </Button>
+                                                <Button
+                                                    onClick={() => toggleExpand(order.id)}
+                                                    variant="ghost"
+                                                    className={cn(
+                                                        "text-primary font-bold hover:bg-orange-50 rounded-full group transition-all h-9 px-4 text-xs",
+                                                        expandedOrderId === order.id && "bg-orange-50"
+                                                    )}
+                                                >
+                                                    {expandedOrderId === order.id ? "Hide Details" : "View Details"}
+                                                    <ChevronRight className={cn(
+                                                        "w-4 h-4 ml-1 transition-transform",
+                                                        expandedOrderId === order.id ? "rotate-90" : "group-hover:translate-x-1"
+                                                    )} />
+                                                </Button>
                                             </div>
                                         </div>
 
@@ -226,78 +243,112 @@ export default function MyOrdersPage() {
                                                     className="overflow-hidden"
                                                 >
                                                     <div className="pt-8 space-y-8">
-                                                        {/* Shipping Address */}
-                                                        <div className="bg-orange-50/30 p-6 rounded-3xl border border-orange-100/50">
-                                                            <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
-                                                                <Truck className="w-4 h-4 text-[#794A05]" />
-                                                                Delivery Address
-                                                            </h4>
-                                                            <div className="text-sm text-slate-700 space-y-1">
-                                                                <p className="font-bold text-slate-900">{order.shippingAddress?.fullName}</p>
-                                                                <p>{order.shippingAddress?.street}</p>
-                                                                <p>{order.shippingAddress?.city}, {order.shippingAddress?.state} - {order.shippingAddress?.pincode}</p>
-                                                                <p className="pt-2 font-medium text-slate-500">Contact: {order.shippingAddress?.phone}</p>
+                                                        <div className="grid md:grid-cols-2 gap-6">
+                                                            <div className="bg-slate-50/50 p-6 rounded-3xl border border-slate-100 flex flex-col gap-4">
+                                                                <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                                                                    <Truck className="w-4 h-4 text-[#794A05]" />
+                                                                    Shipping Destination
+                                                                </h4>
+                                                                <div className="space-y-3">
+                                                                    <div>
+                                                                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">Recipient Name</p>
+                                                                        <p className="text-sm font-bold text-slate-700">{order.shippingAddress?.fullName}</p>
+                                                                    </div>
+                                                                    <div>
+                                                                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">Address</p>
+                                                                        <div className="text-sm font-bold text-slate-700 leading-relaxed italic">
+                                                                            <p>{order.shippingAddress?.street}, {order.shippingAddress?.city}</p>
+                                                                            <p>{order.shippingAddress?.state} - {order.shippingAddress?.pincode}</p>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+
+                                                            <div className="bg-orange-50/30 p-6 rounded-3xl border border-orange-100/50 flex flex-col gap-4">
+                                                                <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                                                                    <Store className="w-4 h-4 text-[#794A05]" />
+                                                                    Items Information
+                                                                </h4>
+                                                                <div className="space-y-3">
+                                                                    <div className="flex justify-between items-center">
+                                                                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">Total Items</p>
+                                                                        <p className="text-sm font-bold text-slate-700">{order.subOrders.reduce((acc: number, so: any) => acc + so.items.length, 0)} Units</p>
+                                                                    </div>
+                                                                    <div className="flex justify-between items-center">
+                                                                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">Packages</p>
+                                                                        <p className="text-sm font-bold text-slate-700">{order.subOrders.length} Parcel(s)</p>
+                                                                    </div>
+                                                                    <div className="flex justify-between items-center pt-2 border-t border-orange-200/30">
+                                                                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">Support Pin</p>
+                                                                        <p className="text-sm font-bold text-[#794A05]">#SPD-{order.id.slice(-4).toUpperCase()}</p>
+                                                                    </div>
+                                                                </div>
                                                             </div>
                                                         </div>
 
-                                                        {/* Breakdowns by Temple */}
-                                                        <div className="space-y-6">
-                                                            <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest pl-1">Consignment Breakdown</h4>
+                                                        {/* Breakdowns - Product List */}
+                                                        <div className="space-y-4">
+                                                            <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] pl-1">Package Breakdown</h4>
                                                             {order.subOrders.map((sub: any) => (
-                                                                <div key={sub.id} className="border border-slate-100 rounded-[1.5rem] overflow-hidden">
-                                                                    <div className="bg-slate-50/50 px-5 py-3 border-b flex items-center justify-between">
-                                                                        <div className="flex items-center gap-2">
-                                                                            <Badge variant="secondary" className="bg-white text-[10px] font-bold uppercase tracking-wider text-slate-500">
-                                                                                {sub.temple?.name || "Official Warehouse"}
-                                                                            </Badge>
-                                                                        </div>
-                                                                        <Badge className={cn("text-[8px] font-bold uppercase tracking-widest rounded-full", getStatusColor(sub.status))}>
+                                                                <div key={sub.id} className="bg-white border border-slate-100 rounded-[2rem] overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+                                                                    <div className="bg-slate-50/40 px-6 py-3 border-b border-slate-50 flex items-center justify-between">
+                                                                        <span className="text-[11px] font-bold text-slate-500 flex items-center gap-1.5">
+                                                                            <Store className="w-3 h-3" />
+                                                                            {sub.temple?.name || "Official Warehouse"}
+                                                                        </span>
+                                                                        <Badge variant="outline" className={cn("text-[8px] font-black uppercase tracking-widest rounded-lg h-5", getStatusColor(sub.status))}>
                                                                             {sub.status}
                                                                         </Badge>
                                                                     </div>
                                                                     <div className="p-4 space-y-4">
                                                                         {sub.items.map((item: any) => (
-                                                                            <div key={item.id} className="flex items-center justify-between">
-                                                                                <div className="flex items-center gap-3">
-                                                                                    <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center border border-slate-100 overflow-hidden shadow-sm">
+                                                                            <div key={item.id} className="flex items-center justify-between group/item opacity-90 hover:opacity-100">
+                                                                                <div className="flex items-center gap-4">
+                                                                                    <div className="w-12 h-16 bg-white rounded-2xl flex items-center justify-center border border-slate-100 overflow-hidden group-hover/item:border-orange-200 transition-all shadow-sm">
                                                                                         <img
                                                                                             src={item.product?.image ? (item.product.image.startsWith('http') ? item.product.image : `${BASE_URL.replace('/api', '')}/${item.product.image.replace(/^\//, '')}`) : "/placeholder.png"}
                                                                                             alt={item.product?.name}
-                                                                                            className="w-full h-full object-cover"
+                                                                                            className="w-full h-full object-cover group-hover/item:scale-110 transition-transform duration-700"
                                                                                         />
                                                                                     </div>
                                                                                     <div>
-                                                                                        <p className="text-sm font-bold text-slate-800">{item.product?.name}</p>
-                                                                                        <p className="text-[10px] text-slate-400 font-medium">{item.variantName} × {item.quantity}</p>
+                                                                                        <p className="text-[13px] font-bold text-slate-800 group-hover/item:text-[#794A05] transition-colors">{item.product?.name}</p>
+                                                                                        <div className="flex items-center gap-2 mt-0.5">
+                                                                                            <span className="text-[10px] text-slate-400 font-black uppercase tracking-tighter">
+                                                                                                {item.variantName || "Standard Edition"}
+                                                                                            </span>
+                                                                                            <span className="w-1 h-1 rounded-full bg-slate-200" />
+                                                                                            <span className="text-[10px] text-orange-600 font-bold">{item.quantity} Unit(s)</span>
+                                                                                        </div>
                                                                                     </div>
                                                                                 </div>
-                                                                                <p className="text-sm font-bold text-slate-900">₹{(item.price * item.quantity).toLocaleString()}</p>
+                                                                                <div className="text-right">
+                                                                                    <p className="text-sm font-black text-slate-900">₹{(item.price * item.quantity).toLocaleString()}</p>
+                                                                                    <p className="text-[10px] text-slate-400 font-medium">₹{item.price} each</p>
+                                                                                </div>
                                                                             </div>
                                                                         ))}
-                                                                        <div className="pt-3 border-t border-slate-50 flex justify-between items-center">
-                                                                            <span className="text-[10px] font-bold text-slate-300 uppercase tracking-widest">Subtotal</span>
-                                                                            <span className="text-sm font-bold text-[#794A05]">₹{sub.totalAmount.toLocaleString()}</span>
-                                                                        </div>
                                                                     </div>
                                                                 </div>
                                                             ))}
                                                         </div>
 
-                                                        {/* Final Summary Row */}
-                                                        <div className="flex flex-col items-end pt-4 border-t border-slate-100">
-                                                            <div className="w-full md:w-64 space-y-2">
-                                                                <div className="flex justify-between text-slate-500 text-sm">
-                                                                    <span>Subtotal</span>
-                                                                    <span>₹{order.totalAmount.toLocaleString()}</span>
+                                                        <div className="flex items-center justify-between p-6 bg-slate-900 rounded-[2.5rem] text-white shadow-xl shadow-slate-900/10">
+                                                            <div className="flex items-center gap-4">
+                                                                <div className="w-14 h-14 rounded-2xl bg-white/10 flex items-center justify-center border border-white/5 backdrop-blur-sm">
+                                                                    <Package className="w-7 h-7 text-orange-400" />
                                                                 </div>
-                                                                <div className="flex justify-between text-slate-500 text-sm">
-                                                                    <span>Shipping</span>
-                                                                    <span className="text-emerald-600 font-bold">FREE</span>
+                                                                <div>
+                                                                    <p className="text-[10px] text-white/50 font-bold uppercase tracking-widest mb-1">Shipping Status</p>
+                                                                    <p className="font-serif font-bold text-lg flex items-center gap-2">
+                                                                        <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                                                                        {order.status === 'DELIVERED' ? 'Successfully Delivered' : 'Processing Your Order'}
+                                                                    </p>
                                                                 </div>
-                                                                <div className="flex justify-between items-center pt-2">
-                                                                    <span className="font-bold text-slate-900">Grand Total</span>
-                                                                    <span className="text-xl font-bold text-[#794A05]">₹{order.totalAmount.toLocaleString()}</span>
-                                                                </div>
+                                                            </div>
+                                                            <div className="text-right hidden sm:block">
+                                                                <p className="text-[10px] text-white/50 font-bold uppercase tracking-widest mb-1">Final Payment</p>
+                                                                <p className="text-2xl font-black tracking-tighter text-orange-400">₹{order.totalAmount.toLocaleString()}</p>
                                                             </div>
                                                         </div>
                                                     </div>

@@ -45,8 +45,11 @@ interface Variant {
   id: string;
   name: string;
   price: number;
+  costPrice?: number;
   stock: number;
-  image?: string;
+  image?: string | null;
+  imageFile?: File | null;
+  imagePreview?: string;
 }
 
 interface Product {
@@ -192,7 +195,15 @@ export default function EditProductPage() {
         origin: data.origin || "India",
         rating: data.rating?.toString() || "4.5",
       });
-      setVariants(data.variants);
+      setVariants(data.variants.map((v: any) => ({
+        id: v.id,
+        name: v.name,
+        price: v.price,
+        costPrice: v.costPrice || 0,
+        stock: v.stock,
+        image: v.image,
+        imagePreview: v.image ? `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}${v.image}` : ""
+      })));
 
       // Set existing image if available
       if (data.image) {
@@ -342,8 +353,21 @@ export default function EditProductPage() {
       formDataToSend.append('origin', formData.origin);
       formDataToSend.append('rating', formData.rating);
 
-      // Add variants as JSON string
-      formDataToSend.append('variants', JSON.stringify(validVariants));
+      // Add variants as JSON string with costPrice and handle images
+      const variantsData = validVariants.map((v, index) => {
+        if (v.imageFile) {
+          formDataToSend.append(`variant_image_${index}`, v.imageFile);
+        }
+        return {
+          id: v.id,
+          name: v.name,
+          price: v.price,
+          costPrice: v.costPrice || 0,
+          stock: v.stock,
+          image: v.imageFile ? null : (v.image || null)
+        };
+      });
+      formDataToSend.append('variants', JSON.stringify(variantsData));
 
       await updateProductAdmin(params.id as string, formDataToSend);
 
@@ -373,7 +397,11 @@ export default function EditProductPage() {
       id: Date.now().toString(),
       name: "",
       price: 0,
+      costPrice: 0,
       stock: 0,
+      imageFile: null,
+      imagePreview: "",
+      image: null
     };
     setVariants([...variants, newVariant]);
   };
@@ -387,8 +415,36 @@ export default function EditProductPage() {
   const updateVariant = (id: string, field: keyof Variant, value: string | number) => {
     setVariants(variants.map(variant =>
       variant.id === id
-        ? { ...variant, [field]: field === 'price' || field === 'stock' ? Number(value) : value }
+        ? { ...variant, [field]: field === 'price' || field === 'stock' || field === 'costPrice' ? Number(value) : value }
         : variant
+    ));
+  };
+
+  const handleVariantImageChange = (id: string, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (!file.type.startsWith('image/')) {
+        toast({ title: "Invalid File", description: "Please select an image file", variant: "destructive" });
+        return;
+      }
+      if (file.size > 2 * 1024 * 1024) {
+        toast({ title: "File Too Large", description: "Image size should be less than 2MB", variant: "destructive" });
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setVariants(variants.map(v =>
+          v.id === id ? { ...v, imageFile: file, imagePreview: reader.result as string, image: null } : v
+        ));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removeVariantImage = (id: string) => {
+    setVariants(variants.map(v =>
+      v.id === id ? { ...v, imageFile: null, imagePreview: "", image: null } : v
     ));
   };
 
@@ -694,70 +750,135 @@ export default function EditProductPage() {
 
             <div className="space-y-4">
               {variants.map((variant, index) => (
-                <div key={variant.id} className="flex items-center gap-4 p-4 border rounded-lg bg-slate-50">
-                  <div className="flex-1 grid grid-cols-1 md:grid-cols-4 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor={`variant-name-${variant.id}`}>Variant Name *</Label>
-                      <Input
-                        id={`variant-name-${variant.id}`}
-                        value={variant.name}
-                        onChange={(e) => updateVariant(variant.id, 'name', e.target.value)}
-                        placeholder="e.g., Small, Medium, Large"
-                        className={errors[`variant_name_${index}`] ? "border-red-500" : ""}
-                      />
-                      {errors[`variant_name_${index}`] && (
-                        <p className="text-sm text-red-500">{errors[`variant_name_${index}`]}</p>
-                      )}
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor={`variant-price-${variant.id}`}>Price (₹) *</Label>
-                      <Input
-                        id={`variant-price-${variant.id}`}
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        value={variant.price || ""}
-                        onChange={(e) => updateVariant(variant.id, 'price', e.target.value)}
-                        placeholder="0.00"
-                        className={errors[`variant_price_${index}`] ? "border-red-500" : ""}
-                      />
-                      {errors[`variant_price_${index}`] && (
-                        <p className="text-sm text-red-500">{errors[`variant_price_${index}`]}</p>
-                      )}
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor={`variant-stock-${variant.id}`}>Stock</Label>
-                      <Input
-                        id={`variant-stock-${variant.id}`}
-                        type="number"
-                        min="0"
-                        value={variant.stock || ""}
-                        onChange={(e) => updateVariant(variant.id, 'stock', e.target.value)}
-                        placeholder="0"
-                        className={errors[`variant_stock_${index}`] ? "border-red-500" : ""}
-                      />
-                      {errors[`variant_stock_${index}`] && (
-                        <p className="text-sm text-red-500">{errors[`variant_stock_${index}`]}</p>
-                      )}
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label>Actions</Label>
-                      <div className="flex gap-2">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="icon"
-                          onClick={() => removeVariant(variant.id)}
-                          disabled={variants.length === 1}
-                          className="h-10 w-10 text-red-600 border-red-200 hover:bg-red-50"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
+                <div key={variant.id} className="p-4 border rounded-lg bg-slate-50 space-y-4">
+                  <div className="flex flex-col md:flex-row gap-4">
+                    {/* Variant Image */}
+                    <div className="flex-shrink-0">
+                      <Label className="mb-2 block">Variant Image</Label>
+                      <div className="flex items-center gap-3">
+                        {variant.imagePreview ? (
+                          <div className="relative">
+                            <img
+                              src={variant.imagePreview}
+                              alt="Variant"
+                              className="w-16 h-16 object-cover rounded border bg-white"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => removeVariantImage(variant.id)}
+                              className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-0.5 shadow-sm hover:bg-red-600 transition-colors"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="w-16 h-16 border-2 border-dashed border-slate-300 rounded flex items-center justify-center bg-white">
+                            <ImageIcon className="w-6 h-6 text-slate-400" />
+                          </div>
+                        )}
+                        <Input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => handleVariantImageChange(variant.id, e)}
+                          className="max-w-[150px] text-xs h-8"
+                        />
                       </div>
                     </div>
+
+                    <div className="flex-1 grid grid-cols-1 md:grid-cols-4 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor={`variant-name-${variant.id}`}>Variant Name *</Label>
+                        <Input
+                          id={`variant-name-${variant.id}`}
+                          value={variant.name}
+                          onChange={(e) => updateVariant(variant.id, 'name', e.target.value)}
+                          placeholder="e.g., Small, Medium, Large"
+                          className={errors[`variant_name_${index}`] ? "border-red-500" : ""}
+                        />
+                        {errors[`variant_name_${index}`] && (
+                          <p className="text-sm text-red-500">{errors[`variant_name_${index}`]}</p>
+                        )}
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor={`variant-price-${variant.id}`}>Price (₹) *</Label>
+                        <Input
+                          id={`variant-price-${variant.id}`}
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={variant.price || ""}
+                          onChange={(e) => updateVariant(variant.id, 'price', e.target.value)}
+                          placeholder="0.00"
+                          className={errors[`variant_price_${index}`] ? "border-red-500" : ""}
+                        />
+                        {errors[`variant_price_${index}`] && (
+                          <p className="text-sm text-red-500">{errors[`variant_price_${index}`]}</p>
+                        )}
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor={`variant-cost-${variant.id}`}>Cost Price (₹)</Label>
+                        <Input
+                          id={`variant-cost-${variant.id}`}
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={variant.costPrice || ""}
+                          onChange={(e) => updateVariant(variant.id, 'costPrice', e.target.value)}
+                          placeholder="0.00"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor={`variant-stock-${variant.id}`}>Stock</Label>
+                        <Input
+                          id={`variant-stock-${variant.id}`}
+                          type="number"
+                          min="0"
+                          value={variant.stock || ""}
+                          onChange={(e) => updateVariant(variant.id, 'stock', e.target.value)}
+                          placeholder="0"
+                          className={errors[`variant_stock_${index}`] ? "border-red-500" : ""}
+                        />
+                        {errors[`variant_stock_${index}`] && (
+                          <p className="text-sm text-red-500">{errors[`variant_stock_${index}`]}</p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="flex items-end pb-1">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => removeVariant(variant.id)}
+                        disabled={variants.length === 1}
+                        className="text-red-500 hover:text-red-600 hover:bg-red-50"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Profit Calculation */}
+                  <div className="flex items-center gap-4 text-xs">
+                    {variant.price > 0 && variant.costPrice && variant.costPrice > 0 ? (
+                      <>
+                        <span className="text-slate-500">
+                          Profit: <span className={variant.price - variant.costPrice >= 0 ? "text-green-600 font-bold" : "text-red-600 font-bold"}>
+                            ₹{(variant.price - variant.costPrice).toFixed(2)}
+                          </span>
+                        </span>
+                        <span className="text-slate-500">
+                          Margin: <span className={variant.price - variant.costPrice >= 0 ? "text-green-600 font-bold" : "text-red-600 font-bold"}>
+                            {(((variant.price - variant.costPrice) / variant.price) * 100).toFixed(1)}%
+                          </span>
+                        </span>
+                      </>
+                    ) : (
+                      <span className="text-slate-400 italic">Enter cost price to see profit calculation</span>
+                    )}
                   </div>
                 </div>
               ))}

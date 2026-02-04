@@ -81,6 +81,7 @@ export default function ProductDetailsPage() {
   const [isFavorite, setIsFavorite] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [userHasSelectedVariant, setUserHasSelectedVariant] = useState(false);
 
   useEffect(() => {
     if (params.id) {
@@ -109,6 +110,7 @@ export default function ProductDetailsPage() {
       setProduct(data);
       if (data.variants.length > 0) {
         setSelectedVariant(data.variants[0].id);
+        setUserHasSelectedVariant(false);
       }
     } catch (err: any) {
       console.error("Error loading product:", err);
@@ -236,7 +238,7 @@ export default function ProductDetailsPage() {
                 animate={{ opacity: 1, scale: 1 }}
                 className="relative aspect-[4/3] max-h-[500px] bg-white rounded-[2.5rem] overflow-hidden shadow-2xl shadow-[#794A05]/10 border border-[#794A05]/5 group"
               >
-                {currentVariant?.image ? (
+                {(userHasSelectedVariant && currentVariant?.image) ? (
                   <img
                     src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}${currentVariant.image}`}
                     alt={product.name}
@@ -268,37 +270,58 @@ export default function ProductDetailsPage() {
               </motion.div>
 
               {/* Thumbnail Gallery */}
-              {product.variants.length > 1 && (
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.2 }}
-                  className="flex gap-4 p-2 overflow-x-auto pb-4 scrollbar-hide"
-                >
-                  {product.variants.map((variant) => (
-                    <button
-                      key={variant.id}
-                      onClick={() => setSelectedVariant(variant.id)}
-                      className={`flex-shrink-0 w-24 h-24 rounded-2xl overflow-hidden border-2 transition-all duration-300 transform ${selectedVariant === variant.id
-                        ? "border-[#794A05] scale-105 shadow-lg shadow-[#794A05]/20"
-                        : "border-white hover:border-[#794A05]/30 hover:scale-105"
-                        } bg-white`}
-                    >
-                      {variant.image ? (
-                        <img
-                          src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}${variant.image}`}
-                          alt={variant.name}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center">
-                          <Package className="w-6 h-6 text-[#794A05]/20" />
-                        </div>
-                      )}
-                    </button>
-                  ))}
-                </motion.div>
-              )}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+                className="flex gap-4 p-2 overflow-x-auto pb-4 scrollbar-hide"
+              >
+                {/* Main Product Image Thumbnail */}
+                {product.image && (
+                  <button
+                    onClick={() => {
+                      setUserHasSelectedVariant(false);
+                    }}
+                    className={`flex-shrink-0 w-24 h-24 rounded-2xl overflow-hidden border-2 transition-all duration-300 transform ${!userHasSelectedVariant
+                      ? "border-[#794A05] scale-105 shadow-lg shadow-[#794A05]/20"
+                      : "border-white hover:border-[#794A05]/30 hover:scale-105"
+                      } bg-white`}
+                  >
+                    <img
+                      src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}${product.image}`}
+                      alt={product.name}
+                      className="w-full h-full object-cover"
+                    />
+                  </button>
+                )}
+
+                {/* Variant Thumbnails */}
+                {product.variants.map((variant) => (
+                  <button
+                    key={variant.id}
+                    onClick={() => {
+                      setSelectedVariant(variant.id);
+                      setUserHasSelectedVariant(true);
+                    }}
+                    className={`flex-shrink-0 w-24 h-24 rounded-2xl overflow-hidden border-2 transition-all duration-300 transform ${userHasSelectedVariant && selectedVariant === variant.id
+                      ? "border-[#794A05] scale-105 shadow-lg shadow-[#794A05]/20"
+                      : "border-white hover:border-[#794A05]/30 hover:scale-105"
+                      } bg-white`}
+                  >
+                    {variant.image ? (
+                      <img
+                        src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}${variant.image}`}
+                        alt={variant.name}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <Package className="w-6 h-6 text-[#794A05]/20" />
+                      </div>
+                    )}
+                  </button>
+                ))}
+              </motion.div>
             </div>
 
             {/* Right Column: Details */}
@@ -355,7 +378,10 @@ export default function ProductDetailsPage() {
                       {product.variants.map((variant) => (
                         <button
                           key={variant.id}
-                          onClick={() => setSelectedVariant(variant.id)}
+                          onClick={() => {
+                            setSelectedVariant(variant.id);
+                            setUserHasSelectedVariant(true);
+                          }}
                           className={`p-3 rounded-xl border text-sm font-medium transition-all ${selectedVariant === variant.id
                             ? "border-[#794A05] bg-[#794A05]/5 text-[#794A05]"
                             : "border-slate-200 bg-white text-slate-500 hover:border-[#794A05]/30"

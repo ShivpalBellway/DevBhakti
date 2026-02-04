@@ -18,12 +18,12 @@ const upload = multer({ storage });
 const router = Router();
 
 router.use(authenticate);
-router.use(authorize('INSTITUTION')); 
+router.use(authorize('INSTITUTION'));
 
 router.get('/', getMyProducts);
 router.get('/:id', getMyProductById);
-router.post('/', upload.single('image'), createProduct);
-router.put('/:id', upload.single('image'), updateProduct);
+router.post('/', upload.any(), createProduct);
+router.put('/:id', upload.any(), updateProduct);
 router.delete('/:id', deleteProduct);
 
 export default router;
