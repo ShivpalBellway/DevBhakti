@@ -117,7 +117,10 @@ const sidebarItems = [
   {
     label: "Settings",
     icon: Settings,
-    href: "/admin/settings",
+    href: "#",
+    subItems: [
+      { label: "Commission Slabs", href: "/admin/commission-slabs" },
+    ]
   },
 ];
 

@@ -22,7 +22,7 @@ import {
     TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { fetchAllPoojasAdmin, deletePoojaAdmin } from "@/api/adminController";
+import { fetchAllPoojasAdmin, deletePoojaAdmin, promotePoojaToMasterAdmin } from "@/api/adminController";
 import { useToast } from "@/hooks/use-toast";
 import { API_URL } from "@/config/apiConfig";
 
@@ -31,16 +31,21 @@ export default function AdminPoojasListPage() {
     const [poojas, setPoojas] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState("");
+    const [activeTab, setActiveTab] = useState<'all' | 'master' | 'temple'>('all');
     const { toast } = useToast();
 
     useEffect(() => {
         loadPoojas();
-    }, []);
+    }, [activeTab]);
 
     const loadPoojas = async () => {
         setIsLoading(true);
         try {
-            const data = await fetchAllPoojasAdmin();
+            const params: any = {};
+            if (activeTab === 'master') params.isMaster = true;
+            if (activeTab === 'temple') params.isMaster = false;
+
+            const data = await fetchAllPoojasAdmin(params);
             setPoojas(data);
         } catch (error) {
             toast({
@@ -50,6 +55,25 @@ export default function AdminPoojasListPage() {
             });
         } finally {
             setIsLoading(false);
+        }
+    };
+
+    const handlePromoteToMaster = async (id: string) => {
+        if (!window.confirm("Are you sure you want to promote this pooja to a Master Template?")) return;
+
+        try {
+            await promotePoojaToMasterAdmin(id);
+            toast({
+                title: "Success",
+                description: "Pooja promoted to Master Template",
+            });
+            loadPoojas();
+        } catch (error) {
+            toast({
+                title: "Promotion Failed",
+                description: "Failed to promote pooja to master",
+                variant: "destructive"
+            });
         }
     };
 
@@ -97,6 +121,37 @@ export default function AdminPoojasListPage() {
                     <Plus className="w-4 h-4 mr-2" />
                     Add New Pooja
                 </Button>
+            </div>
+
+            {/* Tabs */}
+            <div className="flex border-b border-slate-200">
+                <button
+                    onClick={() => setActiveTab('all')}
+                    className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 ${activeTab === 'all'
+                        ? 'border-primary text-primary'
+                        : 'border-transparent text-slate-500 hover:text-slate-700'
+                        }`}
+                >
+                    All Poojas
+                </button>
+                <button
+                    onClick={() => setActiveTab('master')}
+                    className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 ${activeTab === 'master'
+                        ? 'border-primary text-primary'
+                        : 'border-transparent text-slate-500 hover:text-slate-700'
+                        }`}
+                >
+                    Master Templates
+                </button>
+                <button
+                    onClick={() => setActiveTab('temple')}
+                    className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 ${activeTab === 'temple'
+                        ? 'border-primary text-primary'
+                        : 'border-transparent text-slate-500 hover:text-slate-700'
+                        }`}
+                >
+                    Temple Specific
+                </button>
             </div>
 
             {/* Search */}
@@ -148,7 +203,14 @@ export default function AdminPoojasListPage() {
                                         </div>
                                     </TableCell>
                                     <TableCell>
-                                        <div className="font-medium text-slate-900">{pooja.name}</div>
+                                        <div className="font-medium text-slate-900 flex items-center gap-2">
+                                            {pooja.name}
+                                            {pooja.isMaster && (
+                                                <Badge variant="secondary" className="bg-blue-50 text-blue-700 border-blue-200 text-[10px] scale-90">
+                                                    MASTER
+                                                </Badge>
+                                            )}
+                                        </div>
                                         <div className="text-xs text-muted-foreground line-clamp-1 max-w-[200px]">
                                             {pooja.about || (pooja.description && pooja.description[0])}
                                         </div>
@@ -183,6 +245,16 @@ export default function AdminPoojasListPage() {
                                             >
                                                 <Eye className="w-4 h-4 text-slate-600" />
                                             </Button>
+                                            {!pooja.isMaster && !pooja.masterPoojaId && (
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    onClick={() => handlePromoteToMaster(pooja.id)}
+                                                    title="Promote to Master Template"
+                                                >
+                                                    <Plus className="w-4 h-4 text-green-600" />
+                                                </Button>
+                                            )}
                                             <Button
                                                 variant="ghost"
                                                 size="icon"

@@ -351,27 +351,27 @@ export default function ProductsManagementPage() {
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    <div className="flex items-center gap-1.5 ">
-                      {!product.temple ? (
-                        <div className="flex items-center gap-1.5 text-amber-600 bg-amber-50 px-2 py-1 rounded-md border border-amber-100">
-                          <ShieldCheck className="w-3.5 h-3.5" />
-                          <span className="text-xs font-bold uppercase tracking-wider">Devbhakti Exclusive</span>
-                        </div>
-                      ) : product.temple?.user?.role === "SELLER" ? (
-                        <div className="flex items-center gap-1.5 text-blue-600 bg-blue-50 px-2 py-1 rounded-md border border-blue-100">
-                          <Store className="w-3.5 h-3.5" />
-                          <div className="flex flex-col">
-                            <span className="text-[10px] font-bold uppercase leading-none mb-0.5">Seller</span>
-                            <span className="text-sm font-medium leading-none text-slate-700">{product.temple.name}</span>
-                          </div>
-                        </div>
-                      ) : (
+                    <div className="flex items-center gap-1.5">
+                      {product.temple ? (
                         <div className="flex items-center gap-1.5 text-primary bg-primary/5 px-2 py-1 rounded-md border border-primary/10">
                           <Building2 className="w-3.5 h-3.5" />
                           <div className="flex flex-col">
                             <span className="text-[10px] font-bold uppercase leading-none mb-0.5">Temple</span>
                             <span className="text-sm font-medium leading-none text-slate-700">{product.temple.name}</span>
                           </div>
+                        </div>
+                      ) : product.seller ? (
+                        <div className="flex items-center gap-1.5 text-blue-600 bg-blue-50 px-2 py-1 rounded-md border border-blue-100">
+                          <Store className="w-3.5 h-3.5" />
+                          <div className="flex flex-col">
+                            <span className="text-[10px] font-bold uppercase leading-none mb-0.5">Seller</span>
+                            <span className="text-sm font-medium leading-none text-slate-700">{product.seller.name}</span>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-1.5 text-amber-600 bg-amber-50 px-2 py-1 rounded-md border border-amber-100">
+                          <ShieldCheck className="w-3.5 h-3.5" />
+                          <span className="text-xs font-bold uppercase tracking-wider">Devbhakti Exclusive</span>
                         </div>
                       )}
                     </div>
@@ -482,9 +482,11 @@ export default function ProductsManagementPage() {
                 <div>
                   <label className="text-sm font-medium text-slate-700">Owner/Vendor</label>
                   <p className="text-slate-900">
-                    {!selectedProduct.temple
-                      ? "DevBhakti Exclusive (Admin)"
-                      : `${selectedProduct.temple?.user?.role === 'SELLER' ? 'Seller' : 'Temple'}: ${selectedProduct.temple.name}`}
+                    {selectedProduct.temple
+                      ? `Temple: ${selectedProduct.temple.name}`
+                      : selectedProduct.seller
+                        ? `Seller: ${selectedProduct.seller.name}`
+                        : "DevBhakti Exclusive (Admin)"}
                   </p>
                 </div>
                 <div>

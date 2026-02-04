@@ -34,6 +34,8 @@ import sellerProductRoutes from './routes/seller/productRoutes';
 import sellerOrderRoutes from './routes/seller/orderRoutes';
 import sellerGeneralRoutes from './routes/seller/sellerRoutes';
 import sellerFinanceRoutes from './routes/seller/financeRoutes';
+import adminCommissionSlabRoutes from './routes/admin/commissionSlabRoutes';
+
 
 dotenv.config();
 
@@ -63,6 +65,8 @@ app.use('/api/admin/orders', adminOrderRoutes);
 app.use('/api/admin/finance', adminFinanceManagementRoutes);
 app.use('/api/admin/sellers', adminSellerRoutes);
 app.use('/api/admin/dashboard', adminDashboardRoutes);
+app.use('/api/admin/commission-slabs', adminCommissionSlabRoutes);
+
 
 
 // Temple Admin Routes

@@ -144,15 +144,38 @@ export const getPoojaById = async (req: Request, res: Response) => {
     const pooja = await prisma.pooja.findFirst({
       where: {
         id: String(id),
-        temple: {
-          user: {
-            isVerified: true,
-            role: 'INSTITUTION'
+        OR: [
+          { isMaster: true },
+          {
+            temple: {
+              user: {
+                isVerified: true,
+                role: 'INSTITUTION'
+              }
+            }
           }
-        }
+        ]
       },
       include: {
-        temple: true
+        temple: true,
+        templeCopies: {
+          where: {
+            status: true,
+            temple: {
+              user: { isVerified: true }
+            }
+          },
+          include: {
+            temple: {
+              select: {
+                id: true,
+                name: true,
+                location: true,
+                image: true
+              }
+            }
+          }
+        }
       }
     });
 
@@ -184,17 +207,20 @@ export const getPoojaById = async (req: Request, res: Response) => {
 export const getAllPoojas = async (req: Request, res: Response) => {
   try {
     const userId = getUserIdFromRequest(req);
+    const { templeId } = req.query;
+
+    const where: any = {
+      status: true
+    };
+
+    if (templeId) {
+      where.templeId = String(templeId);
+    } else {
+      where.isMaster = true; // Global list only shows Master templates
+    }
 
     const poojas = await prisma.pooja.findMany({
-      where: {
-        status: true,
-        temple: {
-          user: {
-            isVerified: true,
-            role: 'INSTITUTION'
-          }
-        }
-      },
+      where,
       include: {
         temple: {
           select: {
@@ -202,6 +228,9 @@ export const getAllPoojas = async (req: Request, res: Response) => {
             location: true,
             image: true
           }
+        },
+        _count: {
+          select: { templeCopies: true }
         }
       }
     });

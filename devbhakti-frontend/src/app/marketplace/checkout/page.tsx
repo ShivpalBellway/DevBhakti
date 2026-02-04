@@ -29,6 +29,52 @@ export default function CheckoutPage() {
         pincode: "",
     });
 
+    // Autofill basic details if logged in
+    React.useEffect(() => {
+        const userData = localStorage.getItem("user");
+        if (userData) {
+            try {
+                const user = JSON.parse(userData);
+                setAddress(prev => ({
+                    ...prev,
+                    fullName: user.name || prev.fullName,
+                    phone: user.phone || prev.phone,
+                }));
+            } catch (e) {
+                console.error("Failed to parse user data", e);
+            }
+        }
+    }, []);
+
+    const [platformFee, setPlatformFee] = useState(0);
+    const [isCalculatingFees, setIsCalculatingFees] = useState(false);
+
+    React.useEffect(() => {
+        const fetchFees = async () => {
+            if (cartItems.length === 0) return;
+            setIsCalculatingFees(true);
+            try {
+                const response = await axios.post(`${API_URL}/api/orders/calculate-fees`, {
+                    items: cartItems.map(item => ({
+                        productId: item.productId,
+                        price: item.price,
+                        quantity: item.quantity,
+                        templeId: item.templeId,
+                        sellerId: (item as any).sellerId
+                    }))
+                });
+                if (response.data.success) {
+                    setPlatformFee(response.data.totalPlatformFee);
+                }
+            } catch (error) {
+                console.error("Fee calculation error:", error);
+            } finally {
+                setIsCalculatingFees(false);
+            }
+        };
+        fetchFees();
+    }, [cartItems, API_URL]);
+
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
         setAddress((prev) => ({ ...prev, [name]: value }));
@@ -71,9 +117,10 @@ export default function CheckoutPage() {
                     variantName: item.variantName,
                     price: item.price,
                     quantity: item.quantity,
-                    templeId: item.templeId
+                    templeId: item.templeId,
+                    sellerId: (item as any).sellerId
                 })),
-                totalAmount,
+                totalAmount: totalAmount + platformFee,
                 paymentMethod: "COD",
                 shippingAddress: address,
             };
@@ -220,7 +267,17 @@ export default function CheckoutPage() {
                                 <div className="space-y-2">
                                     <div className="flex justify-between text-slate-600">
                                         <span>Subtotal</span>
-                                        <span className="flex items-center"><IndianRupee className="w-3.5 h-3.5" /> {totalAmount.toLocaleString()}</span>
+                                        <span className="flex items-center font-medium"><IndianRupee className="w-3.5 h-3.5" /> {totalAmount.toLocaleString()}</span>
+                                    </div>
+                                    <div className="flex justify-between text-slate-600">
+                                        <span>Platform Service Fee</span>
+                                        <span className="flex items-center font-medium">
+                                            {isCalculatingFees ? (
+                                                <span className="text-[10px] animate-pulse">Calculating...</span>
+                                            ) : (
+                                                <><IndianRupee className="w-3.5 h-3.5" /> {platformFee.toLocaleString()}</>
+                                            )}
+                                        </span>
                                     </div>
                                     <div className="flex justify-between text-slate-600">
                                         <span>Shipping</span>
@@ -229,7 +286,7 @@ export default function CheckoutPage() {
                                     <Separator className="bg-[#794A05]/10" />
                                     <div className="flex justify-between text-xl font-bold text-[#2a1b01]">
                                         <span>Total</span>
-                                        <span className="flex items-center text-[#794A05]"><IndianRupee className="w-5 h-5" /> {totalAmount.toLocaleString()}</span>
+                                        <span className="flex items-center text-[#794A05]"><IndianRupee className="w-5 h-5" /> {(totalAmount + platformFee).toLocaleString()}</span>
                                     </div>
                                 </div>
                             </CardContent>

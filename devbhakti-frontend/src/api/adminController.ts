@@ -11,9 +11,24 @@ export const loginAdmin = async (credentials: any) => {
 // (Consolidated below)
 
 // Admin Pooja Management
-export const fetchAllPoojasAdmin = async () => {
+export const fetchAllPoojasAdmin = async (params?: { isMaster?: boolean, templeId?: string }) => {
     const token = localStorage.getItem("admin_token");
-    const response = await axios.get(`${API_URL}/admin/poojas`, {
+    let url = `${API_URL}/admin/poojas`;
+    if (params) {
+        const query = new URLSearchParams();
+        if (params.isMaster !== undefined) query.append('isMaster', params.isMaster.toString());
+        if (params.templeId) query.append('templeId', params.templeId);
+        url += `?${query.toString()}`;
+    }
+    const response = await axios.get(url, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+
+export const promotePoojaToMasterAdmin = async (id: string) => {
+    const token = localStorage.getItem("admin_token");
+    const response = await axios.post(`${API_URL}/admin/poojas/${id}/promote`, {}, {
         headers: { Authorization: `Bearer ${token}` }
     });
     return response.data;
@@ -129,7 +144,7 @@ export const deleteTempleAdmin = async (id: string) => {
     return response.data;
 };
 
-export const toggleTempleStatusAdmin = async (id: string, isVerified: boolean, isActive: boolean, data?: { slug?: string, subdomain?: string, urlType?: string, productCommissionRate?: number, poojaCommissionRate?: number, liveStatus?: boolean }) => {
+export const toggleTempleStatusAdmin = async (id: string, isVerified: boolean, isActive: boolean, data?: { slug?: string, subdomain?: string, urlType?: string, productCommissionRate?: number, poojaCommissionRate?: number, liveStatus?: boolean, commissionSlabs?: any[] }) => {
     const token = localStorage.getItem("admin_token");
     const payload = {
         isVerified,
@@ -627,3 +642,44 @@ export const fetchAdminDashboardStats = async () => {
     });
     return response.data;
 };
+
+// Commission Slabs Management
+export const fetchCommissionSlabsAdmin = async (type?: string, targetId?: string, category?: string) => {
+    const token = localStorage.getItem("admin_token");
+    let url = `${API_URL}/admin/commission-slabs`;
+    const params = new URLSearchParams();
+    if (type) params.append("type", type);
+    if (targetId) params.append("targetId", targetId);
+    if (category) params.append("category", category);
+    if (params.toString()) url += `?${params.toString()}`;
+
+    const response = await axios.get(url, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+
+export const createCommissionSlabAdmin = async (slabData: any) => {
+    const token = localStorage.getItem("admin_token");
+    const response = await axios.post(`${API_URL}/admin/commission-slabs`, slabData, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+
+export const updateCommissionSlabAdmin = async (id: string, slabData: any) => {
+    const token = localStorage.getItem("admin_token");
+    const response = await axios.put(`${API_URL}/admin/commission-slabs/${id}`, slabData, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+
+export const deleteCommissionSlabAdmin = async (id: string) => {
+    const token = localStorage.getItem("admin_token");
+    const response = await axios.delete(`${API_URL}/admin/commission-slabs/${id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+

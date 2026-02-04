@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { prisma } from "../../lib/prisma";
+import { SlabType, CommissionCategory } from "@prisma/client";
 
 // Helper to normalize phone number to +91XXXXXXXXXX format
 const normalizePhone = (phone: string): string => {
@@ -46,9 +47,9 @@ export const createSeller = async (req: Request, res: Response) => {
         }
 
         // Transaction to create User and associated SellerProfile (Store)
-        const result = await prisma.$transaction(async (prisma) => {
+        const result = await prisma.$transaction(async (tx) => {
             // 1. Create User
-            const user = await prisma.user.create({
+            const user = await tx.user.create({
                 data: {
                     name: sellerName as string,
                     email: email as string,
@@ -59,7 +60,7 @@ export const createSeller = async (req: Request, res: Response) => {
             });
 
             // 2. Create SellerProfile (Store entity)
-            const sellerProfile = await prisma.sellerProfile.create({
+            const sellerProfile = await tx.sellerProfile.create({
                 data: {
                     name: storeName as string,
                     location: (address as string) || '', // Using address as location
@@ -71,6 +72,23 @@ export const createSeller = async (req: Request, res: Response) => {
                     productCommissionRate: parseFloat(productCommissionRate as string) || 10.0,
                 }
             });
+
+            // 3. Handle Commission Slabs
+            const commissionSlabs = req.body.commissionSlabs;
+            if (commissionSlabs && Array.isArray(commissionSlabs)) {
+                await tx.commissionSlab.createMany({
+                    data: commissionSlabs.map((s: any) => ({
+                        minAmount: parseFloat(s.minAmount),
+                        maxAmount: s.maxAmount ? parseFloat(s.maxAmount) : null,
+                        platformFee: parseFloat(s.platformFee || 0),
+                        percentage: parseFloat(s.percentage || 0),
+                        slabType: SlabType.SELLER,
+                        targetId: sellerProfile.id,
+                        category: CommissionCategory.MARKETPLACE,
+                        isActive: true
+                    }))
+                });
+            }
 
             return { user, sellerProfile };
         });
@@ -173,6 +191,11 @@ export const getSellerById = async (req: Request, res: Response) => {
             return res.status(404).json({ message: 'Seller not found' });
         }
 
+        // Fetch slabs separately for the seller profile
+        const slabs = user.sellerProfile ? await prisma.commissionSlab.findMany({
+            where: { targetId: user.sellerProfile.id, slabType: SlabType.SELLER, isActive: true }
+        }) : [];
+
         // Cast to any to avoid partial type issues for now
         const userAny = user as any;
 
@@ -193,7 +216,8 @@ export const getSellerById = async (req: Request, res: Response) => {
             logo: userAny.sellerProfile?.image || userAny.profileImage || '',
             totalProducts: userAny.sellerProfile?.products?.length || 0,
             totalOrders: userAny.sellerProfile?.subOrders?.length || 0,
-            totalSales: userAny.sellerProfile?.subOrders?.reduce((sum: number, order: any) => sum + order.totalAmount, 0) || 0
+            totalSales: userAny.sellerProfile?.subOrders?.reduce((sum: number, order: any) => sum + order.totalAmount, 0) || 0,
+            commissionSlabs: slabs
         };
 
         res.json({
@@ -216,9 +240,9 @@ export const updateSeller = async (req: Request, res: Response) => {
         const normalizedPhone = phone ? normalizePhone(phone as string) : undefined;
 
         // Transaction to update User and SellerProfile
-        await prisma.$transaction(async (prisma) => {
+        await prisma.$transaction(async (tx) => {
             // Update User
-            await prisma.user.update({
+            await tx.user.update({
                 where: { id: id as string },
                 data: {
                     name: sellerName as string,
@@ -229,12 +253,12 @@ export const updateSeller = async (req: Request, res: Response) => {
             });
 
             // Update SellerProfile (Store)
-            // First find the sellerProfile associated with this user
-            const user = await prisma.user.findUnique({ where: { id: id as string }, include: { sellerProfile: true } });
+            const user = await tx.user.findUnique({ where: { id: id as string }, include: { sellerProfile: true } });
 
-            if (user && (user as any).sellerProfile) {
-                await prisma.sellerProfile.update({
-                    where: { id: (user as any).sellerProfile.id },
+            if (user && user.sellerProfile) {
+                const sellerProfileId = user.sellerProfile.id;
+                await tx.sellerProfile.update({
+                    where: { id: sellerProfileId },
                     data: {
                         name: storeName as string,
                         fullAddress: address as string,
@@ -242,6 +266,31 @@ export const updateSeller = async (req: Request, res: Response) => {
                         productCommissionRate: parseFloat(productCommissionRate as string)
                     }
                 });
+
+                // Handle Commission Slabs Update
+                const commissionSlabs = req.body.commissionSlabs;
+                if (commissionSlabs && Array.isArray(commissionSlabs)) {
+                    // Delete old slabs
+                    await tx.commissionSlab.deleteMany({
+                        where: { targetId: sellerProfileId, slabType: SlabType.SELLER }
+                    });
+
+                    // Create new slabs
+                    if (commissionSlabs.length > 0) {
+                        await tx.commissionSlab.createMany({
+                            data: commissionSlabs.map((s: any) => ({
+                                minAmount: parseFloat(s.minAmount),
+                                maxAmount: s.maxAmount ? parseFloat(s.maxAmount) : null,
+                                platformFee: parseFloat(s.platformFee || 0),
+                                percentage: parseFloat(s.percentage || 0),
+                                slabType: SlabType.SELLER,
+                                targetId: sellerProfileId,
+                                category: CommissionCategory.MARKETPLACE,
+                                isActive: true
+                            }))
+                        });
+                    }
+                }
             }
         });
 

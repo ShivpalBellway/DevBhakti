@@ -63,7 +63,7 @@ export const fetchPublicProducts = async (params?: {
 // Get Product by ID (public)
 export const fetchProductByIdPublic = async (id: string) => {
     try {
-        const response = await axios.get(`${API_URL}/admin/products/${id}`);
+        const response = await axios.get(`${API_URL}/admin/products/public/${id}`);
         return response.data.data;
     } catch (error) {
         console.error("Error fetching product by id:", error);

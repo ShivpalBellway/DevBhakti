@@ -3,7 +3,8 @@ import {
     getAllPoojas, 
     createPooja, 
     updatePooja, 
-    deletePooja 
+    deletePooja,
+    promoteToMaster
 } from '../../controllers/admin/poojaController';
 import { authenticate, authorize } from '../../middleware/authMiddleware';
 
@@ -18,6 +19,7 @@ router.use(authorize('ADMIN'));
 router.get('/', getAllPoojas);
 router.post('/', uploadPoojaImage.single('image'), createPooja);
 router.put('/:id', uploadPoojaImage.single('image'), updatePooja);
+router.post('/:id/promote', promoteToMaster);
 router.delete('/:id', deletePooja);
 
 export default router;
