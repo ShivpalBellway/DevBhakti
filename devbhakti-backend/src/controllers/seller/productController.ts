@@ -110,7 +110,18 @@ export const createProduct = async (req: Request, res: Response) => {
             origin = req.body.origin;
 
             variants = req.body.variants ? JSON.parse(req.body.variants) : [];
-            if (req.file) image = `/uploads/products/${req.file.filename}`;
+
+            const files = req.files as Express.Multer.File[];
+            if (files) {
+                const productFile = files.find(f => f.fieldname === 'image');
+                if (productFile) image = `/uploads/products/${productFile.filename}`;
+
+                variants = variants.map((v: any, index: number) => {
+                    const variantFile = files.find(f => f.fieldname === `variant_image_${index}`);
+                    if (variantFile) v.image = `/uploads/products/${variantFile.filename}`;
+                    return v;
+                });
+            }
         } else {
             const body = req.body;
             name = body.name;
@@ -190,7 +201,18 @@ export const updateProduct = async (req: Request, res: Response) => {
             origin = req.body.origin;
 
             variants = req.body.variants ? JSON.parse(req.body.variants) : [];
-            if (req.file) image = `/uploads/products/${req.file.filename}`;
+
+            const files = req.files as Express.Multer.File[];
+            if (files) {
+                const productFile = files.find(f => f.fieldname === 'image');
+                if (productFile) image = `/uploads/products/${productFile.filename}`;
+
+                variants = variants.map((v: any, index: number) => {
+                    const variantFile = files.find(f => f.fieldname === `variant_image_${index}`);
+                    if (variantFile) v.image = `/uploads/products/${variantFile.filename}`;
+                    return v;
+                });
+            }
             removeImage = req.body.removeImage === 'true';
         } else {
             const body = req.body;

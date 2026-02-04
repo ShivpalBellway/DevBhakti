@@ -18,6 +18,7 @@ import {
   Calendar as CalendarIcon,
   X,
   Filter,
+  Image as ImageIcon,
 } from "lucide-react";
 import {
   Select,
@@ -502,12 +503,32 @@ export default function ProductsManagementPage() {
                 <label className="text-sm font-medium text-slate-700 mb-2 block">Variants & Pricing</label>
                 <div className="space-y-2">
                   {selectedProduct.variants.map((variant: any) => (
-                    <div key={variant.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
-                      <div>
-                        <span className="font-medium text-slate-900">{variant.name}</span>
-                        <span className="text-sm text-slate-600 ml-2">Stock: {variant.stock}</span>
+                    <div key={variant.id} className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg">
+                      <div className="w-12 h-12 rounded border bg-white flex-shrink-0 flex items-center justify-center overflow-hidden">
+                        {variant.image ? (
+                          <img
+                            src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}${variant.image}`}
+                            alt={variant.name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <ImageIcon className="w-6 h-6 text-slate-300" />
+                        )}
                       </div>
-                      <span className="font-semibold text-slate-900">₹{variant.price}</span>
+                      <div className="flex-1">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <p className="font-medium text-slate-900">{variant.name}</p>
+                            <p className="text-xs text-slate-500">Stock: {variant.stock}</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="font-semibold text-slate-900">₹{variant.price}</p>
+                            {variant.costPrice > 0 && (
+                              <p className="text-[10px] text-slate-500 italic">Cost: ₹{variant.costPrice}</p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   ))}
                 </div>

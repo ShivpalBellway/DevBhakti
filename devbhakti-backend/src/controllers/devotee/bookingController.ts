@@ -351,3 +351,69 @@ export const getBookingReceipt = async (req: Request, res: Response) => {
         res.status(500).json({ success: false, message: 'Internal server error' });
     }
 };
+
+export const getUnavailableDates = async (req: Request, res: Response) => {
+    try {
+        const { templeId, poojaId } = req.query;
+
+        if (!templeId) {
+            return res.status(400).json({ success: false, message: 'Temple ID is required' });
+        }
+
+        // 1. Fetch closed dates from BookingAvailability (Global or Specific)
+        const closedRecords = await prisma.bookingAvailability.findMany({
+            where: {
+                templeId: templeId as string,
+                isClosed: true,
+                OR: [
+                    { poojaId: null },
+                    { poojaId: poojaId ? (poojaId as string) : undefined }
+                ]
+            },
+            select: { date: true }
+        });
+
+        // 2. Fetch limit records (Global or Specific)
+        const limitRecords = await prisma.bookingAvailability.findMany({
+            where: {
+                templeId: templeId as string,
+                isClosed: false,
+                OR: [
+                    { poojaId: null },
+                    { poojaId: poojaId ? (poojaId as string) : undefined }
+                ]
+            }
+        });
+
+        const unavailableFromLimits: string[] = [];
+
+        for (const record of limitRecords) {
+            const count = await prisma.poojaBooking.count({
+                where: {
+                    templeId: templeId as string,
+                    poojaId: record.poojaId || undefined,
+                    bookingDate: record.date,
+                    status: { not: 'CANCELLED' }
+                }
+            });
+
+            if (count >= record.maxBookings) {
+                unavailableFromLimits.push(record.date);
+            }
+        }
+
+        const unavailableDates = Array.from(new Set([
+            ...closedRecords.map(r => r.date),
+            ...unavailableFromLimits
+        ]));
+
+        return res.json({
+            success: true,
+            data: unavailableDates
+        });
+
+    } catch (error) {
+        console.error('Error fetching unavailable dates:', error);
+        res.status(500).json({ success: false, message: 'Internal server error' });
+    }
+};

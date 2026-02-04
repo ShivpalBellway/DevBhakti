@@ -115,13 +115,13 @@ export default function ViewPoojaPage() {
                                 </div>
                             </div>
 
-                            <div className="flex items-center gap-3">
+                            {/* <div className="flex items-center gap-3">
                                 <Clock className="w-4 h-4 text-primary" />
                                 <div>
                                     <p className="text-xs text-muted-foreground">Duration</p>
                                     <p className="font-semibold">{pooja.duration}</p>
                                 </div>
-                            </div>
+                            </div> */}
 
                             <div className="flex items-center gap-3">
                                 <Calendar className="w-4 h-4 text-primary" />

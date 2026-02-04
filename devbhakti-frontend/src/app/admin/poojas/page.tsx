@@ -177,7 +177,7 @@ export default function AdminPoojasListPage() {
                             <TableHead>Temple</TableHead>
                             <TableHead>Category</TableHead>
                             <TableHead>Price</TableHead>
-                            <TableHead>Duration</TableHead>
+                            {/* <TableHead>Duration</TableHead> */}
                             <TableHead className="text-right">Actions</TableHead>
                         </TableRow>
                     </TableHeader>
@@ -229,12 +229,12 @@ export default function AdminPoojasListPage() {
                                             {pooja.price}
                                         </div>
                                     </TableCell>
-                                    <TableCell>
+                                    {/* <TableCell>
                                         <div className="flex items-center text-sm text-muted-foreground">
                                             <Clock className="w-3.5 h-3.5 mr-1.5" />
                                             {pooja.duration}
                                         </div>
-                                    </TableCell>
+                                    </TableCell> */}
                                     <TableCell className="text-right">
                                         <div className="flex justify-end gap-1">
                                             <Button

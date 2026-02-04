@@ -3,13 +3,16 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, ChevronDown, ChevronRight, User, LogIn, UserPlus, ShoppingBag, Church, Search, ArrowRight, LogOut, Heart } from "lucide-react";
+import { Menu, X, ChevronDown, ChevronRight, User, LogIn, UserPlus, ShoppingBag, ShoppingCart, Church, Search, ArrowRight, LogOut, Heart } from "lucide-react";
 import { BASE_URL } from "@/config/apiConfig";
+import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import Logo from "@/components/icons/Logo";
 import { GlobalSearch } from "./GlobalSearch";
 import TempleLoginModal from "@/components/temples/TempleLoginModal";
+import { useCart } from "@/context/CartContext";
+import CartDrawer from "@/components/marketplace/CartDrawer";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -28,7 +31,10 @@ const Navbar: React.FC<NavbarProps> = ({ variant = "default" }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [showTempleLoginModal, setShowTempleLoginModal] = useState(false);
+  const [isCartOpen, setIsCartOpen] = useState(false);
   const [user, setUser] = useState<any>(null);
+  const router = useRouter();
+  const { cartItems, itemCount, updateQuantity, removeFromCart } = useCart();
 
   useEffect(() => {
     // Check for user in localStorage
@@ -153,7 +159,22 @@ const Navbar: React.FC<NavbarProps> = ({ variant = "default" }) => {
                 </Button>
               )}
 
-
+              {/* Cart Icon */}
+              {user && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="relative rounded-full w-9 h-9 md:w-10 md:h-10 border-2 border-[#794A05]/20 hover:border-[#794A05] hover:bg-white text-[#794A05] transition-all"
+                  onClick={() => setIsCartOpen(true)}
+                >
+                  <ShoppingCart className="w-4 h-4 md:w-5 md:h-5" />
+                  {itemCount > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-black w-4 h-4 flex items-center justify-center rounded-full shadow-sm">
+                      {itemCount}
+                    </span>
+                  )}
+                </Button>
+              )}
 
               {/* Profile Dropdown */}
               {variant === "default" && (
@@ -374,6 +395,29 @@ const Navbar: React.FC<NavbarProps> = ({ variant = "default" }) => {
                       </Button>
                     )}
 
+                    {user && (
+                      <Button
+                        variant="ghost"
+                        size="lg"
+                        onClick={() => {
+                          setIsMobileMenuOpen(false);
+                          setIsCartOpen(true);
+                        }}
+                        className="justify-start gap-4 h-14 rounded-2xl border border-border/50 bg-primary/5 text-primary"
+                      >
+                        <div className="relative">
+                          <ShoppingCart className="w-5 h-5" />
+                          {itemCount > 0 && (
+                            <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[9px] font-black w-4 h-4 flex items-center justify-center rounded-full">
+                              {itemCount}
+                            </span>
+                          )}
+                        </div>
+                        <span className="font-bold">My Cart</span>
+                        <ChevronRight className="w-4 h-4 ml-auto opacity-50" />
+                      </Button>
+                    )}
+
                     <Button variant="ghost" size="lg" asChild className="justify-start gap-4 h-14 rounded-2xl border border-border/50">
                       <Link href={user ? "/profile/orders" : "/auth"} onClick={() => setIsMobileMenuOpen(false)}>
                         <ShoppingBag className="w-5 h-5 text-orange-600" />
@@ -411,6 +455,17 @@ const Navbar: React.FC<NavbarProps> = ({ variant = "default" }) => {
           )
         }
       </AnimatePresence >
+      <CartDrawer
+        open={isCartOpen}
+        onOpenChange={setIsCartOpen}
+        items={cartItems}
+        onUpdateQuantity={updateQuantity}
+        onRemoveItem={removeFromCart}
+        onCheckout={() => {
+          setIsCartOpen(false);
+          router.push("/marketplace/checkout");
+        }}
+      />
     </>
   );
 };

@@ -261,7 +261,7 @@ export default function CreatePoojaPage() {
                             required
                         />
                     </div>
-                    <div className="space-y-2">
+                    {/* <div className="space-y-2">
                         <Label htmlFor="duration">Duration *</Label>
                         <Input
                             id="duration"
@@ -270,7 +270,7 @@ export default function CreatePoojaPage() {
                             onChange={(e) => setFormData({ ...formData, duration: e.target.value })}
                             required
                         />
-                    </div>
+                    </div> */}
                 </div>
 
                 <div className="space-y-2">

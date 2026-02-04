@@ -363,21 +363,51 @@ export default function TempleProductsPage() {
                                             <table className="w-full text-sm text-left">
                                                 <thead className="bg-slate-50 text-slate-500 border-b">
                                                     <tr>
+                                                        <th className="px-4 py-3 font-medium">Image</th>
                                                         <th className="px-4 py-3 font-medium">Variant Name</th>
                                                         <th className="px-4 py-3 font-medium">Price</th>
+                                                        <th className="px-4 py-3 font-medium">Cost Price</th>
+                                                        <th className="px-4 py-3 font-medium">Profit</th>
                                                         <th className="px-4 py-3 font-medium text-right">Stock</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody className="divide-y">
-                                                    {selectedProduct.variants?.map((variant: any) => (
-                                                        <tr key={variant.id} className="hover:bg-slate-50/50">
-                                                            <td className="px-4 py-3 font-medium text-slate-900">{variant.name}</td>
-                                                            <td className="px-4 py-3 text-slate-700">₹{variant.price}</td>
-                                                            <td className={`px-4 py-3 text-right font-medium ${variant.stock > 0 ? 'text-emerald-600' : 'text-red-500'}`}>
-                                                                {variant.stock > 0 ? `${variant.stock} units` : 'Out of Stock'}
-                                                            </td>
-                                                        </tr>
-                                                    ))}
+                                                    {selectedProduct.variants?.map((variant: any) => {
+                                                        const profit = variant.costPrice && variant.price ? variant.price - variant.costPrice : null;
+                                                        const profitMargin = profit && variant.price ? ((profit / variant.price) * 100).toFixed(1) : null;
+
+                                                        return (
+                                                            <tr key={variant.id} className="hover:bg-slate-50/50">
+                                                                <td className="px-4 py-3">
+                                                                    {variant.image ? (
+                                                                        <img src={`${API_URL}${variant.image}`} alt={variant.name} className="w-12 h-12 object-cover rounded-md border" />
+                                                                    ) : (
+                                                                        <div className="w-12 h-12 border-2 border-dashed border-slate-200 rounded-md flex items-center justify-center">
+                                                                            <Package className="w-5 h-5 text-slate-300" />
+                                                                        </div>
+                                                                    )}
+                                                                </td>
+                                                                <td className="px-4 py-3 font-medium text-slate-900">{variant.name}</td>
+                                                                <td className="px-4 py-3 text-slate-700 font-semibold">₹{variant.price}</td>
+                                                                <td className="px-4 py-3 text-slate-600">
+                                                                    {variant.costPrice ? `₹${variant.costPrice}` : <span className="text-slate-400">-</span>}
+                                                                </td>
+                                                                <td className="px-4 py-3">
+                                                                    {profit !== null ? (
+                                                                        <div className="flex flex-col">
+                                                                            <span className="font-medium text-green-600">₹{profit.toFixed(2)}</span>
+                                                                            <span className="text-xs text-green-600">({profitMargin}%)</span>
+                                                                        </div>
+                                                                    ) : (
+                                                                        <span className="text-slate-400">-</span>
+                                                                    )}
+                                                                </td>
+                                                                <td className={`px-4 py-3 text-right font-medium ${variant.stock > 0 ? 'text-emerald-600' : 'text-red-500'}`}>
+                                                                    {variant.stock > 0 ? `${variant.stock} units` : 'Out of Stock'}
+                                                                </td>
+                                                            </tr>
+                                                        );
+                                                    })}
                                                 </tbody>
                                             </table>
                                         </div>

@@ -20,6 +20,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 import {
   Calendar,
   Clock,
@@ -31,6 +39,8 @@ import {
   CheckCircle2,
   ChevronRight,
   ArrowLeft,
+  CalendarDays,
+  X,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -63,6 +73,28 @@ function BookingForm() {
 
   const [availabilityStatus, setAvailabilityStatus] = useState<{ available: boolean, message: string } | null>(null);
   const [platformFee, setPlatformFee] = useState(0);
+  const [unavailableDates, setUnavailableDates] = useState<string[]>([]);
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+
+  useEffect(() => {
+    const fetchUnavailable = async () => {
+      if (!selectedTemple) return;
+      try {
+        const query = new URLSearchParams({
+          templeId: selectedTemple,
+          ...(selectedPooja ? { poojaId: selectedPooja } : {})
+        });
+        const response = await fetch(`${API_URL}/bookings/unavailable-dates?${query}`);
+        const data = await response.json();
+        if (data.success) {
+          setUnavailableDates(data.data);
+        }
+      } catch (error) {
+        console.error("Failed to fetch unavailable dates", error);
+      }
+    };
+    fetchUnavailable();
+  }, [selectedTemple, selectedPooja]);
 
   useEffect(() => {
     const checkDate = async () => {
@@ -417,28 +449,82 @@ function BookingForm() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <Input
-                    type="date"
-                    value={selectedDate}
-                    onChange={(e) => setSelectedDate(e.target.value)}
-                    min={new Date().toISOString().split("T")[0]}
-                    className="max-w-xs"
-                  />
-                  {availabilityStatus && !availabilityStatus.available && (
-                    <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm flex items-start gap-2 animate-in fade-in slide-in-from-top-1">
-                      <div className="mt-0.5">⚠️</div>
-                      <div>
-                        <p font-bold>Date Unavailable</p>
-                        <p>{availabilityStatus.message}</p>
+                  <div className="flex flex-col gap-4">
+                    <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant={"outline"}
+                          className={cn(
+                            "w-full md:w-[280px] justify-start text-left font-normal",
+                            !selectedDate && "text-muted-foreground"
+                          )}
+                        >
+                          <CalendarDays className="mr-2 h-4 w-4" />
+                          {selectedDate ? format(new Date(selectedDate), "PPP") : <span>Pick a date</span>}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <CalendarComponent
+                          mode="single"
+                          selected={selectedDate ? new Date(selectedDate) : undefined}
+                          onSelect={(date) => {
+                            if (date) {
+                              const localDate = format(date, "yyyy-MM-dd");
+                              setSelectedDate(localDate);
+                              setIsCalendarOpen(false);
+                            }
+                          }}
+                          disabled={(date) => {
+                            const dateString = format(date, "yyyy-MM-dd");
+                            return date < new Date(new Date().setHours(0, 0, 0, 0)) || unavailableDates.includes(dateString);
+                          }}
+                          initialFocus
+                          modifiers={{
+                            unavailable: (date) => {
+                              const dateString = format(date, "yyyy-MM-dd");
+                              return unavailableDates.includes(dateString);
+                            }
+                          }}
+                          modifiersClassNames={{
+                            unavailable: "relative text-muted-foreground opacity-50 cursor-not-allowed"
+                          }}
+                          components={{
+                            DayContent: ({ date }) => {
+                              const dateString = format(date, "yyyy-MM-dd");
+                              const isUnavailable = unavailableDates.includes(dateString);
+
+                              return (
+                                <div className="relative w-full h-full flex items-center justify-center">
+                                  <span className="relative z-0">{date.getDate()}</span>
+                                  {isUnavailable && (
+                                    <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
+                                      <X className="h-6 w-6 text-red-600 opacity-100" strokeWidth={3.5} />
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            }
+                          }}
+                        />
+                      </PopoverContent>
+                    </Popover>
+
+                    {availabilityStatus && !availabilityStatus.available && (
+                      <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm flex items-start gap-2 animate-in fade-in slide-in-from-top-1">
+                        <div className="mt-0.5">⚠️</div>
+                        <div>
+                          <p className="font-bold">Date Unavailable</p>
+                          <p>{availabilityStatus.message}</p>
+                        </div>
                       </div>
-                    </div>
-                  )}
-                  {availabilityStatus && availabilityStatus.available && selectedDate && (
-                    <div className="mt-2 text-green-600 text-sm flex items-center gap-2 animate-in fade-in">
-                      <CheckCircle2 className="w-4 h-4" />
-                      {availabilityStatus.message}
-                    </div>
-                  )}
+                    )}
+                    {availabilityStatus && availabilityStatus.available && selectedDate && (
+                      <div className="text-green-600 text-sm flex items-center gap-2 animate-in fade-in">
+                        <CheckCircle2 className="w-4 h-4" />
+                        {availabilityStatus.message}
+                      </div>
+                    )}
+                  </div>
                 </CardContent>
               </Card>
 

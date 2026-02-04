@@ -376,21 +376,51 @@ export default function SellerProductsPage() {
                                             <table className="w-full text-sm text-left">
                                                 <thead className="bg-slate-50/80 text-[10px] font-bold uppercase tracking-widest text-slate-400 border-b border-slate-100">
                                                     <tr>
+                                                        <th className="px-5 py-4">Image</th>
                                                         <th className="px-5 py-4">Variant Name</th>
                                                         <th className="px-5 py-4">Price</th>
-                                                        <th className="px-5 py-4 text-right">Availability</th>
+                                                        <th className="px-5 py-4">Cost</th>
+                                                        <th className="px-5 py-4">Profit</th>
+                                                        <th className="px-5 py-4 text-right">Stock</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody className="divide-y divide-slate-50">
-                                                    {selectedProduct.variants?.map((variant: any) => (
-                                                        <tr key={variant.id} className="hover:bg-slate-50/50 transition-colors">
-                                                            <td className="px-5 py-4 font-bold text-slate-700">{variant.name}</td>
-                                                            <td className="px-5 py-4 font-black text-slate-900">₹{variant.price}</td>
-                                                            <td className={`px-5 py-4 text-right font-black ${variant.stock > 0 ? 'text-emerald-500' : 'text-red-400'}`}>
-                                                                {variant.stock > 0 ? `${variant.stock} in stock` : 'Sold Out'}
-                                                            </td>
-                                                        </tr>
-                                                    ))}
+                                                    {selectedProduct.variants?.map((variant: any) => {
+                                                        const profit = variant.costPrice && variant.price ? variant.price - variant.costPrice : null;
+                                                        const profitMargin = profit && variant.price ? ((profit / variant.price) * 100).toFixed(1) : null;
+
+                                                        return (
+                                                            <tr key={variant.id} className="hover:bg-slate-50/50 transition-colors">
+                                                                <td className="px-5 py-4">
+                                                                    {variant.image ? (
+                                                                        <img src={`${BASE_URL}${variant.image}`} alt={variant.name} className="w-12 h-12 object-cover rounded-lg border" />
+                                                                    ) : (
+                                                                        <div className="w-12 h-12 border-2 border-dashed border-slate-200 rounded-lg flex items-center justify-center">
+                                                                            <Package className="w-5 h-5 text-slate-300" />
+                                                                        </div>
+                                                                    )}
+                                                                </td>
+                                                                <td className="px-5 py-4 font-bold text-slate-700">{variant.name}</td>
+                                                                <td className="px-5 py-4 font-black text-slate-900">₹{variant.price}</td>
+                                                                <td className="px-5 py-4 text-slate-600">
+                                                                    {variant.costPrice ? `₹${variant.costPrice}` : <span className="text-slate-400">-</span>}
+                                                                </td>
+                                                                <td className="px-5 py-4">
+                                                                    {profit !== null ? (
+                                                                        <div className="flex flex-col">
+                                                                            <span className="font-bold text-emerald-600">₹{profit.toFixed(2)}</span>
+                                                                            <span className="text-[10px] text-emerald-600">({profitMargin}%)</span>
+                                                                        </div>
+                                                                    ) : (
+                                                                        <span className="text-slate-400">-</span>
+                                                                    )}
+                                                                </td>
+                                                                <td className={`px-5 py-4 text-right font-black ${variant.stock > 0 ? 'text-emerald-500' : 'text-red-400'}`}>
+                                                                    {variant.stock > 0 ? `${variant.stock} in stock` : 'Sold Out'}
+                                                                </td>
+                                                            </tr>
+                                                        );
+                                                    })}
                                                 </tbody>
                                             </table>
                                         </div>

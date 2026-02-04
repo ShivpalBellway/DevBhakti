@@ -10,6 +10,7 @@ const Footer: React.FC = () => {
       { label: "Marketplace", href: "#marketplace" },
       { label: "Live Darshan", href: "#darshan" },
       { label: "For Temples", href: "#temples" },
+      { label: "Become a Seller", href: "/register-seller" },
       { label: "Trust & Transparency", href: "#trust" },
     ],
     company: [

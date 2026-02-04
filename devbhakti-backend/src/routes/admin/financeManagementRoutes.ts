@@ -1,8 +1,8 @@
 import { Router } from "express";
 import multer from "multer";
 import path from "path";
-import { 
-  getAllWithdrawalRequests, 
+import {
+  getAllWithdrawalRequests,
   updateWithdrawalStatus,
   getPlatformFinanceSummary,
   getAllPlatformTransactions
@@ -22,7 +22,10 @@ const storage = multer.diskStorage({
     cb(null, `receipt-${Date.now()}${path.extname(file.originalname)}`);
   },
 });
-const upload = multer({ storage });
+const upload = multer({
+  storage,
+  limits: { fileSize: 3 * 1024 * 1024 } // 3MB limit
+});
 
 router.get("/withdrawals", getAllWithdrawalRequests);
 router.patch("/withdrawals/:requestId", upload.single("receiptImage"), updateWithdrawalStatus);

@@ -1,6 +1,12 @@
 import axios from "axios";
 import { API_URL } from "@/config/apiConfig";
 
+// Public/Registration Actions
+export const registerSeller = async (data: any) => {
+    const response = await axios.post(`${API_URL}/seller/register`, data);
+    return response.data;
+};
+
 // Seller Product Management
 export const fetchSellerProducts = async (params: any = {}) => {
     const token = localStorage.getItem("seller_token");

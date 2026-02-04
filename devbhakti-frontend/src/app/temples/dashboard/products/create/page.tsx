@@ -38,8 +38,11 @@ interface Variant {
     id: string;
     name: string;
     price: number;
+    costPrice?: number;
     stock: number;
     image?: string | null;
+    imageFile?: File | null;
+    imagePreview?: string;
 }
 
 export default function CreateTempleProductPage() {
@@ -66,7 +69,7 @@ export default function CreateTempleProductPage() {
     });
 
     const [variants, setVariants] = useState<Variant[]>([
-        { id: "1", name: "", price: 0, stock: 0 }
+        { id: "1", name: "", price: 0, costPrice: 0, stock: 0, imageFile: null, imagePreview: "" }
     ]);
 
     const [errors, setErrors] = useState<Record<string, string>>({});
@@ -156,7 +159,21 @@ export default function CreateTempleProductPage() {
             formDataToSend.append('shippingInfo', formData.shippingInfo);
             formDataToSend.append('origin', formData.origin);
             formDataToSend.append('rating', formData.rating);
-            formDataToSend.append('variants', JSON.stringify(validVariants));
+
+            // Include costPrice in variants data
+            const variantsData = validVariants.map((v, index) => {
+                if (v.imageFile) {
+                    formDataToSend.append(`variant_image_${index}`, v.imageFile);
+                }
+                return {
+                    name: v.name,
+                    price: v.price,
+                    costPrice: v.costPrice || null,
+                    stock: v.stock,
+                    image: v.imageFile ? null : (v.imagePreview || null)
+                };
+            });
+            formDataToSend.append('variants', JSON.stringify(variantsData));
 
             await createMyProduct(formDataToSend);
 
@@ -172,7 +189,7 @@ export default function CreateTempleProductPage() {
     };
 
     const addVariant = () => {
-        setVariants([...variants, { id: Date.now().toString(), name: "", price: 0, stock: 0 }]);
+        setVariants([...variants, { id: Date.now().toString(), name: "", price: 0, costPrice: 0, stock: 0, imageFile: null, imagePreview: "" }]);
     };
 
     const removeVariant = (id: string) => {
@@ -181,7 +198,34 @@ export default function CreateTempleProductPage() {
 
     const updateVariant = (id: string, field: keyof Variant, value: string | number) => {
         setVariants(variants.map(variant =>
-            variant.id === id ? { ...variant, [field]: field === 'price' || field === 'stock' ? Number(value) : value } : variant
+            variant.id === id ? { ...variant, [field]: field === 'price' || field === 'stock' || field === 'costPrice' ? Number(value) : value } : variant
+        ));
+    };
+
+    const handleVariantImageChange = (id: string, e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            if (!file.type.startsWith('image/')) {
+                toast({ title: "Invalid File", description: "Please select an image file", variant: "destructive" });
+                return;
+            }
+            if (file.size > 5 * 1024 * 1024) {
+                toast({ title: "File Too Large", description: "Image size should be less than 5MB", variant: "destructive" });
+                return;
+            }
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setVariants(variants.map(variant =>
+                    variant.id === id ? { ...variant, imageFile: file, imagePreview: reader.result as string } : variant
+                ));
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
+    const removeVariantImage = (id: string) => {
+        setVariants(variants.map(variant =>
+            variant.id === id ? { ...variant, imageFile: null, imagePreview: "" } : variant
         ));
     };
 
@@ -285,24 +329,62 @@ export default function CreateTempleProductPage() {
                             <CardHeader><CardTitle>Variants</CardTitle></CardHeader>
                             <CardContent className="space-y-4">
                                 {variants.map((variant, index) => (
-                                    <div key={variant.id} className="p-3 border rounded-lg bg-card/50 space-y-3">
-                                        <div className="flex justify-between">
-                                            <Label>Variant {index + 1}</Label>
+                                    <div key={variant.id} className="p-4 border rounded-lg bg-card/50 space-y-3">
+                                        <div className="flex justify-between items-center">
+                                            <Label className="font-semibold">Variant {index + 1}</Label>
                                             {variants.length > 1 && <Button type="button" variant="ghost" size="sm" onClick={() => removeVariant(variant.id)} className="h-6 w-6 text-red-500"><Trash2 className="w-3 h-3" /></Button>}
                                         </div>
+
                                         <div className="space-y-2">
-                                            <Label>Variant Name</Label>
-                                            <Input placeholder="e.g. Small" value={variant.name} onChange={(e) => updateVariant(variant.id, 'name', e.target.value)} />
+                                            <Label>Variant Name *</Label>
+                                            <Input placeholder="e.g. Small, Red, 100ml" value={variant.name} onChange={(e) => updateVariant(variant.id, 'name', e.target.value)} />
                                         </div>
+
+                                        <div className="space-y-2">
+                                            <Label>Variant Image</Label>
+                                            <div className="flex items-center gap-3">
+                                                {variant.imagePreview ? (
+                                                    <div className="relative">
+                                                        <img src={variant.imagePreview} alt="Preview" className="w-16 h-16 object-cover rounded-md border" />
+                                                        <Button type="button" variant="destructive" size="icon" className="absolute -top-1 -right-1 h-5 w-5" onClick={() => removeVariantImage(variant.id)}>
+                                                            <X className="w-3 h-3" />
+                                                        </Button>
+                                                    </div>
+                                                ) : (
+                                                    <div className="w-16 h-16 border-2 border-dashed border-input rounded-md flex items-center justify-center">
+                                                        <ImageIcon className="w-6 h-6 text-muted-foreground" />
+                                                    </div>
+                                                )}
+                                                <div className="flex-1">
+                                                    <Input type="file" accept="image/*" onChange={(e) => handleVariantImageChange(variant.id, e)} className="cursor-pointer text-xs" />
+                                                    <p className="text-[10px] text-muted-foreground mt-0.5">Max 5MB</p>
+                                                </div>
+                                            </div>
+                                        </div>
+
                                         <div className="grid grid-cols-2 gap-2">
                                             <div className="space-y-2">
-                                                <Label>Price (₹)</Label>
-                                                <Input type="number" placeholder="0.00" value={variant.price || ''} onChange={(e) => updateVariant(variant.id, 'price', e.target.value)} />
+                                                <Label>Selling Price (₹) *</Label>
+                                                <Input type="number" step="0.01" placeholder="0.00" value={variant.price || ''} onChange={(e) => updateVariant(variant.id, 'price', e.target.value)} />
                                             </div>
                                             <div className="space-y-2">
-                                                <Label>Stock</Label>
-                                                <Input type="number" placeholder="0" value={variant.stock || ''} onChange={(e) => updateVariant(variant.id, 'stock', e.target.value)} />
+                                                <Label>Cost Price (₹)</Label>
+                                                <Input type="number" step="0.01" placeholder="0.00" value={variant.costPrice || ''} onChange={(e) => updateVariant(variant.id, 'costPrice', e.target.value)} />
                                             </div>
+                                        </div>
+
+                                        {variant.price > 0 && variant.costPrice && variant.costPrice > 0 && (
+                                            <div className="text-xs bg-green-50 dark:bg-green-950 p-2 rounded border border-green-200 dark:border-green-800">
+                                                <span className="text-green-700 dark:text-green-300 font-medium">
+                                                    Profit Margin: ₹{(variant.price - variant.costPrice).toFixed(2)}
+                                                    ({(((variant.price - variant.costPrice) / variant.price) * 100).toFixed(1)}%)
+                                                </span>
+                                            </div>
+                                        )}
+
+                                        <div className="space-y-2">
+                                            <Label>Stock Quantity *</Label>
+                                            <Input type="number" placeholder="0" value={variant.stock || ''} onChange={(e) => updateVariant(variant.id, 'stock', e.target.value)} />
                                         </div>
                                     </div>
                                 ))}

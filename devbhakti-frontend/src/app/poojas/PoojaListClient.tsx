@@ -126,24 +126,39 @@ const PoojaListClient: React.FC = () => {
             <Navbar />
 
             {/* Hero Section */}
-            <section className="relative pt-32 pb-20 overflow-hidden">
-                <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/p6.png')] opacity-10" />
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[500px] bg-gradient-to-b from-orange-100/50 to-transparent -z-10" />
+            <section className="relative min-h-[600px] flex items-center justify-center overflow-hidden">
+                {/* Background image */}
+                <div className="absolute inset-0">
+                    <Image
+                        src="/images/sacred_poojas_list_hero_bg.png"
+                        alt="Sacred Poojas"
+                        fill
+                        priority
+                        className="object-cover"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-b from-background/80 via-background/60 to-background/90" />
+                </div>
 
-                <div className="container mx-auto px-4 relative">
+                {/* Background decorative elements */}
+                <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                    <div className="absolute top-1/4 -left-32 w-96 h-96 bg-primary/10 rounded-full blur-3xl animate-pulse-slow" />
+                    <div className="absolute bottom-1/4 -right-32 w-80 h-80 bg-secondary/20 rounded-full blur-3xl animate-pulse-slow" />
+                </div>
+
+                <div className="container mx-auto px-4 relative z-10">
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
-                        className="text-center max-w-3xl mx-auto"
+                        className="text-center max-w-4xl mx-auto"
                     >
                         <Badge variant="outline" className="mb-4 border-primary/30 text-primary px-4 py-1 rounded-full bg-white/50 backdrop-blur-sm">
                             <Sparkles className="w-3 h-3 mr-2 fill-primary" />
                             Sacred Rituals
                         </Badge>
-                        <h1 className="text-4xl md:text-6xl font-display font-bold text-zinc-900 mb-6 tracking-tight">
+                        <h1 className="text-4xl md:text-5xl lg:text-7xl font-serif font-bold text-foreground mb-6 leading-tight tracking-tight">
                             Auspicious <span className="text-primary italic">Poojas & Sevas</span>
                         </h1>
-                        <p className="text-lg text-zinc-600 mb-10 leading-relaxed">
+                        <p className="text-lg md:text-xl text-foreground mb-10 leading-relaxed max-w-2xl mx-auto">
                             Book authentic Vedic rituals performed by experienced priests at India's most sacred temples. Experience divine blessings from anywhere in the world.
                         </p>
 
@@ -260,10 +275,10 @@ const PoojaListClient: React.FC = () => {
                                                 </p>
 
                                                 <div className="space-y-3 mb-8">
-                                                    <div className="flex items-center gap-2 text-zinc-600">
+                                                    {/* <div className="flex items-center gap-2 text-zinc-600">
                                                         <Clock className="w-4 h-4 text-primary" />
                                                         <span className="text-sm font-medium">{pooja.duration || pooja.time}</span>
-                                                    </div>
+                                                    </div> */}
                                                     {pooja.bullets && pooja.bullets.length > 0 && (
                                                         <div className="flex flex-wrap gap-2">
                                                             {pooja.bullets.slice(0, 3).map((bullet, idx) => (
@@ -279,7 +294,7 @@ const PoojaListClient: React.FC = () => {
                                             <div className="mt-auto px-3 pb-2">
                                                 <div className="flex items-center justify-between gap-4 pt-6 border-t border-orange-50">
                                                     <div className="flex flex-col">
-                                                        <span className="text-xs text-zinc-400 uppercase font-bold tracking-widest">Dakshina</span>
+                                                        <span className="text-xs text-zinc-400 uppercase font-bold tracking-widest">Start From</span>
                                                         <span className="text-2xl font-bold text-zinc-900 font-display">₹{pooja.price}</span>
                                                     </div>
                                                     <div className="flex flex-col gap-2 w-full">

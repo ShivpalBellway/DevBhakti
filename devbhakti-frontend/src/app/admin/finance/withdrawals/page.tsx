@@ -67,6 +67,7 @@ export default function WithdrawalRequestsPage() {
     const [adminNotes, setAdminNotes] = useState("");
     const [receiptFile, setReceiptFile] = useState<File | null>(null);
     const [receiptPreview, setReceiptPreview] = useState<string>("");
+    const [fileError, setFileError] = useState<string>("");
     const { toast } = useToast();
 
     useEffect(() => {
@@ -98,6 +99,14 @@ export default function WithdrawalRequestsPage() {
 
     const handleUpdateStatus = async () => {
         if (!selectedRequest) return;
+        if (actionType === "MARK_PAID" && fileError) {
+            toast({
+                title: "Invalid File",
+                description: fileError,
+                variant: "destructive",
+            });
+            return;
+        }
 
         try {
             const statusMap = {
@@ -129,6 +138,7 @@ export default function WithdrawalRequestsPage() {
                 setAdminNotes("");
                 setReceiptFile(null);
                 setReceiptPreview("");
+                setFileError("");
                 loadData();
             }
         } catch (error: any) {
@@ -419,14 +429,24 @@ export default function WithdrawalRequestsPage() {
                                 </div>
                                 <div className="space-y-2">
                                     <label className="text-[11px] font-bold text-slate-900 uppercase tracking-widest pl-1">Payment Receipt (Image)</label>
-                                    <div className="relative h-12 border-2 border-dashed rounded-2xl flex items-center justify-center hover:bg-slate-50 transition-colors cursor-pointer group">
+                                    <div className={cn(
+                                        "relative h-12 border-2 border-dashed rounded-2xl flex items-center justify-center hover:bg-slate-50 transition-colors cursor-pointer group",
+                                        fileError ? "border-red-500 bg-red-50" : "border-slate-200"
+                                    )}>
                                         <input
                                             type="file"
                                             accept="image/*"
                                             className="absolute inset-0 opacity-0 cursor-pointer"
                                             onChange={(e) => {
                                                 const file = e.target.files?.[0];
+                                                setFileError("");
                                                 if (file) {
+                                                    if (file.size > 3 * 1024 * 1024) {
+                                                        setFileError("File size must be under 3MB");
+                                                        setReceiptFile(null);
+                                                        setReceiptPreview("");
+                                                        return;
+                                                    }
                                                     setReceiptFile(file);
                                                     setReceiptPreview(URL.createObjectURL(file));
                                                 }
@@ -442,6 +462,11 @@ export default function WithdrawalRequestsPage() {
                                             </div>
                                         )}
                                     </div>
+                                    {fileError && (
+                                        <p className="text-[10px] text-red-500 font-bold mt-1 pl-1">
+                                            {fileError}
+                                        </p>
+                                    )}
                                 </div>
                             </div>
                         )}

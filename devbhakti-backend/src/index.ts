@@ -95,6 +95,15 @@ app.use('/api/cart', cartRoutes);
 app.use('/api/temples', templeRoutes);
 
 
+// Basic Error Handler
+app.use((err: any, req: Request, res: Response, next: any) => {
+  console.error('Error:', err.message);
+  if (err.code === 'LIMIT_FILE_SIZE') {
+    return res.status(400).json({ success: false, message: 'File is too large. Max limit is 3MB.' });
+  }
+  return res.status(500).json({ success: false, message: 'Internal Server Error' });
+});
+
 app.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
 });
