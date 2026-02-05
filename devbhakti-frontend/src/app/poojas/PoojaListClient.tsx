@@ -407,7 +407,7 @@ const PoojaListClient: React.FC = () => {
                                         <Users className="w-6 h-6 text-primary" />
                                     </div>
                                     <div>
-                                        <div className="text-2xl font-bold text-zinc-900">10k+</div>
+                                        {/* <div className="text-2xl font-bold text-zinc-900">10k+</div> */}
                                         <div className="text-xs text-zinc-500 font-bold uppercase tracking-widest">Happy Devotees</div>
                                     </div>
                                 </div>

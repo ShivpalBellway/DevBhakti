@@ -106,7 +106,7 @@ export default function AdminDashboardPage() {
             <ShieldCheck className="w-8 h-8 text-primary" />
             Admin Intelligence
           </h1>
-          <p className="text-slate-500 mt-1 font-medium">
+          <p className="text-dark-500 mt-1 font-medium">
             Dynamic overview of DevBhakti's spiritual and financial ecosystem.
           </p>
         </div>
@@ -135,7 +135,7 @@ export default function AdminDashboardPage() {
                   <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center transition-transform group-hover:rotate-6", stat.bg)}>
                     <stat.icon className={cn("w-6 h-6", stat.color)} />
                   </div>
-                  <Badge variant="outline" className="text-[10px] font-bold border-slate-100 text-slate-400 uppercase tracking-widest">Live</Badge>
+                  <Badge variant="outline" className="text-[10px] font-bold border-slate-200 text-slate-500 uppercase tracking-widest">Live</Badge>
                 </div>
                 <div>
                   <h3 className="text-2xl font-extrabold text-slate-900 flex items-center">
@@ -143,7 +143,7 @@ export default function AdminDashboardPage() {
                     {stat.isCurrency ? stat.value.toLocaleString() : stat.value}
                   </h3>
                   <p className="text-sm font-bold text-slate-900 mt-1">{stat.title}</p>
-                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tight mt-0.5">{stat.description}</p>
+                  <p className="text-[11px] text-slate-600 font-bold uppercase tracking-tight mt-0.5">{stat.description}</p>
                 </div>
               </CardContent>
             </Card>
@@ -191,10 +191,10 @@ export default function AdminDashboardPage() {
                         <p className="text-sm font-extrabold text-slate-900 group-hover:text-primary transition-colors">
                           {activity.title}
                         </p>
-                        <p className="text-xs text-slate-500 font-medium">{activity.description}</p>
+                        <p className="text-xs text-slate-600 font-medium">{activity.description}</p>
                       </div>
                       <div className="text-right flex flex-col items-end gap-1">
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">
+                        <span className="text-[12px] font-bold text-slate-600 uppercase tracking-tighter">
                           {format(new Date(activity.time), "hh:mm a")}
                         </span>
                         <div className="w-1.5 h-1.5 rounded-full bg-primary/30" />
@@ -254,11 +254,11 @@ export default function AdminDashboardPage() {
 
                 <div className="grid grid-cols-2 gap-3 mt-4">
                   <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Products</p>
+                    <p className="text-[10px] font-bold text-slate-600 uppercase tracking-widest mb-1">Products</p>
                     <p className="text-xl font-extrabold text-slate-900">{data?.pending?.products || 0}</p>
                   </div>
                   <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Payouts</p>
+                    <p className="text-[10px] font-bold text-slate-600 uppercase tracking-widest mb-1">Payouts</p>
                     <p className="text-xl font-extrabold text-slate-900">{data?.pending?.withdrawals || 0}</p>
                   </div>
                 </div>

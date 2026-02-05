@@ -110,7 +110,7 @@ export default function AdminPoojasListPage() {
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                     <h1 className="text-2xl font-bold tracking-tight">Poojas Management</h1>
-                    <p className="text-muted-foreground">
+                    <p className="text-[14px] text-dark-foreground">
                         Manage all poojas, rituals, and spiritual services.
                     </p>
                 </div>
@@ -211,12 +211,12 @@ export default function AdminPoojasListPage() {
                                                 </Badge>
                                             )}
                                         </div>
-                                        <div className="text-xs text-muted-foreground line-clamp-1 max-w-[200px]">
+                                        <div className="text-[14px] text-slate-900 line-clamp-1 max-w-[200px]">
                                             {pooja.about || (pooja.description && pooja.description[0])}
                                         </div>
                                     </TableCell>
                                     <TableCell>
-                                        <div className="text-sm font-medium text-slate-600">{pooja.temple?.name}</div>
+                                        <div className="text-[14px] font-medium text-slate-600">{pooja.temple?.name}</div>
                                     </TableCell>
                                     <TableCell>
                                         <Badge variant="outline" className="bg-slate-50">
@@ -224,7 +224,7 @@ export default function AdminPoojasListPage() {
                                         </Badge>
                                     </TableCell>
                                     <TableCell>
-                                        <div className="flex items-center font-semibold text-primary">
+                                        <div className="flex items-center font-semibold text-primary text-[14px]">
                                             <IndianRupee className="w-3 h-3 mr-0.5" />
                                             {pooja.price}
                                         </div>

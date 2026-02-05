@@ -132,8 +132,8 @@ export default function CategoriesManagementPage() {
   const getStatusBadge = (isActive: boolean) => {
     return (
       <div className={`inline-flex items-center justify-center gap-1 px-2 py-1 rounded-md border text-xs font-medium whitespace-nowrap ${isActive
-          ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-          : "bg-red-50 text-red-700 border-red-200"
+        ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+        : "bg-red-50 text-red-700 border-red-200"
         }`}>
         {isActive ? (
           <>
@@ -221,7 +221,7 @@ export default function CategoriesManagementPage() {
                   <TableRow key={category.id} className="hover:bg-slate-50/50 transition-colors">
                     <TableCell>
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center overflow-hidden">
+                        <div className="w-10 h-10 rounded-lg bg-slate-300 flex items-center justify-center overflow-hidden">
                           {category.image ? (
                             <img
                               src={`${BASE_URL}${category.image}`}
@@ -234,14 +234,14 @@ export default function CategoriesManagementPage() {
                         </div>
                         <div className="flex flex-col">
                           <span className="font-semibold text-slate-900">{category.name}</span>
-                          <span className="text-xs text-slate-500">
+                          <span className="text-xs text-slate-800">
                             Created {new Date(category.createdAt).toLocaleDateString()}
                           </span>
                         </div>
                       </div>
                     </TableCell>
                     <TableCell>
-                      <p className="text-slate-600 max-w-xs truncate">
+                      <p className="text-slate-900 max-w-xs truncate">
                         {category.description || "No description"}
                       </p>
                     </TableCell>
@@ -254,7 +254,7 @@ export default function CategoriesManagementPage() {
                       {getStatusBadge(category.isActive)}
                     </TableCell>
                     <TableCell>
-                      <span className="text-slate-600">{category.sortOrder}</span>
+                      <span className="text-slate-800">{category.sortOrder}</span>
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-1">

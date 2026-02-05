@@ -353,7 +353,7 @@ export default function CreateTemplePage() {
                             <Input
                                 value={formData.viewers}
                                 onChange={e => setFormData({ ...formData, viewers: e.target.value })}
-                                placeholder="e.g. 10K+"
+                                // placeholder="e.g. 10K+"
                             />
                         </div>
                         {/* URL Configuration Section */}

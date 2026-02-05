@@ -272,7 +272,7 @@ export default function TemplesManagementPage() {
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                     <h1 className="text-2xl font-bold tracking-tight text-slate-900">Temple Management</h1>
-                    <p className="text-muted-foreground">Manage temple administrator accounts and temple profiles.</p>
+                    <p className="text-slate-600">Manage temple administrator accounts and temple profiles.</p>
                 </div>
                 <div className="flex gap-2">
                     <Button variant="outline" onClick={() => router.push('/admin/temples/update-requests')} className="border-primary text-primary hover:bg-primary/10 relative">
@@ -363,7 +363,7 @@ export default function TemplesManagementPage() {
 
             <div className="border rounded-xl bg-card overflow-hidden shadow-sm">
                 <Table>
-                    <TableHeader className="bg-slate-50/50">
+                    <TableHeader className="bg-slate-50/100">
                         <TableRow>
                             <TableHead>Temple Owner</TableHead>
                             <TableHead>Temple ID</TableHead>
@@ -395,7 +395,8 @@ export default function TemplesManagementPage() {
                                     <TableCell>
                                         <div className="flex flex-col">
                                             <span className="font-semibold text-slate-900">{inst.userName || "N/A"}</span>
-                                            <span className="text-xs text-muted-foreground">{inst.userEmail || inst.userPhone || "N/A"}</span>
+                                            <span className="text-[13px] text-slate-800">{inst.userEmail || inst.userPhone || "N/A"}</span>
+                                            <span className="text-[13px] text-slate-800">{inst.userPhone || "N/A"}</span>
                                         </div>
                                     </TableCell>
                                     <TableCell>
@@ -405,20 +406,20 @@ export default function TemplesManagementPage() {
                                     </TableCell>
                                     <TableCell>
                                         <div className="flex flex-col gap-0.5">
-                                            <div className="flex items-center gap-1.5 font-medium text-slate-800">
-                                                <Building2 className="w-3.5 h-3.5 text-primary" />
+                                            <div className="flex items-center gap-1.5 font-medium text-slate-900">
+                                                <Building2 className="w-4 h-4 text-primary" />
                                                 <span>{inst.templeName || "No Temple"}</span>
                                             </div>
-                                            <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
-                                                <MapPin className="w-3 h-3" />
+                                            <div className="flex items-center gap-1 text-[12px] text-dark-foreground">
+                                                <MapPin className="w-4 h-4" />
                                                 <span>{inst.templeLocation || "N/A"}</span>
                                             </div>
                                         </div>
                                     </TableCell>
                                     <TableCell>
-                                        <div className="flex flex-col gap-1 text-[11px]">
-                                            <span className="text-slate-600">Poojas: {inst._count?.poojas || 0}</span>
-                                            <span className="text-slate-600">Events: {inst._count?.events || 0}</span>
+                                        <div className="flex flex-col gap-1 text-[14px]">
+                                            <span className="text-slate-800">Poojas: {inst._count?.poojas || 0}</span>
+                                            <span className="text-slate-800">Events: {inst._count?.events || 0}</span>
                                         </div>
                                     </TableCell>
                                     <TableCell>

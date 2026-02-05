@@ -208,7 +208,7 @@ export default function ProductsManagementPage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-slate-900">Product Management</h1>
-          <p className="text-muted-foreground">Manage products, variants, and pricing.</p>
+          <p className="text-slate-600">Manage products, variants, and pricing.</p>
         </div>
         <Button onClick={() => router.push('/admin/products/create')} className="bg-primary">
           <Plus className="w-4 h-4 mr-2" />
@@ -341,7 +341,7 @@ export default function ProductsManagementPage() {
                       </div>
                       <div className="flex flex-col">
                         <span className="font-semibold text-slate-900">{product.name}</span>
-                        <span className="text-xs text-muted-foreground line-clamp-1">
+                        <span className="text-sm text-muted-foreground line-clamp-1">
                           {product.description}
                         </span>
                       </div>
@@ -381,13 +381,13 @@ export default function ProductsManagementPage() {
                   <TableCell>
                     <div className="space-y-1">
                       {product.variants.slice(0, 2).map((variant: any) => (
-                        <div key={variant.id} className="flex items-center justify-between text-xs">
-                          <span className="text-slate-600">{variant.name}</span>
+                        <div key={variant.id} className="flex items-center justify-between text-sm">
+                          <span className="text-slate-800">{variant.name}</span>
                           <span className="font-medium text-slate-900">₹{variant.price}</span>
                         </div>
                       ))}
                       {product.variants.length > 2 && (
-                        <div className="text-xs text-muted-foreground">
+                        <div className="text-sm text-muted-foreground">
                           +{product.variants.length - 2} more variants
                         </div>
                       )}

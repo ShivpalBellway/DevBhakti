@@ -203,7 +203,7 @@ export default function AdminBookingsPage() {
                                             </td>
                                             <td className="p-4">
                                                 <p className="font-medium text-foreground">{booking.pooja?.name}</p>
-                                                <p className="text-[10px] text-muted-foreground">{booking.packageName}</p>
+                                                <p className="text-[14px] text-muted-foreground">{booking.packageName}</p>
                                             </td>
                                             <td className="p-4">
                                                 <div className="flex items-center gap-2">
@@ -224,7 +224,7 @@ export default function AdminBookingsPage() {
                                                     <p className="text-sm text-foreground">
                                                         {booking.bookingDate || new Date(booking.createdAt).toLocaleDateString()}
                                                     </p>
-                                                    <p className="text-[10px] text-muted-foreground flex items-center gap-1">
+                                                    <p className="text-[13px] text-muted-foreground flex items-center gap-1">
                                                         <Clock className="w-3 h-3" />
                                                         Booked: {new Date(booking.createdAt).toLocaleDateString()}
                                                     </p>
@@ -234,8 +234,8 @@ export default function AdminBookingsPage() {
                                                 <p className="font-semibold text-foreground">₹{booking.packagePrice}</p>
                                             </td>
                                             <td className="p-4">
-                                                <Badge variant="outline" className={`text-[10px] uppercase font-bold ${status.color}`}>
-                                                    <status.icon className="w-3 h-3 mr-1" />
+                                                <Badge variant="outline" className={`text-[13px] uppercase font-bold ${status.color}`}>
+                                                    <status.icon className="w-4 h-4 mr-1" />
                                                     {status.label}
                                                 </Badge>
                                             </td>
