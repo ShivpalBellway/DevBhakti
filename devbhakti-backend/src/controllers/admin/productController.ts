@@ -346,6 +346,12 @@ export const getPublicProductById = async (req: Request, res: Response) => {
               },
               isActive: true
             }
+          },
+          {
+            AND: [
+              { templeId: null },
+              { sellerId: null }
+            ]
           }
         ]
       },
