@@ -32,18 +32,25 @@ export function middleware(request: NextRequest) {
             const subdomain = parts[0];
             
             if (subdomain && subdomain !== 'www') {
-                // Case 1: Root path (e.g., kashi.lvh.me/) - Show Temple Profile
+                // Case 1: Root path (e.g., kashi.devbhakti.in/) - Show Temple Profile
                 if (url.pathname === '/') {
                     return NextResponse.rewrite(new URL(`/temples/subdomain/${subdomain}`, request.url));
                 }
                 
-                // Case 2: Any other path (e.g., kashi.lvh.me/booking) 
-                // Redirect to Main Domain to maintain shared Auth/LocalStorage/Cart
-                const hostParts = hostname.split('.');
-                const mainHost = hostParts.slice(1).join('.'); // extracts 'lvh.me:3000' or 'devbhakti.in'
-                
+                // Case 2: Any other path (e.g., kashi.devbhakti.in/marketplace) 
+                // Redirect to Main Domain
                 const redirectUrl = new URL(url.pathname + url.search, request.url);
-                redirectUrl.host = mainHost;
+                
+                // Determine main host without port if in production
+                if (baseHostname.endsWith('devbhakti.in')) {
+                    redirectUrl.host = 'devbhakti.in';
+                    redirectUrl.port = ''; // Clear port for production
+                } else {
+                    // Local development fallback (lvh.me, etc)
+                    const hostParts = hostname.split('.');
+                    const mainHost = hostParts.slice(1).join('.');
+                    redirectUrl.host = mainHost;
+                }
                 
                 return NextResponse.redirect(redirectUrl);
             }
