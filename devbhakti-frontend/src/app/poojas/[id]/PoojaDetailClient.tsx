@@ -324,11 +324,11 @@ const PoojaDetailClient = ({ id }: PoojaDetailClientProps) => {
                                                 <p className="text-[#888] mt-4 mb-16 italic font-serif">Sacred locations where this ritual is performed</p>
                                             </div>
 
-                                            <div className="flex flex-col md:flex-row justify-start gap-12">
-                                                {pooja.temple ? (
-                                                    <div className="bg-white p-10 rounded-[2.5rem] border border-primary/10 shadow-xl max-w-sm w-full group overflow-hidden relative text-center">
+                                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                                                {/* Master Temple (if any) */}
+                                                {pooja.temple && (
+                                                    <div className="bg-white p-10 rounded-[2.5rem] border border-primary/10 shadow-xl w-full group overflow-hidden relative text-center">
                                                         <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16 blur-2xl group-hover:bg-primary/10 transition-colors" />
-
                                                         <div className="relative w-32 h-32 mx-auto mb-8 rounded-full overflow-hidden border-4 border-white shadow-xl group-hover:scale-105 transition-transform">
                                                             <img
                                                                 src={getFullImageUrl(pooja.temple.image)}
@@ -341,7 +341,6 @@ const PoojaDetailClient = ({ id }: PoojaDetailClientProps) => {
                                                             <MapPin className="w-4 h-4 text-primary" />
                                                             {pooja.temple.location}
                                                         </p>
-
                                                         <div className="space-y-4">
                                                             <Button className="w-full bg-[#5d4037] hover:bg-black text-white rounded-full py-6 font-bold flex items-center justify-center gap-2 transition-all group/btn" asChild>
                                                                 <Link href={`/booking?pooja=${id}&temple=${pooja.temple.id}`}>
@@ -353,11 +352,42 @@ const PoojaDetailClient = ({ id }: PoojaDetailClientProps) => {
                                                             </Button>
                                                         </div>
                                                     </div>
-                                                ) : (
-                                                    <div className="p-16 border-2 border-dashed border-primary/10 rounded-[3rem] w-full italic text-[#999]">
+                                                )}
+
+                                                {/* Associated Temples (Copies) */}
+                                                {pooja.templeCopies && pooja.templeCopies.length > 0 ? (
+                                                    pooja.templeCopies.map((copy: any) => (
+                                                        <div key={copy.temple.id} className="bg-white p-10 rounded-[2.5rem] border border-primary/10 shadow-xl w-full group overflow-hidden relative text-center">
+                                                            <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16 blur-2xl group-hover:bg-primary/10 transition-colors" />
+                                                            <div className="relative w-32 h-32 mx-auto mb-8 rounded-full overflow-hidden border-4 border-white shadow-xl group-hover:scale-105 transition-transform">
+                                                                <img
+                                                                    src={getFullImageUrl(copy.temple.image)}
+                                                                    alt={copy.temple.name}
+                                                                    className="w-full h-full object-cover"
+                                                                />
+                                                            </div>
+                                                            <h3 className="text-2xl font-serif font-bold text-[#1a1a1a] mb-2">{copy.temple.name}</h3>
+                                                            <p className="flex items-center justify-center gap-2 text-[#777] text-sm mb-10">
+                                                                <MapPin className="w-4 h-4 text-primary" />
+                                                                {copy.temple.location}
+                                                            </p>
+                                                            <div className="space-y-4">
+                                                                <Button className="w-full bg-[#5d4037] hover:bg-black text-white rounded-full py-6 font-bold flex items-center justify-center gap-2 transition-all group/btn" asChild>
+                                                                    <Link href={`/booking?pooja=${id}&temple=${copy.temple.id}`}>
+                                                                        Book Pooja <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
+                                                                    </Link>
+                                                                </Button>
+                                                                <Button variant="outline" className="w-full border-primary/5 text-[#5d4037] bg-[#FFF8F0]/30 hover:bg-[#FFF8F0]/50 rounded-full py-6 font-bold transition-all" asChild>
+                                                                    <Link href={getTempleUrl(copy.temple)}>Explore Temple</Link>
+                                                                </Button>
+                                                            </div>
+                                                        </div>
+                                                    ))
+                                                ) : (!pooja.temple && (
+                                                    <div className="col-span-full p-16 border-2 border-dashed border-primary/10 rounded-[3rem] w-full text-center italic text-[#999]">
                                                         Participating temple data will be shared soon.
                                                     </div>
-                                                )}
+                                                ))}
                                             </div>
                                         </div>
                                     </TabsContent>
