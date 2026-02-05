@@ -116,32 +116,11 @@ export const getTempleById = async (req: Request, res: Response) => {
       return res.status(404).json({ success: false, message: 'Temple not found or not verified' });
     }
 
-    // Resolve strict live status for this temple
-    let isLiveNow = false;
-    let resolvedLiveUrl: string | null = null;
-    if (temple.isLive) {
-      try {
-        const channelId = extractYouTubeChannelId((temple as any).channelId || (temple as any).liveUrl);
-        if (channelId) {
-          const videoId = await getLiveVideoForChannel(channelId);
-          if (videoId) {
-            isLiveNow = true;
-            resolvedLiveUrl = `https://www.youtube.com/watch?v=${videoId}`;
-          }
-        } else {
-          const videoId = extractYouTubeVideoId((temple as any).liveUrl);
-          if (videoId) {
-            const live = await isYouTubeVideoLive(videoId);
-            if (live) {
-              isLiveNow = true;
-              resolvedLiveUrl = (temple as any).liveUrl || null;
-            }
-          }
-        }
-      } catch (err) {
-        console.error(`Failed to resolve live status for temple ${temple.id}`, err);
-      }
-    }
+    // Resolve live status for this temple using direct URL/flags (no YouTube API)
+    const hasUserLiveFlag = temple.isLive;
+    const hasLiveSource = !!((temple as any).liveUrl || (temple as any).channelId);
+    const isLiveNow = !!(hasUserLiveFlag && hasLiveSource);
+    const resolvedLiveUrl: string | null = (temple as any).liveUrl || null;
 
     let isFavorite = false;
     if (userId) {

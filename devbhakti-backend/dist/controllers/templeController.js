@@ -6,7 +6,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.getAllPoojas = exports.getPoojaById = exports.registerTemple = exports.getTempleById = exports.getAllTemples = void 0;
 const prisma_1 = require("../lib/prisma");
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
-const youtubeService_1 = require("../services/youtubeService");
 const JWT_SECRET = process.env.JWT_SECRET || 'devbhakti_secret_key_2026';
 const getUserIdFromRequest = (req) => {
     const authHeader = req.headers.authorization;
@@ -56,41 +55,19 @@ const getAllTemples = async (req, res) => {
                     favoritedTempleIds.add(fav.templeId);
             });
         }
-        // Map temples to include isFavorite AND resolve Live URL
+        // Map temples to include isFavorite AND expose Live URL
         const templesWithDetails = await Promise.all(temples.map(async (temple) => {
-            let isLiveNow = false;
-            let resolvedLiveUrl = null;
-            // STRICT LIVE MODE:
-            // - Only return a liveUrl if YouTube confirms it is live (channel live search or video live status)
-            if (temple.isLive) {
-                try {
-                    const channelId = (0, youtubeService_1.extractYouTubeChannelId)(temple.channelId || temple.liveUrl);
-                    if (channelId) {
-                        const videoId = await (0, youtubeService_1.getLiveVideoForChannel)(channelId);
-                        if (videoId) {
-                            isLiveNow = true;
-                            resolvedLiveUrl = `https://www.youtube.com/watch?v=${videoId}`;
-                        }
-                    }
-                    else {
-                        const videoId = (0, youtubeService_1.extractYouTubeVideoId)(temple.liveUrl);
-                        if (videoId) {
-                            const live = await (0, youtubeService_1.isYouTubeVideoLive)(videoId);
-                            if (live) {
-                                isLiveNow = true;
-                                resolvedLiveUrl = temple.liveUrl || null;
-                            }
-                        }
-                    }
-                }
-                catch (err) {
-                    console.error(`Failed to resolve live status for temple ${temple.id}`, err);
-                }
-            }
+            // Direct URL mode:
+            // - Temple/apne panel ya admin jo liveUrl / channelId de, wahi expose karenge
+            // - YouTube API key ki zarurat nahi, koi external live check nahi
+            const hasUserLiveFlag = temple.isLive;
+            const hasLiveSource = !!(temple.liveUrl || temple.channelId);
+            const isLiveNow = !!(hasUserLiveFlag && hasLiveSource);
+            const resolvedLiveUrl = temple.liveUrl || null;
             return {
                 ...temple,
-                isLiveNow,
-                liveUrl: resolvedLiveUrl, // Only present if actually live
+                isLiveNow, // UI ke liye convenience flag
+                liveUrl: resolvedLiveUrl, // Hamesha kam se kam user-configured URL
                 isFavorite: favoritedTempleIds.has(temple.id)
             };
         }));
@@ -134,34 +111,11 @@ const getTempleById = async (req, res) => {
         if (!temple) {
             return res.status(404).json({ success: false, message: 'Temple not found or not verified' });
         }
-        // Resolve strict live status for this temple
-        let isLiveNow = false;
-        let resolvedLiveUrl = null;
-        if (temple.isLive) {
-            try {
-                const channelId = (0, youtubeService_1.extractYouTubeChannelId)(temple.channelId || temple.liveUrl);
-                if (channelId) {
-                    const videoId = await (0, youtubeService_1.getLiveVideoForChannel)(channelId);
-                    if (videoId) {
-                        isLiveNow = true;
-                        resolvedLiveUrl = `https://www.youtube.com/watch?v=${videoId}`;
-                    }
-                }
-                else {
-                    const videoId = (0, youtubeService_1.extractYouTubeVideoId)(temple.liveUrl);
-                    if (videoId) {
-                        const live = await (0, youtubeService_1.isYouTubeVideoLive)(videoId);
-                        if (live) {
-                            isLiveNow = true;
-                            resolvedLiveUrl = temple.liveUrl || null;
-                        }
-                    }
-                }
-            }
-            catch (err) {
-                console.error(`Failed to resolve live status for temple ${temple.id}`, err);
-            }
-        }
+        // Resolve live status for this temple using direct URL/flags (no YouTube API)
+        const hasUserLiveFlag = temple.isLive;
+        const hasLiveSource = !!(temple.liveUrl || temple.channelId);
+        const isLiveNow = !!(hasUserLiveFlag && hasLiveSource);
+        const resolvedLiveUrl = temple.liveUrl || null;
         let isFavorite = false;
         if (userId) {
             // Note: We must use the resolved temple.id here, not the slug/param
