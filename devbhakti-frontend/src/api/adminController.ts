@@ -157,6 +157,14 @@ export const toggleTempleStatusAdmin = async (id: string, isVerified: boolean, i
     return response.data;
 };
 
+export const updateTempleLiveConfigAdmin = async (id: string, data: { channelId?: string; liveUrl?: string; isLive?: boolean }) => {
+    const token = localStorage.getItem("admin_token");
+    const response = await axios.patch(`${API_URL}/admin/temples/${id}/live-config`, data, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+
 export const fetchTempleUpdateRequests = async () => {
     const token = localStorage.getItem("admin_token");
     const response = await axios.get(`${API_URL}/admin/temples/update-requests`, {

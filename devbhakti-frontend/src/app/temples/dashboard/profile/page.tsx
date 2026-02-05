@@ -51,6 +51,7 @@ export default function TempleProfilePage() {
         mapUrl: "",
         viewers: "",
         isLive: false,
+        liveUrl: "",
         pickupLocation: "",
     });
 
@@ -85,6 +86,7 @@ export default function TempleProfilePage() {
                     mapUrl: data.mapUrl || "",
                     viewers: data.viewers || "",
                     isLive: data.isLive || false,
+                    liveUrl: data.liveUrl || "",
                     pickupLocation: data.pickupLocation || "",
                 });
                 if (data.image) setMainImagePreview(getImageUrl(data.image));
@@ -366,14 +368,14 @@ export default function TempleProfilePage() {
                     </Card> */}
 
                     {/* Live Status */}
-                    {/* <Card className="border-none shadow-md rounded-2xl">
+                    <Card className="border-none shadow-md rounded-2xl">
                         <CardHeader className="bg-[#7b4623]/5 border-b pb-4">
                             <CardTitle className="text-lg font-serif text-[#7b4623] flex items-center gap-2">
                                 <div className={`w-2 h-2 rounded-full ${formData.isLive ? 'bg-red-600 animate-pulse' : 'bg-slate-400'}`} />
                                 Live Status
                             </CardTitle>
                         </CardHeader>
-                        <CardContent className="pt-6">
+                        <CardContent className="pt-6 space-y-4">
                             <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-100">
                                 <div className="space-y-0.5">
                                     <Label className="text-slate-900 font-medium">Broadcast Live</Label>
@@ -384,8 +386,24 @@ export default function TempleProfilePage() {
                                     onCheckedChange={(checked) => setFormData({ ...formData, isLive: checked })}
                                 />
                             </div>
+
+                            {formData.isLive && (
+                                <div className="space-y-2">
+                                    <Label className="text-slate-600">Live Stream URL or Channel ID</Label>
+                                    {/* Example Channel ID: UCfm7YHik2xfIAbvwBKWoVNw (Permanent Live Link) */}
+                                    <Input
+                                        value={formData.liveUrl}
+                                        onChange={e => setFormData({ ...formData, liveUrl: e.target.value })}
+                                        placeholder="e.g. UCfm7YHik2xfIAbvwBKWoVNw (Channel ID) or YouTube Link"
+                                        className="h-11 border-slate-200 focus:border-[#7b4623] focus:ring-[#7b4623]/10"
+                                    />
+                                    <p className="text-[10px] text-slate-500">
+                                        Paste your <strong>Channel ID</strong> (starts with 'UC') for a permanent link, or a direct video URL.
+                                    </p>
+                                </div>
+                            )}
                         </CardContent>
-                    </Card> */}
+                    </Card>
                 </div>
 
                 {/* Right Column - Details */}

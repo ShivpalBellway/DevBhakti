@@ -201,6 +201,9 @@ const updateMyTempleProfile = async (req, res) => {
             mapUrl: data.mapUrl,
             viewers: data.viewers,
             isLive: data.isLive !== undefined ? (String(data.isLive) === 'true') : undefined,
+            liveUrl: data.liveUrl,
+            // If user pastes a raw YouTube Channel ID in liveUrl, persist it into channelId as well
+            channelId: data.channelId || (typeof data.liveUrl === 'string' && data.liveUrl.trim().startsWith('UC') ? data.liveUrl.trim() : undefined),
         };
         // Handle files
         const newImage = getFilePath(files, 'image');

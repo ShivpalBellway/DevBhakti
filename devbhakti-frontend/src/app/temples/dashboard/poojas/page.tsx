@@ -122,7 +122,7 @@ export default function TemplePoojasListPage() {
                             <TableHead>Pooja Name</TableHead>
                             <TableHead>Category/Purpose</TableHead>
                             <TableHead>Price</TableHead>
-                            <TableHead>Active</TableHead>
+                            
                             <TableHead className="text-right">Actions</TableHead>
                         </TableRow>
                     </TableHeader>
@@ -171,12 +171,12 @@ export default function TemplePoojasListPage() {
                                             {pooja.price}
                                         </div>
                                     </TableCell>
-                                    <TableCell>
+                                    {/* <TableCell>
                                         <div className="flex items-center text-sm text-muted-foreground">
                                             <Clock className="w-4 h-4 mr-2" />
                                             {pooja.isActive ? "Active" : "Inactive"}
                                         </div>
-                                    </TableCell>
+                                    </TableCell> */}
                                     <TableCell className="text-right">
                                         <div className="flex justify-end gap-2">
                                             <Button

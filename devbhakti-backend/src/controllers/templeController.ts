@@ -55,13 +55,26 @@ export const getAllTemples = async (req: Request, res: Response) => {
       });
     }
 
-    // Map temples to include isFavorite
-    const templesWithFav = temples.map(temple => ({
-      ...temple,
-      isFavorite: favoritedTempleIds.has(temple.id)
+    // Map temples to include isFavorite AND expose Live URL
+    const templesWithDetails = await Promise.all(temples.map(async (temple) => {
+      // Direct URL mode:
+      // - Temple/apne panel ya admin jo liveUrl / channelId de, wahi expose karenge
+      // - YouTube API key ki zarurat nahi, koi external live check nahi
+      const hasUserLiveFlag = temple.isLive;
+      const hasLiveSource = !!(temple.liveUrl || temple.channelId);
+
+      const isLiveNow = !!(hasUserLiveFlag && hasLiveSource);
+      const resolvedLiveUrl: string | null = temple.liveUrl || null;
+
+      return {
+        ...temple,
+        isLiveNow,          // UI ke liye convenience flag
+        liveUrl: resolvedLiveUrl, // Hamesha kam se kam user-configured URL
+        isFavorite: favoritedTempleIds.has(temple.id)
+      };
     }));
 
-    res.json({ success: true, data: templesWithFav });
+    res.json({ success: true, data: templesWithDetails });
   } catch (error) {
     console.error('Fetch temples error:', error);
     res.status(500).json({ success: false, message: 'Failed to fetch temples' });
@@ -103,6 +116,33 @@ export const getTempleById = async (req: Request, res: Response) => {
       return res.status(404).json({ success: false, message: 'Temple not found or not verified' });
     }
 
+    // Resolve strict live status for this temple
+    let isLiveNow = false;
+    let resolvedLiveUrl: string | null = null;
+    if (temple.isLive) {
+      try {
+        const channelId = extractYouTubeChannelId((temple as any).channelId || (temple as any).liveUrl);
+        if (channelId) {
+          const videoId = await getLiveVideoForChannel(channelId);
+          if (videoId) {
+            isLiveNow = true;
+            resolvedLiveUrl = `https://www.youtube.com/watch?v=${videoId}`;
+          }
+        } else {
+          const videoId = extractYouTubeVideoId((temple as any).liveUrl);
+          if (videoId) {
+            const live = await isYouTubeVideoLive(videoId);
+            if (live) {
+              isLiveNow = true;
+              resolvedLiveUrl = (temple as any).liveUrl || null;
+            }
+          }
+        }
+      } catch (err) {
+        console.error(`Failed to resolve live status for temple ${temple.id}`, err);
+      }
+    }
+
     let isFavorite = false;
     if (userId) {
       // Note: We must use the resolved temple.id here, not the slug/param
@@ -117,7 +157,7 @@ export const getTempleById = async (req: Request, res: Response) => {
       if (fav) isFavorite = true;
     }
 
-    res.json({ success: true, data: { ...temple, isFavorite } });
+    res.json({ success: true, data: { ...temple, isLiveNow, liveUrl: resolvedLiveUrl, isFavorite } });
 
   } catch (error) {
     console.error('Fetch temple details error:', error);

@@ -16,10 +16,35 @@ const LiveDarshanSection: React.FC = () => {
   const [liveTemples, setLiveTemples] = React.useState<any[]>([]);
   const [loading, setLoading] = React.useState(true);
 
+  const getEmbedUrl = (value?: string | null) => {
+    if (!value) return "";
+    const url = value.trim();
+
+    // Raw Channel ID (UC...) -> permanent live link
+    if (url.startsWith("UC") && !url.includes("/") && !url.includes(".")) {
+      return `https://www.youtube.com/embed/live_stream?channel=${url}`;
+    }
+    // Short link
+    if (url.includes("youtu.be/")) {
+      return url.replace("youtu.be/", "www.youtube.com/embed/");
+    }
+    // Watch URL
+    if (url.includes("watch?v=")) {
+      return url.replace("watch?v=", "embed/");
+    }
+    // Already an embed or some other YouTube URL
+    if (url.includes("youtube.com")) {
+      return url;
+    }
+    return "";
+  };
+
   React.useEffect(() => {
     const loadLiveTemples = async () => {
       const data = await fetchPublicTemples();
-      const live = data.filter((t: any) => t.liveStatus).slice(0, 3);
+      // Temple side: isLive / liveUrl / isLiveNow
+      // Admin side: liveStatus (website par dikhana hai ya nahi)
+      const live = data.filter((t: any) => (t.isLive || t.liveUrl || t.isLiveNow) && t.liveStatus);
       setLiveTemples(live);
       setLoading(false);
     };
@@ -28,6 +53,10 @@ const LiveDarshanSection: React.FC = () => {
 
   if (loading) return null;
   if (liveTemples.length === 0) return null;
+
+  const primaryTemple = liveTemples[0];
+  const primarySource = primaryTemple?.liveUrl || primaryTemple?.channelId;
+  const primaryEmbedUrl = getEmbedUrl(primarySource);
 
   return (
     <section id="darshan" className="py-16 md:py-20 bg-warm-brown relative overflow-hidden">
@@ -47,18 +76,35 @@ const LiveDarshanSection: React.FC = () => {
             transition={{ duration: 0.5 }}
             className="order-2 lg:order-1"
           >
-            <Link href={getTempleUrl(liveTemples[0])}>
+            <Link href="/live-darshan">
               <div className="relative rounded-2xl overflow-hidden bg-sidebar-accent aspect-video shadow-elevated group cursor-pointer">
-                {/* Video preview image */}
-                <img
-                  src={liveTemples[0]?.image ? (liveTemples[0].image.startsWith('http') ? liveTemples[0].image : `${API_URL.replace('/api', '')}${liveTemples[0].image}`) : "/assets/live-darshan-preview.jpg"}
-                  alt="Live darshan preview"
-                  className="w-full h-full object-cover"
-                />
+                {/* Primary live video or fallback image */}
+                {primaryEmbedUrl ? (
+                  <iframe
+                    src={`${primaryEmbedUrl}?autoplay=1&mute=1&rel=0`}
+                    title="Live darshan preview"
+                    className="w-full h-full"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    allowFullScreen
+                    frameBorder={0}
+                  />
+                ) : (
+                  <img
+                    src={
+                      primaryTemple?.image
+                        ? primaryTemple.image.startsWith("http")
+                          ? primaryTemple.image
+                          : `${API_URL.replace("/api", "")}${primaryTemple.image}`
+                        : "/assets/live-darshan-preview.jpg"
+                    }
+                    alt="Live darshan preview"
+                    className="w-full h-full object-cover"
+                  />
+                )}
                 <div className="absolute inset-0 bg-foreground/20" />
 
                 {/* Play button overlay */}
-                <div className="absolute inset-0 flex items-center justify-center">
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                   <div className="text-center">
                     <div className="w-20 h-20 rounded-full bg-primary/80 backdrop-blur-sm flex items-center justify-center mx-auto mb-4 group-hover:bg-primary transition-colors shadow-lg">
                       <Play className="w-8 h-8 text-primary-foreground fill-primary-foreground group-hover:scale-110 transition-transform" />
@@ -78,7 +124,7 @@ const LiveDarshanSection: React.FC = () => {
                 {/* Viewer count */}
                 <div className="absolute bottom-4 left-4 flex items-center gap-2 bg-foreground/20 backdrop-blur-sm text-primary-foreground px-3 py-1.5 rounded-full">
                   <Users className="w-3 h-3" />
-                  <span className="text-xs font-medium">{liveTemples[0]?.viewers || "1.2K"} watching</span>
+                  <span className="text-xs font-medium">{primaryTemple?.viewers || "1.2K"} watching</span>
                 </div>
               </div>
             </Link>

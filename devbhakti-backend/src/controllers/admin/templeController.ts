@@ -323,11 +323,21 @@ export const updateTemple = async (req: Request, res: Response) => {
   }
 };
 
-// Toggle Temple Status
+// Toggle Temple Status (including Live Status)
 export const toggleTempleStatus = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { isVerified, isActive, slug, subdomain, urlType, productCommissionRate, poojaCommissionRate, commissionSlabs } = req.body;
+    const {
+      isVerified,
+      isActive,
+      slug,
+      subdomain,
+      urlType,
+      productCommissionRate,
+      poojaCommissionRate,
+      commissionSlabs,
+      liveStatus,
+    } = req.body;
 
     console.log('toggleTempleStatus called:', {
       id,
@@ -346,6 +356,7 @@ export const toggleTempleStatus = async (req: Request, res: Response) => {
           temple: {
             update: {
               isActive: isActive !== undefined ? isActive : undefined,
+              liveStatus: liveStatus !== undefined ? liveStatus : undefined,
               slug: slug || undefined,
               subdomain: subdomain || undefined,
               urlType: urlType || undefined,
@@ -396,6 +407,37 @@ export const toggleTempleStatus = async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Slug is already taken. Please choose another one.' });
     }
     res.status(500).json({ error: error.message || 'Failed to update status' });
+  }
+};
+
+// Update only Live configuration (channelId, liveUrl, isLive flag) for a specific temple (Admin-only)
+export const updateTempleLiveConfig = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { channelId, liveUrl, isLive } = req.body;
+
+    const user = await prisma.user.update({
+      where: { id: String(id) },
+      data: {
+        temple: {
+          update: {
+            channelId: channelId !== undefined ? channelId : undefined,
+            liveUrl: liveUrl !== undefined ? liveUrl : undefined,
+            isLive: isLive !== undefined ? Boolean(isLive) : undefined,
+          }
+        }
+      },
+      include: { temple: true }
+    });
+
+    if (!user.temple) {
+      return res.status(404).json({ success: false, message: "Temple profile not found for this user" });
+    }
+
+    res.json({ success: true, data: user.temple });
+  } catch (error: any) {
+    console.error('Update temple live config error:', error);
+    res.status(500).json({ success: false, message: error.message || 'Failed to update live config' });
   }
 };
 

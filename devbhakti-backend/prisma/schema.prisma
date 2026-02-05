@@ -58,6 +58,8 @@ model Temple {
   description           String
   history               String?
   image                 String?
+  liveUrl               String?               // URL for Live Darshan (YouTube/RTMP)
+  channelId             String?               // Permanent YouTube Channel ID (for API lookups)
   heroImages            String[]
   gallery               String[]
   rating                Float                 @default(0)

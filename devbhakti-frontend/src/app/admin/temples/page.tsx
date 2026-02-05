@@ -248,6 +248,26 @@ export default function TemplesManagementPage() {
         }
     };
 
+    const handleToggleLiveStatus = async (id: string, currentVerified: boolean, currentActive: boolean, currentLiveStatus: boolean | undefined) => {
+        try {
+            await toggleTempleStatusAdmin(id, currentVerified, currentActive, {
+                liveStatus: !currentLiveStatus,
+            });
+            toast({
+                title: "Success",
+                description: `Temple live status ${!currentLiveStatus ? 'enabled' : 'disabled'} successfully`
+            });
+            await loadTemples();
+        } catch (error: any) {
+            console.error('Toggle Live Status Error:', error);
+            toast({
+                title: "Error",
+                description: error.response?.data?.error || "Failed to update live status",
+                variant: "destructive"
+            });
+        }
+    };
+
     const filteredTemples = temples.filter((inst) => {
         const matchesSearch =
             inst.userName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -370,6 +390,7 @@ export default function TemplesManagementPage() {
                             <TableHead>Temple Profile</TableHead>
                             <TableHead>Statistics</TableHead>
                             <TableHead>Status</TableHead>
+                            <TableHead>Live</TableHead>
                             <TableHead className="text-right">Actions</TableHead>
                         </TableRow>
                     </TableHeader>
@@ -414,6 +435,30 @@ export default function TemplesManagementPage() {
                                                 <MapPin className="w-4 h-4" />
                                                 <span>{inst.templeLocation || "N/A"}</span>
                                             </div>
+                                        </div>
+                                    </TableCell>
+                                    <TableCell>
+                                        <div className="flex items-center gap-2">
+                                            <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium ${inst.temple?.liveStatus
+                                                ? 'bg-red-50 text-red-700 border border-red-200'
+                                                : 'bg-slate-50 text-slate-500 border border-slate-200'
+                                                }`}>
+                                                {inst.temple?.liveStatus ? (
+                                                    <><Power className="w-3 h-3" /> Live</>
+                                                ) : (
+                                                    <><PowerOff className="w-3 h-3" /> Offline</>
+                                                )}
+                                            </div>
+                                            <Switch
+                                                checked={inst.temple?.liveStatus || false}
+                                                onCheckedChange={() => handleToggleLiveStatus(
+                                                    inst.userId,
+                                                    inst.isVerified,
+                                                    inst.temple?.isActive || false,
+                                                    inst.temple?.liveStatus || false
+                                                )}
+                                                disabled={!inst.isVerified}
+                                            />
                                         </div>
                                     </TableCell>
                                     <TableCell>

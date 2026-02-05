@@ -1,6 +1,6 @@
 import React from "react";
 import Link from "next/link";
-import { Mail, Phone, MapPin, Facebook, Twitter, Instagram, Youtube } from "lucide-react";
+import { Mail } from "lucide-react";
 import Logo from "@/components/icons/Logo";
 
 const Footer: React.FC = () => {
@@ -15,7 +15,7 @@ const Footer: React.FC = () => {
     ],
     company: [
       { label: "About Us", href: "/about" },
-      { label: "Contact", href: "/contact" },
+      // { label: "Contact", href: "/contact" },
       // { label: "Blog", href: "/blog" },
       // { label: "Careers", href: "/careers" },
     ],
@@ -26,13 +26,6 @@ const Footer: React.FC = () => {
       { label: "Terms of Service", href: "/terms-of-service" },
     ],
   };
-
-  const socialLinks = [
-    { icon: Facebook, href: "#", label: "Facebook" },
-    { icon: Twitter, href: "#", label: "Twitter" },
-    { icon: Instagram, href: "#", label: "Instagram" },
-    { icon: Youtube, href: "#", label: "Youtube" },
-  ];
 
   return (
     <footer className="bg-warm-brown text-sidebar-foreground">
@@ -46,18 +39,7 @@ const Footer: React.FC = () => {
               Experience divine darshan, book poojas, and shop authentic
               spiritual products.
             </p>
-            <div className="flex items-center gap-4 mt-6">
-              {socialLinks.map((social) => (
-                <a
-                  key={social.label}
-                  href={social.href}
-                  className="w-10 h-10 rounded-lg bg-[#b36f3e] flex items-center justify-center hover:bg-[#D7AD5A] transition-colors"
-                  aria-label={social.label}
-                >
-                  <social.icon className="w-5 h-5" />
-                </a>
-              ))}
-            </div>
+            {/* Social icons disabled as requested */}
           </div>
 
           {/* Platform Links */}
