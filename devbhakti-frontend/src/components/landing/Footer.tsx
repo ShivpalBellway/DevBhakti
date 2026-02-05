@@ -6,24 +6,24 @@ import Logo from "@/components/icons/Logo";
 const Footer: React.FC = () => {
   const footerLinks = {
     platform: [
-      { label: "Features", href: "#features" },
-      { label: "Marketplace", href: "#marketplace" },
-      { label: "Live Darshan", href: "#darshan" },
-      { label: "For Temples", href: "#temples" },
-      { label: "Become a Seller", href: "/register-seller" },
-      { label: "Trust & Transparency", href: "#trust" },
+      { label: "Features", href: "/#features" },
+      { label: "Marketplace", href: "/marketplace" },
+      { label: "Live Darshan", href: "/live-darshan" },
+      { label: "For Temples", href: "/temples" },
+      // { label: "Become a Seller", href: "/register-seller" },
+      { label: "Trust & Transparency", href: "/#trust" },
     ],
     company: [
       { label: "About Us", href: "/about" },
       { label: "Contact", href: "/contact" },
-      { label: "Blog", href: "/blog" },
-      { label: "Careers", href: "/careers" },
+      // { label: "Blog", href: "/blog" },
+      // { label: "Careers", href: "/careers" },
     ],
     support: [
-      { label: "Help Center", href: "/help" },
-      { label: "FAQs", href: "/faqs" },
-      { label: "Privacy Policy", href: "/privacy" },
-      { label: "Terms of Service", href: "/terms" },
+      // { label: "Help Center", href: "/help" },
+      // { label: "FAQs", href: "/faqs" },
+      { label: "Privacy Policy", href: "/privacy-policy" },
+      { label: "Terms of Service", href: "/terms-of-service" },
     ],
   };
 
@@ -66,12 +66,12 @@ const Footer: React.FC = () => {
             <ul className="space-y-3">
               {footerLinks.platform.map((link) => (
                 <li key={link.label}>
-                  <a
+                  <Link
                     href={link.href}
                     className="text-sidebar-foreground/70 hover:text-[#b6d600] transition-colors"
                   >
                     {link.label}
-                  </a>
+                  </Link>
                 </li>
               ))}
             </ul>
@@ -116,14 +116,14 @@ const Footer: React.FC = () => {
         <div className="border-t border-[#DCB35D] mt-12 pt-8">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="flex flex-wrap items-center justify-center gap-6 text-sm text-sidebar-foreground/70">
-              <a href="mailto:support@devbhakti.com" className="flex items-center gap-2 hover:text-white transition-colors">
+              <a href="mailto:admin@devbhakti.in" className="flex items-center gap-2 hover:text-white transition-colors">
                 <Mail className="w-4 h-4" />
-                support@devbhakti.com
+                admin@devbhakti.in
               </a>
-              <a href="tel:+911234567890" className="flex items-center gap-2 hover:text-white transition-colors">
+              {/* <a href="tel:+911234567890" className="flex items-center gap-2 hover:text-white transition-colors">
                 <Phone className="w-4 h-4" />
                 +91 123 456 7890
-              </a>
+              </a> */}
             </div>
             <p className="text-sm text-sidebar-foreground/50">
               © {new Date().getFullYear()} DevBhakti. All rights reserved.

@@ -21,18 +21,18 @@ import { createCategoryAdmin } from "@/api/adminController";
 export default function CreateCategoryPage() {
   const router = useRouter();
   const { toast } = useToast();
-  
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [categoryImage, setCategoryImage] = useState<File | null>(null);
   const [categoryImagePreview, setCategoryImagePreview] = useState<string>("");
-  
+
   const [formData, setFormData] = useState({
     name: "",
     description: "",
     isActive: true,
     sortOrder: 0,
   });
-  
+
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const handleInputChange = (field: string, value: string | number | boolean) => {
@@ -96,7 +96,7 @@ export default function CreateCategoryPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       toast({
         title: "Validation Error",
@@ -107,35 +107,35 @@ export default function CreateCategoryPage() {
     }
 
     setIsSubmitting(true);
-    
+
     try {
       // Create FormData for file upload
       const formDataToSend = new FormData();
-      
+
       // Add basic category data
       formDataToSend.append('name', formData.name);
       formDataToSend.append('description', formData.description);
       formDataToSend.append('isActive', formData.isActive.toString());
       formDataToSend.append('sortOrder', formData.sortOrder.toString());
-      
+
       // Add category image if exists
       if (categoryImage) {
         formDataToSend.append('image', categoryImage);
       }
 
       await createCategoryAdmin(formDataToSend);
-      
+
       toast({
         title: "Success",
         description: "Category created successfully",
       });
-      
+
       router.push("/admin/products/categories");
     } catch (error: any) {
       console.error("Create Category Error:", error);
       const errorMessage = error?.response?.data?.message || error?.message || "Failed to create category";
       const errorDetails = error?.response?.data?.details;
-      
+
       toast({
         title: "Error Creating Category",
         description: errorDetails ? `${errorMessage}: ${errorDetails}` : errorMessage,
@@ -213,11 +213,12 @@ export default function CreateCategoryPage() {
               <div className="flex items-center gap-4">
                 {categoryImagePreview ? (
                   <div className="relative">
-                    <img 
-                      src={categoryImagePreview} 
-                      alt="Category preview" 
+                    <img
+                      src={categoryImagePreview}
+                      alt="Category preview"
                       className="w-24 h-24 object-cover rounded-lg border"
                     />
+
                     <Button
                       type="button"
                       variant="destructive"
@@ -243,6 +244,8 @@ export default function CreateCategoryPage() {
                   <p className="text-xs text-slate-500 mt-1">
                     JPG, PNG, GIF up to 5MB
                   </p>
+                  <p className="text-[10px] font-semibold text-primary mt-1">Recommended: 800x800 px (Square)</p>
+
                 </div>
               </div>
             </div>

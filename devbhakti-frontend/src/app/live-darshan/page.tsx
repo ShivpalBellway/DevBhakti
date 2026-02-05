@@ -177,9 +177,9 @@ export default function LiveDarshanPage() {
                 <Heart className={isLikeActive ? "fill-red-500 text-red-500" : ""} size={24} />
                 {isLikeActive ? "Liked" : "Like"}
               </Button>
-              <Button variant="sacred" className="h-14 px-10 rounded-xl text-lg font-bold shadow-lg hover:shadow-sacred/25 transition-all">
+              {/* <Button variant="sacred" className="h-14 px-10 rounded-xl text-lg font-bold shadow-lg hover:shadow-sacred/25 transition-all">
                 Make Donation
-              </Button>
+              </Button> */}
               <Button variant="secondary" className="h-14 px-6 rounded-xl">
                 <Share2 size={24} />
               </Button>

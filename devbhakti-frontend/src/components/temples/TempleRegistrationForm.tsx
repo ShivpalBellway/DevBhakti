@@ -402,6 +402,9 @@ export default function TempleRegistrationForm({ onClose }: { onClose?: () => vo
                                     <div className="py-10 text-center space-y-2">
                                         <Upload className="w-10 h-10 text-slate-300 mx-auto group-hover:text-[#88542b] transition-colors" />
                                         <p className="text-xs text-slate-400 font-medium uppercase tracking-wider">Select Main Photo</p>
+                                        <p className="font-semibold">Main Profile Image</p>
+                                        <p className="text-slate-300">Max 2MB • 1200x800px</p>
+                                        <p className="text-slate-400">JPG, PNG, WebP</p>
                                     </div>
                                 )}
                                 {/* Hover Info */}
@@ -419,6 +422,9 @@ export default function TempleRegistrationForm({ onClose }: { onClose?: () => vo
                         </div>
                         <div className="space-y-3">
                             <label className="text-sm font-bold text-slate-600 ml-1">Banners (Max 5)</label>
+
+
+
                             <div className="grid grid-cols-3 gap-2">
                                 {heroPreviews.slice(0, 5).map((url, i) => (
                                     <div key={url} className="aspect-square rounded-xl overflow-hidden relative border border-slate-100 group">
@@ -442,6 +448,12 @@ export default function TempleRegistrationForm({ onClose }: { onClose?: () => vo
                                             onChange={handleHeroImagesChange}
                                         />
                                         <Plus className="w-6 h-6 text-slate-300 group-hover:text-[#88542b]" />
+                                        <div className="text-center">
+
+                                            <p className="text-dark-100">Max 1MB each • 800x800px</p>
+                                            <p className="text-dark-200">JPG, PNG, WebP</p>
+                                        </div>
+
                                         {/* Hover Info */}
                                         <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-slate-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10">
                                             <div className="text-center">
@@ -477,15 +489,15 @@ export default function TempleRegistrationForm({ onClose }: { onClose?: () => vo
                             <div
                                 key={pooja.id}
                                 className={`relative rounded-xl border-2 p-4 cursor-pointer transition-all hover:shadow-md ${selectedPoojaIds.includes(pooja.id)
-                                        ? "border-[#88542b] bg-orange-50 shadow-sm"
-                                        : "border-slate-200 bg-white hover:border-[#88542b]/30"
+                                    ? "border-[#88542b] bg-orange-50 shadow-sm"
+                                    : "border-slate-200 bg-white hover:border-[#88542b]/30"
                                     }`}
                                 onClick={() => togglePooja(pooja.id)}
                             >
                                 <div className="flex items-start gap-3">
                                     <div className={`mt-1 w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${selectedPoojaIds.includes(pooja.id)
-                                            ? "border-[#88542b] bg-[#88542b]"
-                                            : "border-slate-300 bg-white"
+                                        ? "border-[#88542b] bg-[#88542b]"
+                                        : "border-slate-300 bg-white"
                                         }`}>
                                         {selectedPoojaIds.includes(pooja.id) && (
                                             <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">

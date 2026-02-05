@@ -396,8 +396,8 @@ const PoojaListClient: React.FC = () => {
                         <div className="relative">
                             <div className="aspect-square rounded-[3rem] overflow-hidden">
                                 <img
-                                    src="https://images.unsplash.com/photo-1609347744403-2306e8a9ae27?q=80&w=2070&auto=format&fit=crop"
-                                    alt="Temple Aarti"
+                                    src="/images/sacred_temple_ritual.png"
+                                    alt="Sacred Temple Ritual"
                                     className="w-full h-full object-cover"
                                 />
                             </div>

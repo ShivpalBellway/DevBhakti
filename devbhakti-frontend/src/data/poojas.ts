@@ -103,7 +103,7 @@ export const poojas = [
       { name: "Mukul Raj", location: "Lucknow", message: "Thank you for conducting this puja for us.", rating: 5 }
     ]
   },
-  
+
   {
     id: "3",
     name: "Sandhya Aarti",

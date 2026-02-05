@@ -125,10 +125,10 @@ export default function SellerProductsPage() {
                     </p>
                 </div>
                 <div className="flex gap-3">
-                    <Button variant="outline" className="hidden md:flex gap-2 rounded-xl">
+                    {/* <Button variant="outline" className="hidden md:flex gap-2 rounded-xl">
                         <Download className="w-4 h-4" />
                         Export
-                    </Button>
+                    </Button> */}
                     <Button
                         onClick={() => router.push('/seller/dashboard/products/create')}
                         className="bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98] rounded-xl px-6"

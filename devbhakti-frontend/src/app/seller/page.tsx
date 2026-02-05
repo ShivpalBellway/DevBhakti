@@ -235,7 +235,7 @@ export default function SellerLoginPage() {
                     {/* Footer Info */}
                     <div className="p-6 bg-slate-50 border-t border-slate-100 text-center">
                         <p className="text-sm text-slate-500">
-                            For assistance contact <a href="mailto:support@devbhakti.in" className="text-[#7b4623] font-bold hover:underline">support@devbhakti.in</a>
+                            For assistance contact <a href="mailto:admin@devbhakti.in" className="text-[#7b4623] font-bold hover:underline">admin@devbhakti.in</a>
                         </p>
                     </div>
                 </div>

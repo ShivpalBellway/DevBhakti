@@ -130,6 +130,23 @@ export const createTemple = async (req: Request, res: Response) => {
         });
       }
 
+      // 4. Create Commission Slabs
+      const commissionSlabs = data.commissionSlabs ? JSON.parse(data.commissionSlabs) : [];
+      if (commissionSlabs.length > 0) {
+        await tx.commissionSlab.createMany({
+          data: commissionSlabs.map((s: any) => ({
+            minAmount: parseFloat(s.minAmount),
+            maxAmount: s.maxAmount ? parseFloat(s.maxAmount) : null,
+            platformFee: parseFloat(s.platformFee),
+            percentage: parseFloat(s.percentage),
+            slabType: SlabType.TEMPLE,
+            targetId: templeId,
+            category: s.category || CommissionCategory.MARKETPLACE,
+            isActive: true
+          }))
+        });
+      }
+
       return user;
     });
 
@@ -179,8 +196,8 @@ export const updateTemple = async (req: Request, res: Response) => {
               viewers: data.viewers,
               rating: parseFloat(data.rating || '0'),
               reviewsCount: parseInt(data.reviewsCount || '0'),
-              slug: data.slug || undefined, 
-              subdomain: data.subdomain || undefined, 
+              slug: data.slug || undefined,
+              subdomain: data.subdomain || undefined,
               urlType: data.urlType || 'slug',
               liveStatus: data.liveStatus === 'true',
               productCommissionRate: data.productCommissionRate ? parseFloat(data.productCommissionRate) : undefined,
@@ -296,7 +313,7 @@ export const updateTemple = async (req: Request, res: Response) => {
       return user;
     }, {
       maxWait: 10000,
-      timeout: 20000 
+      timeout: 20000
     });
 
     res.json(result);

@@ -104,11 +104,11 @@ const sidebarItems = [
     icon: Store,
     href: "/admin/sellers",
   },
-  {
-    label: "Analytics",
-    icon: BarChart3,
-    href: "/admin/analytics",
-  },
+  // {
+  //   label: "Analytics",
+  //   icon: BarChart3,
+  //   href: "/admin/analytics",
+  // },
   // {
   //   label: "Analytics",
   //   icon: BarChart3,
