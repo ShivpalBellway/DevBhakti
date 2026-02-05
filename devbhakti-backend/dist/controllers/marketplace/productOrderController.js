@@ -658,7 +658,7 @@ const getOrderInvoice = async (req, res) => {
                             <span class="address-name">DevBhakti Marketplace</span>
                             <div>Officially Authorized Platform</div>
                             <div>Pan-India Distribution</div>
-                            <div style="margin-top: 4px; color: var(--text-muted)">support@devbhakti.in</div>
+                            <div style="margin-top: 4px; color: var(--text-muted)">admin@devbhakti.in</div>
                         </div>
                     </div>
                 </div>

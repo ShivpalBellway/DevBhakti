@@ -126,6 +126,22 @@ const createTemple = async (req, res) => {
                     }))
                 });
             }
+            // 4. Create Commission Slabs
+            const commissionSlabs = data.commissionSlabs ? JSON.parse(data.commissionSlabs) : [];
+            if (commissionSlabs.length > 0) {
+                await tx.commissionSlab.createMany({
+                    data: commissionSlabs.map((s) => ({
+                        minAmount: parseFloat(s.minAmount),
+                        maxAmount: s.maxAmount ? parseFloat(s.maxAmount) : null,
+                        platformFee: parseFloat(s.platformFee),
+                        percentage: parseFloat(s.percentage),
+                        slabType: client_1.SlabType.TEMPLE,
+                        targetId: templeId,
+                        category: s.category || client_1.CommissionCategory.MARKETPLACE,
+                        isActive: true
+                    }))
+                });
+            }
             return user;
         });
         res.status(201).json(result);
