@@ -33,6 +33,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
+import { BASE_URL } from "@/config/apiConfig";
 import {
   fetchProductByIdAdmin,
   updateProductAdmin,
@@ -202,7 +203,7 @@ export default function EditProductPage() {
         costPrice: v.costPrice || 0,
         stock: v.stock,
         image: v.image,
-        imagePreview: v.image ? `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}${v.image}` : ""
+        imagePreview: v.image ? `${BASE_URL}${v.image}` : ""
       })));
 
       // Set existing image if available
@@ -544,7 +545,7 @@ export default function EditProductPage() {
                   {(productImagePreview || existingImage) ? (
                     <div className="relative">
                       <img
-                        src={productImagePreview || (existingImage ? `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}${existingImage}` : '')}
+                        src={productImagePreview || (existingImage ? `${BASE_URL}${existingImage}` : '')}
                         alt="Product preview"
                         className="w-24 h-24 object-cover rounded-lg border"
                       />

@@ -32,6 +32,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
+import { BASE_URL } from "@/config/apiConfig";
 
 import {
   fetchAllCategoriesAdmin,
@@ -56,7 +57,7 @@ interface Category {
 export default function CategoriesManagementPage() {
   const router = useRouter();
   const { toast } = useToast();
-  
+
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -76,7 +77,7 @@ export default function CategoriesManagementPage() {
       console.error("Load Categories Error:", error);
       const errorMessage = error?.response?.data?.message || error?.message || "Failed to load categories";
       const errorDetails = error?.response?.data?.details;
-      
+
       toast({
         title: "Error Loading Categories",
         description: errorDetails ? `${errorMessage}: ${errorDetails}` : errorMessage,
@@ -97,7 +98,7 @@ export default function CategoriesManagementPage() {
         console.error("Delete Category Error:", error);
         const errorMessage = error?.response?.data?.message || error?.message || "Failed to delete category";
         const errorDetails = error?.response?.data?.details;
-        
+
         toast({
           title: "Error Deleting Category",
           description: errorDetails ? `${errorMessage}: ${errorDetails}` : errorMessage,
@@ -110,16 +111,16 @@ export default function CategoriesManagementPage() {
   const handleToggleStatus = async (id: string, currentStatus: boolean) => {
     try {
       await toggleCategoryStatusAdmin(id, !currentStatus);
-      toast({ 
-        title: "Success", 
-        description: `Category ${!currentStatus ? 'activated' : 'deactivated'} successfully` 
+      toast({
+        title: "Success",
+        description: `Category ${!currentStatus ? 'activated' : 'deactivated'} successfully`
       });
       loadCategories();
     } catch (error: any) {
       console.error("Toggle Status Error:", error);
       const errorMessage = error?.response?.data?.message || error?.message || "Failed to update status";
       const errorDetails = error?.response?.data?.details;
-      
+
       toast({
         title: "Error Updating Status",
         description: errorDetails ? `${errorMessage}: ${errorDetails}` : errorMessage,
@@ -130,11 +131,10 @@ export default function CategoriesManagementPage() {
 
   const getStatusBadge = (isActive: boolean) => {
     return (
-      <div className={`inline-flex items-center justify-center gap-1 px-2 py-1 rounded-md border text-xs font-medium whitespace-nowrap ${
-        isActive 
-          ? "bg-emerald-50 text-emerald-700 border-emerald-200" 
+      <div className={`inline-flex items-center justify-center gap-1 px-2 py-1 rounded-md border text-xs font-medium whitespace-nowrap ${isActive
+          ? "bg-emerald-50 text-emerald-700 border-emerald-200"
           : "bg-red-50 text-red-700 border-red-200"
-      }`}>
+        }`}>
         {isActive ? (
           <>
             <ToggleRight className="w-3 h-3" />
@@ -223,8 +223,8 @@ export default function CategoriesManagementPage() {
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center overflow-hidden">
                           {category.image ? (
-                            <img 
-                              src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}${category.image}`}
+                            <img
+                              src={`${BASE_URL}${category.image}`}
                               alt={category.name}
                               className="w-full h-full object-cover"
                             />
@@ -318,8 +318,8 @@ export default function CategoriesManagementPage() {
               <div className="flex items-center gap-4">
                 <div className="w-20 h-20 rounded-lg bg-slate-100 flex items-center justify-center overflow-hidden">
                   {selectedCategory.image ? (
-                    <img 
-                      src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}${selectedCategory.image}`}
+                    <img
+                      src={`${BASE_URL}${selectedCategory.image}`}
                       alt={selectedCategory.name}
                       className="w-full h-full object-cover"
                     />
@@ -332,7 +332,7 @@ export default function CategoriesManagementPage() {
                   <div className="mt-1">{getStatusBadge(selectedCategory.isActive)}</div>
                 </div>
               </div>
-              
+
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-sm font-medium text-slate-700">Category ID</label>

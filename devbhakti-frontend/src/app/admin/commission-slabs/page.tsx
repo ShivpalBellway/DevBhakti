@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, Save, X } from 'lucide-react';
+import { API_URL } from '@/config/apiConfig';
 
 interface CommissionSlab {
     id: string;
@@ -35,7 +36,7 @@ export default function CommissionSlabsPage() {
         setLoading(true);
         try {
             const token = localStorage.getItem('admin_token');
-            const response = await fetch(`http://localhost:5000/api/admin/commission-slabs?type=GLOBAL&category=${activeCategory}`, {
+            const response = await fetch(`${API_URL}/admin/commission-slabs?type=GLOBAL&category=${activeCategory}`, {
                 headers: {
                     'Authorization': `Bearer ${token}`,
                 },
@@ -55,7 +56,7 @@ export default function CommissionSlabsPage() {
         try {
             console.log('Creating slab with data:', formData);
             const token = localStorage.getItem('admin_token');
-            const response = await fetch('http://localhost:5000/api/admin/commission-slabs', {
+            const response = await fetch(`${API_URL}/admin/commission-slabs`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -87,7 +88,7 @@ export default function CommissionSlabsPage() {
     const handleUpdate = async (id: string) => {
         try {
             const token = localStorage.getItem('admin_token');
-            const response = await fetch(`http://localhost:5000/api/admin/commission-slabs/${id}`, {
+            const response = await fetch(`${API_URL}/admin/commission-slabs/${id}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -116,7 +117,7 @@ export default function CommissionSlabsPage() {
 
         try {
             const token = localStorage.getItem('admin_token');
-            const response = await fetch(`http://localhost:5000/api/admin/commission-slabs/${id}`, {
+            const response = await fetch(`${API_URL}/admin/commission-slabs/${id}`, {
                 method: 'DELETE',
                 headers: {
                     'Authorization': `Bearer ${token}`,
@@ -155,7 +156,7 @@ export default function CommissionSlabsPage() {
                 <div>
                     <h1 className="text-3xl font-bold text-gray-900">Commission Slabs</h1>
                     <p className="text-gray-600 mt-2">
-                        Platform fees ko order value ke basis par manage karein
+                        Manage platform fees based on the order value.
                     </p>
                 </div>
                 <button
@@ -172,8 +173,8 @@ export default function CommissionSlabsPage() {
                 <button
                     onClick={() => setActiveCategory('MARKETPLACE')}
                     className={`px-6 py-3 font-semibold text-sm transition-all duration-200 border-b-2 ${activeCategory === 'MARKETPLACE'
-                            ? 'border-orange-600 text-orange-600'
-                            : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                        ? 'border-orange-600 text-orange-600'
+                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                         }`}
                 >
                     Marketplace (Products)
@@ -181,8 +182,8 @@ export default function CommissionSlabsPage() {
                 <button
                     onClick={() => setActiveCategory('POOJA')}
                     className={`px-6 py-3 font-semibold text-sm transition-all duration-200 border-b-2 ${activeCategory === 'POOJA'
-                            ? 'border-orange-600 text-orange-600'
-                            : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                        ? 'border-orange-600 text-orange-600'
+                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                         }`}
                 >
                     Pooja Bookings

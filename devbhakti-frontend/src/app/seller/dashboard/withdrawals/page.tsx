@@ -29,6 +29,7 @@ import { Label } from "@/components/ui/label";
 import { fetchSellerFinanceSummary, fetchSellerWithdrawalHistory, requestSellerWithdrawal } from "@/api/sellerController";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
+import { BASE_URL } from "@/config/apiConfig";
 
 export default function SellerWithdrawalsPage() {
     const { toast } = useToast();
@@ -344,7 +345,7 @@ export default function SellerWithdrawalsPage() {
                                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Payment Proof</p>
                                         <div className="border rounded-2xl overflow-hidden bg-slate-100">
                                             <img
-                                                src={`http://localhost:5000${selectedTransaction.receiptImage}`}
+                                                src={`${BASE_URL}${selectedTransaction.receiptImage}`}
                                                 alt="Payment Receipt"
                                                 className="w-full h-auto object-cover"
                                             />

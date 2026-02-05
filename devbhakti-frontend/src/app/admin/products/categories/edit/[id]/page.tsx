@@ -16,7 +16,8 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { 
+import { BASE_URL } from "@/config/apiConfig";
+import {
   fetchCategoryByIdAdmin,
   updateCategoryAdmin
 } from "@/api/adminController";
@@ -36,21 +37,21 @@ export default function EditCategoryPage() {
   const router = useRouter();
   const params = useParams();
   const { toast } = useToast();
-  
+
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [category, setCategory] = useState<Category | null>(null);
   const [categoryImage, setCategoryImage] = useState<File | null>(null);
   const [categoryImagePreview, setCategoryImagePreview] = useState<string>("");
   const [existingImage, setExistingImage] = useState<string>("");
-  
+
   const [formData, setFormData] = useState({
     name: "",
     description: "",
     isActive: true,
     sortOrder: 0,
   });
-  
+
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
@@ -63,7 +64,7 @@ export default function EditCategoryPage() {
     setIsLoading(true);
     try {
       const data = await fetchCategoryByIdAdmin(id);
-      
+
       setCategory(data);
       setFormData({
         name: data.name,
@@ -71,17 +72,17 @@ export default function EditCategoryPage() {
         isActive: data.isActive,
         sortOrder: data.sortOrder,
       });
-      
+
       // Set existing image if available
       if (data.image) {
         setExistingImage(data.image);
       }
-      
+
     } catch (error: any) {
       console.error("Load Category Error:", error);
       const errorMessage = error?.response?.data?.message || error?.message || "Failed to load category";
       const errorDetails = error?.response?.data?.details;
-      
+
       toast({
         title: "Error Loading Category",
         description: errorDetails ? `${errorMessage}: ${errorDetails}` : errorMessage,
@@ -158,7 +159,7 @@ export default function EditCategoryPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       toast({
         title: "Validation Error",
@@ -169,40 +170,40 @@ export default function EditCategoryPage() {
     }
 
     setIsSubmitting(true);
-    
+
     try {
       // Create FormData for file upload
       const formDataToSend = new FormData();
-      
+
       // Add basic category data
       formDataToSend.append('name', formData.name);
       formDataToSend.append('description', formData.description);
       formDataToSend.append('isActive', formData.isActive.toString());
       formDataToSend.append('sortOrder', formData.sortOrder.toString());
-      
+
       // Add category image if new one is uploaded
       if (categoryImage) {
         formDataToSend.append('image', categoryImage);
       }
-      
+
       // Add flag to remove existing image if needed
       if (!existingImage && !categoryImage && category?.image) {
         formDataToSend.append('removeImage', 'true');
       }
 
       await updateCategoryAdmin(params.id as string, formDataToSend);
-      
+
       toast({
         title: "Success",
         description: "Category updated successfully",
       });
-      
+
       router.push("/admin/products/categories");
     } catch (error: any) {
       console.error("Update Category Error:", error);
       const errorMessage = error?.response?.data?.message || error?.message || "Failed to update category";
       const errorDetails = error?.response?.data?.details;
-      
+
       toast({
         title: "Error Updating Category",
         description: errorDetails ? `${errorMessage}: ${errorDetails}` : errorMessage,
@@ -291,9 +292,9 @@ export default function EditCategoryPage() {
               <div className="flex items-center gap-4">
                 {(categoryImagePreview || existingImage) ? (
                   <div className="relative">
-                    <img 
-                      src={categoryImagePreview || (existingImage ? `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}${existingImage}` : '')} 
-                      alt="Category preview" 
+                    <img
+                      src={categoryImagePreview || (existingImage ? `${BASE_URL}${existingImage}` : '')}
+                      alt="Category preview"
                       className="w-24 h-24 object-cover rounded-lg border"
                     />
                     <Button

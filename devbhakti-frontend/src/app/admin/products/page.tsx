@@ -54,6 +54,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
+import { BASE_URL } from "@/config/apiConfig";
 
 import {
   fetchAllProductsAdmin,
@@ -330,7 +331,7 @@ export default function ProductsManagementPage() {
                       <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center overflow-hidden">
                         {product.image ? (
                           <img
-                            src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}${product.image}`}
+                            src={`${BASE_URL}${product.image}`}
                             alt={product.name}
                             className="w-full h-full object-cover"
                           />
@@ -456,7 +457,7 @@ export default function ProductsManagementPage() {
                 <div className="w-20 h-20 rounded-lg bg-slate-100 flex items-center justify-center overflow-hidden">
                   {selectedProduct.image ? (
                     <img
-                      src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}${selectedProduct.image}`}
+                      src={`${BASE_URL}${selectedProduct.image}`}
                       alt={selectedProduct.name}
                       className="w-full h-full object-cover"
                     />
@@ -507,7 +508,7 @@ export default function ProductsManagementPage() {
                       <div className="w-12 h-12 rounded border bg-white flex-shrink-0 flex items-center justify-center overflow-hidden">
                         {variant.image ? (
                           <img
-                            src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}${variant.image}`}
+                            src={`${BASE_URL}${variant.image}`}
                             alt={variant.name}
                             className="w-full h-full object-cover"
                           />

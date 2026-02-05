@@ -5,7 +5,7 @@ import { Separator } from "@/components/ui/separator";
 import { Minus, Plus, Trash2, IndianRupee, ShoppingBag } from "lucide-react";
 
 import { useCart, CartItem } from "@/context/CartContext";
-import { BASE_URL } from "@/config/apiConfig";
+import { BASE_URL, API_URL } from "@/config/apiConfig";
 
 interface CartDrawerProps {
   open: boolean;
@@ -26,7 +26,7 @@ const CartDrawer: React.FC<CartDrawerProps> = ({
 }) => {
   const [platformFee, setPlatformFee] = React.useState(0);
   const [isCalculating, setIsCalculating] = React.useState(false);
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+
 
   const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
