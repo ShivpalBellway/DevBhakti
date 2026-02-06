@@ -286,7 +286,10 @@ function BookingForm() {
   const handleConfirmBooking = async () => {
     try {
       const token = localStorage.getItem("token");
-      if (!token) {
+      const savedUser = localStorage.getItem("user");
+      const parsedUser = savedUser ? JSON.parse(savedUser) : null;
+
+      if (!token || !parsedUser) {
         toast({ title: "Please login to book", variant: "destructive" });
         router.push("/auth");
         return;
@@ -336,7 +339,8 @@ function BookingForm() {
                   razorpay_payment_id: responseData.razorpay_payment_id,
                   razorpay_signature: responseData.razorpay_signature,
                   orderType: "POOJA",
-                  referenceId: res.data.id,
+                  orderData: bookingData,
+                  userId: parsedUser.id
                 })
               });
 

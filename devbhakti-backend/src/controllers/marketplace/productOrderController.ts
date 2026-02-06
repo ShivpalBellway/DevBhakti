@@ -75,58 +75,73 @@ export const createOrder = async (req: Request, res: Response) => {
   try {
     const { items, totalAmount, paymentMethod, shippingAddress, userId } = req.body;
 
-    // Only DEVOTEE accounts are allowed to place marketplace orders
     const authUser = (req as any).user;
     if (!authUser || authUser.role !== 'DEVOTEE') {
-      return res.status(403).json({
-        success: false,
-        message: 'Only devotee accounts can place marketplace orders.'
-      });
+      return res.status(403).json({ success: false, message: 'Only devotee accounts can place marketplace orders.' });
     }
 
     if (!items || items.length === 0) {
       return res.status(400).json({ success: false, message: "Cart is empty" });
     }
 
-    // 1. Fetch all products to group by templeId or sellerId
-    const productIds = items.map((item: any) => item.productId);
-    const products = await prisma.product.findMany({
-      where: { id: { in: productIds } },
-      select: {
-        id: true,
-        templeId: true,
-        sellerId: true,
-        name: true,
-        weight: true,
-        length: true,
-        width: true,
-        height: true
-      },
+    // Only Razorpay is supported for this clean flow
+    if (paymentMethod !== "RAZORPAY") {
+      return res.status(400).json({ success: false, message: "Only Online Payment is supported currently." });
+    }
+
+    // 1. Just create a Razorpay Order
+    // Note: We don't save anything in our DB yet.
+    const razorpayOrder = await razorpay.orders.create({
+      amount: Math.round(totalAmount * 100), // Amount in paise
+      currency: "INR",
+      receipt: `order_rcpt_${Date.now()}`,
     });
 
-    const productMap = new Map();
-    products.forEach((p) => {
-      productMap.set(p.id, p);
+    return res.status(200).json({
+      success: true,
+      message: "Order initiated.",
+      razorpayOrder
     });
+  } catch (error: any) {
+    console.error("Initiate Order Error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to initiate order",
+      details: error.message,
+    });
+  }
+};
+
+/**
+ * Centrally create the order in DB after payment success
+ * This is called from the payment controller
+ */
+export const createVerifiedOrder = async (orderData: any, userId: string) => {
+  const { items, totalAmount, shippingAddress, paymentMethod } = orderData;
+
+  return await prisma.$transaction(async (tx) => {
+    // 1. Map products to get vendors
+    const productIds = items.map((item: any) => item.productId);
+    const products = await tx.product.findMany({
+      where: { id: { in: productIds } },
+      select: { id: true, templeId: true, sellerId: true, name: true, weight: true, length: true, width: true, height: true },
+    });
+    const productMap = new Map(products.map(p => [p.id, p]));
 
     // 2. Create Master Order
-    const order = await prisma.order.create({
+    const order = await tx.order.create({
       data: {
-        userId: authUser.userId || userId,
+        userId,
         totalAmount,
         paymentMethod,
         shippingAddress,
-        status: "PENDING",
-        paymentStatus: "PENDING",
+        status: "BOOKED",
+        paymentStatus: "PAID",
       },
-      include: {
-        user: {
-          select: { name: true, email: true, phone: true }
-        }
-      }
+      include: { user: { select: { name: true, email: true, phone: true } } }
     });
 
-    // 3. Group items by templeId or sellerId
+    // 3. Group and create SubOrders
     const groups: Record<string, any[]> = {};
     items.forEach((item: any) => {
       const info = productMap.get(item.productId);
@@ -135,49 +150,28 @@ export const createOrder = async (req: Request, res: Response) => {
       groups[key].push(item);
     });
 
-    // 4. Create SubOrders and OrderItems
     for (const [key, groupItems] of Object.entries(groups)) {
       const subOrderTotal = groupItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+      let templeId = key.startsWith("temple_") ? key.replace("temple_", "") : null;
+      let sellerId = key.startsWith("seller_") ? key.replace("seller_", "") : null;
+      let vendorType = templeId ? SlabType.TEMPLE : (sellerId ? SlabType.SELLER : SlabType.GLOBAL);
+      let vendorId = templeId || sellerId;
 
-      let templeId: string | null = null;
-      let sellerId: string | null = null;
-      let vendorType: SlabType = SlabType.GLOBAL;
-      let vendorId: string | null = null;
-
-      if (key.startsWith("temple_")) {
-        templeId = key.replace("temple_", "");
-        vendorId = templeId;
-        vendorType = SlabType.TEMPLE;
-      } else if (key.startsWith("seller_")) {
-        sellerId = key.replace("seller_", "");
-        vendorId = sellerId;
-        vendorType = SlabType.SELLER;
-      }
-
-      // Calculate commission using Slabs
       let commissionAmount = 0;
       if (vendorId) {
-        const commissionResult = await getCommissionForAmount(
-          subOrderTotal,
-          vendorType,
-          vendorId,
-          CommissionCategory.MARKETPLACE
-        );
+        const commissionResult = await getCommissionForAmount(subOrderTotal, vendorType, vendorId, CommissionCategory.MARKETPLACE);
         commissionAmount = commissionResult.totalCommission;
       }
 
-      // Since platform fee is added on top and charged to user, vendor gets full price
-      const netEarning = subOrderTotal;
-
-      const subOrder = await prisma.subOrder.create({
+      const subOrder = await tx.subOrder.create({
         data: {
           orderId: order.id,
           templeId,
           sellerId,
           totalAmount: subOrderTotal,
           commissionAmount,
-          netEarning,
-          status: "PENDING",
+          netEarning: subOrderTotal,
+          status: "PAID",
           items: {
             create: groupItems.map((item) => ({
               productId: item.productId,
@@ -190,125 +184,34 @@ export const createOrder = async (req: Request, res: Response) => {
         },
       });
 
-      // Create a pending ledger entry (if not admin)
       if (templeId || sellerId) {
-        await prisma.templeLedger.create({
+        await tx.templeLedger.create({
           data: {
             templeId,
             sellerId,
-            amount: netEarning,
+            amount: subOrderTotal,
             grossAmount: subOrderTotal,
             commission: commissionAmount,
             type: "MARKETPLACE_EARNING",
-            sourceId: subOrder.id,
+            sourceId: order.id,
             description: `Earning from Order #${order.id.slice(-6).toUpperCase()}`,
-            status: "PENDING"
+            status: "COMPLETED"
           }
         });
       }
 
-      // 5. Update Stock
+      // Update Stock
       for (const item of groupItems) {
-        await prisma.productVariant.update({
+        await tx.productVariant.update({
           where: { id: item.variantId },
           data: { stock: { decrement: item.quantity } },
         });
       }
 
-      // 6. Sync with Shiprocket (Async - don't block order success)
-      try {
-        const srItems = groupItems.map(item => {
-          const pInfo = productMap.get(item.productId);
-          return {
-            name: pInfo?.name || item.productId,
-            sku: item.variantId,
-            units: item.quantity,
-            selling_price: item.price,
-            discount: 0,
-            tax: 0,
-          };
-        });
-
-        // Calculate package dimensions (Total weight, Max dimensions)
-        const totalWeight = groupItems.reduce((acc, item) => {
-          const pInfo = productMap.get(item.productId);
-          return acc + (Number(pInfo?.weight || 0.5) * item.quantity);
-        }, 0);
-
-        const maxLength = Math.max(...groupItems.map(item => Number(productMap.get(item.productId)?.length || 10)));
-        const maxWidth = Math.max(...groupItems.map(item => Number(productMap.get(item.productId)?.width || 10)));
-        const maxHeight = Math.max(...groupItems.map(item => Number(productMap.get(item.productId)?.height || 10)));
-
-        const pickupLocation = key.startsWith("temple_")
-          ? (await prisma.temple.findUnique({ where: { id: templeId! }, select: { pickupLocation: true } }))?.pickupLocation
-          : (await prisma.sellerProfile.findUnique({ where: { id: sellerId! }, select: { pickupLocation: true } }))?.pickupLocation;
-
-        const shiprocketData = {
-          order_id: subOrder.id,
-          order_date: new Date().toISOString().split('T')[0],
-          pickup_location: pickupLocation || "Primary",
-          billing_customer_name: shippingAddress.fullName.split(' ')[0],
-          billing_last_name: shippingAddress.fullName.split(' ').slice(1).join(' ') || "User",
-          billing_address: shippingAddress.street,
-          billing_city: shippingAddress.city,
-          billing_pincode: shippingAddress.pincode,
-          billing_state: shippingAddress.state || "Delhi",
-          billing_country: "India",
-          billing_email: order.user.email || "customer@devbhakti.in",
-          billing_phone: shippingAddress.phone || order.user.phone || "9999999999",
-          shipping_is_billing: true,
-          order_items: srItems,
-          payment_method: "Prepaid",
-          sub_total: subOrderTotal,
-          length: maxLength,
-          width: maxWidth,
-          height: maxHeight,
-          weight: totalWeight
-        };
-
-        const srResponse = await createShiprocketOrder(shiprocketData);
-        if (srResponse && srResponse.order_id) {
-          await prisma.subOrder.update({
-            where: { id: subOrder.id },
-            data: {
-              shiprocketOrderId: srResponse.order_id.toString()
-            }
-          });
-        }
-      } catch (srError) {
-        console.error("Shiprocket Sync Error for SubOrder", subOrder.id, srError);
-      }
+      // Shiprocket sync would typically be async here
     }
-
-    // 7. Handle Razorpay Order Creation
-    if (paymentMethod === "RAZORPAY") {
-      const razorpayOrder = await razorpay.orders.create({
-        amount: Math.round(totalAmount * 100), // Amount in paise
-        currency: "INR",
-        receipt: `order_rcpt_${order.id.slice(-10)}`,
-      });
-
-      return res.status(201).json({
-        success: true,
-        message: "Order initiated. Complete payment to confirm.",
-        data: order,
-        razorpayOrder
-      });
-    }
-
-    return res.status(201).json({
-      success: true,
-      message: "Order placed successfully",
-      data: order,
-    });
-  } catch (error: any) {
-    console.error("Create Order Error:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Failed to place order",
-      details: error.message,
-    });
-  }
+    return order;
+  });
 };
 
 export const getMyOrders = async (req: any, res: Response) => {
@@ -320,7 +223,13 @@ export const getMyOrders = async (req: any, res: Response) => {
     }
 
     const orders = await prisma.order.findMany({
-      where: { userId },
+      where: {
+        userId,
+        OR: [
+          { paymentMethod: "COD" },
+          { paymentStatus: "PAID" }
+        ]
+      },
       include: {
         subOrders: {
           include: {

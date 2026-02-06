@@ -17,6 +17,7 @@ export default function CreatePoojaPage() {
     const [imageFile, setImageFile] = useState<File | null>(null);
     const [imagePreview, setImagePreview] = useState<string>("");
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isMasterPooja, setIsMasterPooja] = useState(false);
 
     const STATIC_PACKAGE_TYPES = [
         { name: "Single", description: "For 1 person" },
@@ -159,7 +160,8 @@ export default function CreatePoojaPage() {
         e.preventDefault();
         setIsSubmitting(true);
 
-        if (!formData.templeId) {
+        // Validate temple only if NOT creating a master pooja
+        if (!isMasterPooja && !formData.templeId) {
             toast({ title: "Error", description: "Please select a temple", variant: "destructive" });
             setIsSubmitting(false);
             return;
@@ -172,7 +174,8 @@ export default function CreatePoojaPage() {
         submissionData.append('category', formData.category);
         submissionData.append('time', formData.time);
         submissionData.append('about', formData.about);
-        submissionData.append('templeId', formData.templeId);
+        submissionData.append('isMaster', isMasterPooja.toString());
+        submissionData.append('templeId', isMasterPooja ? 'null' : formData.templeId);
         submissionData.append('description', JSON.stringify(formData.description));
         submissionData.append('benefits', JSON.stringify(formData.benefits));
         submissionData.append('bullets', JSON.stringify(formData.bullets));
@@ -186,7 +189,7 @@ export default function CreatePoojaPage() {
 
         try {
             await createPoojaAdmin(submissionData);
-            toast({ title: "Success", description: "Pooja created successfully" });
+            toast({ title: "Success", description: isMasterPooja ? "Master Pooja created successfully" : "Pooja created successfully" });
             router.push('/admin/poojas');
         } catch (error: any) {
             toast({
@@ -212,6 +215,26 @@ export default function CreatePoojaPage() {
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-6 bg-card p-6 rounded-lg border">
+                {/* Master Pooja Toggle */}
+                <div className="flex items-center gap-3 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                    <input
+                        type="checkbox"
+                        id="isMasterPooja"
+                        checked={isMasterPooja}
+                        onChange={(e) => {
+                            setIsMasterPooja(e.target.checked);
+                            if (e.target.checked) {
+                                setFormData({ ...formData, templeId: "" });
+                            }
+                        }}
+                        className="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary"
+                    />
+                    <label htmlFor="isMasterPooja" className="flex-1 cursor-pointer">
+                        <div className="font-semibold text-blue-900">Create as Master Pooja Template</div>
+                        <div className="text-xs text-blue-700">Master poojas are not tied to any specific temple and can be used as templates.</div>
+                    </label>
+                </div>
+
                 <div className="grid grid-cols-2 gap-6">
                     <div className="space-y-2">
                         <Label htmlFor="name">Pooja Name *</Label>
@@ -223,21 +246,23 @@ export default function CreatePoojaPage() {
                             required
                         />
                     </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="templeId">Temple *</Label>
-                        <select
-                            id="templeId"
-                            className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
-                            value={formData.templeId}
-                            onChange={(e) => setFormData({ ...formData, templeId: e.target.value })}
-                            required
-                        >
-                            <option value="">Select a Temple</option>
-                            {temples.map(temple => (
-                                <option key={temple.id} value={temple.id}>{temple.name}</option>
-                            ))}
-                        </select>
-                    </div>
+                    {!isMasterPooja && (
+                        <div className="space-y-2">
+                            <Label htmlFor="templeId">Temple *</Label>
+                            <select
+                                id="templeId"
+                                className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+                                value={formData.templeId}
+                                onChange={(e) => setFormData({ ...formData, templeId: e.target.value })}
+                                required={!isMasterPooja}
+                            >
+                                <option value="">Select a Temple</option>
+                                {temples.map(temple => (
+                                    <option key={temple.id} value={temple.id}>{temple.name}</option>
+                                ))}
+                            </select>
+                        </div>
+                    )}
                 </div>
 
                 <div className="grid grid-cols-3 gap-6">
