@@ -91,7 +91,7 @@ export const sendOTP = async (req: Request, res: Response) => {
         }
 
         // In a real app, you would send OTP via SMS gateway here
-        console.log(`OTP for ${normalizedPhone} as ${user.role}: ${otp}`);
+        console.log(`OTP for ${normalizedPhone} as ${user?.role}: ${otp}`);
 
         res.json({ success: true, message: 'OTP sent successfully', data: { phone: normalizedPhone, otp } });
 
