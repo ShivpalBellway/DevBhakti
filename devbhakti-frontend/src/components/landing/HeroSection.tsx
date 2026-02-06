@@ -78,7 +78,7 @@ const HeroSection: React.FC = () => {
             </Button>
           </motion.div>
 
-          {/* Stats */}
+          {/* Stats
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -98,7 +98,7 @@ const HeroSection: React.FC = () => {
                 <div className="text-sm text-foreground">{stat.label}</div>
               </div>
             ))}
-          </motion.div>
+          </motion.div> */}
         </div>
 
         {/* Floating feature cards */}
@@ -146,7 +146,7 @@ const HeroSection: React.FC = () => {
             </motion.div>
           ))}
         </motion.div> */}
-      
+
 
 
         {/* <motion.div

@@ -60,7 +60,8 @@ const AuthForm: React.FC = () => {
         phone: normalizedPhone,
         name: mode === "register" ? formData.name : undefined,
         email: mode === "register" && formData.email ? formData.email : undefined,
-        role: "DEVOTEE"
+        role: "DEVOTEE",
+        mode
       });
       setShowOtpInput(true);
       if (response.data?.otp) {
@@ -104,8 +105,14 @@ const AuthForm: React.FC = () => {
         description: `Welcome back to DevBhakti!`,
       });
 
+      const redirect = searchParams.get("redirect");
+
       setTimeout(() => {
-        window.location.href = "/";
+        if (redirect) {
+          window.location.href = redirect;
+        } else {
+          window.location.href = "/";
+        }
       }, 1000);
 
     } catch (error: any) {
@@ -314,7 +321,7 @@ const AuthForm: React.FC = () => {
           </div>
 
           {/* Social Login */}
-          <div className="flex justify-center">
+          {/* <div className="flex justify-center">
             <Button variant="outline" className="w-full max-w-sm">
               <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
                 <path
@@ -336,7 +343,7 @@ const AuthForm: React.FC = () => {
               </svg>
               Google
             </Button>
-          </div>
+          </div> */}
 
           {/* Toggle Mode */}
           <p className="text-center mt-8 text-muted-foreground">
@@ -375,9 +382,9 @@ const AuthForm: React.FC = () => {
             {/* Stats */}
             <div className="grid grid-cols-3 gap-8 mt-12">
               {[
-                { value: "500+", label: "Temples" },
-                { value: "50K+", label: "Devotees" },
-                { value: "1M+", label: "Bookings" },
+                // { value: "500+", label: "Temples" },
+                // { value: "50K+", label: "Devotees" },
+                // { value: "1M+", label: "Bookings" },
               ].map((stat) => (
                 <div key={stat.label}>
                   <div className="text-2xl font-bold">{stat.value}</div>

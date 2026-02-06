@@ -175,14 +175,21 @@ const PoojaDetailClient = ({ id }: PoojaDetailClientProps) => {
                                         size="lg"
                                         onClick={() => {
                                             const token = localStorage.getItem("token");
-                                            if (!token) {
-                                                toast({ title: "Please login to book pooja", variant: "destructive" });
-                                                router.push("/auth");
+                                            const savedUser = localStorage.getItem("user");
+                                            const parsedUser = savedUser ? JSON.parse(savedUser) : null;
+                                            const bookingUrl = pooja.temple?.id
+                                                ? `/booking?pooja=${id}&temple=${pooja.temple.id}`
+                                                : window.location.pathname + window.location.search;
+
+                                            if (!token || !parsedUser || parsedUser.role !== "DEVOTEE") {
+                                                toast({ title: "Please login as devotee to book pooja", variant: "destructive" });
+                                                router.push(`/auth?redirect=${encodeURIComponent(bookingUrl)}`);
                                                 return;
                                             }
+
                                             // If temple is available, navigate directly to booking with both params
                                             if (pooja.temple?.id) {
-                                                router.push(`/booking?pooja=${id}&temple=${pooja.temple.id}`);
+                                                router.push(bookingUrl);
                                             } else {
                                                 // Otherwise scroll to temple tab to select temple first
                                                 setActiveTab("temple");
@@ -342,10 +349,22 @@ const PoojaDetailClient = ({ id }: PoojaDetailClientProps) => {
                                                             {pooja.temple.location}
                                                         </p>
                                                         <div className="space-y-4">
-                                                            <Button className="w-full bg-[#5d4037] hover:bg-black text-white rounded-full py-6 font-bold flex items-center justify-center gap-2 transition-all group/btn" asChild>
-                                                                <Link href={`/booking?pooja=${id}&temple=${pooja.temple.id}`}>
-                                                                    Book Pooja <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
-                                                                </Link>
+                                                            <Button
+                                                                className="w-full bg-[#5d4037] hover:bg-black text-white rounded-full py-6 font-bold flex items-center justify-center gap-2 transition-all group/btn"
+                                                                onClick={() => {
+                                                                    const bookingUrl = `/booking?pooja=${id}&temple=${pooja.temple.id}`;
+                                                                    const token = localStorage.getItem("token");
+                                                                    const savedUser = localStorage.getItem("user");
+                                                                    const parsedUser = savedUser ? JSON.parse(savedUser) : null;
+                                                                    if (!token || !parsedUser || parsedUser.role !== "DEVOTEE") {
+                                                                        toast({ title: "Please login as devotee to book pooja", variant: "destructive" });
+                                                                        router.push(`/auth?redirect=${encodeURIComponent(bookingUrl)}`);
+                                                                        return;
+                                                                    }
+                                                                    router.push(bookingUrl);
+                                                                }}
+                                                            >
+                                                                Book Pooja <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
                                                             </Button>
                                                             <Button variant="outline" className="w-full border-primary/5 text-[#5d4037] bg-[#FFF8F0]/30 hover:bg-[#FFF8F0]/50 rounded-full py-6 font-bold transition-all" asChild>
                                                                 <Link href={getTempleUrl(pooja.temple)}>Explore Temple</Link>
@@ -372,10 +391,22 @@ const PoojaDetailClient = ({ id }: PoojaDetailClientProps) => {
                                                                 {copy.temple.location}
                                                             </p>
                                                             <div className="space-y-4">
-                                                                <Button className="w-full bg-[#5d4037] hover:bg-black text-white rounded-full py-6 font-bold flex items-center justify-center gap-2 transition-all group/btn" asChild>
-                                                                    <Link href={`/booking?pooja=${id}&temple=${copy.temple.id}`}>
-                                                                        Book Pooja <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
-                                                                    </Link>
+                                                                <Button
+                                                                    className="w-full bg-[#5d4037] hover:bg-black text-white rounded-full py-6 font-bold flex items-center justify-center gap-2 transition-all group/btn"
+                                                                    onClick={() => {
+                                                                        const bookingUrl = `/booking?pooja=${id}&temple=${copy.temple.id}`;
+                                                                        const token = localStorage.getItem("token");
+                                                                        const savedUser = localStorage.getItem("user");
+                                                                        const parsedUser = savedUser ? JSON.parse(savedUser) : null;
+                                                                        if (!token || !parsedUser || parsedUser.role !== "DEVOTEE") {
+                                                                            toast({ title: "Please login as devotee to book pooja", variant: "destructive" });
+                                                                            router.push(`/auth?redirect=${encodeURIComponent(bookingUrl)}`);
+                                                                            return;
+                                                                        }
+                                                                        router.push(bookingUrl);
+                                                                    }}
+                                                                >
+                                                                    Book Pooja <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
                                                                 </Button>
                                                                 <Button variant="outline" className="w-full border-primary/5 text-[#5d4037] bg-[#FFF8F0]/30 hover:bg-[#FFF8F0]/50 rounded-full py-6 font-bold transition-all" asChild>
                                                                     <Link href={getTempleUrl(copy.temple)}>Explore Temple</Link>

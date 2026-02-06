@@ -27,7 +27,7 @@ const normalizePhone = (phone: string): string => {
 
 export const sendOTP = async (req: Request, res: Response) => {
     try {
-        let { phone, name, email, role } = req.body;
+        let { phone, name, email, role, mode } = req.body;
 
         if (!phone) {
             return res.status(400).json({ success: false, message: 'Phone number is required' });
@@ -42,6 +42,7 @@ export const sendOTP = async (req: Request, res: Response) => {
         const otpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
         const checkRole = role || 'DEVOTEE';
+        const isRegisterFlow = mode === 'register';
         let user = await prisma.user.findFirst({
             where: {
                 phone: normalizedPhone,
@@ -64,18 +65,29 @@ export const sendOTP = async (req: Request, res: Response) => {
                 });
             }
 
-            // Create new user (Devotee) if it's a devotee login flow
-            user = await prisma.user.create({
-                data: {
-                    phone: normalizedPhone,
-                    name: name || 'Devotee',
-                    email: email || null,
-                    role: 'DEVOTEE',
-                    otp,
-                    otpExpires,
-                    isVerified: false
+            // For DEVOTEE role, behaviour depends on flow:
+            // - register flow: create a new account
+            // - login flow: DO NOT auto-create, instead ask user to register
+            if (checkRole === 'DEVOTEE') {
+                if (!isRegisterFlow) {
+                    return res.status(404).json({
+                        success: false,
+                        message: `This mobile number is not registered as a devotee. Please register to continue.`
+                    });
                 }
-            });
+
+                user = await prisma.user.create({
+                    data: {
+                        phone: normalizedPhone,
+                        name: name || 'Devotee',
+                        email: email || null,
+                        role: 'DEVOTEE',
+                        otp,
+                        otpExpires,
+                        isVerified: false
+                    }
+                });
+            }
         }
 
         // In a real app, you would send OTP via SMS gateway here

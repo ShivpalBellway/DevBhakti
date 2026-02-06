@@ -75,6 +75,15 @@ export const createOrder = async (req: Request, res: Response) => {
   try {
     const { items, totalAmount, paymentMethod, shippingAddress, userId } = req.body;
 
+    // Only DEVOTEE accounts are allowed to place marketplace orders
+    const authUser = (req as any).user;
+    if (!authUser || authUser.role !== 'DEVOTEE') {
+      return res.status(403).json({
+        success: false,
+        message: 'Only devotee accounts can place marketplace orders.'
+      });
+    }
+
     if (!items || items.length === 0) {
       return res.status(400).json({ success: false, message: "Cart is empty" });
     }
@@ -103,7 +112,7 @@ export const createOrder = async (req: Request, res: Response) => {
     // 2. Create Master Order
     const order = await prisma.order.create({
       data: {
-        userId,
+        userId: authUser.userId || userId,
         totalAmount,
         paymentMethod,
         shippingAddress,

@@ -107,6 +107,17 @@ export default function CheckoutPage() {
         }
 
         const user = JSON.parse(savedUser);
+
+        if (user.role !== "DEVOTEE") {
+            toast({
+                title: "Devotee account required",
+                description: "Only devotee accounts can place marketplace orders.",
+                variant: "destructive",
+            });
+            router.push("/auth?mode=login");
+            return;
+        }
+
         const userId = user.id;
 
         setIsSubmitting(true);

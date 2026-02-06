@@ -159,8 +159,8 @@ const Navbar: React.FC<NavbarProps> = ({ variant = "default" }) => {
                 </Button>
               )}
 
-              {/* Cart Icon */}
-              {user && (
+              {/* Cart Icon (only for DEVOTEE accounts) */}
+              {user && user.role === "DEVOTEE" && (
                 <Button
                   variant="ghost"
                   size="icon"
@@ -212,39 +212,42 @@ const Navbar: React.FC<NavbarProps> = ({ variant = "default" }) => {
                             <ChevronRight className="w-3 h-3 opacity-0 group-focus:opacity-100 -translate-x-2 group-focus:translate-x-0 transition-all" />
                           </Link>
                         </DropdownMenuItem>
-                      ) : user && user.role === "INSTITUTION" ? (
-                        <DropdownMenuItem asChild className="focus:bg-primary focus:text-white rounded-[1.2rem] cursor-pointer transition-all duration-300 group">
-                          <Link href="/temples/dashboard" className="flex items-center justify-between w-full px-4 py-3">
-                            <div className="flex items-center gap-3">
-                              <Church className="w-4 h-4 text-primary group-focus:text-white transition-colors" />
-                              <span className="font-medium">Temple Dashboard</span>
-                            </div>
-                            <ChevronRight className="w-3 h-3 opacity-0 group-focus:opacity-100 -translate-x-2 group-focus:translate-x-0 transition-all" />
-                          </Link>
-                        </DropdownMenuItem>
-                      ) : !user && (
-                        <>
+                      )
+                        : user && user.role === "INSTITUTION" ? (
                           <DropdownMenuItem asChild className="focus:bg-primary focus:text-white rounded-[1.2rem] cursor-pointer transition-all duration-300 group">
-                            <Link href="/auth" className="flex items-center justify-between w-full px-4 py-3">
+                            <Link href="/temples/dashboard" className="flex items-center justify-between w-full px-4 py-3">
                               <div className="flex items-center gap-3">
-                                <LogIn className="w-4 h-4 text-primary group-focus:text-white transition-colors" />
-                                <span className="font-medium">Login</span>
+                                <Church className="w-4 h-4 text-primary group-focus:text-white transition-colors" />
+                                <span className="font-medium">Temple Dashboard</span>
                               </div>
                               <ChevronRight className="w-3 h-3 opacity-0 group-focus:opacity-100 -translate-x-2 group-focus:translate-x-0 transition-all" />
                             </Link>
                           </DropdownMenuItem>
+                        )
+                          : !user &&
+                          (
+                            <>
+                              <DropdownMenuItem asChild className="focus:bg-primary focus:text-white rounded-[1.2rem] cursor-pointer transition-all duration-300 group">
+                                <Link href="/auth" className="flex items-center justify-between w-full px-4 py-3">
+                                  <div className="flex items-center gap-3">
+                                    <LogIn className="w-4 h-4 text-primary group-focus:text-white transition-colors" />
+                                    <span className="font-medium">Login</span>
+                                  </div>
+                                  <ChevronRight className="w-3 h-3 opacity-0 group-focus:opacity-100 -translate-x-2 group-focus:translate-x-0 transition-all" />
+                                </Link>
+                              </DropdownMenuItem>
 
-                          <DropdownMenuItem asChild className="focus:bg-primary focus:text-white rounded-[1.2rem] cursor-pointer transition-all duration-300 group">
-                            <Link href="/auth?mode=register" className="flex items-center justify-between w-full px-4 py-3">
-                              <div className="flex items-center gap-3">
-                                <UserPlus className="w-4 h-4 text-primary group-focus:text-white transition-colors" />
-                                <span className="font-medium">Sign Up</span>
-                              </div>
-                              <ChevronRight className="w-3 h-3 opacity-0 group-focus:opacity-100 -translate-x-2 group-focus:translate-x-0 transition-all" />
-                            </Link>
-                          </DropdownMenuItem>
-                        </>
-                      )}
+                              <DropdownMenuItem asChild className="focus:bg-primary focus:text-white rounded-[1.2rem] cursor-pointer transition-all duration-300 group">
+                                <Link href="/auth?mode=register" className="flex items-center justify-between w-full px-4 py-3">
+                                  <div className="flex items-center gap-3">
+                                    <UserPlus className="w-4 h-4 text-primary group-focus:text-white transition-colors" />
+                                    <span className="font-medium">Sign Up</span>
+                                  </div>
+                                  <ChevronRight className="w-3 h-3 opacity-0 group-focus:opacity-100 -translate-x-2 group-focus:translate-x-0 transition-all" />
+                                </Link>
+                              </DropdownMenuItem>
+                            </>
+                          )}
 
 
                       {(!user || user.role === "DEVOTEE") && (
@@ -462,6 +465,18 @@ const Navbar: React.FC<NavbarProps> = ({ variant = "default" }) => {
         onUpdateQuantity={updateQuantity}
         onRemoveItem={removeFromCart}
         onCheckout={() => {
+          if (!user) {
+            setIsCartOpen(false);
+            router.push("/auth?mode=login");
+            return;
+          }
+
+          if (user.role !== "DEVOTEE") {
+            setIsCartOpen(false);
+            router.push("/auth?mode=login");
+            return;
+          }
+
           setIsCartOpen(false);
           router.push("/marketplace/checkout");
         }}

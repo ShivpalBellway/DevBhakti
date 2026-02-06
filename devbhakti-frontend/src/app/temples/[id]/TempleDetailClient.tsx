@@ -379,15 +379,32 @@ export default function TempleDetail() {
                                                                 ))}
                                                             </ul> */}
                                                         </div>
-                                                        <div className="flex items-center gap-4">
-                                                            <div className="flex items-center text-primary font-semibold">
-                                                                <IndianRupee className="h-4 w-4" />
-                                                                {pooja.price}
+                                                            <div className="flex items-center gap-4">
+                                                                <div className="flex items-center text-primary font-semibold">
+                                                                    <IndianRupee className="h-4 w-4" />
+                                                                    {pooja.price}
+                                                                </div>
+                                                                <Button
+                                                                    size="sm"
+                                                                    onClick={() => {
+                                                                        const bookingUrl = `/booking?temple=${temple.id}`;
+                                                                        const token = localStorage.getItem("token");
+                                                                        const savedUser = localStorage.getItem("user");
+                                                                        const parsedUser = savedUser ? JSON.parse(savedUser) : null;
+                                                                        if (!token || !parsedUser) {
+                                                                            router.push(`/auth?redirect=${encodeURIComponent(bookingUrl)}`);
+                                                                            return;
+                                                                        }
+                                                                        if (parsedUser.role !== "DEVOTEE") {
+                                                                            router.push(`/auth?redirect=${encodeURIComponent(bookingUrl)}`);
+                                                                            return;
+                                                                        }
+                                                                        router.push(bookingUrl);
+                                                                    }}
+                                                                >
+                                                                    Book Now
+                                                                </Button>
                                                             </div>
-                                                            <Button size="sm" asChild>
-                                                                <Link href={`/booking?temple=${temple.id}`}>Book Now</Link>
-                                                            </Button>
-                                                        </div>
                                                     </div>
                                                 ))}
                                             </div>
@@ -497,14 +514,31 @@ export default function TempleDetail() {
 
                                     {/* Book Pooja and Watch Live Darshan Buttons Right Side*/}
                                     <div className="flex flex-wrap gap-3">
-                                        <Button variant="gold" className="gap-2" asChild>
-                                            <Link href={`/booking?temple=${temple.id}`}>
-                                                <Calendar className="h-4 w-4" />
-                                                Book Pooja
-                                            </Link>
+                                        <Button
+                                            variant="gold"
+                                            className="gap-2"
+                                            onClick={() => {
+                                                const bookingUrl = `/booking?temple=${temple.id}`;
+                                                const token = localStorage.getItem("token");
+                                                const savedUser = localStorage.getItem("user");
+                                                const parsedUser = savedUser ? JSON.parse(savedUser) : null;
+                                                if (!token || !parsedUser) {
+                                                    router.push(`/auth?redirect=${encodeURIComponent(bookingUrl)}`);
+                                                    return;
+                                                }
+                                                if (parsedUser.role !== "DEVOTEE") {
+                                                    router.push(`/auth?redirect=${encodeURIComponent(bookingUrl)}`);
+                                                    return;
+                                                }
+                                                router.push(bookingUrl);
+                                            }}
+                                        >
+                                            <Calendar className="h-4 w-4" />
+                                            Book Pooja
                                         </Button>
 
                                         <Button variant="outline" className="gap-2">
+                                             <Link href={`/live-dharshan`}></Link>
                                             <Video className="h-4 w-4" />
                                             Watch Live Darshan
                                         </Button>

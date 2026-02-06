@@ -261,9 +261,24 @@ function BookingForm() {
         return;
       }
     }
-    if (step === 3 && (!formData.name || !formData.phone || !formData.email)) {
-      toast({ title: "Please fill all required fields", variant: "destructive" });
-      return;
+    if (step === 3) {
+      if (!formData.name || !formData.phone || !formData.email) {
+        toast({ title: "Please fill all required fields", variant: "destructive" });
+        return;
+      }
+
+      if (typeof window !== "undefined") {
+        const token = localStorage.getItem("token");
+        const savedUser = localStorage.getItem("user");
+        const parsedUser = savedUser ? JSON.parse(savedUser) : null;
+
+        if (!token || !parsedUser || parsedUser.role !== "DEVOTEE") {
+          toast({ title: "Please login as devotee to continue booking", variant: "destructive" });
+          const redirectUrl = `${window.location.pathname}${window.location.search}`;
+          router.push(`/auth?redirect=${encodeURIComponent(redirectUrl)}`);
+          return;
+        }
+      }
     }
     setStep(step + 1);
   };

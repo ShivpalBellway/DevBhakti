@@ -11,7 +11,7 @@ import { authenticate } from "../../middleware/authMiddleware";
 
 const router = Router();
 
-router.post("/", createOrder);
+router.post("/", authenticate, createOrder);
 router.post("/calculate-fees", calculateFees);
 router.get("/my-orders", authenticate, getMyOrders);
 router.get("/user/:userId", getMyOrders); // Keep for compatibility
