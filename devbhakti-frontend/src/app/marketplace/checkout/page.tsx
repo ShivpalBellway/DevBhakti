@@ -19,7 +19,7 @@ export default function CheckoutPage() {
     const { cartItems, totalAmount, clearCart } = useCart();
     const { toast } = useToast();
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [paymentMethod, setPaymentMethod] = useState<"COD" | "RAZORPAY">("COD");
+    const [paymentMethod, setPaymentMethod] = useState<"COD" | "RAZORPAY">("RAZORPAY");
     const RAZORPAY_KEY = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "rzp_test_placeholder";
 
     const [address, setAddress] = useState({
@@ -161,7 +161,8 @@ export default function CheckoutPage() {
                                     razorpay_payment_id: responseData.razorpay_payment_id,
                                     razorpay_signature: responseData.razorpay_signature,
                                     orderType: "MARKETPLACE",
-                                    referenceId: response.data.data.id,
+                                    orderData: orderData,
+                                    userId: user.id
                                 }, {
                                     headers: { Authorization: `Bearer ${token}` }
                                 });

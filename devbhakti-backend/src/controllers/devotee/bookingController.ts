@@ -141,7 +141,7 @@ export const createBooking = async (req: Request, res: Response) => {
                     bookingDate: bookingDate as string,
                     address: address as string | null,
                     specialRequests: specialRequests as string | null,
-                    status: 'BOOKED',
+                    status: 'PENDING',
                     commissionAmount,
                     netEarning
                 }
@@ -169,7 +169,7 @@ export const createBooking = async (req: Request, res: Response) => {
             message: 'Pooja initiated. Complete payment to confirm.',
             data: booking,
             razorpayOrder: await razorpay.orders.create({
-                amount: Math.round(packagePrice * 100),
+                amount: Math.round(finalPrice * 100),
                 currency: "INR",
                 receipt: `pooja_rcpt_${booking.id.slice(-10)}`,
             })
@@ -185,7 +185,10 @@ export const getMyBookings = async (req: Request, res: Response) => {
         const { userId } = (req as any).user;
 
         const bookings = await prisma.poojaBooking.findMany({
-            where: { userId },
+            where: {
+                userId,
+                status: { not: 'PENDING' }
+            },
             include: {
                 pooja: true,
                 temple: true

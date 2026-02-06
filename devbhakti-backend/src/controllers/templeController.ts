@@ -86,6 +86,7 @@ export const getTempleById = async (req: Request, res: Response) => {
     const { id } = req.params;
     const userId = getUserIdFromRequest(req);
 
+    // First, find the temple to get its actual ID
     const temple = await prisma.temple.findFirst({
       where: {
         OR: [
@@ -100,12 +101,6 @@ export const getTempleById = async (req: Request, res: Response) => {
         isActive: true
       },
       include: {
-        poojas: {
-          where: { status: true }
-        },
-        events: {
-          where: { status: true }
-        },
         user: {
           select: { isVerified: true }
         }
@@ -115,6 +110,22 @@ export const getTempleById = async (req: Request, res: Response) => {
     if (!temple) {
       return res.status(404).json({ success: false, message: 'Temple not found or not verified' });
     }
+
+    // Now fetch poojas and events using the actual temple.id
+    const [poojas, events] = await Promise.all([
+      prisma.pooja.findMany({
+        where: {
+          templeId: temple.id, // Use actual temple ID
+          status: true
+        }
+      }),
+      prisma.event.findMany({
+        where: {
+          templeId: temple.id,
+          status: true
+        }
+      })
+    ]);
 
     // Resolve live status for this temple using direct URL/flags (no YouTube API)
     const hasUserLiveFlag = temple.isLive;
@@ -136,7 +147,17 @@ export const getTempleById = async (req: Request, res: Response) => {
       if (fav) isFavorite = true;
     }
 
-    res.json({ success: true, data: { ...temple, isLiveNow, liveUrl: resolvedLiveUrl, isFavorite } });
+    res.json({
+      success: true,
+      data: {
+        ...temple,
+        poojas,
+        events,
+        isLiveNow,
+        liveUrl: resolvedLiveUrl,
+        isFavorite
+      }
+    });
 
   } catch (error) {
     console.error('Fetch temple details error:', error);

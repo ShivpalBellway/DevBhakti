@@ -21,6 +21,7 @@ export default function EditPoojaPage() {
     const [imagePreview, setImagePreview] = useState<string>("");
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
+    const [isMaster, setIsMaster] = useState(false);
 
     const STATIC_PACKAGE_TYPES = [
         { name: "Single", description: "For 1 person" },
@@ -65,6 +66,7 @@ export default function EditPoojaPage() {
 
             const pooja = poojasData.find((p: any) => p.id === poojaId);
             if (pooja) {
+                setIsMaster(pooja.isMaster || false);
                 setFormData({
                     name: pooja.name,
                     price: pooja.price,
@@ -241,6 +243,22 @@ export default function EditPoojaPage() {
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-6 bg-card p-6 rounded-lg border">
+                {/* Master Pooja Warning */}
+                {isMaster && (
+                    <div className="flex items-start gap-3 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                        <div className="flex-shrink-0 w-5 h-5 rounded-full bg-amber-500 text-white flex items-center justify-center text-xs font-bold mt-0.5">
+                            !
+                        </div>
+                        <div className="flex-1">
+                            <div className="font-semibold text-amber-900">Master Pooja Template</div>
+                            <div className="text-xs text-amber-700 mt-1">
+                                This is a master pooja template and cannot be assigned to a specific temple.
+                                Temples can select this pooja from their panel to add it to their offerings.
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 <div className="grid grid-cols-2 gap-6">
                     <div className="space-y-2">
                         <Label htmlFor="name">Pooja Name *</Label>
@@ -253,19 +271,23 @@ export default function EditPoojaPage() {
                         />
                     </div>
                     <div className="space-y-2">
-                        <Label htmlFor="templeId">Temple *</Label>
+                        <Label htmlFor="templeId">Temple {!isMaster && '*'}</Label>
                         <select
                             id="templeId"
-                            className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+                            className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:opacity-50 disabled:cursor-not-allowed"
                             value={formData.templeId}
                             onChange={(e) => setFormData({ ...formData, templeId: e.target.value })}
-                            required
+                            required={!isMaster}
+                            disabled={isMaster}
                         >
-                            <option value="">Select a Temple</option>
-                            {temples.map(temple => (
+                            <option value="">{isMaster ? "Not Applicable (Master Pooja)" : "Select a Temple"}</option>
+                            {!isMaster && temples.map(temple => (
                                 <option key={temple.id} value={temple.id}>{temple.name}</option>
                             ))}
                         </select>
+                        {isMaster && (
+                            <p className="text-xs text-muted-foreground">Master poojas are not tied to any temple</p>
+                        )}
                     </div>
                 </div>
 
