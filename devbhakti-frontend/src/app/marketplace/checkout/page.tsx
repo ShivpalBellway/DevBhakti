@@ -19,7 +19,8 @@ export default function CheckoutPage() {
     const { cartItems, totalAmount, clearCart } = useCart();
     const { toast } = useToast();
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [paymentMethod, setPaymentMethod] = useState<"COD" | "RAZORPAY">("COD");
+    // Force online payment as default and only option
+    const [paymentMethod, setPaymentMethod] = useState<"COD" | "RAZORPAY">("RAZORPAY");
     const RAZORPAY_KEY = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "rzp_test_placeholder";
 
     const [address, setAddress] = useState({
@@ -119,6 +120,16 @@ export default function CheckoutPage() {
         }
 
         const userId = user.id;
+
+        // Enforce Razorpay payment only
+        if (paymentMethod !== "RAZORPAY") {
+            toast({
+                title: "Online payment required",
+                description: "Please complete Razorpay payment to confirm your order.",
+                variant: "destructive",
+            });
+            return;
+        }
 
         setIsSubmitting(true);
         try {

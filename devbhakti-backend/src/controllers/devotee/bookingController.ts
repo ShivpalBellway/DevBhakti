@@ -141,7 +141,7 @@ export const createBooking = async (req: Request, res: Response) => {
                     bookingDate: bookingDate as string,
                     address: address as string | null,
                     specialRequests: specialRequests as string | null,
-                    status: 'BOOKED',
+                    status: 'PENDING', // Mark as pending until Razorpay payment is verified
                     commissionAmount,
                     netEarning
                 }

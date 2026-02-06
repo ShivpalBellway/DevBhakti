@@ -45,7 +45,7 @@ const AuthForm: React.FC = () => {
       setProfileImage(file);
       setImagePreview(URL.createObjectURL(file));
     }
-  };
+  };  
 
   const handleSendOTP = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -32,7 +32,7 @@ export default function EditPoojaPage() {
     const [formData, setFormData] = useState({
         name: "",
         price: 0,
-        duration: "",
+        // duration: "",
         category: "",
         time: "",
         about: "",
@@ -68,7 +68,7 @@ export default function EditPoojaPage() {
                 setFormData({
                     name: pooja.name,
                     price: pooja.price,
-                    duration: pooja.duration,
+                    // duration: pooja.duration,
                     category: pooja.category,
                     time: pooja.time,
                     about: pooja.about || "",
@@ -193,7 +193,7 @@ export default function EditPoojaPage() {
         const submissionData = new FormData();
         submissionData.append('name', formData.name);
         submissionData.append('price', formData.price.toString());
-        submissionData.append('duration', formData.duration);
+        // submissionData.append('duration', formData.duration);
         submissionData.append('category', formData.category);
         submissionData.append('time', formData.time);
         submissionData.append('about', formData.about);
@@ -290,7 +290,7 @@ export default function EditPoojaPage() {
                             required
                         />
                     </div>
-                    <div className="space-y-2">
+                    {/* <div className="space-y-2">
                         <Label htmlFor="duration">Duration *</Label>
                         <Input
                             id="duration"
@@ -299,7 +299,7 @@ export default function EditPoojaPage() {
                             onChange={(e) => setFormData({ ...formData, duration: e.target.value })}
                             required
                         />
-                    </div>
+                    </div> */}
                 </div>
 
                 <div className="space-y-2">
