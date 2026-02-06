@@ -92,7 +92,9 @@ export default function TemplesManagementPage() {
         slug: "",
         subdomain: "",
         urlType: "slug",
-        slabs: []
+        slabs: [],
+        poojaSlabs: [],
+        marketplaceSlabs: []
     });
 
     useEffect(() => {
@@ -160,24 +162,58 @@ export default function TemplesManagementPage() {
         }
     };
 
-    const handleToggleStatus = async (id: string, currentVerified: boolean, currentActive: boolean, templeName?: string) => {
+    const handleToggleStatus = async (id: string, templeId: string, currentVerified: boolean, currentActive: boolean, templeName?: string) => {
         if (!currentVerified) {
             try {
-                const response = await fetchCommissionSlabsAdmin('GLOBAL');
-                const slabs = response.success ? response.data : [];
+                // First try to fetch existing slabs for this temple
+                let slabs = [];
+
+                // 1. Try fetching existing TEMPLE specific slabs using the TEMPLE ID
+                const templeSlabsResponse = await fetchCommissionSlabsAdmin('TEMPLE', templeId);
+                if (templeSlabsResponse.success && templeSlabsResponse.data && templeSlabsResponse.data.length > 0) {
+                    slabs = templeSlabsResponse.data;
+                } else {
+                    // 2. Fallback to GLOBAL slabs if no specific slabs exist
+                    const globalResponse = await fetchCommissionSlabsAdmin('GLOBAL');
+                    slabs = globalResponse.success ? globalResponse.data : [];
+                }
 
                 const generatedSlug = templeName ? templeName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') : "";
+
+                // Deduplicate slabs based on unique properties (minAmount + classification) to prevent UI duplication issues
+                const uniqueSlabs = slabs.filter((s: any, index: number, self: any[]) =>
+                    index === self.findIndex((t: any) => (
+                        t.minAmount === s.minAmount &&
+                        t.category === s.category &&
+                        t.slabType === s.slabType
+                    ))
+                );
+
+                // Separate slabs by category
+                const poojaSlabs = uniqueSlabs.filter((s: any) => s.category === 'POOJA').map((s: any) => ({
+                    minAmount: s.minAmount,
+                    maxAmount: s.maxAmount,
+                    platformFee: s.platformFee.toString(),
+                    percentage: s.percentage.toString(),
+                    category: s.category
+                }));
+
+                const marketplaceSlabs = uniqueSlabs.filter((s: any) => s.category === 'MARKETPLACE' || !s.category).map((s: any) => ({
+                    minAmount: s.minAmount,
+                    maxAmount: s.maxAmount,
+                    platformFee: s.platformFee.toString(),
+                    percentage: s.percentage.toString(),
+                    category: 'MARKETPLACE'
+                }));
+
                 setApprovalData({
                     id,
                     slug: generatedSlug,
                     subdomain: generatedSlug,
                     urlType: "slug",
-                    slabs: slabs.map((s: any) => ({
-                        minAmount: s.minAmount,
-                        maxAmount: s.maxAmount,
-                        platformFee: s.platformFee.toString(),
-                        percentage: s.percentage.toString()
-                    }))
+                    poojaSlabs,
+                    marketplaceSlabs,
+                    slabs: [] // Keeping this for backward compatibility if needed, but we rely on split slabs
                 });
                 setApprovalModalOpen(true);
             } catch (error) {
@@ -206,12 +242,22 @@ export default function TemplesManagementPage() {
                     slug: approvalData.slug,
                     subdomain: approvalData.subdomain,
                     urlType: approvalData.urlType,
-                    commissionSlabs: approvalData.slabs.map((s: any) => ({
-                        minAmount: parseFloat(s.minAmount),
-                        maxAmount: s.maxAmount ? parseFloat(s.maxAmount) : null,
-                        platformFee: parseFloat(s.platformFee),
-                        percentage: parseFloat(s.percentage)
-                    }))
+                    commissionSlabs: [
+                        ...approvalData.poojaSlabs.map((s: any) => ({
+                            minAmount: parseFloat(s.minAmount),
+                            maxAmount: s.maxAmount ? parseFloat(s.maxAmount) : null,
+                            platformFee: parseFloat(s.platformFee),
+                            percentage: parseFloat(s.percentage),
+                            category: 'POOJA'
+                        })),
+                        ...approvalData.marketplaceSlabs.map((s: any) => ({
+                            minAmount: parseFloat(s.minAmount),
+                            maxAmount: s.maxAmount ? parseFloat(s.maxAmount) : null,
+                            platformFee: parseFloat(s.platformFee),
+                            percentage: parseFloat(s.percentage),
+                            category: 'MARKETPLACE'
+                        }))
+                    ]
                 }
             );
             toast({ title: "Success", description: "Temple Approved Successfully" });
@@ -490,7 +536,7 @@ export default function TemplesManagementPage() {
                                                     {!inst.isVerified && (
                                                         <>
                                                             <DropdownMenuItem
-                                                                onClick={() => handleToggleStatus(inst.userId, inst.isVerified, inst.temple?.isActive || false, inst.templeName)}
+                                                                onClick={() => handleToggleStatus(inst.userId, inst.templeId, inst.isVerified, inst.temple?.isActive || false, inst.templeName)}
                                                                 className="text-emerald-600"
                                                             >
                                                                 <CheckCircle className="w-4 h-4 mr-2" />
@@ -501,7 +547,7 @@ export default function TemplesManagementPage() {
                                                     )}
                                                     {inst.isVerified && (
                                                         <DropdownMenuItem
-                                                            onClick={() => handleToggleStatus(inst.userId, inst.isVerified, inst.temple?.isActive || false, inst.templeName)}
+                                                            onClick={() => handleToggleStatus(inst.userId, inst.templeId, inst.isVerified, inst.temple?.isActive || false, inst.templeName)}
                                                             className="text-amber-600"
                                                         >
                                                             <XCircle className="w-4 h-4 mr-2" />
@@ -593,13 +639,13 @@ export default function TemplesManagementPage() {
 
             {/* Approval Modal */}
             <Dialog open={approvalModalOpen} onOpenChange={setApprovalModalOpen}>
-                <DialogContent className="max-w-md">
+                <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
                         <DialogTitle>Approve Temple Account</DialogTitle>
                     </DialogHeader>
                     <div className="space-y-4 py-4">
                         {/* URL Configuration Section */}
-                        <div className="space-y-4 p-4 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl border-2 border-blue-200">
+                        <div className="space-y-4 p-4 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl border border-blue-200">
                             <label className="text-sm font-bold text-slate-800 uppercase tracking-widest text-[11px]">🌐 Public URL Configuration</label>
 
                             {/* URL Type Selection */}
@@ -631,8 +677,9 @@ export default function TemplesManagementPage() {
                             {/* Slug Field */}
                             {approvalData.urlType === "slug" && (
                                 <div className="space-y-2">
-                                    <div className="flex items-center gap-1">
-                                        <span className="text-[10px] text-muted-foreground bg-white px-2 py-2 rounded-l-md border border-r-0 font-mono">devbhakti.in/temples/</span>
+                                    <div className="flex flex-col sm:flex-row sm:items-center gap-1">
+                                        <span className="text-[10px] text-muted-foreground bg-white px-2 py-2 rounded-l-md border sm:border-r-0 border-b-0 sm:border-b border-border font-mono whitespace-nowrap hidden sm:block">devbhakti.in/temples/</span>
+                                        <span className="text-[10px] text-muted-foreground sm:hidden mb-1 block">devbhakti.in/temples/</span>
                                         <Input
                                             value={approvalData.slug}
                                             onChange={e => {
@@ -640,7 +687,7 @@ export default function TemplesManagementPage() {
                                                 setApprovalData({ ...approvalData, slug: val, subdomain: val });
                                             }}
                                             placeholder="temple-slug"
-                                            className="rounded-l-none font-mono h-8 text-xs"
+                                            className="rounded-l-md sm:rounded-l-none font-mono h-8 text-xs w-full"
                                         />
                                     </div>
                                     <p className="text-[10px] font-mono text-blue-600 truncate">
@@ -671,50 +718,100 @@ export default function TemplesManagementPage() {
                             )}
                         </div>
 
-                        {/* Slab management */}
+                        {/* Slab management - Pooja */}
                         <div className="space-y-4">
-                            <label className="text-sm font-bold text-slate-800 uppercase tracking-widest text-[11px]">💰 Platform Fee Slabs</label>
+                            <label className="text-sm font-bold text-slate-800 uppercase tracking-widest text-[11px]">🕉️ Pooja Platform Fee Slabs</label>
                             <div className="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
-                                {approvalData.slabs?.map((slab: any, index: number) => (
-                                    <div key={index} className="grid grid-cols-2 gap-3 items-center pb-3 border-b border-slate-200 last:border-0 last:pb-0">
-                                        <div className="text-[11px] font-semibold text-slate-600">
-                                            ₹{slab.minAmount} - {slab.maxAmount ? `₹${slab.maxAmount}` : '∞'}
-                                        </div>
-                                        <div className="flex gap-2">
-                                            <div className="relative flex-1">
-                                                <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] text-slate-400">₹</span>
-                                                <Input
-                                                    type="number"
-                                                    value={slab.platformFee}
-                                                    onChange={(e) => {
-                                                        const newSlabs = [...approvalData.slabs];
-                                                        newSlabs[index].platformFee = e.target.value;
-                                                        setApprovalData({ ...approvalData, slabs: newSlabs });
-                                                    }}
-                                                    className="pl-5 h-8 text-xs font-mono"
-                                                    placeholder="Fee"
-                                                />
+                                {approvalData.poojaSlabs?.length > 0 ? (
+                                    approvalData.poojaSlabs.map((slab: any, index: number) => (
+                                        <div key={index} className="grid grid-cols-2 gap-3 items-center pb-3 border-b border-slate-200 last:border-0 last:pb-0">
+                                            <div className="text-[11px] font-semibold text-slate-600">
+                                                ₹{slab.minAmount} - {slab.maxAmount ? `₹${slab.maxAmount}` : '∞'}
                                             </div>
-                                            <div className="relative flex-1">
-                                                <Input
-                                                    type="number"
-                                                    step="0.01"
-                                                    value={slab.percentage}
-                                                    onChange={(e) => {
-                                                        const newSlabs = [...approvalData.slabs];
-                                                        newSlabs[index].percentage = e.target.value;
-                                                        setApprovalData({ ...approvalData, slabs: newSlabs });
-                                                    }}
-                                                    className="pr-5 h-8 text-xs text-right font-mono"
-                                                    placeholder="%"
-                                                />
-                                                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-slate-400 font-mono">%</span>
+                                            <div className="flex gap-2">
+                                                <div className="relative flex-1">
+                                                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] text-slate-400">₹</span>
+                                                    <Input
+                                                        type="number"
+                                                        value={slab.platformFee}
+                                                        onChange={(e) => {
+                                                            const newSlabs = [...approvalData.poojaSlabs];
+                                                            newSlabs[index].platformFee = e.target.value;
+                                                            setApprovalData({ ...approvalData, poojaSlabs: newSlabs });
+                                                        }}
+                                                        className="pl-5 h-8 text-xs font-mono"
+                                                        placeholder="Fee"
+                                                    />
+                                                </div>
+                                                <div className="relative flex-1">
+                                                    <Input
+                                                        type="number"
+                                                        step="0.01"
+                                                        value={slab.percentage}
+                                                        onChange={(e) => {
+                                                            const newSlabs = [...approvalData.poojaSlabs];
+                                                            newSlabs[index].percentage = e.target.value;
+                                                            setApprovalData({ ...approvalData, poojaSlabs: newSlabs });
+                                                        }}
+                                                        className="pr-5 h-8 text-xs text-right font-mono"
+                                                        placeholder="%"
+                                                    />
+                                                    <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-slate-400 font-mono">%</span>
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                ))}
-                                {approvalData.slabs?.length === 0 && (
-                                    <p className="text-[10px] text-center text-slate-400 py-2 italic font-mono">No slabs defined. Using system defaults.</p>
+                                    ))
+                                ) : (
+                                    <p className="text-[10px] text-center text-slate-400 py-2 italic font-mono">No Pooja slabs defined.</p>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Slab management - Marketplace */}
+                        <div className="space-y-4">
+                            <label className="text-sm font-bold text-slate-800 uppercase tracking-widest text-[11px]">🛍️ Marketplace Platform Fee Slabs</label>
+                            <div className="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                                {approvalData.marketplaceSlabs?.length > 0 ? (
+                                    approvalData.marketplaceSlabs.map((slab: any, index: number) => (
+                                        <div key={index} className="grid grid-cols-2 gap-3 items-center pb-3 border-b border-slate-200 last:border-0 last:pb-0">
+                                            <div className="text-[11px] font-semibold text-slate-600">
+                                                ₹{slab.minAmount} - {slab.maxAmount ? `₹${slab.maxAmount}` : '∞'}
+                                            </div>
+                                            <div className="flex gap-2">
+                                                <div className="relative flex-1">
+                                                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] text-slate-400">₹</span>
+                                                    <Input
+                                                        type="number"
+                                                        value={slab.platformFee}
+                                                        onChange={(e) => {
+                                                            const newSlabs = [...approvalData.marketplaceSlabs];
+                                                            newSlabs[index].platformFee = e.target.value;
+                                                            setApprovalData({ ...approvalData, marketplaceSlabs: newSlabs });
+                                                        }}
+                                                        className="pl-5 h-8 text-xs font-mono"
+                                                        placeholder="Fee"
+                                                    />
+                                                </div>
+                                                <div className="relative flex-1">
+                                                    <Input
+                                                        type="number"
+                                                        step="0.01"
+                                                        value={slab.percentage}
+                                                        onChange={(e) => {
+                                                            const newSlabs = [...approvalData.marketplaceSlabs];
+                                                            newSlabs[index].percentage = e.target.value;
+                                                            setApprovalData({ ...approvalData, marketplaceSlabs: newSlabs });
+                                                        }}
+                                                        className="pr-5 h-8 text-xs text-right font-mono"
+                                                        placeholder="%"
+                                                    />
+                                                    <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-slate-400 font-mono">%</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))
+                                ) : (
+                                    <p className="text-[10px] text-center text-slate-400 py-2 italic font-mono">No Marketplace slabs defined.</p>
                                 )}
                             </div>
                         </div>

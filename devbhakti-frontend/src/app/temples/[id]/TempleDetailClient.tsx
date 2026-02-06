@@ -537,10 +537,11 @@ export default function TempleDetail() {
                                             Book Pooja
                                         </Button>
 
-                                        <Button variant="outline" className="gap-2">
-                                             <Link href={`/live-dharshan`}></Link>
-                                            <Video className="h-4 w-4" />
-                                            Watch Live Darshan
+                                        <Button variant="outline" className="gap-2" asChild>
+                                            <Link href={`/live-darshan?templeId=${temple.id}`}>
+                                                <Video className="h-4 w-4" />
+                                                Watch Live Darshan
+                                            </Link>
                                         </Button>
                                     </div>
                                 </div>
