@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Play, MapPin, Users, Heart, Share2, Calendar } from "lucide-react";
 import Image from "next/image";
@@ -41,11 +42,20 @@ const getEmbedUrl = (url: string) => {
 };
 
 export default function LiveDarshanPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <LiveDarshanContent />
+    </Suspense>
+  );
+}
+
+function LiveDarshanContent() {
   const [temples, setTemples] = useState<any[]>([]);
   const [selectedTemple, setSelectedTemple] = useState<any>(null);
   const [isLikeActive, setIsLikeActive] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [loading, setLoading] = useState(true);
+  const searchParams = useSearchParams();
 
   // Fetch Live Temples
   useEffect(() => {
@@ -63,8 +73,12 @@ export default function LiveDarshanPage() {
 
           if (liveTemples.length > 0) {
             setTemples(liveTemples);
-            setSelectedTemple(liveTemples[0]);
-            setIsPlaying(true); // Auto-play first one? Or wait for click. Let's auto-ready it.
+
+            const paramId = searchParams.get('templeId');
+            const matched = paramId ? liveTemples.find((t: any) => t.id === paramId || t._id === paramId) : null;
+
+            setSelectedTemple(matched || liveTemples[0]);
+            setIsPlaying(true);
           }
         }
       } catch (error) {
@@ -74,7 +88,7 @@ export default function LiveDarshanPage() {
       }
     };
     fetchLiveTemples();
-  }, []);
+  }, [searchParams]);
 
   const handleTempleClick = (temple: any) => {
     setSelectedTemple(temple);

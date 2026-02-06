@@ -380,7 +380,7 @@ export const toggleTempleStatus = async (req: Request, res: Response) => {
           }
         });
 
-        // Create new ones
+        // Create new ones with EXPLICIT category field
         if (commissionSlabs.length > 0) {
           await (tx as any).commissionSlab.createMany({
             data: commissionSlabs.map((s: any) => ({
@@ -390,6 +390,7 @@ export const toggleTempleStatus = async (req: Request, res: Response) => {
               percentage: parseFloat(s.percentage),
               slabType: 'TEMPLE',
               targetId: user.temple!.id,
+              category: s.category || 'MARKETPLACE', // CRITICAL: Explicitly set category from frontend
               isActive: true
             }))
           });
