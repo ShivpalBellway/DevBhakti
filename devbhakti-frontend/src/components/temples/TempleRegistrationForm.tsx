@@ -323,7 +323,7 @@ export default function TempleRegistrationForm({ onClose }: { onClose?: () => vo
                                     required
                                 />
                             </div>
-                            <div className="space-y-2">
+                            {/* <div className="space-y-2">
                                 <label className="text-sm font-bold text-slate-600 ml-1">Opening Hours</label>
                                 <Input
                                     value={formData.openTime}
@@ -331,7 +331,51 @@ export default function TempleRegistrationForm({ onClose }: { onClose?: () => vo
                                     placeholder="4 AM - 10 PM"
                                     className="h-12 border-slate-200 focus:border-orange-500 rounded-xl"
                                 />
+                            </div> */}
+
+                            <div className="space-y-2">
+                                <label className="text-sm font-semibold text-slate-700">Operating Hours</label>
+                                <div className="flex items-center gap-3">
+                                    <div className="flex items-center gap-2 max-w-[140px]">
+                                        <Input
+                                            type="number"
+                                            min="1"
+                                            max="12"
+                                            value={formData.openTime.split(' - ')[0]?.replace(' AM', '') || ''}
+                                            onChange={e => {
+                                                const amTime = e.target.value;
+                                                const pmTime = formData.openTime.split(' - ')[1] || '11 PM';
+                                                setFormData({ ...formData, openTime: `${amTime} AM - ${pmTime}` });
+                                            }}
+                                            placeholder="6"
+                                            className="text-center w-16"
+                                        />
+                                        <span className="text-sm font-bold text-slate-600 whitespace-nowrap">AM</span>
+                                    </div>
+                                    <span className="text-slate-400 font-bold">to</span>
+                                    <div className="flex items-center gap-2 max-w-[150px]">
+                                        <Input
+                                            type="number"
+                                            min="1"
+                                            max="12"
+                                            value={formData.openTime.split(' - ')[1]?.replace(' PM', '') || ''}
+                                            onChange={e => {
+                                                const pmTime = e.target.value;
+                                                const amTime = formData.openTime.split(' - ')[0] || '6 AM';
+                                                setFormData({ ...formData, openTime: `${amTime} - ${pmTime} PM` });
+                                            }}
+                                            placeholder="10"
+                                            className="text-center w-22"
+                                        />
+                                        <span className="text-sm font-bold text-slate-600 whitespace-nowrap">PM</span>
+                                    </div>
+                                </div>
+                                <p className="text-[10px] text-muted-foreground italic">Example: 6 AM to 10 PM</p>
                             </div>
+
+
+
+
                             <div className="space-y-2">
                                 <label className="text-sm font-bold text-slate-600 ml-1">Visitor Count (Approx daily)</label>
                                 <Input

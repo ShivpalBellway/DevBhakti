@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import Navbar from "@/components/landing/Navbar";
 import Footer from "@/components/landing/Footer";
 import { Building2, Calendar, ClipboardCheck, HeartHandshake, ShieldCheck, Sprout } from "lucide-react";
+import aboutImage from "@/assets/temple-kashi.jpg";
 
 export default function AboutPage() {
     const fadeIn = {
@@ -64,8 +65,10 @@ export default function AboutPage() {
                             className="relative aspect-video rounded-3xl overflow-hidden shadow-elevated border-8 border-white/50"
                         >
                             <div className="absolute inset-0 bg-gradient-sacred opacity-10" />
+
+
                             <img
-                                src="https://images.unsplash.com/photo-1619114062031-6e069171b3e9?q=80&w=2070&auto=format&fit=crop"
+                                src={aboutImage}
                                 alt="Sacred Tradition"
                                 className="w-full h-full object-cover"
                             />
@@ -173,7 +176,7 @@ export default function AboutPage() {
                         >
                             <div className="absolute -inset-4 bg-gradient-sacred opacity-20 blur-3xl rounded-full" />
                             <img
-                                src="https://images.unsplash.com/photo-1544006659-f0b21f04cb1d?q=80&w=2070&auto=format&fit=crop"
+                                src="./assets/temple-tirupati.jpg"
                                 alt="Devotion and Faith"
                                 className="relative rounded-3xl shadow-warm border- border-white"
                             />
