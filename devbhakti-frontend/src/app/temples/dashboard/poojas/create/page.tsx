@@ -36,7 +36,8 @@ export default function TempleCreatePoojaPage() {
         bullets: [] as string[],
         packages: [] as any[], // Start with empty, user will select
         processSteps: [] as any[],
-        faqs: [] as any[]
+        faqs: [] as any[],
+        status: true
     });
 
     const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -89,6 +90,7 @@ export default function TempleCreatePoojaPage() {
         submissionData.append('packages', JSON.stringify(formData.packages));
         submissionData.append('processSteps', JSON.stringify(formData.processSteps));
         submissionData.append('faqs', JSON.stringify(formData.faqs));
+        submissionData.append('status', formData.status.toString());
 
         if (imageFile) {
             submissionData.append('image', imageFile);
@@ -162,6 +164,16 @@ export default function TempleCreatePoojaPage() {
                                 className="rounded-xl h-11 border-slate-200 focus:border-[#7b4623] focus:ring-[#7b4623]/10"
                                 required
                             />
+                        </div>
+                        <div className="flex items-center space-x-2 pt-8">
+                            <input
+                                type="checkbox"
+                                id="status"
+                                checked={formData.status}
+                                onChange={(e) => setFormData({ ...formData, status: e.target.checked })}
+                                className="w-5 h-5 accent-[#7b4623]"
+                            />
+                            <Label htmlFor="status" className="font-semibold cursor-pointer">Active (Visible to devotees)</Label>
                         </div>
                         {/* <div className="space-y-2">
                             <Label htmlFor="time">Preferred Time *</Label>

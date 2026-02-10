@@ -31,22 +31,28 @@ const BannerSection: React.FC = () => {
     const [currentIndex, setCurrentIndex] = useState(0);
     const [isPaused, setIsPaused] = useState(false);
     const [loading, setLoading] = useState(true);
+    const [isSectionActive, setIsSectionActive] = useState(true);
 
     useEffect(() => {
-        const fetchBanners = async () => {
+        const fetchBannersAndStatus = async () => {
             try {
-                const response = await axios.get(`${API_URL}/admin/cms/banners`);
-                const activeBanners = response.data.data?.filter((b: any) => b.active) || [];
+                const [bannerRes, statusRes] = await Promise.all([
+                    axios.get(`${API_URL}/admin/cms/banners`),
+                    axios.get(`${API_URL}/admin/cms/banners/global-status`)
+                ]);
+
+                setIsSectionActive(statusRes.data.active);
+                const activeBanners = bannerRes.data.data?.filter((b: any) => b.active) || [];
                 if (activeBanners.length > 0) {
                     setBanners(activeBanners);
                 }
             } catch (error) {
-                console.error("Error fetching dynamic banners:", error);
+                console.error("Error fetching banner data:", error);
             } finally {
                 setLoading(false);
             }
         };
-        fetchBanners();
+        fetchBannersAndStatus();
     }, []);
 
     const nextSlide = useCallback(() => {
@@ -70,6 +76,8 @@ const BannerSection: React.FC = () => {
     }, [isPaused, nextSlide]);
 
     const displayBanners = banners.length > 0 ? banners : staticBanners;
+
+    if (!loading && !isSectionActive) return null;
 
     return (
         <section

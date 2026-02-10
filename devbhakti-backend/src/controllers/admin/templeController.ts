@@ -62,7 +62,26 @@ export const createTemple = async (req: Request, res: Response) => {
     const inlineEvents = data.inlineEvents ? JSON.parse(data.inlineEvents) : [];
 
     if (data.phone) {
+      const cleaned = data.phone.replace(/\D/g, '');
+      if (cleaned.length !== 10) {
+        return res.status(400).json({ error: 'Mobile number must be exactly 10 digits' });
+      }
       data.phone = normalizePhone(data.phone);
+    }
+
+    // Image validations (2MB)
+    const MAX_SIZE = 2 * 1024 * 1024;
+    if (files) {
+      if (files.heroImages && files.heroImages.length > 5) {
+        return res.status(400).json({ error: 'Maximum 5 banner images allowed' });
+      }
+
+      const allFiles = [...(files.image || []), ...(files.heroImages || [])];
+      for (const file of allFiles) {
+        if (file.size > MAX_SIZE) {
+          return res.status(400).json({ error: `Image ${file.originalname} is too large. Max size allowed is 2MB.` });
+        }
+      }
     }
 
     const hashedPassword = await bcrypt.hash(data.password || '123456', 10);
@@ -170,7 +189,29 @@ export const updateTemple = async (req: Request, res: Response) => {
     const commissionSlabs = data.commissionSlabs ? JSON.parse(data.commissionSlabs) : null;
 
     if (data.phone) {
+      const cleaned = data.phone.replace(/\D/g, '');
+      if (cleaned.length !== 10) {
+        return res.status(400).json({ error: 'Mobile number must be exactly 10 digits' });
+      }
       data.phone = normalizePhone(data.phone);
+    }
+
+    // Image validations (2MB)
+    const MAX_SIZE = 2 * 1024 * 1024;
+    if (files) {
+      const newHeroImagesCount = files.heroImages ? files.heroImages.length : 0;
+      const totalHeroImages = existingHeroImages.length + newHeroImagesCount;
+
+      if (totalHeroImages > 5) {
+        return res.status(400).json({ error: `Maximum 5 banner images allowed. You already have ${existingHeroImages.length} and tried to add ${newHeroImagesCount}.` });
+      }
+
+      const allFiles = [...(files.image || []), ...(files.heroImages || [])];
+      for (const file of allFiles) {
+        if (file.size > MAX_SIZE) {
+          return res.status(400).json({ error: `Image ${file.originalname} is too large. Max size allowed is 2MB.` });
+        }
+      }
     }
 
     const result = await prisma.$transaction(async (tx) => {
@@ -447,41 +488,108 @@ export const deleteTemple = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 
-    // Use a transaction to delete both records safely
-    await prisma.$transaction(async (tx) => {
-      // First find the user to get the temple ID
-      const user = await tx.user.findUnique({
-        where: { id: String(id) },
-        include: { temple: true }
-      });
-
-      if (!user) {
-        throw new Error('Temple account not found');
-      }
-
-      // Delete the temple record first (if it exists)
-      if (user.temple) {
-        await tx.temple.delete({
-          where: { id: user.temple.id }
-        });
-      }
-
-      // Then delete the user record
-      await tx.user.delete({ where: { id: String(id) } });
+    // First find the user to get the temple ID
+    const user = await prisma.user.findUnique({
+      where: { id: String(id) },
+      include: { temple: true }
     });
 
-    res.json({ message: 'Temple account deleted successfully' });
+    if (!user) {
+      return res.status(404).json({ error: 'Temple account not found' });
+    }
+
+    if (!user.temple) {
+      return res.status(404).json({ error: 'Temple profile not found for this user' });
+    }
+
+    const templeId = user.temple.id;
+
+    // Check for related data before deletion
+    const [productsCount, bookingsCount, poojasCount, eventsCount] = await Promise.all([
+      // Count products owned by this temple
+      prisma.product.count({
+        where: {
+          OR: [
+            { templeId: templeId },
+            { sellerId: user.id }
+          ]
+        }
+      }),
+      // Count bookings for this temple
+      prisma.poojaBooking.count({
+        where: { templeId: templeId }
+      }),
+      // Count temple-specific poojas (not master poojas)
+      prisma.pooja.count({
+        where: {
+          templeId: templeId,
+          isMaster: false
+        }
+      }),
+      // Count events for this temple
+      prisma.event.count({
+        where: { templeId: templeId }
+      })
+    ]);
+
+    // Calculate total related data
+    const totalRelatedData = productsCount + bookingsCount + poojasCount + eventsCount;
+
+    // If there's any related data, prevent deletion
+    if (totalRelatedData > 0) {
+      const relatedData: any = {};
+      if (productsCount > 0) relatedData.products = productsCount;
+      if (bookingsCount > 0) relatedData.bookings = bookingsCount;
+      if (poojasCount > 0) relatedData.poojas = poojasCount;
+      if (eventsCount > 0) relatedData.events = eventsCount;
+
+      return res.status(400).json({
+        error: 'Cannot delete this temple. It has existing data that must be removed first.',
+        message: 'This temple cannot be deleted because it has associated data.',
+        relatedData: relatedData
+      });
+    }
+
+    // If no related data, proceed with deletion
+    await prisma.$transaction(async (tx) => {
+      // Delete commission slabs for this temple
+      await tx.commissionSlab.deleteMany({
+        where: {
+          targetId: templeId,
+          slabType: SlabType.TEMPLE
+        }
+      });
+
+      // Delete the temple record
+      await tx.temple.delete({
+        where: { id: templeId }
+      });
+
+      // Delete the user record
+      await tx.user.delete({
+        where: { id: String(id) }
+      });
+    });
+
+    res.json({
+      success: true,
+      message: 'Temple account deleted successfully'
+    });
   } catch (error: any) {
     console.error('Delete error:', error);
 
-    // If it's a foreign key constraint error, provide more specific message
-    if (error.code === 'P2002') {
-      res.status(400).json({
-        error: 'Cannot delete temple account. Please delete all associated poojas and events first.'
+    // Handle specific Prisma errors
+    if (error.code === 'P2003') {
+      return res.status(400).json({
+        error: 'Cannot delete temple. Please remove all associated data first.',
+        message: 'This temple has related data that prevents deletion.'
       });
-    } else if (error.message === 'Temple account not found') {
-      res.status(404).json({ error: 'Temple account not found' });
     }
+
+    res.status(500).json({
+      error: 'Failed to delete temple account',
+      message: error.message
+    });
   }
 };
 

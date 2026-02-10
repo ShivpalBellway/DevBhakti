@@ -5,6 +5,9 @@ import { prisma } from '../../lib/prisma';
 export const getBanners = async (req: Request, res: Response) => {
     try {
         const banners = await prisma.banner.findMany({
+            where: {
+                NOT: { id: "GLOBAL_SECTION_toggle" }
+            },
             orderBy: { order: 'asc' }
         });
         res.json({ success: true, data: banners });
@@ -76,6 +79,48 @@ export const updateBanner = async (req: Request, res: Response) => {
         res.status(500).json({ success: false, message: 'Error updating banner' });
     }
 
+};
+
+export const getBannerGlobalStatus = async (req: Request, res: Response) => {
+    try {
+        const statusRecord = await prisma.banner.findUnique({
+            where: { id: "GLOBAL_SECTION_toggle" }
+        });
+
+        res.json({
+            success: true,
+            active: statusRecord ? statusRecord.active : true // Default to true if not exists
+        });
+    } catch (error) {
+        console.error('Error fetching banner global status:', error);
+        res.status(500).json({ success: false, message: 'Error fetching global status' });
+    }
+};
+
+export const toggleBannerGlobalStatus = async (req: Request, res: Response) => {
+    try {
+        const statusRecord = await prisma.banner.findUnique({
+            where: { id: "GLOBAL_SECTION_toggle" }
+        });
+
+        const currentStatus = statusRecord ? statusRecord.active : true;
+
+        const updated = await prisma.banner.upsert({
+            where: { id: "GLOBAL_SECTION_toggle" },
+            update: { active: !currentStatus },
+            create: {
+                id: "GLOBAL_SECTION_toggle",
+                image: "SYSTEM", // Placeholder
+                active: !currentStatus,
+                order: -1
+            }
+        });
+
+        res.json({ success: true, active: updated.active });
+    } catch (error) {
+        console.error('Error toggling banner global status:', error);
+        res.status(500).json({ success: false, message: 'Error toggling global status' });
+    }
 };
 
 export const deleteBanner = async (req: Request, res: Response) => {
@@ -367,10 +412,10 @@ export const updateCTACard = async (req: Request, res: Response) => {
         res.json({ success: true, data: ctaCard });
     } catch (error) {
         console.error('Error updating CTA card (INTERNAL ERROR):', error);
-        res.status(500).json({ 
-            success: false, 
-            message: 'Failed to update CTA card', 
-            details: error instanceof Error ? error.message : String(error) 
+        res.status(500).json({
+            success: false,
+            message: 'Failed to update CTA card',
+            details: error instanceof Error ? error.message : String(error)
         });
     }
 };

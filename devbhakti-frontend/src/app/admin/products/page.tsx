@@ -524,9 +524,6 @@ export default function ProductsManagementPage() {
                           </div>
                           <div className="text-right">
                             <p className="font-semibold text-slate-900">₹{variant.price}</p>
-                            {variant.costPrice > 0 && (
-                              <p className="text-[10px] text-slate-500 italic">Cost: ₹{variant.costPrice}</p>
-                            )}
                           </div>
                         </div>
                       </div>

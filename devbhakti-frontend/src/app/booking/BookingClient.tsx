@@ -50,7 +50,10 @@ function BookingForm() {
   const searchParams = useSearchParams();
   const { toast } = useToast();
   const router = useRouter();
-  const [step, setStep] = useState(1);
+
+  // Skip Step 1 if temple and pooja are already in the URL
+  const initialStep = (searchParams.get("temple") && searchParams.get("pooja")) ? 2 : 1;
+  const [step, setStep] = useState(initialStep);
   const [loading, setLoading] = useState(true);
   const RAZORPAY_KEY = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "rzp_test_placeholder";
 
@@ -70,6 +73,9 @@ function BookingForm() {
     email: "",
     address: "",
     specialRequests: "",
+    gothra: "",
+    kuldevi: "",
+    kuldevta: "",
   });
 
   const [availabilityStatus, setAvailabilityStatus] = useState<{ available: boolean, message: string } | null>(null);
@@ -148,6 +154,9 @@ function BookingForm() {
             name: user.name || "",
             phone: user.phone || "",
             email: user.email || "",
+            gothra: user.gothra || "",
+            kuldevi: user.kuldevi || "",
+            kuldevta: user.kuldevta || "",
           }));
         }
 
@@ -305,6 +314,9 @@ function BookingForm() {
         bookingDate: selectedDate,
         address: formData.address,
         specialRequests: formData.specialRequests,
+        gothra: formData.gothra,
+        kuldevi: formData.kuldevi,
+        kuldevta: formData.kuldevta,
       };
 
       const response = await fetch(`${API_URL}/bookings`, {
@@ -399,8 +411,12 @@ function BookingForm() {
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to {searchParams.get("pooja") ? "Poojas" : "Temples"}
           </Link>
-          <h1 className="text-3xl md:text-4xl font-display font-bold text-foreground">Book Pooja Service</h1>
-          <p className="text-muted-foreground mt-2">Complete your spiritual journey with easy online booking</p>
+          <h1 className="text-3xl md:text-4xl font-display font-bold text-foreground">
+            {selectedPoojaData ? `Book ${selectedPoojaData.name}` : "Book Pooja Service"}
+          </h1>
+          <p className="text-muted-foreground mt-2">
+            {selectedPoojaData ? `Complete your booking for ${selectedPoojaData.name}` : "Complete your spiritual journey with easy online booking"}
+          </p>
         </div>
       </section>
 
@@ -745,10 +761,40 @@ function BookingForm() {
                   <Label htmlFor="requests">Special Requests</Label>
                   <Textarea
                     id="requests"
-                    placeholder="Any special requests or gotra details"
+                    placeholder="Any special requests"
                     value={formData.specialRequests}
                     onChange={(e) => setFormData({ ...formData, specialRequests: e.target.value })}
                   />
+                </div>
+
+                <div className="grid md:grid-cols-3 gap-4 border-t pt-4 mt-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="gothra">Gothra (Optional)</Label>
+                    <Input
+                      id="gothra"
+                      placeholder="e.g. Kashyap"
+                      value={formData.gothra}
+                      onChange={(e) => setFormData({ ...formData, gothra: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="kuldevi">Kuldevi (Optional)</Label>
+                    <Input
+                      id="kuldevi"
+                      placeholder="Enter Kuldevi"
+                      value={formData.kuldevi}
+                      onChange={(e) => setFormData({ ...formData, kuldevi: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="kuldevta">Kuldevta (Optional)</Label>
+                    <Input
+                      id="kuldevta"
+                      placeholder="Enter Kuldevta"
+                      value={formData.kuldevta}
+                      onChange={(e) => setFormData({ ...formData, kuldevta: e.target.value })}
+                    />
+                  </div>
                 </div>
               </CardContent>
             </Card>

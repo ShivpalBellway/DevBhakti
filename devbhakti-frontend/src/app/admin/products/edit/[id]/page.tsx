@@ -14,7 +14,10 @@ import {
   ShieldCheck,
   Store,
   Building2,
+  Check,
+  ChevronsUpDown,
 } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -32,6 +35,19 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 import { useToast } from "@/hooks/use-toast";
 import { BASE_URL } from "@/config/apiConfig";
 import {
@@ -46,7 +62,6 @@ interface Variant {
   id: string;
   name: string;
   price: number;
-  costPrice?: number;
   stock: number;
   image?: string | null;
   imageFile?: File | null;
@@ -86,6 +101,7 @@ export default function EditProductPage() {
   const [productImage, setProductImage] = useState<File | null>(null);
   const [productImagePreview, setProductImagePreview] = useState<string>("");
   const [existingImage, setExistingImage] = useState<string>("");
+  const [open, setOpen] = useState(false);
 
   const [product, setProduct] = useState<Product | null>(null);
 
@@ -121,26 +137,28 @@ export default function EditProductPage() {
         fetchAllSellersAdmin()
       ]);
 
-      const formattedTemples = templesData
-        .filter((user: any) => user.temple)
+      const formattedTemples = (templesData || [])
+        .filter((user: any) => user?.temple?.id)
         .map((user: any) => ({
           id: user.temple.id,
           name: user.temple.name,
           role: "TEMPLE",
-          icon: <Building2 className="w-4 h-4 text-primary" />
+          icon: <Building2 className="w-4 h-4 text-primary" />,
+          searchText: `${user.temple.name} temple institution`
         }));
 
-      const formattedSellers = sellersData
-        .filter((seller: any) => seller.sellerId)
+      const formattedSellers = (sellersData || [])
+        .filter((seller: any) => seller?.sellerId)
         .map((seller: any) => ({
           id: seller.sellerId,
           name: seller.storeName,
           role: "SELLER",
-          icon: <Store className="w-4 h-4 text-blue-600" />
+          icon: <Store className="w-4 h-4 text-blue-600" />,
+          searchText: `${seller.storeName} seller vendor store`
         }));
 
       const allVendors = [
-        { id: "general", name: "DevBhakti Exclusive", role: "ADMIN", icon: <ShieldCheck className="w-4 h-4 text-amber-600" /> },
+        { id: "general", name: "DevBhakti Exclusive", role: "ADMIN", icon: <ShieldCheck className="w-4 h-4 text-amber-600" />, searchText: "devbhakti exclusive admin general" },
         ...formattedTemples,
         ...formattedSellers
       ];
@@ -200,7 +218,6 @@ export default function EditProductPage() {
         id: v.id,
         name: v.name,
         price: v.price,
-        costPrice: v.costPrice || 0,
         stock: v.stock,
         image: v.image,
         imagePreview: v.image ? `${BASE_URL}${v.image}` : ""
@@ -352,7 +369,6 @@ export default function EditProductPage() {
       formDataToSend.append('origin', formData.origin);
       formDataToSend.append('rating', formData.rating);
 
-      // Add variants as JSON string with costPrice and handle images
       const variantsData = validVariants.map((v, index) => {
         if (v.imageFile) {
           formDataToSend.append(`variant_image_${index}`, v.imageFile);
@@ -361,7 +377,6 @@ export default function EditProductPage() {
           id: v.id,
           name: v.name,
           price: v.price,
-          costPrice: v.costPrice || 0,
           stock: v.stock,
           image: v.imageFile ? null : (v.image || null)
         };
@@ -396,7 +411,6 @@ export default function EditProductPage() {
       id: Date.now().toString(),
       name: "",
       price: 0,
-      costPrice: 0,
       stock: 0,
       imageFile: null,
       imagePreview: "",
@@ -414,7 +428,7 @@ export default function EditProductPage() {
   const updateVariant = (id: string, field: keyof Variant, value: string | number) => {
     setVariants(variants.map(variant =>
       variant.id === id
-        ? { ...variant, [field]: field === 'price' || field === 'stock' || field === 'costPrice' ? Number(value) : value }
+        ? { ...variant, [field]: field === 'price' || field === 'stock' ? Number(value) : value }
         : variant
     ));
   };
@@ -587,27 +601,60 @@ export default function EditProductPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="temple">Product Owner / Vendor *</Label>
-                  <Select
-                    value={formData.templeId}
-                    onValueChange={(value) => setFormData({ ...formData, templeId: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select Owner/Vendor" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {vendors.map((vendor) => (
-                        <SelectItem key={vendor.id} value={vendor.id}>
+                  <Popover open={open} onOpenChange={setOpen}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        role="combobox"
+                        aria-expanded={open}
+                        className="w-full justify-between font-normal hover:bg-white"
+                      >
+                        {formData.templeId ? (
                           <div className="flex items-center gap-2">
-                            {vendor.icon}
-                            <span>{vendor.name}</span>
-                            <span className="text-[10px] font-bold uppercase py-0.5 px-1 bg-slate-100 rounded text-slate-500 ml-auto">
-                              {vendor.role}
-                            </span>
+                            {vendors.find((v) => v.id === formData.templeId)?.icon}
+                            <span>{vendors.find((v) => v.id === formData.templeId)?.name}</span>
                           </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                        ) : (
+                          "Select Owner/Vendor"
+                        )}
+                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-full p-0" align="start">
+                      <Command>
+                        <CommandInput placeholder="Search owner or vendor..." className="h-9" />
+                        <CommandList>
+                          <CommandEmpty>No owner found.</CommandEmpty>
+                          <CommandGroup>
+                            {vendors.map((vendor) => (
+                              <CommandItem
+                                key={vendor.id}
+                                value={vendor.searchText || vendor.name}
+                                onSelect={() => {
+                                  setFormData({ ...formData, templeId: vendor.id });
+                                  setOpen(false);
+                                }}
+                              >
+                                <div className="flex items-center gap-2 w-full">
+                                  {vendor.icon}
+                                  <span className="flex-1">{vendor.name}</span>
+                                  <span className="text-[10px] font-bold uppercase py-0.5 px-1 bg-slate-100 rounded text-slate-500">
+                                    {vendor.role}
+                                  </span>
+                                  <Check
+                                    className={cn(
+                                      "ml-2 h-4 w-4",
+                                      formData.templeId === vendor.id ? "opacity-100" : "opacity-0"
+                                    )}
+                                  />
+                                </div>
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
                 </div>
 
                 <div className="space-y-2">
@@ -819,18 +866,6 @@ export default function EditProductPage() {
                         )}
                       </div>
 
-                      <div className="space-y-2">
-                        <Label htmlFor={`variant-cost-${variant.id}`}>Cost Price (₹)</Label>
-                        <Input
-                          id={`variant-cost-${variant.id}`}
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          value={variant.costPrice || ""}
-                          onChange={(e) => updateVariant(variant.id, 'costPrice', e.target.value)}
-                          placeholder="0.00"
-                        />
-                      </div>
 
                       <div className="space-y-2">
                         <Label htmlFor={`variant-stock-${variant.id}`}>Stock</Label>
@@ -863,25 +898,6 @@ export default function EditProductPage() {
                     </div>
                   </div>
 
-                  {/* Profit Calculation */}
-                  <div className="flex items-center gap-4 text-xs">
-                    {variant.price > 0 && variant.costPrice && variant.costPrice > 0 ? (
-                      <>
-                        <span className="text-slate-500">
-                          Profit: <span className={variant.price - variant.costPrice >= 0 ? "text-green-600 font-bold" : "text-red-600 font-bold"}>
-                            ₹{(variant.price - variant.costPrice).toFixed(2)}
-                          </span>
-                        </span>
-                        <span className="text-slate-500">
-                          Margin: <span className={variant.price - variant.costPrice >= 0 ? "text-green-600 font-bold" : "text-red-600 font-bold"}>
-                            {(((variant.price - variant.costPrice) / variant.price) * 100).toFixed(1)}%
-                          </span>
-                        </span>
-                      </>
-                    ) : (
-                      <span className="text-slate-400 italic">Enter cost price to see profit calculation</span>
-                    )}
-                  </div>
                 </div>
               ))}
             </div>

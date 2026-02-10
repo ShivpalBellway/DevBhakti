@@ -38,56 +38,75 @@ export const sendOTP = async (req: Request, res: Response) => {
 
         // Generate random 6-digit OTP
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
-
         const otpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
         const checkRole = role || 'DEVOTEE';
         const isRegisterFlow = mode === 'register';
-        let user = await prisma.user.findFirst({
-            where: {
-                phone: normalizedPhone,
-                role: checkRole as any
-            }
+
+        // 1. Check if ANY user exists with this phone number
+        let existingUser = await prisma.user.findFirst({
+            where: { phone: normalizedPhone }
         });
 
-        if (user) {
-            // Update existing user with new OTP
+        let user;
+
+        if (existingUser) {
+            // If phone exists, check if role matches
+            if (existingUser.role !== (checkRole as any)) {
+                return res.status(400).json({
+                    success: false,
+                    message: `This mobile number is already registered as a ${existingUser.role}. Please use a different number or login as ${existingUser.role}.`
+                });
+            }
+
+            // If role matches but it's registration flow and user is already verified
+            if (isRegisterFlow && existingUser.isVerified) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'This mobile number is already registered and verified. Please login instead.'
+                });
+            }
+
+            // If login flow and user doesn't exist/not verified (handled below)
+            user = existingUser;
             await prisma.user.update({
                 where: { id: user.id },
                 data: { otp, otpExpires }
             });
         } else {
-            // Strict check for Institutions and Sellers: They must register/be created first
-            if (checkRole === 'INSTITUTION' || checkRole === 'SELLER') {
+            // New user case
+            if (!isRegisterFlow) {
                 return res.status(404).json({
                     success: false,
-                    message: `No account found with mobile number ${normalizedPhone}. Please ensure you are registered.`
+                    message: `No account found with number ${normalizedPhone}. Please register to continue.`
                 });
             }
 
-            // For DEVOTEE role, behaviour depends on flow:
-            // - register flow: create a new account
-            // - login flow: DO NOT auto-create, instead ask user to register
-            if (checkRole === 'DEVOTEE') {
-                if (!isRegisterFlow) {
-                    return res.status(404).json({
+            // Check if email is already taken before creating new user
+            if (email) {
+                const existingEmail = await prisma.user.findUnique({
+                    where: { email: email.toLowerCase().trim() }
+                });
+                if (existingEmail) {
+                    return res.status(400).json({
                         success: false,
-                        message: `This mobile number is not registered as a devotee. Please register to continue.`
+                        message: `The email address ${email} is already registered. Please use a unique email or different mobile number.`
                     });
                 }
-
-                user = await prisma.user.create({
-                    data: {
-                        phone: normalizedPhone,
-                        name: name || 'Devotee',
-                        email: email || null,
-                        role: 'DEVOTEE',
-                        otp,
-                        otpExpires,
-                        isVerified: false
-                    }
-                });
             }
+
+            // Create user
+            user = await prisma.user.create({
+                data: {
+                    phone: normalizedPhone,
+                    name: name || 'Devotee',
+                    email: email ? email.toLowerCase().trim() : null,
+                    role: checkRole as any,
+                    otp,
+                    otpExpires,
+                    isVerified: false
+                }
+            });
         }
 
         // In a real app, you would send OTP via SMS gateway here
@@ -95,12 +114,22 @@ export const sendOTP = async (req: Request, res: Response) => {
 
         res.json({ success: true, message: 'OTP sent successfully', data: { phone: normalizedPhone, otp } });
 
-
-    } catch (error) {
+    } catch (error: any) {
         console.error('Error in sendOTP:', error);
+
+        // Final fallback for unique constraints (P2002)
+        if (error.code === 'P2002') {
+            const target = error.meta?.target || [];
+            if (target.includes('email')) {
+                return res.status(400).json({ success: false, message: 'This email is already registered.' });
+            }
+            if (target.includes('phone')) {
+                return res.status(400).json({ success: false, message: 'This mobile number is already registered.' });
+            }
+        }
+
         res.status(500).json({ success: false, message: 'Internal server error' });
     }
-
 };
 
 export const verifyOTP = async (req: Request, res: Response) => {
@@ -197,6 +226,9 @@ export const verifyOTP = async (req: Request, res: Response) => {
                     email: updatedUser.email,
                     role: updatedUser.role,
                     profileImage: updatedUser.profileImage,
+                    gothra: updatedUser.gothra,
+                    kuldevi: updatedUser.kuldevi,
+                    kuldevta: updatedUser.kuldevta,
                     isVerified: updatedUser.isVerified
                 }
             }
@@ -212,17 +244,44 @@ export const verifyOTP = async (req: Request, res: Response) => {
 export const updateProfile = async (req: Request, res: Response) => {
     try {
         const { userId } = (req as any).user; // From auth middleware
-        const { name, email } = req.body;
+        const { name, email, gothra, kuldevi, kuldevta } = req.body;
         const profileImage = req.file ? `/uploads/users/${req.file.filename}` : undefined;
+
+        // If email is being updated, check if it's already taken by another user
+        if (email) {
+            const existingEmail = await prisma.user.findUnique({
+                where: { email: email.toLowerCase().trim() }
+            });
+
+            // If email exists and belongs to a different user
+            if (existingEmail && existingEmail.id !== userId) {
+                return res.status(400).json({
+                    success: false,
+                    message: `The email address ${email} is already registered. Please use a unique email address.`
+                });
+            }
+        }
+
+        const updateData: any = {
+            name,
+            gothra,
+            kuldevi,
+            kuldevta
+        };
+
+        // Only update email if provided
+        if (email) {
+            updateData.email = email.toLowerCase().trim();
+        }
+
+        // Add profile image if uploaded
+        if (profileImage) {
+            updateData.profileImage = profileImage;
+        }
 
         const updatedUser = await prisma.user.update({
             where: { id: userId },
-
-            data: {
-                name,
-                email,
-                ...(profileImage && { profileImage })
-            }
+            data: updateData
         });
 
         res.json({
@@ -235,13 +294,28 @@ export const updateProfile = async (req: Request, res: Response) => {
                     phone: updatedUser.phone,
                     email: updatedUser.email,
                     role: updatedUser.role,
-                    profileImage: updatedUser.profileImage
+                    profileImage: updatedUser.profileImage,
+                    gothra: updatedUser.gothra,
+                    kuldevi: updatedUser.kuldevi,
+                    kuldevta: updatedUser.kuldevta
                 }
             }
         });
 
-    } catch (error) {
+    } catch (error: any) {
         console.error('Error updating profile:', error);
+
+        // Handle unique constraint violations
+        if (error.code === 'P2002') {
+            const target = error.meta?.target || [];
+            if (target.includes('email')) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'This email address is already registered to another account.'
+                });
+            }
+        }
+
         res.status(500).json({ success: false, message: 'Internal server error' });
     }
 };
@@ -258,6 +332,9 @@ export const getProfile = async (req: Request, res: Response) => {
                 email: true,
                 role: true,
                 profileImage: true,
+                gothra: true,
+                kuldevi: true,
+                kuldevta: true,
                 isVerified: true,
                 createdAt: true
             }

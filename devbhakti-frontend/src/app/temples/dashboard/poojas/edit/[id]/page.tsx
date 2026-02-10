@@ -34,7 +34,8 @@ export default function TempleEditPoojaPage() {
         bullets: [] as string[],
         packages: [] as any[],
         processSteps: [] as any[],
-        faqs: [] as any[]
+        faqs: [] as any[],
+        status: true
     });
 
     useEffect(() => {
@@ -73,7 +74,8 @@ export default function TempleEditPoojaPage() {
                     bullets: pooja.bullets || [],
                     packages: validPackages,
                     processSteps: pooja.processSteps || [],
-                    faqs: pooja.faqs || []
+                    faqs: pooja.faqs || [],
+                    status: pooja.status ?? true
                 });
 
                 if (pooja.image) {
@@ -143,6 +145,7 @@ export default function TempleEditPoojaPage() {
         submissionData.append('packages', JSON.stringify(formData.packages));
         submissionData.append('processSteps', JSON.stringify(formData.processSteps));
         submissionData.append('faqs', JSON.stringify(formData.faqs));
+        submissionData.append('status', formData.status.toString());
 
         if (imageFile) {
             submissionData.append('image', imageFile);
@@ -214,6 +217,16 @@ export default function TempleEditPoojaPage() {
                                 className="rounded-xl h-11 border-slate-200 focus:border-[#7b4623] focus:ring-[#7b4623]/10"
                                 required
                             />
+                        </div>
+                        <div className="flex items-center space-x-2 pt-8">
+                            <input
+                                type="checkbox"
+                                id="status"
+                                checked={formData.status}
+                                onChange={(e) => setFormData({ ...formData, status: e.target.checked })}
+                                className="w-5 h-5 accent-[#7b4623]"
+                            />
+                            <Label htmlFor="status" className="font-semibold cursor-pointer">Active (Visible to devotees)</Label>
                         </div>
 
                     </div>

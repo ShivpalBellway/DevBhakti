@@ -39,7 +39,25 @@ export const registerTemple = async (req: Request, res: Response) => {
 
     // Normalize Phone
     if (data.phone) {
+      const cleaned = data.phone.replace(/\D/g, '');
+      if (cleaned.length !== 10) {
+        return res.status(400).json({ success: false, message: 'Mobile number must be exactly 10 digits' });
+      }
       data.phone = normalizePhone(data.phone);
+    }
+
+    // Image validations (2MB)
+    const MAX_SIZE = 2 * 1024 * 1024;
+    if (files) {
+      if (files.heroImages && files.heroImages.length > 5) {
+        return res.status(400).json({ success: false, message: 'Maximum 5 banner images allowed' });
+      }
+      const allFiles = [...(files.image || []), ...(files.heroImages || []), ...(files.gallery || [])];
+      for (const file of allFiles) {
+        if (file.size > MAX_SIZE) {
+          return res.status(400).json({ success: false, message: `Image ${file.originalname} is too large. Max 2MB allowed.` });
+        }
+      }
     }
 
     // Check if user already exists
@@ -192,6 +210,34 @@ export const updateMyTempleProfile = async (req: Request, res: Response) => {
 
     if (!temple) {
       return res.status(404).json({ success: false, message: 'Temple not found' });
+    }
+
+    // Validate Phone if provided
+    if (data.phone) {
+      const cleaned = data.phone.replace(/\D/g, '');
+      if (cleaned.length !== 10) {
+        return res.status(400).json({ success: false, message: 'Mobile number must be exactly 10 digits' });
+      }
+      data.phone = normalizePhone(data.phone);
+    }
+
+    // Image size validations (2MB for NEW files)
+    const MAX_SIZE = 2 * 1024 * 1024;
+    if (files) {
+      const newHeroImagesCount = files.heroImages ? files.heroImages.length : 0;
+      const currentHeroImagesCount = temple.heroImages ? (temple.heroImages as string[]).length : 0;
+      const totalHeroImages = currentHeroImagesCount + newHeroImagesCount;
+
+      if (totalHeroImages > 5) {
+        return res.status(400).json({ success: false, message: `Maximum 5 banners allowed. You already have ${currentHeroImagesCount} and tried to add ${newHeroImagesCount}.` });
+      }
+
+      const allFiles = [...(files.image || []), ...(files.heroImages || []), ...(files.gallery || [])];
+      for (const file of allFiles) {
+        if (file.size > MAX_SIZE) {
+          return res.status(400).json({ success: false, message: `Image ${file.originalname} is too large. Max 2MB allowed.` });
+        }
+      }
     }
 
     // Define sensitive fields

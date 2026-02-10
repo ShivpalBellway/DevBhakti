@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import Navbar from "@/components/landing/Navbar";
@@ -20,7 +21,15 @@ import {
     ChevronLeft,
     ChevronRight,
     IndianRupee,
+    Maximize2,
+    X,
 } from "lucide-react";
+import {
+    Dialog,
+    DialogContent,
+    DialogTrigger,
+    DialogTitle,
+} from "@/components/ui/dialog";
 
 // Local temple images for hero banner & gallery
 
@@ -38,6 +47,7 @@ export default function TempleDetail() {
     const [activeImageIndex, setActiveImageIndex] = useState(0);
     const [isAutoScrolling, setIsAutoScrolling] = useState(true);
     const [user, setUser] = useState<any>(null);
+    const [isFullViewOpen, setIsFullViewOpen] = useState(false);
     const router = useRouter();
     const { toast } = useToast();
 
@@ -169,25 +179,53 @@ export default function TempleDetail() {
             <Navbar />
 
             {/* Hero Image Carousel */}
-            <section className="relative h-[50vh] md:h-[60vh] overflow-hidden mt-20">
-                <img
-                    src={getFullImageUrl(heroImages[activeImageIndex])}
-                    alt={temple.name}
-                    className="w-full h-full object-cover transition-opacity duration-700"
-                />
-                {/* <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent" /> */}
+            <section className="relative h-[65vh] md:h-[75vh] overflow-hidden mt-20">
+                <AnimatePresence mode="wait">
+                    <motion.div
+                        key={activeImageIndex}
+                        initial={{ opacity: 0, scale: 1.05 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.8 }}
+                        className="absolute inset-0"
+                    >
+                        <img
+                            src={getFullImageUrl(heroImages[activeImageIndex])}
+                            alt={temple.name}
+                            className="w-full h-full object-cover"
+                        />
+                    </motion.div>
+                </AnimatePresence>
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent pointer-events-none" />
 
-                {/* Back Button */}
-                {/* <Link
-                    href="/temples"
-                    className="absolute top-20 left-4 md:left-8 bg-background/80 backdrop-blur-sm rounded-full p-2 hover:bg-background transition-colors z-20"
-                >
-                    <ChevronLeft className="h-6 w-6" />
-                </Link> */}
+                {/* Carousel Dots - Top Position */}
+                {heroImages.length > 1 && (
+                    <div className="absolute top-6 left-1/2 -translate-x-1/2 flex gap-2 z-30 bg-black/20 backdrop-blur-sm px-3 py-2 rounded-full border border-white/10">
+                        {heroImages.map((_, index) => (
+                            <button
+                                key={index}
+                                onClick={() => goToImage(index)}
+                                className={`h-1.5 rounded-full transition-all duration-300 ${activeImageIndex === index
+                                    ? "bg-primary w-8"
+                                    : "bg-white/40 hover:bg-white w-2"
+                                    }`}
+                                aria-label={`Go to slide ${index + 1}`}
+                            />
+                        ))}
+                    </div>
+                )}
 
                 {/* Actions */}
-                <div className="absolute top-20 right-4 md:right-8 flex gap-2 z-20">
+                <div className="absolute top-6 right-4 md:right-8 flex gap-2 z-20">
                     <Button
+                        variant="secondary"
+                        size="icon"
+                        className="rounded-full bg-background/80 backdrop-blur-sm pointer-events-auto"
+                        onClick={() => setIsFullViewOpen(true)}
+                    >
+                        <Maximize2 className="h-5 w-5" />
+                    </Button>
+                    {/* <Button
                         variant="secondary"
                         size="icon"
                         className="rounded-full bg-background/80 backdrop-blur-sm"
@@ -203,7 +241,7 @@ export default function TempleDetail() {
                         className="rounded-full bg-background/80 backdrop-blur-sm"
                     >
                         <Share2 className="h-5 w-5" />
-                    </Button>
+                    </Button> */}
                 </div>
 
                 {/* Left/Right Navigation Arrows */}
@@ -249,7 +287,7 @@ export default function TempleDetail() {
                                         <Badge variant="secondary" className="mb-2">
                                             {temple.category}
                                         </Badge>
-                                        <h1 className="text-3xl md:text-4xl font-display font-bold text-foreground">
+                                        <h1 className="text-4xl md:text-5xl font-display font-bold text-foreground">
                                             {temple.name}
                                         </h1>
                                     </div>
@@ -379,32 +417,32 @@ export default function TempleDetail() {
                                                                 ))}
                                                             </ul> */}
                                                         </div>
-                                                            <div className="flex items-center gap-4">
-                                                                <div className="flex items-center text-primary font-semibold">
-                                                                    <IndianRupee className="h-4 w-4" />
-                                                                    {pooja.price}
-                                                                </div>
-                                                                <Button
-                                                                    size="sm"
-                                                                    onClick={() => {
-                                                                        const bookingUrl = `/booking?temple=${temple.id}`;
-                                                                        const token = localStorage.getItem("token");
-                                                                        const savedUser = localStorage.getItem("user");
-                                                                        const parsedUser = savedUser ? JSON.parse(savedUser) : null;
-                                                                        if (!token || !parsedUser) {
-                                                                            router.push(`/auth?redirect=${encodeURIComponent(bookingUrl)}`);
-                                                                            return;
-                                                                        }
-                                                                        if (parsedUser.role !== "DEVOTEE") {
-                                                                            router.push(`/auth?redirect=${encodeURIComponent(bookingUrl)}`);
-                                                                            return;
-                                                                        }
-                                                                        router.push(bookingUrl);
-                                                                    }}
-                                                                >
-                                                                    Book Now
-                                                                </Button>
+                                                        <div className="flex items-center gap-4">
+                                                            <div className="flex items-center text-primary font-semibold">
+                                                                <IndianRupee className="h-4 w-4" />
+                                                                {pooja.price}
                                                             </div>
+                                                            <Button
+                                                                size="sm"
+                                                                onClick={() => {
+                                                                    const bookingUrl = `/booking?temple=${temple.id}`;
+                                                                    const token = localStorage.getItem("token");
+                                                                    const savedUser = localStorage.getItem("user");
+                                                                    const parsedUser = savedUser ? JSON.parse(savedUser) : null;
+                                                                    if (!token || !parsedUser) {
+                                                                        router.push(`/auth?redirect=${encodeURIComponent(bookingUrl)}`);
+                                                                        return;
+                                                                    }
+                                                                    if (parsedUser.role !== "DEVOTEE") {
+                                                                        router.push(`/auth?redirect=${encodeURIComponent(bookingUrl)}`);
+                                                                        return;
+                                                                    }
+                                                                    router.push(bookingUrl);
+                                                                }}
+                                                            >
+                                                                Book Now
+                                                            </Button>
+                                                        </div>
                                                     </div>
                                                 ))}
                                             </div>
@@ -552,6 +590,68 @@ export default function TempleDetail() {
             </section>
 
             <Footer />
+
+            {/* Full View Modal */}
+            <Dialog open={isFullViewOpen} onOpenChange={setIsFullViewOpen}>
+                <DialogContent className="max-w-[95vw] w-full h-[90vh] p-0 border-none bg-black/95 flex items-center justify-center overflow-hidden">
+                    <DialogTitle className="sr-only">Full Image View</DialogTitle>
+                    <div className="relative w-full h-full flex items-center justify-center p-4">
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="absolute top-4 right-4 text-white hover:bg-white/20 z-50 rounded-full"
+                            onClick={() => setIsFullViewOpen(false)}
+                        >
+                            <X className="h-6 w-6" />
+                        </Button>
+
+                        <motion.img
+                            key={activeImageIndex}
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            src={getFullImageUrl(heroImages[activeImageIndex])}
+                            alt={temple.name}
+                            className="max-w-full max-h-full object-contain shadow-2xl rounded-lg"
+                        />
+
+                        {heroImages.length > 1 && (
+                            <>
+                                <button
+                                    className="absolute left-4 top-1/2 -translate-y-1/2 p-3 bg-black/40 hover:bg-black/60 text-white rounded-full transition-colors z-50"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        goToPrev();
+                                    }}
+                                >
+                                    <ChevronLeft className="h-8 w-8" />
+                                </button>
+                                <button
+                                    className="absolute right-4 top-1/2 -translate-y-1/2 p-3 bg-black/40 hover:bg-black/60 text-white rounded-full transition-colors z-50"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        goToNext();
+                                    }}
+                                >
+                                    <ChevronRight className="h-8 w-8" />
+                                </button>
+                            </>
+                        )}
+
+                        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2 z-50">
+                            {heroImages.map((_, index) => (
+                                <button
+                                    key={index}
+                                    onClick={() => goToImage(index)}
+                                    className={`h-1.5 rounded-full transition-all duration-300 ${activeImageIndex === index
+                                        ? "bg-primary w-10"
+                                        : "bg-white/30 hover:bg-white/60 w-3"
+                                        }`}
+                                />
+                            ))}
+                        </div>
+                    </div>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

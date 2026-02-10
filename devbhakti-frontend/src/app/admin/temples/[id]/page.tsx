@@ -17,13 +17,16 @@ import {
     Star,
     Layout,
     ChevronLeft,
-    ChevronRight
+    ChevronRight,
+    Package,
+    Store
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { fetchAllTemplesAdmin } from "@/api/adminController";
+import { fetchAllTemplesAdmin, fetchCommissionSlabsAdmin, fetchProductsByTempleAdmin } from "@/api/adminController";
 import { API_URL } from "@/config/apiConfig";
 import { Card, CardContent } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 export default function ViewTemplePage() {
     const router = useRouter();
@@ -32,6 +35,9 @@ export default function ViewTemplePage() {
     const [inst, setInst] = useState<any>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [currentHeroIndex, setCurrentHeroIndex] = useState(0);
+    const [marketplaceSlabs, setMarketplaceSlabs] = useState<any[]>([]);
+    const [poojaSlabs, setPoojaSlabs] = useState<any[]>([]);
+    const [products, setProducts] = useState<any[]>([]);
 
     useEffect(() => {
         loadData();
@@ -42,6 +48,20 @@ export default function ViewTemplePage() {
             const allInst = await fetchAllTemplesAdmin();
             const found = allInst.find((i: any) => i.id === instId);
             setInst(found);
+
+            if (found?.temple?.id) {
+                // Load Marketplace Slabs
+                const mSlabsResponse = await fetchCommissionSlabsAdmin('TEMPLE', found.temple.id, 'MARKETPLACE');
+                if (mSlabsResponse.success) setMarketplaceSlabs(mSlabsResponse.data);
+
+                // Load Pooja Slabs
+                const pSlabsResponse = await fetchCommissionSlabsAdmin('TEMPLE', found.temple.id, 'POOJA');
+                if (pSlabsResponse.success) setPoojaSlabs(pSlabsResponse.data);
+
+                // Load Products
+                const templeProducts = await fetchProductsByTempleAdmin(found.temple.id);
+                setProducts(templeProducts || []);
+            }
         } catch (error) {
             console.error(error);
         } finally {
@@ -223,7 +243,113 @@ export default function ViewTemplePage() {
                         </CardContent>
                     </Card>
 
-                    {/* Upcoming Events */}
+                    {/* Products Offered */}
+                    <Card className="border-none shadow-sm overflow-hidden">
+                        <CardContent className="p-8 space-y-6">
+                            <h2 className="text-2xl font-bold flex items-center gap-2 text-slate-800">
+                                <Package className="w-6 h-6 text-primary" />
+                                Products Offered
+                            </h2>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {products?.map((p: any) => (
+                                    <div key={p.id} className="p-4 rounded-xl border bg-slate-50 flex items-center justify-between group hover:border-primary transition-all">
+                                        <div className="flex flex-col">
+                                            <span className="font-bold text-slate-800">{p.name}</span>
+                                            <span className="text-sm text-slate-500">{p.category}</span>
+                                        </div>
+                                        <Badge variant="outline" className="group-hover:bg-primary group-hover:text-white transition-colors">
+                                            ₹{p.variants?.[0]?.price || 0}
+                                        </Badge>
+                                    </div>
+                                ))}
+                                {(!products || products.length === 0) && <p className="text-muted-foreground text-sm col-span-2">No products linked yet.</p>}
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    {/* Commission Slabs */}
+                    <div className="space-y-6">
+                        <h2 className="text-2xl font-bold flex items-center gap-2 text-slate-800 px-4">
+                            <History className="w-6 h-6 text-primary" />
+                            Commission Slabs
+                        </h2>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {/* Marketplace Slabs */}
+                            <Card className="border-none shadow-sm overflow-hidden">
+                                <CardContent className="p-6 space-y-4">
+                                    <h3 className="font-bold text-lg text-slate-800 flex items-center gap-2">
+                                        <Store className="w-5 h-5 text-blue-600" />
+                                        Marketplace Slabs
+                                    </h3>
+                                    {marketplaceSlabs.length > 0 ? (
+                                        <div className="rounded-lg border overflow-hidden">
+                                            <Table>
+                                                <TableHeader className="bg-slate-50">
+                                                    <TableRow>
+                                                        <TableHead className="text-[10px] uppercase font-bold">Range (₹)</TableHead>
+                                                        <TableHead className="text-[10px] uppercase font-bold">Fee</TableHead>
+                                                        <TableHead className="text-[10px] uppercase font-bold">%</TableHead>
+                                                    </TableRow>
+                                                </TableHeader>
+                                                <TableBody>
+                                                    {marketplaceSlabs.sort((a, b) => a.minAmount - b.minAmount).map((slab, i) => (
+                                                        <TableRow key={i}>
+                                                            <TableCell className="text-sm font-medium">
+                                                                {slab.minAmount} - {slab.maxAmount || "∞"}
+                                                            </TableCell>
+                                                            <TableCell className="text-sm">₹{slab.platformFee}</TableCell>
+                                                            <TableCell className="text-sm">{slab.percentage}%</TableCell>
+                                                        </TableRow>
+                                                    ))}
+                                                </TableBody>
+                                            </Table>
+                                        </div>
+                                    ) : (
+                                        <p className="text-sm text-slate-500 italic">No custom marketplace slabs.</p>
+                                    )}
+                                </CardContent>
+                            </Card>
+
+                            {/* Pooja Slabs */}
+                            <Card className="border-none shadow-sm overflow-hidden">
+                                <CardContent className="p-6 space-y-4">
+                                    <h3 className="font-bold text-lg text-slate-800 flex items-center gap-2">
+                                        <Calendar className="w-5 h-5 text-orange-600" />
+                                        Pooja Booking Slabs
+                                    </h3>
+                                    {poojaSlabs.length > 0 ? (
+                                        <div className="rounded-lg border overflow-hidden">
+                                            <Table>
+                                                <TableHeader className="bg-slate-50">
+                                                    <TableRow>
+                                                        <TableHead className="text-[10px] uppercase font-bold">Range (₹)</TableHead>
+                                                        <TableHead className="text-[10px] uppercase font-bold">Fee</TableHead>
+                                                        <TableHead className="text-[10px] uppercase font-bold">%</TableHead>
+                                                    </TableRow>
+                                                </TableHeader>
+                                                <TableBody>
+                                                    {poojaSlabs.sort((a, b) => a.minAmount - b.minAmount).map((slab, i) => (
+                                                        <TableRow key={i}>
+                                                            <TableCell className="text-sm font-medium">
+                                                                {slab.minAmount} - {slab.maxAmount || "∞"}
+                                                            </TableCell>
+                                                            <TableCell className="text-sm">₹{slab.platformFee}</TableCell>
+                                                            <TableCell className="text-sm">{slab.percentage}%</TableCell>
+                                                        </TableRow>
+                                                    ))}
+                                                </TableBody>
+                                            </Table>
+                                        </div>
+                                    ) : (
+                                        <p className="text-sm text-slate-500 italic">No custom pooja slabs.</p>
+                                    )}
+                                </CardContent>
+                            </Card>
+                        </div>
+                    </div>
+
+                    {/* Upcoming Festivals & Events */}
                     <Card className="border-none shadow-sm overflow-hidden">
                         <CardContent className="p-8 space-y-6">
                             <h2 className="text-2xl font-bold flex items-center gap-2 text-slate-800">
@@ -234,8 +360,8 @@ export default function ViewTemplePage() {
                                 {temple?.events?.map((ev: any) => (
                                     <div key={ev.id} className="p-4 rounded-xl border bg-slate-50 flex items-center gap-4">
                                         <div className="bg-primary/10 text-primary p-3 rounded-lg flex flex-col items-center min-w-[70px]">
-                                            <span className="text-xs font-bold uppercase">{ev.date.split(' ')[0]}</span>
-                                            <span className="text-xl font-bold">{ev.date.split(' ')[1]?.replace(',', '') || ev.date}</span>
+                                            <span className="text-xs font-bold uppercase">{ev.date?.split(' ')[0]}</span>
+                                            <span className="text-xl font-bold">{ev.date?.split(' ')[1]?.replace(',', '') || ev.date}</span>
                                         </div>
                                         <div>
                                             <h4 className="font-bold text-slate-800">{ev.name}</h4>

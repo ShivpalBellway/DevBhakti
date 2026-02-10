@@ -20,6 +20,9 @@ model User {
   otp           String?
   otpExpires    DateTime?
   profileImage  String?
+  gothra        String?
+  kuldevi       String?
+  kuldevta      String?
   cart          Cart?
   favorites     Favorite[]
   orders        Order[]
@@ -339,6 +342,9 @@ model PoojaBooking {
   bookingDate      String?
   address          String?
   specialRequests  String?
+  gothra           String?
+  kuldevi          String?
+  kuldevta         String?
   status           BookingStatus @default(BOOKED)
   commissionAmount Float         @default(0)
   netEarning       Float         @default(0)

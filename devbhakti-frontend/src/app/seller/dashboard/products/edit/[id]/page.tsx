@@ -44,7 +44,6 @@ interface Variant {
     id: string;
     name: string;
     price: number;
-    costPrice?: number;
     stock: number;
     image?: string | null;
     imageFile?: File | null;
@@ -114,7 +113,6 @@ export default function EditSellerProductPage() {
                         id: v.id,
                         name: v.name,
                         price: v.price,
-                        costPrice: v.costPrice || 0,
                         stock: v.stock,
                         image: v.image,
                         imagePreview: v.image ? `${BASE_URL}${v.image}` : ""
@@ -217,7 +215,6 @@ export default function EditSellerProductPage() {
                     id: v.id,
                     name: v.name,
                     price: v.price,
-                    costPrice: v.costPrice || 0,
                     stock: v.stock,
                     image: v.imageFile ? null : (v.image || null)
                 };
@@ -238,7 +235,7 @@ export default function EditSellerProductPage() {
     };
 
     const addVariant = () => {
-        setVariants([...variants, { id: Date.now().toString(), name: "", price: 0, costPrice: 0, stock: 0, imageFile: null, imagePreview: "" }]);
+        setVariants([...variants, { id: Date.now().toString(), name: "", price: 0, stock: 0, imageFile: null, imagePreview: "" }]);
     };
 
     const removeVariant = (id: string) => {
@@ -247,7 +244,7 @@ export default function EditSellerProductPage() {
 
     const updateVariant = (id: string, field: keyof Variant, value: string | number) => {
         setVariants(variants.map(variant =>
-            variant.id === id ? { ...variant, [field]: field === 'price' || field === 'stock' || field === 'costPrice' ? Number(value) : value } : variant
+            variant.id === id ? { ...variant, [field]: field === 'price' || field === 'stock' ? Number(value) : value } : variant
         ));
     };
 
@@ -447,20 +444,12 @@ export default function EditSellerProductPage() {
                                                 <Input type="number" step="0.01" placeholder="0.00" value={variant.price || ''} onChange={(e) => updateVariant(variant.id, 'price', e.target.value)} />
                                                 {errors[`variant_price_${index}`] && <p className="text-xs text-red-500">{errors[`variant_price_${index}`]}</p>}
                                             </div>
-                                            <div className="space-y-2">
+                                            {/* <div className="space-y-2">
                                                 <Label>Cost Price (₹)</Label>
                                                 <Input type="number" step="0.01" placeholder="0.00" value={variant.costPrice || ''} onChange={(e) => updateVariant(variant.id, 'costPrice', e.target.value)} />
-                                            </div>
+                                            </div> */}
                                         </div>
 
-                                        {variant.price > 0 && variant.costPrice && variant.costPrice > 0 && (
-                                            <div className="text-xs bg-green-50 dark:bg-green-950 p-2 rounded border border-green-200 dark:border-green-800">
-                                                <span className="text-green-700 dark:text-green-300 font-medium">
-                                                    Profit Margin: ₹{(variant.price - variant.costPrice).toFixed(2)}
-                                                    ({(((variant.price - variant.costPrice) / variant.price) * 100).toFixed(1)}%)
-                                                </span>
-                                            </div>
-                                        )}
 
                                         <div className="space-y-2">
                                             <Label>Stock Quantity *</Label>

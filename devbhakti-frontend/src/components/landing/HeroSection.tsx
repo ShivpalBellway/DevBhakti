@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import Image from "next/image";
@@ -13,6 +13,15 @@ import BannerSection from "./BannerSection";
 
 
 const HeroSection: React.FC = () => {
+  const [user, setUser] = useState<any>(null);
+
+  useEffect(() => {
+    const savedUser = localStorage.getItem("user");
+    if (savedUser) {
+      setUser(JSON.parse(savedUser));
+    }
+  }, []);
+
   return (
     <section className="relative min-h-[700px] flex items-center justify-center overflow-hidden">
       {/* Background image */}
@@ -65,7 +74,7 @@ const HeroSection: React.FC = () => {
             className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16"
           >
             <Button variant="hero" size="xl" asChild>
-              <Link href="/auth?mode=register">
+              <Link href={user ? "/poojas" : "/auth?mode=register"}>
                 Book Pooja
                 <ArrowRight className="w-5 h-5" />
               </Link>

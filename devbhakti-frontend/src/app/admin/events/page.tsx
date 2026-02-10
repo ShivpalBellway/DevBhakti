@@ -6,9 +6,17 @@ import {
     Search,
     Edit2,
     Trash2,
-    Calendar,
+    Calendar as CalendarIcon,
     MapPin,
 } from "lucide-react";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
+import { Calendar } from "@/components/ui/calendar";
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -214,7 +222,7 @@ export default function AdminEventsPage() {
                                 <TableRow key={event.id}>
                                     <TableCell>
                                         <div className="flex items-center gap-2">
-                                            <Calendar className="w-4 h-4 text-primary" />
+                                            <CalendarIcon className="w-4 h-4 text-primary" />
                                             <span className="font-medium">{event.name}</span>
                                         </div>
                                     </TableCell>
@@ -306,15 +314,37 @@ export default function AdminEventsPage() {
 
                         <div className="space-y-2">
                             <Label htmlFor="date">Date *</Label>
-                            <Input
-                                id="date"
-                                placeholder="e.g. March 8, 2025"
-                                value={formData.date}
-                                onChange={(e) =>
-                                    setFormData({ ...formData, date: e.target.value })
-                                }
-                                required
-                            />
+                            <Popover>
+                                <PopoverTrigger asChild>
+                                    <Button
+                                        variant={"outline"}
+                                        className={cn(
+                                            "w-full justify-start text-left font-normal h-10 border-input",
+                                            !formData.date && "text-muted-foreground"
+                                        )}
+                                    >
+                                        <CalendarIcon className="mr-2 h-4 w-4" />
+                                        {formData.date ? (
+                                            formData.date
+                                        ) : (
+                                            <span>Pick a date</span>
+                                        )}
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0" align="start">
+                                    <Calendar
+                                        mode="single"
+                                        selected={formData.date ? new Date(formData.date) : undefined}
+                                        onSelect={(date) =>
+                                            setFormData({
+                                                ...formData,
+                                                date: date ? format(date, "PPP") : "",
+                                            })
+                                        }
+                                        initialFocus
+                                    />
+                                </PopoverContent>
+                            </Popover>
                         </div>
 
                         <div className="space-y-2">

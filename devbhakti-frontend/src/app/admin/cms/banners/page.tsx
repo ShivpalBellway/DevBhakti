@@ -32,7 +32,8 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { fetchAllBannersAdmin, createBannerAdmin, updateBannerAdmin, deleteBannerAdmin } from "@/api/adminController";
+import { Switch } from "@/components/ui/switch";
+import { fetchAllBannersAdmin, createBannerAdmin, updateBannerAdmin, deleteBannerAdmin, fetchBannerGlobalStatus, toggleBannerGlobalStatus } from "@/api/adminController";
 import { API_URL, BASE_URL } from "@/config/apiConfig";
 
 
@@ -42,6 +43,7 @@ export default function BannersPage() {
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingBanner, setEditingBanner] = useState<any>(null);
     const [loading, setLoading] = useState(true);
+    const [bannerSectionActive, setBannerSectionActive] = useState(true);
     const [formData, setFormData] = useState({
         link: "",
         active: "true",
@@ -57,8 +59,12 @@ export default function BannersPage() {
     const loadBanners = async () => {
         try {
             setLoading(true);
-            const data = await fetchAllBannersAdmin();
+            const [data, statusData] = await Promise.all([
+                fetchAllBannersAdmin(),
+                fetchBannerGlobalStatus()
+            ]);
             setBanners(data);
+            setBannerSectionActive(statusData.active);
         } catch (error) {
             console.error("Error loading banners:", error);
         } finally {
@@ -140,6 +146,16 @@ export default function BannersPage() {
         }
     };
 
+    const handleToggleSection = async () => {
+        try {
+            const data = await toggleBannerGlobalStatus();
+            setBannerSectionActive(data.active);
+        } catch (error) {
+            console.error("Error toggling banner section:", error);
+            alert("Error updating section visibility");
+        }
+    };
+
     const filteredBanners = banners.filter(banner =>
         (banner.link || "").toLowerCase().includes(searchTerm.toLowerCase())
     );
@@ -158,6 +174,28 @@ export default function BannersPage() {
                     <Plus className="w-4 h-4 mr-2" />
                     Add New Banner
                 </Button>
+            </div>
+
+            {/* Global Toggle Section */}
+            <div className="bg-card border rounded-xl p-5 shadow-sm">
+                <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                        <Label className="text-base font-semibold">Banner Section Visibility</Label>
+                        <p className="text-sm text-muted-foreground">
+                            When disabled, the entire carousel section will be hidden from the home page.
+                        </p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                        <span className={`text-sm font-medium ${bannerSectionActive ? "text-green-600" : "text-muted-foreground"}`}>
+                            {bannerSectionActive ? "Section Enabled" : "Section Disabled"}
+                        </span>
+                        <Switch
+                            checked={bannerSectionActive}
+                            onCheckedChange={handleToggleSection}
+                            className="scale-110"
+                        />
+                    </div>
+                </div>
             </div>
 
             {/* Filters & Search */}

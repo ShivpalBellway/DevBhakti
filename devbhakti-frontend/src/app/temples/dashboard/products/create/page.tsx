@@ -404,10 +404,10 @@ export default function CreateTempleProductPage() {
                                                 <Label>Selling Price (₹) *</Label>
                                                 <Input type="number" step="0.01" placeholder="0.00" value={variant.price || ''} onChange={(e) => updateVariant(variant.id, 'price', e.target.value)} />
                                             </div>
-                                            <div className="space-y-2">
+                                            {/* <div className="space-y-2">
                                                 <Label>Cost Price (₹)</Label>
                                                 <Input type="number" step="0.01" placeholder="0.00" value={variant.costPrice || ''} onChange={(e) => updateVariant(variant.id, 'costPrice', e.target.value)} />
-                                            </div>
+                                            </div> */}
                                         </div>
 
                                         {variant.price > 0 && variant.costPrice && variant.costPrice > 0 && (

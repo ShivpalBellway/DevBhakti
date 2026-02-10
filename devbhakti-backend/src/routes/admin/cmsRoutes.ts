@@ -8,6 +8,7 @@ const router = Router();
 
 // Public GET routes
 router.get('/banners', cmsController.getBanners);
+router.get('/banners/global-status', cmsController.getBannerGlobalStatus);
 router.get('/features', cmsController.getFeatures);
 router.get('/testimonials', cmsController.getTestimonials);
 router.get('/cta-cards', cmsController.getCTACards);
@@ -19,6 +20,7 @@ router.use(authorize('ADMIN'));
 // Banners (Admin)
 router.post('/banners', uploadCmsImage.single('image'), cmsController.createBanner);
 router.put('/banners/:id', uploadCmsImage.single('image'), cmsController.updateBanner);
+router.patch('/banners/global-status', cmsController.toggleBannerGlobalStatus);
 router.delete('/banners/:id', cmsController.deleteBanner);
 
 // Features (Admin)

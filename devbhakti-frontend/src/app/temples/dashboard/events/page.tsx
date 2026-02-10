@@ -6,11 +6,19 @@ import {
     Search,
     Edit2,
     Trash2,
-    Calendar,
+    Calendar as CalendarIcon,
     MapPin,
     Clock,
     Loader2
 } from "lucide-react";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
+import { Calendar } from "@/components/ui/calendar";
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -203,7 +211,7 @@ export default function TempleEventsPage() {
                                     <TableCell>
                                         <div className="flex items-center gap-3">
                                             <div className="w-9 h-9 rounded-lg bg-[#7b4623]/10 flex items-center justify-center">
-                                                <Calendar className="w-5 h-5 text-[#7b4623]" />
+                                                <CalendarIcon className="w-5 h-5 text-[#7b4623]" />
                                             </div>
                                             <span className="font-semibold text-slate-900">{event.name}</span>
                                         </div>
@@ -276,17 +284,38 @@ export default function TempleEventsPage() {
                         </div>
 
                         <div className="space-y-2">
-                            <Label htmlFor="date" className="text-slate-700 font-medium">Date & Time *</Label>
-                            <Input
-                                id="date"
-                                placeholder="e.g. October 25, 2024 at 6:00 PM"
-                                value={formData.date}
-                                onChange={(e) =>
-                                    setFormData({ ...formData, date: e.target.value })
-                                }
-                                className="h-11 rounded-xl border-slate-200 focus:border-[#7b4623] focus:ring-[#7b4623]/10"
-                                required
-                            />
+                            <Label htmlFor="date" className="text-slate-700 font-medium">Date *</Label>
+                            <Popover>
+                                <PopoverTrigger asChild>
+                                    <Button
+                                        variant={"outline"}
+                                        className={cn(
+                                            "w-full justify-start text-left font-normal h-11 rounded-xl border-slate-200 focus:border-[#7b4623] focus:ring-[#7b4623]/10",
+                                            !formData.date && "text-muted-foreground"
+                                        )}
+                                    >
+                                        <CalendarIcon className="mr-2 h-4 w-4" />
+                                        {formData.date ? (
+                                            formData.date
+                                        ) : (
+                                            <span>Pick a date</span>
+                                        )}
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0" align="start">
+                                    <Calendar
+                                        mode="single"
+                                        selected={formData.date ? new Date(formData.date) : undefined}
+                                        onSelect={(date) =>
+                                            setFormData({
+                                                ...formData,
+                                                date: date ? format(date, "PPP") : "",
+                                            })
+                                        }
+                                        initialFocus
+                                    />
+                                </PopoverContent>
+                            </Popover>
                         </div>
 
                         <div className="space-y-2">

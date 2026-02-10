@@ -2,28 +2,24 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, X, MapPin, Church, ShoppingBag, ArrowRight } from "lucide-react";
+import { Search, X, MapPin, Church, ShoppingBag, ArrowRight, Loader2, Command } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { API_URL, BASE_URL } from "@/config/apiConfig";
 
 interface SearchResult {
     id: string;
     title: string;
     category: "Temple" | "Pooja" | "Product";
     location?: string;
-    icon: any;
+    image?: string;
+    type?: string;
 }
-
-const mockResults: SearchResult[] = [
-    { id: "1", title: "Kashi Vishwanath Temple", category: "Temple", location: "Varanasi", icon: Church },
-    { id: "2", title: "Somnath Jyotirlinga", category: "Temple", location: "Gujarat", icon: Church },
-    { id: "3", title: "Special Rudrabhishek", category: "Pooja", icon: MapPin },
-    { id: "4", title: "Online Aarti Booking", category: "Pooja", icon: MapPin },
-    { id: "5", title: "Pure Charnamrit", category: "Product", icon: ShoppingBag },
-    { id: "6", title: "Rudraksha Mala", category: "Product", icon: ShoppingBag },
-];
 
 export const GlobalSearch = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) => {
     const [query, setQuery] = useState("");
+    const [results, setResults] = useState<SearchResult[]>([]);
+    const [isLoading, setIsLoading] = useState(false);
+    const [imgErrors, setImgErrors] = useState<Record<string, boolean>>({});
     const router = useRouter();
     const inputRef = useRef<HTMLInputElement>(null);
 
@@ -33,125 +29,208 @@ export const GlobalSearch = ({ isOpen, onClose }: { isOpen: boolean; onClose: ()
             document.body.style.overflow = "hidden";
         } else {
             document.body.style.overflow = "unset";
+            setQuery("");
+            setResults([]);
+            setImgErrors({});
         }
     }, [isOpen]);
 
-    // Shortcut for Ctrl+K
+    // Shortcut for ESC
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
-            if ((e.ctrlKey || e.metaKey) && e.key === "k") {
-                e.preventDefault();
-                onClose(); // Toggle mechanism can be added if needed
-            }
             if (e.key === "Escape") onClose();
         };
         window.addEventListener("keydown", handleKeyDown);
         return () => window.removeEventListener("keydown", handleKeyDown);
     }, [onClose]);
 
-    const filteredResults = query
-        ? mockResults.filter((item) =>
-            item.title.toLowerCase().includes(query.toLowerCase())
-        )
-        : mockResults.slice(0, 4); // Show "Recent" or "Trending" when empty
+    // Debounced Search (including default results on open)
+    useEffect(() => {
+        const fetchResults = async () => {
+            if (!isOpen && !query.trim()) return;
+
+            setIsLoading(true);
+            try {
+                const response = await fetch(`${API_URL}/search?query=${encodeURIComponent(query)}`);
+                const data = await response.json();
+                if (data.success) {
+                    setResults(data.data);
+                }
+            } catch (error) {
+                console.error("Search fetch error:", error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        const timer = setTimeout(fetchResults, query.trim() ? 300 : 0);
+        return () => clearTimeout(timer);
+    }, [query, isOpen]);
+
+    const handleItemClick = (item: SearchResult) => {
+        onClose();
+        if (item.category === "Temple") {
+            router.push(`/temples/${item.id}`);
+        } else if (item.category === "Pooja") {
+            router.push(`/poojas/${item.id}`);
+        } else if (item.category === "Product") {
+            router.push(`/marketplace/product/${item.id}`);
+        }
+    };
+
+    const getIcon = (category: string) => {
+        switch (category) {
+            case "Temple": return Church;
+            case "Pooja": return MapPin;
+            case "Product": return ShoppingBag;
+            default: return Search;
+        }
+    };
 
     return (
         <AnimatePresence>
             {isOpen && (
                 <div className="fixed inset-0 z-[100] flex items-start justify-center pt-[10vh] px-4">
-                    {/* Backdrop */}
+                    {/* Backdrop - High quality blur with warm tint */}
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         onClick={onClose}
-                        className="fixed inset-0 bg-black/40 backdrop-blur-sm"
+                        className="fixed inset-0 bg-background/60 backdrop-blur-xl"
                     />
 
-                    {/* Search Box */}
+                    {/* Search Box - Premium Glassmorphism */}
                     <motion.div
                         initial={{ opacity: 0, y: -20, scale: 0.95 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: -20, scale: 0.95 }}
-                        className="relative w-full max-w-2xl bg-white dark:bg-zinc-900 rounded-3xl shadow-2xl overflow-hidden border border-orange-100 dark:border-zinc-80 zinc-800"
+                        className="relative w-full max-w-2xl bg-white/80 dark:bg-zinc-900/80 rounded-[2.5rem] shadow-elevated overflow-hidden border border-border/50 backdrop-blur-2xl shadow-glow"
                     >
-                        <div className="p-4 flex items-center border-b border-zinc-100 dark:border-zinc-800">
-                            <Search className="w-5 h-5 text-zinc-400 mr-3" />
+                        {/* Decorative Gradient Line */}
+                        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-sacred opacity-80" />
+
+                        <div className="p-5 flex items-center border-b border-border/50 bg-white/40 dark:bg-zinc-900/40">
+                            {isLoading ? (
+                                <Loader2 className="w-6 h-6 text-primary animate-spin mr-4" />
+                            ) : (
+                                <Search className="w-6 h-6 text-primary/60 mr-4" />
+                            )}
                             <input
                                 ref={inputRef}
                                 type="text"
-                                placeholder="Search Temples, Poojas, or Products..."
-                                className="flex-1 bg-transparent border-none outline-none text-lg text-zinc-800 dark:text-zinc-100 placeholder:text-zinc-400"
+                                placeholder="Discover Sacred Temples, Poojas, or Items..."
+                                className="flex-1 bg-transparent border-none outline-none text-xl font-serif text-foreground placeholder:text-muted-foreground/50 transition-all"
                                 value={query}
                                 onChange={(e) => setQuery(e.target.value)}
                             />
-                            <div className="flex items-center gap-2">
-                                <span className="hidden sm:inline-block px-1.5 py-0.5 rounded border border-zinc-200 dark:border-zinc-700 text-[10px] text-zinc-400 font-mono">
-                                    ESC
-                                </span>
+                            <div className="flex items-center gap-3">
+                                <div className="hidden sm:flex items-center gap-1.5 px-2 py-1 rounded-xl border border-border/50 bg-muted/30 text-[10px] text-muted-foreground font-medium shadow-sm">
+                                    <Command size={10} className="mr-0.5" /> ESC
+                                </div>
                                 <button
                                     onClick={onClose}
-                                    className="p-1 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors"
+                                    className="p-2 hover:bg-destructive hover:text-white rounded-full transition-all duration-300"
                                 >
-                                    <X className="w-5 h-5 text-zinc-400" />
+                                    <X className="w-5 h-5" />
                                 </button>
                             </div>
                         </div>
 
-                        <div className="max-h-[60vh] overflow-y-auto p-2 scrollbar-thin">
-                            {filteredResults.length > 0 ? (
-                                <div className="space-y-1">
-                                    <div className="px-3 py-2 text-[11px] font-bold text-zinc-400 uppercase tracking-wider">
-                                        {query ? "Search Results" : "Trending Searches"}
+                        {/* Results Area with Sacred Pattern */}
+                        <div className="max-h-[60vh] overflow-y-auto p-3 premium-scrollbar pattern-sacred">
+                            {results.length > 0 ? (
+                                <div className="space-y-2">
+                                    <div className="px-4 py-2 text-[12px] font-bold text-primary/70 uppercase tracking-[0.2em] font-sans">
+                                        {query.trim() ? "Sacred Results" : "Sacred Suggestions"}
                                     </div>
-                                    {filteredResults.map((item) => (
-                                        <button
-                                            key={item.id}
-                                            onClick={() => {
-                                                onClose();
-                                                router.push(`/${item.category.toLowerCase()}s/${item.id}`);
-                                            }}
-                                            className="w-full flex items-center justify-between p-3 hover:bg-orange-50 dark:hover:bg-orange-900/10 rounded-2xl transition-all group"
-                                        >
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-10 h-10 rounded-xl bg-orange-100 dark:bg-orange-900/20 flex items-center justify-center text-orange-600">
-                                                    <item.icon className="w-5 h-5" />
-                                                </div>
-                                                <div className="text-left">
-                                                    <div className="text-zinc-800 dark:text-zinc-200 font-medium group-hover:text-orange-700">
-                                                        {item.title}
+                                    {results.map((item, idx) => {
+                                        const Icon = getIcon(item.category);
+                                        const resultKey = `${item.category}-${item.id}`;
+                                        const hasImgError = imgErrors[resultKey];
+
+                                        return (
+                                            <motion.button
+                                                initial={{ opacity: 0, x: -10 }}
+                                                animate={{ opacity: 1, x: 0 }}
+                                                transition={{ delay: idx * 0.05 }}
+                                                key={resultKey}
+                                                onClick={() => handleItemClick(item)}
+                                                className="w-full flex items-center justify-between p-4 hover:bg-white/60 dark:hover:bg-zinc-800/60 rounded-[1.8rem] transition-all duration-300 group border border-transparent hover:border-primary/20 hover:shadow-warm"
+                                            >
+                                                <div className="flex items-center gap-4">
+                                                    <div className="w-14 h-14 rounded-2xl bg-gradient-warm flex items-center justify-center text-primary overflow-hidden shadow-soft border border-border/50 group-hover:scale-105 transition-transform duration-500">
+                                                        {item.image && !hasImgError ? (
+                                                            <img
+                                                                src={item.image.startsWith('http') ? item.image : `${BASE_URL}${item.image}`}
+                                                                alt={item.title}
+                                                                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                                                                onError={() => setImgErrors(prev => ({ ...prev, [resultKey]: true }))}
+                                                            />
+                                                        ) : (
+                                                            <Icon className="w-6 h-6" />
+                                                        )}
                                                     </div>
-                                                    {item.location && (
-                                                        <div className="text-zinc-400 text-xs flex items-center gap-1">
-                                                            <MapPin size={12} /> {item.location}
+                                                    <div className="text-left">
+                                                        <div className="flex items-center gap-2 mb-0.5">
+                                                            <h4 className="text-lg font-serif text-foreground font-semibold group-hover:text-primary transition-colors">
+                                                                {item.title}
+                                                            </h4>
+                                                            <span className="text-[9px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-bold uppercase tracking-wider border border-primary/5">
+                                                                {item.category}
+                                                            </span>
                                                         </div>
-                                                    )}
+                                                        {item.location ? (
+                                                            <div className="text-muted-foreground text-sm flex items-center gap-1.5 font-sans font-medium opacity-70">
+                                                                <MapPin size={14} className="text-primary/60" /> {item.location}
+                                                            </div>
+                                                        ) : item.type ? (
+                                                            <div className="text-muted-foreground text-sm font-sans font-medium opacity-70">
+                                                                {item.type}
+                                                            </div>
+                                                        ) : null}
+                                                    </div>
                                                 </div>
-                                            </div>
-                                            <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                <span className="text-[10px] text-orange-600 font-medium">View {item.category}</span>
-                                                <ArrowRight size={14} className="text-orange-600" />
-                                            </div>
-                                        </button>
-                                    ))}
+                                                <div className="flex items-center translate-x-4 opacity-0 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300">
+                                                    <div className="p-2 rounded-full bg-primary/10 text-primary group-hover:bg-primary group-hover:text-white transition-colors border border-primary/10">
+                                                        <ArrowRight size={18} />
+                                                    </div>
+                                                </div>
+                                            </motion.button>
+                                        );
+                                    })}
+                                </div>
+                            ) : query.trim() !== "" && !isLoading ? (
+                                <div className="p-16 text-center">
+                                    <div className="w-20 h-20 bg-muted/30 rounded-full flex items-center justify-center mx-auto mb-6 shadow-soft border border-border/50">
+                                        <Search className="w-10 h-10 text-muted-foreground/30" />
+                                    </div>
+                                    <h3 className="text-xl font-serif text-foreground mb-2">No Sacred Match Found</h3>
+                                    <p className="text-muted-foreground font-sans">We couldn't find any results for "{query}". Try another search term.</p>
                                 </div>
                             ) : (
-                                <div className="p-12 text-center">
-                                    <div className="w-16 h-16 bg-zinc-50 dark:bg-zinc-800/50 rounded-full flex items-center justify-center mx-auto mb-4">
-                                        <Search className="w-8 h-8 text-zinc-300" />
+                                <div className="p-16 text-center">
+                                    <div className="w-20 h-20 bg-primary/5 rounded-full flex items-center justify-center mx-auto mb-6 border border-primary/10">
+                                        <Command className="w-10 h-10 text-primary/20" />
                                     </div>
-                                    <h3 className="text-zinc-800 dark:text-zinc-200 font-medium">No results found</h3>
-                                    <p className="text-zinc-400 text-sm">We couldn't find anything matching "{query}"</p>
+                                    <h3 className="text-xl font-serif text-foreground mb-2">Omnipresent Search</h3>
+                                    <p className="text-muted-foreground/60 font-sans max-w-sm mx-auto">
+                                        Start typing to navigate through our sacred temples, divine poojas, and spiritual items.
+                                    </p>
                                 </div>
                             )}
                         </div>
 
-                        <div className="p-4 bg-zinc-50/50 dark:bg-zinc-800/30 flex items-center justify-between text-[11px] text-zinc-400 border-t border-zinc-100 dark:border-zinc-800">
-                            <div className="flex items-center gap-4">
-                                <span className="flex items-center gap-1"><ArrowRight size={10} className="rotate-90" /> Select</span>
-                                <span className="flex items-center gap-1"><ArrowRight size={10} className="rotate-180" /> Navigate</span>
+                        {/* Footer - Premium Info Bar */}
+                        <div className="p-5 bg-muted/10 dark:bg-zinc-800/20 flex items-center justify-between text-[11px] text-muted-foreground border-t border-border/50">
+                            <div className="flex items-center gap-6">
+                                <span className="flex items-center gap-2 font-medium"><ArrowRight size={12} className="rotate-90 text-primary" /> Select</span>
+                                <span className="flex items-center gap-2 font-medium"><ArrowRight size={12} className="rotate-180 text-primary" /> Navigate</span>
                             </div>
-                            <div>DevBhakti Search v1.0</div>
+                            <div className="flex items-center gap-1.5 opacity-60">
+                                <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+                                DevBhakti Sacred Search Engine v2.5
+                            </div>
                         </div>
                     </motion.div>
                 </div>

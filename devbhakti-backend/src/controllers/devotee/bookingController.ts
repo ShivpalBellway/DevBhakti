@@ -19,7 +19,10 @@ export const createBooking = async (req: Request, res: Response) => {
             devoteeEmail,
             bookingDate,
             address,
-            specialRequests
+            specialRequests,
+            gothra,
+            kuldevi,
+            kuldevta
         } = req.body;
 
         if (!poojaId || !packageName || !packagePrice || !devoteeName || !devoteePhone) {
@@ -141,11 +144,26 @@ export const createBooking = async (req: Request, res: Response) => {
                     bookingDate: bookingDate as string,
                     address: address as string | null,
                     specialRequests: specialRequests as string | null,
+                    gothra: gothra as string | null,
+                    kuldevi: kuldevi as string | null,
+                    kuldevta: kuldevta as string | null,
                     status: 'PENDING',
                     commissionAmount,
                     netEarning
                 }
             });
+
+            // Update user profile with these optional details if provided
+            if (gothra || kuldevi || kuldevta) {
+                await tx.user.update({
+                    where: { id: userId },
+                    data: {
+                        ...(gothra && { gothra: gothra as string }),
+                        ...(kuldevi && { kuldevi: kuldevi as string }),
+                        ...(kuldevta && { kuldevta: kuldevta as string }),
+                    }
+                });
+            }
 
             // Create ledger entry for temple
             await tx.templeLedger.create({

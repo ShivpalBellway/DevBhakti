@@ -27,15 +27,15 @@ export default function Home() {
     <main className="min-h-screen">
       <Navbar />
       <HeroSection />
-      {/* <BannerSection /> */}
+      <BannerSection />
       <TemplesSection />
       <PoojasSection />
       <LiveDarshanSection />
-      {/* <MarketplaceSection /> */}
-      {/* <FeaturesSection /> */}
-      {/* <VideoTestimonialsSection /> */}
+      <MarketplaceSection />
+      <FeaturesSection />
+      <VideoTestimonialsSection />
       <TrustSection />
-      {/* <ReviewsSection /> */}
+      <ReviewsSection />
       <CTASection />
       <Footer />
     </main>

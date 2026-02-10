@@ -14,6 +14,7 @@ import {
     MapPin,
     Sparkles,
     ArrowRight,
+
     History,
     FileText,
     Key,
@@ -90,7 +91,18 @@ export default function TempleRegistrationForm({ onClose }: { onClose?: () => vo
     // Handlers
     const handleMainImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
+        const MAX_SIZE = 2 * 1024 * 1024; // 2MB
+
         if (file) {
+            if (file.size > MAX_SIZE) {
+                toast({
+                    title: "File Too Large",
+                    description: `Image "${file.name}" exceeds 2MB limit. Please select a smaller file.`,
+                    variant: "destructive"
+                });
+                e.target.value = ''; // Reset input
+                return;
+            }
             setMainImage(file);
             setMainImagePreview(URL.createObjectURL(file));
         }
@@ -98,10 +110,46 @@ export default function TempleRegistrationForm({ onClose }: { onClose?: () => vo
 
     const handleHeroImagesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = Array.from(e.target.files || []);
+        const MAX_SIZE = 2 * 1024 * 1024; // 2MB
+
         if (files.length > 0) {
-            setHeroImages(prev => [...prev, ...files]);
-            const newPreviews = files.map(file => URL.createObjectURL(file));
-            setHeroPreviews(prev => [...prev, ...newPreviews]);
+            const currentCount = heroImages.length;
+            const remaining = 5 - currentCount;
+
+            if (remaining <= 0) {
+                toast({
+                    title: "Limit Reached",
+                    description: "You can only upload up to 5 banner images.",
+                    variant: "destructive"
+                });
+                e.target.value = '';
+                return;
+            }
+
+            const largeFiles = files.filter(f => f.size > MAX_SIZE);
+            if (largeFiles.length > 0) {
+                toast({
+                    title: "Files Too Large",
+                    description: `${largeFiles.length} file(s) exceed the 2MB limit. Those were skipped.`,
+                    variant: "destructive"
+                });
+            }
+
+            const validFiles = files.filter(f => f.size <= MAX_SIZE).slice(0, remaining);
+            if (validFiles.length > 0) {
+                setHeroImages(prev => [...prev, ...validFiles]);
+                const newPreviews = validFiles.map(file => URL.createObjectURL(file));
+                setHeroPreviews(prev => [...prev, ...newPreviews]);
+            }
+
+            if (files.filter(f => f.size <= MAX_SIZE).length > remaining) {
+                toast({
+                    title: "Limit Reached",
+                    description: `Only ${remaining} valid images were added. Maximum 5 banners allowed.`,
+                    variant: "destructive"
+                });
+            }
+            e.target.value = ''; // Reset input
         }
     };
 
@@ -134,6 +182,47 @@ export default function TempleRegistrationForm({ onClose }: { onClose?: () => vo
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        // 1. Phone Number Validation
+        const phoneDigits = formData.phone.replace(/\D/g, '');
+        if (phoneDigits.length !== 10) {
+            toast({
+                title: "Invalid Phone Number",
+                description: "Mobile number must be exactly 10 digits.",
+                variant: "destructive"
+            });
+            return;
+        }
+
+        // 2. Hero Images Count Validation
+        if (heroImages.length > 5) {
+            toast({
+                title: "Too Many Banners",
+                description: "Maximum 5 banner images allowed.",
+                variant: "destructive"
+            });
+            return;
+        }
+
+        // 3. Image Size Validation (Max 2MB)
+        const MAX_SIZE = 2 * 1024 * 1024;
+        const allFiles = [
+            ...(selectedFile ? [selectedFile] : []),
+            ...heroImages,
+            ...galleryImages
+        ];
+
+        for (const file of allFiles) {
+            if (file.size > MAX_SIZE) {
+                toast({
+                    title: "File Too Large",
+                    description: `Image "${file.name}" exceeds 2MB limit. Please reduce the size.`,
+                    variant: "destructive"
+                });
+                return;
+            }
+        }
+
         setIsLoading(true);
 
         try {

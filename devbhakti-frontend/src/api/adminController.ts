@@ -228,6 +228,19 @@ export const deleteBannerAdmin = async (id: string) => {
     return response.data;
 };
 
+export const fetchBannerGlobalStatus = async () => {
+    const response = await axios.get(`${API_URL}/admin/cms/banners/global-status`);
+    return response.data;
+};
+
+export const toggleBannerGlobalStatus = async () => {
+    const token = localStorage.getItem("admin_token");
+    const response = await axios.patch(`${API_URL}/admin/cms/banners/global-status`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+
 export const fetchAllFeaturesAdmin = async () => {
     const token = localStorage.getItem("admin_token");
     const response = await axios.get(`${API_URL}/admin/cms/features`, {

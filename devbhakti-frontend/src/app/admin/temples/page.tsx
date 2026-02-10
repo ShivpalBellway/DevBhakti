@@ -21,6 +21,7 @@ import {
     X,
     Filter,
 } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
     Select,
     SelectContent,
@@ -150,14 +151,50 @@ export default function TemplesManagementPage() {
         if (window.confirm("Are you sure you want to delete this temple account?")) {
             try {
                 await deleteTempleAdmin(id);
-                toast({ title: "Success", description: "Temple account deleted successfully" });
-                loadTemples();
-            } catch (error) {
                 toast({
-                    title: "Error",
-                    description: "Failed to delete temple account",
-                    variant: "destructive",
+                    title: "Success",
+                    description: "Temple account deleted successfully"
                 });
+                loadTemples();
+            } catch (error: any) {
+                console.error('Delete error:', error);
+
+                // Check if error has relatedData from backend
+                const errorData = error.response?.data;
+
+                if (errorData?.relatedData) {
+                    // Build detailed message showing what data exists
+                    const dataItems = [];
+                    if (errorData.relatedData.products) {
+                        dataItems.push(`${errorData.relatedData.products} Product${errorData.relatedData.products > 1 ? 's' : ''}`);
+                    }
+                    if (errorData.relatedData.bookings) {
+                        dataItems.push(`${errorData.relatedData.bookings} Booking${errorData.relatedData.bookings > 1 ? 's' : ''}`);
+                    }
+                    if (errorData.relatedData.poojas) {
+                        dataItems.push(`${errorData.relatedData.poojas} Pooja${errorData.relatedData.poojas > 1 ? 's' : ''}`);
+                    }
+                    if (errorData.relatedData.events) {
+                        dataItems.push(`${errorData.relatedData.events} Event${errorData.relatedData.events > 1 ? 's' : ''}`);
+                    }
+
+                    const detailedMessage = dataItems.length > 0
+                        ? `Cannot delete this temple. It has: ${dataItems.join(', ')}. Please remove this data first.`
+                        : errorData.error || "Cannot delete this temple. It has existing data.";
+
+                    toast({
+                        title: "❌ Cannot Delete Temple",
+                        description: detailedMessage,
+                        variant: "destructive",
+                    });
+                } else {
+                    // Fallback for other errors
+                    toast({
+                        title: "Error",
+                        description: errorData?.error || errorData?.message || "Failed to delete temple account",
+                        variant: "destructive",
+                    });
+                }
             }
         }
     };
@@ -427,215 +464,445 @@ export default function TemplesManagementPage() {
                 </div>
             </div>
 
-            <div className="border rounded-xl bg-card overflow-hidden shadow-sm">
-                <Table>
-                    <TableHeader className="bg-slate-50/100">
-                        <TableRow>
-                            <TableHead>Temple Owner</TableHead>
-                            <TableHead>Temple ID</TableHead>
-                            <TableHead>Temple Profile</TableHead>
-                            <TableHead>Statistics</TableHead>
-                            <TableHead>Status</TableHead>
-                            <TableHead>Live</TableHead>
-                            <TableHead className="text-right">Actions</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {isLoading ? (
-                            <TableRow>
-                                <TableCell colSpan={5} className="text-center py-12 text-muted-foreground">
-                                    <div className="flex flex-col items-center gap-2">
-                                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                                        <span>Loading data...</span>
-                                    </div>
-                                </TableCell>
-                            </TableRow>
-                        ) : filteredTemples.length === 0 ? (
-                            <TableRow>
-                                <TableCell colSpan={5} className="text-center py-12 text-muted-foreground">
-                                    No temples found.
-                                </TableCell>
-                            </TableRow>
-                        ) : (
-                            filteredTemples.map((inst) => (
-                                <TableRow key={inst.userId} className="hover:bg-slate-50/50 transition-colors">
-                                    <TableCell>
-                                        <div className="flex flex-col">
-                                            <span className="font-semibold text-slate-900">{inst.userName || "N/A"}</span>
-                                            <span className="text-[13px] text-slate-800">{inst.userEmail || inst.userPhone || "N/A"}</span>
-                                            <span className="text-[13px] text-slate-800">{inst.userPhone || "N/A"}</span>
-                                        </div>
-                                    </TableCell>
-                                    <TableCell>
-                                        <Badge variant="outline" className="font-mono text-xs">
-                                            {inst.templeId || "N/A"}
-                                        </Badge>
-                                    </TableCell>
-                                    <TableCell>
-                                        <div className="flex flex-col gap-0.5">
-                                            <div className="flex items-center gap-1.5 font-medium text-slate-900">
-                                                <Building2 className="w-4 h-4 text-primary" />
-                                                <span>{inst.templeName || "No Temple"}</span>
-                                            </div>
-                                            <div className="flex items-center gap-1 text-[12px] text-dark-foreground">
-                                                <MapPin className="w-4 h-4" />
-                                                <span>{inst.templeLocation || "N/A"}</span>
-                                            </div>
-                                        </div>
-                                    </TableCell>
-                                    <TableCell>
-                                        <div className="flex items-center gap-2">
-                                            <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium ${inst.temple?.liveStatus
-                                                ? 'bg-red-50 text-red-700 border border-red-200'
-                                                : 'bg-slate-50 text-slate-500 border border-slate-200'
-                                                }`}>
-                                                {inst.temple?.liveStatus ? (
-                                                    <><Power className="w-3 h-3" /> Live</>
-                                                ) : (
-                                                    <><PowerOff className="w-3 h-3" /> Offline</>
-                                                )}
-                                            </div>
-                                            <Switch
-                                                checked={inst.temple?.liveStatus || false}
-                                                onCheckedChange={() => handleToggleLiveStatus(
-                                                    inst.userId,
-                                                    inst.isVerified,
-                                                    inst.temple?.isActive || false,
-                                                    inst.temple?.liveStatus || false
-                                                )}
-                                                disabled={!inst.isVerified}
-                                            />
-                                        </div>
-                                    </TableCell>
-                                    <TableCell>
-                                        <div className="flex flex-col gap-1 text-[14px]">
-                                            <span className="text-slate-800">Poojas: {inst._count?.poojas || 0}</span>
-                                            <span className="text-slate-800">Events: {inst._count?.events || 0}</span>
-                                        </div>
-                                    </TableCell>
-                                    <TableCell>
-                                        <div className="flex flex-col gap-2">
-                                            {/* Verification Status Dropdown */}
-                                            <DropdownMenu>
-                                                <DropdownMenuTrigger asChild>
-                                                    {inst.isVerified ? (
-                                                        <div className="cursor-pointer flex items-center gap-1.5 px-2.5 py-1.5 bg-emerald-50 text-emerald-700 rounded-lg border border-emerald-200 hover:bg-emerald-100 transition-colors">
-                                                            <CheckCircle className="w-3.5 h-3.5" />
-                                                            <span className="text-xs font-semibold">Verified</span>
-                                                            <MoreVertical className="w-3 h-3 ml-auto" />
-                                                        </div>
-                                                    ) : (
-                                                        <div className="cursor-pointer flex items-center gap-1.5 px-2.5 py-1.5 bg-amber-50 text-amber-700 rounded-lg border border-amber-200 hover:bg-amber-100 transition-colors">
-                                                            <Clock className="w-3.5 h-3.5" />
-                                                            <span className="text-xs font-semibold">Pending</span>
-                                                            <MoreVertical className="w-3 h-3 ml-auto" />
-                                                        </div>
-                                                    )}
-                                                </DropdownMenuTrigger>
-                                                <DropdownMenuContent align="end">
-                                                    {!inst.isVerified && (
-                                                        <>
-                                                            <DropdownMenuItem
-                                                                onClick={() => handleToggleStatus(inst.userId, inst.templeId, inst.isVerified, inst.temple?.isActive || false, inst.templeName)}
-                                                                className="text-emerald-600"
-                                                            >
-                                                                <CheckCircle className="w-4 h-4 mr-2" />
-                                                                Approve Temple
-                                                            </DropdownMenuItem>
-                                                            <DropdownMenuSeparator />
-                                                        </>
-                                                    )}
-                                                    {inst.isVerified && (
-                                                        <DropdownMenuItem
-                                                            onClick={() => handleToggleStatus(inst.userId, inst.templeId, inst.isVerified, inst.temple?.isActive || false, inst.templeName)}
-                                                            className="text-amber-600"
-                                                        >
-                                                            <XCircle className="w-4 h-4 mr-2" />
-                                                            Revoke Verification
-                                                        </DropdownMenuItem>
-                                                    )}
-                                                </DropdownMenuContent>
-                                            </DropdownMenu>
+            {/* Tabs for Verified vs Pending */}
+            <Tabs defaultValue="verified" className="w-full">
+                <div className="flex items-center justify-between mb-4">
+                    <TabsList>
+                        <TabsTrigger value="verified" className="flex items-center gap-2">
+                            <CheckCircle className="w-4 h-4" />
+                            Verified Temples
+                        </TabsTrigger>
+                        <TabsTrigger value="unverified" className="flex items-center gap-2">
+                            <Clock className="w-4 h-4" />
+                            Pending Verification
+                        </TabsTrigger>
+                    </TabsList>
+                </div>
 
-                                            {/* Active/Inactive Status */}
-                                            <div className="flex items-center gap-2">
-                                                <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium ${inst.temple?.isActive
-                                                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                                                    : 'bg-slate-50 text-slate-500 border border-slate-200'
-                                                    }`}>
-                                                    {inst.temple?.isActive ? (
-                                                        <><Power className="w-3 h-3" /> Active</>
-                                                    ) : (
-                                                        <><PowerOff className="w-3 h-3" /> Inactive</>
-                                                    )}
-                                                </div>
-                                                <Switch
-                                                    checked={inst.temple?.isActive || false}
-                                                    onCheckedChange={() => handleToggleActive(inst.userId, inst.isVerified, inst.temple?.isActive || false)}
-                                                    disabled={!inst.isVerified}
-                                                />
-                                            </div>
-                                        </div>
-                                    </TableCell>
-                                    <TableCell className="text-right">
-                                        <div className="flex justify-end gap-1">
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                className="h-8 w-8 text-slate-600"
-                                                onClick={() => router.push(`/admin/temples/${inst.userId}`)}
-                                                title="View Details"
-                                            >
-                                                <Eye className="w-4 h-4" />
-                                            </Button>
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                className="h-8 w-8 text-indigo-600"
-                                                onClick={() => {
-                                                    setSelectedTemple(inst);
-                                                    setIsPreviewOpen(true);
-                                                }}
-                                                title="Preview on Website"
-                                            >
-                                                <Globe className="w-4 h-4" />
-                                            </Button>
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                className="h-8 w-8 text-blue-600"
-                                                onClick={() => {
-                                                    console.log('=== TEMPLE DATA DEBUG ===');
-                                                    console.log('inst:', inst);
-                                                    console.log('User Email:', inst.email);
-                                                    console.log('User Phone:', inst.phone);
-                                                    console.log('User ID:', inst.userId);
-                                                    console.log('Temple Name:', inst.name);
-                                                    console.log('Temple Location:', inst.location);
-                                                    console.log('============================');
-                                                    router.push(`/admin/temples/edit/${inst.userId}`)
-                                                }}
-                                                title="Edit Temple Account"
-                                            >
-                                                <Edit2 className="w-4 h-4" />
-                                            </Button>
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                className="h-8 w-8 text-destructive"
-                                                onClick={() => handleDelete(inst.userId)}
-                                                title="Delete Temple Account"
-                                            >
-                                                <Trash2 className="w-4 h-4" />
-                                            </Button>
-                                        </div>
-                                    </TableCell>
+                <TabsContent value="verified">
+                    <div className="border rounded-xl bg-card overflow-hidden shadow-sm">
+                        <Table>
+                            <TableHeader className="bg-slate-50/100">
+                                <TableRow>
+                                    <TableHead>Temple Owner</TableHead>
+                                    <TableHead>Temple ID</TableHead>
+                                    <TableHead>Temple Profile</TableHead>
+                                    <TableHead>Statistics</TableHead>
+                                    <TableHead>Status</TableHead>
+                                    <TableHead>Live</TableHead>
+                                    <TableHead className="text-right">Actions</TableHead>
                                 </TableRow>
-                            ))
-                        )}
-                    </TableBody>
-                </Table>
-            </div>
+                            </TableHeader>
+                            <TableBody>
+                                {isLoading ? (
+                                    <TableRow>
+                                        <TableCell colSpan={7} className="text-center py-12 text-muted-foreground">
+                                            <div className="flex flex-col items-center gap-2">
+                                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                                                <span>Loading data...</span>
+                                            </div>
+                                        </TableCell>
+                                    </TableRow>
+                                ) : filteredTemples.filter(t => t.isVerified).length === 0 ? (
+                                    <TableRow>
+                                        <TableCell colSpan={7} className="text-center py-12 text-muted-foreground">
+                                            No verified temples found.
+                                        </TableCell>
+                                    </TableRow>
+                                ) : (
+                                    filteredTemples.filter(t => t.isVerified).map((inst) => (
+                                        <TableRow key={inst.userId} className="hover:bg-slate-50/50 transition-colors">
+                                            <TableCell>
+                                                <div className="flex flex-col">
+                                                    <span className="font-semibold text-slate-900">{inst.userName || "N/A"}</span>
+                                                    <span className="text-[13px] text-slate-800">{inst.userEmail || inst.userPhone || "N/A"}</span>
+                                                    <span className="text-[13px] text-slate-800">{inst.userPhone || "N/A"}</span>
+                                                </div>
+                                            </TableCell>
+                                            <TableCell>
+                                                <Badge variant="outline" className="font-mono text-xs">
+                                                    {inst.templeId || "N/A"}
+                                                </Badge>
+                                            </TableCell>
+                                            <TableCell>
+                                                <div className="flex flex-col gap-0.5">
+                                                    <div className="flex items-center gap-1.5 font-medium text-slate-900">
+                                                        <Building2 className="w-4 h-4 text-primary" />
+                                                        <span>{inst.templeName || "No Temple"}</span>
+                                                    </div>
+                                                    <div className="flex items-center gap-1 text-[12px] text-dark-foreground">
+                                                        <MapPin className="w-4 h-4" />
+                                                        <span>{inst.templeLocation || "N/A"}</span>
+                                                    </div>
+                                                </div>
+                                            </TableCell>
+                                            <TableCell>
+                                                <div className="flex items-center gap-2">
+                                                    <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium ${inst.temple?.liveStatus
+                                                        ? 'bg-red-50 text-red-700 border border-red-200'
+                                                        : 'bg-slate-50 text-slate-500 border border-slate-200'
+                                                        }`}>
+                                                        {inst.temple?.liveStatus ? (
+                                                            <><Power className="w-3 h-3" /> Live</>
+                                                        ) : (
+                                                            <><PowerOff className="w-3 h-3" /> Offline</>
+                                                        )}
+                                                    </div>
+                                                    <Switch
+                                                        checked={inst.temple?.liveStatus || false}
+                                                        onCheckedChange={() => handleToggleLiveStatus(
+                                                            inst.userId,
+                                                            inst.isVerified,
+                                                            inst.temple?.isActive || false,
+                                                            inst.temple?.liveStatus || false
+                                                        )}
+                                                        disabled={!inst.isVerified}
+                                                    />
+                                                </div>
+                                            </TableCell>
+                                            <TableCell>
+                                                <div className="flex flex-col gap-1 text-[14px]">
+                                                    <span className="text-slate-800">Poojas: {inst._count?.poojas || 0}</span>
+                                                    <span className="text-slate-800">Events: {inst._count?.events || 0}</span>
+                                                </div>
+                                            </TableCell>
+                                            <TableCell>
+                                                <div className="flex flex-col gap-2">
+                                                    {/* Verification Status Dropdown */}
+                                                    <DropdownMenu>
+                                                        <DropdownMenuTrigger asChild>
+                                                            {inst.isVerified ? (
+                                                                <div className="cursor-pointer flex items-center gap-1.5 px-2.5 py-1.5 bg-emerald-50 text-emerald-700 rounded-lg border border-emerald-200 hover:bg-emerald-100 transition-colors">
+                                                                    <CheckCircle className="w-3.5 h-3.5" />
+                                                                    <span className="text-xs font-semibold">Verified</span>
+                                                                    <MoreVertical className="w-3 h-3 ml-auto" />
+                                                                </div>
+                                                            ) : (
+                                                                <div className="cursor-pointer flex items-center gap-1.5 px-2.5 py-1.5 bg-amber-50 text-amber-700 rounded-lg border border-amber-200 hover:bg-amber-100 transition-colors">
+                                                                    <Clock className="w-3.5 h-3.5" />
+                                                                    <span className="text-xs font-semibold">Pending</span>
+                                                                    <MoreVertical className="w-3 h-3 ml-auto" />
+                                                                </div>
+                                                            )}
+                                                        </DropdownMenuTrigger>
+                                                        <DropdownMenuContent align="end">
+                                                            {!inst.isVerified && (
+                                                                <>
+                                                                    <DropdownMenuItem
+                                                                        onClick={() => handleToggleStatus(inst.userId, inst.templeId, inst.isVerified, inst.temple?.isActive || false, inst.templeName)}
+                                                                        className="text-emerald-600"
+                                                                    >
+                                                                        <CheckCircle className="w-4 h-4 mr-2" />
+                                                                        Approve Temple
+                                                                    </DropdownMenuItem>
+                                                                    <DropdownMenuSeparator />
+                                                                </>
+                                                            )}
+                                                            {inst.isVerified && (
+                                                                <DropdownMenuItem
+                                                                    onClick={() => handleToggleStatus(inst.userId, inst.templeId, inst.isVerified, inst.temple?.isActive || false, inst.templeName)}
+                                                                    className="text-amber-600"
+                                                                >
+                                                                    <XCircle className="w-4 h-4 mr-2" />
+                                                                    Revoke Verification
+                                                                </DropdownMenuItem>
+                                                            )}
+                                                        </DropdownMenuContent>
+                                                    </DropdownMenu>
+
+                                                    {/* Active/Inactive Status */}
+                                                    <div className="flex items-center gap-2">
+                                                        <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium ${inst.temple?.isActive
+                                                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                            : 'bg-slate-50 text-slate-500 border border-slate-200'
+                                                            }`}>
+                                                            {inst.temple?.isActive ? (
+                                                                <><Power className="w-3 h-3" /> Active</>
+                                                            ) : (
+                                                                <><PowerOff className="w-3 h-3" /> Inactive</>
+                                                            )}
+                                                        </div>
+                                                        <Switch
+                                                            checked={inst.temple?.isActive || false}
+                                                            onCheckedChange={() => handleToggleActive(inst.userId, inst.isVerified, inst.temple?.isActive || false)}
+                                                            disabled={!inst.isVerified}
+                                                        />
+                                                    </div>
+                                                </div>
+                                            </TableCell>
+                                            <TableCell className="text-right">
+                                                <div className="flex justify-end gap-1">
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="h-8 w-8 text-slate-600"
+                                                        onClick={() => router.push(`/admin/temples/${inst.userId}`)}
+                                                        title="View Details"
+                                                    >
+                                                        <Eye className="w-4 h-4" />
+                                                    </Button>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="h-8 w-8 text-indigo-600"
+                                                        onClick={() => {
+                                                            setSelectedTemple(inst);
+                                                            setIsPreviewOpen(true);
+                                                        }}
+                                                        title="Preview on Website"
+                                                    >
+                                                        <Globe className="w-4 h-4" />
+                                                    </Button>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="h-8 w-8 text-blue-600"
+                                                        onClick={() => {
+                                                            console.log('=== TEMPLE DATA DEBUG ===');
+                                                            console.log('inst:', inst);
+                                                            console.log('User Email:', inst.email);
+                                                            console.log('User Phone:', inst.phone);
+                                                            console.log('User ID:', inst.userId);
+                                                            console.log('Temple Name:', inst.name);
+                                                            console.log('Temple Location:', inst.location);
+                                                            console.log('============================');
+                                                            router.push(`/admin/temples/edit/${inst.userId}`)
+                                                        }}
+                                                        title="Edit Temple Account"
+                                                    >
+                                                        <Edit2 className="w-4 h-4" />
+                                                    </Button>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="h-8 w-8 text-destructive"
+                                                        onClick={() => handleDelete(inst.userId)}
+                                                        title="Delete Temple Account"
+                                                    >
+                                                        <Trash2 className="w-4 h-4" />
+                                                    </Button>
+                                                </div>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))
+                                )}
+                            </TableBody>
+                        </Table>
+                    </div>
+                </TabsContent>
+
+                <TabsContent value="unverified">
+                    <div className="border rounded-xl bg-card overflow-hidden shadow-sm">
+                        <Table>
+                            <TableHeader className="bg-slate-50/100">
+                                <TableRow>
+                                    <TableHead>Temple Owner</TableHead>
+                                    <TableHead>Temple ID</TableHead>
+                                    <TableHead>Temple Profile</TableHead>
+                                    <TableHead>Statistics</TableHead>
+                                    <TableHead>Status</TableHead>
+                                    <TableHead>Live</TableHead>
+                                    <TableHead className="text-right">Actions</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {isLoading ? (
+                                    <TableRow>
+                                        <TableCell colSpan={7} className="text-center py-12 text-muted-foreground">
+                                            <div className="flex flex-col items-center gap-2">
+                                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                                                <span>Loading data...</span>
+                                            </div>
+                                        </TableCell>
+                                    </TableRow>
+                                ) : filteredTemples.filter(t => !t.isVerified).length === 0 ? (
+                                    <TableRow>
+                                        <TableCell colSpan={7} className="text-center py-12 text-muted-foreground">
+                                            No pending verification temples found.
+                                        </TableCell>
+                                    </TableRow>
+                                ) : (
+                                    filteredTemples.filter(t => !t.isVerified).map((inst) => (
+                                        <TableRow key={inst.userId} className="hover:bg-slate-50/50 transition-colors">
+                                            <TableCell>
+                                                <div className="flex flex-col">
+                                                    <span className="font-semibold text-slate-900">{inst.userName || "N/A"}</span>
+                                                    <span className="text-[13px] text-slate-800">{inst.userEmail || inst.userPhone || "N/A"}</span>
+                                                    <span className="text-[13px] text-slate-800">{inst.userPhone || "N/A"}</span>
+                                                </div>
+                                            </TableCell>
+                                            <TableCell>
+                                                <Badge variant="outline" className="font-mono text-xs">
+                                                    {inst.templeId || "N/A"}
+                                                </Badge>
+                                            </TableCell>
+                                            <TableCell>
+                                                <div className="flex flex-col gap-0.5">
+                                                    <div className="flex items-center gap-1.5 font-medium text-slate-900">
+                                                        <Building2 className="w-4 h-4 text-primary" />
+                                                        <span>{inst.templeName || "No Temple"}</span>
+                                                    </div>
+                                                    <div className="flex items-center gap-1 text-[12px] text-dark-foreground">
+                                                        <MapPin className="w-4 h-4" />
+                                                        <span>{inst.templeLocation || "N/A"}</span>
+                                                    </div>
+                                                </div>
+                                            </TableCell>
+                                            <TableCell>
+                                                <div className="flex items-center gap-2">
+                                                    <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium ${inst.temple?.liveStatus
+                                                        ? 'bg-red-50 text-red-700 border border-red-200'
+                                                        : 'bg-slate-50 text-slate-500 border border-slate-200'
+                                                        }`}>
+                                                        {inst.temple?.liveStatus ? (
+                                                            <><Power className="w-3 h-3" /> Live</>
+                                                        ) : (
+                                                            <><PowerOff className="w-3 h-3" /> Offline</>
+                                                        )}
+                                                    </div>
+                                                    <Switch
+                                                        checked={inst.temple?.liveStatus || false}
+                                                        onCheckedChange={() => handleToggleLiveStatus(
+                                                            inst.userId,
+                                                            inst.isVerified,
+                                                            inst.temple?.isActive || false,
+                                                            inst.temple?.liveStatus || false
+                                                        )}
+                                                        disabled={!inst.isVerified}
+                                                    />
+                                                </div>
+                                            </TableCell>
+                                            <TableCell>
+                                                <div className="flex flex-col gap-1 text-[14px]">
+                                                    <span className="text-slate-800">Poojas: {inst._count?.poojas || 0}</span>
+                                                    <span className="text-slate-800">Events: {inst._count?.events || 0}</span>
+                                                </div>
+                                            </TableCell>
+                                            <TableCell>
+                                                <div className="flex flex-col gap-2">
+                                                    {/* Verification Status Dropdown */}
+                                                    <DropdownMenu>
+                                                        <DropdownMenuTrigger asChild>
+                                                            {inst.isVerified ? (
+                                                                <div className="cursor-pointer flex items-center gap-1.5 px-2.5 py-1.5 bg-emerald-50 text-emerald-700 rounded-lg border border-emerald-200 hover:bg-emerald-100 transition-colors">
+                                                                    <CheckCircle className="w-3.5 h-3.5" />
+                                                                    <span className="text-xs font-semibold">Verified</span>
+                                                                    <MoreVertical className="w-3 h-3 ml-auto" />
+                                                                </div>
+                                                            ) : (
+                                                                <div className="cursor-pointer flex items-center gap-1.5 px-2.5 py-1.5 bg-amber-50 text-amber-700 rounded-lg border border-amber-200 hover:bg-amber-100 transition-colors">
+                                                                    <Clock className="w-3.5 h-3.5" />
+                                                                    <span className="text-xs font-semibold">Pending</span>
+                                                                    <MoreVertical className="w-3 h-3 ml-auto" />
+                                                                </div>
+                                                            )}
+                                                        </DropdownMenuTrigger>
+                                                        <DropdownMenuContent align="end">
+                                                            {!inst.isVerified && (
+                                                                <>
+                                                                    <DropdownMenuItem
+                                                                        onClick={() => handleToggleStatus(inst.userId, inst.templeId, inst.isVerified, inst.temple?.isActive || false, inst.templeName)}
+                                                                        className="text-emerald-600"
+                                                                    >
+                                                                        <CheckCircle className="w-4 h-4 mr-2" />
+                                                                        Approve Temple
+                                                                    </DropdownMenuItem>
+                                                                    <DropdownMenuSeparator />
+                                                                </>
+                                                            )}
+                                                            {inst.isVerified && (
+                                                                <DropdownMenuItem
+                                                                    onClick={() => handleToggleStatus(inst.userId, inst.templeId, inst.isVerified, inst.temple?.isActive || false, inst.templeName)}
+                                                                    className="text-amber-600"
+                                                                >
+                                                                    <XCircle className="w-4 h-4 mr-2" />
+                                                                    Revoke Verification
+                                                                </DropdownMenuItem>
+                                                            )}
+                                                        </DropdownMenuContent>
+                                                    </DropdownMenu>
+
+                                                    {/* Active/Inactive Status */}
+                                                    <div className="flex items-center gap-2">
+                                                        <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium ${inst.temple?.isActive
+                                                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                            : 'bg-slate-50 text-slate-500 border border-slate-200'
+                                                            }`}>
+                                                            {inst.temple?.isActive ? (
+                                                                <><Power className="w-3 h-3" /> Active</>
+                                                            ) : (
+                                                                <><PowerOff className="w-3 h-3" /> Inactive</>
+                                                            )}
+                                                        </div>
+                                                        <Switch
+                                                            checked={inst.temple?.isActive || false}
+                                                            onCheckedChange={() => handleToggleActive(inst.userId, inst.isVerified, inst.temple?.isActive || false)}
+                                                            disabled={!inst.isVerified}
+                                                        />
+                                                    </div>
+                                                </div>
+                                            </TableCell>
+                                            <TableCell className="text-right">
+                                                <div className="flex justify-end gap-1">
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="h-8 w-8 text-slate-600"
+                                                        onClick={() => router.push(`/admin/temples/${inst.userId}`)}
+                                                        title="View Details"
+                                                    >
+                                                        <Eye className="w-4 h-4" />
+                                                    </Button>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="h-8 w-8 text-indigo-600"
+                                                        onClick={() => {
+                                                            setSelectedTemple(inst);
+                                                            setIsPreviewOpen(true);
+                                                        }}
+                                                        title="Preview on Website"
+                                                    >
+                                                        <Globe className="w-4 h-4" />
+                                                    </Button>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="h-8 w-8 text-blue-600"
+                                                        onClick={() => {
+                                                            console.log('=== TEMPLE DATA DEBUG ===');
+                                                            console.log('inst:', inst);
+                                                            console.log('User Email:', inst.email);
+                                                            console.log('User Phone:', inst.phone);
+                                                            console.log('User ID:', inst.userId);
+                                                            console.log('Temple Name:', inst.name);
+                                                            console.log('Temple Location:', inst.location);
+                                                            console.log('============================');
+                                                            router.push(`/admin/temples/edit/${inst.userId}`)
+                                                        }}
+                                                        title="Edit Temple Account"
+                                                    >
+                                                        <Edit2 className="w-4 h-4" />
+                                                    </Button>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="h-8 w-8 text-destructive"
+                                                        onClick={() => handleDelete(inst.userId)}
+                                                        title="Delete Temple Account"
+                                                    >
+                                                        <Trash2 className="w-4 h-4" />
+                                                    </Button>
+                                                </div>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))
+                                )}
+                            </TableBody>
+                        </Table>
+                    </div>
+                </TabsContent>
+            </Tabs>
 
             {/* Approval Modal */}
             <Dialog open={approvalModalOpen} onOpenChange={setApprovalModalOpen}>

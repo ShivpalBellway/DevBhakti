@@ -14,7 +14,10 @@ import {
   ShieldCheck,
   Store,
   Building2,
+  Check,
+  ChevronsUpDown,
 } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -38,6 +41,19 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 import { useToast } from "@/hooks/use-toast";
 import { createProductAdmin, fetchAllTemplesAdmin, fetchActiveCategoriesAdmin, fetchAllSellersAdmin } from "@/api/adminController";
 
@@ -45,7 +61,6 @@ interface Variant {
   id: string;
   name: string;
   price: number;
-  costPrice?: number;
   stock: number;
   image?: string | null;
   imageFile?: File | null;
@@ -63,6 +78,7 @@ export default function CreateProductPage() {
   const [isLoadingCategories, setIsLoadingCategories] = useState(true);
   const [productImage, setProductImage] = useState<File | null>(null);
   const [productImagePreview, setProductImagePreview] = useState<string>("");
+  const [open, setOpen] = useState(false);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -78,7 +94,7 @@ export default function CreateProductPage() {
   });
 
   const [variants, setVariants] = useState<Variant[]>([
-    { id: "1", name: "", price: 0, costPrice: 0, stock: 0, imageFile: null, imagePreview: "" }
+    { id: "1", name: "", price: 0, stock: 0, imageFile: null, imagePreview: "" }
   ]);
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -96,26 +112,28 @@ export default function CreateProductPage() {
         fetchAllSellersAdmin()
       ]);
 
-      const formattedTemples = templesData
-        .filter((user: any) => user.temple)
+      const formattedTemples = (templesData || [])
+        .filter((user: any) => user?.temple?.id)
         .map((user: any) => ({
           id: user.temple.id,
           name: user.temple.name,
           role: "TEMPLE",
-          icon: <Building2 className="w-4 h-4 text-primary" />
+          icon: <Building2 className="w-4 h-4 text-primary" />,
+          searchText: `${user.temple.name} temple institution`
         }));
 
-      const formattedSellers = sellersData
-        .filter((seller: any) => seller.templeId)
+      const formattedSellers = (sellersData || [])
+        .filter((seller: any) => seller?.sellerId)
         .map((seller: any) => ({
-          id: seller.templeId,
+          id: seller.sellerId,
           name: seller.storeName,
           role: "SELLER",
-          icon: <Store className="w-4 h-4 text-blue-600" />
+          icon: <Store className="w-4 h-4 text-blue-600" />,
+          searchText: `${seller.storeName} seller vendor store`
         }));
 
       const allVendors = [
-        { id: "general", name: "DevBhakti Exclusive", role: "ADMIN", icon: <ShieldCheck className="w-4 h-4 text-amber-600" /> },
+        { id: "general", name: "DevBhakti Exclusive", role: "ADMIN", icon: <ShieldCheck className="w-4 h-4 text-amber-600" />, searchText: "devbhakti exclusive admin general" },
         ...formattedTemples,
         ...formattedSellers
       ];
@@ -277,7 +295,6 @@ export default function CreateProductPage() {
         return {
           name: v.name,
           price: v.price,
-          costPrice: v.costPrice || null,
           stock: v.stock,
           image: v.imageFile ? null : (v.imagePreview || null)
         };
@@ -312,7 +329,6 @@ export default function CreateProductPage() {
       id: Date.now().toString(),
       name: "",
       price: 0,
-      costPrice: 0,
       stock: 0,
       imageFile: null,
       imagePreview: ""
@@ -329,7 +345,7 @@ export default function CreateProductPage() {
   const updateVariant = (id: string, field: keyof Variant, value: string | number) => {
     setVariants(variants.map(variant =>
       variant.id === id
-        ? { ...variant, [field]: field === 'price' || field === 'stock' || field === 'costPrice' ? Number(value) : value }
+        ? { ...variant, [field]: field === 'price' || field === 'stock' ? Number(value) : value }
         : variant
     ));
   };
@@ -479,27 +495,60 @@ export default function CreateProductPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="temple">Product Owner / Vendor *</Label>
-                  <Select
-                    value={formData.templeId}
-                    onValueChange={(value) => setFormData({ ...formData, templeId: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select Owner/Vendor" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {vendors.map((vendor) => (
-                        <SelectItem key={vendor.id} value={vendor.id}>
+                  <Popover open={open} onOpenChange={setOpen}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        role="combobox"
+                        aria-expanded={open}
+                        className="w-full justify-between font-normal hover:bg-white"
+                      >
+                        {formData.templeId ? (
                           <div className="flex items-center gap-2">
-                            {vendor.icon}
-                            <span>{vendor.name}</span>
-                            <span className="text-[10px] font-bold uppercase py-0.5 px-1 bg-slate-100 rounded text-slate-500 ml-auto">
-                              {vendor.role}
-                            </span>
+                            {vendors.find((v) => v.id === formData.templeId)?.icon}
+                            <span>{vendors.find((v) => v.id === formData.templeId)?.name}</span>
                           </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                        ) : (
+                          "Select Owner/Vendor"
+                        )}
+                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-full p-0" align="start">
+                      <Command>
+                        <CommandInput placeholder="Search owner or vendor..." className="h-9" />
+                        <CommandList>
+                          <CommandEmpty>No owner found.</CommandEmpty>
+                          <CommandGroup>
+                            {vendors.map((vendor) => (
+                              <CommandItem
+                                key={vendor.id}
+                                value={vendor.searchText || vendor.name}
+                                onSelect={() => {
+                                  setFormData({ ...formData, templeId: vendor.id });
+                                  setOpen(false);
+                                }}
+                              >
+                                <div className="flex items-center gap-2 w-full">
+                                  {vendor.icon}
+                                  <span className="flex-1">{vendor.name}</span>
+                                  <span className="text-[10px] font-bold uppercase py-0.5 px-1 bg-slate-100 rounded text-slate-500">
+                                    {vendor.role}
+                                  </span>
+                                  <Check
+                                    className={cn(
+                                      "ml-2 h-4 w-4",
+                                      formData.templeId === vendor.id ? "opacity-100" : "opacity-0"
+                                    )}
+                                  />
+                                </div>
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
                 </div>
 
                 <div className="space-y-2">
@@ -713,20 +762,6 @@ export default function CreateProductPage() {
                       )}
                     </div>
 
-                    {/* Cost Price */}
-                    <div className="space-y-2">
-                      <Label htmlFor={`variant-cost-${variant.id}`}>Cost Price (₹)</Label>
-                      <Input
-                        id={`variant-cost-${variant.id}`}
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        value={variant.costPrice || ""}
-                        onChange={(e) => updateVariant(variant.id, 'costPrice', e.target.value)}
-                        placeholder="0.00"
-                      />
-                    </div>
-
                     {/* Stock */}
                     <div className="space-y-2">
                       <Label htmlFor={`variant-stock-${variant.id}`}>Stock Quantity *</Label>
@@ -744,16 +779,6 @@ export default function CreateProductPage() {
                       )}
                     </div>
                   </div>
-
-                  {/* Profit Margin Display */}
-                  {variant.price > 0 && variant.costPrice && variant.costPrice > 0 && (
-                    <div className="text-xs bg-green-50 dark:bg-green-950 p-2 rounded border border-green-200 dark:border-green-800">
-                      <span className="text-green-700 dark:text-green-300 font-medium">
-                        Profit Margin: ₹{(variant.price - variant.costPrice).toFixed(2)}
-                        ({(((variant.price - variant.costPrice) / variant.price) * 100).toFixed(1)}%)
-                      </span>
-                    </div>
-                  )}
                 </div>
               ))}
             </div>
@@ -789,6 +814,6 @@ export default function CreateProductPage() {
           </Button>
         </div>
       </form>
-    </div>
+    </div >
   );
 }

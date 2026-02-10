@@ -4,8 +4,10 @@ import React from "react";
 import { motion } from "framer-motion";
 import Navbar from "@/components/landing/Navbar";
 import Footer from "@/components/landing/Footer";
+import Image from "next/image";
 import { Building2, Calendar, ClipboardCheck, HeartHandshake, ShieldCheck, Sprout } from "lucide-react";
 import aboutImage from "@/assets/temple-kashi.jpg";
+import tirupatiImage from "@/assets/temple-tirupati.jpg";
 
 export default function AboutPage() {
     const fadeIn = {
@@ -67,10 +69,11 @@ export default function AboutPage() {
                             <div className="absolute inset-0 bg-gradient-sacred opacity-10" />
 
 
-                            <img
+                            <Image
                                 src={aboutImage}
                                 alt="Sacred Tradition"
-                                className="w-full h-full object-cover"
+                                fill
+                                className="object-cover"
                             />
                         </motion.div>
                     </div>
@@ -175,9 +178,11 @@ export default function AboutPage() {
                             className="flex-1 relative"
                         >
                             <div className="absolute -inset-4 bg-gradient-sacred opacity-20 blur-3xl rounded-full" />
-                            <img
-                                src="./assets/temple-tirupati.jpg"
+                            <Image
+                                src={tirupatiImage}
                                 alt="Devotion and Faith"
+                                width={600}
+                                height={400}
                                 className="relative rounded-3xl shadow-warm border- border-white"
                             />
                         </motion.div>

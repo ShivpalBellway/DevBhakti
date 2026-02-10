@@ -92,7 +92,7 @@ const MarketplaceSection: React.FC = () => {
   };
 
   return (
-    <section id="marketplace" className="py-12 bg-[#fdf6e9]/50">
+    <section id="marketplace" className="py-4 bg-[#fdf6e9]/50">
       <div className="container mx-auto px-4">
         {/* Header */}
         <div className="flex items-end justify-between mb-10">

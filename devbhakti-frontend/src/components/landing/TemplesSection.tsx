@@ -106,7 +106,7 @@ const TemplesSection: React.FC = () => {
   if (temples.length === 0) return null;
 
   return (
-    <section id="temples" className="py-16 bg-background relative overflow-hidden">
+    <section id="temples" className="py-6 bg-background relative overflow-hidden">
       {/* Background pattern */}
       <div className="absolute inset-0 pattern-lotus opacity-30" />
 
@@ -260,8 +260,8 @@ const TemplesSection: React.FC = () => {
         </div>
 
         {/* View All Button */}
-        <div className="text-center mt-4">
-          <Button variant="outline" asChild>
+        <div className="text-center mt-12">
+          <Button variant="outline" className="rounded-full border-[#88542B] text-[#88542B] hover:bg-[#88542B] hover:text-white" asChild>
             <Link href="/temples">
               View All Temples <ArrowRight className="w-4 h-4 ml-2" />
             </Link>

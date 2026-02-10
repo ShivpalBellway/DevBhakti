@@ -105,7 +105,7 @@ const PoojasSection: React.FC = () => {
   if (poojas.length === 0) return null;
 
   return (
-    <section id="poojas" className="py-16 md:py-20 bg-white/5 relative overflow-hidden">
+    <section id="poojas" className="py-6 md:py-6 bg-white/5 relative overflow-hidden">
       {/* Background pattern */}
       <div className="absolute inset-0 pattern-sacred opacity-30" />
 
@@ -200,7 +200,7 @@ const PoojasSection: React.FC = () => {
                             {(pooja as any).benefits?.slice(0, 3).map((benefit: string, bIdx: number) => (
                               <span
                                 key={bIdx}
-                                className="text-[11px] font-medium px-3 py-1 rounded-full bg-white/12 border border-white/25 text-[#FFF9EA] backdrop-blur-md"
+                                className="text-[14px] font-medium px-3 py-1 rounded-full bg-white/12 border border-white/25 text-[#FFF9EA] backdrop-blur-md"
                               >
                                 {benefit}
                               </span>

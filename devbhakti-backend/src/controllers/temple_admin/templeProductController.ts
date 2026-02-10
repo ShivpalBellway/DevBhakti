@@ -66,9 +66,14 @@ export const getMyProductById = async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user.userId;
     const { id } = req.params;
+    console.log(`GET Product By ID: ${id} for user: ${userId}`);
 
     const temple = await prisma.temple.findUnique({ where: { userId } });
-    if (!temple) return res.status(404).json({ success: false, message: "Temple not found" });
+    if (!temple) {
+      console.log(`Temple not found for user: ${userId}`);
+      return res.status(404).json({ success: false, message: "Temple not found" });
+    }
+    console.log(`Found Temple: ${temple.id}`);
 
     const product = await prisma.product.findFirst({
       where: { id: id as string, templeId: temple.id },
@@ -159,7 +164,6 @@ export const createProduct = async (req: Request, res: Response) => {
           create: variants.map((v: any) => ({
             name: v.name,
             price: parseFloat(v.price),
-            costPrice: v.costPrice ? parseFloat(v.costPrice) : null,
             stock: parseInt(v.stock) || 0,
             image: v.image || null
           }))
@@ -252,7 +256,6 @@ export const updateProduct = async (req: Request, res: Response) => {
         create: variants.map((v: any) => ({
           name: v.name,
           price: parseFloat(v.price),
-          costPrice: v.costPrice ? parseFloat(v.costPrice) : null,
           stock: parseInt(v.stock) || 0,
           image: v.image || null
         }))

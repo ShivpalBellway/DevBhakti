@@ -54,6 +54,9 @@ const ProfilePage = () => {
     const [formData, setFormData] = useState({
         name: "",
         email: "",
+        gothra: "",
+        kuldevi: "",
+        kuldevta: "",
     });
     const [profilePreview, setProfilePreview] = useState<string | null>(null);
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -87,6 +90,9 @@ const ProfilePage = () => {
                 setFormData({
                     name: u.name || "",
                     email: u.email || "",
+                    gothra: u.gothra || "",
+                    kuldevi: u.kuldevi || "",
+                    kuldevta: u.kuldevta || "",
                 });
                 if (u.profileImage) {
                     const imgUrl = u.profileImage.startsWith('http')
@@ -145,6 +151,9 @@ const ProfilePage = () => {
             const fd = new FormData();
             fd.append("name", formData.name);
             fd.append("email", formData.email);
+            fd.append("gothra", formData.gothra);
+            fd.append("kuldevi", formData.kuldevi);
+            fd.append("kuldevta", formData.kuldevta);
             if (selectedFile) {
                 fd.append("profileImage", selectedFile);
             }
@@ -351,6 +360,36 @@ const ProfilePage = () => {
                                                         <span className="text-lg font-bold text-slate-700">{user.email || "No email linked"}</span>
                                                     </div>
                                                 </div>
+
+                                                {/* Spiritual Details */}
+                                                {(user.gothra || user.kuldevi || user.kuldevta) && (
+                                                    <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-6 pt-4">
+                                                        {user.gothra && (
+                                                            <div className="space-y-1">
+                                                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Gothra</p>
+                                                                <div className="p-3 bg-orange-50/30 rounded-xl border border-orange-100/50">
+                                                                    <span className="font-bold text-slate-700">{user.gothra}</span>
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                        {user.kuldevi && (
+                                                            <div className="space-y-1">
+                                                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Kuldevi</p>
+                                                                <div className="p-3 bg-orange-50/30 rounded-xl border border-orange-100/50">
+                                                                    <span className="font-bold text-slate-700">{user.kuldevi}</span>
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                        {user.kuldevta && (
+                                                            <div className="space-y-1">
+                                                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Kuldevta</p>
+                                                                <div className="p-3 bg-orange-50/30 rounded-xl border border-orange-100/50">
+                                                                    <span className="font-bold text-slate-700">{user.kuldevta}</span>
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                )}
                                             </div>
 
                                             {/* Tabs / Features Area */}
@@ -515,6 +554,35 @@ const ProfilePage = () => {
                                                             className="h-14 pl-12 bg-slate-50 border-slate-100 focus:bg-white focus:border-primary rounded-2xl text-lg font-medium"
                                                         />
                                                     </div>
+                                                </div>
+
+                                                {/* Optional Spiritual Details */}
+                                                <div className="space-y-2.5">
+                                                    <Label className="text-slate-700 font-bold ml-1">Gothra</Label>
+                                                    <Input
+                                                        value={formData.gothra}
+                                                        onChange={(e) => setFormData({ ...formData, gothra: e.target.value })}
+                                                        placeholder="e.g. Kashyap"
+                                                        className="h-14 px-6 bg-slate-50 border-slate-100 focus:bg-white focus:border-primary rounded-2xl text-lg font-medium"
+                                                    />
+                                                </div>
+                                                <div className="space-y-2.5">
+                                                    <Label className="text-slate-700 font-bold ml-1">Kuldevi</Label>
+                                                    <Input
+                                                        value={formData.kuldevi}
+                                                        onChange={(e) => setFormData({ ...formData, kuldevi: e.target.value })}
+                                                        placeholder="Enter Kuldevi"
+                                                        className="h-14 px-6 bg-slate-50 border-slate-100 focus:bg-white focus:border-primary rounded-2xl text-lg font-medium"
+                                                    />
+                                                </div>
+                                                <div className="space-y-2.5">
+                                                    <Label className="text-slate-700 font-bold ml-1">Kuldevta</Label>
+                                                    <Input
+                                                        value={formData.kuldevta}
+                                                        onChange={(e) => setFormData({ ...formData, kuldevta: e.target.value })}
+                                                        placeholder="Enter Kuldevta"
+                                                        className="h-14 px-6 bg-slate-50 border-slate-100 focus:bg-white focus:border-primary rounded-2xl text-lg font-medium"
+                                                    />
                                                 </div>
                                             </div>
 

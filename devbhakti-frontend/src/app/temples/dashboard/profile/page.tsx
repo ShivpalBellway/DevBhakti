@@ -116,7 +116,17 @@ export default function TempleProfilePage() {
 
     const handleMainImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
+        const MAX_SIZE = 2 * 1024 * 1024; // 2MB
         if (file) {
+            if (file.size > MAX_SIZE) {
+                toast({
+                    title: "File Too Large",
+                    description: `Image "${file.name}" exceeds 2MB limit. Please select a smaller file.`,
+                    variant: "destructive"
+                });
+                e.target.value = ''; // Reset input
+                return;
+            }
             setSelectedMainFile(file);
             const reader = new FileReader();
             reader.onloadend = () => setMainImagePreview(reader.result as string);
@@ -126,25 +136,53 @@ export default function TempleProfilePage() {
 
     const handleHeroImagesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = Array.from(e.target.files || []);
+        const MAX_SIZE = 2 * 1024 * 1024; // 2MB
         if (files.length > 0) {
-            setSelectedHeroFiles(prev => [...prev, ...files]);
-            files.forEach(file => {
-                const reader = new FileReader();
-                reader.onloadend = () => setHeroPreviews(prev => [...prev, reader.result as string]);
-                reader.readAsDataURL(file);
-            });
+            const largeFiles = files.filter(f => f.size > MAX_SIZE);
+            if (largeFiles.length > 0) {
+                toast({
+                    title: "Files Too Large",
+                    description: `${largeFiles.length} file(s) exceed the 2MB limit. Those were skipped.`,
+                    variant: "destructive"
+                });
+            }
+
+            const validFiles = files.filter(f => f.size <= MAX_SIZE);
+            if (validFiles.length > 0) {
+                setSelectedHeroFiles(prev => [...prev, ...validFiles]);
+                validFiles.forEach(file => {
+                    const reader = new FileReader();
+                    reader.onloadend = () => setHeroPreviews(prev => [...prev, reader.result as string]);
+                    reader.readAsDataURL(file);
+                });
+            }
+            e.target.value = ''; // Reset input
         }
     };
 
     const handleGalleryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = Array.from(e.target.files || []);
+        const MAX_SIZE = 2 * 1024 * 1024; // 2MB
         if (files.length > 0) {
-            setSelectedGalleryFiles(prev => [...prev, ...files]);
-            files.forEach(file => {
-                const reader = new FileReader();
-                reader.onloadend = () => setGalleryPreviews(prev => [...prev, reader.result as string]);
-                reader.readAsDataURL(file);
-            });
+            const largeFiles = files.filter(f => f.size > MAX_SIZE);
+            if (largeFiles.length > 0) {
+                toast({
+                    title: "Files Too Large",
+                    description: `${largeFiles.length} file(s) exceed the 2MB limit. Those were skipped.`,
+                    variant: "destructive"
+                });
+            }
+
+            const validFiles = files.filter(f => f.size <= MAX_SIZE);
+            if (validFiles.length > 0) {
+                setSelectedGalleryFiles(prev => [...prev, ...validFiles]);
+                validFiles.forEach(file => {
+                    const reader = new FileReader();
+                    reader.onloadend = () => setGalleryPreviews(prev => [...prev, reader.result as string]);
+                    reader.readAsDataURL(file);
+                });
+            }
+            e.target.value = ''; // Reset input
         }
     };
 
@@ -160,6 +198,48 @@ export default function TempleProfilePage() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        // 1. Phone Number Validation
+        const phoneDigits = formData.phone.replace(/\D/g, '');
+        if (phoneDigits.length !== 10) {
+            toast({
+                title: "Invalid Phone Number",
+                description: "Contact phone must be exactly 10 digits.",
+                variant: "destructive"
+            });
+            return;
+        }
+
+        // 2. Hero Images Count Validation (Total)
+        // Calculating total based on previews which include existing + newly added
+        if (heroPreviews.length > 5) {
+            toast({
+                title: "Too Many Banners",
+                description: `Maximum 5 banners allowed. You have ${heroPreviews.length} selected.`,
+                variant: "destructive"
+            });
+            return;
+        }
+
+        // 3. Image Size Validation (Max 2MB for NEW files)
+        const MAX_SIZE = 2 * 1024 * 1024;
+        const newFiles = [
+            ...(selectedMainFile ? [selectedMainFile] : []),
+            ...selectedHeroFiles,
+            ...selectedGalleryFiles
+        ];
+
+        for (const file of newFiles) {
+            if (file.size > MAX_SIZE) {
+                toast({
+                    title: "File Too Large",
+                    description: `Image "${file.name}" exceeds 2MB limit.`,
+                    variant: "destructive"
+                });
+                return;
+            }
+        }
+
         setIsSaving(true);
         try {
             const fd = new FormData();

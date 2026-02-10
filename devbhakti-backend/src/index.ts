@@ -37,6 +37,7 @@ import sellerOrderRoutes from './routes/seller/orderRoutes';
 import sellerGeneralRoutes from './routes/seller/sellerRoutes';
 import sellerFinanceRoutes from './routes/seller/financeRoutes';
 import adminCommissionSlabRoutes from './routes/admin/commissionSlabRoutes';
+import publicSearchRoutes from './routes/publicSearchRoutes';
 
 
 dotenv.config();
@@ -97,6 +98,7 @@ app.use('/api/payments', paymentRoutes);
 
 // General Routes (Temporary)
 app.use('/api/temples', templeRoutes);
+app.use('/api/search', publicSearchRoutes);
 
 
 // Basic Error Handler
