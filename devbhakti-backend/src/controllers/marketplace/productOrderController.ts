@@ -120,11 +120,21 @@ export const createVerifiedOrder = async (orderData: any, userId: string) => {
   const { items, totalAmount, shippingAddress, paymentMethod } = orderData;
 
   return await prisma.$transaction(async (tx) => {
-    // 1. Map products to get vendors
     const productIds = items.map((item: any) => item.productId);
     const products = await tx.product.findMany({
       where: { id: { in: productIds } },
-      select: { id: true, templeId: true, sellerId: true, name: true, weight: true, length: true, width: true, height: true },
+      select: {
+        id: true,
+        templeId: true,
+        sellerId: true,
+        name: true,
+        weight: true,
+        length: true,
+        width: true,
+        height: true,
+        temple: { select: { pickupLocation: true } },
+        seller: { select: { pickupLocation: true } }
+      },
     });
     const productMap = new Map(products.map(p => [p.id, p]));
 
@@ -137,6 +147,8 @@ export const createVerifiedOrder = async (orderData: any, userId: string) => {
         shippingAddress,
         status: "BOOKED",
         paymentStatus: "PAID",
+        platformFee: orderData.platformFee || 0,
+        shippingCost: orderData.shippingCost || 0,
       },
       include: { user: { select: { name: true, email: true, phone: true } } }
     });
@@ -208,7 +220,71 @@ export const createVerifiedOrder = async (orderData: any, userId: string) => {
         });
       }
 
-      // Shiprocket sync would typically be async here
+      // 4. Shiprocket Sync
+      try {
+        const orderWithUser = await tx.order.findUnique({
+          where: { id: order.id },
+          include: { user: true }
+        });
+
+        const shippingAddr = shippingAddress as any;
+
+        // Use the first product's vendor pickup location
+        const firstProd = productMap.get(groupItems[0].productId);
+        const pickupLocation = (templeId ? (firstProd as any)?.temple?.pickupLocation : (firstProd as any)?.seller?.pickupLocation) || "Primary";
+
+        // Prepare Shiprocket Order Payload
+        const shiprocketOrderData = {
+          order_id: subOrder.id,
+          order_date: new Date().toISOString().split('T')[0],
+          pickup_location: pickupLocation,
+          billing_customer_name: shippingAddr.fullName || orderWithUser?.user?.name || "Customer",
+          billing_last_name: "",
+          billing_address: shippingAddr.street || "N/A",
+          billing_city: shippingAddr.city || "N/A",
+          billing_pincode: shippingAddr.pincode || "000000",
+          billing_state: shippingAddr.state || "N/A",
+          billing_country: "India",
+          billing_email: orderWithUser?.user?.email || "customer@example.com",
+          billing_phone: shippingAddr.phone || orderWithUser?.user?.phone || "0000000000",
+          shipping_is_billing: true,
+          order_items: groupItems.map(item => {
+            const p = productMap.get(item.productId);
+            return {
+              name: p?.name || "Product",
+              sku: item.variantId,
+              units: item.quantity,
+              selling_price: item.price,
+              discount: 0,
+              tax: 0,
+              hsn: 0
+            };
+          }),
+          payment_method: paymentMethod === "COD" ? "COD" : "Prepaid",
+          sub_total: subOrderTotal,
+          length: Math.max(...groupItems.map(item => productMap.get(item.productId)?.length || 10)),
+          width: Math.max(...groupItems.map(item => productMap.get(item.productId)?.width || 10)),
+          height: Math.max(...groupItems.map(item => productMap.get(item.productId)?.height || 10)),
+          weight: groupItems.reduce((sum, item) => sum + ((productMap.get(item.productId)?.weight || 0.5) * item.quantity), 0)
+        };
+
+        const srResponse = await createShiprocketOrder(shiprocketOrderData);
+
+        if (srResponse && srResponse.order_id) {
+          await tx.subOrder.update({
+            where: { id: subOrder.id },
+            data: {
+              shiprocketOrderId: srResponse.order_id.toString(),
+              status: "PROCESSING"
+            }
+          });
+          console.log(`Shiprocket Order Created for SubOrder ${subOrder.id}: ${srResponse.order_id}`);
+        } else {
+          console.error(`Shiprocket Sync Failed for SubOrder ${subOrder.id}:`, srResponse);
+        }
+      } catch (srError: any) {
+        console.error(`Shiprocket Sync Error for SubOrder ${subOrder.id}:`, srError.message);
+      }
     }
     return order;
   });
@@ -649,11 +725,17 @@ export const getOrderInvoice = async (req: Request, res: Response) => {
                     <div class="totals-box">
                         <div class="total-row">
                             <span>Subtotal</span>
-                            <span>₹${order.totalAmount.toLocaleString()}</span>
+                            <span>₹${(order.totalAmount - (order.platformFee || 0) - (order.shippingCost || 0)).toLocaleString()}</span>
+                        </div>
+                        <div class="total-row">
+                            <span>Platform Fee</span>
+                            <span>₹${(order.platformFee || 0).toLocaleString()}</span>
                         </div>
                         <div class="total-row">
                             <span>Shipping Costs</span>
-                            <span style="color: #10b981; font-weight: 600;">FREE</span>
+                            <span style="${(order.shippingCost || 0) > 0 ? '' : 'color: #10b981; font-weight: 600;'}">
+                                ${(order.shippingCost || 0) > 0 ? '₹' + order.shippingCost.toLocaleString() : 'FREE'}
+                            </span>
                         </div>
                         <div class="total-row final">
                             <span>Grand Total</span>

@@ -312,7 +312,7 @@ export default function CreateTempleProductPage() {
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <div className="space-y-2">
                                     <Label htmlFor="origin">Origin</Label>
                                     <Input id="origin" value={formData.origin} onChange={(e) => setFormData({ ...formData, origin: e.target.value })} />
@@ -320,6 +320,18 @@ export default function CreateTempleProductPage() {
                                 <div className="space-y-2">
                                     <Label htmlFor="shippingInfo">Shipping Label (UI)</Label>
                                     <Input id="shippingInfo" value={formData.shippingInfo} onChange={(e) => setFormData({ ...formData, shippingInfo: e.target.value })} />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="rating">Base Rating (1-5)</Label>
+                                    <Input
+                                        id="rating"
+                                        type="number"
+                                        step="0.1"
+                                        min="1"
+                                        max="5"
+                                        value={formData.rating}
+                                        onChange={(e) => setFormData({ ...formData, rating: e.target.value })}
+                                    />
                                 </div>
                             </div>
 

@@ -27,6 +27,17 @@ const upload = multer({
   limits: { fileSize: 3 * 1024 * 1024 } // 3MB limit
 });
 
+
+import {
+  getPendingApprovals,
+  approveRequest,
+  rejectRequest
+} from "../../controllers/admin/adminApprovalsController";
+
+router.get("/approvals", getPendingApprovals);
+router.post("/approve", approveRequest);
+router.post("/reject", rejectRequest);
+
 router.get("/withdrawals", getAllWithdrawalRequests);
 router.patch("/withdrawals/:requestId", upload.single("receiptImage"), updateWithdrawalStatus);
 

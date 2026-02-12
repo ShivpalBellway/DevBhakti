@@ -111,10 +111,7 @@ export default function AdminBookingsPage() {
                         View and manage all pooja and seva bookings across all temples
                     </p>
                 </div>
-                <Button variant="sacred" onClick={loadBookings}>
-                    <Calendar className="w-4 h-4 mr-2" />
-                    Refresh Data
-                </Button>
+
             </div>
 
             {/* Stats */}

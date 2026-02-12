@@ -337,11 +337,11 @@ export default function TempleAdminLayout({ children }: { children: React.ReactN
                 )}
             >
                 {/* Logo */}
-                <div className="flex items-right justify-between h-20 px-4 border-b border-sidebar-border">
+                <div className="flex items-center justify-between h-20 px-4 border-b border-sidebar-border">
                     {sidebarOpen ? (
-                        <Logo size="lg" />
+                        <Logo size="md" />
                     ) : (
-                        <Logo size="lg" variant="icon" />
+                        <Logo size="md" variant="icon" />
                     )}
                     <button
                         onClick={() => setSidebarOpen(!sidebarOpen)}

@@ -6,24 +6,26 @@ import Logo from "@/components/icons/Logo";
 const Footer: React.FC = () => {
   const footerLinks = {
     platform: [
-      { label: "Features", href: "/#features" },
+      // { label: "Features", href: "/#features" },
       { label: "Marketplace", href: "/marketplace" },
       { label: "Live Darshan", href: "/live-darshan" },
-      { label: "For Temples", href: "/temples" },
-      // { label: "Become a Seller", href: "/register-seller" },
+      { label: "Sacred Temples", href: "/temples" },
+      { label: "Register as Temple", href: "/temples/register" },
       { label: "Trust & Transparency", href: "/#trust" },
+
     ],
     company: [
       { label: "About Us", href: "/about" },
+      { label: "Privacy Policy", href: "/privacy-policy" },
+      { label: "Terms of Service", href: "/terms-of-service" },
+
       // { label: "Contact", href: "/contact" },
       // { label: "Blog", href: "/blog" },
       // { label: "Careers", href: "/careers" },
     ],
     support: [
-      // { label: "Help Center", href: "/help" },
-      // { label: "FAQs", href: "/faqs" },
-      { label: "Privacy Policy", href: "/privacy-policy" },
-      { label: "Terms of Service", href: "/terms-of-service" },
+      { label: "admin@devbhakti.in", href: "mailto:[EMAIL_ADDRESS]" },
+
     ],
   };
 
@@ -44,7 +46,7 @@ const Footer: React.FC = () => {
 
           {/* Platform Links */}
           <div>
-            <h4 className="font-semibold text-lg mb-4">Platform</h4>
+            <h4 className="font-semibold text-lg mb-4">Offerings</h4>
             <ul className="space-y-3">
               {footerLinks.platform.map((link) => (
                 <li key={link.label}>
@@ -61,7 +63,7 @@ const Footer: React.FC = () => {
 
           {/* Company Links */}
           <div>
-            <h4 className="font-semibold text-lg mb-4">Company</h4>
+            <h4 className="font-semibold text-lg mb-4">Platform</h4>
             <ul className="space-y-3">
               {footerLinks.company.map((link) => (
                 <li key={link.label}>
@@ -82,12 +84,10 @@ const Footer: React.FC = () => {
             <ul className="space-y-3">
               {footerLinks.support.map((link) => (
                 <li key={link.label}>
-                  <Link
-                    href={link.href}
-                    className="text-sidebar-foreground/70 hover:text-[#f59b35e3] transition-colors"
-                  >
-                    {link.label}
-                  </Link>
+                  <a href="mailto:admin@devbhakti.in" className="flex items-center gap-2 hover:text-white transition-colors">
+                    <Mail className="w-4 h-4" />
+                    admin@devbhakti.in
+                  </a>
                 </li>
               ))}
             </ul>
@@ -108,7 +108,9 @@ const Footer: React.FC = () => {
               </a> */}
             </div>
             <p className="text-sm text-sidebar-foreground/50">
-              © {new Date().getFullYear()} DevBhakti. All rights reserved.
+              © {new Date().getFullYear()}DevBhakti™
+              . All rights reserved.
+
             </p>
           </div>
         </div>

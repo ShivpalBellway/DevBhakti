@@ -148,7 +148,7 @@ export default function AdminLiveDarshanPage() {
     if (allTemples.length === 0) {
       toast({
         title: "No temples found",
-        description: "Pehle temples create/approve kariye, phir unke liye live configure kar sakte hain.",
+        description: "First create/approve temples, then you can configure live settings for them.",
         variant: "destructive",
       });
       return;
@@ -236,7 +236,7 @@ export default function AdminLiveDarshanPage() {
             Live Darshan Control
           </h1>
           <p className="text-slate-600 text-sm">
-            Temples jinhone apne panel se Live ON kiya hai aur URL dala hai, unko yahan se website par dikhane/na dikhane ka control karein.
+            Control the visibility of temples on the website that have enabled Live Darshan and provided a URL from their panel.
           </p>
         </div>
         <div className="flex gap-2">
@@ -253,7 +253,7 @@ export default function AdminLiveDarshanPage() {
             Live Temples ({temples.length})
           </CardTitle>
           <CardDescription className="text-xs">
-            List me sirf wahi temples hain jinhone apni profile se Live toggle ON rakha hai aur live URL / channel ID diya hai.
+            The list only contains temples that have enabled Live toggle from their profile and provided a live URL / channel ID.
           </CardDescription>
         </CardHeader>
         <CardContent className="p-0">
@@ -264,7 +264,7 @@ export default function AdminLiveDarshanPage() {
             </div>
           ) : temples.length === 0 ? (
             <div className="text-center py-10 text-sm text-muted-foreground">
-              Abhi kisi temple ne apne panel se Live ON nahi kiya hai ya URL nahi diya hai.
+              Currently, no temple has enabled Live from their panel or provided a URL.
             </div>
           ) : (
             <Table>
@@ -305,11 +305,10 @@ export default function AdminLiveDarshanPage() {
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <div
-                          className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-medium ${
-                            entry.temple?.liveStatus
+                          className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-medium ${entry.temple?.liveStatus
                               ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
                               : "bg-slate-50 text-slate-500 border border-slate-200"
-                          }`}
+                            }`}
                         >
                           {entry.temple?.liveStatus ? (
                             <>
@@ -401,7 +400,7 @@ export default function AdminLiveDarshanPage() {
                 />
               </div>
               <p className="text-[11px] text-slate-500">
-                Temple apne panel se bhi ye values change kar sakta hai. Yahan se aap emergency me correct kar sakte hain.
+                The temple can also change these values from their panel. You can correct them here in case of emergency.
               </p>
               <div className="flex justify-end gap-2 pt-2">
                 <Button
@@ -436,11 +435,11 @@ export default function AdminLiveDarshanPage() {
                 </div>
               ) : (
                 <div className="aspect-video w-full rounded-lg border border-dashed border-slate-200 bg-slate-50 flex items-center justify-center text-xs text-slate-400 text-center px-4">
-                  Channel ID ya URL daalein preview ke liye.
+                  Enter Channel ID or URL for preview.
                 </div>
               )}
               <p className="text-[11px] text-slate-500">
-                Ye sirf admin preview hai. Public ke liye final experience landing Live section aur `/live-darshan` page par dikhega.
+                This is just an admin preview. The final experience for the public will be visible in the landing Live section and on the `/live-darshan` page.
               </p>
             </div>
           </div>

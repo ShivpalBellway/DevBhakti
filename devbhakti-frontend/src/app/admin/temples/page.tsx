@@ -506,7 +506,7 @@ export default function TemplesManagementPage() {
                                 ) : filteredTemples.filter(t => t.isVerified).length === 0 ? (
                                     <TableRow>
                                         <TableCell colSpan={7} className="text-center py-12 text-muted-foreground">
-                                            No verified temples found.
+                                            No   temples found.
                                         </TableCell>
                                     </TableRow>
                                 ) : (

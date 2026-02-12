@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
-import { User, Phone, ArrowRight, Building2, Mail, Camera, Key } from "lucide-react";
+import { User, Phone, ArrowRight, Building2, Mail, Camera, Key, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,6 +13,7 @@ import { sendOTP, verifyOTP, updateProfile } from "@/api/authController";
 
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
+import heroBg from "@/assets/hero-temple.jpg";
 
 
 const AuthForm: React.FC = () => {
@@ -45,7 +46,7 @@ const AuthForm: React.FC = () => {
       setProfileImage(file);
       setImagePreview(URL.createObjectURL(file));
     }
-  };  
+  };
 
   const handleSendOTP = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -128,118 +129,144 @@ const AuthForm: React.FC = () => {
 
 
   return (
-    <div className="min-h-screen flex">
-      {/* Left side - Form */}
-      <div className="flex-1 flex items-center justify-center p-6 md:p-12 bg-background">
+    <div className="min-h-screen flex flex-col relative overflow-hidden bg-white">
+      {/* Full Page Background Image */}
+      <div
+        className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat"
+        style={{
+          backgroundImage: `url(${heroBg.src})`,
+          filter: 'brightness(0.7) blur(2px)'
+        }}
+      />
+
+      {/* Subtle Mesh Gradient Overlay */}
+      <div className="absolute inset-0 z-[1] bg-white/30 backdrop-blur-[1px]" />
+
+      {/* Decorative Background Elements */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden z-[2]">
+        <div className="absolute top-[10%] -left-24 w-96 h-96 bg-primary/10 rounded-full blur-[120px] opacity-40" />
+        <div className="absolute bottom-[10%] -right-48 w-[500px] h-[500px] bg-orange-300/10 rounded-full blur-[150px] opacity-30" />
+      </div>
+
+      <div className="flex-1 flex flex-col items-center justify-center p-4 md:p-6 relative z-10 w-full">
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="w-full max-w-md"
+          transition={{ duration: 0.6, ease: "easeOut" }}
+          className="w-full max-w-xl bg-white/95 backdrop-blur-md p-6 md:p-8 rounded-[2rem] border border-white shadow-[0_20px_50px_rgba(0,0,0,0.1)]"
         >
-          {/* Logo */}
-          <Link href="/" className="inline-block mb-8">
-            <Logo size="lg" />
-          </Link>
+          {/* Back Button and Logo Container */}
+          <div className="flex flex-col items-center mb-6">
+            <div className="w-full flex justify-start mb-6 -mt-2">
+              <button
+                onClick={() => router.back()}
+                className="group flex items-center gap-2 text-slate-500 hover:text-primary transition-all text-sm font-medium"
+              >
+                <div className="p-2 rounded-full bg-slate-100 group-hover:bg-primary/10 transition-all border border-slate-200 group-hover:border-primary/30">
+                  <ArrowLeft className="w-4 h-4" />
+                </div>
+                Back to Home
+              </button>
+            </div>
+
+            <Link href="/" className="transition-transform hover:scale-105 duration-500 cursor-pointer mb-1">
+              <Logo size="xl" className="drop-shadow-[0_0_25px_rgba(255,255,255,0.3)]" />
+            </Link>
+          </div>
 
           {/* Header */}
-          <div className="mb-8">
-            <h1 className="text-3xl font-serif font-bold text-foreground mb-2">
-              {mode === "login" ? "Welcome Back" : "Create Your Account"}
+          <div className="text-center mb-6">
+            <h1 className="text-3xl md:text-4xl font-serif font-bold text-slate-900 mb-2 tracking-tight">
+              {mode === "login" ? "Welcome Back" : "Begin Your Journey"}
             </h1>
-            <p className="text-muted-foreground">
+            <p className="text-base text-slate-500 font-light">
               {mode === "login"
-                ? "Sign in to continue your spiritual journey"
-                : "Join DevBhakti and connect with sacred temples"}
+                ? "Sign in to continue your spiritual path"
+                : "Join the sacred community of DevBhakti"}
             </p>
           </div>
 
           {/* User Type Toggle (for registration) */}
-          {mode === "register" && (
-            <div className="flex gap-2 p-1 bg-muted rounded-lg mb-6">
+          {/* {mode === "register" && (
+            <div className="flex gap-2 p-1 bg-slate-100 rounded-xl mb-6 border border-slate-200">
               <button
                 onClick={() => setUserType("devotee")}
-                className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-md text-sm font-medium transition-all ${userType === "devotee"
-                  ? "bg-card shadow-soft text-foreground"
-                  : "text-muted-foreground hover:text-foreground"
+                className={`flex-1 flex items-center justify-center gap-2 py-2 px-4 rounded-lg text-sm font-semibold transition-all duration-300 ${userType === "devotee"
+                  ? "bg-white text-primary shadow-sm scale-[1.01]"
+                  : "text-slate-500 hover:text-slate-700"
                   }`}
               >
                 <User className="w-4 h-4" />
                 Devotee
               </button>
-              {/* <button
-                onClick={() => setUserType("institution")}
-                className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-md text-sm font-medium transition-all ${userType === "institution"
-                    ? "bg-card shadow-soft text-foreground"
-                    : "text-muted-foreground hover:text-foreground"
-                  }`}
-              >
-                <Building2 className="w-4 h-4" />
-                Temple
-              </button> */}
             </div>
-          )}
+          )} */}
 
           {/* Form */}
           {!showOtpInput ? (
             <form onSubmit={handleSendOTP} className="space-y-5">
               {mode === "register" && (
                 <>
-                  <div className="flex justify-center mb-6">
+                  {/* <div className="flex justify-center mb-6">
                     <div className="relative group">
-                      <div className="w-24 h-24 rounded-full overflow-hidden bg-muted border-2 border-primary/20 flex items-center justify-center">
+                      <div className="w-24 h-24 rounded-full overflow-hidden bg-slate-50 border-2 border-slate-200 group-hover:border-primary/50 flex items-center justify-center transition-all duration-300 shadow-sm">
                         {imagePreview ? (
                           <img src={imagePreview} className="w-full h-full object-cover" />
                         ) : (
-                          <User className="w-10 h-10 text-muted-foreground" />
+                          <div className="flex flex-col items-center text-slate-300 group-hover:text-primary/40 transition-colors">
+                            <User className="w-10 h-10 mb-1" />
+                            <span className="text-[10px] font-bold uppercase tracking-widest">Photo</span>
+                          </div>
                         )}
                       </div>
-                      <label className="absolute bottom-0 right-0 p-1.5 bg-primary rounded-full text-white cursor-pointer shadow-lg hover:scale-110 transition-transform">
-                        <Camera className="w-4 h-4" />
+                      <label className="absolute bottom-1 right-1 p-1.5 bg-primary rounded-full text-white cursor-pointer shadow-md hover:scale-110 transition-all hover:bg-orange-500 border border-white">
+                        <Camera className="w-3.5 h-3.5" />
                         <input type="file" className="hidden" accept="image/*" onChange={handleImageChange} />
                       </label>
                     </div>
-                  </div>
+                  </div> */}
 
-                  <div className="space-y-2">
-                    <Label htmlFor="name">Full Name</Label>
-                    <div className="relative">
-                      <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                      <Input
-                        id="name"
-                        type="text"
-                        placeholder="Enter your name"
-                        value={formData.name}
-                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                        className="pl-10"
-                        required
-                      />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="name" className="text-slate-700 text-xs ml-1 font-medium">Full Name</Label>
+                      <div className="relative group">
+                        <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-primary transition-colors" />
+                        <Input
+                          id="name"
+                          type="text"
+                          placeholder="Your name"
+                          value={formData.name}
+                          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                          className="pl-10 bg-slate-50 border-slate-200 text-slate-900 placeholder:text-slate-400 h-11 rounded-lg focus:ring-primary/20 focus:border-primary transition-all text-sm"
+                          required
+                        />
+                      </div>
                     </div>
-                  </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="email">Email Address (Optional)</Label>
-                    <div className="relative">
-                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                      <Input
-                        id="email"
-                        type="email"
-                        placeholder="example@email.com"
-                        value={formData.email}
-                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                        className="pl-10"
-                      />
+                    <div className="space-y-1.5">
+                      <Label htmlFor="email" className="text-slate-700 text-xs ml-1 font-medium">Email (Optional)</Label>
+                      <div className="relative group">
+                        <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-primary transition-colors" />
+                        <Input
+                          id="email"
+                          type="email"
+                          placeholder="email@example.com"
+                          value={formData.email}
+                          onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                          className="pl-10 bg-slate-50 border-slate-200 text-slate-900 placeholder:text-slate-400 h-11 rounded-lg focus:ring-primary/20 focus:border-primary transition-all text-sm"
+                        />
+                      </div>
                     </div>
                   </div>
                 </>
               )}
 
-              <div className="space-y-2">
-                <Label htmlFor="phone">Phone Number</Label>
-                <div className="relative">
-                  <div className="absolute left-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
-                    <Phone className="w-5 h-5 text-muted-foreground" />
-                    <span className="text-muted-foreground font-semibold border-l pl-2 border-slate-300 leading-none">+91</span>
+              <div className="space-y-1.5">
+                <Label htmlFor="phone" className="text-slate-700 text-xs ml-1 font-medium">Phone Number</Label>
+                <div className="relative group">
+                  <div className="absolute left-3.5 top-1/2 -translate-y-1/2 flex items-center gap-2">
+                    <Phone className="w-4 h-4 text-slate-400 group-focus-within:text-primary transition-colors" />
+                    <span className="text-slate-400 font-semibold border-l pl-2 border-slate-200 leading-none group-focus-within:border-primary/30 transition-colors text-sm">+91</span>
                   </div>
                   <Input
                     id="phone"
@@ -251,149 +278,79 @@ const AuthForm: React.FC = () => {
                       const val = e.target.value.replace(/\D/g, '');
                       setFormData({ ...formData, phone: val })
                     }}
-                    className="pl-24"
+                    className="pl-20 bg-slate-50 border-slate-200 text-slate-900 placeholder:text-slate-400 h-11 rounded-lg focus:ring-primary/20 focus:border-primary transition-all text-sm font-medium tracking-wider"
                     required
                   />
                 </div>
               </div>
 
-              <Button type="submit" variant="sacred" size="lg" className="w-full" disabled={loading}>
-                {loading ? "Processing..." : (mode === "login" ? "Send OTP" : "Create Account & Send OTP")}
-                {!loading && <ArrowRight className="w-5 h-5" />}
+              <Button type="submit" variant="sacred" className="w-full h-12 rounded-xl text-base font-bold shadow-lg hover:shadow-primary/20 transition-all hover:scale-[1.01]" disabled={loading}>
+                {loading ? "Processing..." : (mode === "login" ? "Send OTP" : "Begin My Journey")}
+                {!loading && <ArrowRight className="w-4 h-4 ml-2" />}
               </Button>
             </form>
           ) : (
             <form onSubmit={handleVerifyOTP} className="space-y-5">
               {receivedOtp && (
-                <div className="p-3 bg-primary/10 border border-primary/20 rounded-lg text-center">
-                  <p className="text-sm font-medium text-primary">
-                    Development OTP: <span className="text-lg font-bold tracking-widest">{receivedOtp}</span>
+                <div className="p-4 bg-primary/5 border border-primary/10 rounded-2xl text-center mb-6">
+                  <p className="text-sm font-medium text-slate-900">
+                    Development OTP: <span className="text-xl font-bold tracking-widest ml-1 text-primary">{receivedOtp}</span>
                   </p>
                 </div>
               )}
-              <div className="space-y-2">
-
-                <Label htmlFor="otp">Enter 6-digit OTP</Label>
-                <div className="relative">
-                  <Key className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                  <Input
-                    id="otp"
-                    type="text"
-                    maxLength={6}
-                    placeholder="123456"
-                    value={otp}
-                    onChange={(e) => setOtp(e.target.value)}
-                    className="pl-10 text-center tracking-[0.5em] font-bold text-xl"
-                    required
-                  />
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="otp" className="text-slate-700 ml-1">Enter 6-digit OTP</Label>
+                  <div className="relative group">
+                    <Key className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-primary transition-colors" />
+                    <Input
+                      id="otp"
+                      type="text"
+                      maxLength={6}
+                      placeholder="123456"
+                      value={otp}
+                      onChange={(e) => setOtp(e.target.value)}
+                      className="pl-12 bg-slate-50 border-slate-200 text-slate-900 placeholder:text-slate-400 h-16 text-center tracking-[0.8em] font-bold text-2xl rounded-xl focus:ring-primary/20 focus:border-primary transition-all"
+                      required
+                    />
+                  </div>
+                  <p className="text-sm text-slate-400 text-center">
+                    OTP sent to <span className="text-slate-700 font-medium">+91 {formData.phone}</span>
+                  </p>
                 </div>
-                <p className="text-xs text-muted-foreground text-center">
-                  OTP sent to {formData.phone}
-                </p>
+
+                <Button type="submit" variant="sacred" className="w-full h-14 rounded-xl text-lg font-medium shadow-lg hover:shadow-primary/20 transition-all hover:scale-[1.02]" disabled={loading}>
+                  {loading ? "Verifying..." : "Verify & Sign In"}
+                  {!loading && <ArrowRight className="w-5 h-5 ml-2" />}
+                </Button>
+
+                <button
+                  type="button"
+                  onClick={() => setShowOtpInput(false)}
+                  className="w-full text-sm text-white/50 hover:text-primary transition-colors font-medium"
+                >
+                  Change Phone Number
+                </button>
               </div>
-
-              <Button type="submit" variant="sacred" size="lg" className="w-full" disabled={loading}>
-                {loading ? "Verifying..." : "Verify OTP & Sign In"}
-                {!loading && <ArrowRight className="w-5 h-5" />}
-              </Button>
-
-              <button
-                type="button"
-                onClick={() => setShowOtpInput(false)}
-                className="w-full text-sm text-primary hover:underline"
-              >
-                Change Phone Number
-              </button>
             </form>
           )}
 
 
-          {/* Divider */}
-          <div className="relative my-8">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-border" />
-            </div>
-            <div className="relative flex justify-center">
-              <span className="bg-background px-4 text-sm text-muted-foreground">
-                Or continue with
-              </span>
-            </div>
-          </div>
 
-          {/* Social Login */}
-          {/* <div className="flex justify-center">
-            <Button variant="outline" className="w-full max-w-sm">
-              <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
-                <path
-                  fill="currentColor"
-                  d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                />
-                <path
-                  fill="currentColor"
-                  d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                />
-                <path
-                  fill="currentColor"
-                  d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-                />
-                <path
-                  fill="currentColor"
-                  d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                />
-              </svg>
-              Google
-            </Button>
-          </div> */}
 
           {/* Toggle Mode */}
-          <p className="text-center mt-8 text-muted-foreground">
-            {mode === "login" ? "Don't have an account?" : "Already have an account?"}{" "}
-            <button
-              onClick={() => setMode(mode === "login" ? "register" : "login")}
-              className="text-primary font-medium hover:underline"
-            >
-              {mode === "login" ? "Sign up" : "Sign in"}
-            </button>
-          </p>
-
-        </motion.div>
-      </div>
-
-      {/* Right side - Image/Illustration */}
-      <div className="hidden lg:flex flex-1 bg-gradient-sacred relative overflow-hidden">
-        {/* Decorative elements */}
-        <div className="absolute inset-0">
-          <div className="absolute top-1/4 -right-20 w-80 h-80 bg-primary-foreground/10 rounded-full blur-3xl" />
-          <div className="absolute bottom-1/4 -left-20 w-96 h-96 bg-primary-foreground/5 rounded-full blur-3xl" />
-        </div>
-
-        <div className="relative z-10 flex items-center justify-center p-12 w-full">
-          <div className="text-center text-primary-foreground max-w-lg">
-            <div className="text-8xl mb-8 text-black"> 🕉</div>
-            {/* 🕉️ */}
-            <h2 className="text-3xl font-serif font-bold mb-4">
-              Experience Divine Connections
-            </h2>
-            <p className="text-lg text-primary-foreground/80">
-              Join thousands of devotees discovering temples, booking poojas,
-              and experiencing live darshan from sacred places across India.
+          <div className="text-center mt-6 pb-2">
+            <p className="text-sm text-slate-500">
+              {mode === "login" ? "New to DevBhakti?" : "Already on a journey?"}{" "}
+              <button
+                onClick={() => setMode(mode === "login" ? "register" : "login")}
+                className="text-primary font-bold hover:text-primary/80 transition-colors underline underline-offset-4"
+              >
+                {mode === "login" ? "Sign up now" : "Sign in"}
+              </button>
             </p>
-
-            {/* Stats */}
-            <div className="grid grid-cols-3 gap-8 mt-12">
-              {[
-                // { value: "500+", label: "Temples" },
-                // { value: "50K+", label: "Devotees" },
-                // { value: "1M+", label: "Bookings" },
-              ].map((stat) => (
-                <div key={stat.label}>
-                  <div className="text-2xl font-bold">{stat.value}</div>
-                  <div className="text-sm text-primary-foreground/60">{stat.label}</div>
-                </div>
-              ))}
-            </div>
           </div>
-        </div>
+        </motion.div>
       </div>
     </div>
   );

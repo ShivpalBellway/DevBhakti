@@ -28,7 +28,7 @@ import { Badge } from "@/components/ui/badge";
 import Navbar from "@/components/landing/Navbar";
 import Footer from "@/components/landing/Footer";
 
-const categories = ["All", "Aarti", "Pooja", "Abhishekam", "Special Puja"];
+
 
 const PoojaListClient: React.FC = () => {
     const [searchQuery, setSearchQuery] = useState("");
@@ -39,6 +39,11 @@ const PoojaListClient: React.FC = () => {
     const router = useRouter();
     const { toast } = useToast();
     const [user, setUser] = useState<any>(null);
+
+    const categories = React.useMemo(() => {
+        const uniqueCategories = Array.from(new Set(poojas.map(p => p.category?.trim()).filter(Boolean)));
+        return ["All", ...uniqueCategories];
+    }, [poojas]);
 
     React.useEffect(() => {
         const savedUser = localStorage.getItem("user");
@@ -126,7 +131,7 @@ const PoojaListClient: React.FC = () => {
             <Navbar />
 
             {/* Hero Section */}
-            <section className="relative min-h-[600px] flex items-center justify-center overflow-hidden">
+            <section className="relative min-h-[420px] flex items-center justify-center overflow-hidden">
                 {/* Background image */}
                 <div className="absolute inset-0">
                     <Image
@@ -155,11 +160,11 @@ const PoojaListClient: React.FC = () => {
                             <Sparkles className="w-3 h-3 mr-2 fill-primary" />
                             Sacred Rituals
                         </Badge>
-                        <h1 className="text-4xl md:text-5xl lg:text-7xl font-serif font-bold text-foreground mb-6 leading-tight tracking-tight">
+                        <h1 className="text-4xl md:text-5xl lg:text-6xl font-serif font-bold text-foreground mb-4 leading-tight tracking-tight">
                             Auspicious <span className="text-primary italic">Poojas & Sevas</span>
                         </h1>
-                        <p className="text-lg md:text-xl text-foreground mb-10 leading-relaxed max-w-2xl mx-auto">
-                            Book authentic Vedic rituals performed by experienced priests at India's most sacred temples. Experience divine blessings from anywhere in the world.
+                        <p className="text-base md:text-lg text-foreground mb-8 leading-relaxed max-w-2xl mx-auto">
+                            Book authentic Poojas & Sevas, performed by experienced priests at verified temples across India. Experience divine blessings from anywhere in the world.
                         </p>
 
                         {/* Premium Search Bar */}
@@ -184,42 +189,47 @@ const PoojaListClient: React.FC = () => {
             </section>
 
             {/* Filter Chips */}
-            <section className="sticky top-20 z-30 py-4 bg-white/80 backdrop-blur-xl border-y border-orange-100/50">
+            <section className="sticky top-20 z-30 py-2 bg-white border-y border-zinc-200 shadow-sm">
                 <div className="container mx-auto px-4">
-                    <div className="flex items-center gap-4 overflow-x-auto pb-2 scrollbar-none">
-                        <div className="flex items-center gap-2 mr-4 border-r border-orange-100 pr-4">
-                            <Filter className="w-4 h-4 text-primary" />
-                            <span className="text-sm font-medium text-zinc-500 whitespace-nowrap">Categories</span>
+                    <div className="flex items-center gap-3 overflow-x-auto pb-1 scrollbar-none">
+
+                        <div className="flex items-center gap-2 mr-4 border-r border-zinc-200 pr-4">
+                            {/* <span className="text-sm font-semibold text-zinc-700 whitespace-nowrap">
+                                Categories
+                            </span> */}
                         </div>
+
                         {categories.map((category) => (
                             <button
                                 key={category}
                                 onClick={() => setSelectedCategory(category)}
-                                className={`px-6 py-2 rounded-full text-sm font-medium transition-all duration-300 whitespace-nowrap ${selectedCategory === category
-                                    ? "bg-primary text-white shadow-lg shadow-primary/25"
-                                    : "bg-orange-50/50 text-zinc-600 hover:bg-orange-100/50 border border-orange-100/30"
+                                className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all duration-300 whitespace-nowrap ${selectedCategory === category
+                                    ? "bg-primary text-white shadow-md"
+                                    : "bg-zinc-100 text-zinc-700 hover:bg-zinc-200"
                                     }`}
                             >
                                 {category}
                             </button>
                         ))}
+
                     </div>
                 </div>
             </section>
 
+
             {/* Pooja Grid */}
-            <section className="py-20">
+            <section className="py-2">
                 <div className="container mx-auto px-4">
-                    <div className="mb-12 flex items-center justify-between">
-                        <h2 className="text-2xl font-semibold text-zinc-900">
-                            Available <span className="text-primary">{selectedCategory === 'All' ? '' : selectedCategory}</span> Services
+                    <div className="mb-8 flex items-center justify-between">
+                        <h2 className="text-2xl font-semibold text-zinc-500">
+                            Available <span className="text-primary">{selectedCategory === 'All' ? '' : selectedCategory}</span> Poojas
                         </h2>
                         <div className="text-sm text-zinc-500">
-                            Showing {filteredPoojas.length} rituals
+                            Showing {filteredPoojas.length} Poojas
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         <AnimatePresence mode="popLayout">
                             {filteredPoojas.map((pooja, index) => (
                                 <motion.div
@@ -230,9 +240,9 @@ const PoojaListClient: React.FC = () => {
                                     exit={{ opacity: 0, scale: 0.95 }}
                                     transition={{ delay: index * 0.05 }}
                                 >
-                                    <div className="relative group/card bg-white rounded-[2.5rem] p-4 shadow-sm hover:shadow-2xl transition-all duration-500 border border-orange-50/50 h-full flex flex-col hover:-translate-y-2">
+                                    <div className="relative group/card bg-white rounded-3xl p-3 shadow-sm hover:shadow-2xl transition-all duration-500 border border-orange-50/50 h-full flex flex-col hover:-translate-y-2">
                                         <Link href={`/poojas/${pooja.id}`}>
-                                            <div className="relative aspect-[4/3] overflow-hidden rounded-[2rem] mb-6">
+                                            <div className="relative aspect-video overflow-hidden rounded-2xl mb-4">
                                                 <img
                                                     src={getFullImageUrl(pooja.image)}
                                                     alt={pooja.name}
@@ -266,20 +276,20 @@ const PoojaListClient: React.FC = () => {
                                                     <span className="text-xs text-zinc-400 font-medium">(4.8/5)</span>
                                                 </div>
 
-                                                <h3 className="text-2xl font-bold text-zinc-900 mb-2 group-hover:text-primary transition-colors">
+                                                <h3 className="text-xl font-bold text-zinc-900 mb-1 group-hover:text-primary transition-colors">
                                                     {pooja.name}
                                                 </h3>
 
-                                                <p className="text-zinc-500 text-sm line-clamp-2 mb-6 leading-relaxed">
+                                                <p className="text-zinc-500 text-sm line-clamp-2 mb-3 leading-relaxed">
                                                     {Array.isArray(pooja.description) ? pooja.description[0] : pooja.description}
                                                 </p>
 
-                                                <div className="space-y-3 mb-8">
+                                                <div className="space-y-3 mb-4">
                                                     {/* <div className="flex items-center gap-2 text-zinc-600">
                                                         <Clock className="w-4 h-4 text-primary" />
                                                         <span className="text-sm font-medium">{pooja.duration || pooja.time}</span>
                                                     </div> */}
-                                                    {pooja.bullets && pooja.bullets.length > 0 && (
+                                                    {/* {pooja.bullets && pooja.bullets.length > 0 && (
                                                         <div className="flex flex-wrap gap-2">
                                                             {pooja.bullets.slice(0, 3).map((bullet, idx) => (
                                                                 <span key={idx} className="text-[10px] uppercase tracking-wider font-bold text-zinc-400 px-2 py-1 bg-zinc-50 rounded-md">
@@ -287,12 +297,12 @@ const PoojaListClient: React.FC = () => {
                                                                 </span>
                                                             ))}
                                                         </div>
-                                                    )}
+                                                    )} */}
                                                 </div>
                                             </div>
 
-                                            <div className="mt-auto px-3 pb-2">
-                                                <div className="flex items-center justify-between gap-4 pt-6 border-t border-orange-50">
+                                            <div className="mt-auto px-3 pb-1">
+                                                <div className="flex items-center justify-between gap-4 pt-4 border-t border-orange-50">
                                                     {/* <div className="flex flex-col">
                                                         <span className="text-xs text-zinc-400 uppercase font-bold tracking-widest">Start From</span>
                                                         <span className="text-2xl font-bold text-zinc-900 font-display">₹{pooja.price}</span>
@@ -374,12 +384,21 @@ const PoojaListClient: React.FC = () => {
                             <h2 className="text-4xl md:text-5xl font-bold text-black mb-8 leading-tight">
                                 Why book your rituals through <span className="text-primary italic">DevBhakti?</span>
                             </h2>
+
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
                                 {[
-                                    { title: "Authentic Rituals", desc: "Performed exactly as per Vedic scriptures by certified priests." },
-                                    { title: "Sacred Kshetras", desc: "Select from India's most powerful and historic temples." },
-                                    { title: "Live Streaming", desc: "Watch your puja live from anywhere in the world." },
-                                    { title: "Holy Prasad", desc: "Receive sanctified prasad delivered to your doorstep." }
+                                    {
+                                        title: "Verified Temples",
+                                        desc: "A curated network of legitimate temples across India, personally vetted for your peace of mind."
+                                    },
+                                    {
+                                        title: "Authentic Poojaris",
+                                        desc: "Experienced priests with expertise in Hindu rituals and poojas."
+                                    },
+                                    {
+                                        title: "Proof of Service",
+                                        desc: "Total transparency with personalized photo / video recordings of your poojas and sevas."
+                                    }
                                 ].map((item, i) => (
                                     <div key={i} className="flex gap-4">
                                         <div className="w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center shrink-0 border border-white/10">
@@ -392,6 +411,10 @@ const PoojaListClient: React.FC = () => {
                                     </div>
                                 ))}
                             </div>
+
+
+
+
                         </div>
                         <div className="relative">
                             <div className="aspect-square rounded-[3rem] overflow-hidden">
@@ -401,18 +424,18 @@ const PoojaListClient: React.FC = () => {
                                     className="w-full h-full object-cover"
                                 />
                             </div>
-                            <div className="absolute -bottom-8 -left-8 bg-white p-8 rounded-[2rem] shadow-2xl max-w-xs animate-in slide-in-from-left-4 duration-1000">
+                            {/* <div className="absolute -bottom-8 -left-8 bg-white p-8 rounded-[2rem] shadow-2xl max-w-xs animate-in slide-in-from-left-4 duration-1000">
                                 <div className="flex items-center gap-4 mb-4">
                                     <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
                                         <Users className="w-6 h-6 text-primary" />
                                     </div>
                                     <div>
-                                        {/* <div className="text-2xl font-bold text-zinc-900">10k+</div> */}
+                                        <div className="text-2xl font-bold text-zinc-900">10k+</div>
                                         <div className="text-xs text-zinc-500 font-bold uppercase tracking-widest">Happy Devotees</div>
                                     </div>
                                 </div>
                                 <p className="text-sm text-zinc-600 font-medium">Joined us in finding spiritual peace through sacred rituals.</p>
-                            </div>
+                            </div> */}
                         </div>
                     </div>
                 </div>

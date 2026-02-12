@@ -72,11 +72,10 @@ const TrustSection: React.FC = () => {
                                 Built on <span className="text-gradient-sacred">Trust & Transparency</span>
                             </h2>
                             <p className="text-black text-lg mb-8 leading-relaxed max-w-xl">
-                                Unlike other platforms, DevBhakti is built on the foundation of direct connection. We ensure every rupee you donate and every pooja you book is handled with the utmost sanctity and transparency.
-                            </p>
+                                DevBhakti is built on the foundation of Trust, Transparency & Respect for Faith. We ensure that every pooja, seva or product purchase is handled with the utmost sanctity and transparency.                            </p>
 
                             <div className="flex flex-wrap gap-4 items-center">
-                                <div className="flex -space-x-3">
+                                {/* <div className="flex -space-x-3">
                                     {[1, 2, 3, 4].map((i) => (
                                         <div key={i} className="w-12 h-12 rounded-full border-4 border-white bg-zinc-200 overflow-hidden shadow-sm">
                                             <img
@@ -86,7 +85,7 @@ const TrustSection: React.FC = () => {
                                             />
                                         </div>
                                     ))}
-                                </div>
+                                </div> */}
                                 <div className="text-sm">
                                     <span className="block font-bold text-zinc-900">10,000+ Devotees Trust Us</span>
                                     <span className="text-black">Join a community of faithful believers</span>

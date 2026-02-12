@@ -105,7 +105,7 @@ const PoojasSection: React.FC = () => {
   if (poojas.length === 0) return null;
 
   return (
-    <section id="poojas" className="py-6 md:py-6 bg-white/5 relative overflow-hidden">
+    <section id="poojas" className="py-6 md:py-8 bg-white/5 relative overflow-hidden">
       {/* Background pattern */}
       <div className="absolute inset-0 pattern-sacred opacity-30" />
 
@@ -123,35 +123,36 @@ const PoojasSection: React.FC = () => {
               Sacred Services
             </span>
             <h2 className="text-3xl md:text-4xl font-serif font-bold text-foreground mt-2">
-              Book{" "}
-              <span className="text-gradient-sacred">Poojas & Aartis</span>
+              Book <span className="text-gradient-sacred">Poojas & Sevas</span>
             </h2>
             <p className="text-muted-foreground mt-2">
               Experience divine rituals and ceremonies
             </p>
           </div>
-          <div className="hidden md:flex gap-2">
+        </motion.div>
+
+        {/* Scrollable poojas container */}
+        <div className="relative group/scroll">
+          {/* Side Navigation Buttons */}
+          <div className="hidden md:block">
             <Button
               variant="outline"
               size="icon"
               onClick={() => scroll("left")}
-              className="rounded-full"
+              className="absolute left-0 top-[45%] -translate-y-1/2 -translate-x-1/2 z-20 rounded-full w-12 h-12 bg-white shadow-2xl border-2 border-red-100 text-[#88542b] hover:bg-[#88542b] hover:text-white transition-all duration-300 flex items-center justify-center font-bold"
             >
-              <ChevronLeft className="w-5 h-5" />
+              <ChevronLeft className="w-7 h-7" />
             </Button>
             <Button
               variant="outline"
               size="icon"
               onClick={() => scroll("right")}
-              className="rounded-full"
+              className="absolute right-0 top-[45%] -translate-y-1/2 translate-x-1/2 z-20 rounded-full w-12 h-12 bg-white shadow-2xl border-2 border-red-100 text-[#88542b] hover:bg-[#88542b] hover:text-white transition-all duration-300 flex items-center justify-center font-bold"
             >
-              <ChevronRight className="w-5 h-5" />
+              <ChevronRight className="w-7 h-7" />
             </Button>
           </div>
-        </motion.div>
 
-        {/* Scrollable poojas container */}
-        <div className="relative">
           <div
             ref={scrollContainerRef}
             className="flex gap-6 overflow-x-auto scrollbar-hide pb-4 scroll-smooth"
@@ -169,7 +170,7 @@ const PoojasSection: React.FC = () => {
                 transition={{ duration: 0.4, delay: index * 0.1 }}
                 className="flex-shrink-0 w-[300px] md:w-[340px]"
               >
-                <div className="relative group/card h-[420px]">
+                <div className="relative group/card h-[400px]">
                   <Link href={`/poojas/${pooja.id}`}>
                     <div className="bg-card rounded-2xl overflow-hidden border border-border/40 shadow-soft hover:shadow-warm transition-all duration-300 hover:-translate-y-2 h-full flex flex-col">
                       {/* Background Image with bottom gradient for text readability */}
@@ -207,6 +208,19 @@ const PoojasSection: React.FC = () => {
                             ))}
                           </div>
                         </div>
+
+                        {/* <div className="flex items-center justify-between mt-6 pt-4 border-t border-white/10">
+                          <div className="flex flex-col">
+                            <span className="text-white/60 text-xs uppercase tracking-wider">Starts from</span>
+                            <div className="flex items-center text-xl font-bold text-primary">
+                              <IndianRupee className="w-4 h-4" />
+                              <span>{pooja.price}</span>
+                            </div>
+                          </div>
+                          <Button variant="outline" size="sm" className="rounded-full bg-white/10 border-white/20 text-white hover:bg-primary hover:border-primary transition-all">
+                            Book Now
+                          </Button>
+                        </div> */}
                       </div>
                     </div>
                   </Link>
@@ -229,7 +243,7 @@ const PoojasSection: React.FC = () => {
           </div>
         </div>
 
-        <div className="text-center mt-12">
+        <div className="text-center mt-1">
           <Button variant="outline" className="rounded-full border-[#88542B] text-[#88542B] hover:bg-[#88542B] hover:text-white" asChild>
             <Link href="/poojas">
               View All Poojas <ArrowRight className="w-4 h-4 ml-2" />

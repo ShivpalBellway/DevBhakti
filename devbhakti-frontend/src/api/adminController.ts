@@ -704,3 +704,28 @@ export const deleteCommissionSlabAdmin = async (id: string) => {
     return response.data;
 };
 
+
+// Admin Finance Approvals
+export const fetchPendingApprovals = async () => {
+    const token = localStorage.getItem("admin_token");
+    const response = await axios.get(`${API_URL}/admin/finance/approvals`, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+
+export const approveRequestAdmin = async (id: string, type: string) => {
+    const token = localStorage.getItem("admin_token");
+    const response = await axios.post(`${API_URL}/admin/finance/approve`, { id, type }, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+
+export const rejectRequestAdmin = async (id: string, type: string) => {
+    const token = localStorage.getItem("admin_token");
+    const response = await axios.post(`${API_URL}/admin/finance/reject`, { id, type }, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};

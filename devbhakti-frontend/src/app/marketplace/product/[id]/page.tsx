@@ -236,9 +236,9 @@ export default function ProductDetailsPage() {
             <span className="text-[#4A2c01]">{product.name}</span>
           </nav>
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-4">
             {/* Left Column: Product Images */}
-            <div className="lg:col-span-7 space-y-6">
+            <div className="lg:col-span-6 space-y-6">
               <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
@@ -248,13 +248,13 @@ export default function ProductDetailsPage() {
                   <img
                     src={`${BASE_URL}${currentVariant.image}`}
                     alt={product.name}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-900"
                   />
                 ) : product.image ? (
                   <img
                     src={`${BASE_URL}${product.image}`}
                     alt={product.name}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-900"
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center">
@@ -328,10 +328,37 @@ export default function ProductDetailsPage() {
                   </button>
                 ))}
               </motion.div>
+
+              {/* Trust Badges - Aligned with images on the left side */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+                className="flex flex-wrap gap-12 pt-10 border-t border-[#794A05]/10 mt-6"
+              >
+                <div className="flex flex-col items-center gap-2">
+                  <div className="w-12 h-12 rounded-xl bg-white flex items-center justify-center shadow-sm border border-[#794A05]/5">
+                    <Truck className="w-5 h-5 text-[#794A05]" />
+                  </div>
+                  <span className="text-[10px] font-bold text-[#794A05]/60 uppercase tracking-widest">Fast Delivery</span>
+                </div>
+                <div className="flex flex-col items-center gap-2">
+                  <div className="w-12 h-12 rounded-xl bg-white flex items-center justify-center shadow-sm border border-[#794A05]/5">
+                    <Shield className="w-5 h-5 text-[#794A05]" />
+                  </div>
+                  <span className="text-[10px] font-bold text-[#794A05]/60 uppercase tracking-widest">Safe & Secure</span>
+                </div>
+                <div className="flex flex-col items-center gap-2">
+                  <div className="w-12 h-12 rounded-xl bg-white flex items-center justify-center shadow-sm border border-[#794A05]/5">
+                    <Package className="w-5 h-5 text-[#794A05]" />
+                  </div>
+                  <span className="text-[10px] font-bold text-[#794A05]/60 uppercase tracking-widest">Temple Blessed</span>
+                </div>
+              </motion.div>
             </div>
 
             {/* Right Column: Details */}
-            <div className="lg:col-span-5 space-y-8">
+            <div className="lg:col-span-6 space-y-8">
               <motion.div
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
@@ -340,12 +367,12 @@ export default function ProductDetailsPage() {
                 {/* Product Info */}
                 <div>
                   <div className="flex items-center justify-between mb-4">
-                    <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#794A05]/60 pr-4">
-                      {product.temple?.name || product.seller?.name || "DevBhakti Exclusive"}
-                    </span>
-                    <div className="flex items-center gap-1 bg-[#794A05]/5 px-2 py-1 rounded-full">
-                      <Star className="w-3 h-3 text-amber-500 fill-amber-500" />
-                      <span className="text-[10px] font-bold text-[#794A05]">{product.rating || "4.5"}</span>
+                    {/* <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#794A05]/60 pr-4">
+                        {product.temple?.name || product.seller?.name || "DevBhakti Exclusive"}
+                      </span> */}
+                    <div className="flex items-center gap-1.5 bg-amber-50 px-3 py-1.5 rounded-full border border-amber-200 shadow-sm">
+                      <Star className="w-6 h-6 text-amber-500 fill-amber-500" />
+                      <span className="text-sm font-bold text-amber-700">{product.rating || "4.2"}</span>
                     </div>
                   </div>
 
@@ -369,15 +396,15 @@ export default function ProductDetailsPage() {
                 </div>
 
                 {/* Description */}
-                <div>
-                  <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-[#4A2c01] mb-3">Divine Description</h3>
+                <div className="space-y-3">
+                  <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-[#794A05] opacity-70">Divine Description</h3>
                   <p className="text-slate-600 leading-relaxed text-sm">
                     {product.description}
                   </p>
                 </div>
 
                 {/* Variant Selection */}
-                {product.variants.length > 1 && (
+                {/* {product.variants.length > 1 && (
                   <div className="space-y-3">
                     <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-[#4A2c01]">Select Option</h3>
                     <div className="grid grid-cols-2 gap-2">
@@ -398,28 +425,28 @@ export default function ProductDetailsPage() {
                       ))}
                     </div>
                   </div>
-                )}
+                )} */}
 
                 {/* Quantity and Actions */}
                 <div className="space-y-6 pt-6">
-                  <div className="flex items-center justify-between gap-6">
-                    <div className="flex items-center bg-white border border-slate-200 rounded-2xl p-1 shadow-sm">
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-center bg-[#fdf6e9] border border-[#794A05]/10 rounded-xl p-0.5">
                       <Button
                         variant="ghost"
                         size="icon"
                         onClick={() => setQuantity(Math.max(1, quantity - 1))}
                         disabled={quantity <= 1}
-                        className="h-10 w-10 text-[#794A05] hover:bg-[#794A05]/5"
+                        className="h-8 w-8 text-[#794A05] hover:bg-[#794A05]/5 rounded-lg"
                       >
                         <Minus className="w-3 h-3" />
                       </Button>
-                      <span className="w-12 text-center font-bold text-slate-700">{quantity}</span>
+                      <span className="w-8 text-center font-bold text-[#794A05] text-sm">{quantity}</span>
                       <Button
                         variant="ghost"
                         size="icon"
                         onClick={() => setQuantity(quantity + 1)}
                         disabled={currentVariant?.stock ? quantity >= currentVariant.stock : true}
-                        className="h-10 w-10 text-[#794A05] hover:bg-[#794A05]/5"
+                        className="h-8 w-8 text-[#794A05] hover:bg-[#794A05]/5 rounded-lg"
                       >
                         <Plus className="w-3 h-3" />
                       </Button>
@@ -429,10 +456,10 @@ export default function ProductDetailsPage() {
                       variant="outline"
                       size="icon"
                       onClick={toggleFavorite}
-                      className={`h-12 w-12 rounded-2xl transition-all shadow-sm ${isFavorite ? "border-red-100 bg-red-50 text-red-500" : "border-slate-200 bg-white"
+                      className={`h-10 w-10 rounded-xl transition-all shadow-sm ${isFavorite ? "border-red-100 bg-red-50 text-red-500" : "border-[#794A05]/10 bg-white text-[#794A05]"
                         }`}
                     >
-                      <Heart className={`w-5 h-5 ${isFavorite ? "fill-red-500" : ""}`} />
+                      <Heart className={`w-4 h-4 ${isFavorite ? "fill-red-500" : ""}`} />
                     </Button>
                   </div>
 
@@ -453,27 +480,7 @@ export default function ProductDetailsPage() {
                   </div>
                 </div>
 
-                {/* Trust Badges */}
-                <div className="grid grid-cols-3 gap-4 py-8 border-t border-[#794A05]/10">
-                  <div className="flex flex-col items-center text-center gap-2">
-                    <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm">
-                      <Truck className="w-4 h-4 text-[#794A05]" />
-                    </div>
-                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tighter">Fast Delivery</span>
-                  </div>
-                  <div className="flex flex-col items-center text-center gap-2">
-                    <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm">
-                      <Shield className="w-4 h-4 text-[#794A05]" />
-                    </div>
-                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tighter">Safe & Secure</span>
-                  </div>
-                  <div className="flex flex-col items-center text-center gap-2">
-                    <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm">
-                      <Package className="w-4 h-4 text-[#794A05]" />
-                    </div>
-                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tighter">Temple Blessed</span>
-                  </div>
-                </div>
+
               </motion.div>
             </div>
           </div>
@@ -491,35 +498,35 @@ export default function ProductDetailsPage() {
                   <div className="inline-block px-4 py-1.5 bg-[#794A05]/5 text-[#794A05] text-[10px] font-bold uppercase tracking-widest rounded-full mb-2">
                     Detailed Information
                   </div>
-                  <h2 className="text-3xl font-display font-bold text-[#2a1b01]">About this Sacred Offering</h2>
+                  {/* <h2 className="text-3xl font-display font-bold text-[#2a1b01]">About this Sacred Offering</h2>
                   <p className="text-slate-600 leading-relaxed">
                     {product.longDescription || `Every product in our marketplace is carefully selected for its spiritual significance and quality. 
                     This ${product.name} is crafted following traditional guidelines to ensure it serves as a meaningful 
                     addition to your spiritual journey.`}
-                  </p>
+                  </p> */}
 
-                  <div className="grid grid-cols-2 gap-6 pt-6">
-                    <div className="space-y-1">
-                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Origin</span>
-                      <p className="text-sm font-semibold text-[#4A2c01]">{product.origin || product.temple?.location || product.seller?.location || "India"}</p>
+                  <div className="grid grid-cols-2 gap-8 pt-4">
+                    <div className="space-y-1.5">
+                      <span className="text-[11px] font-bold text-slate-500 uppercase tracking-[0.15em]">Origin</span>
+                      <p className="text-md font-bold text-[#2a1b01]">{product.origin || product.temple?.location || product.seller?.location || "India"}</p>
                     </div>
-                    <div className="space-y-1">
-                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Category</span>
-                      <p className="text-sm font-semibold text-[#4A2c01]">{product.categoryObj?.name || product.category}</p>
+                    <div className="space-y-1.5">
+                      <span className="text-[11px] font-bold text-slate-500 uppercase tracking-[0.15em]">Category</span>
+                      <p className="text-md font-bold text-[#2a1b01]">{product.categoryObj?.name || product.category}</p>
                     </div>
-                    <div className="space-y-1">
-                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">SKU</span>
-                      <p className="text-xs font-mono text-slate-500">{currentVariant?.id.slice(-8) || "N/A"}</p>
+                    <div className="space-y-1.5">
+                      <span className="text-[11px] font-bold text-slate-500 uppercase tracking-[0.15em]">SKU</span>
+                      <p className="text-sm font-mono font-bold text-[#2a1b01]">{currentVariant?.id.slice(-8) || "N/A"}</p>
                     </div>
-                    <div className="space-y-1">
-                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Availability</span>
-                      <p className="text-sm font-semibold text-green-600">{product.shippingInfo || "Ships in 24-48 Hours"}</p>
+                    <div className="space-y-1.5">
+                      <span className="text-[11px] font-bold text-slate-500 uppercase tracking-[0.15em]">Availability</span>
+                      <p className="text-md font-bold text-green-700">{product.shippingInfo || "Ships in 24-48 Hours"}</p>
                     </div>
                   </div>
                 </div>
 
                 <div className="bg-[#fdf6e9] rounded-[2rem] p-8 space-y-6">
-                  <h3 className="text-lg font-display font-bold text-[#4A2c01]">Sacred Highlights</h3>
+                  <h3 className="text-lg font-display font-bold text-[#4A2c01]">Highlights</h3>
                   <ul className="space-y-4">
                     {(product.highlights ? product.highlights.split(',').map(s => s.trim()) : [
                       "Directly from Temple Source",

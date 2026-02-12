@@ -106,7 +106,7 @@ const TemplesSection: React.FC = () => {
   if (temples.length === 0) return null;
 
   return (
-    <section id="temples" className="py-6 bg-background relative overflow-hidden">
+    <section id="temples" className="py-2 bg-background relative overflow-hidden">
       {/* Background pattern */}
       <div className="absolute inset-0 pattern-lotus opacity-30" />
 
@@ -123,36 +123,38 @@ const TemplesSection: React.FC = () => {
             <span className="text-primary font-medium text-sm uppercase tracking-wider">
               Sacred Temples
             </span>
-            <h2 className="text-3xl md:text-4xl font-serif font-bold text-foreground mt-2">
-              Discover Divine{" "}
-              <span className="text-gradient-sacred">Temples</span>
+            <h2 className="text-2xl md:text-3xl font-serif font-bold text-foreground mt-1">
+              Discover Divine <span className="text-gradient-sacred">Temples</span>
             </h2>
-            <p className="text-foreground mt-2">
+            <p className="text-sm text-foreground mt-1">
               Browse temples you can trust — curated and verified by DevBhakti
             </p>
           </div>
-          <div className="hidden md:flex gap-2">
+
+        </motion.div>
+
+        {/* Scrollable temples container */}
+        <div className="relative group/scroll">
+          {/* Side Navigation Buttons */}
+          <div className="hidden md:block">
             <Button
               variant="outline"
               size="icon"
               onClick={() => scroll("left")}
-              className="rounded-full"
+              className="absolute left-0 top-[45%] -translate-y-1/2 -translate-x-1/2 z-20 rounded-full w-12 h-12 bg-white shadow-2xl border-2 border-red-100 text-[#88542b] hover:bg-[#88542b] hover:text-white transition-all duration-300 flex items-center justify-center font-bold"
             >
-              <ChevronLeft className="w-5 h-5" />
+              <ChevronLeft className="w-7 h-7" />
             </Button>
             <Button
               variant="outline"
               size="icon"
               onClick={() => scroll("right")}
-              className="rounded-full"
+              className="absolute right-0 top-[45%] -translate-y-1/2 translate-x-1/2 z-20 rounded-full w-12 h-12 bg-white shadow-2xl border-2 border-red-100 text-[#88542b] hover:bg-[#88542b] hover:text-white transition-all duration-300 flex items-center justify-center font-bold"
             >
-              <ChevronRight className="w-5 h-5" />
+              <ChevronRight className="w-7 h-7" />
             </Button>
           </div>
-        </motion.div>
 
-        {/* Scrollable temples container */}
-        <div className="relative">
           <div
             ref={scrollContainerRef}
             className="flex gap-6 overflow-x-auto scrollbar-hide pb-4 scroll-smooth"
@@ -174,7 +176,7 @@ const TemplesSection: React.FC = () => {
                   <Link href={getTempleUrl(temple)}>
                     <div className="bg-card rounded-2xl overflow-hidden border-2 border-border/50 shadow-soft hover:shadow-warm transition-all duration-300 hover:-translate-y-2 h-full flex flex-col">
                       {/* Image */}
-                      <div className="relative h-48 md:h-56 overflow-hidden">
+                      <div className="relative h-40 md:h-44 overflow-hidden">
                         <img
                           src={getFullImageUrl(temple.image)}
                           alt={temple.name}
@@ -192,7 +194,7 @@ const TemplesSection: React.FC = () => {
                       </div>
 
                       {/* Content */}
-                      <div className="p-5 flex-grow">
+                      <div className="p-4 flex-grow">
                         <div className="flex items-start justify-between gap-4 mb-2">
                           <h3 className="text-xl font-serif font-bold text-foreground group-hover/card:text-primary transition-colors leading-tight">
                             {temple.name}
@@ -207,35 +209,40 @@ const TemplesSection: React.FC = () => {
                           {temple.description}
                         </p>
 
-                        <div className="flex items-center gap-2 text-foreground mb-3">
-                          <MapPin className="w-4 h-4" />
-                          <span className="text-sm">{temple.location}</span>
-                        </div>
 
-                        <div className="flex items-center justify-between mb-3">
-                          <div className="flex items-center gap-1">
-                            <Star className="w-4 h-4 fill-secondary text-secondary" />
-                            <span className="font-semibold text-foreground">{temple.rating}</span>
-                            <span className="text-sm text-muted-foreground">
-                              ({(temple.reviewsCount || 0).toLocaleString()})
-                            </span>
-                          </div>
-                          {temple.liveStatus && (
-                            <div className="flex items-center gap-1 text-accent">
-                              <Video className="w-4 h-4" />
-                              <span className="text-xs font-medium">Live Darshan</span>
+
+                        <div className="flex items-center justify-between pt-2 border-t border-border/40 mt-auto">
+                          <div className="flex flex-col gap-1">
+                            <div className="flex items-center gap-1 text-muted-foreground">
+                              <MapPin className="w-3 h-3" />
+                              <span className="text-[10px] line-clamp-1">{temple.location}</span>
                             </div>
-                          )}
-                        </div>
+                            <div className="flex items-center gap-1">
+                              <div className="flex items-center gap-0.5">
+                                <Star className="w-3 h-3 fill-secondary text-secondary" />
+                                <span className="font-bold text-[11px]">4.5</span>
+                              </div>
+                              <span className="text-[10px] text-muted-foreground">
+                                ({[432, 252, 125, 75][index % 4]})
+                              </span>
+                            </div>
+                          </div>
 
-                        <div className="flex items-center justify-end pt-3 border-t border-border/50">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="group-hover/card:text-primary"
-                          >
-                            Explore <ArrowRight className="w-4 h-4 ml-1" />
-                          </Button>
+                          <div className="flex flex-col items-end gap-1">
+                            {temple.liveStatus && (
+                              <div className="flex items-center gap-1 text-accent">
+                                <Video className="w-3 h-3" />
+                                <span className="text-[9px] font-medium uppercase tracking-tighter">Live</span>
+                              </div>
+                            )}
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 px-2 group-hover/card:text-primary text-[11px] font-medium"
+                            >
+                              Explore <ArrowRight className="w-3 h-3 ml-1" />
+                            </Button>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -260,7 +267,7 @@ const TemplesSection: React.FC = () => {
         </div>
 
         {/* View All Button */}
-        <div className="text-center mt-12">
+        <div className="text-center mt-1">
           <Button variant="outline" className="rounded-full border-[#88542B] text-[#88542B] hover:bg-[#88542B] hover:text-white" asChild>
             <Link href="/temples">
               View All Temples <ArrowRight className="w-4 h-4 ml-2" />

@@ -2,7 +2,7 @@
 
 import React from "react";
 import { motion } from "framer-motion";
-import { Play, Users, Radio, Clock, ArrowRight } from "lucide-react";
+import { Play, Users, Radio, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import Image from "next/image";
@@ -187,18 +187,16 @@ const LiveDarshanSection: React.FC = () => {
             </p>
 
             {/* Features */}
-            <div className="space-y-4 mb-8">
+            <div className="space-y-2.5 mb-8">
               {[
-                { icon: Radio, text: "Low-latency HD streaming" },
-                { icon: Clock, text: "24/7 live coverage from major temples" },
-                { icon: Users, text: "Join thousands of devotees watching" },
-              ].map((feature) => (
-                <div key={feature.text} className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center">
-                    <feature.icon className="w-5 h-5 text-primary" />
-                  </div>
-                  <span className="text-sidebar-foreground/90">
-                    {feature.text}
+                "Low-latency HD streaming",
+                "24/7 live coverage from major temples",
+                "Join thousands of devotees watching",
+              ].map((text) => (
+                <div key={text} className="flex items-center gap-3">
+                  <div className="w-1.5 h-1.5 rounded-full bg-[#eea25a] shadow-[0_0_8px_rgba(238,162,90,0.6)]" />
+                  <span className="text-white/90 text-lg">
+                    {text}
                   </span>
                 </div>
               ))}

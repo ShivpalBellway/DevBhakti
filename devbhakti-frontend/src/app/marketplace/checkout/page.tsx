@@ -146,9 +146,9 @@ export default function CheckoutPage() {
                 // totalAmount,
                 totalAmount: totalAmount + platformFee,
                 paymentMethod,
-                // totalAmount: totalAmount + platformFee,
-                // paymentMethod: "COD",
                 shippingAddress: address,
+                platformFee,
+                shippingCost: 0, // Currently Free as per UI
             };
 
             const response = await axios.post(`${API_URL}/orders`, orderData, {

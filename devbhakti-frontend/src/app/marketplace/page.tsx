@@ -264,32 +264,38 @@ function MarketplaceContent() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
-              className="text-lg text-slate-600 mb-10"
+              className="text-lg text-slate-800 mb-10"
             >
               Discover authentic devotional items, pooja essentials, and spiritual treasures
               delivered directly from sacred temples to your home.
             </motion.p>
 
-            {/* Search Bar */}
+            {/* Premium Search Bar */}
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.2 }}
-              className="relative max-w-2xl mx-auto"
+              className="relative max-w-2xl mx-auto group"
             >
-              <Search className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-[#794A05]/50" />
-              <Input
-                type="text"
-                placeholder="Search for idols, incense, books..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-14 h-16 text-lg rounded-2xl border-2 border-[#794A05]/10 focus:border-[#794A05]/30 bg-white/80 backdrop-blur-sm shadow-lg shadow-[#794A05]/5 transition-all"
-              />
+              <div className="absolute -inset-1 bg-gradient-to-r from-[#794A05] to-[#B8860B] rounded-2xl blur opacity-25 group-hover:opacity-40 transition duration-1000 group-hover:duration-200" />
+              <div className="relative flex items-center bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl overflow-hidden border border-[#794A05]/10">
+                <Search className="absolute left-5 h-5 w-5 text-[#794A05]/50" />
+                <input
+                  type="text"
+                  placeholder="Search for idols, incense, books..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-14 pr-32 py-5 text-lg outline-none bg-transparent text-[#261601]"
+                />
+                <Button className="absolute right-2 h-12 px-8 rounded-xl bg-[#794A05] hover:bg-[#5d3804] text-white hidden sm:flex font-bold">
+                  Explore
+                </Button>
+              </div>
             </motion.div>
           </div>
 
           {/* Trust Badges */}
-          <div className="flex flex-wrap justify-center gap-6 mt-12">
+          <div className="flex flex-wrap justify-center gap-6 mt-4">
             {[
               { icon: Truck, text: "Fast Devine Delivery" },
               { icon: Shield, text: "100% Authentic & Blessed" },

@@ -317,6 +317,7 @@ function BookingForm() {
         gothra: formData.gothra,
         kuldevi: formData.kuldevi,
         kuldevta: formData.kuldevta,
+        platformFee: platformFee, // Send platform fee to backend
       };
 
       const response = await fetch(`${API_URL}/bookings`, {

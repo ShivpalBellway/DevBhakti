@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { prisma } from '../../lib/prisma';
 import { createShiprocketPickupLocation } from '../../services/shiprocketService';
+import { parseLocation, extractPincode } from '../../lib/shiprocketUtils';
 import bcrypt from 'bcrypt';
 
 const getFilePath = (files: any, fieldName: string) => {
@@ -131,16 +132,19 @@ export const registerTemple = async (req: Request, res: Response) => {
 
     // 3. Register Pickup Location with Shiprocket
     try {
+      const { city, state } = parseLocation(data.location || "");
+      const pincode = extractPincode(data.fullAddress || "");
+
       const pickupData = {
         pickup_location: (result.temple as any).pickupLocation,
         name: data.name,
         email: data.email,
         phone: data.phone,
         address: data.fullAddress || '',
-        city: data.location || "Delhi",
-        state: "Delhi",
+        city: city || "Delhi",
+        state: state || "Delhi",
         country: "India",
-        pin_code: "110001"
+        pin_code: pincode || "110001"
       };
       await createShiprocketPickupLocation(pickupData);
     } catch (srError) {
@@ -241,7 +245,10 @@ export const updateMyTempleProfile = async (req: Request, res: Response) => {
     }
 
     // Define sensitive fields
-    const sensitiveFields = ['name', 'location', 'category', 'fullAddress', 'image', 'heroImages', 'gallery'];
+    const sensitiveFields = [
+      'name', 'location', 'category', 'fullAddress', 'image', 'heroImages', 'gallery',
+      'accountHolderName', 'accountNumber', 'bankName', 'ifscCode', 'upiId'
+    ];
 
     // Check if any sensitive field is being updated
     const updateData: any = {};

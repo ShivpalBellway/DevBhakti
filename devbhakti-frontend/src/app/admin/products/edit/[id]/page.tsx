@@ -16,6 +16,7 @@ import {
   Building2,
   Check,
   ChevronsUpDown,
+  Truck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -83,6 +84,10 @@ interface Product {
   shippingInfo?: string;
   origin?: string;
   rating?: number;
+  weight?: number;
+  length?: number;
+  width?: number;
+  height?: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -116,6 +121,10 @@ export default function EditProductPage() {
     shippingInfo: "Ships in 24-48 Hours",
     origin: "India",
     rating: "4.5",
+    weight: "",
+    length: "",
+    width: "",
+    height: "",
   });
 
   const [variants, setVariants] = useState<Variant[]>([]);
@@ -213,6 +222,10 @@ export default function EditProductPage() {
         shippingInfo: data.shippingInfo || "Ships in 24-48 Hours",
         origin: data.origin || "India",
         rating: data.rating?.toString() || "4.5",
+        weight: data.weight?.toString() || "",
+        length: data.length?.toString() || "",
+        width: data.width?.toString() || "",
+        height: data.height?.toString() || "",
       });
       setVariants(data.variants.map((v: any) => ({
         id: v.id,
@@ -368,6 +381,10 @@ export default function EditProductPage() {
       formDataToSend.append('shippingInfo', formData.shippingInfo);
       formDataToSend.append('origin', formData.origin);
       formDataToSend.append('rating', formData.rating);
+      formDataToSend.append('weight', formData.weight);
+      formDataToSend.append('length', formData.length);
+      formDataToSend.append('width', formData.width);
+      formDataToSend.append('height', formData.height);
 
       const variantsData = validVariants.map((v, index) => {
         if (v.imageFile) {
@@ -710,6 +727,32 @@ export default function EditProductPage() {
                     placeholder="e.g., Ships in 24-48 Hours"
                   />
                 </div>
+              </div>
+
+              <div className="bg-blue-50/50 dark:bg-blue-950/30 p-4 rounded-xl border border-blue-100 dark:border-blue-900 space-y-4">
+                <div className="flex items-center gap-2 text-blue-700 dark:text-blue-300">
+                  <Truck className="w-5 h-5" />
+                  <h3 className="font-bold text-sm uppercase tracking-wider">Shiprocket Dimensions (Required)</h3>
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="weight">Weight (kg) *</Label>
+                    <Input id="weight" type="number" step="0.01" value={formData.weight} onChange={(e) => setFormData({ ...formData, weight: e.target.value })} placeholder="0.5" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="length">Length (cm) *</Label>
+                    <Input id="length" type="number" value={formData.length} onChange={(e) => setFormData({ ...formData, length: e.target.value })} placeholder="10" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="width">Width (cm) *</Label>
+                    <Input id="width" type="number" value={formData.width} onChange={(e) => setFormData({ ...formData, width: e.target.value })} placeholder="10" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="height">Height (cm) *</Label>
+                    <Input id="height" type="number" value={formData.height} onChange={(e) => setFormData({ ...formData, height: e.target.value })} placeholder="10" />
+                  </div>
+                </div>
+                <p className="text-[10px] text-blue-600/70 font-medium">Note: Exact dimensions help in accurate shipping charges.</p>
               </div>
 
               <div className="space-y-2">

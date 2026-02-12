@@ -91,7 +91,8 @@ const sidebarItems = [
     href: "#",
     subItems: [
       { label: "Transaction Ledger", href: "/admin/finance/ledger" },
-      { label: "Withdrawal Requests", href: "/admin/finance/withdrawals" }
+      { label: "Withdrawal Requests", href: "/admin/finance/withdrawals" },
+      { label: "Approvals", href: "/admin/finance/approvals" }
     ]
   },
   {

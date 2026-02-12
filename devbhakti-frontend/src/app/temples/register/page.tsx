@@ -146,14 +146,14 @@ export default function RegisterTemplePage() {
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ duration: 1, delay: 0.2 }}
                         >
-                          <h1 className="text-2xl md:text-4xl lg:text-6xl font-serif font-extrabold tracking-tight mb-8 leading-tight text-foreground">
-    <span className="text-primary">Helping Temples Stay Connected</span>
-    <br />
-    <span>with Devotees Worldwide</span>
-</h1>
-<p className="text-xl md:text-2xl text-black max-w-3xl mx-auto mb-12 leading-relaxed font-light font-sans">
-    A temple-first digital platform for online poojas, donations, live darshan, and devotee communication.
-</p>
+                            <h1 className="text-2xl md:text-4xl lg:text-6xl font-serif font-extrabold tracking-tight mb-8 leading-tight text-foreground">
+                                <span className="text-primary">Helping Temples Stay Connected</span>
+                                <br />
+                                <span>with Devotees Worldwide</span>
+                            </h1>
+                            <p className="text-xl md:text-2xl text-black max-w-3xl mx-auto mb-12 leading-relaxed font-light font-sans">
+                                A temple-first digital platform for online poojas, donations, live darshan, and devotee communication.
+                            </p>
 
                             <div className="flex flex-col sm:flex-row gap-6 justify-center">
                                 <Button
@@ -235,10 +235,10 @@ export default function RegisterTemplePage() {
                                         alt="Temple Priest"
                                         className="rounded-2xl shadow-elevated"
                                     />
-                                    <div className="absolute -bottom-6 -right-6 bg-card rounded-2xl p-6 shadow-warm border border-border">
+                                    {/* <div className="absolute -bottom-6 -right-6 bg-card rounded-2xl p-6 shadow-warm border border-border">
                                         <div className="text-3xl font-bold text-primary font-serif">10+</div>
-                                        <div className="text-sm text-foreground">Years of Divine Service</div>
-                                    </div>
+                                        <div className="text-sm text-primary">Years of Divine Service</div>
+                                    </div> */}
                                 </div>
                             </motion.div>
 
@@ -326,10 +326,10 @@ export default function RegisterTemplePage() {
                                         <p className="text-muted-foreground leading-relaxed mb-4">
                                             {benefit.desc}
                                         </p>
-                                        <div className="flex items-center text-primary font-medium group-hover:text-primary/80 transition-colors cursor-pointer">
+                                        {/* <div className="flex items-center text-primary font-medium group-hover:text-primary/80 transition-colors cursor-pointer">
                                             <span>Learn More</span>
                                             <ChevronRight className="ml-1 h-4 w-4 transform group-hover:translate-x-1 transition-transform" />
-                                        </div>
+                                        </div> */}
                                     </div>
                                 </motion.div>
                             ))}

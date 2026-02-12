@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { prisma } from '../../lib/prisma';
 
 import jwt from 'jsonwebtoken';
+import { sendSMS } from '../../services/mobicommService';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'devbhakti_secret_key_2026';
 
@@ -109,8 +110,16 @@ export const sendOTP = async (req: Request, res: Response) => {
             });
         }
 
-        // In a real app, you would send OTP via SMS gateway here
-        console.log(`OTP for ${normalizedPhone} as ${user?.role}: ${otp}`);
+        // Send OTP via Mobicomm SMS
+        const message = `Your OTP for DevBhakti is ${otp}. Valid for 10 minutes.`;
+        const smsSent = await sendSMS(normalizedPhone, message);
+
+        if (smsSent) {
+            console.log(`[Auth] OTP sent successfully to ${normalizedPhone}`);
+        } else {
+            console.log(`[Auth] Failed to send OTP to ${normalizedPhone}. Check Mobicomm logs.`);
+        }
+
 
         res.json({ success: true, message: 'OTP sent successfully', data: { phone: normalizedPhone, otp } });
 

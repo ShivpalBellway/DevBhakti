@@ -23,7 +23,7 @@ const HeroSection: React.FC = () => {
   }, []);
 
   return (
-    <section className="relative min-h-[700px] flex items-center justify-center overflow-hidden">
+    <section className="relative min-h-[600px] flex items-center justify-center overflow-hidden">
       {/* Background image */}
       <div className="absolute inset-0">
         <Image
@@ -42,7 +42,7 @@ const HeroSection: React.FC = () => {
         <div className="absolute bottom-1/4 -right-32 w-80 h-80 bg-secondary/20 rounded-full blur-3xl animate-pulse-slow" />
       </div>
 
-      <div className="container mx-auto px-4 pt-24 pb-12 relative z-10">
+      <div className="container mx-auto px-4 pt-20 pb-10 relative z-10">
         <div className="max-w-5xl mx-auto text-center">
 
           {/* Main heading */}
@@ -71,7 +71,7 @@ const HeroSection: React.FC = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.3 }}
-            className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16"
+            className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-13"
           >
             <Button variant="hero" size="xl" asChild>
               <Link href={user ? "/poojas" : "/auth?mode=register"}>
@@ -80,7 +80,7 @@ const HeroSection: React.FC = () => {
               </Link>
             </Button>
             <Button variant="outline-sacred" size="xl" asChild>
-              <a href="#darshan">
+              <a href="live-darshan">
                 <Play className="w-5 h-5" />
                 View Live Darshan
               </a>

@@ -7,6 +7,7 @@ export const getBankDetails = async (req: Request, res: Response) => {
         const temple = await prisma.temple.findUnique({
             where: { userId },
             select: {
+                id: true,
                 bankName: true,
                 accountNumber: true,
                 accountHolderName: true,
@@ -19,7 +20,22 @@ export const getBankDetails = async (req: Request, res: Response) => {
             return res.status(404).json({ success: false, message: 'Temple not found' });
         }
 
-        res.json({ success: true, data: temple });
+        // Check for pending update request
+        const pendingRequest = await prisma.templeUpdateRequest.findFirst({
+            where: {
+                templeId: temple.id,
+                status: 'PENDING'
+            },
+            orderBy: { createdAt: 'desc' }
+        });
+
+        const data = {
+            ...temple,
+            verificationPending: !!pendingRequest,
+            pendingData: pendingRequest ? pendingRequest.requestedData : null
+        };
+
+        res.json({ success: true, data });
     } catch (error: any) {
         res.status(500).json({ success: false, message: error.message });
     }
@@ -33,18 +49,57 @@ export const updateBankDetails = async (req: Request, res: Response) => {
         const temple = await prisma.temple.findUnique({ where: { userId } });
         if (!temple) return res.status(404).json({ success: false, message: 'Temple not found' });
 
-        const updatedTemple = await prisma.temple.update({
-            where: { userId },
-            data: {
-                bankName,
-                accountNumber,
-                accountHolderName,
-                ifscCode,
-                upiId
+        // Check if there is already a pending request
+        const existingRequest = await prisma.templeUpdateRequest.findFirst({
+            where: {
+                templeId: temple.id,
+                status: 'PENDING'
             }
         });
 
-        res.json({ success: true, message: 'Bank details updated successfully', data: updatedTemple });
+        const requestedData = {
+            bankName,
+            accountNumber,
+            accountHolderName,
+            ifscCode,
+            upiId
+        };
+
+        const oldData = {
+            bankName: temple.bankName,
+            accountNumber: temple.accountNumber,
+            accountHolderName: temple.accountHolderName,
+            ifscCode: temple.ifscCode,
+            upiId: temple.upiId
+        };
+
+        if (existingRequest) {
+            // Update existing pending request
+            await prisma.templeUpdateRequest.update({
+                where: { id: existingRequest.id },
+                data: {
+                    requestedData,
+                    oldData
+                }
+            });
+        } else {
+            // Create new request
+            await prisma.templeUpdateRequest.create({
+                data: {
+                    templeId: temple.id,
+                    requestedData,
+                    oldData,
+                    status: 'PENDING'
+                }
+            });
+        }
+
+        res.json({
+            success: true,
+            message: 'Bank details submitted for verification.',
+            verificationPending: true
+        });
+
     } catch (error: any) {
         res.status(500).json({ success: false, message: error.message });
     }

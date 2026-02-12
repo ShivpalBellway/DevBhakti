@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Landmark, Save, ArrowLeft, Building2, CreditCard, User, AlertCircle } from "lucide-react";
+import { Landmark, Save, ArrowLeft, Building2, CreditCard, User, AlertCircle, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -14,6 +14,7 @@ export default function BankDetailsPage() {
     const { toast } = useToast();
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
+    const [verificationPending, setVerificationPending] = useState(false);
 
     const [formData, setFormData] = useState({
         accountHolderName: "",
@@ -32,6 +33,14 @@ export default function BankDetailsPage() {
             const response = await fetchBankDetails();
             if (response.success && response.data) {
                 const data = response.data;
+
+                // If there's pending data, we could show that, or current data with a flag
+                // For now, let's show current data but flag it
+                setVerificationPending(!!data.verificationPending);
+
+                // If pending, maybe show pending data in form?
+                // Let's stick to showing approved data in form, but disabling edit
+
                 setFormData({
                     accountHolderName: data.accountHolderName || "",
                     accountNumber: data.accountNumber || "",
@@ -83,8 +92,9 @@ export default function BankDetailsPage() {
             if (response.success) {
                 toast({
                     title: "Success",
-                    description: "Bank details saved successfully.",
+                    description: response.message || "Bank details submitted for verification.",
                 });
+                setVerificationPending(true);
             } else {
                 throw new Error(response.message || 'Failed to save');
             }
@@ -126,6 +136,21 @@ export default function BankDetailsPage() {
                 </div>
             </div>
 
+            {verificationPending && (
+                <div className="bg-amber-50 border border-amber-200 rounded-2xl p-6 flex items-start gap-4 shadow-sm animate-in fade-in slide-in-from-top-4">
+                    <div className="bg-amber-100 p-2 rounded-full">
+                        <Clock className="w-6 h-6 text-amber-700" />
+                    </div>
+                    <div>
+                        <h3 className="text-lg font-bold text-amber-800">Verification Pending</h3>
+                        <p className="text-amber-700/80 mt-1">
+                            You have submitted changes to your bank details. These are currently under review by our admin team.
+                            You cannot make further changes until this request is processed.
+                        </p>
+                    </div>
+                </div>
+            )}
+
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 {/* Form Section */}
                 <div className="lg:col-span-2 space-y-6">
@@ -148,8 +173,9 @@ export default function BankDetailsPage() {
                                         name="accountHolderName"
                                         value={formData.accountHolderName}
                                         onChange={handleChange}
+                                        disabled={verificationPending}
                                         placeholder="e.g. Rahul Kumar"
-                                        className="h-12 pl-11 rounded-xl bg-slate-50 border-slate-200 focus:bg-white transition-all font-bold text-slate-900"
+                                        className="h-12 pl-11 rounded-xl bg-slate-50 border-slate-200 focus:bg-white transition-all font-bold text-slate-900 disabled:opacity-70 disabled:cursor-not-allowed"
                                     />
                                 </div>
                             </div>
@@ -162,8 +188,9 @@ export default function BankDetailsPage() {
                                         name="accountNumber"
                                         value={formData.accountNumber}
                                         onChange={handleChange}
+                                        disabled={verificationPending}
                                         placeholder="e.g. 12345678901234"
-                                        className="h-12 pl-11 rounded-xl bg-slate-50 border-slate-200 focus:bg-white transition-all font-mono font-bold text-slate-900"
+                                        className="h-12 pl-11 rounded-xl bg-slate-50 border-slate-200 focus:bg-white transition-all font-mono font-bold text-slate-900 disabled:opacity-70 disabled:cursor-not-allowed"
                                     />
                                 </div>
                             </div>
@@ -177,8 +204,9 @@ export default function BankDetailsPage() {
                                             name="ifscCode"
                                             value={formData.ifscCode}
                                             onChange={handleChange}
+                                            disabled={verificationPending}
                                             placeholder="HDFC0001234"
-                                            className="h-12 pl-11 rounded-xl bg-slate-50 border-slate-200 focus:bg-white transition-all font-mono uppercase font-bold text-slate-900"
+                                            className="h-12 pl-11 rounded-xl bg-slate-50 border-slate-200 focus:bg-white transition-all font-mono uppercase font-bold text-slate-900 disabled:opacity-70 disabled:cursor-not-allowed"
                                             maxLength={11}
                                         />
                                     </div>
@@ -189,8 +217,9 @@ export default function BankDetailsPage() {
                                         name="bankName"
                                         value={formData.bankName}
                                         onChange={handleChange}
+                                        disabled={verificationPending}
                                         placeholder="e.g. HDFC Bank"
-                                        className="h-12 rounded-xl bg-slate-50 border-slate-200 focus:bg-white transition-all font-bold text-slate-900"
+                                        className="h-12 rounded-xl bg-slate-50 border-slate-200 focus:bg-white transition-all font-bold text-slate-900 disabled:opacity-70 disabled:cursor-not-allowed"
                                     />
                                 </div>
                             </div>
@@ -201,8 +230,9 @@ export default function BankDetailsPage() {
                                     name="upiId"
                                     value={formData.upiId}
                                     onChange={handleChange}
+                                    disabled={verificationPending}
                                     placeholder="e.g. rahul@upi"
-                                    className="h-12 rounded-xl bg-slate-50 border-slate-200 focus:bg-white transition-all font-bold text-slate-900"
+                                    className="h-12 rounded-xl bg-slate-50 border-slate-200 focus:bg-white transition-all font-bold text-slate-900 disabled:opacity-70 disabled:cursor-not-allowed"
                                 />
                             </div>
                         </CardContent>
@@ -211,11 +241,11 @@ export default function BankDetailsPage() {
                     <div className="flex justify-end">
                         <Button
                             onClick={handleSave}
-                            disabled={isSaving}
-                            className="bg-[#794A05] hover:bg-[#5D3804] text-white rounded-xl h-12 px-8 font-bold shadow-lg shadow-[#794A05]/20 flex items-center gap-2 transition-all active:scale-95"
+                            disabled={isSaving || verificationPending}
+                            className="bg-[#794A05] hover:bg-[#5D3804] text-white rounded-xl h-12 px-8 font-bold shadow-lg shadow-[#794A05]/20 flex items-center gap-2 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             <Save className="w-4 h-4" />
-                            {isSaving ? "Saving..." : "Save Bank Details"}
+                            {isSaving ? "Saving..." : verificationPending ? "Validation Pending" : "Save Bank Details"}
                         </Button>
                     </div>
                 </div>

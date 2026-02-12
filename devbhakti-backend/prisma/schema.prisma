@@ -148,6 +148,7 @@ model SellerProfile {
   subOrders             SubOrder[]
   ledgerEntries         TempleLedger[]
   withdrawals           WithdrawalRequest[]
+  updateRequests        SellerUpdateRequest[]
 }
 
 model TempleUpdateRequest {
@@ -159,6 +160,17 @@ model TempleUpdateRequest {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
   temple        Temple   @relation(fields: [templeId], references: [id], onDelete: Cascade)
+}
+
+model SellerUpdateRequest {
+  id            String        @id @default(cuid())
+  sellerId      String
+  requestedData Json
+  oldData       Json
+  status        String        @default("PENDING")
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  seller        SellerProfile @relation(fields: [sellerId], references: [id], onDelete: Cascade)
 }
 
 model Pooja {
@@ -348,6 +360,7 @@ model PoojaBooking {
   status           BookingStatus @default(BOOKED)
   commissionAmount Float         @default(0)
   netEarning       Float         @default(0)
+  platformFee      Float         @default(0)
   createdAt        DateTime      @default(now())
   updatedAt        DateTime      @updatedAt
   pooja            Pooja         @relation(fields: [poojaId], references: [id])
@@ -363,6 +376,8 @@ model Order {
   paymentStatus   String     @default("PENDING")
   paymentMethod   String?
   shippingAddress Json?
+  platformFee     Float      @default(0)
+  shippingCost    Float      @default(0)
   createdAt       DateTime   @default(now())
   updatedAt       DateTime   @updatedAt
   user            User       @relation(fields: [userId], references: [id])

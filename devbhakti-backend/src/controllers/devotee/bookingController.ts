@@ -56,7 +56,9 @@ export const createBooking = async (req: Request, res: Response) => {
         }
 
         // Optional: If price in body is significantly different, you might want to log it or use verifiedPrice
+        const platformFee = req.body.platformFee || 0;
         const finalPrice = verifiedPrice || parseFloat(packagePrice);
+        const totalPayable = finalPrice + platformFee;
 
         // Calculate commission via Slab System using verified price
         const commissionData = await getCommissionForAmount(
@@ -138,6 +140,7 @@ export const createBooking = async (req: Request, res: Response) => {
                     templeId: pooja.templeId as string,
                     packageName,
                     packagePrice: finalPrice, // Use verified price
+                    platformFee: platformFee,
                     devoteeName,
                     devoteePhone,
                     devoteeEmail: devoteeEmail as string | null,
@@ -187,7 +190,7 @@ export const createBooking = async (req: Request, res: Response) => {
             message: 'Pooja initiated. Complete payment to confirm.',
             data: booking,
             razorpayOrder: await razorpay.orders.create({
-                amount: Math.round(finalPrice * 100),
+                amount: Math.round(totalPayable * 100),
                 currency: "INR",
                 receipt: `pooja_rcpt_${booking.id.slice(-10)}`,
             })
@@ -409,13 +412,23 @@ export const getBookingReceipt = async (req: Request, res: Response) => {
         doc.moveDown(1);
 
         // --- Summary Section ---
-        const summaryY = doc.y;
-        doc.fillColor(textColor).font('Helvetica').fontSize(10).text('Subtotal:', 350, summaryY);
-        doc.font('Helvetica-Bold').text(`Rs. ${booking.packagePrice}`, 400, summaryY, { align: 'right', width: 140 });
+
+        // Add Platform Fee if applicable
+        const platformFee = (booking as any).platformFee || 0;
+        if (platformFee > 0) {
+            doc.fillColor(textColor).font('Helvetica').fontSize(10).text('Platform Fee:', 350, doc.y);
+            doc.font('Helvetica-Bold').text(`Rs. ${platformFee}`, 400, doc.y, { align: 'right', width: 140 });
+            doc.moveDown(1);
+        }
+
+        doc.fillColor(textColor).font('Helvetica').fontSize(10).text('Subtotal:', 350, doc.y);
+        doc.font('Helvetica-Bold').text(`Rs. ${booking.packagePrice}`, 400, doc.y, { align: 'right', width: 140 });
+
+        const totalPaid = booking.packagePrice + platformFee;
 
         doc.moveDown(1);
         doc.font('Helvetica-Bold').fontSize(13).text('Total Amount Paid:', 280, doc.y);
-        doc.fillColor(primaryColor).text(`Rs. ${booking.packagePrice}`, 400, doc.y - 13, { align: 'right', width: 140 });
+        doc.fillColor(primaryColor).text(`Rs. ${totalPaid}`, 400, doc.y - 13, { align: 'right', width: 140 });
 
         // --- Footer ---
         doc.moveDown(8);
