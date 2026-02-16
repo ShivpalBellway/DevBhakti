@@ -8,6 +8,7 @@ import { uploadUserImage } from '../../middleware/uploadMiddleware';
 const router = Router();
 
 // Devotee Auth Routes
+router.get('/test', (req, res) => res.json({ message: 'Auth routes are working' }));
 router.post('/send-otp', authController.sendOTP);
 router.post('/verify-otp', authController.verifyOTP);
 

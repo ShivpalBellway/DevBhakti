@@ -28,6 +28,8 @@ import { useToast } from "@/hooks/use-toast";
 import { createTempleAdmin, fetchAllPoojasAdmin, createPoojaAdmin, fetchCommissionSlabsAdmin } from "@/api/adminController";
 import { Badge } from "@/components/ui/badge"
 import { ImageCropper } from "@/components/admin/ImageCropper";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 export default function CreateTemplePage() {
     const router = useRouter();
@@ -52,7 +54,7 @@ export default function CreateTemplePage() {
         openTime: "",
         // Details
         description: "",
-        history: "",
+        // history: "",
         viewers: "",
         // Contact
         templePhone: "",
@@ -74,6 +76,10 @@ export default function CreateTemplePage() {
     const [inlineEvents, setInlineEvents] = useState<any[]>([]);
     const [marketplaceSlabs, setMarketplaceSlabs] = useState<any[]>([]);
     const [poojaSlabs, setPoojaSlabs] = useState<any[]>([]);
+
+    // Rate Customization State
+    const [marketplaceRateType, setMarketplaceRateType] = useState<"DEFAULT" | "CUSTOM">("DEFAULT");
+    const [poojaRateType, setPoojaRateType] = useState<"DEFAULT" | "CUSTOM">("DEFAULT");
 
     // Images State
     const [mainImage, setMainImage] = useState<File | null>(null);
@@ -229,15 +235,49 @@ export default function CreateTemplePage() {
     };
 
     const handleMarketplaceSlabChange = (index: number, field: string, value: any) => {
+        if (marketplaceRateType === "DEFAULT") return;
         const newSlabs = [...marketplaceSlabs];
         newSlabs[index] = { ...newSlabs[index], [field]: value };
         setMarketplaceSlabs(newSlabs);
     };
 
     const handlePoojaSlabChange = (index: number, field: string, value: any) => {
+        if (poojaRateType === "DEFAULT") return;
         const newSlabs = [...poojaSlabs];
         newSlabs[index] = { ...newSlabs[index], [field]: value };
         setPoojaSlabs(newSlabs);
+    };
+
+    const handleMarketplaceRateTypeChange = async (checked: boolean) => {
+        const newType = checked ? "CUSTOM" : "DEFAULT";
+        setMarketplaceRateType(newType);
+
+        if (newType === "DEFAULT") {
+            try {
+                const response = await fetchCommissionSlabsAdmin('GLOBAL', undefined, 'MARKETPLACE');
+                if (response.success) {
+                    setMarketplaceSlabs(response.data);
+                }
+            } catch (error) {
+                toast({ title: "Error", description: "Failed to reset Marketplace rates", variant: "destructive" });
+            }
+        }
+    };
+
+    const handlePoojaRateTypeChange = async (checked: boolean) => {
+        const newType = checked ? "CUSTOM" : "DEFAULT";
+        setPoojaRateType(newType);
+
+        if (newType === "DEFAULT") {
+            try {
+                const response = await fetchCommissionSlabsAdmin('GLOBAL', undefined, 'POOJA');
+                if (response.success) {
+                    setPoojaSlabs(response.data);
+                }
+            } catch (error) {
+                toast({ title: "Error", description: "Failed to reset Pooja rates", variant: "destructive" });
+            }
+        }
     };
 
     const handleAddNewPooja = async () => {
@@ -394,7 +434,7 @@ export default function CreateTemplePage() {
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="space-y-2">
-                                <label className="text-sm font-semibold text-slate-700">Owner/Admin Name *</label>
+                                <label className="text-sm font-semibold text-slate-700">Trustee / Management Name *</label>
                                 <Input
                                     value={formData.name}
                                     onChange={e => setFormData({ ...formData, name: e.target.value })}
@@ -612,7 +652,7 @@ export default function CreateTemplePage() {
                             />
                         </div>
 
-                        <div className="space-y-2">
+                        {/* <div className="space-y-2">
                             <label className="text-sm font-semibold text-slate-700">Temple History</label>
                             <Textarea
                                 value={formData.history}
@@ -620,7 +660,7 @@ export default function CreateTemplePage() {
                                 placeholder="Describe the ancient origin and historical significance..."
                                 rows={3}
                             />
-                        </div>
+                        </div> */}
 
                         <div className="space-y-2">
                             <label className="text-sm font-semibold text-slate-700">Description</label>
@@ -871,9 +911,20 @@ export default function CreateTemplePage() {
 
                     {/* 7. Commission Slabs Section */}
                     <div className="bg-card border rounded-xl p-8 shadow-sm space-y-6">
-                        <div className="flex items-center gap-2 text-primary font-bold">
-                            <Layout className="w-5 h-5" />
-                            <h2 className="text-xl font-serif">Marketplace Commission Slabs</h2>
+                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                            <div className="flex items-center gap-2 text-primary font-bold">
+                                <Layout className="w-5 h-5" />
+                                <h2 className="text-xl font-serif">Marketplace Commission Slabs</h2>
+                            </div>
+
+                            <div className="flex items-center gap-3 bg-slate-100 p-1.5 rounded-lg border border-slate-200">
+                                <Label className={`text-[10px] font-bold uppercase transition-colors ${marketplaceRateType === 'DEFAULT' ? 'text-primary' : 'text-slate-400'}`}>Default Rates</Label>
+                                <Switch
+                                    checked={marketplaceRateType === "CUSTOM"}
+                                    onCheckedChange={handleMarketplaceRateTypeChange}
+                                />
+                                <Label className={`text-[10px] font-bold uppercase transition-colors ${marketplaceRateType === 'CUSTOM' ? 'text-primary' : 'text-slate-400'}`}>Custom Rates</Label>
+                            </div>
                         </div>
                         <div className="space-y-4">
                             <p className="text-sm text-slate-500">Define amount-based commission rates for Marketplace Products for this temple.</p>
@@ -899,7 +950,8 @@ export default function CreateTemplePage() {
                                                     type="number"
                                                     value={slab.platformFee}
                                                     onChange={e => handleMarketplaceSlabChange(index, 'platformFee', e.target.value)}
-                                                    className="h-9 text-[#794A05] font-bold bg-white border-primary/20 focus:border-primary shadow-sm"
+                                                    disabled={marketplaceRateType === "DEFAULT"}
+                                                    className={`h-9 font-bold shadow-sm ${marketplaceRateType === "DEFAULT" ? "bg-slate-100/50 cursor-not-allowed text-slate-500" : "text-[#794A05] bg-white border-primary/20 focus:border-primary"}`}
                                                 />
                                             </div>
                                             <div className="space-y-1">
@@ -909,7 +961,8 @@ export default function CreateTemplePage() {
                                                     step="0.1"
                                                     value={slab.percentage}
                                                     onChange={e => handleMarketplaceSlabChange(index, 'percentage', e.target.value)}
-                                                    className="h-9 bg-white border-primary/20 focus:border-primary shadow-sm"
+                                                    disabled={marketplaceRateType === "DEFAULT"}
+                                                    className={`h-9 shadow-sm ${marketplaceRateType === "DEFAULT" ? "bg-slate-100/50 cursor-not-allowed text-slate-500" : "bg-white border-primary/20 focus:border-primary"}`}
                                                 />
                                             </div>
                                         </div>
@@ -921,9 +974,20 @@ export default function CreateTemplePage() {
                         <Separator className="my-6" />
 
                         <div className="space-y-4">
-                            <div className="flex items-center gap-2 text-primary font-bold">
-                                <Calendar className="w-5 h-5" />
-                                <h2 className="text-xl">Pooja Booking Commission Slabs</h2>
+                            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                                <div className="flex items-center gap-2 text-primary font-bold">
+                                    <Calendar className="w-5 h-5" />
+                                    <h2 className="text-xl">Pooja Booking Commission Slabs</h2>
+                                </div>
+
+                                <div className="flex items-center gap-3 bg-slate-100 p-1.5 rounded-lg border border-slate-200">
+                                    <Label className={`text-[10px] font-bold uppercase transition-colors ${poojaRateType === 'DEFAULT' ? 'text-primary' : 'text-slate-400'}`}>Default Rates</Label>
+                                    <Switch
+                                        checked={poojaRateType === "CUSTOM"}
+                                        onCheckedChange={handlePoojaRateTypeChange}
+                                    />
+                                    <Label className={`text-[10px] font-bold uppercase transition-colors ${poojaRateType === 'CUSTOM' ? 'text-primary' : 'text-slate-400'}`}>Custom Rates</Label>
+                                </div>
                             </div>
                             <p className="text-sm text-slate-500">Define amount-based commission rates for Pooja Bookings for this temple.</p>
                             {poojaSlabs.length === 0 ? (
@@ -948,7 +1012,8 @@ export default function CreateTemplePage() {
                                                     type="number"
                                                     value={slab.platformFee}
                                                     onChange={e => handlePoojaSlabChange(index, 'platformFee', e.target.value)}
-                                                    className="h-9 text-[#794A05] font-bold bg-white border-primary/20 focus:border-primary shadow-sm"
+                                                    disabled={poojaRateType === "DEFAULT"}
+                                                    className={`h-9 font-bold shadow-sm ${poojaRateType === "DEFAULT" ? "bg-slate-100/50 cursor-not-allowed text-slate-500" : "text-[#794A05] bg-white border-primary/20 focus:border-primary"}`}
                                                 />
                                             </div>
                                             <div className="space-y-1">
@@ -958,7 +1023,8 @@ export default function CreateTemplePage() {
                                                     step="0.1"
                                                     value={slab.percentage}
                                                     onChange={e => handlePoojaSlabChange(index, 'percentage', e.target.value)}
-                                                    className="h-9 bg-white border-primary/20 focus:border-primary shadow-sm"
+                                                    disabled={poojaRateType === "DEFAULT"}
+                                                    className={`h-9 shadow-sm ${poojaRateType === "DEFAULT" ? "bg-slate-100/50 cursor-not-allowed text-slate-500" : "bg-white border-primary/20 focus:border-primary"}`}
                                                 />
                                             </div>
                                         </div>

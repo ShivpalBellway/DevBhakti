@@ -11,6 +11,12 @@ import { fetchAllPoojasAdmin, updatePoojaAdmin, fetchAllTemplesAdmin } from "@/a
 import { useToast } from "@/hooks/use-toast";
 import { API_URL } from "@/config/apiConfig";
 import { ImageCropper } from "@/components/admin/ImageCropper";
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 export default function EditPoojaPage() {
     const router = useRouter();
@@ -32,7 +38,7 @@ export default function EditPoojaPage() {
         { name: "Single", description: "For 1 person" },
         { name: "Couple", description: "For 2 people" },
         { name: "Family", description: "Upto 5 people" },
-        { name: "Group", description: "Upto 6 people" }
+        { name: "Group", description: "Upto 8 people" }
     ];
 
     const [formData, setFormData] = useState({
@@ -384,7 +390,7 @@ export default function EditPoojaPage() {
                     </div>
                 </div>
 
-                <div className="space-y-4 p-4 border rounded-xl bg-slate-50/50">
+                {/* <div className="space-y-4 p-4 border rounded-xl bg-slate-50/50">
                     <div className="flex items-center justify-between">
                         <h3 className="font-semibold">Description Points</h3>
                         <Button type="button" variant="outline" size="sm" onClick={() => addArrayItem('description')}>
@@ -405,7 +411,7 @@ export default function EditPoojaPage() {
                             </div>
                         ))}
                     </div>
-                </div>
+                </div> */}
 
                 <div className="space-y-4 p-4 border rounded-xl bg-slate-50/50">
                     <div className="flex items-center justify-between">
@@ -466,17 +472,26 @@ export default function EditPoojaPage() {
                             {STATIC_PACKAGE_TYPES.map((ptype) => {
                                 const isSelected = formData.packages.some(p => p.name === ptype.name);
                                 return (
-                                    <Button
-                                        key={ptype.name}
-                                        type="button"
-                                        variant={isSelected ? "default" : "outline"}
-                                        onClick={() => togglePackage(ptype)}
-                                        className={`rounded-full px-6 transition-all ${isSelected ? 'bg-primary text-white' : ''}`}
-                                    >
-                                        {isSelected && <Plus className="w-4 h-4 mr-2 rotate-45" />}
-                                        {!isSelected && <Plus className="w-4 h-4 mr-2" />}
-                                        {ptype.name}
-                                    </Button>
+                                    <TooltipProvider key={ptype.name}>
+                                        <Tooltip>
+                                            <TooltipTrigger asChild>
+                                                <Button
+                                                    key={ptype.name}
+                                                    type="button"
+                                                    variant={isSelected ? "default" : "outline"}
+                                                    onClick={() => togglePackage(ptype)}
+                                                    className={`rounded-full px-6 transition-all ${isSelected ? 'bg-primary text-white' : ''}`}
+                                                >
+                                                    {isSelected && <Plus className="w-4 h-4 mr-2 rotate-45" />}
+                                                    {!isSelected && <Plus className="w-4 h-4 mr-2" />}
+                                                    {ptype.name}
+                                                </Button>
+                                            </TooltipTrigger>
+                                            <TooltipContent>
+                                                <p>{ptype.description}</p>
+                                            </TooltipContent>
+                                        </Tooltip>
+                                    </TooltipProvider>
                                 );
                             })}
                         </div>
@@ -523,7 +538,7 @@ export default function EditPoojaPage() {
                     )}
                 </div>
 
-                <div className="space-y-4 p-4 border rounded-xl bg-slate-50/50">
+                {/* <div className="space-y-4 p-4 border rounded-xl bg-slate-50/50">
                     <div className="flex items-center justify-between">
                         <h3 className="font-semibold">Ritual Process Steps</h3>
                         <Button type="button" variant="outline" size="sm" onClick={addStep}>
@@ -560,7 +575,7 @@ export default function EditPoojaPage() {
                             </div>
                         ))}
                     </div>
-                </div>
+                </div> */}
 
                 <div className="space-y-4 p-4 border rounded-xl bg-slate-50/50">
                     <div className="flex items-center justify-between">

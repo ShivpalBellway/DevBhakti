@@ -67,6 +67,7 @@ const Navbar: React.FC<NavbarProps> = ({ variant = "default" }) => {
     { label: "Sacred Temples", href: "/temples" },
     { label: "Sacred Items", href: "/marketplace?category=All" },
     { label: "Live Darshan", href: "/live-darshan" },
+    // { label: "Donations", href: "/donations" },
     // { label: "Buy Prasad", href: "/marketplace?category=Prasad" },
   ];
 

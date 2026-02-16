@@ -23,7 +23,7 @@ import {
     Mail,
     Phone,
     Globe,
-    History,
+    // History,
     FileText,
     Key,
 } from "lucide-react";
@@ -57,7 +57,7 @@ export default function TempleRegistrationForm({ onClose }: { onClose?: () => vo
         openTime: "",
         // Details
         description: "",
-        history: "",
+        // history: "",
         viewers: "",
         // Contact & Social
         templePhone: "",
@@ -353,7 +353,7 @@ export default function TempleRegistrationForm({ onClose }: { onClose?: () => vo
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-2">
-                            <label className="text-sm font-bold text-slate-600 ml-1">Admin/Owner Name *</label>
+                            <label className="text-sm font-bold text-slate-600 ml-1">Trustee / Management Name *</label>
                             <Input
                                 value={formData.name}
                                 onChange={e => setFormData({ ...formData, name: e.target.value })}
@@ -519,7 +519,7 @@ export default function TempleRegistrationForm({ onClose }: { onClose?: () => vo
                                 required
                             />
                         </div>
-                        <div className="space-y-2">
+                        {/* <div className="space-y-2">
                             <label className="text-sm font-bold text-slate-600 ml-1">Sacred History</label>
                             <Textarea
                                 value={formData.history}
@@ -527,7 +527,7 @@ export default function TempleRegistrationForm({ onClose }: { onClose?: () => vo
                                 placeholder="Describe the ancient origin and legends..."
                                 className="min-h-[100px] border-slate-200 focus:border-orange-500 rounded-xl resize-none"
                             />
-                        </div>
+                        </div> */}
                         <div className="space-y-2">
                             <label className="text-sm font-bold text-slate-600 ml-1">Description / Overview</label>
                             <Textarea

@@ -1,5 +1,7 @@
 import { Request, Response } from 'express';
 import { prisma } from '../../lib/prisma';
+import fs from 'fs';
+import path from 'path';
 
 import jwt from 'jsonwebtoken';
 import { sendSMS } from '../../services/mobicommService';
@@ -11,22 +13,44 @@ const normalizePhone = (phone: string): string => {
     // Remove all non-numeric characters
     let cleaned = phone.replace(/\D/g, '');
 
+    // If it starts with 00 (double zero), replace with +
+    if (cleaned.startsWith('00')) {
+        cleaned = cleaned.substring(2);
+    }
+
     // If it starts with 0 (11 digits), remove the 0
     if (cleaned.length === 11 && cleaned.startsWith('0')) {
         cleaned = cleaned.substring(1);
     }
 
-    // If it has 10 digits, add 91
-    if (cleaned.length === 10) {
+    // If it has 12 digits and starts with 91, it's already got the country code
+    if (cleaned.length === 12 && cleaned.startsWith('91')) {
+        // Keep it as is
+    } else if (cleaned.length === 10) {
+        // If it has 10 digits, add 91
         cleaned = '91' + cleaned;
+    }
+
+    // Final check for 9191 case (user entered 91 and app also added 91)
+    if (cleaned.length === 14 && cleaned.startsWith('9191')) {
+        cleaned = cleaned.substring(2);
     }
 
     // Ensure it starts with +
     return '+' + cleaned;
 };
 
+// Simple file logger for debugging when terminal output is unavailable
+const logToFile = (message: string) => {
+    const logPath = path.join(process.cwd(), 'debug.log');
+    const timestamp = new Date().toISOString();
+    fs.appendFileSync(logPath, `[${timestamp}] ${message}\n`);
+};
+
 
 export const sendOTP = async (req: Request, res: Response) => {
+    logToFile(`[sendOTP] Request body: ${JSON.stringify(req.body)}`);
+    console.log('[sendOTP] Request body:', req.body);
     try {
         let { phone, name, email, role, mode } = req.body;
 
@@ -42,7 +66,23 @@ export const sendOTP = async (req: Request, res: Response) => {
         const otpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
         const checkRole = role || 'DEVOTEE';
-        const isRegisterFlow = mode === 'register';
+
+        // Infer mode if missing
+        let effectiveMode = mode;
+        if (!effectiveMode) {
+            if (name) {
+                effectiveMode = 'register';
+            } else {
+                // If no mode and no name, we'll check if user exists first
+                const tempUser = await prisma.user.findFirst({
+                    where: { phone: normalizedPhone }
+                });
+                effectiveMode = tempUser ? 'login' : 'register';
+            }
+            logToFile(`[sendOTP] Inferred mode: ${effectiveMode} (original mode was missing)`);
+        }
+
+        const isRegisterFlow = effectiveMode === 'register';
 
         // 1. Check if ANY user exists with this phone number
         let existingUser = await prisma.user.findFirst({
@@ -238,6 +278,8 @@ export const verifyOTP = async (req: Request, res: Response) => {
                     gothra: updatedUser.gothra,
                     kuldevi: updatedUser.kuldevi,
                     kuldevta: updatedUser.kuldevta,
+                    dob: updatedUser.dob,
+                    anniversary: updatedUser.anniversary,
                     isVerified: updatedUser.isVerified
                 }
             }
@@ -253,7 +295,7 @@ export const verifyOTP = async (req: Request, res: Response) => {
 export const updateProfile = async (req: Request, res: Response) => {
     try {
         const { userId } = (req as any).user; // From auth middleware
-        const { name, email, gothra, kuldevi, kuldevta } = req.body;
+        const { name, email, gothra, kuldevi, kuldevta, dob, anniversary } = req.body;
         const profileImage = req.file ? `/uploads/users/${req.file.filename}` : undefined;
 
         // If email is being updated, check if it's already taken by another user
@@ -275,7 +317,9 @@ export const updateProfile = async (req: Request, res: Response) => {
             name,
             gothra,
             kuldevi,
-            kuldevta
+            kuldevta,
+            dob,
+            anniversary
         };
 
         // Only update email if provided
@@ -306,7 +350,9 @@ export const updateProfile = async (req: Request, res: Response) => {
                     profileImage: updatedUser.profileImage,
                     gothra: updatedUser.gothra,
                     kuldevi: updatedUser.kuldevi,
-                    kuldevta: updatedUser.kuldevta
+                    kuldevta: updatedUser.kuldevta,
+                    dob: updatedUser.dob,
+                    anniversary: updatedUser.anniversary
                 }
             }
         });
@@ -344,6 +390,8 @@ export const getProfile = async (req: Request, res: Response) => {
                 gothra: true,
                 kuldevi: true,
                 kuldevta: true,
+                dob: true,
+                anniversary: true,
                 isVerified: true,
                 createdAt: true
             }

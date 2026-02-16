@@ -76,6 +76,8 @@ function BookingForm() {
     gothra: "",
     kuldevi: "",
     kuldevta: "",
+    dob: "",
+    anniversary: "",
   });
 
   const [availabilityStatus, setAvailabilityStatus] = useState<{ available: boolean, message: string } | null>(null);
@@ -157,6 +159,8 @@ function BookingForm() {
             gothra: user.gothra || "",
             kuldevi: user.kuldevi || "",
             kuldevta: user.kuldevta || "",
+            dob: user.dob || "",
+            anniversary: user.anniversary || "",
           }));
         }
 
@@ -317,6 +321,8 @@ function BookingForm() {
         gothra: formData.gothra,
         kuldevi: formData.kuldevi,
         kuldevta: formData.kuldevta,
+        dob: formData.dob,
+        anniversary: formData.anniversary,
         platformFee: platformFee, // Send platform fee to backend
       };
 
@@ -794,6 +800,27 @@ function BookingForm() {
                       placeholder="Enter Kuldevta"
                       value={formData.kuldevta}
                       onChange={(e) => setFormData({ ...formData, kuldevta: e.target.value })}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-4 border-t pt-4 mt-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="dob">Date of Birth (Optional)</Label>
+                    <Input
+                      id="dob"
+                      type="date"
+                      value={formData.dob}
+                      onChange={(e) => setFormData({ ...formData, dob: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="anniversary">Anniversary (Optional)</Label>
+                    <Input
+                      id="anniversary"
+                      type="date"
+                      value={formData.anniversary}
+                      onChange={(e) => setFormData({ ...formData, anniversary: e.target.value })}
                     />
                   </div>
                 </div>

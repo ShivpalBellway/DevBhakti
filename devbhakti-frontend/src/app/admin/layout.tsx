@@ -27,7 +27,7 @@ import {
 import { Button } from "@/components/ui/button";
 // import Logo from "@/components/icons/Logo";
 import { cn } from "@/lib/utils";
-import Image from "next/image"; 
+import Image from "next/image";
 import logo from "@/assets/logo2.png";
 
 const sidebarItems = [
@@ -209,40 +209,40 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         )}
       >
         {/* Logo */}
-       <div className="flex items-center justify-between h-20 px-4 border-b border-sidebar-border">
-                          {sidebarOpen ? (
-                              <div className="flex flex-col gap-0.5">
-                                  <div className="relative h-10 w-32">
-                                      <Image
-                                          src={logo}
-                                          alt="Temple Logo"
-                                          fill
-                                          className="object-contain object-center"
-                                          priority
-                                      />
-                                  </div>
-                                  <span className="text-[15px] font-bold text-sidebar-foreground/90 uppercase tracking-widest pl-2 mt-1">
-                                      Devbhakti Admin 
-                                  </span>
-                              </div>
-                          ) : (
-                              <div className="relative h-8 w-8">
-                                  <Image
-                                      src={logo}
-                                      alt="Temple Logo"
-                                      fill
-                                      className="object-contain"
-                                      priority
-                                  />
-                              </div>
-                          )}
-                          <button
-                              onClick={() => setSidebarOpen(!sidebarOpen)}
-                              className="p-2 rounded-lg hover:bg-sidebar-accent text-sidebar-foreground transition-colors"
-                          >
-                              <Menu className="w-5 h-5" />
-                          </button>
-                      </div>
+        <div className="flex items-center justify-between h-20 px-4 border-b border-sidebar-border">
+          {sidebarOpen ? (
+            <div className="flex flex-col gap-0.5">
+              <div className="relative h-10 w-32">
+                <Image
+                  src={logo}
+                  alt="Temple Logo"
+                  fill
+                  className="object-contain object-center"
+                  priority
+                />
+              </div>
+              <span className="text-[15px] font-bold text-sidebar-foreground/90 uppercase tracking-widest pl-2 mt-1">
+                Devbhakti Admin
+              </span>
+            </div>
+          ) : (
+            <div className="relative h-8 w-8">
+              <Image
+                src={logo}
+                alt="Temple Logo"
+                fill
+                className="object-contain"
+                priority
+              />
+            </div>
+          )}
+          <button
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            className="p-2 rounded-lg hover:bg-sidebar-accent text-sidebar-foreground transition-colors"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
+        </div>
 
         {/* Navigation */}
         <nav className="flex-1 py-4 px-3 space-y-1 overflow-y-auto premium-scrollbar">

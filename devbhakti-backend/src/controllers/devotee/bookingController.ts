@@ -22,7 +22,9 @@ export const createBooking = async (req: Request, res: Response) => {
             specialRequests,
             gothra,
             kuldevi,
-            kuldevta
+            kuldevta,
+            dob,
+            anniversary
         } = req.body;
 
         if (!poojaId || !packageName || !packagePrice || !devoteeName || !devoteePhone) {
@@ -150,6 +152,8 @@ export const createBooking = async (req: Request, res: Response) => {
                     gothra: gothra as string | null,
                     kuldevi: kuldevi as string | null,
                     kuldevta: kuldevta as string | null,
+                    dob: dob as string | null,
+                    anniversary: anniversary as string | null,
                     status: 'PENDING',
                     commissionAmount,
                     netEarning
@@ -164,6 +168,8 @@ export const createBooking = async (req: Request, res: Response) => {
                         ...(gothra && { gothra: gothra as string }),
                         ...(kuldevi && { kuldevi: kuldevi as string }),
                         ...(kuldevta && { kuldevta: kuldevta as string }),
+                        ...(dob && { dob: dob as string }),
+                        ...(anniversary && { anniversary: anniversary as string }),
                     }
                 });
             }
@@ -381,6 +387,11 @@ export const getBookingReceipt = async (req: Request, res: Response) => {
         doc.fillColor(textColor).font('Helvetica-Bold').fontSize(12).text(booking.devoteeName);
         doc.font('Helvetica').fontSize(10).text(`Phone: ${booking.devoteePhone}`);
         if (booking.devoteeEmail) doc.text(`Email: ${booking.devoteeEmail}`);
+        if (booking.dob) doc.text(`DOB: ${new Date(booking.dob).toLocaleDateString('en-IN')}`);
+        if (booking.anniversary) doc.text(`Anniversary: ${new Date(booking.anniversary).toLocaleDateString('en-IN')}`);
+        if (booking.gothra) doc.text(`Gothra: ${booking.gothra}`);
+        if (booking.kuldevi) doc.text(`Kuldevi: ${booking.kuldevi}`);
+        if (booking.kuldevta) doc.text(`Kuldevta: ${booking.kuldevta}`);
 
         // Booking Status Column (Right)
         doc.fillColor(primaryColor).fontSize(11).font('Helvetica-Bold').text('BOOKING STATUS', 350, topOfDetails);

@@ -217,7 +217,7 @@ const PoojaDetailClient = ({ id }: PoojaDetailClientProps) => {
                                     {[
                                         { id: "about", label: "About", icon: Info },
                                         { id: "benefits", label: "Benefits", icon: CheckCircle2 },
-                                        { id: "process", label: "Process", icon: PlayCircle },
+                                        // { id: "process", label: "Process", icon: PlayCircle },
                                         { id: "temple", label: "Temple", icon: MapPin },
                                         { id: "reviews", label: "Reviews", icon: Star },
                                         ...(pooja.faqs && Array.isArray(pooja.faqs) && pooja.faqs.length > 0
@@ -297,7 +297,7 @@ const PoojaDetailClient = ({ id }: PoojaDetailClientProps) => {
                                         </div>
                                     </TabsContent>
 
-                                    {/* Process Tab Content */}
+                                    {/* Process Tab Content
                                     <TabsContent value="process" className="mt-0 outline-none">
                                         <div className="max-w-6xl mx-auto text-center">
                                             <h2 className="text-4xl font-serif font-bold mb-2 relative inline-block text-primary">
@@ -323,7 +323,7 @@ const PoojaDetailClient = ({ id }: PoojaDetailClientProps) => {
                                                 ))}
                                             </div>
                                         </div>
-                                    </TabsContent>
+                                    </TabsContent> */}
 
                                     {/* Temple Tab Content */}
                                     <TabsContent value="temple" className="mt-0 outline-none">

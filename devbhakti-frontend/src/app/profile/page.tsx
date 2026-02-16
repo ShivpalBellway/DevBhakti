@@ -57,6 +57,8 @@ const ProfilePage = () => {
         gothra: "",
         kuldevi: "",
         kuldevta: "",
+        dob: "",
+        anniversary: "",
     });
     const [profilePreview, setProfilePreview] = useState<string | null>(null);
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -93,6 +95,8 @@ const ProfilePage = () => {
                     gothra: u.gothra || "",
                     kuldevi: u.kuldevi || "",
                     kuldevta: u.kuldevta || "",
+                    dob: u.dob || "",
+                    anniversary: u.anniversary || "",
                 });
                 if (u.profileImage) {
                     const imgUrl = u.profileImage.startsWith('http')
@@ -154,6 +158,8 @@ const ProfilePage = () => {
             fd.append("gothra", formData.gothra);
             fd.append("kuldevi", formData.kuldevi);
             fd.append("kuldevta", formData.kuldevta);
+            fd.append("dob", formData.dob);
+            fd.append("anniversary", formData.anniversary);
             if (selectedFile) {
                 fd.append("profileImage", selectedFile);
             }
@@ -362,7 +368,7 @@ const ProfilePage = () => {
                                                 </div>
 
                                                 {/* Spiritual Details */}
-                                                {(user.gothra || user.kuldevi || user.kuldevta) && (
+                                                {(user.gothra || user.kuldevi || user.kuldevta || user.dob || user.anniversary) && (
                                                     <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-6 pt-4">
                                                         {user.gothra && (
                                                             <div className="space-y-1">
@@ -385,6 +391,22 @@ const ProfilePage = () => {
                                                                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Kuldevta</p>
                                                                 <div className="p-3 bg-orange-50/30 rounded-xl border border-orange-100/50">
                                                                     <span className="font-bold text-slate-700">{user.kuldevta}</span>
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                        {user.dob && (
+                                                            <div className="space-y-1">
+                                                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Date of Birth</p>
+                                                                <div className="p-3 bg-orange-50/30 rounded-xl border border-orange-100/50">
+                                                                    <span className="font-bold text-slate-700">{format(new Date(user.dob), "dd MMM, yyyy")}</span>
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                        {user.anniversary && (
+                                                            <div className="space-y-1">
+                                                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Anniversary</p>
+                                                                <div className="p-3 bg-orange-50/30 rounded-xl border border-orange-100/50">
+                                                                    <span className="font-bold text-slate-700">{format(new Date(user.anniversary), "dd MMM, yyyy")}</span>
                                                                 </div>
                                                             </div>
                                                         )}
@@ -584,6 +606,24 @@ const ProfilePage = () => {
                                                         className="h-14 px-6 bg-slate-50 border-slate-100 focus:bg-white focus:border-primary rounded-2xl text-lg font-medium"
                                                     />
                                                 </div>
+                                                <div className="space-y-2.5">
+                                                    <Label className="text-slate-700 font-bold ml-1">Date of Birth</Label>
+                                                    <Input
+                                                        type="date"
+                                                        value={formData.dob}
+                                                        onChange={(e) => setFormData({ ...formData, dob: e.target.value })}
+                                                        className="h-14 px-6 bg-slate-50 border-slate-100 focus:bg-white focus:border-primary rounded-2xl text-lg font-medium"
+                                                    />
+                                                </div>
+                                                <div className="space-y-2.5">
+                                                    <Label className="text-slate-700 font-bold ml-1">Anniversary</Label>
+                                                    <Input
+                                                        type="date"
+                                                        value={formData.anniversary}
+                                                        onChange={(e) => setFormData({ ...formData, anniversary: e.target.value })}
+                                                        className="h-14 px-6 bg-slate-50 border-slate-100 focus:bg-white focus:border-primary rounded-2xl text-lg font-medium"
+                                                    />
+                                                </div>
                                             </div>
 
                                             <div className="flex items-center gap-4 pt-4">
@@ -712,6 +752,41 @@ const ProfilePage = () => {
                                             <p className="text-sm font-mono text-primary font-bold">#{selectedBooking.id.toUpperCase()}</p>
                                         </div>
                                     </div>
+                                    {/* New details */}
+                                    {(selectedBooking.gothra || selectedBooking.kuldevi || selectedBooking.kuldevta || selectedBooking.dob || selectedBooking.anniversary) && (
+                                        <div className="md:col-span-2 grid grid-cols-2 md:grid-cols-3 gap-4 border-t pt-4">
+                                            {selectedBooking.gothra && (
+                                                <div>
+                                                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1">Gothra</p>
+                                                    <p className="text-slate-700 font-medium">{selectedBooking.gothra}</p>
+                                                </div>
+                                            )}
+                                            {selectedBooking.kuldevi && (
+                                                <div>
+                                                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1">Kuldevi</p>
+                                                    <p className="text-slate-700 font-medium">{selectedBooking.kuldevi}</p>
+                                                </div>
+                                            )}
+                                            {selectedBooking.kuldevta && (
+                                                <div>
+                                                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1">Kuldevta</p>
+                                                    <p className="text-slate-700 font-medium">{selectedBooking.kuldevta}</p>
+                                                </div>
+                                            )}
+                                            {selectedBooking.dob && (
+                                                <div>
+                                                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1">DOB</p>
+                                                    <p className="text-slate-700 font-medium">{format(new Date(selectedBooking.dob), "dd MMM, yyyy")}</p>
+                                                </div>
+                                            )}
+                                            {selectedBooking.anniversary && (
+                                                <div>
+                                                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1">Anniversary</p>
+                                                    <p className="text-slate-700 font-medium">{format(new Date(selectedBooking.anniversary), "dd MMM, yyyy")}</p>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
                                 </div>
 
                                 {/* Amount Summary */}

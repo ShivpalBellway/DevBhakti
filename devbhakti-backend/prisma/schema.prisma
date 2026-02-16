@@ -23,6 +23,8 @@ model User {
   gothra        String?
   kuldevi       String?
   kuldevta      String?
+  dob           String?
+  anniversary   String?
   cart          Cart?
   favorites     Favorite[]
   orders        Order[]
@@ -61,15 +63,14 @@ model Temple {
   description           String
   history               String?
   image                 String?
-  liveUrl               String?               // URL for Live Darshan (YouTube/RTMP)
-  channelId             String?               // Permanent YouTube Channel ID (for API lookups)
+  liveUrl               String?
+  channelId             String?
   heroImages            String[]
   gallery               String[]
   rating                Float                 @default(0)
   reviewsCount          Int                   @default(0)
   category              String
   liveStatus            Boolean               @default(false)
-  isPrimaryLive         Boolean               @default(false)
   openTime              String
   phone                 String?
   website               String?
@@ -91,6 +92,8 @@ model Temple {
   upiId                 String?
   subdomain             String?               @unique
   urlType               String                @default("slug")
+  pickupLocation        String?
+  isPrimaryLive         Boolean               @default(false)
   availability          BookingAvailability[]
   events                Event[]
   favorites             Favorite[]
@@ -99,7 +102,6 @@ model Temple {
   products              Product[]
   subOrders             SubOrder[]
   user                  User                  @relation(fields: [userId], references: [id])
-  pickupLocation        String? 
   ledgerEntries         TempleLedger[]
   updateRequests        TempleUpdateRequest[]
   withdrawals           WithdrawalRequest[]
@@ -121,7 +123,7 @@ model BookingAvailability {
 }
 
 model SellerProfile {
-  id                    String              @id @default(cuid())
+  id                    String                @id @default(cuid())
   name                  String
   location              String?
   fullAddress           String?
@@ -132,24 +134,24 @@ model SellerProfile {
   openTime              String?
   phone                 String?
   website               String?
-  isActive              Boolean             @default(true)
-  isVerified            Boolean             @default(false)
-  userId                String              @unique
-  productCommissionRate Float               @default(10.0)
-  createdAt             DateTime            @default(now())
-  updatedAt             DateTime            @updatedAt
+  isActive              Boolean               @default(true)
+  isVerified            Boolean               @default(false)
+  userId                String                @unique
+  productCommissionRate Float                 @default(10.0)
+  createdAt             DateTime              @default(now())
+  updatedAt             DateTime              @updatedAt
   accountHolderName     String?
   accountNumber         String?
   bankName              String?
   ifscCode              String?
   upiId                 String?
-  products              Product[]
-  user                  User                @relation(fields: [userId], references: [id], onDelete: Cascade)
   pickupLocation        String?
+  products              Product[]
+  user                  User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  updateRequests        SellerUpdateRequest[]
   subOrders             SubOrder[]
   ledgerEntries         TempleLedger[]
   withdrawals           WithdrawalRequest[]
-  updateRequests        SellerUpdateRequest[]
 }
 
 model TempleUpdateRequest {
@@ -188,12 +190,9 @@ model Pooja {
   bullets       String[]
   process       String?
   processSteps  Json?
-  
-  // New Fields for Master-Template System
-  isMaster      Boolean               @default(false) 
-  masterPoojaId String?               // Reference to the original pooja if this is a temple copy
-  
-  templeId      String?               // Optional only for Master Poojas
+  isMaster      Boolean               @default(false)
+  masterPoojaId String?
+  templeId      String?
   templeDetails String?
   packages      Json?
   faqs          Json?
@@ -203,10 +202,10 @@ model Pooja {
   status        Boolean               @default(true)
   availability  BookingAvailability[]
   favorites     Favorite[]
-  temple        Temple?               @relation(fields: [templeId], references: [id])
-  bookings      PoojaBooking[]
   masterPooja   Pooja?                @relation("MasterPoojaRelation", fields: [masterPoojaId], references: [id])
   templeCopies  Pooja[]               @relation("MasterPoojaRelation")
+  temple        Temple?               @relation(fields: [templeId], references: [id])
+  bookings      PoojaBooking[]
 }
 
 model Event {
@@ -358,6 +357,8 @@ model PoojaBooking {
   gothra           String?
   kuldevi          String?
   kuldevta         String?
+  dob              String?
+  anniversary      String?
   status           BookingStatus @default(BOOKED)
   commissionAmount Float         @default(0)
   netEarning       Float         @default(0)
@@ -386,25 +387,25 @@ model Order {
 }
 
 model SubOrder {
-  id               String         @id @default(cuid())
-  orderId          String
-  templeId         String?
-  totalAmount      Float
-  status           String         @default("PENDING")
-  commissionAmount Float          @default(0)
-  netEarning       Float          @default(0)
-  shippingLabel    String?
+  id                String         @id @default(cuid())
+  orderId           String
+  templeId          String?
+  totalAmount       Float
+  status            String         @default("PENDING")
+  commissionAmount  Float          @default(0)
+  netEarning        Float          @default(0)
+  shippingLabel     String?
   shiprocketOrderId String?
-  awbCode          String?
-  trackingUrl      String?
-  courierName      String?
-  createdAt        DateTime       @default(now())
-  updatedAt        DateTime       @updatedAt
-  sellerId         String?
-  items            OrderItem[]
-  order            Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  seller           SellerProfile? @relation(fields: [sellerId], references: [id])
-  temple           Temple?        @relation(fields: [templeId], references: [id])
+  awbCode           String?
+  trackingUrl       String?
+  courierName       String?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+  sellerId          String?
+  items             OrderItem[]
+  order             Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  seller            SellerProfile? @relation(fields: [sellerId], references: [id])
+  temple            Temple?        @relation(fields: [templeId], references: [id])
 }
 
 model OrderItem {
@@ -455,17 +456,17 @@ model WithdrawalRequest {
 }
 
 model CommissionSlab {
-  id          String   @id @default(cuid())
-  minAmount   Float    // Minimum order amount for this slab (e.g., 0, 500, 2000)
-  maxAmount   Float?   // Maximum order amount (null for last slab like 4000+)
-  platformFee Float    @default(0) // Fixed platform fee (e.g., ₹20)
-  percentage  Float    @default(0) // Percentage commission (e.g., 5%)
-  slabType    SlabType @default(GLOBAL) // GLOBAL, TEMPLE, or SELLER
-  category    CommissionCategory @default(MARKETPLACE) // MARKETPLACE vs POOJA
-  targetId    String?  // Specific Temple/Seller ID (null for GLOBAL)
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id          String             @id @default(cuid())
+  minAmount   Float
+  maxAmount   Float?
+  platformFee Float              @default(0)
+  percentage  Float              @default(0)
+  slabType    SlabType           @default(GLOBAL)
+  category    CommissionCategory @default(MARKETPLACE)
+  targetId    String?
+  isActive    Boolean            @default(true)
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
 
   @@index([slabType, targetId, category])
 }
