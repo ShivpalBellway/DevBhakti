@@ -13,6 +13,7 @@ import {
     Image as ImageIcon,
     Truck
 } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -263,7 +264,7 @@ export default function CreateTempleProductPage() {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div className="space-y-2">
                                     <Label htmlFor="name">Product Name *</Label>
-                                    <Input id="name" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} placeholder="Enter product name" className={errors.name ? "border-red-500" : ""} />
+                                    <Input id="name" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} placeholder="Enter product name" className={cn("placeholder:text-muted-foreground/50", errors.name ? "border-red-500" : "")} />
                                     {errors.name && <p className="text-sm text-red-500">{errors.name}</p>}
                                 </div>
 
@@ -285,7 +286,7 @@ export default function CreateTempleProductPage() {
 
                             <div className="space-y-2">
                                 <Label htmlFor="description">Description *</Label>
-                                <Textarea id="description" value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} placeholder="Enter product description" rows={4} className={errors.description ? "border-red-500" : ""} />
+                                <Textarea id="description" value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} placeholder="Enter product description" rows={4} className={cn("placeholder:text-muted-foreground/50", errors.description ? "border-red-500" : "")} />
                                 {errors.description && <p className="text-sm text-red-500">{errors.description}</p>}
                             </div>
 
@@ -343,19 +344,19 @@ export default function CreateTempleProductPage() {
                                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                                     <div className="space-y-2">
                                         <Label htmlFor="weight">Weight (kg) *</Label>
-                                        <Input id="weight" type="number" step="0.01" value={formData.weight} onChange={(e) => setFormData({ ...formData, weight: e.target.value })} placeholder="0.5" />
+                                        <Input id="weight" type="number" step="0.01" value={formData.weight} onChange={(e) => setFormData({ ...formData, weight: e.target.value })} placeholder="0.5" className="placeholder:text-muted-foreground/50" />
                                     </div>
                                     <div className="space-y-2">
                                         <Label htmlFor="length">Length (cm) *</Label>
-                                        <Input id="length" type="number" value={formData.length} onChange={(e) => setFormData({ ...formData, length: e.target.value })} placeholder="10" />
+                                        <Input id="length" type="number" value={formData.length} onChange={(e) => setFormData({ ...formData, length: e.target.value })} placeholder="10" className="placeholder:text-muted-foreground/50" />
                                     </div>
                                     <div className="space-y-2">
                                         <Label htmlFor="width">Width (cm) *</Label>
-                                        <Input id="width" type="number" value={formData.width} onChange={(e) => setFormData({ ...formData, width: e.target.value })} placeholder="10" />
+                                        <Input id="width" type="number" value={formData.width} onChange={(e) => setFormData({ ...formData, width: e.target.value })} placeholder="10" className="placeholder:text-muted-foreground/50" />
                                     </div>
                                     <div className="space-y-2">
                                         <Label htmlFor="height">Height (cm) *</Label>
-                                        <Input id="height" type="number" value={formData.height} onChange={(e) => setFormData({ ...formData, height: e.target.value })} placeholder="10" />
+                                        <Input id="height" type="number" value={formData.height} onChange={(e) => setFormData({ ...formData, height: e.target.value })} placeholder="10" className="placeholder:text-muted-foreground/50" />
                                     </div>
                                 </div>
                                 <p className="text-[10px] text-blue-600/70 font-medium">Note: Exact dimensions help in accurate shipping charges.</p>
@@ -385,7 +386,7 @@ export default function CreateTempleProductPage() {
 
                                         <div className="space-y-2">
                                             <Label>Variant Name *</Label>
-                                            <Input placeholder="e.g. Small, Red, 100ml" value={variant.name} onChange={(e) => updateVariant(variant.id, 'name', e.target.value)} />
+                                            <Input placeholder="e.g. Small, Red, 100ml" value={variant.name} onChange={(e) => updateVariant(variant.id, 'name', e.target.value)} className="placeholder:text-muted-foreground/50" />
                                         </div>
 
                                         <div className="space-y-2">
@@ -414,7 +415,7 @@ export default function CreateTempleProductPage() {
                                         <div className="grid grid-cols-2 gap-2">
                                             <div className="space-y-2">
                                                 <Label>Selling Price (₹) *</Label>
-                                                <Input type="number" step="0.01" placeholder="0.00" value={variant.price || ''} onChange={(e) => updateVariant(variant.id, 'price', e.target.value)} />
+                                                <Input type="number" step="0.01" placeholder="0.00" value={variant.price || ''} onChange={(e) => updateVariant(variant.id, 'price', e.target.value)} className="placeholder:text-muted-foreground/50" />
                                             </div>
                                             {/* <div className="space-y-2">
                                                 <Label>Cost Price (₹)</Label>
@@ -433,7 +434,7 @@ export default function CreateTempleProductPage() {
 
                                         <div className="space-y-2">
                                             <Label>Stock Quantity *</Label>
-                                            <Input type="number" placeholder="0" value={variant.stock || ''} onChange={(e) => updateVariant(variant.id, 'stock', e.target.value)} />
+                                            <Input type="number" placeholder="0" value={variant.stock || ''} onChange={(e) => updateVariant(variant.id, 'stock', e.target.value)} className="placeholder:text-muted-foreground/50" />
                                         </div>
                                     </div>
                                 ))}

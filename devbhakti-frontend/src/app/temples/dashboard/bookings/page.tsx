@@ -1,9 +1,8 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
 import {
-
     Search,
     Filter,
     MoreVertical,
@@ -21,6 +20,8 @@ import {
     Mail,
     Ban,
     PlayCircle,
+    ArrowUpDown,
+    CalendarRange,
     Calendar as CalendarIcon
 } from "lucide-react";
 import { useSearchParams } from "next/navigation";
@@ -38,7 +39,7 @@ import {
 import {
     Dialog,
     DialogContent,
-    DialogTrigger // Added DialogTrigger
+    DialogTrigger
 } from "@/components/ui/dialog";
 import {
     DropdownMenu,
@@ -57,7 +58,7 @@ import {
     getTempleAvailability
 } from "@/api/templeAdminController";
 import { useToast } from "@/hooks/use-toast";
-import { format } from "date-fns";
+import { format, isWithinInterval, startOfDay, endOfDay, subWeeks, subMonths, subYears, isAfter } from "date-fns";
 import { cn } from "@/lib/utils";
 
 const statusConfig = {
@@ -85,8 +86,20 @@ export default function TempleBookingsPage() {
     const [loading, setLoading] = useState(true);
     const [selectedBooking, setSelectedBooking] = useState<any | null>(null);
     const [isProcessing, setIsProcessing] = useState(false);
-    const [date, setDate] = useState<Date | undefined>(undefined);
     const [isTodayClosed, setIsTodayClosed] = useState(false);
+
+    // Confirmation dialog for Mark Complete
+    const [confirmCompleteId, setConfirmCompleteId] = useState<string | null>(null);
+    const [confirmCancelId, setConfirmCancelId] = useState<string | null>(null);
+
+    // View toggle: sort/display by ritual date or booking date
+    const [viewMode, setViewMode] = useState<"ritual" | "booking">("ritual");
+
+    // Advanced filter state
+    const [filterType, setFilterType] = useState<"ritual" | "booking">("ritual");
+    const [startDate, setStartDate] = useState<Date | undefined>(undefined);
+    const [endDate, setEndDate] = useState<Date | undefined>(undefined);
+    const [statsPeriod, setStatsPeriod] = useState<"week" | "month" | "year" | "lifetime">("week");
     const { toast } = useToast();
 
     useEffect(() => {
@@ -201,35 +214,98 @@ export default function TempleBookingsPage() {
     const searchParams = useSearchParams();
     const statusFilter = searchParams.get("status");
 
-    const filteredBookings = bookings.filter((b) => {
-        const matchesSearch =
-            b.devoteeName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            b.pooja?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            b.id?.toLowerCase().includes(searchQuery.toLowerCase());
+    const filteredBookings = useMemo(() => {
+        const filtered = bookings.filter((b) => {
+            const matchesSearch =
+                b.devoteeName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                b.pooja?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                b.id?.toLowerCase().includes(searchQuery.toLowerCase());
 
-        const matchesStatus = statusFilter ? b.status === statusFilter : true;
+            const matchesStatus = statusFilter ? b.status === statusFilter : true;
 
-        const bookingDate = new Date(b.createdAt);
-        const matchesDate = date
-            ? bookingDate.toDateString() === date.toDateString()
-            : true;
+            // Date range filter (Manual priority, then statsPeriod)
+            let matchesDate = true;
+            if (startDate) {
+                const targetDate = filterType === "ritual"
+                    ? (b.bookingDate ? new Date(b.bookingDate) : null)
+                    : new Date(b.createdAt);
 
-        return matchesSearch && matchesStatus && matchesDate;
-    });
+                if (targetDate) {
+                    const from = startOfDay(startDate);
+                    const to = endDate ? endOfDay(endDate) : endOfDay(startDate);
+                    matchesDate = isWithinInterval(targetDate, { start: from, end: to });
+                } else {
+                    matchesDate = false;
+                }
+            } else if (statsPeriod !== "lifetime") {
+                // If no manual date is selected, use statsPeriod
+                const now = new Date();
+                let periodStart: Date;
+                switch (statsPeriod) {
+                    case "week": periodStart = subWeeks(now, 1); break;
+                    case "month": periodStart = subMonths(now, 1); break;
+                    case "year": periodStart = subYears(now, 1); break;
+                    default: periodStart = new Date(0);
+                }
+                const createdAtDate = new Date(b.createdAt);
+                matchesDate = isAfter(createdAtDate, periodStart);
+            }
+
+            return matchesSearch && matchesStatus && matchesDate;
+        });
+
+        // Sort based on viewMode
+        return filtered.sort((a, b) => {
+            if (viewMode === "ritual") {
+                const dateA = a.bookingDate ? new Date(a.bookingDate).getTime() : 0;
+                const dateB = b.bookingDate ? new Date(b.bookingDate).getTime() : 0;
+                return dateA - dateB; // ascending — upcoming rituals first
+            } else {
+                const dateA = new Date(a.createdAt).getTime();
+                const dateB = new Date(b.createdAt).getTime();
+                return dateB - dateA; // descending — newest bookings first
+            }
+        });
+    }, [bookings, searchQuery, statusFilter, startDate, endDate, filterType, viewMode, statsPeriod]);
 
     const isToday = (dateString: string) => {
         return new Date(dateString).toDateString() === new Date().toDateString();
     };
 
-    const stats = {
-        total: bookings.length,
-        todayCount: bookings.filter(b => isToday(b.createdAt)).length,
-        todayRevenue: bookings
-            .filter(b => isToday(b.createdAt))
-            .reduce((acc, b) => acc + (b.packagePrice || 0), 0),
-        completed: bookings.filter(b => b.status === "COMPLETED").length,
-        revenue: bookings.reduce((acc, b) => acc + (b.packagePrice || 0), 0)
-    };
+    const stats = useMemo(() => {
+        const now = new Date();
+        let startDate: Date;
+
+        switch (statsPeriod) {
+            case "week":
+                startDate = subWeeks(now, 1);
+                break;
+            case "month":
+                startDate = subMonths(now, 1);
+                break;
+            case "year":
+                startDate = subYears(now, 1);
+                break;
+            case "lifetime":
+                startDate = new Date(0);
+                break;
+            default:
+                startDate = subWeeks(now, 1);
+        }
+
+        const periodBookings = bookings.filter(b => isAfter(new Date(b.createdAt), startDate));
+        const activePeriodBookings = periodBookings.filter(b => b.status !== 'CANCELLED');
+
+        return {
+            total: periodBookings.length,
+            todayCount: bookings.filter(b => isToday(b.createdAt)).length,
+            todayRevenue: bookings
+                .filter(b => isToday(b.createdAt) && b.status !== 'CANCELLED')
+                .reduce((acc, b) => acc + (b.packagePrice || 0), 0),
+            completed: periodBookings.filter(b => b.status === "COMPLETED").length,
+            revenue: activePeriodBookings.reduce((acc, b) => acc + (b.packagePrice || 0), 0)
+        };
+    }, [bookings, statsPeriod]);
 
     return (
         <div className="space-y-6">
@@ -284,6 +360,54 @@ export default function TempleBookingsPage() {
                 </div>
             </div>
 
+            {/* Stats Header with Filter */}
+            <div className="flex items-center justify-between">
+                <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
+                    Performance Overview
+                    <Badge variant="outline" className="text-[12px] uppercase tracking-wider px-2 py-0 border-primary/20 bg-primary/5 text-dark-border">
+                        {statsPeriod}ly
+                    </Badge>
+                </h2>
+                <div className="flex items-center bg-muted rounded-lg p-1">
+                    <button
+                        onClick={() => setStatsPeriod("week")}
+                        className={cn(
+                            "px-3 py-1 text-xs font-medium rounded-md transition-all",
+                            statsPeriod === "week" ? "bg-white text-primary shadow-sm" : "text-muted-foreground hover:text-foreground"
+                        )}
+                    >
+                        Week
+                    </button>
+                    <button
+                        onClick={() => setStatsPeriod("month")}
+                        className={cn(
+                            "px-3 py-1 text-xs font-medium rounded-md transition-all",
+                            statsPeriod === "month" ? "bg-white text-primary shadow-sm" : "text-muted-foreground hover:text-foreground"
+                        )}
+                    >
+                        Month
+                    </button>
+                    <button
+                        onClick={() => setStatsPeriod("year")}
+                        className={cn(
+                            "px-3 py-1 text-xs font-medium rounded-md transition-all",
+                            statsPeriod === "year" ? "bg-white text-primary shadow-sm" : "text-muted-foreground hover:text-foreground"
+                        )}
+                    >
+                        Year
+                    </button>
+                    <button
+                        onClick={() => setStatsPeriod("lifetime")}
+                        className={cn(
+                            "px-3 py-1 text-xs font-medium rounded-md transition-all",
+                            statsPeriod === "lifetime" ? "bg-white text-primary shadow-sm" : "text-muted-foreground hover:text-foreground"
+                        )}
+                    >
+                        Lifetime
+                    </button>
+                </div>
+            </div>
+
             {/* Stats */}
             <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                 <Card>
@@ -318,8 +442,39 @@ export default function TempleBookingsPage() {
                 </Card>
             </div>
 
+            {/* View Toggle */}
+            <div className="flex items-center gap-3">
+                <span className="text-sm font-medium text-muted-foreground">Sort by:</span>
+                <div className="flex items-center bg-muted rounded-full p-0.5">
+                    <button
+                        onClick={() => setViewMode("ritual")}
+                        className={cn(
+                            "flex items-center gap-1.5 px-4 py-1.5 rounded-full text-sm font-medium transition-all duration-200",
+                            viewMode === "ritual"
+                                ? "bg-primary text-white shadow-sm"
+                                : "text-muted-foreground hover:text-foreground"
+                        )}
+                    >
+                        <CalendarIcon className="w-3.5 h-3.5" />
+                        Ritual Date
+                    </button>
+                    <button
+                        onClick={() => setViewMode("booking")}
+                        className={cn(
+                            "flex items-center gap-1.5 px-4 py-1.5 rounded-full text-sm font-medium transition-all duration-200",
+                            viewMode === "booking"
+                                ? "bg-primary text-white shadow-sm"
+                                : "text-muted-foreground hover:text-foreground"
+                        )}
+                    >
+                        <Clock className="w-3.5 h-3.5" />
+                        Booking Date
+                    </button>
+                </div>
+            </div>
+
             {/* Filters */}
-            <div className="flex flex-col md:flex-row gap-4">
+            <div className="flex flex-col md:flex-row gap-3 items-start md:items-center">
                 <div className="relative flex-1">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                     <Input
@@ -329,40 +484,116 @@ export default function TempleBookingsPage() {
                         className="pl-10"
                     />
                 </div>
-                <div className="w-full md:w-auto">
-                    <Popover>
-                        <PopoverTrigger asChild>
-                            <Button
-                                variant={"outline"}
-                                className={cn(
-                                    "w-full md:w-[240px] justify-start text-left font-normal",
-                                    !date && "text-muted-foreground"
-                                )}
-                            >
-                                <CalendarIcon className="mr-2 h-4 w-4" />
-                                {date ? format(date, "PPP") : <span>Filter by date</span>}
-                            </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="end">
-                            <Calendar
-                                mode="single"
-                                selected={date}
-                                onSelect={setDate}
-                                initialFocus
-                            />
-                        </PopoverContent>
-                    </Popover>
-                    {date && (
-                        <Button
-                            variant="ghost"
-                            className="ml-2 px-2 text-xs h-8 text-muted-foreground hover:text-foreground"
-                            onClick={() => setDate(undefined)}
-                        >
-                            <X className="w-3 h-3 mr-1" /> Clear Date
+
+                {/* Filter Type Selector */}
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button variant="outline" size="sm" className="gap-2 text-sm shrink-0">
+                            <Filter className="w-4 h-4" />
+                            {filterType === "ritual" ? "By Ritual Date" : "By Booking Date"}
                         </Button>
-                    )}
-                </div>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                        <DropdownMenuLabel>Filter Criteria</DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                            onClick={() => { setFilterType("ritual"); setStartDate(undefined); setEndDate(undefined); }}
+                            className={cn(filterType === "ritual" && "bg-primary/10 text-primary font-semibold")}
+                        >
+                            <CalendarIcon className="w-4 h-4 mr-2" />
+                            Filter by Ritual Date
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                            onClick={() => { setFilterType("booking"); setStartDate(undefined); setEndDate(undefined); }}
+                            className={cn(filterType === "booking" && "bg-primary/10 text-primary font-semibold")}
+                        >
+                            <Clock className="w-4 h-4 mr-2" />
+                            Filter by Booking Date
+                        </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+
+                {/* Start Date Picker */}
+                <Popover>
+                    <PopoverTrigger asChild>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            className={cn(
+                                "w-[150px] justify-start text-left font-normal text-sm gap-2 shrink-0",
+                                !startDate && "text-muted-foreground"
+                            )}
+                        >
+                            <CalendarIcon className="w-4 h-4" />
+                            {startDate ? format(startDate, "dd MMM yyyy") : "Start Date"}
+                        </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="end">
+                        <Calendar
+                            mode="single"
+                            selected={startDate}
+                            onSelect={setStartDate}
+                            initialFocus
+                        />
+                    </PopoverContent>
+                </Popover>
+
+                {/* End Date Picker */}
+                <Popover>
+                    <PopoverTrigger asChild>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            className={cn(
+                                "w-[150px] justify-start text-left font-normal text-sm gap-2 shrink-0",
+                                !endDate && "text-muted-foreground"
+                            )}
+                        >
+                            <CalendarIcon className="w-4 h-4" />
+                            {endDate ? format(endDate, "dd MMM yyyy") : "End Date"}
+                        </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="end">
+                        <Calendar
+                            mode="single"
+                            selected={endDate}
+                            onSelect={setEndDate}
+                            disabled={(day) => startDate ? day < startDate : false}
+                            initialFocus
+                        />
+                    </PopoverContent>
+                </Popover>
+
+                {/* Clear Dates */}
+                {(startDate || endDate) && (
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        className="px-2 text-xs h-8 text-muted-foreground hover:text-destructive shrink-0"
+                        onClick={() => { setStartDate(undefined); setEndDate(undefined); }}
+                    >
+                        <X className="w-3 h-3 mr-1" /> Clear
+                    </Button>
+                )}
             </div>
+
+            {/* Active filter indicator */}
+            {startDate && (
+                <div className="flex items-center gap-2">
+                    <Badge variant="secondary" className="gap-1.5 text-xs font-medium py-1 px-3">
+                        <Filter className="w-3 h-3" />
+                        {filterType === "ritual" ? "Ritual Date" : "Booking Date"}:
+                        {" "}{format(startDate, "dd MMM yyyy")}
+                        {endDate && ` – ${format(endDate, "dd MMM yyyy")}`}
+                        <button onClick={() => { setStartDate(undefined); setEndDate(undefined); }} className="ml-1 hover:text-destructive">
+                            <X className="w-3 h-3" />
+                        </button>
+                    </Badge>
+                    <span className="text-xs text-muted-foreground">
+                        {filteredBookings.length} booking{filteredBookings.length !== 1 ? "s" : ""} found
+                    </span>
+                </div>
+            )}
 
             {/* Bookings Table */}
             <Card>
@@ -374,7 +605,24 @@ export default function TempleBookingsPage() {
                                     <th className="text-left p-4 text-sm font-medium text-muted-foreground">Booking ID</th>
                                     <th className="text-left p-4 text-sm font-medium text-muted-foreground">Devotee</th>
                                     <th className="text-left p-4 text-sm font-medium text-muted-foreground">Pooja/Ritual</th>
-                                    <th className="text-left p-4 text-sm font-medium text-muted-foreground">Booking Date</th>
+                                    <th className="text-left p-4 text-sm font-medium text-muted-foreground">
+                                        <button
+                                            onClick={() => setViewMode("ritual")}
+                                            className={cn("flex items-center gap-1 hover:text-foreground transition-colors", viewMode === "ritual" && "text-primary font-semibold")}
+                                        >
+                                            Ritual Date
+                                            {viewMode === "ritual" && <ArrowUpDown className="w-3 h-3" />}
+                                        </button>
+                                    </th>
+                                    <th className="text-left p-4 text-sm font-medium text-muted-foreground">
+                                        <button
+                                            onClick={() => setViewMode("booking")}
+                                            className={cn("flex items-center gap-1 hover:text-foreground transition-colors", viewMode === "booking" && "text-primary font-semibold")}
+                                        >
+                                            Booked On
+                                            {viewMode === "booking" && <ArrowUpDown className="w-3 h-3" />}
+                                        </button>
+                                    </th>
                                     <th className="text-left p-4 text-sm font-medium text-muted-foreground">Amount</th>
                                     <th className="text-left p-4 text-sm font-medium text-muted-foreground w-[150px]">Status</th>
                                     <th className="text-right p-4 text-sm font-medium text-muted-foreground w-[100px]">Actions</th>
@@ -383,7 +631,7 @@ export default function TempleBookingsPage() {
                             <tbody>
                                 {loading ? (
                                     <tr>
-                                        <td colSpan={7} className="p-12 text-center">
+                                        <td colSpan={8} className="p-12 text-center">
                                             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
                                             <p className="text-muted-foreground mt-2">Loading bookings...</p>
                                         </td>
@@ -395,9 +643,16 @@ export default function TempleBookingsPage() {
                                             <motion.tr
                                                 key={booking.id}
                                                 initial={{ opacity: 0, y: 10 }}
-                                                animate={{ opacity: 1, y: 0 }}
+                                                animate={{
+                                                    opacity: booking.status === 'CANCELLED' ? 0.5 : 1,
+                                                    y: 0,
+                                                    filter: booking.status === 'CANCELLED' ? 'grayscale(100%)' : 'grayscale(0%)'
+                                                }}
                                                 transition={{ duration: 0.3, delay: index * 0.05 }}
-                                                className="border-b border-border hover:bg-muted/30 transition-colors"
+                                                className={cn(
+                                                    "border-b border-border hover:bg-muted/30 transition-colors",
+                                                    booking.status === 'CANCELLED' && "bg-slate-50/50"
+                                                )}
                                             >
                                                 <td className="p-4 font-mono text-xs font-medium text-primary">
                                                     #{booking.id?.slice(-8).toUpperCase()}
@@ -415,14 +670,14 @@ export default function TempleBookingsPage() {
                                                     </div>
                                                 </td>
                                                 <td className="p-4">
-                                                    <div className="flex flex-col">
-                                                        <span className="text-sm text-foreground font-medium">
-                                                            {booking.bookingDate ? format(new Date(booking.bookingDate), "dd MMM yyyy") : "N/A"}
-                                                        </span>
-                                                        <span className="text-[10px] text-muted-foreground">
-                                                            Booked on {format(new Date(booking.createdAt), "dd MMM")}
-                                                        </span>
-                                                    </div>
+                                                    <span className={cn("text-sm font-medium", viewMode === "ritual" ? "text-primary" : "text-foreground")}>
+                                                        {booking.bookingDate ? format(new Date(booking.bookingDate), "dd MMM yyyy") : "N/A"}
+                                                    </span>
+                                                </td>
+                                                <td className="p-4">
+                                                    <span className={cn("text-sm font-medium", viewMode === "booking" ? "text-primary" : "text-foreground")}>
+                                                        {format(new Date(booking.createdAt), "dd MMM yyyy")}
+                                                    </span>
                                                 </td>
                                                 <td className="p-4">
                                                     <span className="text-sm font-bold text-foreground">₹{booking.packagePrice}</span>
@@ -459,7 +714,7 @@ export default function TempleBookingsPage() {
 
                                                                 {booking.status === 'BOOKED' && (
                                                                     <DropdownMenuItem
-                                                                        onClick={() => handleUpdateStatus(booking.id, 'COMPLETED')}
+                                                                        onClick={() => setConfirmCompleteId(booking.id)}
                                                                         className="text-emerald-600 focus:text-emerald-600 font-bold"
                                                                         disabled={isProcessing}
                                                                     >
@@ -469,7 +724,7 @@ export default function TempleBookingsPage() {
 
                                                                 {booking.status === 'BOOKED' && (
                                                                     <DropdownMenuItem
-                                                                        onClick={() => handleUpdateStatus(booking.id, 'CANCELLED')}
+                                                                        onClick={() => setConfirmCancelId(booking.id)}
                                                                         className="text-slate-600 focus:text-slate-600"
                                                                         disabled={isProcessing}
                                                                     >
@@ -483,7 +738,7 @@ export default function TempleBookingsPage() {
                                                                     className="text-red-600 focus:text-red-600 transition-colors"
                                                                     disabled={isProcessing}
                                                                 >
-                                                                    <Trash2 className="w-4 h-4 mr-2" /> Delete Record
+                                                                    {/* <Trash2 className="w-4 h-4 mr-2" /> Delete Record */}
                                                                 </DropdownMenuItem>
                                                             </DropdownMenuContent>
                                                         </DropdownMenu>
@@ -494,7 +749,7 @@ export default function TempleBookingsPage() {
                                     })
                                 ) : (
                                     <tr>
-                                        <td colSpan={7} className="p-12 text-center text-muted-foreground">
+                                        <td colSpan={8} className="p-12 text-center text-muted-foreground">
                                             No bookings found.
                                         </td>
                                     </tr>
@@ -627,27 +882,163 @@ export default function TempleBookingsPage() {
                                         <div className="flex gap-2">
                                             {selectedBooking.status === 'BOOKED' && (
                                                 <Button
-                                                    onClick={() => handleUpdateStatus(selectedBooking.id, 'COMPLETED')}
+                                                    onClick={() => setConfirmCompleteId(selectedBooking.id)}
                                                     className="bg-gradient-to-r from-gold to-gold hover:bg-gold text-white rounded-xl px-6"
                                                     disabled={isProcessing}
                                                 >
                                                     Mark Completed
                                                 </Button>
                                             )}
-                                            <Button
+                                            {/* <Button
                                                 variant="outline"
                                                 onClick={() => setSelectedBooking(null)}
                                                 className="rounded-xl px-6 border-slate-200 text-slate-600"
                                             >
                                                 Close View
-                                            </Button>
+                                            </Button> */}
                                         </div>
                                     </div>
                                     <div className="flex items-center justify-between text-[11px] text-slate-400 font-medium uppercase tracking-wider">
-                                        <span>Reference ID: {selectedBooking.id?.toUpperCase()}</span>
-                                        <span>Secured payment with GST invoice</span>
+                                        {/* <span>Reference ID: {selectedBooking.id?.toUpperCase()}</span> */}
+                                        {/* <span>Secured payment with GST invoice</span> */}
                                     </div>
                                 </div>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
+            {/* Cancel Confirmation Dialog */}
+            <AnimatePresence>
+                {confirmCancelId && (
+                    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={() => setConfirmCancelId(null)}
+                            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+                        />
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.85, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.85, y: 20 }}
+                            transition={{ type: "spring", damping: 25, stiffness: 350 }}
+                            className="bg-[#7b4623] w-full max-w-md rounded-2xl shadow-2xl overflow-hidden relative border border-[#63391c]"
+                        >
+                            {/* Warning Header */}
+                            <div className="bg-[#63391c]/50 p-6 text-white border-b border-[#63391c]">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 bg-red-500/20 rounded-xl flex items-center justify-center backdrop-blur-md">
+                                        <XCircle className="w-6 h-6 text-red-400" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-lg font-bold">Cancel Booking</h3>
+                                        <p className="text-slate-400 text-sm">Confirmation Required</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Body */}
+                            <div className="p-6">
+                                <p className="text-slate-300 text-sm leading-relaxed">
+                                    Are you sure you want to <span className="font-bold text-white underline decoration-red-500/50">cancel</span> this booking? This will mark the record as cancelled and remove it from revenue totals.
+                                </p>
+                            </div>
+
+                            {/* Actions */}
+                            <div className="flex items-center justify-end gap-3 px-6 pb-6">
+                                <Button
+                                    variant="ghost"
+                                    onClick={() => setConfirmCancelId(null)}
+                                    className="rounded-xl px-6 text-white/60 hover:text-white hover:bg-[#63391c]"
+                                    disabled={isProcessing}
+                                >
+                                    No
+                                </Button>
+                                <Button
+                                    onClick={async () => {
+                                        if (confirmCancelId) {
+                                            await handleUpdateStatus(confirmCancelId, 'CANCELLED');
+                                            setConfirmCancelId(null);
+                                        }
+                                    }}
+                                    className="bg-red-600 hover:bg-red-700 text-white rounded-xl px-6 border-none"
+                                    disabled={isProcessing}
+                                >
+                                    {isProcessing ? "Processing..." : "Yes, Cancel"}
+                                </Button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
+            {/* Mark Complete Confirmation Dialog */}
+            <AnimatePresence>
+                {confirmCompleteId && (
+                    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={() => setConfirmCompleteId(null)}
+                            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+                        />
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.85, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.85, y: 20 }}
+                            transition={{ type: "spring", damping: 25, stiffness: 350 }}
+                            className="bg-[#7b4623] w-full max-w-md rounded-2xl shadow-2xl overflow-hidden relative border border-[#63391c]"
+                        >
+                            {/* Warning Header */}
+                            <div className="bg-[#63391c]/50 p-6 text-white border-b border-[#63391c]">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 bg-amber-500/20 rounded-xl flex items-center justify-center backdrop-blur-md">
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                                            <line x1="12" y1="9" x2="12" y2="13" />
+                                            <line x1="12" y1="17" x2="12.01" y2="17" />
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <h3 className="text-lg font-bold">Warning</h3>
+                                        <p className="text-slate-400 text-sm">Irreversible Action</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Body */}
+                            <div className="p-6">
+                                <p className="text-slate-300 text-sm leading-relaxed">
+                                    Are you sure you want to mark this booking as <span className="font-bold text-emerald-400">complete</span>? This is an <span className="font-bold text-red-400">irreversible action</span> and cannot be undone.
+                                </p>
+                            </div>
+
+                            {/* Actions */}
+                            <div className="flex items-center justify-end gap-3 px-6 pb-6">
+                                <Button
+                                    variant="ghost"
+                                    onClick={() => setConfirmCompleteId(null)}
+                                    className="rounded-xl px-6 text-white/60 hover:text-white hover:bg-[#63391c]"
+                                    disabled={isProcessing}
+                                >
+                                    No
+                                </Button>
+                                <Button
+                                    onClick={async () => {
+                                        if (confirmCompleteId) {
+                                            await handleUpdateStatus(confirmCompleteId, 'COMPLETED');
+                                            setConfirmCompleteId(null);
+                                        }
+                                    }}
+                                    className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl px-6 border-none"
+                                    disabled={isProcessing}
+                                >
+                                    {isProcessing ? "Processing..." : "Yes, Complete"}
+                                </Button>
                             </div>
                         </motion.div>
                     </div>

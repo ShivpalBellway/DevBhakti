@@ -25,26 +25,108 @@ const normalizePhone = (phone: string): string => {
 // Get all Temples (via User accounts)
 export const getAllTemples = async (req: Request, res: Response) => {
   try {
-    const temples = await prisma.user.findMany({
-      where: {
-        role: 'INSTITUTION'
-      },
-      include: {
-        temple: {
-          include: {
-            _count: {
-              select: { poojas: true, events: true },
-            },
-            poojas: {
-              select: { id: true, name: true, category: true, price: true }
-            },
-            events: true
+    const { page, limit, search, isVerified, templeId, date } = req.query;
+
+    const where: any = {
+      role: 'INSTITUTION'
+    };
+
+    if (isVerified !== undefined) {
+      where.isVerified = isVerified === 'true';
+    }
+
+    if (templeId && templeId !== 'all') {
+      where.temple = { id: String(templeId) };
+    }
+
+    if (date) {
+      const startOfDay = new Date(String(date));
+      startOfDay.setHours(0, 0, 0, 0);
+      const endOfDay = new Date(String(date));
+      endOfDay.setHours(23, 59, 59, 999);
+      where.createdAt = {
+        gte: startOfDay,
+        lte: endOfDay
+      };
+    }
+
+    if (search) {
+      where.OR = [
+        { name: { contains: String(search), mode: 'insensitive' } },
+        { email: { contains: String(search), mode: 'insensitive' } },
+        { phone: { contains: String(search), mode: 'insensitive' } },
+        {
+          temple: {
+            OR: [
+              { name: { contains: String(search), mode: 'insensitive' } },
+              { location: { contains: String(search), mode: 'insensitive' } },
+              { templeId: { contains: String(search), mode: 'insensitive' } }
+            ]
           }
         }
-      },
-      orderBy: { createdAt: 'desc' }
+      ];
+    }
+
+    // Backward compatibility: If no page/limit provided, return all as array
+    if (!page && !limit) {
+      const temples = await prisma.user.findMany({
+        where,
+        include: {
+          temple: {
+            include: {
+              _count: {
+                select: { poojas: true, events: true },
+              },
+              poojas: {
+                select: { id: true, name: true, category: true, price: true }
+              },
+              events: true
+            }
+          }
+        },
+        orderBy: { createdAt: 'desc' }
+      });
+      return res.json(temples);
+    }
+
+    // Paginated response
+    const p = parseInt(String(page)) || 1;
+    const l = parseInt(String(limit)) || 10;
+    const skip = (p - 1) * l;
+
+    const [temples, total] = await Promise.all([
+      prisma.user.findMany({
+        where,
+        include: {
+          temple: {
+            include: {
+              _count: {
+                select: { poojas: true, events: true },
+              },
+              poojas: {
+                select: { id: true, name: true, category: true, price: true }
+              },
+              events: true
+            }
+          }
+        },
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: l
+      }),
+      prisma.user.count({ where })
+    ]);
+
+    res.json({
+      success: true,
+      data: temples,
+      pagination: {
+        total,
+        page: p,
+        limit: l,
+        totalPages: Math.ceil(total / l)
+      }
     });
-    res.json(temples);
   } catch (error) {
     console.error('Fetch error:', error);
     res.status(500).json({ error: 'Failed to fetch temples' });
@@ -480,6 +562,33 @@ export const updateTempleLiveConfig = async (req: Request, res: Response) => {
   } catch (error: any) {
     console.error('Update temple live config error:', error);
     res.status(500).json({ success: false, message: error.message || 'Failed to update live config' });
+  }
+};
+
+// Set a temple as the primary live darshan temple (Admin-only)
+export const setPrimaryLive = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    const result = await prisma.$transaction(async (tx) => {
+      // 1. Reset all temples' primary status
+      await tx.temple.updateMany({
+        data: { isPrimaryLive: false }
+      });
+
+      // 2. Set the chosen temple as primary
+      const temple = await tx.temple.update({
+        where: { userId: String(id) }, // Note: Most admin temple actions use User ID
+        data: { isPrimaryLive: true }
+      });
+
+      return temple;
+    });
+
+    res.json({ success: true, data: result });
+  } catch (error: any) {
+    console.error('Set primary live error:', error);
+    res.status(500).json({ success: false, message: error.message || 'Failed to set primary live temple' });
   }
 };
 

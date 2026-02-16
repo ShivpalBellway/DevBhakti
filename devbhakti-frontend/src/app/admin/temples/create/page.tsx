@@ -25,16 +25,17 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
-import { createTempleAdmin, fetchAllPoojasAdmin, fetchCommissionSlabsAdmin } from "@/api/adminController";
-import { Badge } from "@/components/ui/badge";
-import Cropper from "react-easy-crop";
-import type { Area } from "react-easy-crop";
+import { createTempleAdmin, fetchAllPoojasAdmin, createPoojaAdmin, fetchCommissionSlabsAdmin } from "@/api/adminController";
+import { Badge } from "@/components/ui/badge"
+import { ImageCropper } from "@/components/admin/ImageCropper";
 
 export default function CreateTemplePage() {
     const router = useRouter();
     const { toast } = useToast();
     const [isLoading, setIsLoading] = useState(false);
     const [allPoojas, setAllPoojas] = useState<any[]>([]);
+    const [newPoojaName, setNewPoojaName] = useState("");
+    const [isAddingPooja, setIsAddingPooja] = useState(false);
 
     // Form State
     const [formData, setFormData] = useState({
@@ -81,13 +82,11 @@ export default function CreateTemplePage() {
     const [heroPreviews, setHeroPreviews] = useState<string[]>([]);
 
     // Cropping State
-    const [cropModalOpen, setCropModalOpen] = useState(false);
-    const [cropImageSrc, setCropImageSrc] = useState<string>("");
+    const [showCropper, setShowCropper] = useState(false);
+    const [tempImage, setTempImage] = useState<string | null>(null);
     const [cropType, setCropType] = useState<"main" | "hero">("main");
-    const [crop, setCrop] = useState({ x: 0, y: 0 });
-    const [zoom, setZoom] = useState(1);
-    const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
-    const [aspectRatio, setAspectRatio] = useState(3 / 2); // Default for main image
+    const [cropTitle, setCropTitle] = useState("Crop Temple Image");
+    const [initialAspect, setInitialAspect] = useState(3 / 2);
 
     useEffect(() => {
         loadPoojas();
@@ -114,105 +113,23 @@ export default function CreateTemplePage() {
 
     const loadPoojas = async () => {
         try {
-            const data = await fetchAllPoojasAdmin();
+            const data = await fetchAllPoojasAdmin({ isMaster: true });
             setAllPoojas(data);
         } catch (error) {
             console.error("Failed to load poojas");
         }
     };
 
-    // Crop Utility Functions
-    const createImage = (url: string): Promise<HTMLImageElement> =>
-        new Promise((resolve, reject) => {
-            const image = new Image();
-            image.addEventListener("load", () => resolve(image));
-            image.addEventListener("error", (error) => reject(error));
-            image.src = url;
-        });
-
-    const getCroppedImg = async (
-        imageSrc: string,
-        pixelCrop: Area,
-        fileName: string
-    ): Promise<File> => {
-        const image = await createImage(imageSrc);
-        const canvas = document.createElement("canvas");
-        const ctx = canvas.getContext("2d");
-
-        if (!ctx) {
-            throw new Error("No 2d context");
+    const handleCropComplete = (croppedFile: File) => {
+        if (cropType === "main") {
+            setMainImage(croppedFile);
+            setMainImagePreview(URL.createObjectURL(croppedFile));
+        } else {
+            setHeroImages(prev => [...prev, croppedFile]);
+            setHeroPreviews(prev => [...prev, URL.createObjectURL(croppedFile)]);
         }
-
-        canvas.width = pixelCrop.width;
-        canvas.height = pixelCrop.height;
-
-        ctx.drawImage(
-            image,
-            pixelCrop.x,
-            pixelCrop.y,
-            pixelCrop.width,
-            pixelCrop.height,
-            0,
-            0,
-            pixelCrop.width,
-            pixelCrop.height
-        );
-
-        return new Promise((resolve, reject) => {
-            canvas.toBlob((blob) => {
-                if (!blob) {
-                    reject(new Error("Canvas is empty"));
-                    return;
-                }
-                const file = new File([blob], fileName, {
-                    type: "image/jpeg",
-                    lastModified: Date.now(),
-                });
-                resolve(file);
-            }, "image/jpeg", 0.95);
-        });
-    };
-
-    const onCropComplete = useCallback((croppedArea: Area, croppedAreaPixels: Area) => {
-        setCroppedAreaPixels(croppedAreaPixels);
-    }, []);
-
-    const handleCropSave = async () => {
-        if (!croppedAreaPixels || !cropImageSrc) return;
-
-        try {
-            const croppedImage = await getCroppedImg(
-                cropImageSrc,
-                croppedAreaPixels,
-                `cropped-${Date.now()}.jpg`
-            );
-
-            if (cropType === "main") {
-                setMainImage(croppedImage);
-                setMainImagePreview(URL.createObjectURL(croppedImage));
-            } else {
-                setHeroImages(prev => [...prev, croppedImage]);
-                setHeroPreviews(prev => [...prev, URL.createObjectURL(croppedImage)]);
-            }
-
-            // Reset crop modal
-            setCropModalOpen(false);
-            setCropImageSrc("");
-            setCrop({ x: 0, y: 0 });
-            setZoom(1);
-            setCroppedAreaPixels(null);
-
-            toast({
-                title: "Image Cropped",
-                description: "Image has been cropped successfully!",
-            });
-        } catch (error) {
-            toast({
-                title: "Crop Failed",
-                description: "Failed to crop image. Please try again.",
-                variant: "destructive",
-            });
-        }
+        setShowCropper(false);
+        setTempImage(null);
     };
 
     // Handlers
@@ -234,10 +151,11 @@ export default function CreateTemplePage() {
             // Open crop modal
             const reader = new FileReader();
             reader.onload = () => {
-                setCropImageSrc(reader.result as string);
+                setTempImage(reader.result as string);
                 setCropType("main");
-                setAspectRatio(3 / 2); // 3:2 for main image
-                setCropModalOpen(true);
+                setCropTitle("Adjust Temple Profile Image");
+                setInitialAspect(3 / 2);
+                setShowCropper(true);
             };
             reader.readAsDataURL(file);
             e.target.value = ''; // Reset input
@@ -263,10 +181,11 @@ export default function CreateTemplePage() {
                 // Process first valid file for cropping
                 const reader = new FileReader();
                 reader.onload = () => {
-                    setCropImageSrc(reader.result as string);
+                    setTempImage(reader.result as string);
                     setCropType("hero");
-                    setAspectRatio(16 / 9); // 16:9 for hero banners
-                    setCropModalOpen(true);
+                    setCropTitle("Adjust Temple Banner Image");
+                    setInitialAspect(16 / 9);
+                    setShowCropper(true);
                 };
                 reader.readAsDataURL(validFiles[0]);
             }
@@ -319,6 +238,39 @@ export default function CreateTemplePage() {
         const newSlabs = [...poojaSlabs];
         newSlabs[index] = { ...newSlabs[index], [field]: value };
         setPoojaSlabs(newSlabs);
+    };
+
+    const handleAddNewPooja = async () => {
+        if (!newPoojaName.trim()) return;
+        setIsAddingPooja(true);
+        try {
+            const fd = new FormData();
+            fd.append("name", newPoojaName.trim());
+            fd.append("isMaster", "true");
+            fd.append("category", "General"); // Default category
+            fd.append("price", "0");
+            fd.append("status", "APPROVED");
+
+            const res = await createPoojaAdmin(fd);
+            if (res.success || res.id) {
+                toast({ title: "Success", description: "New pooja added to master list" });
+                setNewPoojaName("");
+                // Refresh poojas list
+                const data = await fetchAllPoojasAdmin({ isMaster: true });
+                setAllPoojas(data);
+
+                // Automatically select the new pooja
+                const newId = res.data?.id || res.id;
+                if (newId) {
+                    setSelectedPoojaIds(prev => [...prev, newId]);
+                }
+            }
+        } catch (error) {
+            console.error("Add pooja error:", error);
+            toast({ title: "Error", description: "Failed to create new pooja", variant: "destructive" });
+        } finally {
+            setIsAddingPooja(false);
+        }
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -407,125 +359,17 @@ export default function CreateTemplePage() {
     return (
         <>
             {/* Image Crop Modal */}
-            {cropModalOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm">
-                    <div className="relative w-full max-w-4xl h-[80vh] bg-white rounded-2xl shadow-2xl overflow-hidden">
-                        {/* Header */}
-                        <div className="flex items-center justify-between px-6 py-4 bg-gradient-to-r from-orange-50 to-amber-50 border-b">
-                            <div className="flex items-center gap-3">
-                                <Crop className="w-5 h-5 text-[#88542b]" />
-                                <h3 className="text-lg font-bold text-slate-800">
-                                    Crop Image {cropType === "main" ? "(Main Profile)" : "(Banner)"}
-                                </h3>
-                            </div>
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => {
-                                    setCropModalOpen(false);
-                                    setCropImageSrc("");
-                                }}
-                            >
-                                <X className="w-5 h-5" />
-                            </Button>
-                        </div>
-
-                        {/* Cropper Area */}
-                        <div className="relative h-[calc(80vh-180px)] bg-slate-900">
-                            <Cropper
-                                image={cropImageSrc}
-                                crop={crop}
-                                zoom={zoom}
-                                aspect={aspectRatio}
-                                onCropChange={setCrop}
-                                onZoomChange={setZoom}
-                                onCropComplete={onCropComplete}
-                                style={{
-                                    containerStyle: {
-                                        backgroundColor: "#1e293b",
-                                    },
-                                }}
-                            />
-                        </div>
-
-                        {/* Controls */}
-                        <div className="px-6 py-4 bg-white border-t space-y-4">
-                            {/* Zoom Control */}
-                            <div className="flex items-center gap-4">
-                                <ZoomOut className="w-5 h-5 text-slate-600" />
-                                <input
-                                    type="range"
-                                    min={1}
-                                    max={3}
-                                    step={0.1}
-                                    value={zoom}
-                                    onChange={(e) => setZoom(Number(e.target.value))}
-                                    className="flex-1 h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-[#88542b]"
-                                />
-                                <ZoomIn className="w-5 h-5 text-slate-600" />
-                                <span className="text-sm font-semibold text-slate-700 min-w-[60px]">
-                                    {Math.round(zoom * 100)}%
-                                </span>
-                            </div>
-
-                            {/* Aspect Ratio Buttons */}
-                            <div className="flex items-center gap-2">
-                                <span className="text-sm font-semibold text-slate-600 mr-2">Aspect Ratio:</span>
-                                <Button
-                                    type="button"
-                                    variant={aspectRatio === 1 ? "default" : "outline"}
-                                    size="sm"
-                                    onClick={() => setAspectRatio(1)}
-                                >
-                                    Square (1:1)
-                                </Button>
-                                <Button
-                                    type="button"
-                                    variant={aspectRatio === 4 / 3 ? "default" : "outline"}
-                                    size="sm"
-                                    onClick={() => setAspectRatio(4 / 3)}
-                                >
-                                    Classic (4:3)
-                                </Button>
-                                <Button
-                                    type="button"
-                                    variant={aspectRatio === 3 / 2 ? "default" : "outline"}
-                                    size="sm"
-                                    onClick={() => setAspectRatio(3 / 2)}
-                                >
-                                    Photo (3:2)
-                                </Button>
-                                <Button
-                                    type="button"
-                                    variant={aspectRatio === 16 / 9 ? "default" : "outline"}
-                                    size="sm"
-                                    onClick={() => setAspectRatio(16 / 9)}
-                                >
-                                    Wide (16:9)
-                                </Button>
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    onClick={() => {
-                                        setCropModalOpen(false);
-                                        setCropImageSrc("");
-                                    }}
-                                >
-                                    Cancel
-                                </Button>
-
-                                <Button
-                                    type="button"
-                                    onClick={handleCropSave}
-                                    className="bg-[#88542b] hover:bg-[#6d4222] text-white px-6"
-                                >
-                                    <CheckCircle className="w-4 h-4 mr-2" />
-                                    Save Crop
-                                </Button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+            {showCropper && tempImage && (
+                <ImageCropper
+                    image={tempImage}
+                    title={cropTitle}
+                    initialAspect={initialAspect}
+                    onCropComplete={handleCropComplete}
+                    onCancel={() => {
+                        setShowCropper(false);
+                        setTempImage(null);
+                    }}
+                />
             )}
 
             {/* Main Page Content */}
@@ -878,11 +722,20 @@ export default function CreateTemplePage() {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="space-y-2">
                                 <label className="text-sm font-semibold text-slate-700">Temple Contact Number</label>
-                                <Input
-                                    value={formData.templePhone}
-                                    onChange={e => setFormData({ ...formData, templePhone: e.target.value })}
-                                    placeholder="+91 000 000 0000"
-                                />
+                                <div className="relative">
+                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 font-semibold border-r border-slate-300 pr-2">+91</span>
+                                    <Input
+                                        type="tel"
+                                        maxLength={10}
+                                        value={formData.templePhone}
+                                        onChange={e => {
+                                            const val = e.target.value.replace(/\D/g, '');
+                                            setFormData({ ...formData, templePhone: val });
+                                        }}
+                                        placeholder="Enter 10-digit number"
+                                        className="pl-14"
+                                    />
+                                </div>
                             </div>
                             <div className="space-y-2">
                                 <label className="text-sm font-semibold text-slate-700">Website URL</label>
@@ -893,7 +746,7 @@ export default function CreateTemplePage() {
                                 />
                             </div>
                             <div className="space-y-2 md:col-span-2">
-                                <label className="text-sm font-semibold text-slate-700">Google Maps URL</label>
+                                <label className="text-sm font-semibold text-slate-700">Google Maps Link</label>
                                 <Input
                                     value={formData.mapUrl}
                                     onChange={e => setFormData({ ...formData, mapUrl: e.target.value })}
@@ -905,11 +758,27 @@ export default function CreateTemplePage() {
 
                     {/* 5. Poojas Management (Multiple Select) */}
                     <div className="bg-card border rounded-xl p-8 shadow-sm space-y-6">
-                        <div className="flex items-center justify-between">
+                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                             <div className="flex items-center gap-2 text-primary font-bold">
                                 <Layout className="w-5 h-5" />
                                 <h2 className="text-xl">Available Poojas</h2>
                             </div>
+                            {/* <div className="flex items-center gap-2">
+                                <Input
+                                    placeholder="New Pooja Name..."
+                                    value={newPoojaName}
+                                    onChange={(e) => setNewPoojaName(e.target.value)}
+                                    className="max-w-[200px] h-9"
+                                />
+                                <Button
+                                    type="button"
+                                    size="sm"
+                                    onClick={handleAddNewPooja}
+                                    disabled={isAddingPooja || !newPoojaName.trim()}
+                                >
+                                    {isAddingPooja ? "Adding..." : <><Plus className="w-4 h-4 mr-1" /> Add</>}
+                                </Button>
+                            </div> */}
                         </div>
                         <p className="text-sm text-muted-foreground mb-4">Select poojas that are performed at this temple.</p>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

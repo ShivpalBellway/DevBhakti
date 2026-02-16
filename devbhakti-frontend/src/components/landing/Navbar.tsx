@@ -5,7 +5,7 @@ import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X, ChevronDown, ChevronRight, User, LogIn, UserPlus, ShoppingBag, ShoppingCart, Church, Search, ArrowRight, LogOut, Heart } from "lucide-react";
 import { BASE_URL } from "@/config/apiConfig";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import Logo from "@/components/icons/Logo";
@@ -34,6 +34,10 @@ const Navbar: React.FC<NavbarProps> = ({ variant = "default" }) => {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [user, setUser] = useState<any>(null);
   const router = useRouter();
+  const pathname = usePathname();
+
+  // Check if we're on the temple registration page
+  const isTempleRegistrationPage = pathname === '/temples/register';
   const { cartItems, itemCount, updateQuantity, removeFromCart } = useCart();
 
   useEffect(() => {
@@ -94,25 +98,26 @@ const Navbar: React.FC<NavbarProps> = ({ variant = "default" }) => {
             {/* Desktop Navigation */}
             <div className="hidden lg:flex items-center gap-8">
 
-              {/* Desktop Search Bar - More Prominent Glassmorphism */}
-              <div
-                onClick={() => setIsSearchOpen(true)}
-                className="hidden sm:flex items-center gap-2.5 px-6 py-3
-             w-[350px] md:w-[350px] lg:w-[400px]
-             bg-white/30 dark:bg-zinc-900/80 backdrop-blur-md rounded-xl
-             cursor-pointer transition-all border border-black/50
-             dark:border-zinc-800/50 hover:border-primary/60
-             shadow-sm hover:shadow-md"
-              >
-                <Search className="w-5 h-5 text-primary group-hover:scale-110 transition-transform" />
-                <span className="text-black dark:text-black text-sm font-medium truncate">
-                  Search temples, poojas, products...
-                </span>
-              </div>
+              {/* Desktop Search Bar - Hidden on temple registration page */}
+              {!isTempleRegistrationPage && (
+                <div
+                  onClick={() => setIsSearchOpen(true)}
+                  className="hidden sm:flex items-center gap-2.5 px-6 py-3
+               w-[350px] md:w-[350px] lg:w-[400px]
+               bg-white/30 dark:bg-zinc-900/80 backdrop-blur-md rounded-xl
+               cursor-pointer transition-all border border-black/50
+               dark:border-zinc-800/50 hover:border-primary/60
+               shadow-sm hover:shadow-md"
+                >
+                  <Search className="w-5 h-5 text-primary group-hover:scale-110 transition-transform" />
+                  <span className="text-black dark:text-black text-sm font-medium truncate">
+                    Search temples, poojas, products...
+                  </span>
+                </div>
+              )}
 
-
-
-              {navLinks.map((link) => (
+              {/* Navigation Links - Hidden on temple registration page */}
+              {!isTempleRegistrationPage && navLinks.map((link) => (
                 <Link
                   key={link.label}
                   href={link.href}
@@ -121,6 +126,16 @@ const Navbar: React.FC<NavbarProps> = ({ variant = "default" }) => {
                   {link.label}
                 </Link>
               ))}
+
+              {/* Go to Devotee Home Page - Only on temple registration page */}
+              {isTempleRegistrationPage && (
+                <Link
+                  href="/"
+                  className="text-sm font-medium text-dark-foreground hover:text-foreground transition-colors"
+                >
+                  Go to Devotee Home Page
+                </Link>
+              )}
             </div>
 
             {/* Action Group */}
@@ -355,7 +370,8 @@ const Navbar: React.FC<NavbarProps> = ({ variant = "default" }) => {
             >
               <div className="container px-4 py-8">
                 <div className="flex flex-col gap-4">
-                  {navLinks.map((link) => (
+                  {/* Navigation links - Hidden on temple registration page */}
+                  {!isTempleRegistrationPage && navLinks.map((link) => (
                     <Link
                       key={link.label}
                       href={link.href}
@@ -365,6 +381,17 @@ const Navbar: React.FC<NavbarProps> = ({ variant = "default" }) => {
                       {link.label}
                     </Link>
                   ))}
+
+                  {/* Go to Devotee Home Page - Only on temple registration page */}
+                  {isTempleRegistrationPage && (
+                    <Link
+                      href="/"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className="text-lg font-medium text-dark-foreground py-2 border-b border-border"
+                    >
+                      Go to Devotee Home Page
+                    </Link>
+                  )}
                   <div className="flex flex-col gap-3 mt-6">
                     {!user ? (
                       <div className="grid grid-cols-2 gap-3">

@@ -65,9 +65,17 @@ export const deletePoojaAdmin = async (id: string) => {
 };
 
 // Admin Event Management
-export const fetchAllEventsAdmin = async () => {
+export const fetchAllEventsAdmin = async (params?: { page?: number; limit?: number; search?: string }) => {
     const token = localStorage.getItem("admin_token");
-    const response = await axios.get(`${API_URL}/admin/events`, {
+    let url = `${API_URL}/admin/events`;
+    if (params) {
+        const query = new URLSearchParams();
+        if (params.page !== undefined) query.append('page', params.page.toString());
+        if (params.limit !== undefined) query.append('limit', params.limit.toString());
+        if (params.search) query.append('search', params.search);
+        url += `?${query.toString()}`;
+    }
+    const response = await axios.get(url, {
         headers: { Authorization: `Bearer ${token}` }
     });
     return response.data;
@@ -106,9 +114,20 @@ export const deleteEventAdmin = async (id: string) => {
 };
 
 // Admin Temple Management
-export const fetchAllTemplesAdmin = async () => {
+export const fetchAllTemplesAdmin = async (params?: { page?: number; limit?: number; search?: string; isVerified?: boolean; templeId?: string; date?: string }) => {
     const token = localStorage.getItem("admin_token");
-    const response = await axios.get(`${API_URL}/admin/temples`, {
+    let url = `${API_URL}/admin/temples`;
+    if (params) {
+        const query = new URLSearchParams();
+        if (params.page !== undefined) query.append('page', params.page.toString());
+        if (params.limit !== undefined) query.append('limit', params.limit.toString());
+        if (params.search) query.append('search', params.search);
+        if (params.isVerified !== undefined) query.append('isVerified', params.isVerified.toString());
+        if (params.templeId) query.append('templeId', params.templeId);
+        if (params.date) query.append('date', params.date);
+        url += `?${query.toString()}`;
+    }
+    const response = await axios.get(url, {
         headers: { Authorization: `Bearer ${token}` }
     });
     return response.data;
@@ -160,6 +179,14 @@ export const toggleTempleStatusAdmin = async (id: string, isVerified: boolean, i
 export const updateTempleLiveConfigAdmin = async (id: string, data: { channelId?: string; liveUrl?: string; isLive?: boolean }) => {
     const token = localStorage.getItem("admin_token");
     const response = await axios.patch(`${API_URL}/admin/temples/${id}/live-config`, data, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+
+export const setPrimaryLiveAdmin = async (id: string) => {
+    const token = localStorage.getItem("admin_token");
+    const response = await axios.patch(`${API_URL}/admin/temples/${id}/set-primary-live`, {}, {
         headers: { Authorization: `Bearer ${token}` }
     });
     return response.data;
@@ -358,12 +385,23 @@ export const deleteCTACardAdmin = async (id: string) => {
 };
 
 // Admin Product Management
-export const fetchAllProductsAdmin = async () => {
+export const fetchAllProductsAdmin = async (params?: { page?: number; limit?: number; search?: string; status?: string; templeId?: string; date?: string }) => {
     const token = localStorage.getItem("admin_token");
-    const response = await axios.get(`${API_URL}/admin/products`, {
+    let url = `${API_URL}/admin/products`;
+    if (params) {
+        const query = new URLSearchParams();
+        if (params.page !== undefined) query.append('page', params.page.toString());
+        if (params.limit !== undefined) query.append('limit', params.limit.toString());
+        if (params.search) query.append('search', params.search);
+        if (params.status) query.append('status', params.status);
+        if (params.templeId) query.append('templeId', params.templeId);
+        if (params.date) query.append('date', params.date);
+        url += `?${query.toString()}`;
+    }
+    const response = await axios.get(url, {
         headers: { Authorization: `Bearer ${token}` }
     });
-    return response.data.data.products;
+    return response.data;
 };
 
 export const fetchProductOwnersAdmin = async () => {
@@ -532,9 +570,20 @@ export const fetchProductsByTempleAdmin = async (templeId: string) => {
 };
 
 // Admin Booking Management
-export const fetchAllBookingsAdmin = async () => {
+export const fetchAllBookingsAdmin = async (params?: { page?: number; limit?: number; search?: string; status?: string; startDate?: string; endDate?: string }) => {
     const token = localStorage.getItem("admin_token");
-    const response = await axios.get(`${API_URL}/admin/bookings`, {
+    let url = `${API_URL}/admin/bookings`;
+    if (params) {
+        const query = new URLSearchParams();
+        if (params.page !== undefined) query.append('page', params.page.toString());
+        if (params.limit !== undefined) query.append('limit', params.limit.toString());
+        if (params.search) query.append('search', params.search);
+        if (params.status) query.append('status', params.status);
+        if (params.startDate) query.append('startDate', params.startDate);
+        if (params.endDate) query.append('endDate', params.endDate);
+        url += `?${query.toString()}`;
+    }
+    const response = await axios.get(url, {
         headers: { Authorization: `Bearer ${token}` }
     });
     return response.data;
@@ -725,6 +774,34 @@ export const approveRequestAdmin = async (id: string, type: string) => {
 export const rejectRequestAdmin = async (id: string, type: string) => {
     const token = localStorage.getItem("admin_token");
     const response = await axios.post(`${API_URL}/admin/finance/reject`, { id, type }, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+
+// Admin User Management
+export const fetchAllUsersAdmin = async (params?: { page?: number; limit?: number; search?: string; role?: string; startDate?: string; endDate?: string }) => {
+    const token = localStorage.getItem("admin_token");
+    let url = `${API_URL}/admin/users`;
+    if (params) {
+        const query = new URLSearchParams();
+        if (params.page !== undefined) query.append('page', params.page.toString());
+        if (params.limit !== undefined) query.append('limit', params.limit.toString());
+        if (params.search) query.append('search', params.search);
+        if (params.role) query.append('role', params.role);
+        if (params.startDate) query.append('startDate', params.startDate);
+        if (params.endDate) query.append('endDate', params.endDate);
+        url += `?${query.toString()}`;
+    }
+    const response = await axios.get(url, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+
+export const fetchUserDetailAdmin = async (id: string) => {
+    const token = localStorage.getItem("admin_token");
+    const response = await axios.get(`${API_URL}/admin/users/${id}`, {
         headers: { Authorization: `Bearer ${token}` }
     });
     return response.data;

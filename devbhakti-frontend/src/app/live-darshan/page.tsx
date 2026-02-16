@@ -69,7 +69,7 @@ function LiveDarshanContent() {
           // - YouTube live URL resolve hua ho (liveUrl)
           // - Admin ne website visibility ke liye approve kiya ho (liveStatus)
           const liveTemples = res.data.data.filter(
-            (t: any) => (t.isLive || t.liveUrl) && t.liveStatus
+            (t: any) => t.isLive && t.liveStatus
           );
 
           if (liveTemples.length > 0) {

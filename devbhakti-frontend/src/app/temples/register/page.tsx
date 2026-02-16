@@ -7,6 +7,7 @@ import Navbar from "@/components/landing/Navbar";
 import { Button } from "@/components/ui/button"
 import { Sparkles, Building2, Calendar, Search, Users, ShieldCheck, ArrowRight, X, Info, Smartphone, Globe, Tv, Gift, LayoutDashboard, CheckCircle2, Heart, Star, Hand, Lamp, Bell, Play, Volume2, Eye, Flame, Cloud, Sunrise, Moon, Infinity, Zap, Award, TrendingUp, Clock, Shield, BookOpen, ChevronRight } from "lucide-react"
 import TempleRegistrationForm from "@/components/temples/TempleRegistrationForm"
+import FloatingRegisterButton from "@/components/landing/FloatingRegisterButton";
 import Image from "next/image"
 import heroTempleImage from "@/assets/hero-temple.jpg"
 
@@ -494,6 +495,7 @@ export default function RegisterTemplePage() {
             </main>
 
             <Footer />
+            <FloatingRegisterButton onClick={() => setShowRegistrationModal(true)} />
 
             {/* Registration Modal with Enhanced Animation */}
             <AnimatePresence>

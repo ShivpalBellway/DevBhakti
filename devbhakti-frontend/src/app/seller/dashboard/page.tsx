@@ -15,7 +15,8 @@ import {
     ArrowUp,
     ArrowDown,
     Wallet,
-    CreditCard
+    CreditCard,
+    Info
 } from "lucide-react";
 import {
     AreaChart,
@@ -23,7 +24,7 @@ import {
     XAxis,
     YAxis,
     CartesianGrid,
-    Tooltip,
+    Tooltip as RechartsTooltip,
     ResponsiveContainer
 } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -31,6 +32,12 @@ import { fetchSellerFinanceSummary, fetchSellerOrders, fetchSellerProducts } fro
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 export default function SellerDashboard() {
     const [user, setUser] = useState<any>(null);
@@ -78,7 +85,8 @@ export default function SellerDashboard() {
             icon: IndianRupee,
             color: "text-emerald-600",
             bg: "bg-emerald-50",
-            border: "border-emerald-100"
+            border: "border-emerald-100",
+            tooltip: "Total revenue earned from all completed product sales on the marketplace."
         },
         {
             title: "Pending Orders",
@@ -88,7 +96,8 @@ export default function SellerDashboard() {
             icon: ShoppingBag,
             color: "text-blue-600",
             bg: "bg-blue-50",
-            border: "border-blue-100"
+            border: "border-blue-100",
+            tooltip: "Orders that are awaiting processing, shipping, or delivery confirmation."
         },
         {
             title: "Active Products",
@@ -98,7 +107,8 @@ export default function SellerDashboard() {
             icon: Package,
             color: "text-amber-600",
             bg: "bg-amber-50",
-            border: "border-amber-100"
+            border: "border-amber-100",
+            tooltip: "Number of approved products currently live and visible to buyers on the marketplace."
         },
         {
             title: "Available Balance",
@@ -108,7 +118,8 @@ export default function SellerDashboard() {
             icon: Wallet,
             color: "text-violet-600",
             bg: "bg-violet-50",
-            border: "border-violet-100"
+            border: "border-violet-100",
+            tooltip: "Amount available for withdrawal to your bank account after platform deductions."
         },
     ];
 
@@ -152,35 +163,49 @@ export default function SellerDashboard() {
             </div>
 
             {/* Stats Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                {stats.map((stat, index) => (
-                    <motion.div
-                        key={stat.title}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.4, delay: index * 0.1 }}
-                    >
-                        <Card className={`border shadow-sm hover:shadow-md transition-all duration-300 rounded-2xl overflow-hidden ${stat.border}`}>
-                            <CardContent className="p-6">
-                                <div className="flex items-center justify-between mb-4">
-                                    <div className={`w-12 h-12 rounded-xl ${stat.bg} ${stat.color} flex items-center justify-center`}>
-                                        <stat.icon className="w-6 h-6" />
+            <TooltipProvider delayDuration={100}>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {stats.map((stat, index) => (
+                        <motion.div
+                            key={stat.title}
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.4, delay: index * 0.1 }}
+                        >
+                            <Card className={`border shadow-sm hover:shadow-md transition-all duration-300 rounded-2xl overflow-hidden ${stat.border}`}>
+                                <CardContent className="p-6">
+                                    <div className="flex items-center justify-between mb-4">
+                                        <div className={`w-12 h-12 rounded-xl ${stat.bg} ${stat.color} flex items-center justify-center`}>
+                                            <stat.icon className="w-6 h-6" />
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <Badge variant="secondary" className={`flex items-center gap-1 ${stat.bg} ${stat.color} border-0`}>
+                                                {stat.trend === 'up' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />}
+                                                {stat.change}
+                                            </Badge>
+                                            <Tooltip>
+                                                <TooltipTrigger asChild>
+                                                    <div className="p-1 rounded-full hover:bg-slate-200 transition-colors cursor-help">
+                                                        <Info className="w-3.5 h-3.5 text-slate-400 hover:text-slate-600" />
+                                                    </div>
+                                                </TooltipTrigger>
+                                                <TooltipContent side="bottom" className="max-w-[220px] text-xs">
+                                                    <p>{stat.tooltip}</p>
+                                                </TooltipContent>
+                                            </Tooltip>
+                                        </div>
                                     </div>
-                                    <Badge variant="secondary" className={`flex items-center gap-1 ${stat.bg} ${stat.color} border-0`}>
-                                        {stat.trend === 'up' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />}
-                                        {stat.change}
-                                    </Badge>
-                                </div>
-                                <div>
-                                    <p className="text-2xl font-bold text-slate-900">{stat.value}</p>
-                                    <p className="text-sm font-medium text-slate-500 mt-1">{stat.title}</p>
-                                </div >
-                            </CardContent >
-                        </Card >
-                    </motion.div >
-                ))
-                }
-            </div >
+                                    <div>
+                                        <p className="text-2xl font-bold text-slate-900">{stat.value}</p>
+                                        <p className="text-sm font-medium text-slate-500 mt-1">{stat.title}</p>
+                                    </div >
+                                </CardContent >
+                            </Card >
+                        </motion.div >
+                    ))
+                    }
+                </div >
+            </TooltipProvider>
 
             {/* Revenue Chart Section */}
             < motion.div
@@ -218,7 +243,7 @@ export default function SellerDashboard() {
                                     tickFormatter={(value) => `₹${value}`}
                                     dx={-10}
                                 />
-                                <Tooltip
+                                <RechartsTooltip
                                     contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
                                     itemStyle={{ color: '#d97706', fontWeight: 600 }}
                                 />

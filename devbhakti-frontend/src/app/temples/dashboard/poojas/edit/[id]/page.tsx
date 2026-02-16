@@ -212,8 +212,8 @@ export default function TempleEditPoojaPage() {
                             <Input
                                 id="price"
                                 type="number"
-                                value={formData.price}
-                                onChange={(e) => setFormData({ ...formData, price: parseInt(e.target.value) })}
+                                value={formData.price === 0 ? "" : formData.price}
+                                onChange={(e) => setFormData({ ...formData, price: e.target.value === "" ? 0 : parseInt(e.target.value) })}
                                 className="rounded-xl h-11 border-slate-200 focus:border-[#7b4623] focus:ring-[#7b4623]/10"
                                 required
                             />
@@ -301,8 +301,8 @@ export default function TempleEditPoojaPage() {
                                             <Label className="text-[10px] uppercase font-bold text-slate-400 block mb-1">Price (₹)</Label>
                                             <Input
                                                 type="number"
-                                                value={pkg.price}
-                                                onChange={(e) => updatePackage(index, 'price', parseInt(e.target.value) || 0)}
+                                                value={pkg.price === 0 ? "" : pkg.price}
+                                                onChange={(e) => updatePackage(index, 'price', e.target.value === "" ? 0 : parseInt(e.target.value))}
                                                 className="h-10 border-slate-200 focus:border-[#7b4623]"
                                                 required
                                             />

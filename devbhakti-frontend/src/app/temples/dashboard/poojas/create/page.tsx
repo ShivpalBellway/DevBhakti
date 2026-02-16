@@ -159,8 +159,8 @@ export default function TempleCreatePoojaPage() {
                             <Input
                                 id="price"
                                 type="number"
-                                value={formData.price}
-                                onChange={(e) => setFormData({ ...formData, price: parseInt(e.target.value) })}
+                                value={formData.price === 0 ? "" : formData.price}
+                                onChange={(e) => setFormData({ ...formData, price: e.target.value === "" ? 0 : parseInt(e.target.value) })}
                                 className="rounded-xl h-11 border-slate-200 focus:border-[#7b4623] focus:ring-[#7b4623]/10"
                                 required
                             />
@@ -281,8 +281,8 @@ export default function TempleCreatePoojaPage() {
                                         <Input
                                             type="number"
                                             placeholder="0"
-                                            value={pkg.price}
-                                            onChange={(e) => updatePackage(index, 'price', parseInt(e.target.value) || 0)}
+                                            value={pkg.price === 0 ? "" : pkg.price}
+                                            onChange={(e) => updatePackage(index, 'price', e.target.value === "" ? 0 : parseInt(e.target.value))}
                                             className="rounded-lg h-10 border-slate-200 focus:border-[#7b4623]"
                                             required
                                         />
@@ -323,7 +323,7 @@ export default function TempleCreatePoojaPage() {
                     </Button>
                     <Button type="submit" disabled={isSubmitting} className="rounded-xl h-11 px-10 bg-[#7b4623] hover:bg-[#5d351a] text-white shadow-lg shadow-orange-900/10">
                         {isSubmitting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
-                        {isSubmitting ? "Creating..." : "Offer Pooja"}
+                        {isSubmitting ? "Creating..." : "Submit"}
                     </Button>
                 </div>
             </form>

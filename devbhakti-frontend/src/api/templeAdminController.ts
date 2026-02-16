@@ -266,3 +266,11 @@ export const deleteMyProduct = async (id: string) => {
     return response.data;
 };
 
+export const fetchMyTempleDevotees = async () => {
+    const token = localStorage.getItem("token");
+    const response = await axios.get(`${API_URL}/temple-admin/devotees`, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+

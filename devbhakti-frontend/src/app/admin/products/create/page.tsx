@@ -17,8 +17,10 @@ import {
   Check,
   ChevronsUpDown,
   Truck,
+  Crop
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { ImageCropper } from "@/components/admin/ImageCropper";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -79,6 +81,8 @@ export default function CreateProductPage() {
   const [isLoadingCategories, setIsLoadingCategories] = useState(true);
   const [productImage, setProductImage] = useState<File | null>(null);
   const [productImagePreview, setProductImagePreview] = useState<string>("");
+  const [showCropper, setShowCropper] = useState(false);
+  const [tempImage, setTempImage] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
 
   const [formData, setFormData] = useState({
@@ -179,33 +183,34 @@ export default function CreateProductPage() {
   const handleProductImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      // Validate file type
       if (!file.type.startsWith('image/')) {
-        toast({
-          title: "Invalid File",
-          description: "Please select an image file",
-          variant: "destructive",
-        });
+        toast({ title: "Invalid File", description: "Please select an image file", variant: "destructive" });
         return;
       }
-
-      // Validate file size (5MB max)
       if (file.size > 5 * 1024 * 1024) {
-        toast({
-          title: "File Too Large",
-          description: "Image size should be less than 5MB",
-          variant: "destructive",
-        });
+        toast({ title: "File Too Large", description: "Image size should be less than 5MB", variant: "destructive" });
         return;
       }
 
-      setProductImage(file);
       const reader = new FileReader();
       reader.onloadend = () => {
-        setProductImagePreview(reader.result as string);
+        setTempImage(reader.result as string);
+        setShowCropper(true);
       };
       reader.readAsDataURL(file);
+      e.target.value = ''; // Reset input
     }
+  };
+
+  const handleCropComplete = (croppedFile: File) => {
+    setProductImage(croppedFile);
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setProductImagePreview(reader.result as string);
+      setShowCropper(false);
+      setTempImage(null);
+    };
+    reader.readAsDataURL(croppedFile);
   };
 
   const removeProductImage = () => {
@@ -388,6 +393,18 @@ export default function CreateProductPage() {
 
   return (
     <div className="space-y-6">
+      {showCropper && tempImage && (
+        <ImageCropper
+          image={tempImage}
+          onCropComplete={handleCropComplete}
+          onCancel={() => {
+            setShowCropper(false);
+            setTempImage(null);
+          }}
+          initialAspect={5 / 4}
+          title="Adjust Product Image"
+        />
+      )}
       <div className="flex items-center gap-4">
         <Button
           variant="ghost"

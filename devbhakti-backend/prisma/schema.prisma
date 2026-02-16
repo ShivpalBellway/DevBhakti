@@ -69,6 +69,7 @@ model Temple {
   reviewsCount          Int                   @default(0)
   category              String
   liveStatus            Boolean               @default(false)
+  isPrimaryLive         Boolean               @default(false)
   openTime              String
   phone                 String?
   website               String?

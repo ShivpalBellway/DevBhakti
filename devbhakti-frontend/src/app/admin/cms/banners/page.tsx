@@ -10,8 +10,10 @@ import {
     Upload,
     X,
     CheckCircle2,
-    AlertCircle
+    AlertCircle,
+    Crop
 } from "lucide-react";
+import { ImageCropper } from "@/components/admin/ImageCropper";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -51,6 +53,8 @@ export default function BannersPage() {
     });
     const [imageFile, setImageFile] = useState<File | null>(null);
     const [imagePreview, setImagePreview] = useState<string>("");
+    const [showCropper, setShowCropper] = useState(false);
+    const [tempImage, setTempImage] = useState<string | null>(null);
 
     useEffect(() => {
         loadBanners();
@@ -99,9 +103,21 @@ export default function BannersPage() {
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files?.[0]) {
             const file = e.target.files[0];
-            setImageFile(file);
-            setImagePreview(URL.createObjectURL(file));
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setTempImage(reader.result as string);
+                setShowCropper(true);
+            };
+            reader.readAsDataURL(file);
+            e.target.value = ''; // Reset input
         }
+    };
+
+    const handleCropComplete = (croppedFile: File) => {
+        setImageFile(croppedFile);
+        setImagePreview(URL.createObjectURL(croppedFile));
+        setShowCropper(false);
+        setTempImage(null);
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -162,6 +178,18 @@ export default function BannersPage() {
 
     return (
         <div className="space-y-6">
+            {showCropper && tempImage && (
+                <ImageCropper
+                    image={tempImage}
+                    onCropComplete={handleCropComplete}
+                    onCancel={() => {
+                        setShowCropper(false);
+                        setTempImage(null);
+                    }}
+                    initialAspect={1920 / 600}
+                    title="Adjust Banner Image"
+                />
+            )}
             {/* Page Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
@@ -230,13 +258,12 @@ export default function BannersPage() {
                             {filteredBanners.map((banner) => (
                                 <TableRow key={banner.id}>
                                     <TableCell>
-                                        <div className="w-24 h-14 rounded overflow-hidden bg-muted">
+                                        <div className="w-24 h-14 rounded overflow-hidden bg-muted border flex items-center justify-center">
                                             <img
                                                 src={banner.image.startsWith('http') ? banner.image : `${BASE_URL}${banner.image}`}
                                                 alt="Banner"
-                                                className="w-full h-full object-cover"
+                                                className="max-w-full max-h-full object-contain"
                                             />
-
                                         </div>
                                     </TableCell>
                                     <TableCell>
@@ -333,8 +360,8 @@ export default function BannersPage() {
                                 />
                             </div>
                             {imagePreview && (
-                                <div className="mt-2 relative w-full h-40 rounded-lg overflow-hidden border">
-                                    <img src={imagePreview} className="w-full h-full object-cover" alt="Preview" />
+                                <div className="mt-2 relative w-full h-48 bg-black/5 rounded-lg overflow-hidden border flex items-center justify-center">
+                                    <img src={imagePreview} className="max-w-full max-h-full object-contain" alt="Preview" />
                                     <button
                                         type="button"
                                         onClick={() => {

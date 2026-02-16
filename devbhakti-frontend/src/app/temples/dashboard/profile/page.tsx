@@ -1,10 +1,12 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
     Camera,
     MapPin,
     Globe,
+    Badge,
     Phone,
     Mail,
     History,
@@ -14,7 +16,16 @@ import {
     Image as ImageIcon,
     X,
     Plus,
-    Truck
+    Truck,
+    User,
+    ShieldCheck,
+    ArrowUpRight,
+    Sparkles,
+    Eye,
+    AlertCircle,
+    CheckCircle2,
+    Settings2,
+    Link2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,6 +33,13 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
 import { fetchMyTempleProfile, updateMyTempleProfile } from "@/api/templeAdminController";
 import { useToast } from "@/hooks/use-toast";
 import { API_URL } from "@/config/apiConfig";
@@ -53,6 +71,14 @@ export default function TempleProfilePage() {
         isLive: false,
         liveUrl: "",
         pickupLocation: "",
+        // Admin Info (from User)
+        adminName: "",
+        adminEmail: "",
+        adminPhone: "",
+        // Technical Info
+        slug: "",
+        subdomain: "",
+        urlType: "slug",
     });
 
     const [mainImagePreview, setMainImagePreview] = useState<string | null>(null);
@@ -88,6 +114,14 @@ export default function TempleProfilePage() {
                     isLive: data.isLive || false,
                     liveUrl: data.liveUrl || "",
                     pickupLocation: data.pickupLocation || "",
+                    // Admin Info
+                    adminName: data.user?.name || "",
+                    adminEmail: data.user?.email || "",
+                    adminPhone: data.user?.phone || "",
+                    // Technical Info
+                    slug: data.slug || "",
+                    subdomain: data.subdomain || "",
+                    urlType: data.urlType || "slug",
                 });
                 if (data.image) setMainImagePreview(getImageUrl(data.image));
                 if (data.heroImages && Array.isArray(data.heroImages)) {
@@ -107,6 +141,20 @@ export default function TempleProfilePage() {
             setIsLoading(false);
         }
     };
+
+    const calculateCompleteness = () => {
+        const fields = [
+            'name', 'category', 'openTime', 'description', 'history',
+            'location', 'fullAddress', 'phone', 'website', 'mapUrl'
+        ];
+        const filled = fields.filter(f => !!formData[f]).length;
+        const mainImg = mainImagePreview ? 1 : 0;
+        const heros = heroPreviews.length > 0 ? 1 : 0;
+        const total = fields.length + 2;
+        return Math.round(((filled + mainImg + heros) / total) * 100);
+    };
+
+    const completeness = useMemo(calculateCompleteness, [formData, mainImagePreview, heroPreviews]);
 
     const getImageUrl = (path: string) => {
         if (!path) return "";
@@ -296,25 +344,89 @@ export default function TempleProfilePage() {
     }
 
     return (
-        <div className="max-w-5xl mx-auto space-y-8 pb-12">
-            {/* Header */}
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-                <div className="space-y-2">
-                    <h1 className="text-3xl font-bold font-serif text-[#7b4623]">Temple Profile</h1>
-                    <p className="text-slate-500">Manage your temple's public information and media assets.</p>
+        <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="max-w-[1440px] mx-auto space-y-6 pb-20 relative px-4"
+        >
+            {/* Background Decorations */}
+            <div className="absolute top-0 right-0 -z-10 opacity-5 pointer-events-none">
+                <Sparkles className="w-96 h-96 text-[#7b4623]" />
+            </div>
+
+            {/* Profile Completeness Indicator */}
+            <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="bg-white/40 backdrop-blur-md border border-white/20 p-5 rounded-3xl shadow-xl flex flex-col md:flex-row items-center justify-between gap-6"
+            >
+                <div className="flex items-center gap-4">
+                    <div className="relative w-14 h-14 flex items-center justify-center">
+                        <svg className="w-full h-full transform -rotate-90">
+                            <circle
+                                cx="28"
+                                cy="28"
+                                r="25"
+                                stroke="currentColor"
+                                strokeWidth="4"
+                                fill="transparent"
+                                className="text-slate-100"
+                            />
+                            <motion.circle
+                                cx="28"
+                                cy="28"
+                                r="25"
+                                stroke="currentColor"
+                                strokeWidth="4"
+                                fill="transparent"
+                                strokeDasharray={157}
+                                initial={{ strokeDashoffset: 157 }}
+                                animate={{ strokeDashoffset: 157 * (1 - completeness / 100) }}
+                                transition={{ duration: 1, ease: "easeOut" }}
+                                className="text-[#7b4623]"
+                            />
+                        </svg>
+                        <span className="absolute text-xs font-bold text-[#7b4623]">{completeness}%</span>
+                    </div>
+                    <div>
+                        <h3 className="text-lg font-bold text-slate-800">Profile Completeness</h3>
+                        <p className="text-xs text-slate-500">Your temple profile is {completeness}% complete.</p>
+                    </div>
                 </div>
-                <div className="flex gap-3">
+                <div className="flex items-center gap-2">
+                    {completeness === 100 ? (
+                        <Badge className="bg-emerald-500 hover:bg-emerald-600">
+                            <CheckCircle2 className="w-3 h-3 mr-1" /> Fully Complete
+                        </Badge>
+                    ) : (
+                        <div className="text-[10px] font-bold text-[#7b4623]/60 uppercase tracking-widest bg-[#7b4623]/5 px-3 py-1 rounded-full">
+                            {100 - completeness}% TO GO
+                        </div>
+                    )}
+                </div>
+            </motion.div>
+
+            {/* Header */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div className="space-y-0.5">
+                    <div className="flex items-center gap-2 text-[#7b4623]">
+                        <ShieldCheck className="w-4 h-4" />
+                        <span className="text-[10px] font-black uppercase tracking-[0.2em]">Verified Profile</span>
+                    </div>
+                    <h1 className="text-3xl font-bold font-serif text-slate-900 tracking-tight">Temple Settings</h1>
+                </div>
+                <div className="flex gap-2 bg-white/50 backdrop-blur-sm p-1.5 rounded-2xl border border-white/40 shadow-sm">
                     <Button
-                        variant="outline"
+                        variant="ghost"
                         onClick={() => loadProfile()}
-                        className="border-[#7b4623] text-[#7b4623] hover:bg-[#7b4623]/5"
+                        className="text-slate-600 hover:bg-slate-100 rounded-xl px-4 h-10 text-sm"
                     >
-                        Reset Changes
+                        Reset
                     </Button>
                     <Button
                         onClick={handleSubmit}
                         disabled={isSaving}
-                        className="bg-[#7b4623] hover:bg-[#5d351a] text-white px-8"
+                        className="bg-[#7b4623] hover:bg-[#5d351a] text-white px-8 h-10 rounded-xl shadow-lg shadow-[#7b4623]/20 active:scale-95 transition-all text-sm font-bold"
                     >
                         {isSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
                         Save Profile
@@ -322,315 +434,353 @@ export default function TempleProfilePage() {
                 </div>
             </div>
 
-            <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {/* Left Column - Media */}
+            <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+                {/* Left Column: Media & Live */}
                 <div className="lg:col-span-1 space-y-8">
                     {/* Main Image */}
-                    <Card className="overflow-hidden border-none shadow-md rounded-2xl">
-                        <CardHeader className="bg-[#7b4623]/5 border-b pb-4">
-                            <CardTitle className="text-lg font-serif text-[#7b4623] flex items-center gap-2">
-                                <ImageIcon className="w-5 h-5" />
-                                Main Image
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="pt-6">
-                            <div className="relative aspect-[4/3] rounded-xl overflow-hidden border-2 border-dashed border-slate-200 bg-slate-50 group">
-                                {mainImagePreview ? (
-                                    <>
-                                        <img src={mainImagePreview} alt="Preview" className="w-full h-full object-cover" />
-                                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                            <Button
-                                                type="button"
-                                                variant="secondary"
-                                                size="sm"
-                                                onClick={() => mainImageRef.current?.click()}
-                                            >
-                                                Change Image
-                                            </Button>
+                    <motion.div
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                    >
+                        <Card className="overflow-hidden border-white/20 bg-white/60 backdrop-blur-sm shadow-xl rounded-[2.5rem] group">
+                            <CardHeader className="bg-gradient-to-br from-[#7b4623]/10 to-transparent border-b border-white/20 p-6">
+                                <CardTitle className="text-lg font-serif text-[#7b4623] flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                        <div className="p-2 bg-white/80 rounded-xl shadow-sm">
+                                            <ImageIcon className="w-5 h-5" />
                                         </div>
-                                    </>
-                                ) : (
-                                    <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-400 gap-2 cursor-pointer" onClick={() => mainImageRef.current?.click()}>
-                                        <span className="text-sm font-medium">Upload Temple Image</span>
-                                        <span className="text-[10px] text-slate-500">Recommended: 1200x900 px (4:3)</span>
+                                        Profile Image
+                                    </div>
+                                    <ArrowUpRight className="w-5 h-5 text-slate-300 opacity-0 group-hover:opacity-100 transition-all" />
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent className="p-6">
+                                <div
+                                    className="relative aspect-square rounded-[2rem] overflow-hidden border-2 border-dashed border-slate-200 bg-slate-50/50 group/img cursor-pointer transition-all hover:border-[#7b4623]/30"
+                                    onClick={() => mainImageRef.current?.click()}
+                                >
+                                    {mainImagePreview ? (
+                                        <>
+                                            <img src={mainImagePreview} alt="Preview" className="w-full h-full object-cover transition-transform duration-700 group-hover/img:scale-110" />
+                                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[2px]">
+                                                <Camera className="w-8 h-8 text-white" />
+                                            </div>
+                                        </>
+                                    ) : (
+                                        <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-400 gap-3">
+                                            <Plus className="w-8 h-8" />
+                                            <span className="text-xs font-bold uppercase tracking-widest">Upload Photo</span>
+                                        </div>
+                                    )}
+                                    <input type="file" ref={mainImageRef} className="hidden" accept="image/*" onChange={handleMainImageChange} />
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </motion.div>
+
+                    {/* Banner Showcase */}
+                    <motion.div
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.1 }}
+                    >
+                        <Card className="border-white/20 bg-white/60 backdrop-blur-sm shadow-xl rounded-[2.5rem] overflow-hidden">
+                            <CardHeader className="bg-gradient-to-br from-[#7b4623]/10 to-transparent border-b border-white/20 p-6">
+                                <CardTitle className="text-lg font-serif text-[#7b4623] flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                        <div className="p-2 bg-white/80 rounded-xl shadow-sm">
+                                            <ImageIcon className="w-5 h-5" />
+                                        </div>
+                                        Banners
+                                    </div>
+                                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">{heroPreviews.length}/5</span>
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent className="p-6">
+                                <div className="grid grid-cols-2 gap-4">
+                                    <AnimatePresence mode="popLayout">
+                                        {heroPreviews.map((preview, idx) => (
+                                            <motion.div
+                                                layout
+                                                initial={{ scale: 0.8, opacity: 0 }}
+                                                animate={{ scale: 1, opacity: 1 }}
+                                                exit={{ scale: 0.8, opacity: 0 }}
+                                                key={preview}
+                                                className="relative aspect-video rounded-xl overflow-hidden shadow-md group/banner"
+                                            >
+                                                <img src={preview} className="w-full h-full object-cover" />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => removeHeroImage(idx)}
+                                                    className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-lg opacity-0 group-hover/banner:opacity-100 transition-all shadow-lg"
+                                                >
+                                                    <X className="w-3 h-3" />
+                                                </button>
+                                            </motion.div>
+                                        ))}
+                                    </AnimatePresence>
+                                    {heroPreviews.length < 5 && (
+                                        <div
+                                            onClick={() => heroImagesRef.current?.click()}
+                                            className="aspect-video rounded-xl border-2 border-dashed border-slate-200 bg-white/40 flex flex-col items-center justify-center text-slate-400 hover:bg-white/80 hover:border-[#7b4623]/30 transition-all cursor-pointer group/add"
+                                        >
+                                            <Plus className="w-6 h-6 group-hover/add:text-[#7b4623]" />
+                                            <span className="text-[8px] font-black uppercase tracking-widest">Add Banner</span>
+                                        </div>
+                                    )}
+                                </div>
+                                <input type="file" ref={heroImagesRef} className="hidden" accept="image/*" multiple onChange={handleHeroImagesChange} />
+                            </CardContent>
+                        </Card>
+                    </motion.div>
+
+                    {/* Live Stream */}
+                    <motion.div
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.2 }}
+                    >
+                        <Card className="border-white/20 bg-white/60 backdrop-blur-sm shadow-xl rounded-[2.5rem] overflow-hidden">
+                            <CardHeader className="bg-gradient-to-br from-red-500/10 to-transparent border-b border-white/20 p-6">
+                                <CardTitle className="text-lg font-serif text-slate-800 flex items-center gap-2">
+                                    <div className={`w-3 h-3 rounded-full ${formData.isLive ? 'bg-red-600 animate-pulse' : 'bg-slate-300'}`} />
+                                    Live Stream
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent className="p-6 space-y-6">
+                                <div className="flex items-center justify-between p-4 bg-white/50 rounded-2xl border border-white/40 shadow-inner">
+                                    <Label className="text-sm font-bold text-slate-700">Go Live Visibility</Label>
+                                    <Switch
+                                        checked={formData.isLive}
+                                        onCheckedChange={(checked) => setFormData({ ...formData, isLive: checked })}
+                                    />
+                                </div>
+                                {formData.isLive && (
+                                    <div className="space-y-2">
+                                        <Label className="text-[10px] uppercase font-black tracking-widest text-slate-400 ml-1">Live URL / Channel ID</Label>
+                                        <Input
+                                            value={formData.liveUrl}
+                                            onChange={e => setFormData({ ...formData, liveUrl: e.target.value })}
+                                            placeholder="Enter Channel ID"
+                                            className="h-12 border-white/40 bg-white/40 focus:bg-white rounded-xl focus:ring-[#7b4623]/10"
+                                        />
                                     </div>
                                 )}
-                                <input
-                                    type="file"
-                                    ref={mainImageRef}
-                                    className="hidden"
-                                    accept="image/*"
-                                    onChange={handleMainImageChange}
-                                />
-                            </div>
-                        </CardContent>
-                    </Card>
+                            </CardContent>
+                        </Card>
+                    </motion.div>
 
-                    {/* Hero Banners */}
-                    <Card className="border-none shadow-md rounded-2xl">
-                        <CardHeader className="bg-[#7b4623]/5 border-b pb-4">
-                            <CardTitle className="text-lg font-serif text-[#7b4623] flex items-center gap-2">
-                                <ImageIcon className="w-5 h-5" />
-                                Hero Banners
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="pt-6">
-                            <div className="grid grid-cols-2 gap-3">
-                                {heroPreviews.map((preview, idx) => (
-                                    <div key={idx} className="relative aspect-video rounded-lg overflow-hidden border bg-slate-50">
-                                        <img src={preview} className="w-full h-full object-cover" />
-                                        <button
-                                            type="button"
-                                            onClick={() => removeHeroImage(idx)}
-                                            className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
-                                        >
-                                            <X className="w-3 h-3" />
-                                        </button>
+                    {/* Logistic Harmony - Moved here */}
+                    <motion.div
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.3 }}
+                    >
+                        <Card className="border-none shadow-xl rounded-[2.5rem] bg-[#0070F3]/5 border-dashed border-[#0070F3]/30 backdrop-blur-sm">
+                            <CardHeader className="border-b border-[#0070F3]/10 p-6">
+                                <CardTitle className="text-lg font-serif text-[#0070F3] flex items-center gap-2">
+                                    <div className="p-2 bg-white rounded-xl shadow-sm">
+                                        <Truck className="w-5 h-5" />
                                     </div>
-                                ))}
-                                <div
-                                    onClick={() => heroImagesRef.current?.click()}
-                                    className="aspect-video rounded-lg border-2 border-dashed border-slate-200 bg-slate-50 flex flex-col items-center justify-center text-slate-400 hover:bg-slate-100 transition-colors cursor-pointer relative"
-                                >
-                                    <Plus className="w-6 h-6" />
-                                    <span className="text-[9px] font-bold text-slate-500 absolute bottom-2">1920x1080 px</span>
-                                </div>
-                            </div>
-                            <input
-                                type="file"
-                                ref={heroImagesRef}
-                                className="hidden"
-                                accept="image/*"
-                                multiple
-                                onChange={handleHeroImagesChange}
-                            />
-                        </CardContent>
-                    </Card>
-
-                    {/* Gallery */}
-                    {/*     <Card className="border-none shadow-md rounded-2xl">
-                        <CardHeader className="bg-[#7b4623]/5 border-b pb-4">
-                            <CardTitle className="text-lg font-serif text-[#7b4623] flex items-center gap-2">
-                                <ImageIcon className="w-5 h-5" />
-                                Temple Gallery
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="pt-6">
-                            <div className="grid grid-cols-2 gap-3">
-                                {galleryPreviews.map((preview, idx) => (
-                                    <div key={idx} className="relative aspect-square rounded-lg overflow-hidden border bg-slate-50">
-                                        <img src={preview} className="w-full h-full object-cover" />
-                                        <button
-                                            type="button"
-                                            onClick={() => removeGalleryImage(idx)}
-                                            className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
-                                        >
-                                            <X className="w-3 h-3" />
-                                        </button>
-                                    </div>
-                                ))}
-                                <div
-                                    onClick={() => galleryRef.current?.click()}
-                                    className="aspect-square rounded-lg border-2 border-dashed border-slate-200 bg-slate-50 flex items-center justify-center text-slate-400 hover:bg-slate-100 transition-colors cursor-pointer"
-                                >
-                                    <Plus className="w-6 h-6" />
-                                </div>
-                            </div>
-                            <input
-                                type="file"
-                                ref={galleryRef}
-                                className="hidden"
-                                accept="image/*"
-                                multiple
-                                onChange={handleGalleryChange}
-                            />
-                        </CardContent>
-                    </Card> */}
-
-                    {/* Live Status */}
-                    <Card className="border-none shadow-md rounded-2xl">
-                        <CardHeader className="bg-[#7b4623]/5 border-b pb-4">
-                            <CardTitle className="text-lg font-serif text-[#7b4623] flex items-center gap-2">
-                                <div className={`w-2 h-2 rounded-full ${formData.isLive ? 'bg-red-600 animate-pulse' : 'bg-slate-400'}`} />
-                                Live Status
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="pt-6 space-y-4">
-                            <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-100">
-                                <div className="space-y-0.5">
-                                    <Label className="text-slate-900 font-medium">Broadcast Live</Label>
-                                    <p className="text-xs text-muted-foreground">Toggle to show live darshan to devotees</p>
-                                </div>
-                                <Switch
-                                    checked={formData.isLive}
-                                    onCheckedChange={(checked) => setFormData({ ...formData, isLive: checked })}
-                                />
-                            </div>
-
-                            {formData.isLive && (
+                                    Logistic Harmony
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent className="p-6 space-y-4">
                                 <div className="space-y-2">
-                                    <Label className="text-slate-600">Live Stream URL or Channel ID</Label>
-                                    {/* Example Channel ID: UCfm7YHik2xfIAbvwBKWoVNw (Permanent Live Link) */}
+                                    <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-[#0070F3] ml-1">Pickup Nickname</Label>
                                     <Input
-                                        value={formData.liveUrl}
-                                        onChange={e => setFormData({ ...formData, liveUrl: e.target.value })}
-                                        placeholder="e.g. UCfm7YHik2xfIAbvwBKWoVNw (Channel ID) or YouTube Link"
-                                        className="h-11 border-slate-200 focus:border-[#7b4623] focus:ring-[#7b4623]/10"
+                                        value={formData.pickupLocation}
+                                        onChange={e => setFormData({ ...formData, pickupLocation: e.target.value })}
+                                        className="h-12 border-[#0070F3]/20 bg-white border-2 focus:border-[#0070F3] rounded-xl font-bold px-4 text-sm"
+                                        placeholder="e.g. TEMPLE_MAIN_PICKUP"
                                     />
-                                    <p className="text-[10px] text-slate-500">
-                                        Paste your <strong>Channel ID</strong> (starts with 'UC') for a permanent link, or a direct video URL.
-                                    </p>
                                 </div>
-                            )}
-                        </CardContent>
-                    </Card>
+                                <div className="p-3 bg-white/40 rounded-xl border border-[#0070F3]/10 text-[9px] text-[#0070F3]/70 font-bold leading-relaxed">
+                                    Must match Shiprocket Dashboard setting exactly for automated fulfillment.
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </motion.div>
                 </div>
 
-                {/* Right Column - Details */}
+                {/* Right Column: Information Details */}
                 <div className="lg:col-span-2 space-y-8">
-                    <Card className="border-none shadow-md rounded-2xl">
-                        <CardHeader className="bg-[#7b4623]/5 border-b pb-4">
-                            <CardTitle className="text-xl font-serif text-[#7b4623] flex items-center gap-2">
-                                <FileText className="w-5 h-5" />
-                                Basic Information
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="pt-6 space-y-6">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div className="space-y-2">
-                                    <Label className="text-slate-600">Temple Name</Label>
-                                    <Input
-                                        value={formData.name}
-                                        onChange={e => setFormData({ ...formData, name: e.target.value })}
-                                        className="h-11 border-slate-200 focus:border-[#7b4623] focus:ring-[#7b4623]/10 text-slate-900"
-                                    />
+                    {/* Trustee Identity */}
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                    >
+                        <Card className="border-white/20 bg-white/60 backdrop-blur-sm shadow-xl rounded-[2.5rem] overflow-hidden">
+                            <CardHeader className="bg-gradient-to-r from-[#7b4623]/10 to-transparent border-b border-white/20 p-8">
+                                <CardTitle className="text-2xl font-serif text-[#7b4623] flex items-center gap-3">
+                                    <div className="p-2.5 bg-white rounded-2xl shadow-sm">
+                                        <User className="w-6 h-6" />
+                                    </div>
+                                    Trustee Identity
+                                </CardTitle>
+                                <CardDescription className="ml-14 font-medium text-slate-500 italic">Verified administrator details from registration</CardDescription>
+                            </CardHeader>
+                            <CardContent className="p-8">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                    <div className="space-y-2">
+                                        <Label className="text-xs uppercase font-bold tracking-widest text-slate-400 ml-1">Authorized Name</Label>
+                                        <div className="h-14 px-5 bg-slate-50/50 border border-slate-100 rounded-2xl flex items-center gap-3 text-slate-600 font-bold">
+                                            <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+                                            {formData.adminName}
+                                        </div>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label className="text-xs uppercase font-bold tracking-widest text-slate-400 ml-1">Contact Phone</Label>
+                                        <div className="h-14 px-5 bg-slate-50/50 border border-slate-100 rounded-2xl flex items-center gap-3 text-slate-600 font-bold">
+                                            <Phone className="w-5 h-5 text-[#7b4623]/30" />
+                                            {formData.adminPhone}
+                                        </div>
+                                    </div>
+                                    <div className="md:col-span-2 space-y-2">
+                                        <Label className="text-xs uppercase font-bold tracking-widest text-slate-400 ml-1">Official Email</Label>
+                                        <div className="h-14 px-5 bg-slate-50/50 border border-slate-100 rounded-2xl flex items-center gap-3 text-slate-600 font-bold">
+                                            <Mail className="w-5 h-5 text-[#7b4623]/30" />
+                                            {formData.adminEmail}
+                                        </div>
+                                    </div>
                                 </div>
-                                <div className="space-y-2">
-                                    <Label className="text-slate-600">Category</Label>
-                                    <Input
-                                        value={formData.category}
-                                        onChange={e => setFormData({ ...formData, category: e.target.value })}
-                                        className="h-11 border-slate-200 focus:border-[#7b4623] focus:ring-[#7b4623]/10 text-slate-900"
-                                    />
+                                <div className="mt-6 p-4 bg-emerald-50/50 border border-emerald-100 rounded-2xl flex gap-3 items-center">
+                                    <ShieldCheck className="w-5 h-5 text-emerald-600 shrink-0" />
+                                    <p className="text-xs text-emerald-800 font-medium italic">Identity credentials are locked for verification. Contact support for updates.</p>
                                 </div>
-                                <div className="space-y-2">
-                                    <Label className="text-slate-600">Opening Hours</Label>
-                                    <Input
-                                        value={formData.openTime}
-                                        onChange={e => setFormData({ ...formData, openTime: e.target.value })}
-                                        placeholder="e.g. 6:00 AM - 9:00 PM"
-                                        className="h-11 border-slate-200 focus:border-[#7b4623] focus:ring-[#7b4623]/10 text-slate-900"
-                                    />
-                                </div>
-                                {/*  <div className="space-y-2">
-                                    <Label className="text-slate-600">Phone Number</Label>
-                                    <Input
-                                        value={formData.phone}
-                                        onChange={e => setFormData({ ...formData, phone: e.target.value })}
-                                        className="h-11 border-slate-200 focus:border-[#7b4623] focus:ring-[#7b4623]/10 text-slate-900"
-                                    />
-                                </div> */}
-                                <div className="space-y-2">
-                                    <Label className="text-slate-600">Virtual Viewers</Label>
-                                    <Input
-                                        value={formData.viewers}
-                                        onChange={e => setFormData({ ...formData, viewers: e.target.value })}
-                                        placeholder="e.g. 1.2k+"
-                                        className="h-11 border-slate-200 focus:border-[#7b4623] focus:ring-[#7b4623]/10 text-slate-900"
-                                    />
-                                </div>
-                            </div>
+                            </CardContent>
+                        </Card>
+                    </motion.div>
 
-                            <div className="space-y-2">
-                                <Label className="text-slate-600">Temple Description</Label>
-                                <Textarea
-                                    value={formData.description}
-                                    onChange={e => setFormData({ ...formData, description: e.target.value })}
-                                    className="min-h-[120px] border-slate-200 focus:border-[#7b4623] focus:ring-[#7b4623]/10"
-                                />
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label className="text-slate-600 flex items-center gap-2">
-                                    <History className="w-4 h-4" />
-                                    Temple History
-                                </Label>
-                                <Textarea
-                                    value={formData.history}
-                                    onChange={e => setFormData({ ...formData, history: e.target.value })}
-                                    className="min-h-[120px] border-slate-200 focus:border-[#7b4623] focus:ring-[#7b4623]/10"
-                                />
-                            </div>
-                        </CardContent>
-                    </Card>
-
-                    <Card className="border-none shadow-md rounded-2xl">
-                        <CardHeader className="bg-[#7b4623]/5 border-b pb-4">
-                            <CardTitle className="text-xl font-serif text-[#7b4623] flex items-center gap-2">
-                                <MapPin className="w-5 h-5" />
-                                Location & Presence
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="pt-6 space-y-6">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div className="space-y-2">
-                                    <Label className="text-slate-600">City / Location</Label>
-                                    <Input
-                                        value={formData.location}
-                                        onChange={e => setFormData({ ...formData, location: e.target.value })}
-                                        className="h-11 border-slate-200 focus:border-[#7b4623] focus:ring-[#7b4623]/10"
-                                    />
+                    {/* Sacred Knowledge */}
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.1 }}
+                    >
+                        <Card className="border-white/20 bg-white/60 backdrop-blur-sm shadow-xl rounded-[2.5rem] overflow-hidden">
+                            <CardHeader className="bg-gradient-to-r from-[#7b4623]/10 to-transparent border-b border-white/20 p-8">
+                                <CardTitle className="text-2xl font-serif text-[#7b4623] flex items-center gap-3">
+                                    <div className="p-2.5 bg-white rounded-2xl shadow-sm">
+                                        <FileText className="w-6 h-6" />
+                                    </div>
+                                    Sacred Knowledge
+                                </CardTitle>
+                                <CardDescription className="ml-14 font-medium text-slate-500 italic">Descriptive details about the temple's history and purpose</CardDescription>
+                            </CardHeader>
+                            <CardContent className="p-8 space-y-8">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                    <div className="space-y-2">
+                                        <Label className="text-xs uppercase font-bold tracking-widest text-[#7b4623]/60 ml-1">Temple Name</Label>
+                                        <Input
+                                            value={formData.name}
+                                            onChange={e => setFormData({ ...formData, name: e.target.value })}
+                                            className="h-14 px-5 border-white/40 bg-white/40 focus:bg-white rounded-2xl focus:ring-[#7b4623]/10 text-lg font-bold text-slate-800"
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label className="text-xs uppercase font-bold tracking-widest text-[#7b4623]/60 ml-1">Category</Label>
+                                        <Input
+                                            value={formData.category}
+                                            onChange={e => setFormData({ ...formData, category: e.target.value })}
+                                            className="h-14 px-5 border-white/40 bg-white/40 focus:bg-white rounded-2xl focus:ring-[#7b4623]/10 text-lg font-bold text-slate-800"
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label className="text-xs uppercase font-bold tracking-widest text-[#7b4623]/60 ml-1">Darshan Hours</Label>
+                                        <Input
+                                            value={formData.openTime}
+                                            onChange={e => setFormData({ ...formData, openTime: e.target.value })}
+                                            className="h-14 px-5 border-white/40 bg-white/40 focus:bg-white rounded-2xl"
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label className="text-xs uppercase font-bold tracking-widest text-[#7b4623]/60 ml-1">Official Phone</Label>
+                                        <Input
+                                            value={formData.phone}
+                                            onChange={e => setFormData({ ...formData, phone: e.target.value })}
+                                            className="h-14 px-5 border-white/40 bg-white/40 focus:bg-white rounded-2xl font-bold"
+                                        />
+                                    </div>
                                 </div>
-                                <div className="space-y-2">
-                                    <Label className="text-slate-600">Website</Label>
-                                    <Input
-                                        value={formData.website}
-                                        onChange={e => setFormData({ ...formData, website: e.target.value })}
-                                        className="h-11 border-slate-200 focus:border-[#7b4623] focus:ring-[#7b4623]/10"
-                                    />
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4">
+                                    <div className="space-y-2">
+                                        <Label className="text-xs uppercase font-bold tracking-widest text-[#7b4623]/60 ml-1">Divine Description</Label>
+                                        <Textarea
+                                            value={formData.description}
+                                            onChange={e => setFormData({ ...formData, description: e.target.value })}
+                                            className="min-h-[140px] p-5 border-white/40 bg-white/40 focus:bg-white rounded-2xl leading-relaxed"
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label className="text-xs uppercase font-bold tracking-widest text-[#7b4623]/60 ml-1">Historical Narrative</Label>
+                                        <Textarea
+                                            value={formData.history}
+                                            onChange={e => setFormData({ ...formData, history: e.target.value })}
+                                            className="min-h-[140px] p-5 border-white/40 bg-white/40 focus:bg-white rounded-2xl leading-relaxed"
+                                        />
+                                    </div>
                                 </div>
-                            </div>
-                            <div className="space-y-2">
-                                <Label className="text-slate-600">Full Address</Label>
-                                <Input
-                                    value={formData.fullAddress}
-                                    onChange={e => setFormData({ ...formData, fullAddress: e.target.value })}
-                                    className="h-11 border-slate-200 focus:border-[#7b4623] focus:ring-[#7b4623]/10"
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <Label className="text-slate-600">Google Maps URL</Label>
-                                <Input
-                                    value={formData.mapUrl}
-                                    onChange={e => setFormData({ ...formData, mapUrl: e.target.value })}
-                                    className="h-11 border-slate-200 focus:border-[#7b4623] focus:ring-[#7b4623]/10"
-                                />
-                            </div>
-                        </CardContent>
-                    </Card>
+                            </CardContent>
+                        </Card>
+                    </motion.div>
 
-                    <Card className="border-none shadow-md rounded-2xl bg-[#0070F3]/5 border-dashed border-[#0070F3]/20">
-                        <CardHeader className="border-b pb-4">
-                            <CardTitle className="text-xl font-serif text-[#0070F3] flex items-center gap-2">
-                                <Truck className="w-5 h-5" />
-                                Shiprocket Fulfillment
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="pt-6 space-y-4">
-                            <div className="space-y-2">
-                                <Label className="text-[#0070F3] font-bold uppercase text-[10px] tracking-widest">Pickup Location Nickname *</Label>
-                                <Input
-                                    value={formData.pickupLocation}
-                                    onChange={e => setFormData({ ...formData, pickupLocation: e.target.value })}
-                                    className="h-11 border-[#0070F3]/20 focus:border-[#0070F3] focus:ring-[#0070F3]/10 bg-white"
-                                    placeholder="e.g. TEMPLE_MAIN_GATE"
-                                />
-                                <p className="text-[10px] text-slate-500 italic">Enter the nickname exactly as it appears in your Shiprocket Dashboard.</p>
-                            </div>
-                        </CardContent>
-                    </Card>
+                    {/* Divine Presence */}
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.2 }}
+                    >
+                        <Card className="border-white/20 bg-white/60 backdrop-blur-sm shadow-xl rounded-[2.5rem] overflow-hidden">
+                            <CardHeader className="bg-gradient-to-r from-[#7b4623]/10 to-transparent border-b border-white/20 p-8">
+                                <CardTitle className="text-2xl font-serif text-[#7b4623] flex items-center gap-3">
+                                    <div className="p-2.5 bg-white rounded-2xl shadow-sm">
+                                        <MapPin className="w-6 h-6" />
+                                    </div>
+                                    Divine Presence
+                                </CardTitle>
+                                <CardDescription className="ml-14 font-medium text-slate-500 italic">Geographical location and digital navigation</CardDescription>
+                            </CardHeader>
+                            <CardContent className="p-8">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                    <div className="space-y-2">
+                                        <Label className="text-xs uppercase font-bold tracking-widest text-slate-400 ml-1">City / Region</Label>
+                                        <Input
+                                            value={formData.location}
+                                            onChange={e => setFormData({ ...formData, location: e.target.value })}
+                                            className="h-14 px-5 border-white/40 bg-white/40 focus:bg-white rounded-2xl font-bold"
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label className="text-xs uppercase font-bold tracking-widest text-slate-400 ml-1">Website</Label>
+                                        <Input
+                                            value={formData.website}
+                                            onChange={e => setFormData({ ...formData, website: e.target.value })}
+                                            className="h-14 px-5 border-white/40 bg-white/40 focus:bg-white rounded-2xl"
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label className="text-xs uppercase font-bold tracking-widest text-slate-400 ml-1">Full Address</Label>
+                                        <Input
+                                            value={formData.fullAddress}
+                                            onChange={e => setFormData({ ...formData, fullAddress: e.target.value })}
+                                            className="h-14 px-5 border-white/40 bg-white/40 focus:bg-white rounded-2xl"
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label className="text-xs uppercase font-bold tracking-widest text-slate-400 ml-1">Maps Navigation</Label>
+                                        <Input
+                                            value={formData.mapUrl}
+                                            onChange={e => setFormData({ ...formData, mapUrl: e.target.value })}
+                                            className="h-14 px-5 border-white/40 bg-white/40 focus:bg-white rounded-2xl text-blue-600 font-medium"
+                                        />
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </motion.div>
                 </div>
             </form>
-        </div>
+        </motion.div>
     );
 }

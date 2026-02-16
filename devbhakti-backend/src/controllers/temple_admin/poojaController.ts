@@ -44,7 +44,7 @@ export const createMyPooja = async (req: Request, res: Response) => {
                 name: data.name,
                 category: data.category,
                 price: parseFloat(data.price),
-                duration: data.duration,
+                duration: data.duration || "N/A",
                 description: data.description ? JSON.parse(data.description) : [],
                 time: data.time || '',
                 about: data.about,

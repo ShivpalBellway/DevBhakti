@@ -40,6 +40,16 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
+    Pagination,
+    PaginationContent,
+    PaginationEllipsis,
+    PaginationItem,
+    PaginationLink,
+    PaginationNext,
+    PaginationPrevious,
+} from "@/components/ui/pagination";
+import { useDebounce } from "@/hooks/use-debounce";
+import {
     Dialog,
     DialogContent,
     DialogHeader,
@@ -85,6 +95,15 @@ export default function TemplesManagementPage() {
     const [updateRequestsCount, setUpdateRequestsCount] = useState(0);
     const { toast } = useToast();
 
+    // Pagination state
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+    const [totalItems, setTotalItems] = useState(0);
+    const [itemsPerPage] = useState(10);
+    const [activeTab, setActiveTab] = useState("verified");
+    const [allTemplesForFilter, setAllTemplesForFilter] = useState<any[]>([]);
+    const debouncedSearch = useDebounce(searchTerm, 500);
+
     // Slabs State
     const [approvalModalOpen, setApprovalModalOpen] = useState(false);
     const [globalSlabs, setGlobalSlabs] = useState<any[]>([]);
@@ -99,9 +118,37 @@ export default function TemplesManagementPage() {
     });
 
     useEffect(() => {
-        loadTemples();
-        loadUpdateRequestsCount();
+        fetchAllTemplesAdmin().then(data => {
+            if (Array.isArray(data)) {
+                setAllTemplesForFilter(data.filter((u: any) => u.temple).map((u: any) => ({
+                    userId: u.id,
+                    templeId: u.temple.id,
+                    templeName: u.temple.name
+                })));
+            } else if (data.data) {
+                setAllTemplesForFilter(data.data.filter((u: any) => u.temple).map((u: any) => ({
+                    userId: u.id,
+                    templeId: u.temple.id,
+                    templeName: u.temple.name
+                })));
+            }
+        });
     }, []);
+
+    useEffect(() => {
+        if (currentPage === 1) {
+            loadTemples(1);
+        } else {
+            setCurrentPage(1);
+        }
+        loadUpdateRequestsCount();
+    }, [debouncedSearch, activeTab, selectedTempleFilter, date]);
+
+    useEffect(() => {
+        if (currentPage !== 1) {
+            loadTemples(currentPage);
+        }
+    }, [currentPage]);
 
     const loadUpdateRequestsCount = async () => {
         try {
@@ -112,10 +159,19 @@ export default function TemplesManagementPage() {
         }
     };
 
-    const loadTemples = async () => {
+    const loadTemples = async (page: number) => {
         setIsLoading(true);
         try {
-            const data = await fetchAllTemplesAdmin();
+            const res = await fetchAllTemplesAdmin({
+                page,
+                limit: itemsPerPage,
+                search: debouncedSearch,
+                isVerified: activeTab === "verified",
+                templeId: selectedTempleFilter,
+                date: date ? date.toISOString() : undefined
+            });
+
+            const data = Array.isArray(res) ? res : res.data;
 
             // Extract temple objects but keep the user data properly
             const actualTemples = data
@@ -136,6 +192,15 @@ export default function TemplesManagementPage() {
                 }));
 
             setTemples(actualTemples);
+
+            if (res.pagination) {
+                setTotalPages(res.pagination.totalPages);
+                setTotalItems(res.pagination.total);
+                setCurrentPage(res.pagination.page);
+            } else {
+                setTotalPages(1);
+                setTotalItems(actualTemples.length);
+            }
         } catch (error) {
             toast({
                 title: "Error",
@@ -155,7 +220,7 @@ export default function TemplesManagementPage() {
                     title: "Success",
                     description: "Temple account deleted successfully"
                 });
-                loadTemples();
+                loadTemples(currentPage);
             } catch (error: any) {
                 console.error('Delete error:', error);
 
@@ -261,7 +326,7 @@ export default function TemplesManagementPage() {
                 try {
                     await toggleTempleStatusAdmin(id, false, currentActive);
                     toast({ title: "Success", description: "Temple verification revoked" });
-                    await loadTemples();
+                    await loadTemples(currentPage);
                 } catch (error) {
                     toast({ title: "Error", description: "Failed to update status", variant: "destructive" });
                 }
@@ -299,7 +364,7 @@ export default function TemplesManagementPage() {
             );
             toast({ title: "Success", description: "Temple Approved Successfully" });
             setApprovalModalOpen(false);
-            loadTemples();
+            loadTemples(currentPage);
         } catch (error: any) {
             toast({
                 title: "Error",
@@ -320,7 +385,7 @@ export default function TemplesManagementPage() {
                 title: "Success",
                 description: `Temple ${!currentActive ? 'activated' : 'deactivated'} successfully`
             });
-            await loadTemples();
+            await loadTemples(currentPage);
         } catch (error: any) {
             console.error('Toggle Active Error:', error);
             toast({
@@ -340,7 +405,7 @@ export default function TemplesManagementPage() {
                 title: "Success",
                 description: `Temple live status ${!currentLiveStatus ? 'enabled' : 'disabled'} successfully`
             });
-            await loadTemples();
+            await loadTemples(currentPage);
         } catch (error: any) {
             console.error('Toggle Live Status Error:', error);
             toast({
@@ -351,24 +416,11 @@ export default function TemplesManagementPage() {
         }
     };
 
-    const filteredTemples = temples.filter((inst) => {
-        const matchesSearch =
-            inst.userName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            inst.userEmail?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            inst.templeName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            inst.templeLocation?.toLowerCase().includes(searchTerm.toLowerCase());
-
-        const matchesTemple =
-            selectedTempleFilter === "all"
-                ? true
-                : inst.templeId === selectedTempleFilter;
-
-        const matchesDate = date
-            ? new Date(inst.temple?.createdAt || inst.createdAt).toDateString() === date.toDateString()
-            : true;
-
-        return matchesSearch && matchesTemple && matchesDate;
-    });
+    const handlePageChange = (page: number) => {
+        if (page >= 1 && page <= totalPages) {
+            setCurrentPage(page);
+        }
+    };
 
     return (
         <div className="space-y-6">
@@ -413,7 +465,7 @@ export default function TemplesManagementPage() {
                             </SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="all">All Temples</SelectItem>
-                                {temples.map((inst) => (
+                                {allTemplesForFilter.map((inst) => (
                                     <SelectItem key={inst.userId} value={inst.templeId || inst.userId}>
                                         {inst.templeName}
                                     </SelectItem>
@@ -465,7 +517,7 @@ export default function TemplesManagementPage() {
             </div>
 
             {/* Tabs for Verified vs Pending */}
-            <Tabs defaultValue="verified" className="w-full">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                 <div className="flex items-center justify-between mb-4">
                     <TabsList>
                         <TabsTrigger value="verified" className="flex items-center gap-2">
@@ -487,7 +539,7 @@ export default function TemplesManagementPage() {
                                     <TableHead>Temple Owner</TableHead>
                                     <TableHead>Temple ID</TableHead>
                                     <TableHead>Temple Profile</TableHead>
-                                    <TableHead>Statistics</TableHead>
+                                    {/* <TableHead>Statistics</TableHead> */}
                                     <TableHead>Status</TableHead>
                                     <TableHead>Live</TableHead>
                                     <TableHead className="text-right">Actions</TableHead>
@@ -503,14 +555,14 @@ export default function TemplesManagementPage() {
                                             </div>
                                         </TableCell>
                                     </TableRow>
-                                ) : filteredTemples.filter(t => t.isVerified).length === 0 ? (
+                                ) : temples.length === 0 ? (
                                     <TableRow>
                                         <TableCell colSpan={7} className="text-center py-12 text-muted-foreground">
-                                            No   temples found.
+                                            No temples found.
                                         </TableCell>
                                     </TableRow>
                                 ) : (
-                                    filteredTemples.filter(t => t.isVerified).map((inst) => (
+                                    temples.map((inst) => (
                                         <TableRow key={inst.userId} className="hover:bg-slate-50/50 transition-colors">
                                             <TableCell>
                                                 <div className="flex flex-col">
@@ -536,7 +588,7 @@ export default function TemplesManagementPage() {
                                                     </div>
                                                 </div>
                                             </TableCell>
-                                            <TableCell>
+                                            {/* <TableCell>
                                                 <div className="flex items-center gap-2">
                                                     <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium ${inst.temple?.liveStatus
                                                         ? 'bg-red-50 text-red-700 border border-red-200'
@@ -559,7 +611,7 @@ export default function TemplesManagementPage() {
                                                         disabled={!inst.isVerified}
                                                     />
                                                 </div>
-                                            </TableCell>
+                                            </TableCell> */}
                                             <TableCell>
                                                 <div className="flex flex-col gap-1 text-[14px]">
                                                     <span className="text-slate-800">Poojas: {inst._count?.poojas || 0}</span>
@@ -689,7 +741,7 @@ export default function TemplesManagementPage() {
                             </TableBody>
                         </Table>
                     </div>
-                </TabsContent>
+                </TabsContent >
 
                 <TabsContent value="unverified">
                     <div className="border rounded-xl bg-card overflow-hidden shadow-sm">
@@ -699,7 +751,7 @@ export default function TemplesManagementPage() {
                                     <TableHead>Temple Owner</TableHead>
                                     <TableHead>Temple ID</TableHead>
                                     <TableHead>Temple Profile</TableHead>
-                                    <TableHead>Statistics</TableHead>
+                                    {/* <TableHead>Statistics</TableHead> */}
                                     <TableHead>Status</TableHead>
                                     <TableHead>Live</TableHead>
                                     <TableHead className="text-right">Actions</TableHead>
@@ -715,14 +767,14 @@ export default function TemplesManagementPage() {
                                             </div>
                                         </TableCell>
                                     </TableRow>
-                                ) : filteredTemples.filter(t => !t.isVerified).length === 0 ? (
+                                ) : temples.length === 0 ? (
                                     <TableRow>
                                         <TableCell colSpan={7} className="text-center py-12 text-muted-foreground">
                                             No pending verification temples found.
                                         </TableCell>
                                     </TableRow>
                                 ) : (
-                                    filteredTemples.filter(t => !t.isVerified).map((inst) => (
+                                    temples.map((inst) => (
                                         <TableRow key={inst.userId} className="hover:bg-slate-50/50 transition-colors">
                                             <TableCell>
                                                 <div className="flex flex-col">
@@ -748,7 +800,7 @@ export default function TemplesManagementPage() {
                                                     </div>
                                                 </div>
                                             </TableCell>
-                                            <TableCell>
+                                            {/* <TableCell>
                                                 <div className="flex items-center gap-2">
                                                     <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium ${inst.temple?.liveStatus
                                                         ? 'bg-red-50 text-red-700 border border-red-200'
@@ -771,7 +823,7 @@ export default function TemplesManagementPage() {
                                                         disabled={!inst.isVerified}
                                                     />
                                                 </div>
-                                            </TableCell>
+                                            </TableCell> */}
                                             <TableCell>
                                                 <div className="flex flex-col gap-1 text-[14px]">
                                                     <span className="text-slate-800">Poojas: {inst._count?.poojas || 0}</span>
@@ -902,6 +954,69 @@ export default function TemplesManagementPage() {
                         </Table>
                     </div>
                 </TabsContent>
+
+                {/* Pagination UI */}
+                {totalPages > 1 && (
+                    <div className="flex items-center justify-between px-2 py-4">
+                        <p className="text-sm text-muted-foreground font-medium">
+                            Showing <span className="text-foreground">{(currentPage - 1) * itemsPerPage + 1}</span> to{" "}
+                            <span className="text-foreground">
+                                {Math.min(currentPage * itemsPerPage, totalItems)}
+                            </span>{" "}
+                            of <span className="text-foreground">{totalItems}</span> results
+                        </p>
+                        <Pagination className="justify-end w-auto mx-0">
+                            <PaginationContent>
+                                <PaginationItem>
+                                    <PaginationPrevious
+                                        href="#"
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            handlePageChange(currentPage - 1);
+                                        }}
+                                        className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                                    />
+                                </PaginationItem>
+
+                                {Array.from({ length: totalPages }, (_, i) => i + 1)
+                                    .filter(p => p === 1 || p === totalPages || Math.abs(p - currentPage) <= 1)
+                                    .map((page, idx, array) => (
+                                        <React.Fragment key={page}>
+                                            {idx > 0 && array[idx - 1] !== page - 1 && (
+                                                <PaginationItem>
+                                                    <PaginationEllipsis />
+                                                </PaginationItem>
+                                            )}
+                                            <PaginationItem>
+                                                <PaginationLink
+                                                    href="#"
+                                                    onClick={(e) => {
+                                                        e.preventDefault();
+                                                        handlePageChange(page);
+                                                    }}
+                                                    isActive={currentPage === page}
+                                                    className="cursor-pointer"
+                                                >
+                                                    {page}
+                                                </PaginationLink>
+                                            </PaginationItem>
+                                        </React.Fragment>
+                                    ))}
+
+                                <PaginationItem>
+                                    <PaginationNext
+                                        href="#"
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            handlePageChange(currentPage + 1);
+                                        }}
+                                        className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                                    />
+                                </PaginationItem>
+                            </PaginationContent>
+                        </Pagination>
+                    </div>
+                )}
             </Tabs>
 
             {/* Approval Modal */}

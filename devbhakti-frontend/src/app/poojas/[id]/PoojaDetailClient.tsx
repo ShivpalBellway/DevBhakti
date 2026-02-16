@@ -220,7 +220,9 @@ const PoojaDetailClient = ({ id }: PoojaDetailClientProps) => {
                                         { id: "process", label: "Process", icon: PlayCircle },
                                         { id: "temple", label: "Temple", icon: MapPin },
                                         { id: "reviews", label: "Reviews", icon: Star },
-                                        { id: "faqs", label: "FAQs", icon: HelpCircle },
+                                        ...(pooja.faqs && Array.isArray(pooja.faqs) && pooja.faqs.length > 0
+                                            ? [{ id: "faqs", label: "FAQs", icon: HelpCircle }]
+                                            : []),
                                     ].map((tab) => (
                                         <TabsTrigger
                                             key={tab.id}
@@ -458,27 +460,26 @@ const PoojaDetailClient = ({ id }: PoojaDetailClientProps) => {
                                     </TabsContent>
 
                                     {/* FAQs tab */}
-                                    <TabsContent value="faqs" className="mt-0 outline-none">
-                                        <div className="max-w-6xl mx-auto">
-                                            <h2 className="text-4xl font-serif font-bold mb-12 text-center text-primary text-gradient-sacred">Questions? We have answers.</h2>
-                                            <div className="space-y-6">
-                                                {(pooja.faqs || [
-                                                    { q: "What is the significance of this ritual?", a: "This ritual is performed to invoke divine blessings, seek protection, and ensure the overall well-being of the devotee and their family." },
-                                                    { q: "How long does the ritual take?", a: "The duration varies by ritual, typically ranging from 45 minutes to 3 hours depending on the complexity and package chosen." }
-                                                ]).map((faq: any, idx: number) => (
-                                                    <div key={idx} className="p-8 rounded-[2rem] border border-primary/5 bg-[#FFF8F0]/30 hover:bg-white transition-all duration-500 hover:shadow-lg">
-                                                        <h4 className="text-xl font-serif font-bold text-[#1a1a1a] mb-4 flex items-start gap-4">
-                                                            <HelpCircle className="w-6 h-6 text-primary mt-0.5 shrink-0 opacity-50" />
-                                                            {faq.q}
-                                                        </h4>
-                                                        <p className="text-[#666] leading-relaxed pl-10 italic">
-                                                            {faq.a}
-                                                        </p>
-                                                    </div>
-                                                ))}
+                                    {pooja.faqs && Array.isArray(pooja.faqs) && pooja.faqs.length > 0 && (
+                                        <TabsContent value="faqs" className="mt-0 outline-none">
+                                            <div className="max-w-6xl mx-auto">
+                                                <h2 className="text-4xl font-serif font-bold mb-12 text-center text-primary text-gradient-sacred">Questions? We have answers.</h2>
+                                                <div className="space-y-6">
+                                                    {pooja.faqs.map((faq: any, idx: number) => (
+                                                        <div key={idx} className="p-8 rounded-[2rem] border border-primary/5 bg-[#FFF8F0]/30 hover:bg-white transition-all duration-500 hover:shadow-lg">
+                                                            <h4 className="text-xl font-serif font-bold text-[#1a1a1a] mb-4 flex items-start gap-4">
+                                                                <HelpCircle className="w-6 h-6 text-primary mt-0.5 shrink-0 opacity-50" />
+                                                                {faq.q}
+                                                            </h4>
+                                                            <p className="text-[#666] leading-relaxed pl-10 italic">
+                                                                {faq.a}
+                                                            </p>
+                                                        </div>
+                                                    ))}
+                                                </div>
                                             </div>
-                                        </div>
-                                    </TabsContent>
+                                        </TabsContent>
+                                    )}
                                 </motion.div>
                             </AnimatePresence>
                         </Tabs>

@@ -25,7 +25,7 @@ export const getAdminDashboardStats = async (req: Request, res: Response) => {
         const totalRevenue = (platformSummary._sum.packagePrice || 0) + (orderRevenue._sum.totalAmount || 0);
 
         // 2. Pending Approvals
-        const [pendingTemples, pendingProducts, pendingWithdrawals] = await Promise.all([
+        const [pendingTemples, pendingProducts, pendingWithdrawals, pendingPoojas] = await Promise.all([
             prisma.user.count({
                 where: {
                     role: 'INSTITUTION',
@@ -33,7 +33,8 @@ export const getAdminDashboardStats = async (req: Request, res: Response) => {
                 }
             }),
             prisma.product.count({ where: { status: 'pending' } }),
-            prisma.withdrawalRequest.count({ where: { status: 'PENDING' } })
+            prisma.withdrawalRequest.count({ where: { status: 'PENDING' } }),
+            prisma.pooja.count({ where: { status: false } })
         ]);
 
         // 3. Recent Activity (Combined)
@@ -79,13 +80,62 @@ export const getAdminDashboardStats = async (req: Request, res: Response) => {
             }))
         ].sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime()).slice(0, 8);
 
-        // 4. Pending Items List for UI
-        const pendingItems = await prisma.temple.findMany({
-            where: { user: { role: 'INSTITUTION', isVerified: false } },
-            take: 5,
-            include: { user: true },
-            orderBy: { createdAt: 'desc' }
-        });
+        // 4. Pending Items List for UI - Mixed types
+        const [pTemples, pProducts, pWithdrawals, pPoojas] = await Promise.all([
+            prisma.temple.findMany({
+                where: { user: { role: 'INSTITUTION', isVerified: false } },
+                take: 2,
+                orderBy: { createdAt: 'desc' }
+            }),
+            prisma.product.findMany({
+                where: { status: 'pending' },
+                take: 2,
+                orderBy: { createdAt: 'desc' }
+            }),
+            prisma.withdrawalRequest.findMany({
+                where: { status: 'PENDING' },
+                take: 2,
+                include: { temple: true, seller: true },
+                orderBy: { createdAt: 'desc' }
+            }),
+            prisma.pooja.findMany({
+                where: { status: false },
+                take: 2,
+                include: { temple: true },
+                orderBy: { createdAt: 'desc' }
+            })
+        ]);
+
+        const pendingApprovalsList = [
+            ...pTemples.map(t => ({
+                id: t.id,
+                name: t.name,
+                location: t.location,
+                type: 'Temple',
+                date: t.createdAt
+            })),
+            ...pProducts.map(p => ({
+                id: p.id,
+                name: p.name,
+                location: 'Product',
+                type: 'Product',
+                date: p.createdAt
+            })),
+            ...pWithdrawals.map(w => ({
+                id: w.id,
+                name: `₹${w.amount} Withdrawal`,
+                location: w.temple?.name || w.seller?.name || 'Seller',
+                type: 'Payout',
+                date: w.createdAt
+            })),
+            ...pPoojas.map(p => ({
+                id: p.id,
+                name: p.name,
+                location: p.temple?.name || 'Temple Pooja',
+                type: 'Pooja',
+                date: p.createdAt
+            }))
+        ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 5);
 
         res.json({
             success: true,
@@ -100,16 +150,11 @@ export const getAdminDashboardStats = async (req: Request, res: Response) => {
                     temples: pendingTemples,
                     products: pendingProducts,
                     withdrawals: pendingWithdrawals,
-                    total: pendingTemples + pendingProducts + pendingWithdrawals
+                    poojas: pendingPoojas,
+                    total: pendingTemples + pendingProducts + pendingWithdrawals + pendingPoojas
                 },
                 activities,
-                pendingApprovals: pendingItems.map(t => ({
-                    id: t.id,
-                    name: t.name,
-                    location: t.location,
-                    type: 'Temple',
-                    date: t.createdAt
-                }))
+                pendingApprovals: pendingApprovalsList
             }
         });
 

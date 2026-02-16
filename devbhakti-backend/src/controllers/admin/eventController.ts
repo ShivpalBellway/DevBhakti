@@ -6,24 +6,53 @@ const prisma = new PrismaClient();
 // Get all events
 export const getAllEvents = async (req: Request, res: Response) => {
     try {
-        const events = await prisma.event.findMany({
-            include: {
-                temple: {
-                    select: {
-                        id: true,
-                        name: true,
-                        location: true
+        const page = parseInt(req.query.page as string) || 1;
+        const limit = parseInt(req.query.limit as string) || 10;
+        const skip = (page - 1) * limit;
+        const search = req.query.search as string;
+
+        let where: any = {};
+        if (search) {
+            where.OR = [
+                { name: { contains: search, mode: 'insensitive' } },
+                { temple: { name: { contains: search, mode: 'insensitive' } } }
+            ];
+        }
+
+        const [events, total] = await Promise.all([
+            prisma.event.findMany({
+                where,
+                include: {
+                    temple: {
+                        select: {
+                            id: true,
+                            name: true,
+                            location: true
+                        }
                     }
-                }
-            },
-            orderBy: {
-                createdAt: 'desc'
+                },
+                orderBy: {
+                    createdAt: 'desc'
+                },
+                skip,
+                take: limit
+            }),
+            prisma.event.count({ where })
+        ]);
+
+        res.json({
+            success: true,
+            data: events,
+            pagination: {
+                total,
+                page,
+                limit,
+                totalPages: Math.ceil(total / limit)
             }
         });
-        res.json(events);
     } catch (error) {
         console.error('Error fetching events:', error);
-        res.status(500).json({ error: 'Failed to fetch events' });
+        res.status(500).json({ success: false, error: 'Failed to fetch events' });
     }
 };
 

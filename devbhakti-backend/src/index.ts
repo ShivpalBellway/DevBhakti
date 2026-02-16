@@ -32,11 +32,13 @@ import adminFinanceManagementRoutes from './routes/admin/financeManagementRoutes
 import templeAdminFinanceRoutes from './routes/temple_admin/financeRoutes';
 import templeAdminProductRoutes from './routes/temple_admin/productRoutes';
 import templeAdminBankRoutes from './routes/temple_admin/bankRoutes';
+import templeAdminDevoteeRoutes from './routes/temple_admin/devoteeRoutes';
 import sellerProductRoutes from './routes/seller/productRoutes';
 import sellerOrderRoutes from './routes/seller/orderRoutes';
 import sellerGeneralRoutes from './routes/seller/sellerRoutes';
 import sellerFinanceRoutes from './routes/seller/financeRoutes';
 import adminCommissionSlabRoutes from './routes/admin/commissionSlabRoutes';
+import adminUserRoutes from './routes/admin/userRoutes';
 import publicSearchRoutes from './routes/publicSearchRoutes';
 
 
@@ -68,6 +70,7 @@ app.use('/api/admin/orders', adminOrderRoutes);
 app.use('/api/admin/finance', adminFinanceManagementRoutes);
 app.use('/api/admin/sellers', adminSellerRoutes);
 app.use('/api/admin/dashboard', adminDashboardRoutes);
+app.use('/api/admin/users', adminUserRoutes);
 app.use('/api/admin/commission-slabs', adminCommissionSlabRoutes);
 
 
@@ -81,6 +84,7 @@ app.use('/api/temple-admin/orders', templeAdminOrderRoutes);
 app.use('/api/temple-admin/finance', templeAdminFinanceRoutes);
 app.use('/api/temple-admin/products', templeAdminProductRoutes);
 app.use('/api/temple-admin/bank', templeAdminBankRoutes);
+app.use('/api/temple-admin/devotees', templeAdminDevoteeRoutes);
 app.use('/api/seller/products', sellerProductRoutes);
 app.use('/api/seller/orders', sellerOrderRoutes);
 app.use('/api/seller/finance', sellerFinanceRoutes);

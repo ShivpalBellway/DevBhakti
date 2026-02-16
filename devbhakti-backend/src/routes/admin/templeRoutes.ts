@@ -9,7 +9,8 @@ import {
     getPendingUpdateRequests,
     approveUpdateRequest,
     rejectUpdateRequest,
-    updateTempleLiveConfig
+    updateTempleLiveConfig,
+    setPrimaryLive
 } from '../../controllers/admin/templeController';
 import { authenticate, authorize } from '../../middleware/authMiddleware';
 
@@ -47,6 +48,7 @@ router.post('/', templeUpload, createTemple);
 router.put('/:id', templeUpload, updateTemple);
 router.patch('/:id/status', toggleTempleStatus);
 router.patch('/:id/live-config', updateTempleLiveConfig);
+router.patch('/:id/set-primary-live', setPrimaryLive);
 router.delete('/:id', deleteTemple);
 
 export default router;

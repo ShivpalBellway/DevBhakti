@@ -30,7 +30,7 @@ export const getAllTemples = async (req: Request, res: Response) => {
           isVerified: true,
           role: 'INSTITUTION'
         },
-        isActive: true
+        isActive: true,
       },
       include: {
         poojas: {
@@ -98,7 +98,7 @@ export const getTempleById = async (req: Request, res: Response) => {
           isVerified: true,
           role: 'INSTITUTION'
         },
-        isActive: true
+        isActive: true,
       },
       include: {
         user: {

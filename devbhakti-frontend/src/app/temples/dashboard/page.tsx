@@ -12,50 +12,24 @@ import {
     ArrowUpRight,
     Video,
     Heart,
-    IndianRupee
+    IndianRupee,
+    Info
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { fetchMyTempleBookings, fetchTempleOrders, fetchMyTempleProfile } from "@/api/templeAdminController";
+import { fetchMyTempleBookings, fetchTempleOrders, fetchMyTempleProfile, fetchMyProducts } from "@/api/templeAdminController";
 import { format } from "date-fns";
 import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from "@/components/ui/tooltip";
 
-const stats = [
-    {
-        title: "Total Devotees",
-        value: "1,284",
-        change: "+5.4%",
-        trend: "up",
-        icon: Users,
-        color: "bg-blue-500",
-    },
-    {
-        title: "Pooja Bookings",
-        value: "156",
-        change: "+12%",
-        trend: "up",
-        icon: Calendar,
-        color: "bg-orange-500",
-    },
-    {
-        title: "Product Sales",
-        value: "₹45,200",
-        change: "+8.2%",
-        trend: "up",
-        icon: ShoppingBag,
-        color: "bg-green-500",
-    },
-    {
-        title: "Donations",
-        value: "₹1.2L",
-        change: "+15%",
-        trend: "up",
-        icon: Heart,
-        color: "bg-red-500",
-    },
-];
+
 
 const recentOrders = [
     {
@@ -102,6 +76,8 @@ export default function TempleDashboardPage() {
     const router = useRouter();
     const [bookings, setBookings] = useState<any[]>([]);
     const [orders, setOrders] = useState<any[]>([]);
+    const [products, setProducts] = useState<any[]>([]);
+    const [totalProducts, setTotalProducts] = useState(0);
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
@@ -111,19 +87,32 @@ export default function TempleDashboardPage() {
     const loadDashboardData = async () => {
         setIsLoading(true);
         try {
-            const [profileRes, bookingsRes] = await Promise.all([
+            const [profileRes, bookingsRes, productsRes] = await Promise.all([
                 fetchMyTempleProfile(),
-                fetchMyTempleBookings()
+                fetchMyTempleBookings(),
+                fetchMyProducts() // Fetch products for count
             ]);
 
             if (bookingsRes.success) {
-                setBookings(bookingsRes.data);
+                setBookings(bookingsRes.data || []); // Ensure array
+            }
+
+            if (productsRes.success) {
+                // content is nested in data.products due to pagination
+                const productsData = productsRes.data?.products || productsRes.data || [];
+                setProducts(productsData);
+
+                if (productsRes.data?.pagination?.total !== undefined) {
+                    setTotalProducts(productsRes.data.pagination.total);
+                } else {
+                    setTotalProducts(Array.isArray(productsData) ? productsData.length : 0);
+                }
             }
 
             if (profileRes.success && profileRes.data.id) {
                 const ordersRes = await fetchTempleOrders(profileRes.data.id);
                 if (ordersRes.success) {
-                    setOrders(ordersRes.data);
+                    setOrders(ordersRes.data || []); // Ensure array
                 }
             }
         } catch (error) {
@@ -140,41 +129,55 @@ export default function TempleDashboardPage() {
     ]).size;
 
     const poojaRevenue = bookings.reduce((acc, b) => acc + (b.packagePrice || 0), 0);
-    const productRevenue = orders.reduce((acc, o) => acc + (o.totalAmount || 0), 0);
-    const totalSales = poojaRevenue + productRevenue;
+    const productRevenue = orders.reduce((acc: number, o: any) => acc + (o.totalAmount || 0), 0);
+
+    // Calculate total items sold if needed, but user asked for "Total Product" (Count of active/listed products?)
+    // Given "Total Product bhi show karo" and context of dashboard inventory/sales, listed products seems appropriate.
+    // However, if they meant "Total Products Sold" (count), that would be different.
+    // I'll show "Total Products" as inventory count for now as per common dashboard patterns, 
+    // or better, I'll label it "Total Inventory" or "Active Products" if that's what it is.
+    // But "Total Product" label is what was asked.
 
     const dynamicStats = [
         {
-            title: "Total Devotees",
-            value: uniqueDevotees.toString(),
-            change: "+12.5%", // These could be calculated if we had history
-            trend: "up",
-            icon: Users,
-            color: "bg-blue-500",
-        },
-        {
-            title: "Total Bookings",
-            value: bookings.length.toString(),
+            title: "Total Service Sales",
+            value: `₹${poojaRevenue.toLocaleString()}`,
             change: "+8.2%",
             trend: "up",
             icon: Calendar,
             color: "bg-orange-500",
+            href: "/temples/dashboard/bookings",
+            tooltip: "Total revenue generated from all Pooja and Seva bookings made by devotees."
         },
         {
-            title: "Marketplace Sales",
+            title: "Total Products",
+            value: totalProducts.toString(),
+            change: "+4",
+            trend: "up",
+            icon: Package,
+            color: "bg-purple-500",
+            href: "/temples/dashboard/products",
+            tooltip: "Total number of products currently listed in the temple marketplace."
+        },
+        {
+            title: "Product Sales",
             value: `₹${productRevenue.toLocaleString()}`,
             change: "+15.3%",
             trend: "up",
             icon: ShoppingBag,
             color: "bg-emerald-500",
+            href: "/temples/dashboard/orders",
+            tooltip: "Total revenue generated from marketplace product orders."
         },
         {
-            title: "Donations (Static)",
-            value: "₹0",
-            change: "0%",
+            title: "Total Devotees",
+            value: uniqueDevotees.toString(),
+            change: "+12.5%",
             trend: "up",
-            icon: Heart,
-            color: "bg-rose-500",
+            icon: Users,
+            color: "bg-blue-500",
+            href: "/temples/dashboard/users",
+            tooltip: "Total unique devotees who have booked poojas or placed orders."
         },
     ];
 
@@ -209,43 +212,63 @@ export default function TempleDashboardPage() {
             </div>
 
             {/* Stats Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                {dynamicStats.map((stat, index) => (
-                    <motion.div
-                        key={stat.title}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.4, delay: index * 0.1 }}
-                    >
-                        <Card className="hover:shadow-warm transition-shadow duration-300 border-none shadow-sm">
-                            <CardContent className="p-6">
-                                <div className="flex items-center justify-between">
-                                    <div
-                                        className={`w-12 h-12 rounded-xl ${stat.color} flex items-center justify-center bg-opacity-10`}
-                                    >
-                                        <stat.icon className={`w-6 h-6 ${stat.color.replace('bg-', 'text-')}`} />
+            <TooltipProvider delayDuration={100}>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {dynamicStats.map((stat, index) => (
+                        <motion.div
+                            key={stat.title}
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.4, delay: index * 0.1 }}
+                        >
+                            <Card
+                                className="hover:shadow-warm transition-all duration-300 border-none shadow-sm cursor-pointer hover:bg-slate-50"
+                                onClick={() => router.push(stat.href)}
+                            >
+                                <CardContent className="p-6">
+                                    <div className="flex items-center justify-between">
+                                        <div
+                                            className={`w-12 h-12 rounded-xl ${stat.color} flex items-center justify-center bg-opacity-10`}
+                                        >
+                                            <stat.icon className={`w-6 h-6 ${stat.color.replace('bg-', 'text-')}`} />
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <div
+                                                className={`flex items-center gap-1 text-xs font-bold px-2 py-1 rounded-full ${stat.trend === "up" ? "bg-emerald-50 text-emerald-600" : "bg-rose-50 text-rose-600"
+                                                    }`}
+                                            >
+                                                {stat.trend === "up" ? (
+                                                    <TrendingUp className="w-3 h-3" />
+                                                ) : (
+                                                    <TrendingDown className="w-3 h-3" />
+                                                )}
+                                                {stat.change}
+                                            </div>
+                                            <Tooltip>
+                                                <TooltipTrigger asChild>
+                                                    <div
+                                                        className="p-1 rounded-full hover:bg-slate-200 transition-colors cursor-help"
+                                                        onClick={(e) => e.stopPropagation()}
+                                                    >
+                                                        <Info className="w-3.5 h-3.5 text-slate-400 hover:text-slate-600" />
+                                                    </div>
+                                                </TooltipTrigger>
+                                                <TooltipContent side="bottom" className="max-w-[220px] text-xs">
+                                                    <p>{stat.tooltip}</p>
+                                                </TooltipContent>
+                                            </Tooltip>
+                                        </div>
                                     </div>
-                                    <div
-                                        className={`flex items-center gap-1 text-xs font-bold px-2 py-1 rounded-full ${stat.trend === "up" ? "bg-emerald-50 text-emerald-600" : "bg-rose-50 text-rose-600"
-                                            }`}
-                                    >
-                                        {stat.trend === "up" ? (
-                                            <TrendingUp className="w-3 h-3" />
-                                        ) : (
-                                            <TrendingDown className="w-3 h-3" />
-                                        )}
-                                        {stat.change}
+                                    <div className="mt-4">
+                                        <p className="text-2xl font-bold text-slate-900">{stat.value}</p>
+                                        <p className="text-sm font-medium text-slate-500 uppercase tracking-wider">{stat.title}</p>
                                     </div>
-                                </div>
-                                <div className="mt-4">
-                                    <p className="text-2xl font-bold text-slate-900">{stat.value}</p>
-                                    <p className="text-sm font-medium text-slate-500 uppercase tracking-wider">{stat.title}</p>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    </motion.div>
-                ))}
-            </div>
+                                </CardContent>
+                            </Card>
+                        </motion.div>
+                    ))}
+                </div>
+            </TooltipProvider>
 
             {/* Main content grid */}
             <div className="grid lg:grid-cols-2 gap-6">
@@ -362,27 +385,42 @@ export default function TempleDashboardPage() {
                         <CardTitle className="text-lg font-semibold">Quick Actions</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                            {[
-                                { label: "Add Product", icon: Package, color: "bg-green-500", href: "/temples/dashboard/products" },
-                                { label: "Offer Pooja", icon: Calendar, color: "bg-orange-500", href: "/temples/dashboard/poojas/create" },
-                                { label: "New Event", icon: Calendar, color: "bg-red-500", href: "/temples/dashboard/events" },
-                                { label: "View Reports", icon: TrendingUp, color: "bg-blue-500", href: "/temples/dashboard" },
-                            ].map((action) => (
-                                <button
-                                    key={action.label}
-                                    onClick={() => router.push(action.href)}
-                                    className="flex flex-col items-center gap-3 p-4 rounded-xl border border-border hover:border-sidebar-primary/30 hover:bg-muted/50 transition-all group"
-                                >
-                                    <div
-                                        className={`w-12 h-12 rounded-xl ${action.color} flex items-center justify-center group-hover:scale-110 transition-transform`}
+                        <TooltipProvider delayDuration={100}>
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                {[
+                                    { label: "Add Product", icon: Package, color: "bg-green-500", href: "/temples/dashboard/products", tooltip: "Add new products to your temple marketplace for devotees to purchase." },
+                                    { label: "Offer Pooja", icon: Calendar, color: "bg-orange-500", href: "/temples/dashboard/poojas/create", tooltip: "Create a new Pooja or Seva offering for devotees to book online." },
+                                    { label: "New Event", icon: Calendar, color: "bg-red-500", href: "/temples/dashboard/events", tooltip: "Create and manage upcoming temple events, festivals, and celebrations." },
+                                    { label: "View Reports", icon: TrendingUp, color: "bg-blue-500", href: "/temples/dashboard", tooltip: "View detailed analytics and financial reports of your temple." },
+                                ].map((action) => (
+                                    <button
+                                        key={action.label}
+                                        onClick={() => router.push(action.href)}
+                                        className="relative flex flex-col items-center gap-3 p-4 rounded-xl border border-border hover:border-sidebar-primary/30 hover:bg-muted/50 transition-all group"
                                     >
-                                        <action.icon className="w-6 h-6 text-white" />
-                                    </div>
-                                    <span className="text-sm font-medium text-foreground">{action.label}</span>
-                                </button>
-                            ))}
-                        </div>
+                                        <Tooltip>
+                                            <TooltipTrigger asChild>
+                                                <div
+                                                    className="absolute top-2 right-2 p-0.5 rounded-full hover:bg-slate-200 transition-colors cursor-help"
+                                                    onClick={(e) => e.stopPropagation()}
+                                                >
+                                                    <Info className="w-3.5 h-3.5 text-slate-400 hover:text-slate-600" />
+                                                </div>
+                                            </TooltipTrigger>
+                                            <TooltipContent side="top" className="max-w-[220px] text-xs">
+                                                <p>{action.tooltip}</p>
+                                            </TooltipContent>
+                                        </Tooltip>
+                                        <div
+                                            className={`w-12 h-12 rounded-xl ${action.color} flex items-center justify-center group-hover:scale-110 transition-transform`}
+                                        >
+                                            <action.icon className="w-6 h-6 text-white" />
+                                        </div>
+                                        <span className="text-sm font-medium text-foreground">{action.label}</span>
+                                    </button>
+                                ))}
+                            </div>
+                        </TooltipProvider>
                     </CardContent>
                 </Card>
             </motion.div>

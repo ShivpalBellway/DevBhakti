@@ -32,7 +32,7 @@ const getAllTemples = async (req, res) => {
                     isVerified: true,
                     role: 'INSTITUTION'
                 },
-                isActive: true
+                isActive: true,
             },
             include: {
                 poojas: {
@@ -95,7 +95,7 @@ const getTempleById = async (req, res) => {
                     isVerified: true,
                     role: 'INSTITUTION'
                 },
-                isActive: true
+                isActive: true,
             },
             include: {
                 user: {

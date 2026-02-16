@@ -23,7 +23,10 @@ import {
 } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import Logo from "@/components/icons/Logo";
+import Image from "next/image";
+// import Logo from "@/components/icons/Logo";
+import logo from "@/assets/logo2.png";
+
 import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
@@ -337,11 +340,33 @@ export default function TempleAdminLayout({ children }: { children: React.ReactN
                 )}
             >
                 {/* Logo */}
+                {/* Logo */}
                 <div className="flex items-center justify-between h-20 px-4 border-b border-sidebar-border">
                     {sidebarOpen ? (
-                        <Logo size="md" />
+                        <div className="flex flex-col gap-0.5">
+                            <div className="relative h-10 w-32">
+                                <Image
+                                    src={logo}
+                                    alt="Temple Logo"
+                                    fill
+                                    className="object-contain object-center"
+                                    priority
+                                />
+                            </div>
+                            <span className="text-[15px] font-bold text-sidebar-foreground/90 uppercase tracking-widest pl-2 mt-1">
+                                Temple Dashboard
+                            </span>
+                        </div>
                     ) : (
-                        <Logo size="md" variant="icon" />
+                        <div className="relative h-8 w-8">
+                            <Image
+                                src={logo}
+                                alt="Temple Logo"
+                                fill
+                                className="object-contain"
+                                priority
+                            />
+                        </div>
                     )}
                     <button
                         onClick={() => setSidebarOpen(!sidebarOpen)}

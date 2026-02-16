@@ -41,7 +41,8 @@ export const registerTemple = async (req: Request, res: Response) => {
     // Normalize Phone
     if (data.phone) {
       const cleaned = data.phone.replace(/\D/g, '');
-      if (cleaned.length !== 10) {
+      // Allow 10 digits OR 12 digits if starting with 91
+      if (!(cleaned.length === 10 || (cleaned.length === 12 && cleaned.startsWith('91')))) {
         return res.status(400).json({ success: false, message: 'Mobile number must be exactly 10 digits' });
       }
       data.phone = normalizePhone(data.phone);
@@ -219,7 +220,8 @@ export const updateMyTempleProfile = async (req: Request, res: Response) => {
     // Validate Phone if provided
     if (data.phone) {
       const cleaned = data.phone.replace(/\D/g, '');
-      if (cleaned.length !== 10) {
+      // Allow 10 digits OR 12 digits if starting with 91
+      if (!(cleaned.length === 10 || (cleaned.length === 12 && cleaned.startsWith('91')))) {
         return res.status(400).json({ success: false, message: 'Mobile number must be exactly 10 digits' });
       }
       data.phone = normalizePhone(data.phone);
@@ -271,6 +273,10 @@ export const updateMyTempleProfile = async (req: Request, res: Response) => {
       viewers: data.viewers,
       isLive: data.isLive !== undefined ? (String(data.isLive) === 'true') : undefined,
       liveUrl: data.liveUrl,
+      // Technical Identity
+      slug: data.slug,
+      subdomain: data.subdomain,
+      urlType: data.urlType,
       // If user pastes a raw YouTube Channel ID in liveUrl, persist it into channelId as well
       channelId: data.channelId || (typeof data.liveUrl === 'string' && data.liveUrl.trim().startsWith('UC') ? data.liveUrl.trim() : undefined),
     };
@@ -351,6 +357,119 @@ export const updateMyTempleProfile = async (req: Request, res: Response) => {
     res.json({ success: true, message: 'No changes detected' });
   } catch (error: any) {
     console.error('Update Temple Profile Error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const getTempleDevotees = async (req: Request, res: Response) => {
+  try {
+    const { userId } = (req as any).user;
+
+    const temple = await prisma.temple.findUnique({
+      where: { userId }
+    });
+
+    if (!temple) {
+      return res.status(404).json({ success: false, message: 'Temple not found' });
+    }
+
+    // 1. Fetch users who have booked poojas
+    const poojaBookings = await prisma.poojaBooking.findMany({
+      where: { templeId: temple.id },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            phone: true,
+            profileImage: true
+          }
+        }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    // 2. Fetch users who have ordered products (via SubOrders)
+    const productSubOrders = await prisma.subOrder.findMany({
+      where: { templeId: temple.id },
+      include: {
+        order: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                phone: true,
+                profileImage: true
+              }
+            }
+          }
+        }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    // Process Pooja Bookers
+    const poojaDevoteesMap = new Map();
+    poojaBookings.forEach(booking => {
+      if (!booking.user) return;
+      if (!poojaDevoteesMap.has(booking.userId)) {
+        poojaDevoteesMap.set(booking.userId, {
+          ...booking.user,
+          lastInteraction: booking.createdAt,
+          totalInteractions: 0,
+          totalSpent: 0,
+          type: 'POOJA'
+        });
+      }
+      const devotee = poojaDevoteesMap.get(booking.userId);
+      devotee.totalInteractions += 1;
+      devotee.totalSpent += booking.packagePrice;
+      if (new Date(booking.createdAt) > new Date(devotee.lastInteraction)) {
+        devotee.lastInteraction = booking.createdAt;
+      }
+    });
+
+    // Process Product Customers
+    const productDevoteesMap = new Map();
+    productSubOrders.forEach(subOrder => {
+      if (!subOrder.order.user) return;
+      if (!productDevoteesMap.has(subOrder.order.userId)) {
+        productDevoteesMap.set(subOrder.order.userId, {
+          ...subOrder.order.user,
+          lastInteraction: subOrder.createdAt,
+          totalInteractions: 0,
+          totalSpent: 0,
+          type: 'PRODUCT'
+        });
+      }
+      const devotee = productDevoteesMap.get(subOrder.order.userId);
+      devotee.totalInteractions += 1;
+      devotee.totalSpent += subOrder.totalAmount;
+      if (new Date(subOrder.createdAt) > new Date(devotee.lastInteraction)) {
+        devotee.lastInteraction = subOrder.createdAt;
+      }
+    });
+
+    const poojaBookers = Array.from(poojaDevoteesMap.values());
+    const productCustomers = Array.from(productDevoteesMap.values());
+
+    res.json({
+      success: true,
+      data: {
+        poojaBookers,
+        productCustomers,
+        stats: {
+          totalDevotees: new Set([...poojaDevoteesMap.keys(), ...productDevoteesMap.keys()]).size,
+          poojaBookersCount: poojaBookers.length,
+          productCustomersCount: productCustomers.length,
+        }
+      }
+    });
+  } catch (error: any) {
+    console.error('Get Temple Devotees Error:', error);
     res.status(500).json({ success: false, message: error.message });
   }
 };

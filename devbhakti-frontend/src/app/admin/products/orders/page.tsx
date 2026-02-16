@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import {
     fetchAllOrdersAdmin,
     updateSubOrderStatusAdmin
@@ -53,6 +54,8 @@ import { cn } from "@/lib/utils";
 import { BASE_URL } from "@/config/apiConfig";
 
 export default function AdminOrdersPage() {
+    const searchParams = useSearchParams();
+    const idParam = searchParams.get("id");
     const [orders, setOrders] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState("");
@@ -60,8 +63,20 @@ export default function AdminOrdersPage() {
     const { toast } = useToast();
 
     useEffect(() => {
+        if (idParam) {
+            setSearchQuery(idParam);
+        }
         loadOrders();
-    }, []);
+    }, [idParam]);
+
+    useEffect(() => {
+        if (idParam && orders.length > 0) {
+            const order = orders.find(o => o.id === idParam);
+            if (order) {
+                setSelectedOrder(order);
+            }
+        }
+    }, [idParam, orders]);
 
     const loadOrders = async () => {
         setIsLoading(true);

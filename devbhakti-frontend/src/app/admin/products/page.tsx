@@ -19,6 +19,8 @@ import {
   X,
   Filter,
   Image as ImageIcon,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import {
   Select,
@@ -68,6 +70,10 @@ export default function ProductsManagementPage() {
   const [products, setProducts] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [stats, setStats] = useState({ total: 0, pending: 0, approved: 0 });
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [itemsPerPage] = useState(10);
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [date, setDate] = useState<Date | undefined>(undefined);
@@ -77,6 +83,20 @@ export default function ProductsManagementPage() {
 
   useEffect(() => {
     loadProducts();
+  }, [currentPage, selectedOwner, date]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (currentPage !== 1) {
+        setCurrentPage(1);
+      } else {
+        loadProducts();
+      }
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  useEffect(() => {
     loadOwners();
   }, []);
 
@@ -94,18 +114,25 @@ export default function ProductsManagementPage() {
   const loadProducts = async () => {
     setIsLoading(true);
     try {
-      const data = await fetchAllProductsAdmin();
-      console.log('Products API Response:', data);
-      console.log('First Product:', data[0]);
-      setProducts(data);
+      const res = await fetchAllProductsAdmin({
+        page: currentPage,
+        limit: itemsPerPage,
+        search: searchTerm,
+        templeId: selectedOwner === "all" ? undefined : selectedOwner,
+        date: date ? date.toISOString() : undefined
+      });
+
+      if (res.success) {
+        setProducts(res.data.products);
+        setStats(res.data.stats || { total: 0, pending: 0, approved: 0 });
+        setTotalPages(res.data.pagination.pages);
+      }
     } catch (error: any) {
       console.error("Load Products Error:", error);
       const errorMessage = error?.response?.data?.message || error?.message || "Failed to load products";
-      const errorDetails = error?.response?.data?.details;
-
       toast({
         title: "Error Loading Products",
-        description: errorDetails ? `${errorMessage}: ${errorDetails}` : errorMessage,
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -155,27 +182,8 @@ export default function ProductsManagementPage() {
     }
   };
 
-  const filteredProducts = products.filter((product) => {
-    const matchesSearch =
-      product.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      product.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      product.temple?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      product.seller?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      product.category?.toLowerCase().includes(searchTerm.toLowerCase());
-
-    const matchesOwner =
-      selectedOwner === "all"
-        ? true
-        : selectedOwner === "admin"
-          ? (!product.temple && !product.seller)
-          : (product.temple?.id === selectedOwner || product.seller?.id === selectedOwner);
-
-    const matchesDate = date
-      ? new Date(product.createdAt).toDateString() === date.toDateString()
-      : true;
-
-    return matchesSearch && matchesOwner && matchesDate;
-  });
+  // No longer needed but kept for backward compatibility if any local filtering is still applied
+  const filteredProducts = products;
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -203,6 +211,13 @@ export default function ProductsManagementPage() {
     }
   };
 
+  const truncateWords = (text: string, maxWords: number) => {
+    if (!text) return "";
+    const words = text.split(/\s+/);
+    if (words.length <= maxWords) return text;
+    return words.slice(0, maxWords).join(" ") + "...";
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -214,6 +229,49 @@ export default function ProductsManagementPage() {
           <Plus className="w-4 h-4 mr-2" />
           Add New Product
         </Button>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card className="bg-white border-slate-200">
+          <CardContent className="p-6">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-blue-50 text-blue-600 rounded-xl">
+                <Package className="w-6 h-6" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-slate-500">Total Products</p>
+                <h3 className="text-2xl font-bold text-slate-900">{stats.total}</h3>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="bg-white border-slate-200">
+          <CardContent className="p-6">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-amber-50 text-amber-600 rounded-xl">
+                <Clock className="w-6 h-6" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-slate-500">Pending Products</p>
+                <h3 className="text-2xl font-bold text-slate-900">{stats.pending}</h3>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="bg-white border-slate-200">
+          <CardContent className="p-6">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-emerald-50 text-emerald-600 rounded-xl">
+                <CheckCircle className="w-6 h-6" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-slate-500">Approved Products</p>
+                <h3 className="text-2xl font-bold text-slate-900">{stats.approved}</h3>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       <div className="flex flex-col md:flex-row gap-4 items-end">
@@ -328,7 +386,7 @@ export default function ProductsManagementPage() {
                 <TableRow key={product.id} className="hover:bg-slate-50/50 transition-colors">
                   <TableCell>
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center overflow-hidden">
+                      <div className="w-16 aspect-[5/4] rounded-lg bg-slate-100 flex items-center justify-center overflow-hidden flex-shrink-0">
                         {product.image ? (
                           <img
                             src={`${BASE_URL}${product.image}`}
@@ -336,14 +394,25 @@ export default function ProductsManagementPage() {
                             className="w-full h-full object-cover"
                           />
                         ) : (
-                          <Package className="w-5 h-5 text-slate-600" />
+                          <Package className="w-6 h-6 text-slate-600" />
                         )}
                       </div>
-                      <div className="flex flex-col">
-                        <span className="font-semibold text-slate-900">{product.name}</span>
-                        <span className="text-sm text-muted-foreground line-clamp-1">
-                          {product.description}
-                        </span>
+                      <div className="flex flex-col min-w-0">
+                        <span className="font-semibold text-slate-900 truncate">{product.name}</span>
+                        <p className="text-sm text-muted-foreground mt-0.5">
+                          {truncateWords(product.description, 10)}
+                          {product.description?.split(/\s+/).length > 10 && (
+                            <button
+                              onClick={() => {
+                                setSelectedProduct(product);
+                                setIsPreviewOpen(true);
+                              }}
+                              className="ml-1 text-primary hover:underline font-medium"
+                            >
+                              more
+                            </button>
+                          )}
+                        </p>
                       </div>
                     </div>
                   </TableCell>
@@ -444,6 +513,65 @@ export default function ProductsManagementPage() {
             )}
           </TableBody>
         </Table>
+        <div className="flex items-center justify-between px-4 py-4 border-t bg-slate-50/50">
+          <p className="text-sm text-muted-foreground">
+            Showing <span className="font-medium">{stats.total > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0}</span> to{" "}
+            <span className="font-medium">
+              {Math.min(currentPage * itemsPerPage, stats.total)}
+            </span>{" "}
+            of <span className="font-medium">{stats.total}</span> products
+          </p>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              disabled={currentPage === 1 || isLoading}
+            >
+              <ChevronLeft className="w-4 h-4 mr-1" />
+              Previous
+            </Button>
+            <div className="flex items-center gap-1">
+              {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+                // Show up to 5 pages for simplicity, or implement more complex pagination logic
+                const pageNum = i + 1;
+                return (
+                  <Button
+                    key={pageNum}
+                    variant={currentPage === pageNum ? "default" : "outline"}
+                    size="sm"
+                    className="w-8 h-8 p-0"
+                    onClick={() => setCurrentPage(pageNum)}
+                    disabled={isLoading}
+                  >
+                    {pageNum}
+                  </Button>
+                );
+              })}
+              {totalPages > 5 && <span className="text-muted-foreground mx-1">...</span>}
+              {totalPages > 5 && (
+                <Button
+                  variant={currentPage === totalPages ? "default" : "outline"}
+                  size="sm"
+                  className="w-8 h-8 p-0"
+                  onClick={() => setCurrentPage(totalPages)}
+                  disabled={isLoading}
+                >
+                  {totalPages}
+                </Button>
+              )}
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages || isLoading}
+            >
+              Next
+              <ChevronRight className="w-4 h-4 ml-1" />
+            </Button>
+          </div>
+        </div>
       </div>
 
       <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
@@ -454,7 +582,7 @@ export default function ProductsManagementPage() {
           {selectedProduct && (
             <div className="space-y-4">
               <div className="flex items-center gap-4">
-                <div className="w-20 h-20 rounded-lg bg-slate-100 flex items-center justify-center overflow-hidden">
+                <div className="w-32 aspect-[5/4] rounded-lg bg-slate-100 flex items-center justify-center overflow-hidden flex-shrink-0">
                   {selectedProduct.image ? (
                     <img
                       src={`${BASE_URL}${selectedProduct.image}`}
@@ -462,7 +590,7 @@ export default function ProductsManagementPage() {
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <Package className="w-10 h-10 text-slate-600" />
+                    <Package className="w-12 h-12 text-slate-600" />
                   )}
                 </div>
                 <div className="flex-1">

@@ -85,7 +85,7 @@ const BannerSection: React.FC = () => {
             onMouseEnter={() => setIsPaused(true)}
             onMouseLeave={() => setIsPaused(false)} >
             <div className="container mx-auto px-4">
-                <div className="relative h-[180px] sm:h-[280px] md:h-[420px] rounded-[2rem] overflow-hidden shadow-2xl group">
+                <div className="relative h-[250px] sm:h-[400px] md:h-[500px] w-full rounded-[2rem] overflow-hidden shadow-2xl group bg-black/5">
                     <AnimatePresence initial={false} mode="wait">
                         <motion.div
                             key={currentIndex}
@@ -96,22 +96,38 @@ const BannerSection: React.FC = () => {
                             className="absolute inset-0 w-full h-full"
                         >
                             {banners.length > 0 ? (
-                                <Image
-                                    src={banners[currentIndex].image.startsWith('http') ? banners[currentIndex].image : `${BASE_URL}${banners[currentIndex].image}`}
-                                    alt={`DevBhakti Sacred Banner ${currentIndex + 1}`}
-
-                                    fill
-                                    className="object-cover transform scale-105"
-                                    priority
-                                />
+                                <>
+                                    {/* Blurred Background for no-cut experience */}
+                                    <Image
+                                        src={banners[currentIndex].image.startsWith('http') ? banners[currentIndex].image : `${BASE_URL}${banners[currentIndex].image}`}
+                                        alt="Background blur"
+                                        fill
+                                        className="object-cover blur-3xl opacity-40 scale-110"
+                                    />
+                                    <Image
+                                        src={banners[currentIndex].image.startsWith('http') ? banners[currentIndex].image : `${BASE_URL}${banners[currentIndex].image}`}
+                                        alt={`DevBhakti Sacred Banner ${currentIndex + 1}`}
+                                        fill
+                                        className="object-contain z-10"
+                                        priority
+                                    />
+                                </>
                             ) : (
-                                <Image
-                                    src={staticBanners[currentIndex]}
-                                    alt={`DevBhakti Sacred Banner ${currentIndex + 1}`}
-                                    fill
-                                    className="object-cover transform scale-105"
-                                    priority
-                                />
+                                <>
+                                    <Image
+                                        src={staticBanners[currentIndex]}
+                                        alt="Background blur"
+                                        fill
+                                        className="object-cover blur-3xl opacity-40 scale-110"
+                                    />
+                                    <Image
+                                        src={staticBanners[currentIndex]}
+                                        alt={`DevBhakti Sacred Banner ${currentIndex + 1}`}
+                                        fill
+                                        className="object-contain z-10"
+                                        priority
+                                    />
+                                </>
                             )}
                             {/* Subtle Overlay */}
                             <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent" />

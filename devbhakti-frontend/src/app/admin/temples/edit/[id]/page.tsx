@@ -18,17 +18,19 @@ import {
     ZoomOut,
     Crop
 } from "lucide-react";
-import Cropper from "react-easy-crop";
-import type { Area } from "react-easy-crop";
+import { ImageCropper } from "@/components/admin/ImageCropper";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import {
     updateTempleAdmin,
     fetchAllTemplesAdmin,
     fetchAllPoojasAdmin,
+    createPoojaAdmin,
     fetchCommissionSlabsAdmin
 } from "@/api/adminController";
 import { API_URL } from "@/config/apiConfig";
@@ -41,6 +43,8 @@ export default function EditTemplePage() {
     const [isLoading, setIsLoading] = useState(false);
     const [isFetching, setIsFetching] = useState(true);
     const [allPoojas, setAllPoojas] = useState<any[]>([]);
+    const [newPoojaName, setNewPoojaName] = useState("");
+    const [isAddingPooja, setIsAddingPooja] = useState(false);
 
     // Form State
     const [formData, setFormData] = useState({
@@ -84,13 +88,11 @@ export default function EditTemplePage() {
     const [existingHeroImages, setExistingHeroImages] = useState<string[]>([]);
 
     // Crop State
-    const [cropModalOpen, setCropModalOpen] = useState(false);
-    const [cropImageSrc, setCropImageSrc] = useState<string>("");
+    const [showCropper, setShowCropper] = useState(false);
+    const [tempImage, setTempImage] = useState<string | null>(null);
     const [cropType, setCropType] = useState<"main" | "hero">("main");
-    const [crop, setCrop] = useState({ x: 0, y: 0 });
-    const [zoom, setZoom] = useState(1);
-    const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
-    const [aspectRatio, setAspectRatio] = useState(3 / 2);
+    const [cropTitle, setCropTitle] = useState("Edit Temple Image");
+    const [initialAspect, setInitialAspect] = useState(3 / 2);
 
     useEffect(() => {
         loadData();
@@ -137,7 +139,7 @@ export default function EditTemplePage() {
                 setExistingHeroImages(inst.temple?.heroImages || []);
 
                 if (inst.temple?.poojas) {
-                    setSelectedPoojaIds(inst.temple.poojas.map((p: any) => p.id));
+                    setSelectedPoojaIds(inst.temple.poojas.map((p: any) => p.masterPoojaId || p.id));
                 }
 
                 if (inst.temple?.events) {
@@ -195,88 +197,16 @@ export default function EditTemplePage() {
         return `${API_URL.replace('/api', '')}${path}`;
     };
 
-    // Crop Utility Functions
-    const createImage = (url: string): Promise<HTMLImageElement> =>
-        new Promise((resolve, reject) => {
-            const image = new Image();
-            image.addEventListener("load", () => resolve(image));
-            image.addEventListener("error", (error) => reject(error));
-            image.setAttribute("crossOrigin", "anonymous");
-            image.src = url;
-        });
-
-    const getCroppedImg = async (
-        imageSrc: string,
-        pixelCrop: Area
-    ): Promise<File> => {
-        const image = await createImage(imageSrc);
-        const canvas = document.createElement("canvas");
-        const ctx = canvas.getContext("2d");
-
-        if (!ctx) throw new Error("No 2d context");
-
-        canvas.width = pixelCrop.width;
-        canvas.height = pixelCrop.height;
-
-        ctx.drawImage(
-            image,
-            pixelCrop.x,
-            pixelCrop.y,
-            pixelCrop.width,
-            pixelCrop.height,
-            0,
-            0,
-            pixelCrop.width,
-            pixelCrop.height
-        );
-
-        return new Promise((resolve) => {
-            canvas.toBlob((blob) => {
-                if (blob) {
-                    const file = new File([blob], "cropped-image.jpg", {
-                        type: "image/jpeg",
-                    });
-                    resolve(file);
-                }
-            }, "image/jpeg", 0.95);
-        });
-    };
-
-    const onCropComplete = useCallback((_: Area, croppedAreaPixels: Area) => {
-        setCroppedAreaPixels(croppedAreaPixels);
-    }, []);
-
-    const handleCropSave = async () => {
-        if (!croppedAreaPixels || !cropImageSrc) return;
-
-        try {
-            const croppedImage = await getCroppedImg(cropImageSrc, croppedAreaPixels);
-
-            if (cropType === "main") {
-                setMainImage(croppedImage);
-                setMainImagePreview(URL.createObjectURL(croppedImage));
-            } else {
-                setHeroImages(prev => [...prev, croppedImage]);
-                setHeroPreviews(prev => [...prev, URL.createObjectURL(croppedImage)]);
-            }
-
-            setCropModalOpen(false);
-            setCropImageSrc("");
-            setCrop({ x: 0, y: 0 });
-            setZoom(1);
-
-            toast({
-                title: "Success",
-                description: "Image cropped successfully!",
-            });
-        } catch (error) {
-            console.error("Crop error:", error);
-            toast({
-                title: "Error",
-                description: "Failed to crop image",
-                variant: "destructive"
-            });
+    const handleCropComplete = (croppedFile: File) => {
+        if (cropType === "main") {
+            setMainImage(croppedFile);
+            setMainImagePreview(URL.createObjectURL(croppedFile));
+        } else {
+            setHeroImages(prev => [...prev, croppedFile]);
+            setHeroPreviews(prev => [...prev, URL.createObjectURL(croppedFile)]);
         }
+        setShowCropper(false);
+        setTempImage(null);
     };
 
     // Handlers
@@ -298,10 +228,11 @@ export default function EditTemplePage() {
             // Open crop modal
             const reader = new FileReader();
             reader.onload = () => {
-                setCropImageSrc(reader.result as string);
+                setTempImage(reader.result as string);
                 setCropType("main");
-                setAspectRatio(3 / 2); // 3:2 for main image
-                setCropModalOpen(true);
+                setCropTitle("Adjust Temple Profile Image");
+                setInitialAspect(3 / 2);
+                setShowCropper(true);
             };
             reader.readAsDataURL(file);
             e.target.value = ''; // Reset input
@@ -327,10 +258,11 @@ export default function EditTemplePage() {
                 // Process first valid file for cropping
                 const reader = new FileReader();
                 reader.onload = () => {
-                    setCropImageSrc(reader.result as string);
+                    setTempImage(reader.result as string);
                     setCropType("hero");
-                    setAspectRatio(16 / 9); // 16:9 for hero banners
-                    setCropModalOpen(true);
+                    setCropTitle("Adjust Temple Banner Image");
+                    setInitialAspect(16 / 9);
+                    setShowCropper(true);
                 };
                 reader.readAsDataURL(validFiles[0]);
             }
@@ -351,6 +283,39 @@ export default function EditTemplePage() {
         setSelectedPoojaIds(prev =>
             prev.includes(id) ? prev.filter(pid => pid !== id) : [...prev, id]
         );
+    };
+
+    const handleAddNewPooja = async () => {
+        if (!newPoojaName.trim()) return;
+        setIsAddingPooja(true);
+        try {
+            const fd = new FormData();
+            fd.append("name", newPoojaName.trim());
+            fd.append("isMaster", "true");
+            fd.append("category", "General"); // Default category
+            fd.append("price", "0");
+            fd.append("status", "APPROVED");
+
+            const res = await createPoojaAdmin(fd);
+            if (res.success || res.id) {
+                toast({ title: "Success", description: "New pooja added to master list" });
+                setNewPoojaName("");
+                // Refresh poojas list
+                const poojasResponse = await fetchAllPoojasAdmin({ isMaster: true });
+                setAllPoojas(poojasResponse);
+
+                // Automatically select the new pooja
+                const newId = res.data?.id || res.id;
+                if (newId) {
+                    setSelectedPoojaIds(prev => [...prev, newId]);
+                }
+            }
+        } catch (error) {
+            console.error("Add pooja error:", error);
+            toast({ title: "Error", description: "Failed to create new pooja", variant: "destructive" });
+        } finally {
+            setIsAddingPooja(false);
+        }
     };
 
     const handleRemoveMarketplaceSlab = (index: number) => {
@@ -462,136 +427,17 @@ export default function EditTemplePage() {
     return (
         <>
             {/* Crop Modal */}
-            {cropModalOpen && (
-                <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/90 backdrop-blur-sm">
-                    <div className="w-full max-w-5xl mx-4 bg-white rounded-2xl shadow-2xl overflow-hidden">
-                        {/* Header */}
-                        <div className="flex items-center justify-between px-6 py-4 border-b bg-gradient-to-r from-[#88542b] to-[#6d4222]">
-                            <div className="flex items-center gap-2 text-white">
-                                <Crop className="w-5 h-5" />
-                                <h3 className="text-lg font-bold">
-                                    Crop Image ({cropType === "main" ? "Main Profile" : "Hero Banner"})
-                                </h3>
-                            </div>
-                            <button
-                                onClick={() => {
-                                    setCropModalOpen(false);
-                                    setCropImageSrc("");
-                                }}
-                                className="text-white/80 hover:text-white transition-colors"
-                            >
-                                <X className="w-6 h-6" />
-                            </button>
-                        </div>
-
-                        {/* Crop Area */}
-                        <div className="relative h-[500px] bg-gray-900">
-                            <Cropper
-                                image={cropImageSrc}
-                                crop={crop}
-                                zoom={zoom}
-                                aspect={aspectRatio}
-                                onCropChange={setCrop}
-                                onZoomChange={setZoom}
-                                onCropComplete={onCropComplete}
-                                style={{
-                                    containerStyle: {
-                                        background: "#1a1a1a",
-                                    },
-                                }}
-                            />
-                        </div>
-
-                        {/* Controls */}
-                        <div className="px-6 py-5 bg-gray-50 space-y-4">
-                            {/* Zoom Control */}
-                            <div className="space-y-2">
-                                <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-                                    <ZoomIn className="w-4 h-4" />
-                                    Zoom Level
-                                </label>
-                                <div className="flex items-center gap-3">
-                                    <ZoomOut className="w-4 h-4 text-gray-400" />
-                                    <input
-                                        type="range"
-                                        min={1}
-                                        max={3}
-                                        step={0.1}
-                                        value={zoom}
-                                        onChange={(e) => setZoom(Number(e.target.value))}
-                                        className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[#88542b]"
-                                    />
-                                    <ZoomIn className="w-4 h-4 text-gray-400" />
-                                    <span className="text-sm font-mono text-gray-600 min-w-[45px]">
-                                        {Math.round(zoom * 100)}%
-                                    </span>
-                                </div>
-                            </div>
-
-                            {/* Aspect Ratio Buttons */}
-                            <div className="flex flex-wrap items-center gap-2">
-                                <span className="text-sm font-semibold text-gray-700 mr-2">Aspect Ratio:</span>
-                                <Button
-                                    type="button"
-                                    size="sm"
-                                    variant={aspectRatio === 1 / 1 ? "default" : "outline"}
-                                    onClick={() => setAspectRatio(1 / 1)}
-                                    className={aspectRatio === 1 / 1 ? "bg-[#88542b] hover:bg-[#6d4222]" : ""}
-                                >
-                                    Square (1:1)
-                                </Button>
-                                <Button
-                                    type="button"
-                                    size="sm"
-                                    variant={aspectRatio === 4 / 3 ? "default" : "outline"}
-                                    onClick={() => setAspectRatio(4 / 3)}
-                                    className={aspectRatio === 4 / 3 ? "bg-[#88542b] hover:bg-[#6d4222]" : ""}
-                                >
-                                    Classic (4:3)
-                                </Button>
-                                <Button
-                                    type="button"
-                                    size="sm"
-                                    variant={aspectRatio === 3 / 2 ? "default" : "outline"}
-                                    onClick={() => setAspectRatio(3 / 2)}
-                                    className={aspectRatio === 3 / 2 ? "bg-[#88542b] hover:bg-[#6d4222]" : ""}
-                                >
-                                    Photo (3:2)
-                                </Button>
-                                <Button
-                                    type="button"
-                                    size="sm"
-                                    variant={aspectRatio === 16 / 9 ? "default" : "outline"}
-                                    onClick={() => setAspectRatio(16 / 9)}
-                                    className={aspectRatio === 16 / 9 ? "bg-[#88542b] hover:bg-[#6d4222]" : ""}
-                                >
-                                    Wide (16:9)
-                                </Button>
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => {
-                                        setCropModalOpen(false);
-                                        setCropImageSrc("");
-                                    }}
-                                >
-                                    Cancel
-                                </Button>
-
-                                <Button
-                                    type="button"
-                                    onClick={handleCropSave}
-                                    size="sm"
-                                    className="bg-[#88542b] hover:bg-[#6d4222] text-white px-6"
-                                >
-                                    <CheckCircle className="w-4 h-4 mr-2" />
-                                    Save Crop
-                                </Button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+            {showCropper && tempImage && (
+                <ImageCropper
+                    image={tempImage}
+                    title={cropTitle}
+                    initialAspect={initialAspect}
+                    onCropComplete={handleCropComplete}
+                    onCancel={() => {
+                        setShowCropper(false);
+                        setTempImage(null);
+                    }}
+                />
             )}
 
             <div className="max-w-7xl mx-auto space-y-6 pb-20 px-4">
@@ -702,7 +548,7 @@ export default function EditTemplePage() {
                                 <p className="text-[10px] text-muted-foreground italic">Example: 6 AM to 10 PM</p>
                             </div>
                             <div className="space-y-2">
-                                <label className="text-sm font-semibold text-slate-700">Viewers Count</label>
+                                <label className="text-sm font-semibold text-slate-700">Approx monthly visitor count</label>
                                 <Input value={formData.viewers} onChange={e => setFormData({ ...formData, viewers: e.target.value })} />
                             </div>
 
@@ -858,15 +704,28 @@ export default function EditTemplePage() {
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="space-y-2">
-                                <label className="text-sm font-semibold text-slate-700">Temple Phone</label>
-                                <Input value={formData.templePhone} onChange={e => setFormData({ ...formData, templePhone: e.target.value })} />
+                                <label className="text-sm font-semibold text-slate-700">Temple Contact Number</label>
+                                <div className="relative">
+                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 font-semibold border-r border-slate-300 pr-2">+91</span>
+                                    <Input
+                                        type="tel"
+                                        maxLength={10}
+                                        value={formData.templePhone}
+                                        onChange={e => {
+                                            const val = e.target.value.replace(/\D/g, '');
+                                            setFormData({ ...formData, templePhone: val });
+                                        }}
+                                        placeholder="Enter 10-digit number"
+                                        className="pl-14"
+                                    />
+                                </div>
                             </div>
                             <div className="space-y-2">
                                 <label className="text-sm font-semibold text-slate-700">Website</label>
                                 <Input value={formData.website} onChange={e => setFormData({ ...formData, website: e.target.value })} />
                             </div>
                             <div className="space-y-2 md:col-span-2">
-                                <label className="text-sm font-semibold text-slate-700">Map URL</label>
+                                <label className="text-sm font-semibold text-slate-700">Map Location Link</label>
                                 <Input value={formData.mapUrl} onChange={e => setFormData({ ...formData, mapUrl: e.target.value })} />
                             </div>
                         </div>
@@ -874,22 +733,68 @@ export default function EditTemplePage() {
 
                     {/* Poojas Section */}
                     <div className="bg-card border rounded-xl p-8 shadow-sm space-y-6">
-                        <h2 className="text-xl font-bold flex items-center gap-2"><Layout className="w-5 h-5 text-primary" /> Available Poojas</h2>
-                        <div className="flex flex-wrap gap-2">
-                            {allPoojas.map(pooja => (
-                                <button
-                                    key={pooja.id}
+                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                            <div className="space-y-1">
+                                <h2 className="text-xl font-bold font-serif flex items-center gap-2">
+                                    <Layout className="w-5 h-5 text-primary" /> Available Poojas
+                                </h2>
+                                <p className="text-sm text-slate-500">Select which poojas this temple offers or add a new one to the master list.</p>
+                            </div>
+
+                            {/* <div className="flex items-center gap-2">
+                                <Input
+                                    placeholder="New Pooja Name..."
+                                    value={newPoojaName}
+                                    onChange={(e) => setNewPoojaName(e.target.value)}
+                                    className="max-w-[200px] h-9"
+                                />
+                                <Button
                                     type="button"
-                                    onClick={() => togglePooja(pooja.id)}
-                                    className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${selectedPoojaIds.includes(pooja.id)
-                                        ? "bg-primary text-white"
-                                        : "bg-slate-100 text-slate-600"
-                                        }`}
+                                    size="sm"
+                                    onClick={handleAddNewPooja}
+                                    disabled={isAddingPooja || !newPoojaName.trim()}
                                 >
-                                    {pooja.name} {selectedPoojaIds.includes(pooja.id) && "✓"}
-                                </button>
-                            ))}
+                                    {isAddingPooja ? "Adding..." : <><Plus className="w-4 h-4 mr-1" /> Add</>}
+                                </Button>
+                            </div> */}
                         </div>
+
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 pt-2">
+                            {allPoojas.map(pooja => {
+                                const isSelected = selectedPoojaIds.includes(pooja.id);
+                                return (
+                                    <div
+                                        key={pooja.id}
+                                        className={`flex items-center space-x-3 p-3 rounded-xl border transition-all cursor-pointer select-none group ${isSelected
+                                            ? "bg-primary/5 border-primary shadow-sm"
+                                            : "bg-white border-slate-200 hover:border-primary/40 hover:bg-slate-50"
+                                            }`}
+                                        onClick={() => togglePooja(pooja.id)}
+                                    >
+                                        <div className={`w-5 h-5 rounded-md border flex items-center justify-center transition-all ${isSelected
+                                            ? "bg-primary border-primary text-white scale-110 shadow-sm"
+                                            : "bg-white border-slate-200 group-hover:border-primary/30"
+                                            }`}>
+                                            {isSelected ? (
+                                                <CheckCircle className="w-3.5 h-3.5" />
+                                            ) : (
+                                                <div className="w-1.5 h-1.5 rounded-full bg-slate-100 group-hover:bg-primary/20 transition-colors" />
+                                            )}
+                                        </div>
+                                        <span className={`text-[13px] font-semibold truncate transition-colors ${isSelected ? "text-primary" : "text-slate-600"
+                                            }`}>
+                                            {pooja.name}
+                                        </span>
+                                    </div>
+                                );
+                            })}
+                        </div>
+
+                        {allPoojas.length === 0 && (
+                            <div className="text-center py-10 border-2 border-dashed rounded-xl border-slate-200">
+                                <p className="text-slate-400 text-sm italic">No poojas found in master list. Add your first one above.</p>
+                            </div>
+                        )}
                     </div>
 
                     {/* Financial Settings - REPLACED WITH SLABS */}

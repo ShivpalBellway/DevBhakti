@@ -109,7 +109,7 @@ export default function AdminPoojasListPage() {
             {/* Page Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold tracking-tight">Poojas Management</h1>
+                    <h1 className="text-2xl font-bold tracking-tight">Poojas & Sevas Management</h1>
                     <p className="text-[14px] text-dark-foreground">
                         Manage all poojas, rituals, and spiritual services.
                     </p>
@@ -132,7 +132,7 @@ export default function AdminPoojasListPage() {
                         : 'border-transparent text-slate-500 hover:text-slate-700'
                         }`}
                 >
-                    All Poojas
+                   Poojas & Sevas Management
                 </button>
                 <button
                     onClick={() => setActiveTab('master')}

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
     Calendar,
@@ -17,7 +18,8 @@ import {
     Phone,
     Mail,
     X,
-    Trash2
+    Trash2,
+    ChevronDown
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -25,6 +27,16 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { fetchAllBookingsAdmin, deleteBookingAdmin } from "@/api/adminController";
 import { useToast } from "@/hooks/use-toast";
+import {
+    Pagination,
+    PaginationContent,
+    PaginationEllipsis,
+    PaginationItem,
+    PaginationLink,
+    PaginationNext,
+    PaginationPrevious,
+} from "@/components/ui/pagination";
+import { useDebounce } from "@/hooks/use-debounce";
 
 const statusConfig = {
     BOOKED: {
@@ -50,23 +62,88 @@ const statusConfig = {
 };
 
 export default function AdminBookingsPage() {
+    const searchParams = useSearchParams();
+    const idParam = searchParams.get("id");
     const [searchQuery, setSearchQuery] = useState("");
+    const debouncedSearch = useDebounce(searchQuery, 500);
     const [statusFilter, setStatusFilter] = useState("all");
     const [bookings, setBookings] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectedBooking, setSelectedBooking] = useState<any | null>(null);
     const { toast } = useToast();
 
-    useEffect(() => {
-        loadBookings();
-    }, []);
+    // Pagination state
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+    const [totalItems, setTotalItems] = useState(0);
+    const [itemsPerPage] = useState(10);
 
-    const loadBookings = async () => {
+    const [stats, setStats] = useState({ booked: 0, completed: 0, cancelled: 0, rejected: 0 });
+
+    // Date filtering state
+    const [dateRange, setDateRange] = useState<"all" | "week" | "month" | "year" | "custom">("all");
+    const [customStartDate, setCustomStartDate] = useState("");
+    const [customEndDate, setCustomEndDate] = useState("");
+    const [showCustomDate, setShowCustomDate] = useState(false);
+
+    useEffect(() => {
+        if (idParam) {
+            setSearchQuery(idParam);
+        }
+        loadBookings(1);
+    }, [debouncedSearch, statusFilter, idParam, dateRange, customStartDate, customEndDate]);
+
+    useEffect(() => {
+        loadBookings(currentPage);
+    }, [currentPage]);
+
+    useEffect(() => {
+        if (idParam && bookings.length > 0) {
+            const booking = bookings.find(b => b.id === idParam);
+            if (booking) {
+                setSelectedBooking(booking);
+            }
+        }
+    }, [idParam, bookings]);
+
+    const loadBookings = async (page: number) => {
         setLoading(true);
         try {
-            const res = await fetchAllBookingsAdmin();
+            let startDate, endDate;
+            if (dateRange !== "all") {
+                if (dateRange === "custom") {
+                    startDate = customStartDate ? new Date(customStartDate).toISOString() : undefined;
+                    endDate = customEndDate ? new Date(customEndDate).toISOString() : undefined;
+                } else {
+                    const now = new Date();
+                    const end = new Date();
+                    const start = new Date();
+                    if (dateRange === "week") start.setDate(now.getDate() - 7);
+                    else if (dateRange === "month") start.setMonth(now.getMonth() - 1);
+                    else if (dateRange === "year") start.setFullYear(now.getFullYear() - 1);
+                    startDate = start.toISOString();
+                    endDate = end.toISOString();
+                }
+            }
+
+            const res = await fetchAllBookingsAdmin({
+                page,
+                limit: itemsPerPage,
+                search: debouncedSearch,
+                status: statusFilter,
+                startDate,
+                endDate
+            });
             if (res.success) {
                 setBookings(res.data);
+                if (res.pagination) {
+                    setTotalPages(res.pagination.totalPages);
+                    setTotalItems(res.pagination.total);
+                    setCurrentPage(res.pagination.page);
+                }
+                if (res.stats) {
+                    setStats(res.stats);
+                }
             }
         } catch (error) {
             console.error("Failed to load bookings", error);
@@ -82,22 +159,18 @@ export default function AdminBookingsPage() {
             const res = await deleteBookingAdmin(id);
             if (res.success) {
                 toast({ title: "Success", description: "Booking deleted successfully" });
-                loadBookings();
+                loadBookings(currentPage);
             }
         } catch (error) {
             toast({ title: "Error", description: "Failed to delete booking", variant: "destructive" });
         }
     };
 
-    const filteredBookings = bookings.filter((booking) => {
-        const matchesSearch =
-            booking.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            booking.pooja?.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            booking.temple?.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            booking.devoteeName.toLowerCase().includes(searchQuery.toLowerCase());
-        const matchesStatus = statusFilter === "all" || booking.status === statusFilter;
-        return matchesSearch && matchesStatus;
-    });
+    const handlePageChange = (page: number) => {
+        if (page >= 1 && page <= totalPages) {
+            setCurrentPage(page);
+        }
+    };
 
     return (
         <div className="space-y-6">
@@ -117,10 +190,10 @@ export default function AdminBookingsPage() {
             {/* Stats */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {[
-                    { label: "Total Bookings", value: bookings.length, color: "text-foreground" },
-                    { label: "Confirmed", value: bookings.filter(b => b.status === 'BOOKED').length, color: "text-emerald-600" },
-                    { label: "Completed", value: bookings.filter(b => b.status === 'COMPLETED').length, color: "text-emerald-700" },
-                    { label: "Cancelled/Rejected", value: bookings.filter(b => b.status === 'CANCELLED' || b.status === 'REJECTED').length, color: "text-rose-600" },
+                    { label: "Total Bookings", value: totalItems, color: "text-foreground" },
+                    { label: "Confirmed", value: stats.booked, color: "text-emerald-600" },
+                    { label: "Completed", value: stats.completed, color: "text-emerald-700" },
+                    { label: "Cancelled/Rejected", value: stats.cancelled + stats.rejected, color: "text-rose-600" },
                 ].map((stat) => (
                     <Card key={stat.label}>
                         <CardContent className="p-4">
@@ -148,13 +221,93 @@ export default function AdminBookingsPage() {
                             key={status}
                             variant={statusFilter === status ? "sacred" : "outline"}
                             size="sm"
-                            onClick={() => setStatusFilter(status)}
+                            onClick={() => {
+                                setStatusFilter(status);
+                                setCurrentPage(1);
+                            }}
                             className="capitalize"
                         >
-                            {status === "all" ? "All" : status === "BOOKED" ? "Confirmed" : status.toLowerCase()}
+                            {status === "all" ? "All Status" : status === "BOOKED" ? "Confirmed" : status.toLowerCase()}
                         </Button>
                     ))}
                 </div>
+            </div>
+
+            {/* Date Filters */}
+            <div className="flex flex-col md:flex-row items-start md:items-center gap-4 bg-muted/20 p-4 rounded-xl border border-border/50">
+                <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground mr-2">
+                    <Calendar className="w-4 h-4" />
+                    <span>Duration:</span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                    {[
+                        { label: "All Time", value: "all" },
+                        { label: "This Week", value: "week" },
+                        { label: "This Month", value: "month" },
+                        { label: "This Year", value: "year" },
+                        { label: "Custom Range", value: "custom" },
+                    ].map((range) => (
+                        <Button
+                            key={range.value}
+                            variant={dateRange === range.value ? "sacred" : "outline"}
+                            size="sm"
+                            onClick={() => {
+                                setDateRange(range.value as any);
+                                if (range.value !== "custom") {
+                                    setShowCustomDate(false);
+                                } else {
+                                    setShowCustomDate(!showCustomDate);
+                                }
+                                setCurrentPage(1);
+                            }}
+                            className="text-xs"
+                        >
+                            {range.label}
+                            {range.value === "custom" && <ChevronDown className={`w-3 h-3 ml-1 transition-transform ${showCustomDate ? 'rotate-180' : ''}`} />}
+                        </Button>
+                    ))}
+                </div>
+
+                <AnimatePresence>
+                    {(dateRange === "custom" || showCustomDate) && (
+                        <motion.div
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: "auto" }}
+                            exit={{ opacity: 0, height: 0 }}
+                            className="flex flex-col md:flex-row items-end gap-3 w-full md:w-auto overflow-hidden"
+                        >
+                            <div className="space-y-1 w-full md:w-auto">
+                                <label className="text-[10px] uppercase font-bold text-muted-foreground ml-1">Start Date</label>
+                                <Input
+                                    type="date"
+                                    value={customStartDate}
+                                    onChange={(e) => setCustomStartDate(e.target.value)}
+                                    className="h-9 text-sm"
+                                />
+                            </div>
+                            <div className="space-y-1 w-full md:w-auto">
+                                <label className="text-[10px] uppercase font-bold text-muted-foreground ml-1">End Date</label>
+                                <Input
+                                    type="date"
+                                    value={customEndDate}
+                                    onChange={(e) => setCustomEndDate(e.target.value)}
+                                    className="h-9 text-sm"
+                                />
+                            </div>
+                            <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-9 text-xs"
+                                onClick={() => {
+                                    setCustomStartDate("");
+                                    setCustomEndDate("");
+                                }}
+                            >
+                                Clear
+                            </Button>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
             </div>
 
             {/* Bookings Table */}
@@ -179,11 +332,11 @@ export default function AdminBookingsPage() {
                                     <tr>
                                         <td colSpan={8} className="p-8 text-center text-muted-foreground">Loading bookings...</td>
                                     </tr>
-                                ) : filteredBookings.length === 0 ? (
+                                ) : bookings.length === 0 ? (
                                     <tr>
                                         <td colSpan={8} className="p-8 text-center text-muted-foreground">No bookings found</td>
                                     </tr>
-                                ) : filteredBookings.map((booking, index) => {
+                                ) : bookings.map((booking, index) => {
                                     const status = statusConfig[booking.status as keyof typeof statusConfig] || statusConfig.BOOKED;
                                     return (
                                         <motion.tr
@@ -254,6 +407,70 @@ export default function AdminBookingsPage() {
                     </div>
                 </CardContent>
             </Card>
+
+            {/* Pagination UI */}
+            {totalPages > 1 && (
+                <div className="flex items-center justify-between px-2">
+                    <p className="text-sm text-muted-foreground">
+                        Showing <span className="font-medium">{(currentPage - 1) * itemsPerPage + 1}</span> to{" "}
+                        <span className="font-medium">
+                            {Math.min(currentPage * itemsPerPage, totalItems)}
+                        </span>{" "}
+                        of <span className="font-medium">{totalItems}</span> results
+                    </p>
+                    <Pagination className="justify-end w-auto mx-0">
+                        <PaginationContent>
+                            <PaginationItem>
+                                <PaginationPrevious
+                                    href="#"
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        handlePageChange(currentPage - 1);
+                                    }}
+                                    className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                                />
+                            </PaginationItem>
+
+                            {/* Simple pagination logic */}
+                            {Array.from({ length: totalPages }, (_, i) => i + 1)
+                                .filter(p => p === 1 || p === totalPages || Math.abs(p - currentPage) <= 1)
+                                .map((page, idx, array) => (
+                                    <React.Fragment key={page}>
+                                        {idx > 0 && array[idx - 1] !== page - 1 && (
+                                            <PaginationItem>
+                                                <PaginationEllipsis />
+                                            </PaginationItem>
+                                        )}
+                                        <PaginationItem>
+                                            <PaginationLink
+                                                href="#"
+                                                onClick={(e) => {
+                                                    e.preventDefault();
+                                                    handlePageChange(page);
+                                                }}
+                                                isActive={currentPage === page}
+                                                className="cursor-pointer"
+                                            >
+                                                {page}
+                                            </PaginationLink>
+                                        </PaginationItem>
+                                    </React.Fragment>
+                                ))}
+
+                            <PaginationItem>
+                                <PaginationNext
+                                    href="#"
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        handlePageChange(currentPage + 1);
+                                    }}
+                                    className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                                />
+                            </PaginationItem>
+                        </PaginationContent>
+                    </Pagination>
+                </div>
+            )}
 
             {/* Booking Detail Modal */}
             <AnimatePresence>

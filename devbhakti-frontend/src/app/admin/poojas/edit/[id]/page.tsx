@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { fetchAllPoojasAdmin, updatePoojaAdmin, fetchAllTemplesAdmin } from "@/api/adminController";
 import { useToast } from "@/hooks/use-toast";
 import { API_URL } from "@/config/apiConfig";
+import { ImageCropper } from "@/components/admin/ImageCropper";
 
 export default function EditPoojaPage() {
     const router = useRouter();
@@ -22,6 +23,10 @@ export default function EditPoojaPage() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const [isMaster, setIsMaster] = useState(false);
+
+    // Image Cropper State
+    const [showCropper, setShowCropper] = useState(false);
+    const [tempImage, setTempImage] = useState<string | null>(null);
 
     const STATIC_PACKAGE_TYPES = [
         { name: "Single", description: "For 1 person" },
@@ -103,13 +108,29 @@ export default function EditPoojaPage() {
     const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
-            setImageFile(file);
             const reader = new FileReader();
             reader.onloadend = () => {
-                setImagePreview(reader.result as string);
+                setTempImage(reader.result as string);
+                setShowCropper(true);
             };
             reader.readAsDataURL(file);
         }
+    };
+
+    const handleCropComplete = (croppedFile: File) => {
+        setImageFile(croppedFile);
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            setImagePreview(reader.result as string);
+            setShowCropper(false);
+            setTempImage(null);
+        };
+        reader.readAsDataURL(croppedFile);
+    };
+
+    const handleCropCancel = () => {
+        setShowCropper(false);
+        setTempImage(null);
     };
 
     const handleArrayChange = (field: 'description' | 'benefits' | 'bullets', index: number, value: string) => {
@@ -584,6 +605,15 @@ export default function EditPoojaPage() {
                     </Button>
                 </div>
             </form>
+
+            {showCropper && tempImage && (
+                <ImageCropper
+                    image={tempImage}
+                    onCropComplete={handleCropComplete}
+                    onCancel={handleCropCancel}
+                    title="Edit Pooja Image"
+                />
+            )}
         </div>
     );
 }

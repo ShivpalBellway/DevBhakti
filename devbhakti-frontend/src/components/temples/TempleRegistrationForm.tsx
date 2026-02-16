@@ -12,19 +12,22 @@ import {
     Layout,
     Building2,
     MapPin,
+    Check,
+    CheckCircle,
+    ZoomIn,
+    ZoomOut,
+    Crop as CropIcon,
     Sparkles,
     ArrowRight,
-
-    History,
-    FileText,
-    Key,
     User,
     Mail,
     Phone,
     Globe,
-    Check,
-    CheckCircle,
+    History,
+    FileText,
+    Key,
 } from "lucide-react";
+import { ImageCropper } from "@/components/admin/ImageCropper";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -65,6 +68,13 @@ export default function TempleRegistrationForm({ onClose }: { onClose?: () => vo
         reviewsCount: "0"
     });
 
+    // Crop State
+    const [showCropper, setShowCropper] = useState(false);
+    const [tempImage, setTempImage] = useState<string | null>(null);
+    const [cropType, setCropType] = useState<"main" | "hero">("main");
+    const [cropTitle, setCropTitle] = useState("Edit Temple Image");
+    const [initialAspect, setInitialAspect] = useState(3 / 2);
+
     // Relationships State
     const [selectedPoojaIds, setSelectedPoojaIds] = useState<string[]>([]);
     const [inlineEvents, setInlineEvents] = useState<any[]>([]);
@@ -82,7 +92,9 @@ export default function TempleRegistrationForm({ onClose }: { onClose?: () => vo
     const loadPoojas = async () => {
         try {
             const data = await fetchAllPoojasPublic();
-            setAllPoojas(Array.isArray(data) ? data : data.data || []);
+            const poojas = Array.isArray(data) ? data : data.data || [];
+            // Filter to show only Master Poojas
+            setAllPoojas(poojas.filter((p: any) => p.isMaster === true));
         } catch (error) {
             console.error("Failed to load poojas");
         }
@@ -91,21 +103,43 @@ export default function TempleRegistrationForm({ onClose }: { onClose?: () => vo
     // Handlers
     const handleMainImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
-        const MAX_SIZE = 2 * 1024 * 1024; // 2MB
+        const MAX_SIZE = 5 * 1024 * 1024; // 5MB for initial upload
 
         if (file) {
             if (file.size > MAX_SIZE) {
                 toast({
                     title: "File Too Large",
-                    description: `Image "${file.name}" exceeds 2MB limit. Please select a smaller file.`,
+                    description: `Image "${file.name}" exceeds 5MB limit. Please select a smaller file.`,
                     variant: "destructive"
                 });
                 e.target.value = ''; // Reset input
                 return;
             }
-            setMainImage(file);
-            setMainImagePreview(URL.createObjectURL(file));
+
+            // Open crop modal
+            const reader = new FileReader();
+            reader.onload = () => {
+                setTempImage(reader.result as string);
+                setCropType("main");
+                setCropTitle("Adjust Temple Profile Image");
+                setInitialAspect(3 / 2);
+                setShowCropper(true);
+            };
+            reader.readAsDataURL(file);
+            e.target.value = ''; // Reset input
         }
+    };
+
+    const handleCropComplete = (croppedFile: File) => {
+        if (cropType === "main") {
+            setMainImage(croppedFile);
+            setMainImagePreview(URL.createObjectURL(croppedFile));
+        } else {
+            setHeroImages(prev => [...prev, croppedFile]);
+            setHeroPreviews(prev => [...prev, URL.createObjectURL(croppedFile)]);
+        }
+        setShowCropper(false);
+        setTempImage(null);
     };
 
     const handleHeroImagesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -137,9 +171,16 @@ export default function TempleRegistrationForm({ onClose }: { onClose?: () => vo
 
             const validFiles = files.filter(f => f.size <= MAX_SIZE).slice(0, remaining);
             if (validFiles.length > 0) {
-                setHeroImages(prev => [...prev, ...validFiles]);
-                const newPreviews = validFiles.map(file => URL.createObjectURL(file));
-                setHeroPreviews(prev => [...prev, ...newPreviews]);
+                // Process first valid file for cropping
+                const reader = new FileReader();
+                reader.onload = () => {
+                    setTempImage(reader.result as string);
+                    setCropType("hero");
+                    setCropTitle("Adjust Temple Banner Image");
+                    setInitialAspect(16 / 9);
+                    setShowCropper(true);
+                };
+                reader.readAsDataURL(validFiles[0]);
             }
 
             if (files.filter(f => f.size <= MAX_SIZE).length > remaining) {
@@ -207,9 +248,8 @@ export default function TempleRegistrationForm({ onClose }: { onClose?: () => vo
         // 3. Image Size Validation (Max 2MB)
         const MAX_SIZE = 2 * 1024 * 1024;
         const allFiles = [
-            ...(selectedFile ? [selectedFile] : []),
-            ...heroImages,
-            ...galleryImages
+            ...(mainImage ? [mainImage] : []),
+            ...heroImages
         ];
 
         for (const file of allFiles) {
@@ -228,19 +268,9 @@ export default function TempleRegistrationForm({ onClose }: { onClose?: () => vo
         try {
             const fd = new FormData();
 
-            // Normalize Phone numbers
-            let normalizedPhone = formData.phone;
-            if (normalizedPhone.length === 10) {
-                normalizedPhone = `+91${normalizedPhone}`;
-            }
-
             // Append basic fields
             Object.entries(formData).forEach(([key, value]) => {
-                if (key === 'phone') {
-                    fd.append(key, normalizedPhone);
-                } else {
-                    fd.append(key, value);
-                }
+                fd.append(key, value);
             });
 
             // Append relationships
@@ -308,7 +338,11 @@ export default function TempleRegistrationForm({ onClose }: { onClose?: () => vo
                 </div>
             </div>
 
-            <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-8 md:p-10 space-y-10 custom-scrollbar">
+            <form
+                id="temple-reg-form"
+                onSubmit={handleSubmit}
+                className="flex-1 overflow-y-auto p-8 md:p-10 space-y-10 custom-scrollbar"
+            >
                 {/* 1. Account Identity */}
                 <section className="space-y-6">
                     <div className="flex items-center gap-3 pb-3 border-b border-slate-100">
@@ -677,7 +711,7 @@ export default function TempleRegistrationForm({ onClose }: { onClose?: () => vo
                             />
                         </div>
                         <div className="space-y-2">
-                            <label className="text-sm font-bold text-slate-600 ml-1">Google Maps URL</label>
+                            <label className="text-sm font-bold text-slate-600 ml-1">Google Maps Link</label>
                             <Input
                                 value={formData.mapUrl}
                                 onChange={e => setFormData({ ...formData, mapUrl: e.target.value })}
@@ -762,7 +796,8 @@ export default function TempleRegistrationForm({ onClose }: { onClose?: () => vo
                     Discard
                 </Button>
                 <Button
-                    onClick={handleSubmit}
+                    type="submit"
+                    form="temple-reg-form"
                     disabled={isLoading}
                     className="h-14 px-12 bg-gradient-to-r from-[#88542b] to-[#794a05] hover:from-[#794a05] hover:to-[#88542b] text-white rounded-2xl text-lg font-bold shadow-xl shadow-amber-900/20 active:scale-95 transition-all"
                 >
@@ -779,6 +814,20 @@ export default function TempleRegistrationForm({ onClose }: { onClose?: () => vo
                     )}
                 </Button>
             </div>
+
+            {/* Crop Modal */}
+            {showCropper && tempImage && (
+                <ImageCropper
+                    image={tempImage}
+                    title={cropTitle}
+                    initialAspect={initialAspect}
+                    onCropComplete={handleCropComplete}
+                    onCancel={() => {
+                        setShowCropper(false);
+                        setTempImage(null);
+                    }}
+                />
+            )}
         </div>
     );
 }

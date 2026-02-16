@@ -8,7 +8,9 @@ import {
     Trash2,
     Upload,
     X,
+    Crop
 } from "lucide-react";
+import { ImageCropper } from "@/components/admin/ImageCropper";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -52,6 +54,10 @@ export default function FeaturesPage() {
 
     const [iconFile, setIconFile] = useState<File | null>(null);
     const [iconPreview, setIconPreview] = useState<string>("");
+
+    const [showCropper, setShowCropper] = useState(false);
+    const [tempImage, setTempImage] = useState<string | null>(null);
+    const [cropType, setCropType] = useState<"icon" | "bg">("bg");
 
     useEffect(() => {
         loadFeatures();
@@ -102,17 +108,42 @@ export default function FeaturesPage() {
     const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files?.[0]) {
             const file = e.target.files[0];
-            setImageFile(file);
-            setImagePreview(URL.createObjectURL(file));
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setTempImage(reader.result as string);
+                setCropType("bg");
+                setShowCropper(true);
+            };
+            reader.readAsDataURL(file);
+            e.target.value = ''; // Reset input
         }
     };
 
     const handleIconChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files?.[0]) {
             const file = e.target.files[0];
-            setIconFile(file);
-            setIconPreview(URL.createObjectURL(file));
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setTempImage(reader.result as string);
+                setCropType("icon");
+                setShowCropper(true);
+            };
+            reader.readAsDataURL(file);
+            e.target.value = ''; // Reset input
         }
+    };
+
+    const handleCropComplete = (croppedFile: File) => {
+        const previewUrl = URL.createObjectURL(croppedFile);
+        if (cropType === "bg") {
+            setImageFile(croppedFile);
+            setImagePreview(previewUrl);
+        } else {
+            setIconFile(croppedFile);
+            setIconPreview(previewUrl);
+        }
+        setShowCropper(false);
+        setTempImage(null);
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -163,6 +194,18 @@ export default function FeaturesPage() {
 
     return (
         <div className="space-y-6">
+            {showCropper && tempImage && (
+                <ImageCropper
+                    image={tempImage}
+                    onCropComplete={handleCropComplete}
+                    onCancel={() => {
+                        setShowCropper(false);
+                        setTempImage(null);
+                    }}
+                    initialAspect={cropType === "bg" ? 4 / 3 : 1}
+                    title={cropType === "bg" ? "Adjust Background Image" : "Adjust Feature Icon"}
+                />
+            )}
             {/* Page Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>

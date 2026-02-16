@@ -20,9 +20,16 @@ import {
   AlertCircle,
   Loader2,
   ArrowRight,
-  ChevronRight
+  ChevronRight,
+  Info
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { fetchAdminDashboardStats } from "@/api/adminController";
@@ -52,6 +59,36 @@ export default function AdminDashboardPage() {
     }
   };
 
+  const handleActivityClick = (activity: any) => {
+    const { type, id } = activity;
+    if (type === 'booking') {
+      router.push(`/admin/bookings?id=${id}`);
+    } else if (type === 'user') {
+      router.push(`/admin/users/${id}`);
+    } else if (type === 'temple' || type === 'institution') {
+      router.push(`/admin/temples/${id}`);
+    } else if (type === 'product') {
+      router.push(`/admin/products`);
+    } else if (type === 'withdrawal' || type === 'payout') {
+      router.push(`/admin/finance/withdrawals`);
+    } else if (type === 'pooja') {
+      router.push(`/admin/poojas`);
+    }
+  };
+
+  const handlePendingItemClick = (item: any) => {
+    const type = item.type.toLowerCase();
+    if (type === 'temple') {
+      router.push('/admin/temples');
+    } else if (type === 'product') {
+      router.push('/admin/products');
+    } else if (type === 'payout' || type === 'withdrawal') {
+      router.push('/admin/finance/withdrawals');
+    } else if (type === 'pooja') {
+      router.push('/admin/poojas');
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
@@ -68,7 +105,8 @@ export default function AdminDashboardPage() {
       icon: Building2,
       color: "text-blue-600",
       bg: "bg-blue-50",
-      description: "Active shrines on platform"
+      description: "Total temples",
+      path: "/admin/temples"
     },
     {
       title: "Active Devotees",
@@ -76,7 +114,8 @@ export default function AdminDashboardPage() {
       icon: Users,
       color: "text-emerald-600",
       bg: "bg-emerald-50",
-      description: "Registered spiritual seekers"
+      description: "Total devotees ",
+      path: "/admin/users"
     },
     {
       title: "Total Bookings",
@@ -84,7 +123,8 @@ export default function AdminDashboardPage() {
       icon: Calendar,
       color: "text-amber-600",
       bg: "bg-amber-50",
-      description: "Poojas & Product orders"
+      description: "Poojas & Product orders",
+      path: "/admin/bookings"
     },
     {
       title: "Gross Revenue",
@@ -93,7 +133,8 @@ export default function AdminDashboardPage() {
       isCurrency: true,
       color: "text-[#794A05]",
       bg: "bg-[#794A05]/10",
-      description: "Platform wide earnings"
+      description: "Platform wide earnings",
+      path: "/admin/finance/ledger"
     },
   ];
 
@@ -128,22 +169,37 @@ export default function AdminDashboardPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: index * 0.1 }}
+            className="cursor-pointer"
+            onClick={() => router.push((stat as any).path)}
           >
-            <Card className="border-none shadow-xl rounded-[1.5rem] overflow-hidden group hover:scale-[1.02] transition-all duration-300 bg-white border border-slate-100">
+            <Card className="border-none shadow-xl rounded-[1.5rem] overflow-hidden group hover:scale-[1.02] transition-all duration-300 bg-white border border-slate-100 hover:shadow-primary/5">
               <CardContent className="p-6">
                 <div className="flex justify-between items-start mb-4">
                   <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center transition-transform group-hover:rotate-6", stat.bg)}>
                     <stat.icon className={cn("w-6 h-6", stat.color)} />
                   </div>
-                  <Badge variant="outline" className="text-[10px] font-bold border-slate-200 text-slate-500 uppercase tracking-widest">Live</Badge>
+                  {/* <Badge variant="outline" className="text-[10px] font-bold border-slate-200 text-slate-500 uppercase tracking-widest">Live</Badge> */}
                 </div>
                 <div>
                   <h3 className="text-2xl font-extrabold text-slate-900 flex items-center">
                     {stat.isCurrency && <IndianRupee className="w-4 h-4 mr-0.5 opacity-50" strokeWidth={3} />}
                     {stat.isCurrency ? stat.value.toLocaleString() : stat.value}
                   </h3>
-                  <p className="text-sm font-bold text-slate-900 mt-1">{stat.title}</p>
-                  <p className="text-[11px] text-slate-600 font-bold uppercase tracking-tight mt-0.5">{stat.description}</p>
+                  <div className="flex items-center gap-1.5 mt-1">
+                    <p className="text-sm font-bold text-slate-900">{stat.title}</p>
+                    <TooltipProvider delayDuration={0}>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <button className="text-slate-400 hover:text-primary transition-colors cursor-help">
+                            <Info className="w-3.5 h-3.5" />
+                          </button>
+                        </TooltipTrigger>
+                        <TooltipContent side="right" className="bg-slate-900 text-white border-slate-800 rounded-xl p-3 shadow-2xl max-w-xs">
+                          <p className="text-xs font-medium leading-relaxed">{stat.description}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -160,7 +216,7 @@ export default function AdminDashboardPage() {
               Recent Spiritual Activity
             </h3>
             <Button variant="ghost" size="sm" className="text-primary font-bold hover:bg-primary/5 rounded-lg" onClick={() => router.push('/admin/bookings')}>
-              View Ledger
+              View full list
               <ChevronRight className="w-4 h-4 ml-1" />
             </Button>
           </div>
@@ -175,7 +231,8 @@ export default function AdminDashboardPage() {
                       initial={{ opacity: 0, x: -10 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: index * 0.05 }}
-                      className="flex items-center gap-4 p-4 rounded-2xl hover:bg-slate-50 transition-all group"
+                      className="flex items-center gap-4 p-4 rounded-2xl hover:bg-slate-50 transition-all group cursor-pointer"
+                      onClick={() => handleActivityClick(activity)}
                     >
                       <div className={cn(
                         "w-12 h-12 rounded-[1rem] flex items-center justify-center transition-colors shadow-sm",
@@ -194,15 +251,17 @@ export default function AdminDashboardPage() {
                         <p className="text-xs text-slate-600 font-medium">{activity.description}</p>
                       </div>
                       <div className="text-right flex flex-col items-end gap-1">
-                        <span className="text-[12px] font-bold text-slate-600 uppercase tracking-tighter">
-                          {format(new Date(activity.time), "hh:mm a")}
+
+
+                        <span className="text-[15px] font-bold text-slate-800 uppercase tracking-tighter">
+                          {format(new Date(activity.time), "hh:mm a  dd-MM-yyyy")}
                         </span>
                         <div className="w-1.5 h-1.5 rounded-full bg-primary/30" />
                       </div>
                     </motion.div>
                   ))
                 ) : (
-                  <div className="py-20 text-center flex flex-col items-center gap-2 opacity-30">
+                  <div className="py-20 text-center flex flex-col items-center gap-5 opacity-30">
                     <AlertCircle className="w-12 h-12" />
                     <p className="font-serif font-bold italic">No recent activities recorded.</p>
                   </div>
@@ -233,7 +292,7 @@ export default function AdminDashboardPage() {
                 {data?.pendingApprovals?.length > 0 ? (
                   <div className="space-y-3">
                     {data.pendingApprovals.map((item: any) => (
-                      <div key={item.id} className="p-4 rounded-2xl border border-slate-100 hover:border-primary/20 hover:bg-amber-50/30 transition-all cursor-pointer group" onClick={() => router.push('/admin/temples')}>
+                      <div key={item.id} className="p-4 rounded-2xl border border-slate-100 hover:border-primary/20 hover:bg-amber-50/30 transition-all cursor-pointer group" onClick={() => handlePendingItemClick(item)}>
                         <div className="flex justify-between items-start">
                           <div>
                             <p className="text-sm font-extrabold text-slate-900 group-hover:text-primary transition-colors">{item.name}</p>
@@ -253,18 +312,26 @@ export default function AdminDashboardPage() {
                 )}
 
                 <div className="grid grid-cols-2 gap-3 mt-4">
-                  <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                  <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 hover:bg-blue-50/50 cursor-pointer transition-colors" onClick={() => router.push('/admin/temples')}>
+                    <p className="text-[10px] font-bold text-slate-600 uppercase tracking-widest mb-1">Temples</p>
+                    <p className="text-xl font-extrabold text-slate-900">{data?.pending?.temples || 0}</p>
+                  </div>
+                  <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 hover:bg-amber-50/50 cursor-pointer transition-colors" onClick={() => router.push('/admin/products')}>
                     <p className="text-[10px] font-bold text-slate-600 uppercase tracking-widest mb-1">Products</p>
                     <p className="text-xl font-extrabold text-slate-900">{data?.pending?.products || 0}</p>
                   </div>
-                  <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                  <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 hover:bg-emerald-50/50 cursor-pointer transition-colors" onClick={() => router.push('/admin/finance/withdrawals')}>
                     <p className="text-[10px] font-bold text-slate-600 uppercase tracking-widest mb-1">Payouts</p>
                     <p className="text-xl font-extrabold text-slate-900">{data?.pending?.withdrawals || 0}</p>
+                  </div>
+                  <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 hover:bg-purple-50/50 cursor-pointer transition-colors" onClick={() => router.push('/admin/poojas')}>
+                    <p className="text-[10px] font-bold text-slate-600 uppercase tracking-widest mb-1">Poojas</p>
+                    <p className="text-xl font-extrabold text-slate-900">{data?.pending?.poojas || 0}</p>
                   </div>
                 </div>
 
                 <Button variant="ghost" className="w-full rounded-xl font-bold text-primary group" onClick={() => router.push('/admin/temples')}>
-                  Review All Systems
+                  Review All Requests
                   <ChevronRight className="w-4 h-4 ml-1 transition-transform group-hover:translate-x-1" />
                 </Button>
               </CardContent>
@@ -303,7 +370,7 @@ export default function AdminDashboardPage() {
         <h3 className="text-xl font-serif font-bold text-slate-900">System Quick Access</h3>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[
-            { label: "Pooja Bookings", icon: Calendar, path: "/admin/bookings", color: "bg-amber-100 text-amber-700" },
+            { label: "Pooja & Sev Booking", icon: Calendar, path: "/admin/bookings", color: "bg-amber-100 text-amber-700" },
             { label: "Withdrawal Requests", icon: Wallet, path: "/admin/finance/withdrawals", color: "bg-emerald-100 text-emerald-700" },
             { label: "Product Inventory", icon: Package, path: "/admin/products", color: "bg-blue-100 text-blue-700" },
             { label: "System Settings", icon: AlertCircle, path: "/admin/settings", color: "bg-slate-100 text-slate-700" }

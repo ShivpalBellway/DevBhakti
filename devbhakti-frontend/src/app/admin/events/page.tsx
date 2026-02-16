@@ -38,23 +38,34 @@ import {
     DialogTitle,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import {
-    fetchAllEventsAdmin,
-    fetchAllTemplesAdmin,
-    createEventAdmin,
-    updateEventAdmin,
-    deleteEventAdmin,
-} from "@/api/adminController";
+import { fetchAllEventsAdmin, fetchAllTemplesAdmin, createEventAdmin, updateEventAdmin, deleteEventAdmin, } from "@/api/adminController";
 import { useToast } from "@/hooks/use-toast";
+import {
+    Pagination,
+    PaginationContent,
+    PaginationEllipsis,
+    PaginationItem,
+    PaginationLink,
+    PaginationNext,
+    PaginationPrevious,
+} from "@/components/ui/pagination";
+import { useDebounce } from "@/hooks/use-debounce";
 
 export default function AdminEventsPage() {
     const [events, setEvents] = useState<any[]>([]);
     const [temples, setTemples] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState("");
+    const debouncedSearch = useDebounce(searchTerm, 500);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingEvent, setEditingEvent] = useState<any>(null);
     const { toast } = useToast();
+
+    // Pagination state
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+    const [totalItems, setTotalItems] = useState(0);
+    const [itemsPerPage] = useState(10);
 
     const [formData, setFormData] = useState({
         name: "",
@@ -64,28 +75,50 @@ export default function AdminEventsPage() {
     });
 
     useEffect(() => {
-        loadData();
+        loadEvents(1);
+    }, [debouncedSearch]);
+
+    useEffect(() => {
+        loadEvents(currentPage);
+    }, [currentPage]);
+
+    useEffect(() => {
+        loadTemples();
     }, []);
 
-    const loadData = async () => {
+    const loadTemples = async () => {
+        try {
+            const templesData = await fetchAllTemplesAdmin();
+            const actualTemples = templesData
+                .filter((user: any) => user.temple)
+                .map((user: any) => user.temple);
+            setTemples(actualTemples);
+        } catch (error) {
+            console.error("Failed to load temples", error);
+        }
+    };
+
+    const loadEvents = async (page: number) => {
         setIsLoading(true);
         try {
-            const [eventsData, templesData] = await Promise.all([
-                fetchAllEventsAdmin(),
-                fetchAllTemplesAdmin(),
-            ]);
+            const res = await fetchAllEventsAdmin({
+                page,
+                limit: itemsPerPage,
+                search: debouncedSearch,
+            });
 
-            // Extract actual temple objects from User responses
-            const actualTemples = templesData
-                .filter((user: any) => user.temple) // Only include users that have temples
-                .map((user: any) => user.temple); // Extract the temple object
-
-            setEvents(eventsData);
-            setTemples(actualTemples);
+            if (res.success) {
+                setEvents(res.data);
+                if (res.pagination) {
+                    setTotalPages(res.pagination.totalPages);
+                    setTotalItems(res.pagination.total);
+                    setCurrentPage(res.pagination.page);
+                }
+            }
         } catch (error) {
             toast({
                 title: "Error",
-                description: "Failed to load data",
+                description: "Failed to load events",
                 variant: "destructive",
             });
         } finally {
@@ -128,7 +161,7 @@ export default function AdminEventsPage() {
                 toast({ title: "Success", description: "Event created successfully" });
             }
             setIsDialogOpen(false);
-            loadData();
+            loadEvents(currentPage);
         } catch (error) {
             toast({
                 title: "Error",
@@ -143,7 +176,7 @@ export default function AdminEventsPage() {
             try {
                 await deleteEventAdmin(id);
                 toast({ title: "Success", description: "Event deleted successfully" });
-                loadData();
+                loadEvents(currentPage);
             } catch (error) {
                 toast({
                     title: "Error",
@@ -154,11 +187,11 @@ export default function AdminEventsPage() {
         }
     };
 
-    const filteredEvents = events.filter(
-        (event) =>
-            event.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            event.temple?.name.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const handlePageChange = (page: number) => {
+        if (page >= 1 && page <= totalPages) {
+            setCurrentPage(page);
+        }
+    };
 
     return (
         <div className="space-y-6">
@@ -211,14 +244,14 @@ export default function AdminEventsPage() {
                                     Loading events...
                                 </TableCell>
                             </TableRow>
-                        ) : filteredEvents.length === 0 ? (
+                        ) : events.length === 0 ? (
                             <TableRow>
                                 <TableCell colSpan={5} className="text-center py-10">
                                     No events found.
                                 </TableCell>
                             </TableRow>
                         ) : (
-                            filteredEvents.map((event) => (
+                            events.map((event) => (
                                 <TableRow key={event.id}>
                                     <TableCell>
                                         <div className="flex items-center gap-2">
@@ -266,6 +299,70 @@ export default function AdminEventsPage() {
                     </TableBody>
                 </Table>
             </div>
+
+            {/* Pagination UI */}
+            {totalPages > 1 && (
+                <div className="flex items-center justify-between px-2">
+                    <p className="text-sm text-muted-foreground">
+                        Showing <span className="font-medium">{(currentPage - 1) * itemsPerPage + 1}</span> to{" "}
+                        <span className="font-medium">
+                            {Math.min(currentPage * itemsPerPage, totalItems)}
+                        </span>{" "}
+                        of <span className="font-medium">{totalItems}</span> results
+                    </p>
+                    <Pagination className="justify-end w-auto mx-0">
+                        <PaginationContent>
+                            <PaginationItem>
+                                <PaginationPrevious
+                                    href="#"
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        handlePageChange(currentPage - 1);
+                                    }}
+                                    className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                                />
+                            </PaginationItem>
+
+                            {/* Simple pagination logic */}
+                            {Array.from({ length: totalPages }, (_, i) => i + 1)
+                                .filter(p => p === 1 || p === totalPages || Math.abs(p - currentPage) <= 2)
+                                .map((page, idx, array) => (
+                                    <React.Fragment key={page}>
+                                        {idx > 0 && array[idx - 1] !== page - 1 && (
+                                            <PaginationItem>
+                                                <PaginationEllipsis />
+                                            </PaginationItem>
+                                        )}
+                                        <PaginationItem>
+                                            <PaginationLink
+                                                href="#"
+                                                onClick={(e) => {
+                                                    e.preventDefault();
+                                                    handlePageChange(page);
+                                                }}
+                                                isActive={currentPage === page}
+                                                className="cursor-pointer"
+                                            >
+                                                {page}
+                                            </PaginationLink>
+                                        </PaginationItem>
+                                    </React.Fragment>
+                                ))}
+
+                            <PaginationItem>
+                                <PaginationNext
+                                    href="#"
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        handlePageChange(currentPage + 1);
+                                    }}
+                                    className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                                />
+                            </PaginationItem>
+                        </PaginationContent>
+                    </Pagination>
+                </div>
+            )}
 
             {/* Add/Edit Dialog */}
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>

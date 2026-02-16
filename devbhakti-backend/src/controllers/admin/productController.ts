@@ -169,33 +169,61 @@ export const createProduct = async (req: Request, res: Response) => {
 // Get All Products (Admin)
 export const getAllProducts = async (req: Request, res: Response) => {
   try {
-    const { page = 1, limit = 10, search, category, status, templeId } = req.query;
+    const { page = 1, limit = 10, search, category, status, templeId, date } = req.query;
 
     const skip = (Number(page) - 1) * Number(limit);
 
     // Build where clause
-    const where: any = {};
+    const where: any = { AND: [] };
 
     if (search) {
-      where.OR = [
-        { name: { contains: search as string, mode: "insensitive" } },
-        { description: { contains: search as string, mode: "insensitive" } }
-      ];
+      where.AND.push({
+        OR: [
+          { name: { contains: search as string, mode: "insensitive" } },
+          { description: { contains: search as string, mode: "insensitive" } }
+        ]
+      });
     }
 
     if (category) {
-      where.category = category;
+      where.AND.push({ category });
     }
 
     if (status) {
-      where.status = status;
+      where.AND.push({ status });
     }
 
     if (templeId) {
-      where.templeId = templeId;
+      if (templeId === "admin") {
+        where.AND.push({ templeId: null });
+        where.AND.push({ sellerId: null });
+      } else {
+        where.AND.push({
+          OR: [
+            { templeId: templeId as string },
+            { sellerId: templeId as string }
+          ]
+        });
+      }
     }
 
-    const [products, total] = await Promise.all([
+    if (date) {
+      const startDate = new Date(date as string);
+      startDate.setHours(0, 0, 0, 0);
+      const endDate = new Date(date as string);
+      endDate.setHours(23, 59, 59, 999);
+      where.AND.push({
+        createdAt: {
+          gte: startDate,
+          lte: endDate
+        }
+      });
+    }
+
+    // Remove empty AND if no filters
+    if (where.AND.length === 0) delete where.AND;
+
+    const [products, total, pendingCount, approvedCount, totalCount] = await Promise.all([
       prisma.product.findMany({
         where,
         include: {
@@ -236,7 +264,10 @@ export const getAllProducts = async (req: Request, res: Response) => {
         skip,
         take: Number(limit) as number
       }),
-      prisma.product.count({ where })
+      prisma.product.count({ where }),
+      prisma.product.count({ where: { status: 'pending' } }),
+      prisma.product.count({ where: { status: 'approved' } }),
+      prisma.product.count()
     ]);
 
     res.status(200).json({
@@ -244,6 +275,11 @@ export const getAllProducts = async (req: Request, res: Response) => {
       message: "Products retrieved successfully",
       data: {
         products,
+        stats: {
+          total: totalCount,
+          pending: pendingCount,
+          approved: approvedCount
+        },
         pagination: {
           page: Number(page),
           limit: Number(limit),
@@ -500,7 +536,7 @@ export const updateProduct = async (req: Request, res: Response) => {
     }
 
     const updateData: any = {};
-    
+
     // Validate and handle categoryId
     if (categoryId) {
       const categoryRecord = await prisma.productCategory.findUnique({
@@ -567,7 +603,7 @@ export const updateProduct = async (req: Request, res: Response) => {
         await prisma.productVariant.deleteMany({
           where: { productId: id as string }
         });
-        
+
         updateData.variants = {
           create: variants.map((variant: any) => ({
             name: variant.name,
@@ -806,10 +842,10 @@ export const getPublicProducts = async (req: Request, res: Response) => {
           }
         },
         {
-            AND: [
-                { templeId: null },
-                { sellerId: null }
-            ]
+          AND: [
+            { templeId: null },
+            { sellerId: null }
+          ]
         }
       ]
     };

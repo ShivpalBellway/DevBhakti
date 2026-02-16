@@ -44,7 +44,15 @@ const LiveDarshanSection: React.FC = () => {
       const data = await fetchPublicTemples();
       // Temple side: isLive / liveUrl / isLiveNow
       // Admin side: liveStatus (website par dikhana hai ya nahi)
-      const live = data.filter((t: any) => (t.isLive || t.liveUrl || t.isLiveNow) && t.liveStatus);
+      const live = data.filter((t: any) => t.isLive && t.liveStatus);
+
+      // Sort so isPrimaryLive: true comes first
+      live.sort((a: any, b: any) => {
+        if (a.isPrimaryLive && !b.isPrimaryLive) return -1;
+        if (!a.isPrimaryLive && b.isPrimaryLive) return 1;
+        return 0;
+      });
+
       setLiveTemples(live);
       setLoading(false);
     };
