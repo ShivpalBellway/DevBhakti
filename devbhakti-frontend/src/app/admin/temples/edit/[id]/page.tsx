@@ -777,7 +777,7 @@ export default function EditTemplePage() {
                         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                             <div className="space-y-1">
                                 <h2 className="text-xl font-bold font-serif flex items-center gap-2">
-                                    <Layout className="w-5 h-5 text-primary" /> Available Poojas
+                                    <Layout className="w-5 h-5 text-dark" /> Available Poojas
                                 </h2>
                                 <p className="text-sm text-slate-500">Select which poojas this temple offers or add a new one to the master list.</p>
                             </div>

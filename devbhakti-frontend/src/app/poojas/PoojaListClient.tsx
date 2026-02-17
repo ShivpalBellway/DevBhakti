@@ -221,10 +221,10 @@ const PoojaListClient: React.FC = () => {
             <section className="py-2">
                 <div className="container mx-auto px-4">
                     <div className="mb-8 flex items-center justify-between">
-                        <h2 className="text-2xl font-semibold text-zinc-500">
-                            Available <span className="text-primary">{selectedCategory === 'All' ? '' : selectedCategory}</span> Poojas
+                        <h2 className="text-2xl font-semibold text-dark">
+                            Available <span className="text-dark">{selectedCategory === 'All' ? '' : selectedCategory}</span> Poojas
                         </h2>
-                        <div className="text-sm text-zinc-500">
+                        <div className="text-sm text-dark-800">
                             Showing {filteredPoojas.length} Poojas
                         </div>
                     </div>
@@ -280,7 +280,7 @@ const PoojaListClient: React.FC = () => {
                                                     {pooja.name}
                                                 </h3>
 
-                                                <p className="text-zinc-500 text-sm line-clamp-2 mb-3 leading-relaxed">
+                                                <p className="font-bold text-zinc-900  mb-3 leading-relaxed">
                                                     {Array.isArray(pooja.description) ? pooja.description[0] : pooja.description}
                                                 </p>
 

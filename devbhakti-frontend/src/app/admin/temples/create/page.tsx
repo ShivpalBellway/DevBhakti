@@ -799,7 +799,7 @@ export default function CreateTemplePage() {
                     {/* 5. Poojas Management (Multiple Select) */}
                     <div className="bg-card border rounded-xl p-8 shadow-sm space-y-6">
                         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                            <div className="flex items-center gap-2 text-primary font-bold">
+                            <div className="flex items-center gap-2 text-dark font-bold">
                                 <Layout className="w-5 h-5" />
                                 <h2 className="text-xl">Available Poojas</h2>
                             </div>
