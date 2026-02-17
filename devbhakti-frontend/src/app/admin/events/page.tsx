@@ -633,7 +633,7 @@ export default function AdminEventsPage() {
                                         </PopoverContent>
                                     </Popover>
                                     {selectedPoojaIds.length > 0 && (
-                                        <p className="text-xs text-emerald-700 font-medium">
+                                        <p className="text-xs text-amber-700 font-medium">
                                             ✓ {selectedPoojaIds.length} pooja{selectedPoojaIds.length > 1 ? 's' : ''} selected
                                         </p>
                                     )}
