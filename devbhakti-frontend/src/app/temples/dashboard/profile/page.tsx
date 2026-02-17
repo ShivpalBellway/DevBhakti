@@ -705,7 +705,7 @@ export default function TempleProfilePage() {
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4">
                                     <div className="space-y-2">
-                                        <Label className="text-xs uppercase font-bold tracking-widest text-[#7b4623]/60 ml-1">Divine Description</Label>
+                                        <Label className="text-xs uppercase font-bold tracking-widest text-[#7b4623]/60 ml-1">Description</Label>
                                         <Textarea
                                             value={formData.description}
                                             onChange={e => setFormData({ ...formData, description: e.target.value })}

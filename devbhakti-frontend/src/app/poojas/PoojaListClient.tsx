@@ -15,7 +15,8 @@ import {
     ChevronRight,
     Zap,
     Users,
-    Heart
+    Heart,
+    IndianRupee
 } from "lucide-react";
 import { fetchPublicPoojas } from "@/api/publicController";
 import { fetchUserFavorites, addFavorite, removeFavorite } from "@/api/userController";
@@ -67,7 +68,13 @@ const PoojaListClient: React.FC = () => {
 
     const loadPoojas = async () => {
         const data = await fetchPublicPoojas();
-        setPoojas(data);
+
+        // Sort poojas by lowest price
+        const sortedData = [...data].sort((a, b) => {
+            return getLowestPrice(a) - getLowestPrice(b);
+        });
+
+        setPoojas(sortedData);
         setLoading(false);
     };
 
@@ -75,6 +82,57 @@ const PoojaListClient: React.FC = () => {
         if (!path) return "/placeholder.jpg";
         if (path.startsWith('http')) return path;
         return `${API_URL.replace('/api', '')}${path}`;
+    };
+
+    const getLowestPrice = (pooja: any) => {
+        let prices: number[] = [pooja.price];
+
+        if (pooja.packages) {
+            try {
+                const pkgs = typeof pooja.packages === 'string' ? JSON.parse(pooja.packages) : pooja.packages;
+                if (Array.isArray(pkgs)) {
+                    pkgs.forEach((p: any) => p.price && prices.push(p.price));
+                }
+            } catch (e) { }
+        }
+
+        if (pooja.templeCopies && Array.isArray(pooja.templeCopies)) {
+            pooja.templeCopies.forEach((copy: any) => {
+                if (copy.price) prices.push(copy.price);
+                if (copy.packages) {
+                    try {
+                        const pkgs = typeof copy.packages === 'string' ? JSON.parse(copy.packages) : copy.packages;
+                        if (Array.isArray(pkgs)) {
+                            pkgs.forEach((p: any) => p.price && prices.push(p.price));
+                        }
+                    } catch (e) { }
+                }
+            });
+        }
+
+        const validPrices = prices.filter(p => p > 0);
+        return validPrices.length > 0 ? Math.min(...validPrices) : pooja.price;
+    };
+
+    // Levenshtein Distance Helper for Fuzzy Search
+    const getLevenshteinDistance = (a: string, b: string): number => {
+        const matrix = Array.from({ length: b.length + 1 }, (_, i) => [i]);
+        for (let j = 0; j <= a.length; j++) matrix[0][j] = j;
+
+        for (let i = 1; i <= b.length; i++) {
+            for (let j = 1; j <= a.length; j++) {
+                if (b.charAt(i - 1) === a.charAt(j - 1)) {
+                    matrix[i][j] = matrix[i - 1][j - 1];
+                } else {
+                    matrix[i][j] = Math.min(
+                        matrix[i - 1][j - 1] + 1, // substitution
+                        matrix[i][j - 1] + 1,     // insertion
+                        matrix[i - 1][j] + 1      // deletion
+                    );
+                }
+            }
+        }
+        return matrix[b.length][a.length];
     };
 
     const toggleFavorite = async (e: React.MouseEvent, poojaId: string) => {
@@ -114,6 +172,23 @@ const PoojaListClient: React.FC = () => {
             selectedCategory === "All" || pooja.category === selectedCategory;
         return matchesSearch && matchesCategory;
     });
+
+    const suggestion = React.useMemo(() => {
+        if (searchQuery.length < 2 || filteredPoojas.length > 0) return null;
+
+        let minDistance = Infinity;
+        let bestMatch = "";
+
+        poojas.forEach(pooja => {
+            const distance = getLevenshteinDistance(searchQuery.toLowerCase(), pooja.name.toLowerCase());
+            if (distance < minDistance && distance < 3) { // Threshold of 3 characters
+                minDistance = distance;
+                bestMatch = pooja.name;
+            }
+        });
+
+        return bestMatch;
+    }, [searchQuery, filteredPoojas, poojas]);
 
     if (loading) {
         return (
@@ -220,14 +295,16 @@ const PoojaListClient: React.FC = () => {
             {/* Pooja Grid */}
             <section className="py-2">
                 <div className="container mx-auto px-4">
-                    <div className="mb-8 flex items-center justify-between">
-                        <h2 className="text-2xl font-semibold text-dark">
-                            Available <span className="text-dark">{selectedCategory === 'All' ? '' : selectedCategory}</span> Poojas
-                        </h2>
-                        <div className="text-sm text-dark-800">
-                            Showing {filteredPoojas.length} Poojas
+                    {filteredPoojas.length > 0 && (
+                        <div className="mb-8 flex items-center justify-between">
+                            <h2 className="text-2xl font-semibold text-dark">
+                                Available <span className="text-dark">{selectedCategory === 'All' ? '' : selectedCategory}</span> Poojas
+                            </h2>
+                            <div className="text-sm text-dark-800">
+                                Showing {filteredPoojas.length} Poojas
+                            </div>
                         </div>
-                    </div>
+                    )}
 
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         <AnimatePresence mode="popLayout">
@@ -240,9 +317,9 @@ const PoojaListClient: React.FC = () => {
                                     exit={{ opacity: 0, scale: 0.95 }}
                                     transition={{ delay: index * 0.05 }}
                                 >
-                                    <div className="relative group/card bg-white rounded-3xl p-3 shadow-sm hover:shadow-2xl transition-all duration-500 border border-orange-50/50 h-full flex flex-col hover:-translate-y-2">
+                                    <div className="relative group/card bg-white rounded-[2rem] p-3 shadow-md hover:shadow-2xl transition-all duration-500 border border-orange-100 h-full flex flex-col hover:-translate-y-2">
                                         <Link href={`/poojas/${pooja.id}`}>
-                                            <div className="relative aspect-video overflow-hidden rounded-2xl mb-4">
+                                            <div className="relative aspect-video overflow-hidden rounded-[2rem] mb-4">
                                                 <img
                                                     src={getFullImageUrl(pooja.image)}
                                                     alt={pooja.name}
@@ -259,11 +336,13 @@ const PoojaListClient: React.FC = () => {
                                                         </Badge>
                                                     )}
                                                 </div>
-                                                {/* <div className="absolute bottom-4 right-4 animate-in fade-in slide-in-from-bottom-2 duration-700">
-                                                    <div className="bg-black/40 backdrop-blur-md text-white px-4 py-2 rounded-2xl text-sm font-medium border border-white/20">
-                                                        Starts from ₹{pooja.price}
+                                                <div className="absolute bottom-4 right-4 animate-in fade-in slide-in-from-bottom-2 duration-700">
+                                                    <div className="bg-black/40 backdrop-blur-md text-white px-4 py-2 rounded-2xl text-sm font-medium border border-white/20 flex items-center gap-1">
+                                                        <span className="text-[10px] text-zinc-300 uppercase font-bold mr-1">Starts from</span>
+                                                        <IndianRupee className="w-3.5 h-3.5" />
+                                                        <span>{getLowestPrice(pooja)}</span>
                                                     </div>
-                                                </div> */}
+                                                </div>
                                             </div>
 
                                             <div className="px-3 flex-grow">
@@ -280,8 +359,8 @@ const PoojaListClient: React.FC = () => {
                                                     {pooja.name}
                                                 </h3>
 
-                                                <p className="font-bold text-zinc-900  mb-3 leading-relaxed">
-                                                    {Array.isArray(pooja.description) ? pooja.description[0] : pooja.description}
+                                                <p className="text-zinc-600 mb-3 leading-relaxed line-clamp-3 text-sm font-medium">
+                                                    {pooja.about || (Array.isArray(pooja.description) ? pooja.description.join(' ') : pooja.description)}
                                                 </p>
 
                                                 <div className="space-y-3 mb-4">
@@ -361,7 +440,21 @@ const PoojaListClient: React.FC = () => {
                                 <Search className="w-10 h-10 text-primary" />
                             </div>
                             <h3 className="text-2xl font-bold text-zinc-900 mb-2">No rituals found</h3>
-                            <p className="text-zinc-500">Try adjusting your filters or search terms</p>
+                            <p className="text-zinc-500 max-w-md mx-auto line-clamp-2">
+                                {suggestion ? (
+                                    <>
+                                        No results for "<span className="font-semibold">{searchQuery}</span>".
+                                        Did you mean <button
+                                            onClick={() => setSearchQuery(suggestion)}
+                                            className="text-primary font-bold hover:underline"
+                                        >
+                                            {suggestion}
+                                        </button>?
+                                    </>
+                                ) : (
+                                    "Try adjusting your filters or search terms"
+                                )}
+                            </p>
                             <Button
                                 variant="outline"
                                 className="mt-8 rounded-full"

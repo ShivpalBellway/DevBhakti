@@ -233,7 +233,7 @@ export default function TempleDashboardPage() {
                                             <stat.icon className={`w-6 h-6 ${stat.color.replace('bg-', 'text-')}`} />
                                         </div>
                                         <div className="flex items-center gap-2">
-                                            <div
+                                            {/* <div
                                                 className={`flex items-center gap-1 text-xs font-bold px-2 py-1 rounded-full ${stat.trend === "up" ? "bg-emerald-50 text-emerald-600" : "bg-rose-50 text-rose-600"
                                                     }`}
                                             >
@@ -243,7 +243,7 @@ export default function TempleDashboardPage() {
                                                     <TrendingDown className="w-3 h-3" />
                                                 )}
                                                 {stat.change}
-                                            </div>
+                                            </div> */}
                                             <Tooltip>
                                                 <TooltipTrigger asChild>
                                                     <div

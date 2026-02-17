@@ -56,6 +56,36 @@ const PoojaDetailClient = ({ id }: PoojaDetailClientProps) => {
         return `${API_URL.replace('/api', '')}${path}`;
     };
 
+    const getLowestPrice = (pooja: any) => {
+        let prices: number[] = [pooja.price];
+
+        if (pooja.packages) {
+            try {
+                const pkgs = typeof pooja.packages === 'string' ? JSON.parse(pooja.packages) : pooja.packages;
+                if (Array.isArray(pkgs)) {
+                    pkgs.forEach((p: any) => p.price && prices.push(p.price));
+                }
+            } catch (e) { }
+        }
+
+        if (pooja.templeCopies && Array.isArray(pooja.templeCopies)) {
+            pooja.templeCopies.forEach((copy: any) => {
+                if (copy.price) prices.push(copy.price);
+                if (copy.packages) {
+                    try {
+                        const pkgs = typeof copy.packages === 'string' ? JSON.parse(copy.packages) : copy.packages;
+                        if (Array.isArray(pkgs)) {
+                            pkgs.forEach((p: any) => p.price && prices.push(p.price));
+                        }
+                    } catch (e) { }
+                }
+            });
+        }
+
+        const validPrices = prices.filter(p => p > 0);
+        return validPrices.length > 0 ? Math.min(...validPrices) : pooja.price;
+    };
+
     useEffect(() => {
         const loadPooja = async () => {
             try {
@@ -168,7 +198,7 @@ const PoojaDetailClient = ({ id }: PoojaDetailClientProps) => {
                                         <div className="text-primary/70 text-[10px] font-bold uppercase tracking-[0.2em] mb-1">Starting From</div>
                                         <div className="flex items-center gap-1 text-3xl font-bold text-primary">
                                             <IndianRupee className="w-6 h-6 stroke-[2.5]" />
-                                            <span>{pooja.price}</span>
+                                            <span>{getLowestPrice(pooja)}</span>
                                         </div>
                                     </div>
                                     <Button

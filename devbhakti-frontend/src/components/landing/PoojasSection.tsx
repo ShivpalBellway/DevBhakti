@@ -45,7 +45,13 @@ const PoojasSection: React.FC = () => {
 
   const loadPoojas = async () => {
     const data = await fetchPublicPoojas();
-    setPoojas(data);
+
+    // Sort poojas by lowest price
+    const sortedData = [...data].sort((a, b) => {
+      return getLowestPrice(a) - getLowestPrice(b);
+    });
+
+    setPoojas(sortedData);
     setLoading(false);
   };
 
@@ -53,6 +59,36 @@ const PoojasSection: React.FC = () => {
     if (!path) return "/placeholder.jpg";
     if (path.startsWith('http')) return path;
     return `${API_URL.replace('/api', '')}${path}`;
+  };
+
+  const getLowestPrice = (pooja: any) => {
+    let prices: number[] = [pooja.price];
+
+    if (pooja.packages) {
+      try {
+        const pkgs = typeof pooja.packages === 'string' ? JSON.parse(pooja.packages) : pooja.packages;
+        if (Array.isArray(pkgs)) {
+          pkgs.forEach((p: any) => p.price && prices.push(p.price));
+        }
+      } catch (e) { }
+    }
+
+    if (pooja.templeCopies && Array.isArray(pooja.templeCopies)) {
+      pooja.templeCopies.forEach((copy: any) => {
+        if (copy.price) prices.push(copy.price);
+        if (copy.packages) {
+          try {
+            const pkgs = typeof copy.packages === 'string' ? JSON.parse(copy.packages) : copy.packages;
+            if (Array.isArray(pkgs)) {
+              pkgs.forEach((p: any) => p.price && prices.push(p.price));
+            }
+          } catch (e) { }
+        }
+      });
+    }
+
+    const validPrices = prices.filter(p => p > 0);
+    return validPrices.length > 0 ? Math.min(...validPrices) : pooja.price;
   };
 
   const scroll = (direction: "left" | "right") => {
@@ -172,9 +208,9 @@ const PoojasSection: React.FC = () => {
               >
                 <div className="relative group/card h-[400px]">
                   <Link href={`/poojas/${pooja.id}`}>
-                    <div className="bg-card rounded-2xl overflow-hidden border border-border/40 shadow-soft hover:shadow-warm transition-all duration-300 hover:-translate-y-2 h-full flex flex-col">
+                    <div className="bg-card rounded-[2rem] overflow-hidden border-2 border-white/10 shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-2 h-full flex flex-col isolate">
                       {/* Background Image with bottom gradient for text readability */}
-                      <div className="absolute inset-0 z-0">
+                      <div className="absolute inset-0 z-0 rounded-[2rem] overflow-hidden">
                         <img
                           src={getFullImageUrl(pooja.image)}
                           alt={pooja.name}
@@ -189,6 +225,7 @@ const PoojasSection: React.FC = () => {
 
                       <div className="relative z-10 flex flex-col h-full text-white px-5 py-6">
                         {/* Header / Title */}
+
                         <div className="mt-auto space-y-3">
                           <h3 className="text-2xl font-serif font-semibold text-white leading-snug drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]">
                             {pooja.name}
@@ -196,7 +233,7 @@ const PoojasSection: React.FC = () => {
                         </div>
 
                         {/* Bullets */}
-                        <div className="mt-4 space-y-2">
+                        {/* <div className="mt-4 space-y-2">
                           <div className="flex flex-wrap gap-2">
                             {(pooja as any).benefits?.slice(0, 3).map((benefit: string, bIdx: number) => (
                               <span
@@ -207,20 +244,20 @@ const PoojasSection: React.FC = () => {
                               </span>
                             ))}
                           </div>
-                        </div>
+                        </div> */}
 
-                        {/* <div className="flex items-center justify-between mt-6 pt-4 border-t border-white/10">
+                        <div className="flex items-center justify-between pt-4 border-t border-white/10 mt-4">
                           <div className="flex flex-col">
-                            <span className="text-white/60 text-xs uppercase tracking-wider">Starts from</span>
+                            <span className="text-white/60 text-[10px] uppercase tracking-wider font-bold">Starts from</span>
                             <div className="flex items-center text-xl font-bold text-primary">
                               <IndianRupee className="w-4 h-4" />
-                              <span>{pooja.price}</span>
+                              <span>{getLowestPrice(pooja)}</span>
                             </div>
                           </div>
-                          <Button variant="outline" size="sm" className="rounded-full bg-white/10 border-white/20 text-white hover:bg-primary hover:border-primary transition-all">
+                          <Button variant="outline" size="sm" className="rounded-full bg-white/10 border-white/20 text-white hover:bg-primary hover:border-primary transition-all text-xs h-8 px-4">
                             Book Now
                           </Button>
-                        </div> */}
+                        </div>
                       </div>
                     </div>
                   </Link>

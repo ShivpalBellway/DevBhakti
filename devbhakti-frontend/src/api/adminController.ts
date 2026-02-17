@@ -26,6 +26,14 @@ export const fetchAllPoojasAdmin = async (params?: { isMaster?: boolean, templeI
     return response.data;
 };
 
+export const fetchMasterPoojasAdmin = async () => {
+    const token = localStorage.getItem("admin_token");
+    const response = await axios.get(`${API_URL}/admin/poojas?isMaster=true`, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+
 export const promotePoojaToMasterAdmin = async (id: string) => {
     const token = localStorage.getItem("admin_token");
     const response = await axios.post(`${API_URL}/admin/poojas/${id}/promote`, {}, {

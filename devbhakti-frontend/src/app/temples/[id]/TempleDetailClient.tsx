@@ -356,7 +356,7 @@ export default function TempleDetail() {
                         {/* Tabs */}
                         <Tabs defaultValue="poojas" className="w-full">
                             <TabsList className="w-full justify-start bg-white text-black p-2 rounded-lg gap-2 border border-primary/10 shadow-sm">
-                                <TabsTrigger value="poojas" className="data-[state=active]:bg-primary data-[state=active]:text-white transition-all rounded-md px-6 font-bold">Poojas & Aartis</TabsTrigger>
+                                <TabsTrigger value="poojas" className="data-[state=active]:bg-primary data-[state=active]:text-white transition-all rounded-md px-6 font-bold">Poojas & Seva</TabsTrigger>
                                 <TabsTrigger value="filter" className="data-[state=active]:bg-primary data-[state=active]:text-white transition-all rounded-md px-6 font-bold">Filter by Purpose</TabsTrigger>
                             </TabsList>
 

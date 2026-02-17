@@ -397,7 +397,7 @@ export default function ProductDetailsPage() {
 
                 {/* Description */}
                 <div className="space-y-3">
-                  <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-[#794A05] opacity-70">Divine Description</h3>
+                  <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-[#794A05] opacity-70">Description</h3>
                   <p className="text-slate-600 leading-relaxed text-sm">
                     {product.description}
                   </p>
@@ -515,11 +515,11 @@ export default function ProductDetailsPage() {
                       <p className="text-md font-bold text-[#2a1b01]">{product.categoryObj?.name || product.category}</p>
                     </div>
                     <div className="space-y-1.5">
-                      <span className="text-[11px] font-bold text-slate-500 uppercase tracking-[0.15em]">SKU</span>
-                      <p className="text-sm font-mono font-bold text-[#2a1b01]">{currentVariant?.id.slice(-8) || "N/A"}</p>
+                      <span className="text-[14px] font-bold text-slate-500 uppercase tracking-[0.15em]">SKU</span>
+                      <p className="text-md font-mono font-bold text-[#2a1b01]">{currentVariant?.id.slice(-8) || "N/A"}</p>
                     </div>
                     <div className="space-y-1.5">
-                      <span className="text-[11px] font-bold text-slate-500 uppercase tracking-[0.15em]">Availability</span>
+                      <span className="text-[14px] font-bold text-slate-500 uppercase tracking-[0.15em]">Availability</span>
                       <p className="text-md font-bold text-green-700">{product.shippingInfo || "Ships in 24-48 Hours"}</p>
                     </div>
                   </div>

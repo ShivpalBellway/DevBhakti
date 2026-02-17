@@ -15,6 +15,17 @@ export const getMyEvents = async (req: Request, res: Response) => {
 
         const events = await prisma.event.findMany({
             where: { templeId: temple.id },
+            include: {
+                Pooja: {
+                    select: {
+                        id: true,
+                        name: true,
+                        price: true,
+                        duration: true,
+                        image: true
+                    }
+                }
+            },
             orderBy: { createdAt: 'desc' }
         });
 
@@ -38,13 +49,35 @@ export const createMyEvent = async (req: Request, res: Response) => {
             return res.status(404).json({ success: false, message: 'Temple not found' });
         }
 
+        // Extract recommended pooja IDs
+        const { recommendedPoojaIds, ...eventData } = data;
+
         const event = await prisma.event.create({
             data: {
-                name: data.name,
-                date: data.date,
-                description: data.description,
+                name: eventData.name,
+                date: eventData.date,
+                description: eventData.description,
                 templeId: temple.id,
-                status: data.status === false ? false : true
+                status: eventData.status === false ? false : true,
+                // Connect recommended poojas if provided
+                ...(recommendedPoojaIds && recommendedPoojaIds.length > 0
+                    ? {
+                        Pooja: {
+                            connect: recommendedPoojaIds.map((id: string) => ({ id }))
+                        }
+                    }
+                    : {})
+            },
+            include: {
+                Pooja: {
+                    select: {
+                        id: true,
+                        name: true,
+                        price: true,
+                        duration: true,
+                        image: true
+                    }
+                }
             }
         });
 
@@ -73,13 +106,35 @@ export const updateMyEvent = async (req: Request, res: Response) => {
             return res.status(404).json({ success: false, message: 'Event not found or unauthorized' });
         }
 
+        // Extract recommended pooja IDs
+        const { recommendedPoojaIds, ...eventData } = data;
+
         const updatedEvent = await prisma.event.update({
             where: { id: String(id) },
             data: {
-                name: data.name,
-                date: data.date,
-                description: data.description,
-                status: data.status !== undefined ? data.status : undefined
+                name: eventData.name,
+                date: eventData.date,
+                description: eventData.description,
+                status: eventData.status !== undefined ? eventData.status : undefined,
+                // Sync recommended poojas if provided
+                ...(recommendedPoojaIds !== undefined
+                    ? {
+                        Pooja: {
+                            set: recommendedPoojaIds.map((poojaId: string) => ({ id: poojaId }))
+                        }
+                    }
+                    : {})
+            },
+            include: {
+                Pooja: {
+                    select: {
+                        id: true,
+                        name: true,
+                        price: true,
+                        duration: true,
+                        image: true
+                    }
+                }
             }
         });
 

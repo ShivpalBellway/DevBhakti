@@ -257,6 +257,10 @@ const getAllPoojas = async (req, res) => {
                         image: true
                     }
                 },
+                templeCopies: {
+                    where: { status: true },
+                    select: { price: true, packages: true }
+                },
                 _count: {
                     select: { templeCopies: true }
                 }

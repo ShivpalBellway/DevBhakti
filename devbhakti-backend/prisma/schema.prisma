@@ -23,8 +23,8 @@ model User {
   gothra        String?
   kuldevi       String?
   kuldevta      String?
-  dob           String?
   anniversary   String?
+  dob           String?
   cart          Cart?
   favorites     Favorite[]
   orders        Order[]
@@ -206,6 +206,7 @@ model Pooja {
   templeCopies  Pooja[]               @relation("MasterPoojaRelation")
   temple        Temple?               @relation(fields: [templeId], references: [id])
   bookings      PoojaBooking[]
+  Event         Event[]
 }
 
 model Event {
@@ -217,7 +218,9 @@ model Event {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   status      Boolean  @default(true)
+  time        String?
   temple      Temple   @relation(fields: [templeId], references: [id], onDelete: Cascade)
+  Pooja       Pooja[]
 }
 
 model Banner {
@@ -357,14 +360,14 @@ model PoojaBooking {
   gothra           String?
   kuldevi          String?
   kuldevta         String?
-  dob              String?
-  anniversary      String?
   status           BookingStatus @default(BOOKED)
   commissionAmount Float         @default(0)
   netEarning       Float         @default(0)
   platformFee      Float         @default(0)
   createdAt        DateTime      @default(now())
   updatedAt        DateTime      @updatedAt
+  anniversary      String?
+  dob              String?
   pooja            Pooja         @relation(fields: [poojaId], references: [id])
   temple           Temple        @relation(fields: [templeId], references: [id])
   user             User          @relation(fields: [userId], references: [id])

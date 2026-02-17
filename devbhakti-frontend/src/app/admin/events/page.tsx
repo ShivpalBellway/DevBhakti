@@ -8,6 +8,10 @@ import {
     Trash2,
     Calendar as CalendarIcon,
     MapPin,
+    Sparkles,
+    Check,
+    ChevronsUpDown,
+    X
 } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -38,7 +42,15 @@ import {
     DialogTitle,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { fetchAllEventsAdmin, fetchAllTemplesAdmin, createEventAdmin, updateEventAdmin, deleteEventAdmin, } from "@/api/adminController";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+    Command,
+    CommandEmpty,
+    CommandGroup,
+    CommandInput,
+    CommandItem,
+} from "@/components/ui/command";
+import { fetchAllEventsAdmin, fetchAllTemplesAdmin, createEventAdmin, updateEventAdmin, deleteEventAdmin, fetchAllPoojasAdmin } from "@/api/adminController";
 import { useToast } from "@/hooks/use-toast";
 import {
     Pagination,
@@ -66,6 +78,11 @@ export default function AdminEventsPage() {
     const [totalPages, setTotalPages] = useState(1);
     const [totalItems, setTotalItems] = useState(0);
     const [itemsPerPage] = useState(10);
+
+    // Pooja selection state
+    const [templePoojas, setTemplePoojas] = useState<any[]>([]);
+    const [selectedPoojaIds, setSelectedPoojaIds] = useState<string[]>([]);
+    const [loadingPoojas, setLoadingPoojas] = useState(false);
 
     const [formData, setFormData] = useState({
         name: "",
@@ -97,6 +114,38 @@ export default function AdminEventsPage() {
             console.error("Failed to load temples", error);
         }
     };
+
+    const loadTemplePoojas = async (templeId: string) => {
+        if (!templeId) {
+            setTemplePoojas([]);
+            return;
+        }
+
+        setLoadingPoojas(true);
+        try {
+            const response = await fetchAllPoojasAdmin({ templeId });
+            console.log('Temple poojas response:', response);
+            // Backend returns array directly, not wrapped in { data: [...] }
+            setTemplePoojas(Array.isArray(response) ? response : []);
+        } catch (error) {
+            console.error("Failed to load temple poojas:", error);
+            setTemplePoojas([]);
+        } finally {
+            setLoadingPoojas(false);
+        }
+    };
+
+    // Watch for temple selection change
+    useEffect(() => {
+        if (formData.templeId) {
+            loadTemplePoojas(formData.templeId);
+            // Clear selected poojas when temple changes
+            setSelectedPoojaIds([]);
+        } else {
+            setTemplePoojas([]);
+            setSelectedPoojaIds([]);
+        }
+    }, [formData.templeId]);
 
     const loadEvents = async (page: number) => {
         setIsLoading(true);
@@ -135,6 +184,12 @@ export default function AdminEventsPage() {
                 description: event.description || "",
                 templeId: event.templeId,
             });
+            // Pre-populate selected poojas in edit mode
+            if (event.Pooja && Array.isArray(event.Pooja)) {
+                setSelectedPoojaIds(event.Pooja.map((p: any) => p.id));
+            } else {
+                setSelectedPoojaIds([]);
+            }
         } else {
             setEditingEvent(null);
             // Extract temple IDs from actual temples array
@@ -145,22 +200,37 @@ export default function AdminEventsPage() {
                 description: "",
                 templeId: templeIds.length > 0 ? templeIds[0] : "",
             });
+            setSelectedPoojaIds([]);
         }
         setIsDialogOpen(true);
+    };
+
+    const handlePoojaToggle = (poojaId: string, checked: boolean | string) => {
+        if (checked) {
+            setSelectedPoojaIds(prev => [...prev, poojaId]);
+        } else {
+            setSelectedPoojaIds(prev => prev.filter(id => id !== poojaId));
+        }
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
         try {
+            const payload = {
+                ...formData,
+                recommendedPoojaIds: selectedPoojaIds,
+            };
+
             if (editingEvent) {
-                await updateEventAdmin(editingEvent.id, formData);
+                await updateEventAdmin(editingEvent.id, payload);
                 toast({ title: "Success", description: "Event updated successfully" });
             } else {
-                await createEventAdmin(formData);
+                await createEventAdmin(payload);
                 toast({ title: "Success", description: "Event created successfully" });
             }
             setIsDialogOpen(false);
+            setSelectedPoojaIds([]);
             loadEvents(currentPage);
         } catch (error) {
             toast({
@@ -234,19 +304,20 @@ export default function AdminEventsPage() {
                             <TableHead>Temple</TableHead>
                             <TableHead>Date</TableHead>
                             <TableHead>Description</TableHead>
+                            <TableHead>Recommended Poojas</TableHead>
                             <TableHead className="text-right">Actions</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {isLoading ? (
                             <TableRow>
-                                <TableCell colSpan={5} className="text-center py-10">
+                                <TableCell colSpan={6} className="text-center py-10">
                                     Loading events...
                                 </TableCell>
                             </TableRow>
                         ) : events.length === 0 ? (
                             <TableRow>
-                                <TableCell colSpan={5} className="text-center py-10">
+                                <TableCell colSpan={6} className="text-center py-10">
                                     No events found.
                                 </TableCell>
                             </TableRow>
@@ -272,6 +343,25 @@ export default function AdminEventsPage() {
                                         <div className="text-sm text-muted-foreground line-clamp-1 max-w-[300px]">
                                             {event.description || "No description"}
                                         </div>
+                                    </TableCell>
+                                    <TableCell>
+                                        {event.Pooja && event.Pooja.length > 0 ? (
+                                            <div className="flex flex-wrap gap-1 max-w-[200px]">
+                                                {event.Pooja.slice(0, 2).map((pooja: any) => (
+                                                    <Badge key={pooja.id} variant="secondary" className="text-xs bg-amber-50 text-amber-800 border-amber-200">
+                                                        <Sparkles className="w-3 h-3 mr-1" />
+                                                        {pooja.name}
+                                                    </Badge>
+                                                ))}
+                                                {event.Pooja.length > 2 && (
+                                                    <Badge variant="outline" className="text-xs">
+                                                        +{event.Pooja.length - 2} more
+                                                    </Badge>
+                                                )}
+                                            </div>
+                                        ) : (
+                                            <span className="text-xs text-muted-foreground">None</span>
+                                        )}
                                     </TableCell>
                                     <TableCell className="text-right">
                                         <div className="flex justify-end gap-1">
@@ -455,6 +545,104 @@ export default function AdminEventsPage() {
                                 }
                                 className="h-24"
                             />
+                        </div>
+
+                        {/* Recommended Temple Poojas Section */}
+                        <div className="space-y-2">
+                            <Label className="flex items-center gap-2">
+                                <Sparkles className="w-4 h-4 text-amber-600" />
+                                Recommended Poojas for this Temple (Optional)
+                            </Label>
+                            {!formData.templeId ? (
+                                <div className="border rounded-lg p-6 bg-amber-50/50 text-center">
+                                    <p className="text-sm text-amber-800 font-medium">
+                                        Please select a temple first to see available poojas
+                                    </p>
+                                </div>
+                            ) : (
+                                <>
+                                    <Popover>
+                                        <PopoverTrigger asChild>
+                                            <Button
+                                                variant="outline"
+                                                role="combobox"
+                                                className="w-full justify-between h-auto min-h-[2.5rem] py-2"
+                                                disabled={loadingPoojas || templePoojas.length === 0}
+                                            >
+                                                {loadingPoojas ? (
+                                                    <span className="flex items-center gap-2">
+                                                        <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                                                        Loading poojas...
+                                                    </span>
+                                                ) : templePoojas.length === 0 ? (
+                                                    <span className="text-muted-foreground">No poojas available</span>
+                                                ) : selectedPoojaIds.length === 0 ? (
+                                                    <span className="text-muted-foreground">Select poojas...</span>
+                                                ) : (
+                                                    <div className="flex flex-wrap gap-1">
+                                                        {templePoojas
+                                                            .filter(p => selectedPoojaIds.includes(p.id))
+                                                            .map(pooja => (
+                                                                <Badge key={pooja.id} variant="secondary" className="bg-amber-50 text-amber-800 border-amber-200">
+                                                                    {pooja.name}
+                                                                    <X
+                                                                        className="w-3 h-3 ml-1 cursor-pointer hover:text-amber-900"
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            handlePoojaToggle(pooja.id, false);
+                                                                        }}
+                                                                    />
+                                                                </Badge>
+                                                            ))
+                                                        }
+                                                    </div>
+                                                )}
+                                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                            </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-[520px] p-0" align="start">
+                                            <Command>
+                                                <CommandInput placeholder="Search poojas..." />
+                                                <CommandEmpty>No pooja found.</CommandEmpty>
+                                                <CommandGroup className="max-h-64 overflow-auto">
+                                                    {templePoojas.map((pooja) => (
+                                                        <CommandItem
+                                                            key={pooja.id}
+                                                            value={pooja.name}
+                                                            onSelect={() => {
+                                                                handlePoojaToggle(pooja.id, !selectedPoojaIds.includes(pooja.id));
+                                                            }}
+                                                            className="flex items-start gap-2 py-2"
+                                                        >
+                                                            <Check
+                                                                className={cn(
+                                                                    "mt-1 h-4 w-4",
+                                                                    selectedPoojaIds.includes(pooja.id) ? "opacity-100" : "opacity-0"
+                                                                )}
+                                                            />
+                                                            <div className="flex-1">
+                                                                <div className="font-medium">{pooja.name}</div>
+                                                                <div className="text-sm text-muted-foreground">
+                                                                    ₹{pooja.price}
+                                                                </div>
+                                                            </div>
+                                                        </CommandItem>
+                                                    ))}
+                                                </CommandGroup>
+                                            </Command>
+                                        </PopoverContent>
+                                    </Popover>
+                                    {selectedPoojaIds.length > 0 && (
+                                        <p className="text-xs text-emerald-700 font-medium">
+                                            ✓ {selectedPoojaIds.length} pooja{selectedPoojaIds.length > 1 ? 's' : ''} selected
+                                        </p>
+                                    )}
+                                </>
+                            )}
+
+                            <p className="text-xs text-muted-foreground">
+                                Select poojas from the selected temple to recommend for this event
+                            </p>
                         </div>
 
                         <DialogFooter>

@@ -87,8 +87,8 @@ const TrustSection: React.FC = () => {
                                     ))}
                                 </div> */}
                                 <div className="text-sm">
-                                    <span className="block font-bold text-zinc-900">10,000+ Devotees Trust Us</span>
-                                    <span className="text-black">Join a community of faithful believers</span>
+                                    {/* <span className="block font-bold text-zinc-900">10,000+ Devotees Trust Us</span> */}
+                                    {/* <span className="text-black">Join a community of faithful believers</span> */}
                                 </div>
                             </div>
                         </motion.div>

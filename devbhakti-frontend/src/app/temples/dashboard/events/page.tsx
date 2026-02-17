@@ -9,7 +9,11 @@ import {
     Calendar as CalendarIcon,
     MapPin,
     Clock,
-    Loader2
+    Loader2,
+    Sparkles,
+    Check,
+    ChevronsUpDown,
+    X
 } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -40,11 +44,20 @@ import {
     DialogTitle,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+    Command,
+    CommandEmpty,
+    CommandGroup,
+    CommandInput,
+    CommandItem,
+} from "@/components/ui/command";
 import {
     fetchMyEvents,
     createMyEvent,
     updateMyEvent,
     deleteMyEvent,
+    fetchMyPoojas,
 } from "@/api/templeAdminController";
 import { useToast } from "@/hooks/use-toast";
 
@@ -57,6 +70,11 @@ export default function TempleEventsPage() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const { toast } = useToast();
 
+    // Pooja selection state
+    const [templePoojas, setTemplePoojas] = useState<any[]>([]);
+    const [selectedPoojaIds, setSelectedPoojaIds] = useState<string[]>([]);
+    const [loadingPoojas, setLoadingPoojas] = useState(false);
+
     const [formData, setFormData] = useState({
         name: "",
         date: "",
@@ -65,6 +83,7 @@ export default function TempleEventsPage() {
 
     useEffect(() => {
         loadData();
+        loadTemplePoojas();
     }, []);
 
     const loadData = async () => {
@@ -83,6 +102,18 @@ export default function TempleEventsPage() {
         }
     };
 
+    const loadTemplePoojas = async () => {
+        setLoadingPoojas(true);
+        try {
+            const response = await fetchMyPoojas();
+            setTemplePoojas(response.data || []);
+        } catch (error) {
+            console.error("Failed to load poojas:", error);
+        } finally {
+            setLoadingPoojas(false);
+        }
+    };
+
     const handleOpenDialog = (event: any = null) => {
         if (event) {
             setEditingEvent(event);
@@ -91,6 +122,12 @@ export default function TempleEventsPage() {
                 date: event.date,
                 description: event.description || "",
             });
+            // Pre-populate selected poojas in edit mode
+            if (event.Pooja && Array.isArray(event.Pooja)) {
+                setSelectedPoojaIds(event.Pooja.map((p: any) => p.id));
+            } else {
+                setSelectedPoojaIds([]);
+            }
         } else {
             setEditingEvent(null);
             setFormData({
@@ -98,22 +135,37 @@ export default function TempleEventsPage() {
                 date: "",
                 description: "",
             });
+            setSelectedPoojaIds([]);
         }
         setIsDialogOpen(true);
+    };
+
+    const handlePoojaToggle = (poojaId: string, checked: boolean | string) => {
+        if (checked) {
+            setSelectedPoojaIds(prev => [...prev, poojaId]);
+        } else {
+            setSelectedPoojaIds(prev => prev.filter(id => id !== poojaId));
+        }
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsSubmitting(true);
         try {
+            const payload = {
+                ...formData,
+                recommendedPoojaIds: selectedPoojaIds,
+            };
+
             if (editingEvent) {
-                await updateMyEvent(editingEvent.id, formData);
+                await updateMyEvent(editingEvent.id, payload);
                 toast({ title: "Success", description: "Event updated successfully" });
             } else {
-                await createMyEvent(formData);
+                await createMyEvent(payload);
                 toast({ title: "Success", description: "Event created successfully" });
             }
             setIsDialogOpen(false);
+            setSelectedPoojaIds([]);
             loadData();
         } catch (error) {
             toast({
@@ -186,13 +238,14 @@ export default function TempleEventsPage() {
                             <TableHead>Event Name</TableHead>
                             <TableHead>Date</TableHead>
                             <TableHead>Description</TableHead>
+                            <TableHead>Recommended Sevas</TableHead>
                             <TableHead className="text-right">Actions</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {isLoading ? (
                             <TableRow>
-                                <TableCell colSpan={4} className="text-center py-10">
+                                <TableCell colSpan={5} className="text-center py-10">
                                     <div className="flex flex-col items-center gap-2">
                                         <div className="w-6 h-6 border-2 border-[#7b4623] border-t-transparent rounded-full animate-spin" />
                                         <span className="text-sm text-muted-foreground">Loading your events...</span>
@@ -201,7 +254,7 @@ export default function TempleEventsPage() {
                             </TableRow>
                         ) : filteredEvents.length === 0 ? (
                             <TableRow>
-                                <TableCell colSpan={4} className="text-center py-10">
+                                <TableCell colSpan={5} className="text-center py-10">
                                     <div className="text-muted-foreground">No upcoming events found. Create one now!</div>
                                 </TableCell>
                             </TableRow>
@@ -227,6 +280,25 @@ export default function TempleEventsPage() {
                                         <div className="text-sm text-muted-foreground line-clamp-1 max-w-[400px]">
                                             {event.description || "No description"}
                                         </div>
+                                    </TableCell>
+                                    <TableCell>
+                                        {event.Pooja && event.Pooja.length > 0 ? (
+                                            <div className="flex flex-wrap gap-1 max-w-[200px]">
+                                                {event.Pooja.slice(0, 2).map((pooja: any) => (
+                                                    <Badge key={pooja.id} variant="secondary" className="text-xs bg-amber-50 text-amber-700 border-amber-200">
+                                                        <Sparkles className="w-3 h-3 mr-1" />
+                                                        {pooja.name}
+                                                    </Badge>
+                                                ))}
+                                                {event.Pooja.length > 2 && (
+                                                    <Badge variant="outline" className="text-xs border-[#7b4623]/30 text-[#7b4623]">
+                                                        +{event.Pooja.length - 2}
+                                                    </Badge>
+                                                )}
+                                            </div>
+                                        ) : (
+                                            <span className="text-xs text-muted-foreground italic">None</span>
+                                        )}
                                     </TableCell>
                                     <TableCell className="text-right">
                                         <div className="flex justify-end gap-2">
@@ -329,6 +401,93 @@ export default function TempleEventsPage() {
                                 }
                                 className="h-32 rounded-xl resize-none border-slate-200 focus:border-[#7b4623] focus:ring-[#7b4623]/10"
                             />
+                        </div>
+
+                        {/* Recommended Poojas Section */}
+                        <div className="space-y-2">
+                            <Label className="text-slate-700 font-medium flex items-center gap-2">
+                                <Sparkles className="w-4 h-4 text-amber-600" />
+                                Recommended Sevas (Optional)
+                            </Label>
+                            <Popover>
+                                <PopoverTrigger asChild>
+                                    <Button
+                                        variant="outline"
+                                        role="combobox"
+                                        className="w-full justify-between h-auto min-h-[2.5rem] py-2 border-slate-200"
+                                        disabled={loadingPoojas || templePoojas.length === 0}
+                                    >
+                                        {loadingPoojas ? (
+                                            <span className="flex items-center gap-2">
+                                                <Loader2 className="w-4 h-4 animate-spin text-[#7b4623]" />
+                                                Loading sevas...
+                                            </span>
+                                        ) : templePoojas.length === 0 ? (
+                                            <span className="text-muted-foreground">No sevas available</span>
+                                        ) : selectedPoojaIds.length === 0 ? (
+                                            <span className="text-muted-foreground">Select sevas...</span>
+                                        ) : (
+                                            <div className="flex flex-wrap gap-1">
+                                                {templePoojas
+                                                    .filter(p => selectedPoojaIds.includes(p.id))
+                                                    .map(pooja => (
+                                                        <Badge key={pooja.id} variant="secondary" className="bg-amber-50 text-amber-800 border-amber-200">
+                                                            {pooja.name}
+                                                            <X
+                                                                className="w-3 h-3 ml-1 cursor-pointer hover:text-amber-900"
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    handlePoojaToggle(pooja.id, false);
+                                                                }}
+                                                            />
+                                                        </Badge>
+                                                    ))
+                                                }
+                                            </div>
+                                        )}
+                                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-[450px] p-0" align="start">
+                                    <Command>
+                                        <CommandInput placeholder="Search sevas..." />
+                                        <CommandEmpty>No seva found.</CommandEmpty>
+                                        <CommandGroup className="max-h-64 overflow-auto">
+                                            {templePoojas.map((pooja) => (
+                                                <CommandItem
+                                                    key={pooja.id}
+                                                    value={pooja.name}
+                                                    onSelect={() => {
+                                                        handlePoojaToggle(pooja.id, !selectedPoojaIds.includes(pooja.id));
+                                                    }}
+                                                    className="flex items-start gap-2 py-2"
+                                                >
+                                                    <Check
+                                                        className={cn(
+                                                            "mt-1 h-4 w-4",
+                                                            selectedPoojaIds.includes(pooja.id) ? "opacity-100" : "opacity-0"
+                                                        )}
+                                                    />
+                                                    <div className="flex-1">
+                                                        <div className="font-medium">{pooja.name}</div>
+                                                        <div className="text-sm text-muted-foreground">
+                                                            ₹{pooja.price}
+                                                        </div>
+                                                    </div>
+                                                </CommandItem>
+                                            ))}
+                                        </CommandGroup>
+                                    </Command>
+                                </PopoverContent>
+                            </Popover>
+                            {selectedPoojaIds.length > 0 && (
+                                <p className="text-xs text-emerald-700 font-medium">
+                                    ✓ {selectedPoojaIds.length} seva{selectedPoojaIds.length > 1 ? 's' : ''} selected
+                                </p>
+                            )}
+                            <p className="text-xs text-muted-foreground">
+                                Select sevas to recommend to devotees for this event
+                            </p>
                         </div>
 
                         <DialogFooter className="gap-2 sm:gap-0 mt-6">
