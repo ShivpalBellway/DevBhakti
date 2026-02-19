@@ -139,7 +139,7 @@ const LiveDarshanSection: React.FC = () => {
 
             {/* Live temples list */}
             <div className="mt-6 space-y-3">
-              {liveTemples.map((temple, index) => (
+              {liveTemples.slice(0, 2).map((temple, index) => (
                 <motion.div
                   key={temple.id}
                   initial={{ opacity: 0, x: -20 }}

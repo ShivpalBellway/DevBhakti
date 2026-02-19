@@ -578,32 +578,32 @@ export const fetchProductsByTempleAdmin = async (templeId: string) => {
 };
 
 // Admin Booking Management
-export const fetchAllBookingsAdmin = async (params?: { page?: number; limit?: number; search?: string; status?: string; startDate?: string; endDate?: string }) => {
-    const token = localStorage.getItem("admin_token");
-    let url = `${API_URL}/admin/bookings`;
-    if (params) {
-        const query = new URLSearchParams();
-        if (params.page !== undefined) query.append('page', params.page.toString());
-        if (params.limit !== undefined) query.append('limit', params.limit.toString());
-        if (params.search) query.append('search', params.search);
-        if (params.status) query.append('status', params.status);
-        if (params.startDate) query.append('startDate', params.startDate);
-        if (params.endDate) query.append('endDate', params.endDate);
-        url += `?${query.toString()}`;
-    }
-    const response = await axios.get(url, {
-        headers: { Authorization: `Bearer ${token}` }
-    });
-    return response.data;
-};
+// export const fetchAllBookingsAdmin = async (params?: { page?: number; limit?: number; search?: string; status?: string; startDate?: string; endDate?: string }) => {
+//     const token = localStorage.getItem("admin_token");
+//     let url = `${API_URL}/admin/bookings`;
+//     if (params) {
+//         const query = new URLSearchParams();
+//         if (params.page !== undefined) query.append('page', params.page.toString());
+//         if (params.limit !== undefined) query.append('limit', params.limit.toString());
+//         if (params.search) query.append('search', params.search);
+//         if (params.status) query.append('status', params.status);
+//         if (params.startDate) query.append('startDate', params.startDate);
+//         if (params.endDate) query.append('endDate', params.endDate);
+//         url += `?${query.toString()}`;
+//     }
+//     const response = await axios.get(url, {
+//         headers: { Authorization: `Bearer ${token}` }
+//     });
+//     return response.data;
+// };
 
-export const deleteBookingAdmin = async (id: string) => {
-    const token = localStorage.getItem("admin_token");
-    const response = await axios.delete(`${API_URL}/admin/bookings/${id}`, {
-        headers: { Authorization: `Bearer ${token}` }
-    });
-    return response.data;
-};
+// export const deleteBookingAdmin = async (id: string) => {
+//     const token = localStorage.getItem("admin_token");
+//     const response = await axios.delete(`${API_URL}/admin/bookings/${id}`, {
+//         headers: { Authorization: `Bearer ${token}` }
+//     });
+//     return response.data;
+// };
 
 // Admin Order Management
 export const fetchAllOrdersAdmin = async () => {
@@ -810,6 +810,42 @@ export const fetchAllUsersAdmin = async (params?: { page?: number; limit?: numbe
 export const fetchUserDetailAdmin = async (id: string) => {
     const token = localStorage.getItem("admin_token");
     const response = await axios.get(`${API_URL}/admin/users/${id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+
+// Admin Booking Management
+export const fetchAllBookingsAdmin = async (params?: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    status?: string;
+    startDate?: string;
+    endDate?: string;
+}) => {
+    const token = localStorage.getItem("admin_token");
+    let url = `${API_URL}/admin/bookings`;
+    if (params) {
+        const query = new URLSearchParams();
+        if (params.page) query.append('page', params.page.toString());
+        if (params.limit) query.append('limit', params.limit.toString());
+        if (params.search) query.append('search', params.search);
+        if (params.status && params.status !== 'all') query.append('status', params.status);
+        if (params.startDate) query.append('startDate', params.startDate);
+        if (params.endDate) query.append('endDate', params.endDate);
+        const qs = query.toString();
+        if (qs) url += `?${qs}`;
+    }
+    const response = await axios.get(url, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+
+export const deleteBookingAdmin = async (id: string) => {
+    const token = localStorage.getItem("admin_token");
+    const response = await axios.delete(`${API_URL}/admin/bookings/${id}`, {
         headers: { Authorization: `Bearer ${token}` }
     });
     return response.data;

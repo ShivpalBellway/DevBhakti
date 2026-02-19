@@ -3,544 +3,649 @@
 import React, { useState, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+    Heart,
+    IndianRupee,
+    User,
+    Phone,
+    Mail,
+    CheckCircle2,
+    Building2,
+    Gift,
+    ArrowLeft,
+    Sparkles,
+    FileText,
+    ChevronRight,
+    ShieldCheck,
+    MapPin
+} from "lucide-react";
+
 import Navbar from "@/components/landing/Navbar";
 import Footer from "@/components/landing/Footer";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Heart,
-  IndianRupee,
-  User,
-  Phone,
-  Mail,
-  CheckCircle2,
-  Building2,
-  Gift,
-  ArrowLeft,
-  Sparkles,
-  FileText,
-} from "lucide-react";
+import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 
-const temples = [
-  { id: "1", name: "Kashi Vishwanath Temple", location: "Varanasi, UP" },
-  { id: "2", name: "Tirupati Balaji Temple", location: "Tirupati, AP" },
-  { id: "3", name: "Siddhivinayak Temple", location: "Mumbai, MH" },
-  { id: "4", name: "Meenakshi Temple", location: "Madurai, TN" },
-  { id: "5", name: "Jagannath Temple", location: "Puri, Odisha" },
-  { id: "6", name: "Somnath Temple", location: "Gujarat" },
+// Types
+interface Temple {
+    id: string;
+    name: string;
+    location: string;
+    image?: string;
+    deity?: string;
+}
+
+interface DonationPurpose {
+    id: string;
+    name: string;
+    icon: React.ElementType;
+    description: string;
+}
+
+// Data
+const temples: Temple[] = [
+    { id: "1", name: "Kashi Vishwanath Temple", location: "Varanasi, UP", deity: "Lord Shiva" },
+    { id: "2", name: "Tirupati Balaji Temple", location: "Tirupati, AP", deity: "Lord Venkateswara" },
+    { id: "3", name: "Siddhivinayak Temple", location: "Mumbai, MH", deity: "Lord Ganesha" },
+    { id: "4", name: "Meenakshi Temple", location: "Madurai, TN", deity: "Goddess Meenakshi" },
+    { id: "5", name: "Jagannath Temple", location: "Puri, Odisha", deity: "Lord Jagannath" },
+    { id: "6", name: "Somnath Temple", location: "Gujarat", deity: "Lord Shiva" },
+    { id: "7", name: "Kedarnath Temple", location: "Uttarakhand", deity: "Lord Shiva" },
+    { id: "8", name: "Vaishno Devi", location: "Katra, J&K", deity: "Mata Vaishno Devi" },
 ];
 
-const donationPurposes = [
-  { id: "general", name: "General Donation", icon: Heart, description: "Support temple operations and maintenance" },
-  { id: "annadaan", name: "Annadaan (Food Seva)", icon: Gift, description: "Feed devotees and the needy" },
-  { id: "gauseva", name: "Gau Seva", icon: Sparkles, description: "Support cow welfare programs" },
-  { id: "education", name: "Education Fund", icon: FileText, description: "Support vedic education initiatives" },
-  { id: "renovation", name: "Temple Renovation", icon: Building2, description: "Help maintain and beautify the temple" },
+const donationPurposes: DonationPurpose[] = [
+    { id: "general", name: "General Donation", icon: Heart, description: "Support temple operations and daily rituals" },
+    { id: "annadaan", name: "Annadaan (Food Seva)", icon: Gift, description: "Feed devotees and the needy" },
+    { id: "gauseva", name: "Gau Seva (Cow Care)", icon: Sparkles, description: "Support cow welfare & shelter" },
+    { id: "education", name: "Vedic Education", icon: FileText, description: "Support Gurukuls & Vedic studies" },
+    { id: "renovation", name: "Temple Renovation", icon: Building2, description: "Construction & restoration projects" },
 ];
 
-const suggestedAmounts = [101, 251, 501, 1001, 2101, 5001, 11001, 21001];
+const suggestedAmounts = [101, 251, 501, 1100, 2100, 5001, 11000, 21000];
 
 function DonationForm() {
-  const searchParams = useSearchParams();
-  const { toast } = useToast();
-  const [step, setStep] = useState(1);
-  const [selectedTemple, setSelectedTemple] = useState(searchParams.get("temple") || "");
-  const [selectedPurpose, setSelectedPurpose] = useState("general");
-  const [amount, setAmount] = useState("");
-  const [customAmount, setCustomAmount] = useState("");
-  const [is80GRequired, setIs80GRequired] = useState(false);
-  const [isAnonymous, setIsAnonymous] = useState(false);
-  const [formData, setFormData] = useState({
-    name: "",
-    phone: "",
-    email: "",
-    pan: "",
-    address: "",
-    message: "",
-  });
+    const searchParams = useSearchParams();
+    const { toast } = useToast();
+    const [step, setStep] = useState(1);
+    const [direction, setDirection] = useState(1);
 
-  const finalAmount = customAmount || amount;
+    const [selectedTemple, setSelectedTemple] = useState(searchParams.get("temple") || "");
+    const [selectedPurpose, setSelectedPurpose] = useState("general");
+    const [amount, setAmount] = useState("");
+    const [customAmount, setCustomAmount] = useState("");
+    const [is80GRequired, setIs80GRequired] = useState(false);
+    const [isAnonymous, setIsAnonymous] = useState(false);
+    const [paymentMethod, setPaymentMethod] = useState("upi");
 
-  const handleNext = () => {
-    if (step === 1 && !selectedTemple) {
-      toast({ title: "Please select a temple", variant: "destructive" });
-      return;
-    }
-    if (step === 2 && !finalAmount) {
-      toast({ title: "Please enter donation amount", variant: "destructive" });
-      return;
-    }
-    if (step === 3 && !isAnonymous && (!formData.name || !formData.phone || !formData.email)) {
-      toast({ title: "Please fill all required fields", variant: "destructive" });
-      return;
-    }
-    if (step === 3 && is80GRequired && !formData.pan) {
-      toast({ title: "PAN is required for 80G receipt", variant: "destructive" });
-      return;
-    }
-    setStep(step + 1);
-  };
+    const [formData, setFormData] = useState({
+        name: "",
+        phone: "",
+        email: "",
+        pan: "",
+        address: "",
+        message: "",
+    });
 
-  const handleConfirmDonation = () => {
-    setStep(5);
-    toast({ title: "Donation Successful!", description: "Thank you for your generous contribution." });
-  };
+    const finalAmount = customAmount || amount;
 
-  return (
-    <div className="min-h-screen bg-background">
-      <Navbar />
+    const nextStep = () => {
+        if (step === 1 && !selectedTemple) {
+            toast({ title: "Please select a temple", variant: "destructive" });
+            return;
+        }
+        if (step === 2 && !finalAmount) {
+            toast({ title: "Please enter donation amount", variant: "destructive" });
+            return;
+        }
+        if (step === 3 && !isAnonymous && (!formData.name || !formData.phone || !formData.email)) {
+            toast({ title: "Please fill all required fields", variant: "destructive" });
+            return;
+        }
+        if (step === 3 && is80GRequired && !formData.pan) {
+            toast({ title: "PAN is required for 80G receipt", variant: "destructive" });
+            return;
+        }
 
-      {/* Header */}
-      <section className="bg-gradient-to-br from-secondary/30 via-primary/10 to-background pt-24 pb-12">
-        <div className="container mx-auto px-4">
-          <Link href="/temples" className="inline-flex items-center text-muted-foreground hover:text-foreground mb-4 transition-colors">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Temples
-          </Link>
-          <div className="flex items-center gap-3 mb-2">
-            <Heart className="h-8 w-8 text-primary fill-primary" />
-            <h1 className="text-3xl md:text-4xl font-display font-bold text-foreground">Make a Donation</h1>
-          </div>
-          <p className="text-muted-foreground mt-2">Your contribution helps preserve our sacred traditions</p>
-        </div>
-      </section>
+        setDirection(1);
+        setStep(step + 1);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
 
-      {/* Progress Steps */}
-      <section className="container mx-auto px-4 py-8">
-        <div className="flex items-center justify-center mb-8">
-          {[
-            { num: 1, label: "Select Temple" },
-            { num: 2, label: "Amount" },
-            { num: 3, label: "Your Details" },
-            { num: 4, label: "Payment" },
-            { num: 5, label: "Receipt" },
-          ].map((s, idx) => (
-            <React.Fragment key={s.num}>
-              <div className="flex flex-col items-center">
-                <div
-                  className={`h-10 w-10 rounded-full flex items-center justify-center font-semibold transition-colors ${step >= s.num
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-muted text-muted-foreground"
-                    }`}
-                >
-                  {step > s.num ? <CheckCircle2 className="h-5 w-5" /> : s.num}
-                </div>
-                <span className="text-xs mt-1 text-muted-foreground hidden md:block">{s.label}</span>
-              </div>
-              {idx < 4 && (
-                <div className={`w-12 md:w-24 h-1 mx-2 rounded ${step > s.num ? "bg-primary" : "bg-muted"}`} />
-              )}
-            </React.Fragment>
-          ))}
-        </div>
+    const prevStep = () => {
+        setDirection(-1);
+        setStep(step - 1);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
 
-        <div className="max-w-4xl mx-auto">
-          {/* Step 1: Select Temple */}
-          {step === 1 && (
-            <Card className="border-border/50">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Building2 className="h-5 w-5 text-primary" />
-                  Select Temple to Donate
-                </CardTitle>
-                <CardDescription>Choose the temple you wish to support</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <RadioGroup value={selectedTemple} onValueChange={setSelectedTemple} className="space-y-3">
-                  {temples.map((temple) => (
-                    <div
-                      key={temple.id}
-                      className={`flex items-center space-x-3 p-4 rounded-lg border transition-colors cursor-pointer ${selectedTemple === temple.id
-                          ? "border-primary bg-primary/5"
-                          : "border-border hover:border-primary/50"
-                        }`}
-                      onClick={() => setSelectedTemple(temple.id)}
+    const handleConfirmDonation = () => {
+        setDirection(1);
+        setStep(5); // Success Step
+        toast({
+            title: "🙏 Donation Successful!",
+            description: "May you be blessed. Receipt sent to your email.",
+            className: "bg-green-600 text-white border-none"
+        });
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    // Animation variants
+    const slideVariants = {
+        enter: (direction: number) => ({
+            x: direction > 0 ? 50 : -50,
+            opacity: 0,
+        }),
+        center: {
+            x: 0,
+            opacity: 1,
+        },
+        exit: (direction: number) => ({
+            x: direction < 0 ? 50 : -50,
+            opacity: 0,
+        }),
+    };
+
+    return (
+        <div className="min-h-screen bg-background relative overflow-hidden">
+            {/* Decorative Background Elements */}
+            <div className="fixed inset-0 pointer-events-none z-0">
+                {/* Replaced orange/amber colors with #7c4624 variants */}
+                <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#7c4624]/20 dark:bg-[#7c4624]/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+                <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-[#7c4624]/20 dark:bg-[#7c4624]/10 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2" />
+            </div>
+
+            <Navbar />
+
+            {/* Hero Section */}
+            <section className="relative pt-32 pb-16 bg-gradient-to-b from-[#fdf6f0]/80 via-white to-white dark:from-zinc-900 dark:via-background dark:to-background border-b border-[#e6d5c8] dark:border-zinc-800">
+                <div className="container mx-auto px-4 text-center relative z-10">
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.6 }}
                     >
-                      <RadioGroupItem value={temple.id} id={`temple-${temple.id}`} />
-                      <Label htmlFor={`temple-${temple.id}`} className="cursor-pointer flex-1">
-                        <span className="font-semibold">{temple.name}</span>
-                        <p className="text-sm text-muted-foreground">{temple.location}</p>
-                      </Label>
-                    </div>
-                  ))}
-                </RadioGroup>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Step 2: Select Amount & Purpose */}
-          {step === 2 && (
-            <div className="space-y-6">
-              <Card className="border-border/50">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Gift className="h-5 w-5 text-primary" />
-                    Donation Purpose
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <RadioGroup value={selectedPurpose} onValueChange={setSelectedPurpose} className="grid md:grid-cols-2 gap-3">
-                    {donationPurposes.map((purpose) => (
-                      <div
-                        key={purpose.id}
-                        className={`flex items-start gap-3 p-4 rounded-lg border transition-colors cursor-pointer ${selectedPurpose === purpose.id
-                            ? "border-primary bg-primary/5"
-                            : "border-border hover:border-primary/50"
-                          }`}
-                        onClick={() => setSelectedPurpose(purpose.id)}
-                      >
-                        <RadioGroupItem value={purpose.id} id={purpose.id} className="mt-1" />
-                        <div>
-                          <Label htmlFor={purpose.id} className="cursor-pointer font-semibold flex items-center gap-2">
-                            <purpose.icon className="h-4 w-4 text-primary" />
-                            {purpose.name}
-                          </Label>
-                          <p className="text-sm text-muted-foreground">{purpose.description}</p>
+                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#f5ebe0] dark:bg-[#7c4624]/30 text-[#7c4624] dark:text-[#cfa98e] text-sm font-medium mb-4 border border-[#e6d5c8] dark:border-[#7c4624]/50">
+                            <Sparkles className="w-4 h-4" />
+                            <span>Sacred Offering</span>
                         </div>
-                      </div>
-                    ))}
-                  </RadioGroup>
-                </CardContent>
-              </Card>
+                        <h1 className="text-4xl md:text-5xl lg:text-6xl font-display font-bold text-foreground mb-4">
+                            Make a Divine <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#7c4624] to-[#5a3820]">Contribution</span>
+                        </h1>
+                        <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+                            "The act of giving is the path to spiritual abundance." Support ancient temples, annadaan, and gau seva.
+                        </p>
+                    </motion.div>
+                </div>
+            </section>
 
-              <Card className="border-border/50">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <IndianRupee className="h-5 w-5 text-primary" />
-                    Donation Amount
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-4 gap-3">
-                    {suggestedAmounts.map((amt) => (
-                      <Button
-                        key={amt}
-                        variant={amount === amt.toString() && !customAmount ? "default" : "outline"}
-                        onClick={() => {
-                          setAmount(amt.toString());
-                          setCustomAmount("");
-                        }}
-                        className="w-full"
-                      >
-                        ₹{amt.toLocaleString()}
-                      </Button>
-                    ))}
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Or enter custom amount</Label>
-                    <div className="relative">
-                      <IndianRupee className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        type="number"
-                        placeholder="Enter amount"
-                        className="pl-10"
-                        value={customAmount}
-                        onChange={(e) => {
-                          setCustomAmount(e.target.value);
-                          setAmount("");
-                        }}
-                      />
-                    </div>
-                  </div>
-                  {finalAmount && (
-                    <div className="bg-primary/10 rounded-lg p-4 text-center">
-                      <p className="text-sm text-muted-foreground">You are donating</p>
-                      <p className="text-3xl font-bold text-primary flex items-center justify-center">
-                        <IndianRupee className="h-6 w-6" />
-                        {parseInt(finalAmount).toLocaleString()}
-                      </p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
-          )}
+            <div className="container mx-auto px-4 py-8 relative z-10">
+                {/* Progress Steps */}
+                <div className="max-w-4xl mx-auto mb-10">
+                    <div className="flex justify-between items-center relative">
+                        {/* Connecting Line */}
+                        <div className="absolute left-0 top-1/2 -translate-y-1/2 w-full h-1 bg-muted rounded-full -z-10">
+                            <motion.div
+                                className="h-full bg-gradient-to-r from-[#7c4624] to-[#5a3820] rounded-full"
+                                initial={{ width: "0%" }}
+                                animate={{ width: `${((step - 1) / 4) * 100}%` }}
+                                transition={{ duration: 0.5, ease: "easeInOut" }}
+                            />
+                        </div>
 
-          {/* Step 3: Donor Details */}
-          {step === 3 && (
-            <Card className="border-border/50">
-              <CardHeader>
-                <CardTitle>Donor Information</CardTitle>
-                <CardDescription>Please provide your details for the donation receipt</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center space-x-2 p-4 bg-muted/50 rounded-lg">
-                  <Checkbox
-                    id="anonymous"
-                    checked={isAnonymous}
-                    onCheckedChange={(checked) => setIsAnonymous(checked as boolean)}
-                  />
-                  <Label htmlFor="anonymous" className="cursor-pointer">
-                    Make this donation anonymous
-                  </Label>
+                        {[
+                            { num: 1, label: "Temple" },
+                            { num: 2, label: "Purpose" },
+                            { num: 3, label: "Details" },
+                            { num: 4, label: "Payment" },
+                            { num: 5, label: "Receipt" },
+                        ].map((s) => (
+                            <div key={s.num} className="flex flex-col items-center gap-2 bg-background p-2 rounded-xl">
+                                <motion.div
+                                    className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm border-2 transition-colors ${step >= s.num
+                                        ? "bg-[#7c4624] border-[#7c4624] text-white shadow-lg shadow-[#7c4624]/20"
+                                        : "bg-background border-muted text-muted-foreground"
+                                        }`}
+                                    whileHover={{ scale: 1.1 }}
+                                >
+                                    {step > s.num ? <CheckCircle2 className="w-5 h-5" /> : s.num}
+                                </motion.div>
+                                <span className={`text-xs font-semibold hidden md:block ${step >= s.num ? "text-primary" : "text-muted-foreground"}`}>
+                                    {s.label}
+                                </span>
+                            </div>
+                        ))}
+                    </div>
                 </div>
 
-                {!isAnonymous && (
-                  <>
-                    <div className="grid md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="name">Full Name *</Label>
-                        <div className="relative">
-                          <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                          <Input
-                            id="name"
-                            placeholder="Enter your full name"
-                            className="pl-10"
-                            value={formData.name}
-                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                          />
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="phone">Phone Number *</Label>
-                        <div className="relative">
-                          <Phone className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                          <Input
-                            id="phone"
-                            placeholder="Enter phone number"
-                            className="pl-10"
-                            value={formData.phone}
-                            onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                          />
-                        </div>
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="email">Email Address *</Label>
-                      <div className="relative">
-                        <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                        <Input
-                          id="email"
-                          type="email"
-                          placeholder="Enter email address"
-                          className="pl-10"
-                          value={formData.email}
-                          onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                        />
-                      </div>
-                    </div>
+                {/* Main Content Area */}
+                <div className="max-w-4xl mx-auto">
+                    <AnimatePresence mode="wait" custom={direction}>
 
-                    <div className="flex items-center space-x-2 p-4 border border-secondary rounded-lg bg-secondary/10">
-                      <Checkbox
-                        id="80g"
-                        checked={is80GRequired}
-                        onCheckedChange={(checked) => setIs80GRequired(checked as boolean)}
-                      />
-                      <Label htmlFor="80g" className="cursor-pointer">
-                        <span className="font-semibold">I need 80G Tax Exemption Receipt</span>
-                        <p className="text-sm text-muted-foreground">PAN card details required for tax benefit</p>
-                      </Label>
-                    </div>
+                        {/* Step 1: Select Temple */}
+                        {step === 1 && (
+                            <motion.div
+                                key="step1"
+                                custom={direction}
+                                variants={slideVariants}
+                                initial="enter"
+                                animate="center"
+                                exit="exit"
+                                transition={{ duration: 0.3 }}
+                            >
+                                <div className="text-center mb-8">
+                                    <h2 className="text-2xl font-bold font-display mb-2">Select a Sacred Temple</h2>
+                                    <p className="text-muted-foreground">Choose the temple where you wish to offer your donation</p>
+                                </div>
 
-                    {is80GRequired && (
-                      <div className="space-y-2">
-                        <Label htmlFor="pan">PAN Number *</Label>
-                        <Input
-                          id="pan"
-                          placeholder="Enter PAN number (e.g., ABCDE1234F)"
-                          value={formData.pan}
-                          onChange={(e) => setFormData({ ...formData, pan: e.target.value.toUpperCase() })}
-                          maxLength={10}
-                        />
-                      </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {temples.map((temple) => (
+                                        <motion.div
+                                            key={temple.id}
+                                            whileHover={{ scale: 1.02 }}
+                                            whileTap={{ scale: 0.98 }}
+                                            className={`relative p-5 rounded-2xl border-2 cursor-pointer transition-all ${selectedTemple === temple.id
+                                                ? "border-[#7c4624] bg-[#f5ebe0]/50 dark:bg-[#7c4624]/20 shadow-md ring-1 ring-[#e6d5c8]"
+                                                : "border-border hover:border-[#b08d7a] bg-card hover:shadow-sm"
+                                                }`}
+                                            onClick={() => setSelectedTemple(temple.id)}
+                                        >
+                                            <div className="flex items-start gap-4">
+                                                <div className={`p-3 rounded-full ${selectedTemple === temple.id ? "bg-[#f5ebe0] text-[#7c4624]" : "bg-muted text-muted-foreground"}`}>
+                                                </div>
+                                                <div className="flex-1">
+                                                    <h3 className="font-bold text-lg">{temple.name}</h3>
+                                                    <p className="text-sm text-primary font-medium">{temple.deity}</p>
+                                                    <div className="flex items-center gap-1 mt-1 text-muted-foreground text-sm">
+                                                        <MapPin className="w-3 h-3" />
+                                                        {temple.location}
+                                                    </div>
+                                                </div>
+                                                {selectedTemple === temple.id && (
+                                                    <div className="absolute top-4 right-4 text-[#7c4624]">
+                                                        <CheckCircle2 className="w-6 h-6 fill-current" />
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </motion.div>
+                                    ))}
+                                </div>
+                            </motion.div>
+                        )}
+
+                        {/* Step 2: Purpose & Amount */}
+                        {step === 2 && (
+                            <motion.div
+                                key="step2"
+                                custom={direction}
+                                variants={slideVariants}
+                                initial="enter"
+                                animate="center"
+                                exit="exit"
+                                transition={{ duration: 0.3 }}
+                                className="space-y-8"
+                            >
+                                {/* Amount Selection */}
+                                <Card className="border-border/50 shadow-sm overflow-hidden">
+                                    <div className="h-1 bg-gradient-to-r from-[#7c4624] to-[#63361c]" />
+                                    <CardContent className="p-6 md:p-8">
+                                        <div className="text-center mb-6">
+                                            <h3 className="text-xl font-bold flex items-center justify-center gap-2">
+                                                <IndianRupee className="w-5 h-5 text-[#7c4624]" />
+                                                Enter Amount
+                                            </h3>
+                                        </div>
+
+                                        <div className="grid grid-cols-3 md:grid-cols-4 gap-3 mb-6">
+                                            {suggestedAmounts.map((amt) => (
+                                                <Button
+                                                    key={amt}
+                                                    variant={amount === amt.toString() && !customAmount ? "default" : "outline"}
+                                                    className={`h-12 text-lg ${amount === amt.toString() && !customAmount
+                                                        ? "bg-[#7c4624] hover:bg-[#63361c] text-white"
+                                                        : "hover:border-[#b08d7a] hover:text-[#7c4624]"
+                                                        }`}
+                                                    onClick={() => {
+                                                        setAmount(amt.toString());
+                                                        setCustomAmount("");
+                                                    }}
+                                                >
+                                                    ₹{amt.toLocaleString()}
+                                                </Button>
+                                            ))}
+                                        </div>
+
+                                        <div className="relative max-w-xs mx-auto">
+                                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                                <span className="text-muted-foreground text-lg">₹</span>
+                                            </div>
+                                            <Input
+                                                type="number"
+                                                placeholder="Other Amount"
+                                                className="pl-8 text-lg font-semibold h-12 border-[#e6d5c8] focus:border-[#7c4624] focus:ring-[#7c4624]/20"
+                                                value={customAmount}
+                                                onChange={(e) => {
+                                                    setCustomAmount(e.target.value);
+                                                    setAmount("");
+                                                }}
+                                            />
+                                        </div>
+
+                                        {finalAmount && (
+                                            <motion.div
+                                                initial={{ opacity: 0, y: 10 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                className="mt-6 p-4 bg-[#f5ebe0] dark:bg-[#7c4624]/30 rounded-xl text-center border border-[#e6d5c8] dark:border-[#7c4624]/50"
+                                            >
+                                                <p className="text-sm text-muted-foreground mb-1">Total Contribution</p>
+                                                <p className="text-4xl font-bold text-[#7c4624] dark:text-[#cfa98e] font-display">
+                                                    ₹ {parseInt(finalAmount).toLocaleString()}
+                                                </p>
+                                            </motion.div>
+                                        )}
+                                    </CardContent>
+                                </Card>
+                            </motion.div>
+                        )}
+
+                        {/* Step 3: Donor Details */}
+                        {step === 3 && (
+                            <motion.div
+                                key="step3"
+                                custom={direction}
+                                variants={slideVariants}
+                                initial="enter"
+                                animate="center"
+                                exit="exit"
+                                transition={{ duration: 0.3 }}
+                            >
+                                <div className="text-center mb-8">
+                                    <h2 className="text-2xl font-bold font-display mb-2">Devotee Details</h2>
+                                    <p className="text-muted-foreground">Please provide your details for the receipt</p>
+                                </div>
+
+                                <Card className="border-border/50 shadow-sm">
+                                    <CardContent className="p-6 md:p-8 space-y-6">
+                                        {/* 80G Toggle */}
+                                        {/* <div className="md:col-span-2">
+                                                    <div className="flex items-start space-x-3 p-4 border border-[#e6d5c8] bg-[#f5ebe0]/50 dark:border-[#7c4624]/50 dark:bg-[#7c4624]/20 rounded-xl">
+                                                        <Checkbox
+                                                            id="80g"
+                                                            checked={is80GRequired}
+                                                            onCheckedChange={(checked) => setIs80GRequired(checked as boolean)}
+                                                            className="mt-1 data-[state=checked]:bg-[#7c4624] data-[state=checked]:border-[#7c4624]"
+                                                        />
+                                                        <div className="flex-1">
+                                                            <Label htmlFor="80g" className="font-semibold cursor-pointer">I need 80G Tax Exemption Receipt</Label>
+                                                            <p className="text-sm text-muted-foreground mt-1">Avail tax benefits on this donation. PAN card is mandatory.</p>
+                                                            {is80GRequired && (
+                                                                <motion.div
+                                                                    initial={{ height: 0, opacity: 0 }}
+                                                                    animate={{ height: "auto", opacity: 1 }}
+                                                                    className="mt-4"
+                                                                >
+                                                                    <Label htmlFor="pan">PAN Number *</Label>
+                                                                    <Input
+                                                                        id="pan"
+                                                                        placeholder="ABCDE1234F"
+                                                                        value={formData.pan}
+                                                                        onChange={(e) => setFormData({ ...formData, pan: e.target.value.toUpperCase() })}
+                                                                        maxLength={10}
+                                                                        className="uppercase mt-2 font-mono"
+                                                                    />
+                                                                </motion.div>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                </div> */}
+
+                                        {!isAnonymous && (
+                                            <div className="grid md:grid-cols-2 gap-6 animate-in fade-in slide-in-from-top-4 duration-500">
+                                                <div className="space-y-2">
+                                                    <Label htmlFor="name">Full Name <span className="text-red-500">*</span></Label>
+                                                    <div className="relative">
+                                                        <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                                                        <Input
+                                                            id="name"
+                                                            placeholder="e.g. Rahul Sharma"
+                                                            className="pl-10"
+                                                            value={formData.name}
+                                                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                                        />
+                                                    </div>
+                                                </div>
+
+                                                <div className="space-y-2">
+                                                    <Label htmlFor="phone">Phone Number <span className="text-red-500">*</span></Label>
+                                                    <div className="relative">
+                                                        <Phone className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                                                        <Input
+                                                            id="phone"
+                                                            placeholder="+91 98765 43210"
+                                                            className="pl-10"
+                                                            value={formData.phone}
+                                                            onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                                                        />
+                                                    </div>
+                                                </div>
+
+                                                <div className="space-y-2 md:col-span-2">
+                                                    <Label htmlFor="email">Email Address <span className="text-red-500">*</span></Label>
+                                                    <div className="relative">
+                                                        <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                                                        <Input
+                                                            id="email"
+                                                            type="email"
+                                                            placeholder="name@example.com"
+                                                            className="pl-10"
+                                                            value={formData.email}
+                                                            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                                                        />
+                                                    </div>
+                                                </div>
+
+                                                <div className="space-y-2 md:col-span-2">
+                                                    <Label htmlFor="address">Address (Optional)</Label>
+                                                    <Textarea
+                                                        id="address"
+                                                        placeholder="Your postal address"
+                                                        value={formData.address}
+                                                        onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                                                        className="resize-none"
+                                                        rows={3}
+                                                    />
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        <div className="space-y-2">
+                                            <Label htmlFor="message">Prayer / Sankalp Message (Optional)</Label>
+                                            <Textarea
+                                                id="message"
+                                                placeholder="Write a prayer or message to be offered at the temple..."
+                                                value={formData.message}
+                                                onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                                                className="resize-none bg-yellow-50/50 dark:bg-yellow-900/10 border-yellow-200 dark:border-yellow-800"
+                                                rows={3}
+                                            />
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            </motion.div>
+                        )}
+
+                        {/* Step 4: Payment */}
+                        {step === 4 && (
+                            <motion.div
+                                key="step4"
+                                custom={direction}
+                                variants={slideVariants}
+                                initial="enter"
+                                animate="center"
+                                exit="exit"
+                                transition={{ duration: 0.3 }}
+                                className="space-y-6"
+                            >
+                                <div className="text-center mb-6">
+                                    <h2 className="text-2xl font-bold font-display mb-2">Review & Donate</h2>
+                                    <p className="text-muted-foreground">Review your contribution details</p>
+                                </div>
+
+                                <Card className="border-border/50 shadow-lg overflow-hidden border-t-4 border-t-[#7c4624]">
+                                    <CardContent className="p-0">
+                                        <div className="p-6 md:p-8 bg-gradient-to-br from-[#f5ebe0] to-white dark:from-zinc-900 dark:to-zinc-950">
+                                            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+                                                <div>
+                                                    <p className="text-sm text-muted-foreground uppercase tracking-widest font-semibold mb-1">Donating To</p>
+                                                    <h3 className="text-xl font-bold">{temples.find(t => t.id === selectedTemple)?.name}</h3>
+                                                    <p className="text-sm text-[#7c4624]">{temples.find(t => t.id === selectedTemple)?.location}</p>
+                                                </div>
+                                                <div className="text-left md:text-right">
+                                                    <p className="text-sm text-muted-foreground uppercase tracking-widest font-semibold mb-1">Amount</p>
+                                                    <p className="text-3xl font-display font-bold text-[#7c4624]">₹ {parseInt(finalAmount).toLocaleString()}</p>
+                                                </div>
+                                            </div>
+
+                                            <div className="space-y-3 text-sm py-6 border-t border-dashed border-[#e6d5c8] dark:border-zinc-800">
+                                                <div className="flex justify-between">
+                                                    <span className="text-muted-foreground">Purpose</span>
+                                                    <span className="font-medium">{donationPurposes.find(p => p.id === selectedPurpose)?.name}</span>
+                                                </div>
+                                                {!isAnonymous && (
+                                                    <>
+                                                        <div className="flex justify-between">
+                                                            <span className="text-muted-foreground">Donor</span>
+                                                            <span className="font-medium">{formData.name}</span>
+                                                        </div>
+                                                        <div className="flex justify-between">
+                                                            <span className="text-muted-foreground">Email</span>
+                                                            <span className="font-medium">{formData.email}</span>
+                                                        </div>
+                                                    </>
+                                                )}
+                                                {is80GRequired && (
+                                                    <div className="flex justify-between">
+                                                        <span className="text-muted-foreground">80G Receipt</span>
+                                                        <span className="text-green-600 font-medium flex items-center gap-1">
+                                                            <CheckCircle2 className="w-3 h-3" /> Requested (PAN: {formData.pan})
+                                                        </span>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+
+                                <div className="bg-card border border-border rounded-xl p-6">
+                                    <h4 className="font-semibold mb-4">Select Payment Method</h4>
+                                    <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod} className="space-y-3">
+                                        <div className={`flex items-center space-x-3 p-4 rounded-lg border cursor-pointer transition-all ${paymentMethod === 'upi' ? 'border-[#7c4624] bg-[#f5ebe0]/50' : 'border-border'}`} onClick={() => setPaymentMethod('upi')}>
+                                            <RadioGroupItem value="upi" id="upi" />
+                                            <Label htmlFor="upi" className="cursor-pointer flex-1 font-medium">UPI (Google Pay, PhonePe, Paytm)</Label>
+                                        </div>
+                                        <div className={`flex items-center space-x-3 p-4 rounded-lg border cursor-pointer transition-all ${paymentMethod === 'card' ? 'border-[#7c4624] bg-[#f5ebe0]/50' : 'border-border'}`} onClick={() => setPaymentMethod('card')}>
+                                            <RadioGroupItem value="card" id="card" />
+                                            <Label htmlFor="card" className="cursor-pointer flex-1 font-medium">Credit / Debit Card</Label>
+                                        </div>
+                                        <div className={`flex items-center space-x-3 p-4 rounded-lg border cursor-pointer transition-all ${paymentMethod === 'netbanking' ? 'border-[#7c4624] bg-[#f5ebe0]/50' : 'border-border'}`} onClick={() => setPaymentMethod('netbanking')}>
+                                            <RadioGroupItem value="netbanking" id="netbanking" />
+                                            <Label htmlFor="netbanking" className="cursor-pointer flex-1 font-medium">Net Banking</Label>
+                                        </div>
+                                    </RadioGroup>
+                                </div>
+                            </motion.div>
+                        )}
+
+                        {/* Step 5: Success */}
+                        {step === 5 && (
+                            <motion.div
+                                key="step5"
+                                initial={{ opacity: 0, scale: 0.9 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                transition={{ duration: 0.5 }}
+                                className="text-center py-10"
+                            >
+                                <div className="w-24 h-24 bg-green-100 dark:bg-green-900/20 rounded-full flex items-center justify-center mx-auto mb-6 animate-in zoom-in spin-in-3 duration-700">
+                                    <Heart className="w-12 h-12 text-green-600 fill-green-600" />
+                                </div>
+                                <h2 className="text-3xl font-display font-bold text-foreground mb-4">Payment Successful!</h2>
+                                <div className="max-w-md mx-auto mb-8">
+                                    <p className="text-muted-foreground text-lg">
+                                        Thank you, <span className="font-semibold text-foreground">{isAnonymous ? "Devotee" : formData.name.split(' ')[0]}</span>.
+                                    </p>
+                                    <p className="text-muted-foreground mt-2">
+                                        Your contribution of <span className="font-bold text-green-600">₹{parseInt(finalAmount).toLocaleString()}</span> has been received gracefully.
+                                    </p>
+                                </div>
+
+                                <div className="bg-muted/30 p-6 rounded-xl max-w-sm mx-auto mb-8 space-y-2 text-sm">
+                                    <div className="flex justify-between">
+                                        <span className="text-muted-foreground">Transaction ID</span>
+                                        <span className="font-mono">TXN{Math.floor(Math.random() * 10000000)}</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span className="text-muted-foreground">Date</span>
+                                        <span>{new Date().toLocaleDateString()}</span>
+                                    </div>
+                                    <div className="mt-4 pt-4 border-t border-dashed">
+                                        <p className="text-xs text-muted-foreground">An email receipt has been sent to {formData.email}</p>
+                                    </div>
+                                </div>
+
+                                <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                                    <Button asChild size="lg" className="bg-[#7c4624] hover:bg-[#63361c]">
+                                        <Link href="/temples">Explore More Temples</Link>
+                                    </Button>
+                                    <Button variant="outline" size="lg" asChild>
+                                        <Link href="/">Back to Home</Link>
+                                    </Button>
+                                </div>
+                            </motion.div>
+                        )}
+
+                    </AnimatePresence>
+
+                    {/* Navigation Controls */}
+                    {step < 5 && (
+                        <div className="flex justify-center gap-4 mt-8">
+                            <Button
+                                variant="outline"
+                                size="lg"
+                                onClick={prevStep}
+                                disabled={step === 1}
+                                className={`w-32 ${step === 1 ? "opacity-0 pointer-events-none" : ""}`}
+                            >
+                                <ArrowLeft className="w-4 h-4 mr-2" /> Back
+                            </Button>
+
+                            {step < 4 ? (
+                                <Button size="lg" className="w-32 bg-[#7c4624] hover:bg-[#63361c]" onClick={nextStep}>
+                                    Next <ChevronRight className="w-4 h-4 ml-1" />
+                                </Button>
+                            ) : (
+                                <Button size="lg" className="w-48 bg-green-600 hover:bg-green-700" onClick={handleConfirmDonation}>
+                                    Pay ₹{parseInt(finalAmount).toLocaleString()}
+                                </Button>
+                            )}
+                        </div>
                     )}
-
-                    <div className="space-y-2">
-                      <Label htmlFor="address">Address (Optional)</Label>
-                      <Textarea
-                        id="address"
-                        placeholder="Enter your address"
-                        value={formData.address}
-                        onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                      />
-                    </div>
-                  </>
-                )}
-
-                <div className="space-y-2">
-                  <Label htmlFor="message">Message / Prayer Request (Optional)</Label>
-                  <Textarea
-                    id="message"
-                    placeholder="Add a personal message or prayer request"
-                    value={formData.message}
-                    onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                  />
                 </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Step 4: Payment */}
-          {step === 4 && (
-            <div className="space-y-6">
-              <Card className="border-border/50">
-                <CardHeader>
-                  <CardTitle>Donation Summary</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex justify-between py-2 border-b border-border">
-                    <span className="text-muted-foreground">Temple</span>
-                    <span className="font-medium">{temples.find(t => t.id === selectedTemple)?.name}</span>
-                  </div>
-                  <div className="flex justify-between py-2 border-b border-border">
-                    <span className="text-muted-foreground">Purpose</span>
-                    <span className="font-medium">{donationPurposes.find(p => p.id === selectedPurpose)?.name}</span>
-                  </div>
-                  {!isAnonymous && (
-                    <div className="flex justify-between py-2 border-b border-border">
-                      <span className="text-muted-foreground">Donor Name</span>
-                      <span className="font-medium">{formData.name}</span>
-                    </div>
-                  )}
-                  {is80GRequired && (
-                    <div className="flex justify-between py-2 border-b border-border">
-                      <span className="text-muted-foreground">80G Receipt</span>
-                      <Badge variant="secondary">Yes - PAN: {formData.pan}</Badge>
-                    </div>
-                  )}
-                  <div className="flex justify-between py-3 text-lg font-bold">
-                    <span>Donation Amount</span>
-                    <span className="text-primary flex items-center">
-                      <IndianRupee className="h-5 w-5" />
-                      {parseInt(finalAmount).toLocaleString()}
-                    </span>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="border-border/50">
-                <CardHeader>
-                  <CardTitle>Payment Method</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <RadioGroup defaultValue="upi" className="space-y-3">
-                    <div className="flex items-center space-x-3 p-4 border rounded-lg">
-                      <RadioGroupItem value="upi" id="upi" />
-                      <Label htmlFor="upi" className="cursor-pointer flex-1">
-                        <span className="font-semibold">UPI Payment</span>
-                        <p className="text-sm text-muted-foreground">Pay using Google Pay, PhonePe, Paytm etc.</p>
-                      </Label>
-                    </div>
-                    <div className="flex items-center space-x-3 p-4 border rounded-lg">
-                      <RadioGroupItem value="card" id="card" />
-                      <Label htmlFor="card" className="cursor-pointer flex-1">
-                        <span className="font-semibold">Credit/Debit Card</span>
-                        <p className="text-sm text-muted-foreground">Visa, Mastercard, RuPay</p>
-                      </Label>
-                    </div>
-                    <div className="flex items-center space-x-3 p-4 border rounded-lg">
-                      <RadioGroupItem value="netbanking" id="netbanking" />
-                      <Label htmlFor="netbanking" className="cursor-pointer flex-1">
-                        <span className="font-semibold">Net Banking</span>
-                        <p className="text-sm text-muted-foreground">All major banks supported</p>
-                      </Label>
-                    </div>
-                  </RadioGroup>
-                </CardContent>
-              </Card>
             </div>
-          )}
 
-          {/* Step 5: Receipt */}
-          {step === 5 && (
-            <Card className="border-border/50 text-center">
-              <CardContent className="py-12">
-                <div className="h-20 w-20 bg-green-100 dark:bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
-                  <Heart className="h-10 w-10 text-green-600 fill-green-600" />
-                </div>
-                <h2 className="text-2xl font-display font-bold text-foreground mb-2">Thank You for Your Generosity!</h2>
-                <p className="text-muted-foreground mb-6">
-                  Your donation reference number is <span className="font-bold text-foreground">DON{Date.now().toString().slice(-8)}</span>
-                </p>
-
-                <div className="bg-muted/50 rounded-lg p-6 max-w-md mx-auto text-left space-y-3 mb-8">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Temple</span>
-                    <span className="font-medium">{temples.find(t => t.id === selectedTemple)?.name}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Purpose</span>
-                    <span className="font-medium">{donationPurposes.find(p => p.id === selectedPurpose)?.name}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Amount Donated</span>
-                    <span className="font-medium flex items-center">
-                      <IndianRupee className="h-4 w-4" />
-                      {parseInt(finalAmount).toLocaleString()}
-                    </span>
-                  </div>
-                  {is80GRequired && (
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">80G Receipt</span>
-                      <Badge className="bg-green-600">Will be sent via email</Badge>
-                    </div>
-                  )}
-                </div>
-
-                <p className="text-sm text-muted-foreground mb-6">
-                  Receipt has been sent to {formData.email || "your registered email"}
-                </p>
-
-                <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                  <Button variant="outline" asChild>
-                    <Link href="#dashboard">View Donation History</Link>
-                  </Button>
-                  <Button asChild>
-                    <Link href="/temples">Make Another Donation</Link>
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Navigation Buttons */}
-          {step < 5 && (
-            <div className="flex justify-between mt-8">
-              <Button
-                variant="outline"
-                onClick={() => setStep(step - 1)}
-                disabled={step === 1}
-              >
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Previous
-              </Button>
-              {step < 4 ? (
-                <Button onClick={handleNext}>
-                  Next Step
-                </Button>
-              ) : (
-                <Button onClick={handleConfirmDonation} className="bg-green-600 hover:bg-green-700">
-                  Complete Donation <IndianRupee className="h-4 w-4 ml-1" />{parseInt(finalAmount).toLocaleString()}
-                </Button>
-              )}
-            </div>
-          )}
+            <Footer />
         </div>
-      </section>
-
-      <Footer />
-    </div>
-  );
+    );
 }
 
 export default function DonationClient() {
-  return (
-    <Suspense fallback={<div>Loading...</div>}>
-      <DonationForm />
-    </Suspense>
-  );
+    return (
+        <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
+            <DonationForm />
+        </Suspense>
+    );
 }

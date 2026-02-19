@@ -1,0 +1,515 @@
+"use client";
+
+import React, { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+    Heart,
+    Search,
+    Filter,
+    MoreVertical,
+    Clock,
+    CheckCircle,
+    CheckCircle2,
+    XCircle,
+    Eye,
+    Building2,
+    User,
+    Phone,
+    Mail,
+    X,
+    Trash2,
+    ChevronDown,
+    IndianRupee,
+    Gift,
+    Sparkles,
+    FileText,
+    MapPin,
+    ShieldCheck
+} from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { useToast } from "@/hooks/use-toast";
+import {
+    Pagination,
+    PaginationContent,
+    PaginationEllipsis,
+    PaginationItem,
+    PaginationLink,
+    PaginationNext,
+    PaginationPrevious,
+} from "@/components/ui/pagination";
+import { useDebounce } from "@/hooks/use-debounce";
+
+// Mock Data
+const mockDonations = [
+    {
+        id: "DON12345",
+        donorName: "Rahul Sharma",
+        donorPhone: "+91 9876543210",
+        donorEmail: "rahul@example.com",
+        templeName: "Kashi Vishwanath Temple",
+        purpose: "General Donation",
+        amount: 5001,
+        status: "SUCCESS",
+        createdAt: "2024-02-18T10:30:00Z",
+        isAnonymous: false,
+        is80GRequired: true,
+        panNumber: "ABCDE1234F",
+        address: "Varanasi, Uttar Pradesh",
+        message: "For the prosperity of my family.",
+        paymentMethod: "UPI"
+    },
+    {
+        id: "DON12346",
+        donorName: "Anjali Gupta",
+        donorPhone: "+91 8765432109",
+        donorEmail: "anjali@example.com",
+        templeName: "Siddhivinayak Temple",
+        purpose: "Annadaan (Food Seva)",
+        amount: 2100,
+        status: "SUCCESS",
+        createdAt: "2024-02-17T15:45:00Z",
+        isAnonymous: false,
+        is80GRequired: false,
+        address: "Mumbai, Maharashtra",
+        paymentMethod: "Card"
+    },
+    {
+        id: "DON12347",
+        donorName: "Devotee",
+        donorPhone: "N/A",
+        donorEmail: "N/A",
+        templeName: "Jagannath Temple",
+        purpose: "Gau Seva (Cow Care)",
+        amount: 1100,
+        status: "SUCCESS",
+        createdAt: "2024-02-17T09:15:00Z",
+        isAnonymous: true,
+        is80GRequired: false,
+        paymentMethod: "Net Banking"
+    },
+    {
+        id: "DON12348",
+        donorName: "Vikram Singh",
+        donorPhone: "+91 7654321098",
+        donorEmail: "vikram@example.com",
+        templeName: "Somnath Temple",
+        purpose: "Temple Renovation",
+        amount: 11000,
+        status: "PENDING",
+        createdAt: "2024-02-18T12:00:00Z",
+        isAnonymous: false,
+        is80GRequired: true,
+        panNumber: "FGHIJ5678K",
+        address: "Ahmedabad, Gujarat",
+        message: "May the temple shine forever.",
+        paymentMethod: "UPI"
+    }
+];
+
+const statusConfig = {
+    SUCCESS: {
+        label: "Success",
+        color: "bg-emerald-100 text-emerald-700 border-emerald-200",
+        icon: CheckCircle2,
+    },
+    PENDING: {
+        label: "Pending",
+        color: "bg-amber-100 text-amber-700 border-amber-200",
+        icon: Clock,
+    },
+    FAILED: {
+        label: "Failed",
+        color: "bg-rose-100 text-rose-700 border-rose-200",
+        icon: XCircle,
+    },
+};
+
+const purposeIcons: Record<string, any> = {
+    "General Donation": Heart,
+    "Annadaan (Food Seva)": Gift,
+    "Gau Seva (Cow Care)": Sparkles,
+    "Vedic Education": FileText,
+    "Temple Renovation": Building2,
+};
+
+export default function DonationsClient() {
+    const [searchQuery, setSearchQuery] = useState("");
+    const debouncedSearch = useDebounce(searchQuery, 500);
+    const [statusFilter, setStatusFilter] = useState("all");
+    const [donations, setDonations] = useState<any[]>(mockDonations);
+    const [loading, setLoading] = useState(false);
+    const [selectedDonation, setSelectedDonation] = useState<any | null>(null);
+    const { toast } = useToast();
+
+    // Pagination state (Mocked)
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+    const [totalItems, setTotalItems] = useState(mockDonations.length);
+    const itemsPerPage = 10;
+
+    const stats = {
+        totalAmount: mockDonations.reduce((acc, curr) => acc + (curr.status === "SUCCESS" ? curr.amount : 0), 0),
+        successCount: mockDonations.filter(d => d.status === "SUCCESS").length,
+        pendingCount: mockDonations.filter(d => d.status === "PENDING").length,
+        failedCount: mockDonations.filter(d => d.status === "FAILED").length,
+    };
+
+    useEffect(() => {
+        // Filter mock data based on search and status
+        let filtered = mockDonations.filter(d => {
+            const matchesSearch =
+                d.id.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+                d.donorName.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+                d.templeName.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+                d.purpose.toLowerCase().includes(debouncedSearch.toLowerCase());
+
+            const matchesStatus = statusFilter === "all" || d.status === statusFilter;
+
+            return matchesSearch && matchesStatus;
+        });
+
+        setDonations(filtered);
+        setTotalItems(filtered.length);
+    }, [debouncedSearch, statusFilter]);
+
+    const handlePageChange = (page: number) => {
+        if (page >= 1 && page <= totalPages) {
+            setCurrentPage(page);
+        }
+    };
+
+    const handleDelete = (id: string) => {
+        if (!confirm("Are you sure you want to delete this record?")) return;
+        setDonations(donations.filter(d => d.id !== id));
+        toast({ title: "Success", description: "Donation record removed" });
+    };
+
+    return (
+        <div className="space-y-6">
+            {/* Page header */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                    <h1 className="text-2xl md:text-3xl font-serif font-bold text-foreground">
+                        Donations
+                    </h1>
+                    <p className="text-muted-foreground mt-1">
+                        View and manage all sacred contributions from devotees
+                    </p>
+                </div>
+            </div>
+
+            {/* Stats
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {[
+                    { label: "Total Received", value: `₹${stats.totalAmount.toLocaleString()}`, color: "text-[#7c4624]", icon: IndianRupee },
+                    { label: "Successful", value: stats.successCount, color: "text-emerald-600", icon: CheckCircle2 },
+                    { label: "Pending", value: stats.pendingCount, color: "text-amber-600", icon: Clock },
+                    { label: "Failed", value: stats.failedCount, color: "text-rose-600", icon: XCircle },
+                ].map((stat) => (
+                    <Card key={stat.label}>
+                        <CardContent className="p-4 flex items-center gap-4">
+                            <div className={`p-2 rounded-xl bg-muted/50 ${stat.color}`}>
+                                <stat.icon className="w-5 h-5" />
+                            </div>
+                            <div>
+                                <p className={`text-xl font-bold ${stat.color}`}>{stat.value}</p>
+                                <p className="text-xs text-muted-foreground uppercase font-semibold">{stat.label}</p>
+                            </div>
+                        </CardContent>
+                    </Card>
+                ))}
+            </div> */}
+
+            {/* Filters
+            <div className="flex flex-col md:flex-row gap-4">
+                <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                    <Input
+                        placeholder="Search by ID, donor, temple or purpose..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="pl-10"
+                    />
+                </div>
+                <div className="flex gap-2 flex-wrap">
+                    {["all", "SUCCESS", "PENDING", "FAILED"].map((status) => (
+                        <Button
+                            key={status}
+                            variant={statusFilter === status ? "sacred" : "outline"}
+                            size="sm"
+                            onClick={() => {
+                                setStatusFilter(status);
+                                setCurrentPage(1);
+                            }}
+                            className="capitalize"
+                        >
+                            {status === "all" ? "All Status" : status.toLowerCase()}
+                        </Button>
+                    ))}
+                </div>
+            </div> */}
+
+            {/* Donations Table */}
+            <Card>
+                <CardContent className="p-0">
+                    <div className="overflow-x-auto">
+                        <table className="w-full">
+                            <thead className="border-b border-border bg-muted/30">
+                                <tr>
+                                    <th className="text-left p-4 text-sm font-medium text-muted-foreground text-nowrap">Donation ID</th>
+                                    <th className="text-left p-4 text-sm font-medium text-muted-foreground text-nowrap">Donor</th>
+                                    <th className="text-left p-4 text-sm font-medium text-muted-foreground text-nowrap">Temple</th>
+                                    <th className="text-left p-4 text-sm font-medium text-muted-foreground text-nowrap">Purpose</th>
+                                    <th className="text-left p-4 text-sm font-medium text-muted-foreground text-nowrap">Amount</th>
+                                    <th className="text-left p-4 text-sm font-medium text-muted-foreground text-nowrap">Date</th>
+                                    <th className="text-left p-4 text-sm font-medium text-muted-foreground text-nowrap">Status</th>
+                                    <th className="text-right p-4 text-sm font-medium text-muted-foreground text-nowrap">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {loading ? (
+                                    <tr>
+                                        <td colSpan={8} className="p-8 text-center text-muted-foreground">Loading donations...</td>
+                                    </tr>
+                                ) : donations.length === 0 ? (
+                                    <tr>
+                                        <td colSpan={8} className="p-8 text-center text-muted-foreground">No donations found</td>
+                                    </tr>
+                                ) : donations.map((donation, index) => {
+                                    const status = statusConfig[donation.status as keyof typeof statusConfig] || statusConfig.SUCCESS;
+                                    const PurposeIcon = purposeIcons[donation.purpose] || Heart;
+                                    return (
+                                        <motion.tr
+                                            key={donation.id}
+                                            initial={{ opacity: 0, y: 10 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            transition={{ duration: 0.3, delay: index * 0.05 }}
+                                            className="border-b border-border hover:bg-muted/30 transition-colors"
+                                        >
+                                            <td className="p-4">
+                                                <p className="font-mono text-xs font-medium text-primary">
+                                                    {donation.id}
+                                                </p>
+                                            </td>
+                                            <td className="p-4">
+                                                <div className="flex items-center gap-2">
+                                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${donation.isAnonymous ? "bg-slate-200 text-slate-500" : "bg-[#f5ebe0] text-[#7c4624]"}`}>
+                                                        {donation.isAnonymous ? "?" : donation.donorName.split(' ')[0][0]}
+                                                    </div>
+                                                    <div>
+                                                        <p className="font-medium text-foreground">{donation.donorName}</p>
+                                                        {donation.isAnonymous && <span className="text-[10px] bg-slate-100 px-1.5 py-0.5 rounded uppercase font-bold text-slate-500">Anonymous</span>}
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td className="p-4">
+                                                <div className="flex items-center gap-2">
+                                                    <Building2 className="w-4 h-4 text-muted-foreground" />
+                                                    <span className="text-sm text-foreground">
+                                                        {donation.templeName}
+                                                    </span>
+                                                </div>
+                                            </td>
+                                            <td className="p-4">
+                                                <div className="flex items-center gap-2">
+                                                    <PurposeIcon className="w-4 h-4 text-primary" />
+                                                    <p className="text-sm text-foreground">{donation.purpose}</p>
+                                                </div>
+                                            </td>
+                                            <td className="p-4">
+                                                <p className="font-semibold text-foreground">₹{donation.amount.toLocaleString()}</p>
+                                            </td>
+                                            <td className="p-4">
+                                                <p className="text-sm text-foreground">
+                                                    {new Date(donation.createdAt).toLocaleDateString()}
+                                                </p>
+                                            </td>
+                                            <td className="p-4">
+                                                <Badge variant="outline" className={`text-[11px] uppercase font-bold flex items-center gap-1 w-fit ${status.color}`}>
+                                                    <status.icon className="w-3 h-3" />
+                                                    {status.label}
+                                                </Badge>
+                                            </td>
+                                            <td className="p-4 text-right">
+                                                <div className="flex items-center justify-end gap-2">
+                                                    <Button variant="ghost" size="icon" onClick={() => setSelectedDonation(donation)}>
+                                                        <Eye className="w-4 h-4" />
+                                                    </Button>
+                                                    <Button variant="ghost" size="icon" className="text-rose-500 hover:text-rose-600 hover:bg-rose-50" onClick={() => handleDelete(donation.id)}>
+                                                        <Trash2 className="w-4 h-4" />
+                                                    </Button>
+                                                </div>
+                                            </td>
+                                        </motion.tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+                    </div>
+                </CardContent>
+            </Card>
+
+            {/* Donation Detail Modal */}
+            <AnimatePresence>
+                {selectedDonation && (
+                    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={() => setSelectedDonation(null)}
+                            className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
+                        />
+                        <motion.div
+                            initial={{ scale: 0.95, opacity: 0, y: 20 }}
+                            animate={{ scale: 1, opacity: 1, y: 0 }}
+                            exit={{ scale: 0.95, opacity: 0, y: 20 }}
+                            className="bg-white rounded-[32px] w-full max-w-2xl overflow-hidden shadow-2xl relative z-10"
+                        >
+                            <div className="bg-[#7c4624] p-8 text-white relative">
+                                <button
+                                    onClick={() => setSelectedDonation(null)}
+                                    className="absolute right-6 top-6 w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors"
+                                >
+                                    <X className="w-5 h-5" />
+                                </button>
+                                <div className="flex items-center gap-4 mb-2">
+                                    <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-md">
+                                        <Heart className="w-7 h-7" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-2xl font-serif font-bold">Donation Details</h3>
+                                        <p className="text-white/80 text-sm">Sacred Contribution Ref: {selectedDonation.id}</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="p-8 space-y-8 max-h-[75vh] overflow-y-auto">
+                                {/* Status & ID */}
+                                <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                                    <div className="flex items-center gap-3">
+                                        <div className={`p-2 rounded-xl ${(statusConfig[selectedDonation.status as keyof typeof statusConfig] || statusConfig.SUCCESS).color}`}>
+                                            {React.createElement((statusConfig[selectedDonation.status as keyof typeof statusConfig] || statusConfig.SUCCESS).icon, { className: "w-5 h-5" })}
+                                        </div>
+                                        <div>
+                                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Payment Status</p>
+                                            <p className="font-bold text-slate-700">{selectedDonation.status}</p>
+                                        </div>
+                                    </div>
+                                    <div className="text-right">
+                                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Method</p>
+                                        <p className="font-bold text-slate-700">{selectedDonation.paymentMethod}</p>
+                                    </div>
+                                </div>
+
+                                {/* Main Info Grid */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                    <div className="space-y-6">
+                                        <div>
+                                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1">Donor Information</p>
+                                            <div className="space-y-2">
+                                                <p className="text-slate-800 font-bold flex items-center gap-2">
+                                                    <User className="w-4 h-4 text-[#7c4624]" />
+                                                    {selectedDonation.donorName}
+                                                </p>
+                                                {!selectedDonation.isAnonymous && (
+                                                    <>
+                                                        <p className="text-sm text-slate-600 flex items-center gap-2">
+                                                            <Phone className="w-3.5 h-3.5" />
+                                                            {selectedDonation.donorPhone}
+                                                        </p>
+                                                        <p className="text-sm text-slate-600 flex items-center gap-2">
+                                                            <Mail className="w-3.5 h-3.5" />
+                                                            {selectedDonation.donorEmail}
+                                                        </p>
+                                                    </>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1">Temple & Purpose</p>
+                                            <p className="text-slate-800 font-bold flex items-center gap-2 mb-1">
+                                                <Building2 className="w-4 h-4 text-[#7c4624]" />
+                                                {selectedDonation.templeName}
+                                            </p>
+                                            <p className="text-sm text-[#7c4624] font-medium flex items-center gap-2">
+                                                {React.createElement(purposeIcons[selectedDonation.purpose] || Heart, { className: "w-3.5 h-3.5" })}
+                                                {selectedDonation.purpose}
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-6">
+                                        <div>
+                                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1">Amount Details</p>
+                                            <p className="text-3xl font-display font-bold text-[#7c4624]">
+                                                ₹ {selectedDonation.amount.toLocaleString()}
+                                            </p>
+                                            <p className="text-xs text-muted-foreground mt-1">
+                                                Received on {new Date(selectedDonation.createdAt).toLocaleString()}
+                                            </p>
+                                        </div>
+
+                                        {selectedDonation.is80GRequired && (
+                                            <div className="p-3 bg-blue-50 border border-blue-100 rounded-xl">
+                                                <div className="flex items-center gap-2 text-blue-700 font-bold text-xs uppercase tracking-tight mb-1">
+                                                    <ShieldCheck className="w-3.5 h-3.5" />
+                                                    80G Tax Exemption Requested
+                                                </div>
+                                                <p className="text-sm text-blue-900 font-mono font-bold">PAN: {selectedDonation.panNumber}</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Long Text Fields */}
+                                <div className="grid grid-cols-1 gap-6 pt-6 border-t border-slate-100">
+                                    {(selectedDonation.address && !selectedDonation.isAnonymous) && (
+                                        <div>
+                                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1">Postal Address</p>
+                                            <p className="text-slate-700 font-medium bg-slate-50 p-4 rounded-xl border border-dashed border-slate-200 text-sm leading-relaxed">
+                                                <MapPin className="w-4 h-4 inline-block mr-2 text-slate-400" />
+                                                {selectedDonation.address}
+                                            </p>
+                                        </div>
+                                    )}
+
+                                    {selectedDonation.message && (
+                                        <div>
+                                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1">Prayer / Sankalp Message</p>
+                                            <div className="bg-yellow-50/50 p-4 rounded-xl border border-dashed border-yellow-200 text-slate-700 italic text-sm leading-relaxed">
+                                                "{selectedDonation.message}"
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div className="pt-6 border-t border-slate-100 flex items-center justify-between">
+                                    <div className="flex gap-2">
+                                        <Button variant="outline" className="rounded-xl border-slate-200 text-slate-600 h-10 px-4">
+                                            Print Receipt
+                                        </Button>
+                                        <Button variant="outline" className="rounded-xl border-slate-200 text-slate-600 h-10 px-4">
+                                            Send Email
+                                        </Button>
+                                    </div>
+                                    <Button
+                                        onClick={() => setSelectedDonation(null)}
+                                        className="bg-[#7c4624] hover:bg-[#63361c] rounded-xl px-8"
+                                    >
+                                        Close
+                                    </Button>
+                                </div>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+        </div>
+    );
+}

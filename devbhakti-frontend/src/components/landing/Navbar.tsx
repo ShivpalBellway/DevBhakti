@@ -33,6 +33,7 @@ const Navbar: React.FC<NavbarProps> = ({ variant = "default" }) => {
   const [showTempleLoginModal, setShowTempleLoginModal] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [user, setUser] = useState<any>(null);
+  const [mounted, setMounted] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
 
@@ -41,6 +42,7 @@ const Navbar: React.FC<NavbarProps> = ({ variant = "default" }) => {
   const { cartItems, itemCount, updateQuantity, removeFromCart } = useCart();
 
   useEffect(() => {
+    setMounted(true);
     // Check for user in localStorage
     const savedUser = localStorage.getItem("user");
     if (savedUser) {
@@ -67,7 +69,7 @@ const Navbar: React.FC<NavbarProps> = ({ variant = "default" }) => {
     { label: "Sacred Temples", href: "/temples" },
     { label: "Sacred Items", href: "/marketplace?category=All" },
     { label: "Live Darshan", href: "/live-darshan" },
-    // { label: "Donations", href: "/donations" },
+    { label: "Donation", href: "/donation" }
     // { label: "Buy Prasad", href: "/marketplace?category=Prasad" },
   ];
 
@@ -97,22 +99,22 @@ const Navbar: React.FC<NavbarProps> = ({ variant = "default" }) => {
             </div>
 
             {/* Desktop Navigation */}
-            <div className="hidden lg:flex items-center gap-8">
+            <div className="hidden lg:flex items-center gap-4 xl:gap-8">
 
               {/* Desktop Search Bar - Hidden on temple registration page */}
               {!isTempleRegistrationPage && (
                 <div
                   onClick={() => setIsSearchOpen(true)}
-                  className="hidden sm:flex items-center gap-2.5 px-6 py-3
-               w-[350px] md:w-[350px] lg:w-[400px]
+                  className="flex items-center gap-2 px-4 py-2.5
+               w-[200px] lg:w-[280px] xl:w-[350px]
                bg-white/30 dark:bg-zinc-900/80 backdrop-blur-md rounded-xl
                cursor-pointer transition-all border border-black/50
                dark:border-zinc-800/50 hover:border-primary/60
                shadow-sm hover:shadow-md"
                 >
-                  <Search className="w-5 h-5 text-primary group-hover:scale-110 transition-transform" />
+                  <Search className="w-4 h-4 text-primary group-hover:scale-110 transition-transform" />
                   <span className="text-black dark:text-black text-sm font-medium truncate">
-                    Search temples, poojas, products...
+                    Search...temples, poojas, products
                   </span>
                 </div>
               )}
@@ -122,7 +124,7 @@ const Navbar: React.FC<NavbarProps> = ({ variant = "default" }) => {
                 <Link
                   key={link.label}
                   href={link.href}
-                  className="text-md font-medium text-foreground hover:text-primary transition-colors"
+                  className="text-sm xl:text-base font-medium text-foreground hover:text-primary transition-colors whitespace-nowrap"
                 >
                   {link.label}
                 </Link>
@@ -193,7 +195,7 @@ const Navbar: React.FC<NavbarProps> = ({ variant = "default" }) => {
               )}
 
               {/* Profile Dropdown */}
-              {variant === "default" && (
+              {variant === "default" && mounted && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="icon" className="relative rounded-full w-9 h-9 md:w-10 md:h-10 border-2 border-[#794A05]

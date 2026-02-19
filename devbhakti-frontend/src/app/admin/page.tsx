@@ -373,7 +373,7 @@ export default function AdminDashboardPage() {
             { label: "Pooja & Sev Booking", icon: Calendar, path: "/admin/bookings", color: "bg-amber-100 text-amber-700" },
             { label: "Withdrawal Requests", icon: Wallet, path: "/admin/finance/withdrawals", color: "bg-emerald-100 text-emerald-700" },
             { label: "Product Inventory", icon: Package, path: "/admin/products", color: "bg-blue-100 text-blue-700" },
-            { label: "System Settings", icon: AlertCircle, path: "/admin/settings", color: "bg-slate-100 text-slate-700" }
+            { label: "Donation", icon: AlertCircle, path: "/donation", color: "bg-slate-100 text-slate-700" }
           ].map((action, i) => (
             <button
               key={i}

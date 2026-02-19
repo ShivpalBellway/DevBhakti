@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
+  Heart,
   LayoutDashboard,
   Building2,
   Users,
@@ -50,6 +51,11 @@ const sidebarItems = [
     label: "Pooja Bookings",
     icon: Calendar,
     href: "/admin/bookings",
+  },
+  {
+    label: "Donations",
+    icon: Heart,
+    href: "/admin/donations",
   },
   {
     label: "Poojas",
