@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { ImageCropper } from "@/components/admin/ImageCropper";
 import { fetchMyPoojas, updateMyPooja } from "@/api/templeAdminController";
 import { useToast } from "@/hooks/use-toast";
 import { API_URL } from "@/config/apiConfig";
@@ -21,6 +22,8 @@ export default function TempleEditPoojaPage() {
     const [imagePreview, setImagePreview] = useState<string>("");
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
+    const [showCropper, setShowCropper] = useState(false);
+    const [tempImage, setTempImage] = useState<string | null>(null);
 
     const [formData, setFormData] = useState({
         name: "",
@@ -98,13 +101,21 @@ export default function TempleEditPoojaPage() {
     const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
-            setImageFile(file);
             const reader = new FileReader();
             reader.onloadend = () => {
-                setImagePreview(reader.result as string);
+                setTempImage(reader.result as string);
+                setShowCropper(true);
             };
             reader.readAsDataURL(file);
+            e.target.value = ''; // Reset input to allow re-selection of the same file
         }
+    };
+
+    const handleCropComplete = (croppedFile: File) => {
+        setImageFile(croppedFile);
+        setImagePreview(URL.createObjectURL(croppedFile));
+        setShowCropper(false);
+        setTempImage(null);
     };
 
     const togglePackage = (ptype: any) => {
@@ -173,6 +184,18 @@ export default function TempleEditPoojaPage() {
 
     return (
         <div className="max-w-4xl mx-auto space-y-8 pb-20">
+            {showCropper && tempImage && (
+                <ImageCropper
+                    image={tempImage}
+                    onCropComplete={handleCropComplete}
+                    onCancel={() => {
+                        setShowCropper(false);
+                        setTempImage(null);
+                    }}
+                    initialAspect={1 / 1}
+                    title="Crop Pooja Image"
+                />
+            )}
             <div className="flex items-center gap-4">
                 <Button variant="ghost" size="icon" onClick={() => router.back()} className="rounded-full hover:bg-slate-100">
                     <ArrowLeft className="w-5 h-5" />

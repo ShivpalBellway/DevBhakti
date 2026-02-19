@@ -58,7 +58,7 @@ export const setAvailability = async (req: Request, res: Response) => {
                     templeId: temple.id,
                     poojaId: poojaId || null,
                     date,
-                    maxBookings: maxBookings !== undefined ? parseInt(maxBookings) : 20,
+                    maxBookings: maxBookings !== undefined ? parseInt(maxBookings) : 500,
                     isClosed: isClosed || false
                 }
             });

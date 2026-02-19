@@ -51,7 +51,6 @@ const mockDonations = [
         donorPhone: "+91 9876543210",
         donorEmail: "rahul@example.com",
         templeName: "Kashi Vishwanath Temple",
-        purpose: "General Donation",
         amount: 5001,
         status: "SUCCESS",
         createdAt: "2024-02-18T10:30:00Z",
@@ -68,7 +67,6 @@ const mockDonations = [
         donorPhone: "+91 8765432109",
         donorEmail: "anjali@example.com",
         templeName: "Siddhivinayak Temple",
-        purpose: "Annadaan (Food Seva)",
         amount: 2100,
         status: "SUCCESS",
         createdAt: "2024-02-17T15:45:00Z",
@@ -83,7 +81,6 @@ const mockDonations = [
         donorPhone: "N/A",
         donorEmail: "N/A",
         templeName: "Jagannath Temple",
-        purpose: "Gau Seva (Cow Care)",
         amount: 1100,
         status: "SUCCESS",
         createdAt: "2024-02-17T09:15:00Z",
@@ -97,7 +94,6 @@ const mockDonations = [
         donorPhone: "+91 7654321098",
         donorEmail: "vikram@example.com",
         templeName: "Somnath Temple",
-        purpose: "Temple Renovation",
         amount: 11000,
         status: "PENDING",
         createdAt: "2024-02-18T12:00:00Z",
@@ -128,15 +124,9 @@ const statusConfig = {
     },
 };
 
-const purposeIcons: Record<string, any> = {
-    "General Donation": Heart,
-    "Annadaan (Food Seva)": Gift,
-    "Gau Seva (Cow Care)": Sparkles,
-    "Vedic Education": FileText,
-    "Temple Renovation": Building2,
-};
 
-export default function DonationsClient() {
+
+export default function DonationClient() {
     const [searchQuery, setSearchQuery] = useState("");
     const debouncedSearch = useDebounce(searchQuery, 500);
     const [statusFilter, setStatusFilter] = useState("all");
@@ -164,8 +154,7 @@ export default function DonationsClient() {
             const matchesSearch =
                 d.id.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
                 d.donorName.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
-                d.templeName.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
-                d.purpose.toLowerCase().includes(debouncedSearch.toLowerCase());
+                d.templeName.toLowerCase().includes(debouncedSearch.toLowerCase());
 
             const matchesStatus = statusFilter === "all" || d.status === statusFilter;
 
@@ -194,7 +183,7 @@ export default function DonationsClient() {
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                     <h1 className="text-2xl md:text-3xl font-serif font-bold text-foreground">
-                        Donations
+                        Donation
                     </h1>
                     <p className="text-muted-foreground mt-1">
                         View and manage all sacred contributions from devotees
@@ -229,7 +218,7 @@ export default function DonationsClient() {
                 <div className="relative flex-1">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                     <Input
-                        placeholder="Search by ID, donor, temple or purpose..."
+                        placeholder="Search by ID, donor or temple..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         className="pl-10"
@@ -263,7 +252,6 @@ export default function DonationsClient() {
                                     <th className="text-left p-4 text-sm font-medium text-muted-foreground text-nowrap">Donation ID</th>
                                     <th className="text-left p-4 text-sm font-medium text-muted-foreground text-nowrap">Donor</th>
                                     <th className="text-left p-4 text-sm font-medium text-muted-foreground text-nowrap">Temple</th>
-                                    <th className="text-left p-4 text-sm font-medium text-muted-foreground text-nowrap">Purpose</th>
                                     <th className="text-left p-4 text-sm font-medium text-muted-foreground text-nowrap">Amount</th>
                                     <th className="text-left p-4 text-sm font-medium text-muted-foreground text-nowrap">Date</th>
                                     <th className="text-left p-4 text-sm font-medium text-muted-foreground text-nowrap">Status</th>
@@ -281,7 +269,6 @@ export default function DonationsClient() {
                                     </tr>
                                 ) : donations.map((donation, index) => {
                                     const status = statusConfig[donation.status as keyof typeof statusConfig] || statusConfig.SUCCESS;
-                                    const PurposeIcon = purposeIcons[donation.purpose] || Heart;
                                     return (
                                         <motion.tr
                                             key={donation.id}
@@ -314,12 +301,7 @@ export default function DonationsClient() {
                                                     </span>
                                                 </div>
                                             </td>
-                                            <td className="p-4">
-                                                <div className="flex items-center gap-2">
-                                                    <PurposeIcon className="w-4 h-4 text-primary" />
-                                                    <p className="text-sm text-foreground">{donation.purpose}</p>
-                                                </div>
-                                            </td>
+
                                             <td className="p-4">
                                                 <p className="font-semibold text-foreground">₹{donation.amount.toLocaleString()}</p>
                                             </td>
@@ -432,14 +414,10 @@ export default function DonationsClient() {
                                         </div>
 
                                         <div>
-                                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1">Temple & Purpose</p>
+                                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1">Temple</p>
                                             <p className="text-slate-800 font-bold flex items-center gap-2 mb-1">
                                                 <Building2 className="w-4 h-4 text-[#7c4624]" />
                                                 {selectedDonation.templeName}
-                                            </p>
-                                            <p className="text-sm text-[#7c4624] font-medium flex items-center gap-2">
-                                                {React.createElement(purposeIcons[selectedDonation.purpose] || Heart, { className: "w-3.5 h-3.5" })}
-                                                {selectedDonation.purpose}
                                             </p>
                                         </div>
                                     </div>

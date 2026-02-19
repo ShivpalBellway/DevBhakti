@@ -41,12 +41,7 @@ interface Temple {
     deity?: string;
 }
 
-interface DonationPurpose {
-    id: string;
-    name: string;
-    icon: React.ElementType;
-    description: string;
-}
+
 
 // Data
 const temples: Temple[] = [
@@ -60,13 +55,7 @@ const temples: Temple[] = [
     { id: "8", name: "Vaishno Devi", location: "Katra, J&K", deity: "Mata Vaishno Devi" },
 ];
 
-const donationPurposes: DonationPurpose[] = [
-    { id: "general", name: "General Donation", icon: Heart, description: "Support temple operations and daily rituals" },
-    { id: "annadaan", name: "Annadaan (Food Seva)", icon: Gift, description: "Feed devotees and the needy" },
-    { id: "gauseva", name: "Gau Seva (Cow Care)", icon: Sparkles, description: "Support cow welfare & shelter" },
-    { id: "education", name: "Vedic Education", icon: FileText, description: "Support Gurukuls & Vedic studies" },
-    { id: "renovation", name: "Temple Renovation", icon: Building2, description: "Construction & restoration projects" },
-];
+
 
 const suggestedAmounts = [101, 251, 501, 1100, 2100, 5001, 11000, 21000];
 
@@ -77,7 +66,6 @@ function DonationForm() {
     const [direction, setDirection] = useState(1);
 
     const [selectedTemple, setSelectedTemple] = useState(searchParams.get("temple") || "");
-    const [selectedPurpose, setSelectedPurpose] = useState("general");
     const [amount, setAmount] = useState("");
     const [customAmount, setCustomAmount] = useState("");
     const [is80GRequired, setIs80GRequired] = useState(false);
@@ -200,7 +188,7 @@ function DonationForm() {
 
                         {[
                             { num: 1, label: "Temple" },
-                            { num: 2, label: "Purpose" },
+                            { num: 2, label: "Amount" },
                             { num: 3, label: "Details" },
                             { num: 4, label: "Payment" },
                             { num: 5, label: "Receipt" },
@@ -278,7 +266,7 @@ function DonationForm() {
                             </motion.div>
                         )}
 
-                        {/* Step 2: Purpose & Amount */}
+                        {/* Step 2: Amount */}
                         {step === 2 && (
                             <motion.div
                                 key="step2"
@@ -371,38 +359,6 @@ function DonationForm() {
 
                                 <Card className="border-border/50 shadow-sm">
                                     <CardContent className="p-6 md:p-8 space-y-6">
-                                        {/* 80G Toggle */}
-                                        {/* <div className="md:col-span-2">
-                                                    <div className="flex items-start space-x-3 p-4 border border-[#e6d5c8] bg-[#f5ebe0]/50 dark:border-[#7c4624]/50 dark:bg-[#7c4624]/20 rounded-xl">
-                                                        <Checkbox
-                                                            id="80g"
-                                                            checked={is80GRequired}
-                                                            onCheckedChange={(checked) => setIs80GRequired(checked as boolean)}
-                                                            className="mt-1 data-[state=checked]:bg-[#7c4624] data-[state=checked]:border-[#7c4624]"
-                                                        />
-                                                        <div className="flex-1">
-                                                            <Label htmlFor="80g" className="font-semibold cursor-pointer">I need 80G Tax Exemption Receipt</Label>
-                                                            <p className="text-sm text-muted-foreground mt-1">Avail tax benefits on this donation. PAN card is mandatory.</p>
-                                                            {is80GRequired && (
-                                                                <motion.div
-                                                                    initial={{ height: 0, opacity: 0 }}
-                                                                    animate={{ height: "auto", opacity: 1 }}
-                                                                    className="mt-4"
-                                                                >
-                                                                    <Label htmlFor="pan">PAN Number *</Label>
-                                                                    <Input
-                                                                        id="pan"
-                                                                        placeholder="ABCDE1234F"
-                                                                        value={formData.pan}
-                                                                        onChange={(e) => setFormData({ ...formData, pan: e.target.value.toUpperCase() })}
-                                                                        maxLength={10}
-                                                                        className="uppercase mt-2 font-mono"
-                                                                    />
-                                                                </motion.div>
-                                                            )}
-                                                        </div>
-                                                    </div>
-                                                </div> */}
 
                                         {!isAnonymous && (
                                             <div className="grid md:grid-cols-2 gap-6 animate-in fade-in slide-in-from-top-4 duration-500">
@@ -512,10 +468,7 @@ function DonationForm() {
                                             </div>
 
                                             <div className="space-y-3 text-sm py-6 border-t border-dashed border-[#e6d5c8] dark:border-zinc-800">
-                                                <div className="flex justify-between">
-                                                    <span className="text-muted-foreground">Purpose</span>
-                                                    <span className="font-medium">{donationPurposes.find(p => p.id === selectedPurpose)?.name}</span>
-                                                </div>
+
                                                 {!isAnonymous && (
                                                     <>
                                                         <div className="flex justify-between">

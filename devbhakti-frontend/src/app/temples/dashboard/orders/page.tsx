@@ -2,13 +2,15 @@
 
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 
 import {
     ShoppingBag,
     Search,
     Filter,
     Eye,
+
+    Printer,
     Clock,
     CheckCircle,
     XCircle,
@@ -52,13 +54,18 @@ import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { fetchTempleOrders, updateSubOrderStatus, fetchMyTempleProfile } from "@/api/templeAdminController";
 import { BASE_URL } from "@/config/apiConfig";
+import { Checkbox } from "@/components/ui/checkbox";
 
 export default function TempleOrdersPage() {
+    const router = useRouter();
     const [orders, setOrders] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState("");
-    const [selectedOrder, setSelectedOrder] = useState<any>(null);
+    const [selectedOrders, setSelectedOrders] = useState<Set<string>>(new Set());
     const [templeId, setTempleId] = useState<string | null>(null);
+    const [selectedOrder, setSelectedOrder] = useState<any>(null);
+    const [templeData, setTempleData] = useState<any>(null);
+
     const { toast } = useToast();
 
     useEffect(() => {
@@ -74,6 +81,7 @@ export default function TempleOrdersPage() {
                 const id = profileRes.data.id;
                 setTempleId(id);
                 // 2. Load orders for this temple
+                setTempleData(profileRes.data);
                 const ordersRes = await fetchTempleOrders(id);
                 if (ordersRes.success) {
                     setOrders(ordersRes.data);
@@ -139,6 +147,34 @@ export default function TempleOrdersPage() {
         return matchesSearch && matchesStatus;
     });
 
+    const toggleSelectOrder = (id: string) => {
+        const newSelected = new Set(selectedOrders);
+        if (newSelected.has(id)) {
+            newSelected.delete(id);
+        } else {
+            newSelected.add(id);
+        }
+        setSelectedOrders(newSelected);
+    };
+
+    const toggleSelectAll = () => {
+        if (selectedOrders.size === filteredOrders.length) {
+            setSelectedOrders(new Set());
+        } else {
+            setSelectedOrders(new Set(filteredOrders.map(o => o.id)));
+        }
+    };
+
+    const handleBulkPrint = () => {
+        if (selectedOrders.size === 0) return;
+        const ids = Array.from(selectedOrders).join(",");
+        router.push(`/temples/dashboard/orders/print?ids=${ids}`);
+    };
+
+    const handleSinglePrint = (order: any) => {
+        router.push(`/temples/dashboard/orders/print?ids=${order.id}`);
+    };
+
     const getStatusStyle = (status: string) => {
         switch (status) {
             case "DELIVERED": return "bg-emerald-50 text-emerald-700 border-emerald-200";
@@ -172,6 +208,35 @@ export default function TempleOrdersPage() {
                         Track and fulfill marketplace orders specifically for your temple's offerings.
                     </p>
                 </div>
+
+                <AnimatePresence>
+                    {selectedOrders.size > 0 && (
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: 20 }}
+                            className="flex items-center gap-3 bg-white p-2 rounded-2xl shadow-xl border border-orange-100"
+                        >
+                            <div className="px-4 py-2 bg-orange-50 rounded-xl">
+                                <span className="text-sm font-bold text-[#794A05]">{selectedOrders.size} Selected</span>
+                            </div>
+                            <Button
+                                onClick={handleBulkPrint}
+                                className="bg-[#794A05] hover:bg-[#5d3904] text-white rounded-xl px-6 flex items-center gap-2"
+                            >
+                                <Printer className="w-4 h-4" />
+                                Print Labels
+                            </Button>
+                            <Button
+                                variant="ghost"
+                                onClick={() => setSelectedOrders(new Set())}
+                                className="text-slate-500 hover:text-red-500 rounded-xl"
+                            >
+                                Cancel
+                            </Button>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
             </div>
 
             {/* Stats */}
@@ -216,7 +281,14 @@ export default function TempleOrdersPage() {
                 <Table>
                     <TableHeader className="bg-slate-50/80">
                         <TableRow className="hover:bg-transparent border-none">
-                            <TableHead className="py-5 pl-8 font-extrabold text-slate-900 uppercase tracking-widest text-[11px]">Sub-Order ID</TableHead>
+                            <TableHead className="py-5 pl-8 w-[50px]">
+                                <Checkbox
+                                    checked={filteredOrders.length > 0 && selectedOrders.size === filteredOrders.length}
+                                    onCheckedChange={toggleSelectAll}
+                                    className="border-slate-300 data-[state=checked]:bg-[#794A05] data-[state=checked]:border-[#794A05]"
+                                />
+                            </TableHead>
+                            <TableHead className="py-5 font-extrabold text-slate-900 uppercase tracking-widest text-[11px]">Sub-Order ID</TableHead>
                             <TableHead className="py-5 font-extrabold text-slate-900 uppercase tracking-widest text-[11px]">Customer</TableHead>
                             <TableHead className="py-5 font-extrabold text-slate-900 uppercase tracking-widest text-[11px]">Items</TableHead>
                             <TableHead className="py-5 font-extrabold text-slate-900 uppercase tracking-widest text-[11px]">Amount</TableHead>
@@ -242,6 +314,13 @@ export default function TempleOrdersPage() {
                                     className="border-slate-50 hover:bg-slate-50/50 transition-colors"
                                 >
                                     <td className="py-6 pl-8">
+                                        <Checkbox
+                                            checked={selectedOrders.has(order.id)}
+                                            onCheckedChange={() => toggleSelectOrder(order.id)}
+                                            className="border-slate-300 data-[state=checked]:bg-[#794A05] data-[state=checked]:border-[#794A05]"
+                                        />
+                                    </td>
+                                    <td className="py-6">
                                         <span className="font-mono text-xs font-bold text-[#794A05] bg-orange-50 px-2 py-1 rounded">
                                             #{order.id.slice(-8).toUpperCase()}
                                         </span>
@@ -270,7 +349,16 @@ export default function TempleOrdersPage() {
                                             {order.status}
                                         </Badge>
                                     </td>
-                                    <td className="py-6 pr-8 text-right">
+                                    <td className="py-6 pr-8 text-right flex items-center justify-end gap-2">
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-9 w-9 rounded-xl hover:bg-[#794A05]/10 hover:text-[#794A05] transition-all"
+                                            onClick={() => handleSinglePrint(order)}
+                                            title="Print Label"
+                                        >
+                                            <Printer className="w-4 h-4" />
+                                        </Button>
                                         <Button
                                             variant="ghost"
                                             size="icon"
@@ -304,6 +392,13 @@ export default function TempleOrdersPage() {
                                         </p>
                                     </div>
                                     <div className="flex items-center gap-4">
+                                        <Button
+                                            onClick={() => handleSinglePrint(selectedOrder)}
+                                            className="bg-[#794A05] hover:bg-[#5d3904] text-white rounded-xl px-6 flex items-center gap-2"
+                                        >
+                                            <Printer className="w-4 h-4" />
+                                            Print Label
+                                        </Button>
                                         <Select
                                             defaultValue={selectedOrder.status}
                                             onValueChange={(val) => handleStatusUpdate(selectedOrder.id, val)}

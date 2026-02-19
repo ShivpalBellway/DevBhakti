@@ -100,8 +100,20 @@ export const createBooking = async (req: Request, res: Response) => {
                     status: { not: 'CANCELLED' }
                 }
             });
-            if (totalTempleBookings >= globalAvailability.maxBookings) {
+            if (totalTempleBookings >= (globalAvailability?.maxBookings ?? 500)) {
                 return res.status(400).json({ success: false, message: 'Temple is fully booked for this date.' });
+            }
+        } else {
+            // Default enforcement even if no record exists
+            const totalTempleBookings = await prisma.poojaBooking.count({
+                where: {
+                    templeId: pooja.templeId as string,
+                    bookingDate: bookingDate,
+                    status: { not: 'CANCELLED' }
+                }
+            });
+            if (totalTempleBookings >= 500) {
+                return res.status(400).json({ success: false, message: 'Temple is fully booked for this date (Daily limit 500 reaches).' });
             }
         }
 
@@ -125,8 +137,20 @@ export const createBooking = async (req: Request, res: Response) => {
                     status: { not: 'CANCELLED' }
                 }
             });
-            if (totalPoojaBookings >= poojaAvailability.maxBookings) {
+            if (totalPoojaBookings >= (poojaAvailability?.maxBookings ?? 500)) {
                 return res.status(400).json({ success: false, message: 'Daily limit reached for this ritual.' });
+            }
+        } else {
+            // Default enforcement for specific pooja even if no record exists
+            const totalPoojaBookings = await prisma.poojaBooking.count({
+                where: {
+                    poojaId: poojaId,
+                    bookingDate: bookingDate,
+                    status: { not: 'CANCELLED' }
+                }
+            });
+            if (totalPoojaBookings >= 500) {
+                return res.status(400).json({ success: false, message: 'Daily limit (500) reached for this ritual.' });
             }
         }
         // (Existing availability check code stays here...)
@@ -269,11 +293,27 @@ export const checkAvailability = async (req: Request, res: Response) => {
                 }
             });
 
-            if (totalTempleBookings >= globalAvailability.maxBookings) {
+            if (totalTempleBookings >= (globalAvailability?.maxBookings ?? 500)) {
                 return res.json({
                     success: true,
                     available: false,
                     message: "Daily booking limit reached. Please choose another date."
+                });
+            }
+        } else {
+            // Default enforcement
+            const totalTempleBookings = await prisma.poojaBooking.count({
+                where: {
+                    templeId: templeId as string,
+                    bookingDate: date as string,
+                    status: { not: 'CANCELLED' }
+                }
+            });
+            if (totalTempleBookings >= 500) {
+                return res.json({
+                    success: true,
+                    available: false,
+                    message: "Daily booking limit reached (500). Please choose another date."
                 });
             }
         }
@@ -305,11 +345,27 @@ export const checkAvailability = async (req: Request, res: Response) => {
                     }
                 });
 
-                if (totalPoojaBookings >= poojaAvailability.maxBookings) {
+                if (totalPoojaBookings >= (poojaAvailability?.maxBookings ?? 500)) {
                     return res.json({
                         success: true,
                         available: false,
                         message: "Slots full for this ritual on selected date. Please choose another date."
+                    });
+                }
+            } else {
+                // Default enforcement
+                const totalPoojaBookings = await prisma.poojaBooking.count({
+                    where: {
+                        poojaId: poojaId as string,
+                        bookingDate: date as string,
+                        status: { not: 'CANCELLED' }
+                    }
+                });
+                if (totalPoojaBookings >= 500) {
+                    return res.json({
+                        success: true,
+                        available: false,
+                        message: "Slots full for this ritual (limit 500) on selected date."
                     });
                 }
             }

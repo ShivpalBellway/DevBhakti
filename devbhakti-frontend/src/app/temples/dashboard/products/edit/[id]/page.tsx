@@ -32,6 +32,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { updateMyProduct, fetchMyProductById, fetchCategories } from "@/api/templeAdminController";
 import { BASE_URL } from "@/config/apiConfig";
+import { ImageCropper } from "@/components/admin/ImageCropper";
 
 // Image base URL is derived from config
 
@@ -56,6 +57,11 @@ export default function EditTempleProductPage() {
     const [productImage, setProductImage] = useState<File | null>(null);
     const [productImagePreview, setProductImagePreview] = useState<string>("");
     const [removeImage, setRemoveImage] = useState(false);
+
+    // Cropper state
+    const [showCropper, setShowCropper] = useState(false);
+    const [tempImage, setTempImage] = useState<string | null>(null);
+    const [croppingTarget, setCroppingTarget] = useState<{ type: 'product' | 'variant', id?: string } | null>(null);
 
     const [formData, setFormData] = useState({
         name: "",
@@ -127,16 +133,48 @@ export default function EditTempleProductPage() {
                 toast({ title: "Invalid File", description: "Please select an image file", variant: "destructive" });
                 return;
             }
-            if (file.size > 5 * 1024 * 1024) {
-                toast({ title: "File Too Large", description: "Image size should be less than 5MB", variant: "destructive" });
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setTempImage(reader.result as string);
+                setCroppingTarget({ type: 'product' });
+                setShowCropper(true);
+            };
+            reader.readAsDataURL(file);
+            e.target.value = '';
+        }
+    };
+
+    const handleVariantImageChange = (id: string, e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            if (!file.type.startsWith('image/')) {
+                toast({ title: "Invalid File", description: "Please select an image file", variant: "destructive" });
                 return;
             }
-            setProductImage(file);
-            setRemoveImage(false);
             const reader = new FileReader();
-            reader.onloadend = () => setProductImagePreview(reader.result as string);
+            reader.onloadend = () => {
+                setTempImage(reader.result as string);
+                setCroppingTarget({ type: 'variant', id });
+                setShowCropper(true);
+            };
             reader.readAsDataURL(file);
+            e.target.value = '';
         }
+    };
+
+    const handleCropComplete = (croppedFile: File) => {
+        if (croppingTarget?.type === 'product') {
+            setProductImage(croppedFile);
+            setRemoveImage(false);
+            setProductImagePreview(URL.createObjectURL(croppedFile));
+        } else if (croppingTarget?.type === 'variant' && croppingTarget.id) {
+            setVariants(variants.map(variant =>
+                variant.id === croppingTarget.id ? { ...variant, imageFile: croppedFile, imagePreview: URL.createObjectURL(croppedFile) } : variant
+            ));
+        }
+        setShowCropper(false);
+        setTempImage(null);
+        setCroppingTarget(null);
     };
 
     const removeProductImageAction = () => {
@@ -235,27 +273,6 @@ export default function EditTempleProductPage() {
         ));
     };
 
-    const handleVariantImageChange = (id: string, e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (file) {
-            if (!file.type.startsWith('image/')) {
-                toast({ title: "Invalid File", description: "Please select an image file", variant: "destructive" });
-                return;
-            }
-            if (file.size > 5 * 1024 * 1024) {
-                toast({ title: "File Too Large", description: "Image size should be less than 5MB", variant: "destructive" });
-                return;
-            }
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setVariants(variants.map(variant =>
-                    variant.id === id ? { ...variant, imageFile: file, imagePreview: reader.result as string } : variant
-                ));
-            };
-            reader.readAsDataURL(file);
-        }
-    };
-
     const removeVariantImage = (id: string) => {
         setVariants(variants.map(variant =>
             variant.id === id ? { ...variant, imageFile: null, imagePreview: "", image: null } : variant
@@ -266,6 +283,19 @@ export default function EditTempleProductPage() {
 
     return (
         <div className="space-y-6">
+            {showCropper && tempImage && (
+                <ImageCropper
+                    image={tempImage}
+                    onCropComplete={handleCropComplete}
+                    onCancel={() => {
+                        setShowCropper(false);
+                        setTempImage(null);
+                        setCroppingTarget(null);
+                    }}
+                    initialAspect={1 / 1}
+                    title={croppingTarget?.type === 'product' ? "Crop Product Image" : "Crop Variant Image"}
+                />
+            )}
             <div className="flex items-center gap-4">
                 <Button variant="ghost" size="icon" onClick={() => router.back()} className="h-8 w-8">
                     <ArrowLeft className="w-4 h-4" />

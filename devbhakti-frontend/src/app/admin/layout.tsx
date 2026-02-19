@@ -53,9 +53,9 @@ const sidebarItems = [
     href: "/admin/bookings",
   },
   {
-    label: "Donations",
+    label: "Donation",
     icon: Heart,
-    href: "/admin/donations",
+    href: "/admin/donation",
   },
   {
     label: "Poojas",

@@ -50,7 +50,7 @@ export default function AvailabilityManager() {
 
     // Form State
     const [isClosed, setIsClosed] = useState(false);
-    const [maxBookings, setMaxBookings] = useState("20");
+    const [maxBookings, setMaxBookings] = useState("500");
     const [isSaving, setIsSaving] = useState(false);
 
     useEffect(() => {
@@ -89,7 +89,7 @@ export default function AvailabilityManager() {
 
         setSelectedDateRule(rule);
         setIsClosed(rule?.isClosed || false);
-        setMaxBookings(rule?.maxBookings?.toString() || "20");
+        setMaxBookings(rule?.maxBookings?.toString() || "500");
         setIsDialogOpen(true);
     };
 
@@ -165,6 +165,7 @@ export default function AvailabilityManager() {
                     <CardTitle className="text-xl font-serif">Availability Calendar</CardTitle>
                     <CardDescription>
                         Click a date to change limit or close bookings.
+                        <span className="block mt-1 text-primary/80 font-medium">Default limit: 500 bookings/day</span>
                     </CardDescription>
                 </div>
                 <div className="flex gap-2">
@@ -229,7 +230,7 @@ export default function AvailabilityManager() {
                                     />
                                 </div>
                                 <p className="text-xs text-muted-foreground">
-                                    Default limit is usually 20. Change this to override for this specific date.
+                                    Default limit is set to 500 per day. Change this to override for this specific date.
                                 </p>
                             </div>
                         </div>

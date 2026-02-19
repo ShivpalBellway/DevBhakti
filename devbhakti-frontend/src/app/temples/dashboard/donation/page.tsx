@@ -1,16 +1,16 @@
 import { Suspense } from "react";
-import DonationsClient from "./DonationsClient";
+import DonationClient from "./DonationClient";
 
-export default function AdminDonationsPage() {
+export default function TempleDonationsPage() {
     return (
         <Suspense
             fallback={
                 <div className="flex items-center justify-center min-h-[60vh]">
-                    <p className="text-muted-foreground">Loading donations...</p>
+                    <p className="text-muted-foreground">Loading donation...</p>
                 </div>
             }
         >
-            <DonationsClient />
+            <DonationClient />
         </Suspense>
     );
 }

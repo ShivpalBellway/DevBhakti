@@ -18,6 +18,7 @@ import {
     Video,
     CreditCard,
     Flower2,
+    Heart,
     ChevronDown,
     ChevronUp
 } from "lucide-react";
@@ -52,6 +53,11 @@ const sidebarItems = [
         label: "Devotee Management",
         icon: Users,
         href: "/temples/dashboard/users",
+    },
+    {
+        label: "Donations",
+        icon: Heart,
+        href: "/temples/dashboard/donation",
     },
     {
         label: "Product Management",
