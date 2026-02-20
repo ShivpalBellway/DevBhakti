@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useSearchParams, useRouter } from "next/navigation";
 
@@ -56,7 +56,7 @@ import { fetchTempleOrders, updateSubOrderStatus, fetchMyTempleProfile } from "@
 import { BASE_URL } from "@/config/apiConfig";
 import { Checkbox } from "@/components/ui/checkbox";
 
-export default function TempleOrdersPage() {
+function TempleOrdersClient() {
     const router = useRouter();
     const [orders, setOrders] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -533,5 +533,18 @@ export default function TempleOrdersPage() {
                 </DialogContent>
             </Dialog>
         </div>
+    );
+}
+
+export default function TempleOrdersPage() {
+    return (
+        <Suspense fallback={
+            <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
+                <div className="w-10 h-10 animate-spin rounded-full border-4 border-[#794A05] border-t-transparent" />
+                <p className="text-[#794A05] font-medium font-serif">Loading Orders...</p>
+            </div>
+        }>
+            <TempleOrdersClient />
+        </Suspense>
     );
 }

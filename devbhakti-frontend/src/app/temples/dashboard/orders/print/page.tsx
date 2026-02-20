@@ -58,6 +58,10 @@ function PrintLabelsContent() {
 
     return (
         <>
+            {/* Google Font Link for Barcode */}
+            <link rel="preconnect" href="https://fonts.googleapis.com" />
+            <link href="https://fonts.googleapis.com/css2?family=Libre+Barcode+39&display=swap" rel="stylesheet" />
+
             <style>{`
                 * { box-sizing: border-box; }
                 body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #fff; }
@@ -67,10 +71,9 @@ function PrintLabelsContent() {
                     .label-page { page-break-after: always; page-break-inside: avoid; }
                     .label-page:last-child { page-break-after: auto; }
                 }
-                @import url('https://fonts.googleapis.com/css2?family=Libre+Barcode+39&display=swap');
             `}</style>
 
-            {/* Screen-only print button */}
+            {/* Screen-only print/back button */}
             <div className="no-print" style={{ position: "fixed", top: 16, right: 16, zIndex: 9999, display: "flex", gap: 8 }}>
                 <button
                     onClick={() => window.print()}
@@ -79,10 +82,10 @@ function PrintLabelsContent() {
                     🖨️ Print Now
                 </button>
                 <button
-                    onClick={() => window.close()}
+                    onClick={() => window.history.back()}
                     style={{ background: "#eee", color: "#333", border: "none", padding: "10px 22px", borderRadius: 8, fontWeight: 700, fontSize: 15, cursor: "pointer" }}
                 >
-                    ✕ Close
+                    ← Back to Orders
                 </button>
             </div>
 

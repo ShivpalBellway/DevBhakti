@@ -291,6 +291,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                           <Link
                             key={sub.href}
                             href={sub.href}
+                            prefetch={false}
                             className={cn(
                               "block px-3 py-2 rounded-md text-sm transition-colors",
                               isSubActive
@@ -312,6 +313,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <Link
                 key={item.href}
                 href={item.href}
+                prefetch={false}
                 className={cn(
                   "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200",
                   isActive
