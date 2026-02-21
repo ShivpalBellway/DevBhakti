@@ -121,7 +121,7 @@ export default function TempleViewPoojaPage() {
                         </div>
                         <CardContent className="p-6 space-y-6 relative z-10">
                             <div>
-                                <p className="text-orange-200/70 text-xs uppercase tracking-widest font-bold">Standard Offering</p>
+                                <p className="text-orange-200/70 text-xs uppercase tracking-widest font-bold">Single Person Pooja/Seva Price</p>
                                 <div className="flex items-center text-4xl font-bold mt-1">
                                     <IndianRupee className="w-6 h-6 mr-1" />
                                     {pooja.price}

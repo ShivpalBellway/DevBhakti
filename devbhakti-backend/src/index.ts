@@ -27,6 +27,9 @@ import adminDashboardRoutes from './routes/admin/dashboardRoutes';
 import templeAdminOrderRoutes from './routes/temple_admin/productOrderRoutes';
 import shiprocketWebhookRoutes from './routes/shiprocketRoutes';
 import paymentRoutes from './routes/paymentRoutes';
+import adminDonationRoutes from "./routes/admin/donationRoutes";
+import templeDonationRoutes from "./routes/temple_admin/templeDonationRoutes";
+import donationRoutes from './routes/devotee/donationRoutes';
 
 import adminFinanceManagementRoutes from './routes/admin/financeManagementRoutes';
 import templeAdminFinanceRoutes from './routes/temple_admin/financeRoutes';
@@ -72,6 +75,8 @@ app.use('/api/admin/sellers', adminSellerRoutes);
 app.use('/api/admin/dashboard', adminDashboardRoutes);
 app.use('/api/admin/users', adminUserRoutes);
 app.use('/api/admin/commission-slabs', adminCommissionSlabRoutes);
+app.use("/api/admin/donations", adminDonationRoutes);
+app.use("/api/temple-admin/donations", templeDonationRoutes);
 
 
 
@@ -98,6 +103,7 @@ app.use('/api/orders', publicOrderRoutes);
 app.use('/api/cart', cartRoutes);
 app.use('/api/shiprocket-webhook', shiprocketWebhookRoutes);
 app.use('/api/payments', paymentRoutes);
+app.use('/api/donations', donationRoutes);
 
 
 // General Routes (Temporary)

@@ -9,9 +9,8 @@ async function test() {
     console.log('Checking env variables...');
     console.log('MOBICOMM_SENDER_ID:', process.env.MOBICOMM_SENDER_ID);
 
-    // Change this to your actual number to test receipt
-    const testNumber = '+919879879879';
-    const testMessage = 'Your OTP for DevBhakti is 123456. Valid for 10 minutes.';
+    const testNumber = '+919977132450'; // Using user's number for test
+    const testMessage = 'Welcome to DevBhakti. Verify your mobile number using OTP 123456. Valid for 5 minutes.';
 
     console.log(`Testing with number: ${testNumber}`);
     const result = await sendSMS(testNumber, testMessage);

@@ -64,6 +64,41 @@ export const verifyPayment = async (req: Request, res: Response) => {
             });
 
             return res.status(200).json({ success: true, message: "Booking confirmed", data: booking });
+        } else if (orderType === "DONATION") {
+            const { donationId } = orderData; // Expect donationId to be passed in orderData or referenceId
+
+            const donation = await prisma.donation.findUnique({
+                where: { id: donationId || referenceId },
+                include: { temple: true }
+            });
+
+            if (!donation) return res.status(404).json({ success: false, message: "Donation record not found" });
+
+            const updatedDonation = await prisma.$transaction(async (tx) => {
+                const d = await tx.donation.update({
+                    where: { id: donation.id },
+                    data: {
+                        status: 'SUCCESS',
+                        paymentMethod: req.body.paymentMethod || 'Razorpay'
+                    }
+                });
+
+                await tx.templeLedger.create({
+                    data: {
+                        templeId: donation.templeId,
+                        amount: donation.amount,
+                        grossAmount: donation.amount,
+                        commission: 0, // Donations usually have 0 commission in this context or handle as per policy
+                        type: "DONATION_EARNING",
+                        sourceId: d.id,
+                        description: `Donation: ${donation.donorName} for ${donation.temple.name}`,
+                        status: "COMPLETED"
+                    }
+                });
+                return d;
+            });
+
+            return res.status(200).json({ success: true, message: "Donation successful", data: updatedDonation });
         }
 
         return res.status(200).json({ success: true, message: "Payment verified successfully" });

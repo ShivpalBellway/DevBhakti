@@ -151,7 +151,7 @@ export const sendOTP = async (req: Request, res: Response) => {
         }
 
         // Send OTP via Mobicomm SMS
-        const message = `Your OTP for DevBhakti is ${otp}. Valid for 10 minutes.`;
+        const message = `Welcome to DevBhakti. Verify your mobile number using OTP ${otp}. Valid for 5 minutes.`;
         const smsSent = await sendSMS(normalizedPhone, message);
 
         if (smsSent) {

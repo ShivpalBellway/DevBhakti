@@ -186,8 +186,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     });
   }, [pathname]);
 
-  // If we're on the login page, don't show the admin layout UI
-  if (isLoginPage) {
+  // If we're on the login page or print page, don't show the admin layout UI
+  const isPrintPage = pathname?.startsWith("/admin/products/orders/print");
+  if (isLoginPage || isPrintPage) {
     return <>{children}</>;
   }
 

@@ -314,8 +314,8 @@ export default function TempleAdminLayout({ children }: { children: React.ReactN
         router.push("/temples/dashboard/login");
     };
 
-    // Skip sidebar/layout for login page
-    if (pathname === "/temples/dashboard/login") {
+    // Skip sidebar/layout for login page and print page
+    if (pathname === "/temples/dashboard/login" || pathname === "/temples/dashboard/orders/print") {
         return <>{children}</>;
     }
 

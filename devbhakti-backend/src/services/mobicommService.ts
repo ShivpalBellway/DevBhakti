@@ -1,13 +1,14 @@
 import axios from 'axios';
 
 // Configuration from environment variables
-const MOBICOMM_KEY = process.env.MOBICOMM_KEY;
+const MOBICOMM_USER = process.env.MOBICOMM_USER;
+const MOBICOMM_PASSWORD = process.env.MOBICOMM_PASSWORD;
 const MOBICOMM_SENDER_ID = process.env.MOBICOMM_SENDER_ID;
 const MOBICOMM_ENTITY_ID = process.env.MOBICOMM_ENTITY_ID; // PE Id
 const MOBICOMM_TEMPLATE_ID = process.env.MOBICOMM_TEMPLATE_ID; // Template Id
 
-// Updated API URL for Dovesoft
-const MOBICOMM_URL = 'https://api.dovesoft.io//api/sendsms';
+// Dovesoft API URL 
+const MOBICOMM_URL = 'https://api.dovesoft.io/api/sendsms';
 
 
 /**
@@ -19,40 +20,81 @@ const MOBICOMM_URL = 'https://api.dovesoft.io//api/sendsms';
  */
 export const sendSMS = async (phone: string, message: string, templateId?: string): Promise<boolean> => {
     // 1. Check if credentials exist
-    if (!MOBICOMM_KEY || !MOBICOMM_SENDER_ID) {
+    if (!MOBICOMM_USER || !MOBICOMM_PASSWORD || !MOBICOMM_SENDER_ID) {
         console.warn('[Mobicomm] Missing credentials in .env. Skipping SMS send.');
         return false;
     }
 
     try {
         // 2. Format phone number - ensure it has the correct format
-        let formattedPhone = phone;
-        if (!formattedPhone.startsWith('+')) {
-            formattedPhone = '+' + formattedPhone;
-        }
+        // Many Indian gateways prefer 91XXXXXXXXXX without the '+'
+        let formattedPhone = phone.replace(/\+/g, '').trim();
 
-        // 3. Prepare query parameters as per the new API link
+        // 3. Prepare query parameters for Dovesoft HTTP API
         const params: any = {
-            key: MOBICOMM_KEY,
+            user: MOBICOMM_USER,
+            password: MOBICOMM_PASSWORD,
             mobiles: formattedPhone,
             sms: message,
             senderid: MOBICOMM_SENDER_ID,
             entityid: MOBICOMM_ENTITY_ID,
-            tempid: templateId || MOBICOMM_TEMPLATE_ID
+            tempid: templateId || MOBICOMM_TEMPLATE_ID,
         };
 
-        console.log(`[Mobicomm] Sending SMS via Dovesoft to ${formattedPhone}...`);
+        console.log(`[Mobicomm] Sending SMS via Dovesoft...`);
+        console.log(`[Mobicomm] Destination: ${formattedPhone}`);
+        console.log(`[Mobicomm] Message Length: ${message.length} chars`);
+        console.log(`[Mobicomm] Message Content: "${message}"`);
+        console.log(`[Mobicomm] Template ID: ${params.tempid}`);
+        console.log(`[Mobicomm] Entity ID: ${params.entityid}`);
 
-        // 4. Make GET API call (usually these APIs are GET based on the link provided)
-        const response = await axios.get(MOBICOMM_URL, { params });
+        // 4. Make API call
+        // Some gateways return empty on HTTPS if not configured, try HTTP as well
+        const urls = [
+            'https://api.dovesoft.io/api/sendsms',
+            'http://api.dovesoft.io/api/sendsms'
+        ];
+
+        let response;
+        let finalUrl = '';
+
+        for (const url of urls) {
+            console.log(`[Mobicomm] Trying ${url}...`);
+            try {
+                const res = await axios.get(url, { params, timeout: 15000 });
+                if (res.data && res.data !== '' && res.data !== '""') {
+                    response = res;
+                    finalUrl = url;
+                    break;
+                }
+                console.log(`[Mobicomm] ${url} returned empty response.`);
+                // Keep trying or use the last one if both are empty
+                response = res;
+                finalUrl = url;
+            } catch (err: any) {
+                console.error(`[Mobicomm] Error with ${url}:`, err.message);
+                if (!response) response = { status: 500, data: null }; // Fallback
+            }
+        }
 
         // 5. Handle Response
-        const responseData = response.data;
-        console.log(`[Mobicomm] Response:`, responseData);
+        let responseData = response?.data;
+        console.log(`[Mobicomm] Final URL used: ${finalUrl}`);
+        console.log(`[Mobicomm] Response StatusCode: ${response?.status}`);
+        console.log(`[Mobicomm] Response Headers:`, JSON.stringify(response?.headers || {}));
+        console.log(`[Mobicomm] Response Raw:`, responseData);
 
-        // Dovesoft responses are often strings like "Submitted Successfully" or JSON
-        if (response.status === 200) {
-            const responseStr = JSON.stringify(responseData).toLowerCase();
+        if (response && response.status === 200) {
+            const responseStr = typeof responseData === 'object'
+                ? JSON.stringify(responseData).toLowerCase()
+                : String(responseData).toLowerCase();
+
+            // Success often returns a number (message ID) like "1001-3453" or "OK"
+            // Empty string "" typically means rejection by the gateway due to DLT mismatch or missing parameters.
+            if (responseStr === '' || responseStr === '""' || responseStr === 'null' || responseStr.trim() === '') {
+                console.warn('[Mobicomm] API returned an empty response. Rejection likely.');
+                return false;
+            }
 
             if (responseStr.includes('error') || responseStr.includes('fail') || responseStr.includes('invalid')) {
                 console.error('[Mobicomm] API returned error:', responseData);
@@ -61,7 +103,7 @@ export const sendSMS = async (phone: string, message: string, templateId?: strin
 
             return true;
         } else {
-            console.error(`[Mobicomm] HTTP Error: ${response.status}`);
+            console.error(`[Mobicomm] HTTP Error: ${response?.status || 'Unknown'}`);
             return false;
         }
 
@@ -73,4 +115,3 @@ export const sendSMS = async (phone: string, message: string, templateId?: strin
         return false;
     }
 };
-

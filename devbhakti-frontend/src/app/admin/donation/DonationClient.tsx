@@ -43,68 +43,9 @@ import {
 } from "@/components/ui/pagination";
 import { useDebounce } from "@/hooks/use-debounce";
 
-// Mock Data
-const mockDonations = [
-    {
-        id: "DON12345",
-        donorName: "Rahul Sharma",
-        donorPhone: "+91 9876543210",
-        donorEmail: "rahul@example.com",
-        templeName: "Kashi Vishwanath Temple",
-        amount: 5001,
-        status: "SUCCESS",
-        createdAt: "2024-02-18T10:30:00Z",
-        isAnonymous: false,
-        is80GRequired: true,
-        panNumber: "ABCDE1234F",
-        address: "Varanasi, Uttar Pradesh",
-        message: "For the prosperity of my family.",
-        paymentMethod: "UPI"
-    },
-    {
-        id: "DON12346",
-        donorName: "Anjali Gupta",
-        donorPhone: "+91 8765432109",
-        donorEmail: "anjali@example.com",
-        templeName: "Siddhivinayak Temple",
-        amount: 2100,
-        status: "SUCCESS",
-        createdAt: "2024-02-17T15:45:00Z",
-        isAnonymous: false,
-        is80GRequired: false,
-        address: "Mumbai, Maharashtra",
-        paymentMethod: "Card"
-    },
-    {
-        id: "DON12347",
-        donorName: "Devotee",
-        donorPhone: "N/A",
-        donorEmail: "N/A",
-        templeName: "Jagannath Temple",
-        amount: 1100,
-        status: "SUCCESS",
-        createdAt: "2024-02-17T09:15:00Z",
-        isAnonymous: true,
-        is80GRequired: false,
-        paymentMethod: "Net Banking"
-    },
-    {
-        id: "DON12348",
-        donorName: "Vikram Singh",
-        donorPhone: "+91 7654321098",
-        donorEmail: "vikram@example.com",
-        templeName: "Somnath Temple",
-        amount: 11000,
-        status: "PENDING",
-        createdAt: "2024-02-18T12:00:00Z",
-        isAnonymous: false,
-        is80GRequired: true,
-        panNumber: "FGHIJ5678K",
-        address: "Ahmedabad, Gujarat",
-        message: "May the temple shine forever.",
-        paymentMethod: "UPI"
-    }
-];
+import { API_URL } from "@/config/apiConfig";
+import { generateReceiptHTML } from "@/utils/donationReceipt";
+import { Download } from "lucide-react";
 
 const statusConfig = {
     SUCCESS: {
@@ -130,40 +71,71 @@ export default function DonationClient() {
     const [searchQuery, setSearchQuery] = useState("");
     const debouncedSearch = useDebounce(searchQuery, 500);
     const [statusFilter, setStatusFilter] = useState("all");
-    const [donations, setDonations] = useState<any[]>(mockDonations);
-    const [loading, setLoading] = useState(false);
+    const [donations, setDonations] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
     const [selectedDonation, setSelectedDonation] = useState<any | null>(null);
     const { toast } = useToast();
 
-    // Pagination state (Mocked)
+    // Stats state
+    const [stats, setStats] = useState({
+        totalAmount: 0,
+        successCount: 0,
+        pendingCount: 0,
+        failedCount: 0,
+    });
+
+    // Pagination state
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
-    const [totalItems, setTotalItems] = useState(mockDonations.length);
+    const [totalItems, setTotalItems] = useState(0);
     const itemsPerPage = 10;
 
-    const stats = {
-        totalAmount: mockDonations.reduce((acc, curr) => acc + (curr.status === "SUCCESS" ? curr.amount : 0), 0),
-        successCount: mockDonations.filter(d => d.status === "SUCCESS").length,
-        pendingCount: mockDonations.filter(d => d.status === "PENDING").length,
-        failedCount: mockDonations.filter(d => d.status === "FAILED").length,
+
+    const fetchDonations = async () => {
+        try {
+            setLoading(true);
+            const query = new URLSearchParams({
+                page: currentPage.toString(),
+                limit: itemsPerPage.toString(),
+                search: debouncedSearch,
+                status: statusFilter
+            });
+
+            const response = await fetch(`${API_URL}/admin/donations?${query}`);
+            const data = await response.json();
+
+            if (data.success) {
+                setDonations(data.data);
+                setTotalPages(data.pagination.totalPages);
+                setTotalItems(data.pagination.total);
+            }
+        } catch (error) {
+            console.error("Fetch Donations Error:", error);
+            toast({ title: "Error", description: "Failed to fetch donations", variant: "destructive" });
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const fetchStats = async () => {
+        try {
+            const response = await fetch(`${API_URL}/admin/donations/stats`);
+            const data = await response.json();
+            if (data.success) {
+                setStats(data.data);
+            }
+        } catch (error) {
+            console.error("Fetch Stats Error:", error);
+        }
     };
 
     useEffect(() => {
-        // Filter mock data based on search and status
-        let filtered = mockDonations.filter(d => {
-            const matchesSearch =
-                d.id.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
-                d.donorName.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
-                d.templeName.toLowerCase().includes(debouncedSearch.toLowerCase());
+        fetchDonations();
+    }, [debouncedSearch, statusFilter, currentPage]);
 
-            const matchesStatus = statusFilter === "all" || d.status === statusFilter;
-
-            return matchesSearch && matchesStatus;
-        });
-
-        setDonations(filtered);
-        setTotalItems(filtered.length);
-    }, [debouncedSearch, statusFilter]);
+    useEffect(() => {
+        fetchStats();
+    }, []);
 
     const handlePageChange = (page: number) => {
         if (page >= 1 && page <= totalPages) {
@@ -171,10 +143,39 @@ export default function DonationClient() {
         }
     };
 
-    const handleDelete = (id: string) => {
+    const handlePrintReceipt = (donation: any) => {
+        const html = generateReceiptHTML({
+            ...donation,
+            templeName: donation.templeName || "Sacred Temple Offering"
+        });
+        const printWindow = window.open('', '_blank');
+        if (printWindow) {
+            printWindow.document.write(html);
+            printWindow.document.close();
+            setTimeout(() => {
+                printWindow.print();
+            }, 500);
+        }
+    };
+
+    const handleDelete = async (id: string) => {
         if (!confirm("Are you sure you want to delete this record?")) return;
-        setDonations(donations.filter(d => d.id !== id));
-        toast({ title: "Success", description: "Donation record removed" });
+        try {
+            const response = await fetch(`${API_URL}/admin/donations/${id}`, {
+                method: "DELETE"
+            });
+            const data = await response.json();
+            if (data.success) {
+                setDonations(donations.filter(d => d.id !== id));
+                toast({ title: "Success", description: "Donation record removed" });
+                fetchStats(); // Update stats
+            } else {
+                toast({ title: "Error", description: data.message, variant: "destructive" });
+            }
+        } catch (error) {
+            console.error("Delete Error:", error);
+            toast({ title: "Error", description: "Failed to delete donation", variant: "destructive" });
+        }
     };
 
     return (
@@ -191,56 +192,7 @@ export default function DonationClient() {
                 </div>
             </div>
 
-            {/* Stats
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {[
-                    { label: "Total Received", value: `₹${stats.totalAmount.toLocaleString()}`, color: "text-[#7c4624]", icon: IndianRupee },
-                    { label: "Successful", value: stats.successCount, color: "text-emerald-600", icon: CheckCircle2 },
-                    { label: "Pending", value: stats.pendingCount, color: "text-amber-600", icon: Clock },
-                    { label: "Failed", value: stats.failedCount, color: "text-rose-600", icon: XCircle },
-                ].map((stat) => (
-                    <Card key={stat.label}>
-                        <CardContent className="p-4 flex items-center gap-4">
-                            <div className={`p-2 rounded-xl bg-muted/50 ${stat.color}`}>
-                                <stat.icon className="w-5 h-5" />
-                            </div>
-                            <div>
-                                <p className={`text-xl font-bold ${stat.color}`}>{stat.value}</p>
-                                <p className="text-xs text-muted-foreground uppercase font-semibold">{stat.label}</p>
-                            </div>
-                        </CardContent>
-                    </Card>
-                ))}
-            </div> */}
 
-            {/* Filters
-            <div className="flex flex-col md:flex-row gap-4">
-                <div className="relative flex-1">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                    <Input
-                        placeholder="Search by ID, donor or temple..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="pl-10"
-                    />
-                </div>
-                <div className="flex gap-2 flex-wrap">
-                    {["all", "SUCCESS", "PENDING", "FAILED"].map((status) => (
-                        <Button
-                            key={status}
-                            variant={statusFilter === status ? "sacred" : "outline"}
-                            size="sm"
-                            onClick={() => {
-                                setStatusFilter(status);
-                                setCurrentPage(1);
-                            }}
-                            className="capitalize"
-                        >
-                            {status === "all" ? "All Status" : status.toLowerCase()}
-                        </Button>
-                    ))}
-                </div>
-            </div> */}
 
             {/* Donations Table */}
             <Card>
@@ -469,8 +421,12 @@ export default function DonationClient() {
 
                                 <div className="pt-6 border-t border-slate-100 flex items-center justify-between">
                                     <div className="flex gap-2">
-                                        <Button variant="outline" className="rounded-xl border-slate-200 text-slate-600 h-10 px-4">
-                                            Print Receipt
+                                        <Button
+                                            variant="outline"
+                                            className="rounded-xl border-slate-200 text-slate-600 h-10 px-4"
+                                            onClick={() => handlePrintReceipt(selectedDonation)}
+                                        >
+                                            <Download className="w-4 h-4 mr-2" /> Print Receipt
                                         </Button>
                                         <Button variant="outline" className="rounded-xl border-slate-200 text-slate-600 h-10 px-4">
                                             Send Email

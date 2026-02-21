@@ -29,6 +29,7 @@ model User {
   favorites     Favorite[]
   orders        Order[]
   bookings      PoojaBooking[]
+  donations     Donation[]
   sellerProfile SellerProfile?
   temple        Temple?
 }
@@ -99,6 +100,7 @@ model Temple {
   favorites             Favorite[]
   poojas                Pooja[]
   bookings              PoojaBooking[]
+  donations             Donation[]
   products              Product[]
   subOrders             SubOrder[]
   user                  User                  @relation(fields: [userId], references: [id])
@@ -503,6 +505,7 @@ enum BookingStatus {
 enum LedgerType {
   MARKETPLACE_EARNING
   POOJA_EARNING
+  DONATION_EARNING
   WITHDRAWAL
 }
 
@@ -517,4 +520,25 @@ enum WithdrawalStatus {
   APPROVED
   REJECTED
   PAID
+}
+model Donation {
+  id              String         @id @default(cuid())
+  userId          String?
+  templeId        String
+  donorName       String
+  donorPhone      String
+  donorEmail      String
+  amount          Float
+  status          String         @default("PENDING")
+  paymentMethod   String?
+  razorpayOrderId String?        @unique
+  isAnonymous     Boolean        @default(false)
+  is80GRequired   Boolean        @default(false)
+  panNumber       String?
+  address         String?
+  message         String?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  temple          Temple         @relation(fields: [templeId], references: [id])
+  user            User?          @relation(fields: [userId], references: [id])
 }

@@ -31,10 +31,14 @@ export default function CreatePoojaPage() {
     const [tempImage, setTempImage] = useState<string | null>(null);
 
     const STATIC_PACKAGE_TYPES = [
-        { name: "Single", description: "For 1 person" },
+        // { name: "Single", description: "For 1 person" },
         { name: "Couple", description: "For 2 people" },
         { name: "Family", description: "Upto 5 people" },
-        { name: "Group", description: "Upto 8 people" }
+        { name: "Group", description: "Upto 8 people" },
+        { name: "Big Group", description: "Upto 25 people" },
+        { name: "Small Business", description: "Upto 50 people" },
+        { name: "Large Business", description: "Upto 100 people" },
+        { name: "Corporates", description: "Upto 500 people" }
     ];
 
     const [formData, setFormData] = useState({
@@ -130,9 +134,10 @@ export default function CreatePoojaPage() {
                 packages: formData.packages.filter(p => p.name !== ptype.name)
             });
         } else {
+            const newPrice = ptype.name === "Single" ? formData.price : 0;
             setFormData({
                 ...formData,
-                packages: [...formData.packages, { ...ptype, price: 0 }]
+                packages: [...formData.packages, { ...ptype, price: newPrice }]
             });
         }
     };
@@ -304,12 +309,23 @@ export default function CreatePoojaPage() {
                         />
                     </div>
                     <div className="space-y-2">
-                        <Label htmlFor="price">Base Price (₹) *</Label>
+                        <Label htmlFor="price">Single Person Price (₹) *</Label>
                         <Input
                             id="price"
                             type="number"
                             value={formData.price}
-                            onChange={(e) => setFormData({ ...formData, price: parseInt(e.target.value) })}
+                            onChange={(e) => {
+                                const newPrice = parseInt(e.target.value) || 0;
+                                setFormData((prev) => {
+                                    const newPackages = prev.packages.map((pkg) => {
+                                        if (pkg.name === "Single") {
+                                            return { ...pkg, price: newPrice };
+                                        }
+                                        return pkg;
+                                    });
+                                    return { ...prev, price: newPrice, packages: newPackages };
+                                });
+                            }}
                             required
                         />
                     </div>

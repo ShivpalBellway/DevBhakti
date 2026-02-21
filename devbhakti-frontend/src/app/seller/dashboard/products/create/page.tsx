@@ -368,10 +368,10 @@ export default function CreateSellerProductPage() {
                                 <Label htmlFor="highlights">Highlights</Label>
                                 <Textarea id="highlights" value={formData.highlights} onChange={(e) => setFormData({ ...formData, highlights: e.target.value })} rows={2} />
                             </div>
-                            <div className="space-y-2">
+                            {/* <div className="space-y-2">
                                 <Label htmlFor="longDescription">Detailed Description</Label>
                                 <Textarea id="longDescription" value={formData.longDescription} onChange={(e) => setFormData({ ...formData, longDescription: e.target.value })} rows={6} />
-                            </div>
+                            </div> */}
                         </CardContent>
                     </Card>
 

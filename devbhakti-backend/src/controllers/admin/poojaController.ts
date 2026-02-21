@@ -4,7 +4,7 @@ import { prisma } from '../../lib/prisma';
 export const getAllPoojas = async (req: Request, res: Response) => {
     try {
         const { isMaster, templeId } = req.query;
-        
+
         const where: any = {};
         if (isMaster !== undefined) {
             where.isMaster = isMaster === 'true';
@@ -41,7 +41,7 @@ export const createPooja = async (req: Request, res: Response) => {
         console.log('=== CREATE POOJA DEBUG ===');
         console.log('Request body:', req.body);
         console.log('Request file:', req.file);
-        
+
         const {
             name,
             category,
@@ -241,5 +241,30 @@ export const promoteToMaster = async (req: Request, res: Response) => {
     } catch (error) {
         console.error('Promote pooja error:', error);
         res.status(500).json({ error: 'Failed to promote pooja' });
+    }
+};
+
+// Toggle Pooja Status (active/inactive)
+export const togglePoojaStatus = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+
+        const pooja = await prisma.pooja.findUnique({
+            where: { id: String(id) }
+        });
+
+        if (!pooja) {
+            return res.status(404).json({ success: false, message: 'Pooja not found' });
+        }
+
+        const updatedPooja = await prisma.pooja.update({
+            where: { id: String(id) },
+            data: { status: !pooja.status }
+        });
+
+        res.json({ success: true, data: updatedPooja });
+    } catch (error: any) {
+        console.error('Toggle Pooja Status Error:', error);
+        res.status(500).json({ success: false, message: error.message });
     }
 };

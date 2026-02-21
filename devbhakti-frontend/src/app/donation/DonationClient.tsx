@@ -43,21 +43,15 @@ interface Temple {
 
 
 
-// Data
-const temples: Temple[] = [
-    { id: "1", name: "Kashi Vishwanath Temple", location: "Varanasi, UP", deity: "Lord Shiva" },
-    { id: "2", name: "Tirupati Balaji Temple", location: "Tirupati, AP", deity: "Lord Venkateswara" },
-    { id: "3", name: "Siddhivinayak Temple", location: "Mumbai, MH", deity: "Lord Ganesha" },
-    { id: "4", name: "Meenakshi Temple", location: "Madurai, TN", deity: "Goddess Meenakshi" },
-    { id: "5", name: "Jagannath Temple", location: "Puri, Odisha", deity: "Lord Jagannath" },
-    { id: "6", name: "Somnath Temple", location: "Gujarat", deity: "Lord Shiva" },
-    { id: "7", name: "Kedarnath Temple", location: "Uttarakhand", deity: "Lord Shiva" },
-    { id: "8", name: "Vaishno Devi", location: "Katra, J&K", deity: "Mata Vaishno Devi" },
-];
-
-
-
 const suggestedAmounts = [101, 251, 501, 1100, 2100, 5001, 11000, 21000];
+import { fetchPublicTemples } from "@/api/publicController";
+import { API_URL } from "@/config/apiConfig";
+
+declare global {
+    interface Window {
+        Razorpay: any;
+    }
+}
 
 function DonationForm() {
     const searchParams = useSearchParams();
@@ -81,12 +75,50 @@ function DonationForm() {
         message: "",
     });
 
+    const [temples, setTemples] = useState<Temple[]>([]);
+    const [loading, setLoading] = useState(false);
+    const [transactionId, setTransactionId] = useState("");
+
+    const RAZORPAY_KEY = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "";
+
+    React.useEffect(() => {
+        const loadTemples = async () => {
+            const data = await fetchPublicTemples();
+            setTemples(data);
+        };
+        loadTemples();
+
+        // Pre-fill from localstorage if available
+        const savedUser = localStorage.getItem("user");
+        if (savedUser) {
+            const user = JSON.parse(savedUser);
+            setFormData(prev => ({
+                ...prev,
+                name: user.name || "",
+                phone: user.phone || "",
+                email: user.email || "",
+            }));
+        }
+    }, []);
+
     const finalAmount = customAmount || amount;
 
     const nextStep = () => {
-        if (step === 1 && !selectedTemple) {
-            toast({ title: "Please select a temple", variant: "destructive" });
-            return;
+        if (step === 1) {
+            if (!selectedTemple) {
+                toast({ title: "Please select a temple", variant: "destructive" });
+                return;
+            }
+            // Check login status
+            const token = localStorage.getItem("token");
+            if (!token) {
+                toast({
+                    title: "Authentication Required",
+                    description: "Please login to proceed with your donation.",
+                    variant: "destructive"
+                });
+                return;
+            }
         }
         if (step === 2 && !finalAmount) {
             toast({ title: "Please enter donation amount", variant: "destructive" });
@@ -112,15 +144,102 @@ function DonationForm() {
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
-    const handleConfirmDonation = () => {
-        setDirection(1);
-        setStep(5); // Success Step
-        toast({
-            title: "🙏 Donation Successful!",
-            description: "May you be blessed. Receipt sent to your email.",
-            className: "bg-green-600 text-white border-none"
-        });
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+    const handleConfirmDonation = async () => {
+        try {
+            setLoading(true);
+            const savedUser = localStorage.getItem("user");
+            const user = savedUser ? JSON.parse(savedUser) : null;
+
+            // 1. Initiate Donation with Backend
+            const initiateRes = await fetch(`${API_URL}/donations`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    templeId: selectedTemple,
+                    amount: parseFloat(finalAmount),
+                    donorName: formData.name,
+                    donorPhone: formData.phone,
+                    donorEmail: formData.email,
+                    isAnonymous,
+                    is80GRequired,
+                    panNumber: formData.pan,
+                    address: formData.address,
+                    message: formData.message,
+                    userId: user?.id
+                })
+            });
+
+            const initiateData = await initiateRes.json();
+
+            if (!initiateData.success) {
+                if (initiateData.message?.includes("token") || initiateRes.status === 401) {
+                    toast({ title: "Session Expired", description: "Please login again.", variant: "destructive" });
+                } else {
+                    toast({ title: "Failed to initiate donation", description: initiateData.message, variant: "destructive" });
+                }
+                return;
+            }
+
+            // 2. Open Razorpay Checkout
+            const options = {
+                key: RAZORPAY_KEY,
+                amount: initiateData.order.amount,
+                currency: initiateData.order.currency,
+                name: "DevBhakti",
+                description: `Donation to ${temples.find(t => t.id === selectedTemple)?.name}`,
+                order_id: initiateData.order.id,
+                handler: async function (response: any) {
+                    try {
+                        // 3. Verify Payment
+                        const verifyRes = await fetch(`${API_URL}/payments/verify`, {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                                razorpay_order_id: response.razorpay_order_id,
+                                razorpay_payment_id: response.razorpay_payment_id,
+                                razorpay_signature: response.razorpay_signature,
+                                orderType: "DONATION",
+                                referenceId: initiateData.donationId, // Using donationId as reference
+                                orderData: { donationId: initiateData.donationId },
+                                userId: user?.id
+                            })
+                        });
+
+                        const verifyData = await verifyRes.json();
+
+                        if (verifyData.success) {
+                            setTransactionId(response.razorpay_payment_id);
+                            setDirection(1);
+                            setStep(5); // Success Step
+                            toast({
+                                title: "🙏 Donation Successful!",
+                                description: "May you be blessed. Receipt sent to your email.",
+                                className: "bg-green-600 text-white border-none"
+                            });
+                        } else {
+                            toast({ title: "Payment verification failed", description: verifyData.message, variant: "destructive" });
+                        }
+                    } catch (err: any) {
+                        toast({ title: "Verification error", description: err.message, variant: "destructive" });
+                    }
+                },
+                prefill: {
+                    name: formData.name,
+                    email: formData.email,
+                    contact: formData.phone
+                },
+                theme: { color: "#7c4624" }
+            };
+
+            const rzp = new window.Razorpay(options);
+            rzp.open();
+
+        } catch (error: any) {
+            console.error("Donation Error:", error);
+            toast({ title: "Donation failed", description: error.message, variant: "destructive" });
+        } finally {
+            setLoading(false);
+        }
     };
 
     // Animation variants
@@ -232,36 +351,43 @@ function DonationForm() {
                                 </div>
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    {temples.map((temple) => (
-                                        <motion.div
-                                            key={temple.id}
-                                            whileHover={{ scale: 1.02 }}
-                                            whileTap={{ scale: 0.98 }}
-                                            className={`relative p-5 rounded-2xl border-2 cursor-pointer transition-all ${selectedTemple === temple.id
-                                                ? "border-[#7c4624] bg-[#f5ebe0]/50 dark:bg-[#7c4624]/20 shadow-md ring-1 ring-[#e6d5c8]"
-                                                : "border-border hover:border-[#b08d7a] bg-card hover:shadow-sm"
-                                                }`}
-                                            onClick={() => setSelectedTemple(temple.id)}
-                                        >
-                                            <div className="flex items-start gap-4">
-                                                <div className={`p-3 rounded-full ${selectedTemple === temple.id ? "bg-[#f5ebe0] text-[#7c4624]" : "bg-muted text-muted-foreground"}`}>
-                                                </div>
-                                                <div className="flex-1">
-                                                    <h3 className="font-bold text-lg">{temple.name}</h3>
-                                                    <p className="text-sm text-primary font-medium">{temple.deity}</p>
-                                                    <div className="flex items-center gap-1 mt-1 text-muted-foreground text-sm">
-                                                        <MapPin className="w-3 h-3" />
-                                                        {temple.location}
+                                    {temples.length > 0 ? (
+                                        temples.map((temple) => (
+                                            <motion.div
+                                                key={temple.id}
+                                                whileHover={{ scale: 1.02 }}
+                                                whileTap={{ scale: 0.98 }}
+                                                className={`relative p-5 rounded-2xl border-2 cursor-pointer transition-all ${selectedTemple === temple.id
+                                                    ? "border-[#7c4624] bg-[#f5ebe0]/50 dark:bg-[#7c4624]/20 shadow-md ring-1 ring-[#e6d5c8]"
+                                                    : "border-border hover:border-[#b08d7a] bg-card hover:shadow-sm"
+                                                    }`}
+                                                onClick={() => setSelectedTemple(temple.id)}
+                                            >
+                                                <div className="flex items-start gap-4">
+                                                    <div className={`p-3 rounded-full ${selectedTemple === temple.id ? "bg-[#f5ebe0] text-[#7c4624]" : "bg-muted text-muted-foreground"}`}>
+                                                        <Building2 className="w-6 h-6" />
                                                     </div>
-                                                </div>
-                                                {selectedTemple === temple.id && (
-                                                    <div className="absolute top-4 right-4 text-[#7c4624]">
-                                                        <CheckCircle2 className="w-6 h-6 fill-current" />
+                                                    <div className="flex-1">
+                                                        <h3 className="font-bold text-lg">{temple.name}</h3>
+                                                        <p className="text-sm text-primary font-medium">{temple.deity || "Sacred Temple"}</p>
+                                                        <div className="flex items-center gap-1 mt-1 text-muted-foreground text-sm">
+                                                            <MapPin className="w-3 h-3" />
+                                                            {temple.location}
+                                                        </div>
                                                     </div>
-                                                )}
-                                            </div>
-                                        </motion.div>
-                                    ))}
+                                                    {selectedTemple === temple.id && (
+                                                        <div className="absolute top-4 right-4 text-[#7c4624]">
+                                                            <CheckCircle2 className="w-6 h-6 fill-current" />
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </motion.div>
+                                        ))
+                                    ) : (
+                                        <div className="col-span-full py-12 text-center text-muted-foreground italic">
+                                            Loading sacred temples...
+                                        </div>
+                                    )}
                                 </div>
                             </motion.div>
                         )}
@@ -539,7 +665,7 @@ function DonationForm() {
                                 <div className="bg-muted/30 p-6 rounded-xl max-w-sm mx-auto mb-8 space-y-2 text-sm">
                                     <div className="flex justify-between">
                                         <span className="text-muted-foreground">Transaction ID</span>
-                                        <span className="font-mono">TXN{Math.floor(Math.random() * 10000000)}</span>
+                                        <span className="font-mono">{transactionId || `TXN${Math.floor(Math.random() * 10000000)}`}</span>
                                     </div>
                                     <div className="flex justify-between">
                                         <span className="text-muted-foreground">Date</span>
@@ -581,8 +707,8 @@ function DonationForm() {
                                     Next <ChevronRight className="w-4 h-4 ml-1" />
                                 </Button>
                             ) : (
-                                <Button size="lg" className="w-48 bg-green-600 hover:bg-green-700" onClick={handleConfirmDonation}>
-                                    Pay ₹{parseInt(finalAmount).toLocaleString()}
+                                <Button size="lg" className="w-48 bg-green-600 hover:bg-green-700" onClick={handleConfirmDonation} disabled={loading}>
+                                    {loading ? "Processing..." : `Pay ₹${parseInt(finalAmount).toLocaleString()}`}
                                 </Button>
                             )}
                         </div>

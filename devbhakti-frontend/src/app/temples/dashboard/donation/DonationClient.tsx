@@ -31,78 +31,8 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useDebounce } from "@/hooks/use-debounce";
 
-// Mock Data for Temple
-const mockDonations = [
-    {
-        id: "DON-TM-90123",
-        donorName: "Amit Kumar",
-        donorPhone: "+91 9123456780",
-        donorEmail: "amit@example.com",
-        amount: 11000,
-        status: "SUCCESS",
-        createdAt: "2024-02-19T10:30:00Z",
-        isAnonymous: false,
-        is80GRequired: true,
-        panNumber: "PQRSR1234M",
-        address: "Ayodhya, Uttar Pradesh",
-        message: "Sukh Shanti ke liye.",
-        paymentMethod: "UPI"
-    },
-    {
-        id: "DON-TM-90124",
-        donorName: "Priya Singh",
-        donorPhone: "+91 8234567891",
-        donorEmail: "priya@example.com",
-        amount: 5100,
-        status: "SUCCESS",
-        createdAt: "2024-02-18T15:45:00Z",
-        isAnonymous: false,
-        is80GRequired: false,
-        address: "Lucknow, Uttar Pradesh",
-        paymentMethod: "Card"
-    },
-    {
-        id: "DON-TM-90125",
-        donorName: "Devotee",
-        donorPhone: "N/A",
-        donorEmail: "N/A",
-        amount: 1100,
-        status: "SUCCESS",
-        createdAt: "2024-02-18T09:15:00Z",
-        isAnonymous: true,
-        is80GRequired: false,
-        paymentMethod: "Net Banking"
-    },
-    {
-        id: "DON-TM-90126",
-        donorName: "Karan Johar",
-        donorPhone: "+91 7345678902",
-        donorEmail: "karan@example.com",
-        amount: 25000,
-        status: "PENDING",
-        createdAt: "2024-02-19T12:00:00Z",
-        isAnonymous: false,
-        is80GRequired: true,
-        panNumber: "TUVWX5678Y",
-        address: "Mumbai, Maharashtra",
-        message: "Blessings for the new project.",
-        paymentMethod: "UPI"
-    },
-    {
-        id: "DON-TM-90127",
-        donorName: "Sanjay Dutt",
-        donorPhone: "+91 9456789012",
-        donorEmail: "sanjay@example.com",
-        amount: 50001,
-        status: "SUCCESS",
-        createdAt: "2024-02-17T11:20:00Z",
-        isAnonymous: false,
-        is80GRequired: true,
-        panNumber: "XYZAB9012C",
-        address: "Mumbai, Maharashtra",
-        paymentMethod: "UPI"
-    }
-];
+import { fetchMyTempleProfile } from "@/api/templeAdminController";
+import { generateReceiptHTML } from "@/utils/donationReceipt";
 
 const statusConfig = {
     SUCCESS: {
@@ -126,31 +56,97 @@ export default function DonationClient() {
     const [searchQuery, setSearchQuery] = useState("");
     const debouncedSearch = useDebounce(searchQuery, 500);
     const [statusFilter, setStatusFilter] = useState("all");
-    const [donations, setDonations] = useState<any[]>(mockDonations);
+    const [donations, setDonations] = useState<any[]>([]);
     const [selectedDonation, setSelectedDonation] = useState<any | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [templeId, setTempleId] = useState<string | null>(null);
     const { toast } = useToast();
 
-    const stats = {
-        totalAmount: mockDonations.reduce((acc, curr) => acc + (curr.status === "SUCCESS" ? curr.amount : 0), 0),
-        totalDonors: new Set(mockDonations.map(d => d.donorName)).size,
-        avgDonation: Math.round(mockDonations.reduce((acc, curr) => acc + (curr.status === "SUCCESS" ? curr.amount : 0), 0) / (mockDonations.filter(d => d.status === "SUCCESS").length || 1)),
+    const [stats, setStats] = useState({
+        totalAmount: 0,
+        totalDonors: 0,
+        avgDonation: 0,
         growth: 12.5,
-        trend: [40, 70, 45, 90, 65, 80, 95] // Mock chart points
+        trend: [40, 70, 45, 90, 65, 80, 95]
+    });
+
+    useEffect(() => {
+        const loadInitialData = async () => {
+            try {
+                const profile = await fetchMyTempleProfile();
+                if (profile.success && profile.data.id) {
+                    setTempleId(profile.data.id);
+                }
+            } catch (error) {
+                console.error("Load Initial Data Error:", error);
+            }
+        };
+        loadInitialData();
+    }, []);
+
+    const fetchDonations = async () => {
+        if (!templeId) return;
+        try {
+            setLoading(true);
+            const query = new URLSearchParams({
+                search: debouncedSearch,
+                status: statusFilter,
+                limit: "100" // For now simplified
+            });
+
+            const response = await fetch(`${API_URL}/temple-admin/donations/${templeId}?${query}`);
+            const data = await response.json();
+
+            if (data.success) {
+                setDonations(data.data);
+            }
+        } catch (error) {
+            console.error("Fetch Donations Error:", error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const fetchStats = async () => {
+        if (!templeId) return;
+        try {
+            const response = await fetch(`${API_URL}/temple-admin/donations/${templeId}/stats`);
+            const data = await response.json();
+            if (data.success) {
+                const s = data.data;
+                setStats(prev => ({
+                    ...prev,
+                    totalAmount: s.totalAmount,
+                    totalDonors: s.totalDonors,
+                    avgDonation: Math.round(s.totalAmount / (s.successCount || 1))
+                }));
+            }
+        } catch (error) {
+            console.error("Fetch Stats Error:", error);
+        }
     };
 
     useEffect(() => {
-        let filtered = mockDonations.filter(d => {
-            const matchesSearch =
-                d.id.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
-                d.donorName.toLowerCase().includes(debouncedSearch.toLowerCase());
+        if (templeId) {
+            fetchDonations();
+            fetchStats();
+        }
+    }, [templeId, debouncedSearch, statusFilter]);
 
-            const matchesStatus = statusFilter === "all" || d.status === statusFilter;
-
-            return matchesSearch && matchesStatus;
+    const handlePrintReceipt = (donation: any) => {
+        const html = generateReceiptHTML({
+            ...donation,
+            templeName: profiles?.name || "Temple" // Assuming profile data has temple name
         });
-
-        setDonations(filtered);
-    }, [debouncedSearch, statusFilter]);
+        const printWindow = window.open('', '_blank');
+        if (printWindow) {
+            printWindow.document.write(html);
+            printWindow.document.close();
+            setTimeout(() => {
+                printWindow.print();
+            }, 500);
+        }
+    };
 
     const handleDownloadReport = () => {
         toast({
@@ -472,10 +468,19 @@ export default function DonationClient() {
 
                             {/* Modal Footer */}
                             <div className="p-8 pt-0 flex gap-3">
-                                <Button className="flex-1 bg-primary hover:bg-primary/90 text-white rounded-[20px] h-12 font-bold shadow-lg shadow-primary/20">
-                                    Accept Blessing
+                                <Button
+                                    className="flex-1 bg-[#7c4624] hover:bg-[#63361c] text-white rounded-[20px] h-12 font-bold shadow-lg shadow-[#7c4624]/20"
+                                    onClick={() => handlePrintReceipt(selectedDonation)}
+                                >
+                                    <Download className="w-4 h-4 mr-2" /> Print Receipt
                                 </Button>
-
+                                <Button
+                                    variant="outline"
+                                    className="flex-1 rounded-[20px] h-12 font-bold"
+                                    onClick={() => setSelectedDonation(null)}
+                                >
+                                    Close
+                                </Button>
                             </div>
                         </motion.div>
                     </div>

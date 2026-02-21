@@ -668,7 +668,7 @@ export default function CreateProductPage() {
                   rows={2}
                 />
               </div>
-
+              {/* 
               <div className="space-y-2">
                 <Label htmlFor="longDescription">Detailed Product Description / Benefits</Label>
                 <Textarea
@@ -678,7 +678,7 @@ export default function CreateProductPage() {
                   placeholder="Explain the significance, usage, and benefits in detail..."
                   rows={6}
                 />
-              </div>
+              </div> */}
             </CardContent>
           </Card>
 

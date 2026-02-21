@@ -1,10 +1,11 @@
 import { Router } from 'express';
-import { 
-    getAllPoojas, 
-    createPooja, 
-    updatePooja, 
+import {
+    getAllPoojas,
+    createPooja,
+    updatePooja,
     deletePooja,
-    promoteToMaster
+    promoteToMaster,
+    togglePoojaStatus
 } from '../../controllers/admin/poojaController';
 import { authenticate, authorize } from '../../middleware/authMiddleware';
 
@@ -21,5 +22,6 @@ router.post('/', uploadPoojaImage.single('image'), createPooja);
 router.put('/:id', uploadPoojaImage.single('image'), updatePooja);
 router.post('/:id/promote', promoteToMaster);
 router.delete('/:id', deletePooja);
+router.patch('/:id/toggle-status', togglePoojaStatus);
 
 export default router;

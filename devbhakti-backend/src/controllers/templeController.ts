@@ -23,13 +23,9 @@ export const getAllTemples = async (req: Request, res: Response) => {
   try {
     const userId = getUserIdFromRequest(req);
 
-    // Fetch only temples where user is verified AND temple is active
+    // Fetch only temples that are active (removed strict isVerified check to show all as requested)
     const temples = await prisma.temple.findMany({
       where: {
-        user: {
-          isVerified: true,
-          role: 'INSTITUTION'
-        },
         isActive: true,
       },
       include: {

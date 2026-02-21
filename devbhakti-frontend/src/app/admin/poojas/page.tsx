@@ -6,7 +6,6 @@ import {
     Plus,
     Search,
     Edit2,
-    Trash2,
     Eye,
     Clock,
     IndianRupee,
@@ -22,7 +21,8 @@ import {
     TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { fetchAllPoojasAdmin, deletePoojaAdmin, promotePoojaToMasterAdmin } from "@/api/adminController";
+import { fetchAllPoojasAdmin, deletePoojaAdmin, promotePoojaToMasterAdmin, updatePoojaAdmin, togglePoojaStatusAdmin } from "@/api/adminController";
+import { Pause, Play, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { API_URL } from "@/config/apiConfig";
 
@@ -93,6 +93,23 @@ export default function AdminPoojasListPage() {
         }
     };
 
+    const handleToggleStatus = async (pooja: any) => {
+        try {
+            await togglePoojaStatusAdmin(pooja.id);
+            toast({
+                title: !pooja.status ? "Pooja Resumed" : "Pooja Paused",
+                description: `Pooja is now ${!pooja.status ? 'visible to' : 'hidden from'} devotees.`,
+            });
+            loadPoojas();
+        } catch (error) {
+            toast({
+                title: "Error",
+                description: "Failed to update pooja status",
+                variant: "destructive"
+            });
+        }
+    };
+
     const filteredPoojas = poojas.filter(pooja =>
         pooja.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         pooja.category.toLowerCase().includes(searchTerm.toLowerCase())
@@ -132,7 +149,7 @@ export default function AdminPoojasListPage() {
                         : 'border-transparent text-slate-500 hover:text-slate-700'
                         }`}
                 >
-                   Poojas & Sevas Management
+                    Poojas & Sevas Management
                 </button>
                 <button
                     onClick={() => setActiveTab('master')}
@@ -176,7 +193,8 @@ export default function AdminPoojasListPage() {
                             <TableHead>Pooja Name</TableHead>
                             <TableHead>Temple</TableHead>
                             <TableHead>Category/Purpose</TableHead>
-                            <TableHead>Price</TableHead>
+                            <TableHead> Single Person Price</TableHead>
+                            <TableHead>Status</TableHead>
                             {/* <TableHead>Duration</TableHead> */}
                             <TableHead className="text-right">Actions</TableHead>
                         </TableRow>
@@ -229,6 +247,11 @@ export default function AdminPoojasListPage() {
                                             {pooja.price}
                                         </div>
                                     </TableCell>
+                                    <TableCell>
+                                        <Badge variant="outline" className={pooja.status ? "bg-green-50 text-green-700 border-green-200" : "bg-orange-50 text-orange-700 border-orange-200"}>
+                                            {pooja.status ? "Active" : "Paused"}
+                                        </Badge>
+                                    </TableCell>
                                     {/* <TableCell>
                                         <div className="flex items-center text-sm text-muted-foreground">
                                             <Clock className="w-3.5 h-3.5 mr-1.5" />
@@ -266,8 +289,20 @@ export default function AdminPoojasListPage() {
                                             <Button
                                                 variant="ghost"
                                                 size="icon"
+                                                onClick={() => handleToggleStatus(pooja)}
+                                                title={pooja.status ? "Pause Pooja" : "Resume Pooja"}
+                                            >
+                                                {pooja.status ? (
+                                                    <Pause className="w-4 h-4 text-orange-600" />
+                                                ) : (
+                                                    <Play className="w-4 h-4 text-green-600" />
+                                                )}
+                                            </Button>
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
                                                 onClick={() => handleDelete(pooja.id)}
-                                                title="Delete Pooja"
+                                                title="Remove Pooja"
                                             >
                                                 <Trash2 className="w-4 h-4 text-destructive" />
                                             </Button>

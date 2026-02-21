@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import {
     fetchAllOrdersAdmin,
     updateSubOrderStatusAdmin
@@ -35,6 +35,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
     Search,
     Package,
@@ -46,7 +47,8 @@ import {
     Building2,
     Store,
     IndianRupee,
-    Phone
+    Phone,
+    Printer
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
@@ -55,11 +57,13 @@ import { BASE_URL } from "@/config/apiConfig";
 
 export default function AdminOrdersPage() {
     const searchParams = useSearchParams();
+    const router = useRouter();
     const idParam = searchParams.get("id");
     const [orders, setOrders] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState("");
     const [selectedOrder, setSelectedOrder] = useState<any>(null);
+    const [selectedOrders, setSelectedOrders] = useState<Set<string>>(new Set());
     const { toast } = useToast();
 
     useEffect(() => {
@@ -127,6 +131,34 @@ export default function AdminOrdersPage() {
         }
     };
 
+    const toggleSelectOrder = (id: string) => {
+        const newSelected = new Set(selectedOrders);
+        if (newSelected.has(id)) {
+            newSelected.delete(id);
+        } else {
+            newSelected.add(id);
+        }
+        setSelectedOrders(newSelected);
+    };
+
+    const toggleSelectAll = () => {
+        if (selectedOrders.size === filteredOrders.length) {
+            setSelectedOrders(new Set());
+        } else {
+            setSelectedOrders(new Set(filteredOrders.map(o => o.id)));
+        }
+    };
+
+    const handleBulkPrint = () => {
+        if (selectedOrders.size === 0) return;
+        const ids = Array.from(selectedOrders).join(",");
+        router.push(`/admin/products/orders/print?ids=${ids}`);
+    };
+
+    const handleSinglePrint = (order: any) => {
+        router.push(`/admin/products/orders/print?ids=${order.id}`);
+    };
+
     const getStatusColor = (status: string) => {
         switch (status) {
             case "PENDING": return "bg-amber-100 text-amber-700 border-amber-200";
@@ -151,7 +183,7 @@ export default function AdminOrdersPage() {
                     <h1 className="text-3xl font-bold text-slate-900">Marketplace Orders</h1>
                     <p className="text-slate-600 font-medium">Manage and track all product orders across temples</p>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 flex-wrap">
                     <div className="relative">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                         <Input
@@ -161,6 +193,23 @@ export default function AdminOrdersPage() {
                             className="pl-10 w-full md:w-80 border-slate-300 focus:ring-[#794A05]"
                         />
                     </div>
+                    {selectedOrders.size > 0 && (
+                        <>
+                            <span className="text-sm font-bold text-[#794A05] bg-orange-50 px-3 py-2 rounded-lg">
+                                {selectedOrders.size} Selected
+                            </span>
+                            <Button
+                                onClick={handleBulkPrint}
+                                className="bg-[#794A05] hover:bg-[#5d3904] text-white flex items-center gap-2"
+                            >
+                                <Printer className="w-4 h-4" />
+                                Print Labels
+                            </Button>
+                            <Button variant="ghost" onClick={() => setSelectedOrders(new Set())} className="text-slate-500">
+                                Cancel
+                            </Button>
+                        </>
+                    )}
                     <Button onClick={loadOrders} variant="outline" className="border-slate-300 hover:bg-slate-50">
                         <Clock className="w-4 h-4 mr-2" /> Refresh
                     </Button>
@@ -171,32 +220,46 @@ export default function AdminOrdersPage() {
                 <Table>
                     <TableHeader className="bg-slate-50">
                         <TableRow className="hover:bg-transparent">
+                            <TableHead className="py-4 pl-4 w-[50px]">
+                                <Checkbox
+                                    checked={filteredOrders.length > 0 && selectedOrders.size === filteredOrders.length}
+                                    onCheckedChange={toggleSelectAll}
+                                    className="border-slate-300 data-[state=checked]:bg-[#794A05] data-[state=checked]:border-[#794A05]"
+                                />
+                            </TableHead>
                             <TableHead className="py-4 font-bold text-slate-800">Order ID</TableHead>
                             <TableHead className="py-4 font-bold text-slate-800">Devotee</TableHead>
                             <TableHead className="py-4 font-bold text-slate-800">Date & Time</TableHead>
                             <TableHead className="py-4 font-bold text-slate-800">Amount</TableHead>
                             <TableHead className="py-4 font-bold text-slate-800">Status</TableHead>
                             <TableHead className="py-4 font-bold text-slate-800">Payment</TableHead>
-                            <TableHead className="py-4 font-bold text-slate-800 text-right">Details</TableHead>
+                            <TableHead className="py-4 font-bold text-slate-800 text-right">Actions</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {isLoading ? (
                             <TableRow>
-                                <TableCell colSpan={7} className="h-40 text-center text-slate-900 font-bold">
+                                <TableCell colSpan={8} className="h-40 text-center text-slate-900 font-bold">
                                     <Clock className="w-8 h-8 mx-auto mb-2 animate-spin text-[#794A05]" />
                                     Fetching orders...
                                 </TableCell>
                             </TableRow>
                         ) : filteredOrders.length === 0 ? (
                             <TableRow>
-                                <TableCell colSpan={7} className="h-40 text-center text-slate-900 font-bold">
+                                <TableCell colSpan={8} className="h-40 text-center text-slate-900 font-bold">
                                     <Search className="w-8 h-8 mx-auto mb-2 text-slate-300" />
                                     {searchQuery ? "No matching orders found" : "No orders yet"}
                                 </TableCell>
                             </TableRow>
                         ) : filteredOrders.map((order) => (
                             <TableRow key={order.id} className="hover:bg-slate-50/80 transition-colors">
+                                <TableCell className="pl-4">
+                                    <Checkbox
+                                        checked={selectedOrders.has(order.id)}
+                                        onCheckedChange={() => toggleSelectOrder(order.id)}
+                                        className="border-slate-300 data-[state=checked]:bg-[#794A05] data-[state=checked]:border-[#794A05]"
+                                    />
+                                </TableCell>
                                 <TableCell className="font-mono text-sm font-bold text-slate-900">
                                     #{order.id.slice(-8).toUpperCase()}
                                 </TableCell>
@@ -223,14 +286,25 @@ export default function AdminOrdersPage() {
                                     </Badge>
                                 </TableCell>
                                 <TableCell className="text-right">
-                                    <Button
-                                        onClick={() => setSelectedOrder(order)}
-                                        variant="ghost"
-                                        size="icon"
-                                        className="h-10 w-10 text-[#794A05] hover:bg-orange-50 hover:text-[#794A05] rounded-full"
-                                    >
-                                        <Eye className="w-5 h-5" />
-                                    </Button>
+                                    <div className="flex items-center justify-end gap-1">
+                                        <Button
+                                            onClick={() => handleSinglePrint(order)}
+                                            variant="ghost"
+                                            size="icon"
+                                            title="Print Label"
+                                            className="h-10 w-10 text-slate-500 hover:bg-orange-50 hover:text-[#794A05] rounded-full"
+                                        >
+                                            <Printer className="w-4 h-4" />
+                                        </Button>
+                                        <Button
+                                            onClick={() => setSelectedOrder(order)}
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-10 w-10 text-[#794A05] hover:bg-orange-50 hover:text-[#794A05] rounded-full"
+                                        >
+                                            <Eye className="w-5 h-5" />
+                                        </Button>
+                                    </div>
                                 </TableCell>
                             </TableRow>
                         ))}
