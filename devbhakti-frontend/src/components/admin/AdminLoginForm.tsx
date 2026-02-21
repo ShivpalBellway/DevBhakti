@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { Mail, Lock, ArrowRight, Loader2, Eye, EyeOff } from "lucide-react";
+import { Mail, Lock, ArrowRight, Loader2, Eye, EyeOff, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -144,7 +144,14 @@ const AdminLoginForm: React.FC = () => {
                     </form>
 
                     {/* Footer */}
-                    <div className="mt-8 pt-6 border-t border-slate-100 text-center">
+                    <div className="mt-8 pt-6 border-t border-slate-100 text-center space-y-4">
+                        <button
+                            onClick={() => router.push("/admin/staff-login")}
+                            className="text-sm font-semibold text-primary hover:underline flex items-center justify-center gap-2 mx-auto"
+                        >
+                            <ShieldCheck className="w-4 h-4" />
+                            Admin Staff? Login Here
+                        </button>
                         <p className="text-sm text-slate-500">
                             Secure access for authorized personnel only.
                         </p>

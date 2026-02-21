@@ -179,9 +179,20 @@ export default function TempleLoginModal({ onClose }: TempleLoginModalProps) {
                     </form>
                 )}
 
-                <p className="mt-8 text-center text-sm text-slate-400">
-                    New Temple Administrator? <a href="/temples/register" className="text-[#7b4623] font-bold underline">Register Temple</a>
-                </p>
+                <div className="mt-8 text-center space-y-3">
+                    <button
+                        onClick={() => {
+                            onClose();
+                            router.push("/temples/dashboard/staff-login");
+                        }}
+                        className="text-sm font-bold text-[#7b4623] hover:underline"
+                    >
+                        Temple Staff? Login Here
+                    </button>
+                    <p className="text-sm text-slate-400">
+                        New Temple Administrator? <a href="/temples/register" className="text-[#7b4623] font-bold underline">Register Temple</a>
+                    </p>
+                </div>
             </div>
         </div>
     );
