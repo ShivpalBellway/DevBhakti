@@ -6,16 +6,12 @@ const prisma = new PrismaClient();
 // Get My Products
 export const getMyProducts = async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user.userId;
-
-    // Get Temple ID
-    const temple = await prisma.temple.findUnique({ where: { userId } });
-    if (!temple) return res.status(404).json({ success: false, message: "Temple not found" });
+    const templeId = (req as any).owner.ownerId;
 
     const { page = 1, limit = 10, search, status } = req.query;
     const skip = (Number(page) - 1) * Number(limit);
 
-    const where: any = { templeId: temple.id };
+    const where: any = { templeId };
 
     if (search) {
       where.OR = [
@@ -64,19 +60,11 @@ export const getMyProducts = async (req: Request, res: Response) => {
 // Get My Product by ID
 export const getMyProductById = async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user.userId;
+    const templeId = (req as any).owner.ownerId;
     const { id } = req.params;
-    console.log(`GET Product By ID: ${id} for user: ${userId}`);
-
-    const temple = await prisma.temple.findUnique({ where: { userId } });
-    if (!temple) {
-      console.log(`Temple not found for user: ${userId}`);
-      return res.status(404).json({ success: false, message: "Temple not found" });
-    }
-    console.log(`Found Temple: ${temple.id}`);
 
     const product = await prisma.product.findFirst({
-      where: { id: id as string, templeId: temple.id },
+      where: { id: id as string, templeId },
       include: {
         variants: true,
         categoryObj: { select: { id: true, name: true } },
@@ -98,9 +86,7 @@ export const getMyProductById = async (req: Request, res: Response) => {
 // Create Product
 export const createProduct = async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user.userId;
-    const temple = await prisma.temple.findUnique({ where: { userId } });
-    if (!temple) return res.status(404).json({ success: false, message: "Temple not found" });
+    const templeId = (req as any).owner.ownerId;
 
     let name, description, category, categoryId, variants, image;
     let highlights, longDescription, shippingInfo, origin;
@@ -153,7 +139,7 @@ export const createProduct = async (req: Request, res: Response) => {
         description,
         category,
         categoryId,
-        templeId: temple.id,
+        templeId: templeId,
         status: "pending", // Force Pending
         highlights,
         longDescription,
@@ -183,15 +169,12 @@ export const createProduct = async (req: Request, res: Response) => {
 // Update Product
 export const updateProduct = async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user.userId;
+    const templeId = (req as any).owner.ownerId;
     const { id } = req.params;
-
-    const temple = await prisma.temple.findUnique({ where: { userId } });
-    if (!temple) return res.status(404).json({ success: false, message: "Temple not found" });
 
     // Verify ownership
     const existingProduct = await prisma.product.findFirst({
-      where: { id: id as string, templeId: temple.id }
+      where: { id: id as string, templeId }
     });
     if (!existingProduct) return res.status(404).json({ success: false, message: "Product not found or access denied" });
 
@@ -279,14 +262,11 @@ export const updateProduct = async (req: Request, res: Response) => {
 // Delete Product
 export const deleteProduct = async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user.userId;
+    const templeId = (req as any).owner.ownerId;
     const { id } = req.params;
 
-    const temple = await prisma.temple.findUnique({ where: { userId } });
-    if (!temple) return res.status(404).json({ success: false, message: "Temple not found" });
-
     const existingProduct = await prisma.product.findFirst({
-      where: { id: id as string, templeId: temple.id }
+      where: { id: id as string, templeId }
     });
     if (!existingProduct) return res.status(404).json({ success: false, message: "Product not found or access denied" });
 

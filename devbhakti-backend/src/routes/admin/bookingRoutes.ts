@@ -1,13 +1,12 @@
 import { Router } from 'express';
 import { getAllBookings, deleteBookingByAdmin } from '../../controllers/admin/bookingController';
-import { authenticate, authorize } from '../../middleware/authMiddleware';
+import { authenticate, authorize, checkPermission } from '../../middleware/authMiddleware';
 
 const router = Router();
 
 router.use(authenticate);
-router.use(authorize('ADMIN'));
 
-router.get('/', getAllBookings);
-router.delete('/:id', deleteBookingByAdmin);
+router.get('/', checkPermission('bookings.view'), getAllBookings);
+router.delete('/:id', checkPermission('bookings.manage'), deleteBookingByAdmin);
 
 export default router;

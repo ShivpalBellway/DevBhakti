@@ -492,6 +492,79 @@ enum UserRole {
   SELLER
 }
 
+enum OwnerType {
+  ADMIN
+  TEMPLE
+  SELLER
+}
+
+// ─── RBAC Models ───────────────────────────────────────────
+
+// Staff members created by Admin / Temple Owner / Seller Owner
+model StaffMember {
+  id          String     @id @default(cuid())
+  name        String
+  email       String     @unique
+  password    String
+  ownerType   OwnerType  // Who created this staff: ADMIN | TEMPLE | SELLER
+  ownerId     String     // Super Admin fixed "SUPER_ADMIN" | templeId | sellerId
+  isActive    Boolean    @default(true)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  staffRoles  StaffRole[]
+}
+
+// Roles created by owners (e.g., "Finance Manager", "Booking Staff")
+model Role {
+  id              String          @id @default(cuid())
+  name            String
+  description     String?
+  ownerType       OwnerType       // Which panel this role belongs to
+  ownerId         String          // Same as StaffMember: "SUPER_ADMIN" | templeId | sellerId
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  rolePermissions RolePermission[]
+  staffRoles      StaffRole[]
+
+  @@unique([name, ownerType, ownerId])  // Same role name can exist across different owners
+}
+
+// Fixed permission keys seeded into DB (e.g., "bookings.view", "finance.manage")
+model Permission {
+  id              String          @id @default(cuid())
+  key             String          @unique  // e.g., "bookings.view"
+  module          String          // e.g., "bookings"
+  label           String          // Human readable: "View Bookings"
+  description     String?
+  applicableTo    OwnerType[]     // Which panels can use this permission
+  createdAt       DateTime        @default(now())
+  rolePermissions RolePermission[]
+}
+
+// Role ↔ Permission (many-to-many)
+model RolePermission {
+  id           String     @id @default(cuid())
+  roleId       String
+  permissionId String
+  createdAt    DateTime   @default(now())
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, permissionId])
+}
+
+// StaffMember ↔ Role (many-to-many, staff can have multiple roles)
+model StaffRole {
+  id          String      @id @default(cuid())
+  staffId     String
+  roleId      String
+  createdAt   DateTime    @default(now())
+  staff       StaffMember @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  role        Role        @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@unique([staffId, roleId])
+}
+
 enum BookingStatus {
   BOOKED
   REJECTED

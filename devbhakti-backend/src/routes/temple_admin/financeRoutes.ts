@@ -5,10 +5,14 @@ import {
   requestWithdrawal 
 } from "../../controllers/temple_admin/financeController";
 
+import { authenticate, checkPermission } from "../../middleware/authMiddleware";
+
 const router = Router();
 
-router.get("/ledger/:templeId", getTempleLedger);
-router.get("/summary/:templeId", getTempleFinanceSummary);
-router.post("/withdraw", requestWithdrawal);
+router.use(authenticate);
+
+router.get("/ledger/:templeId", checkPermission('finance.ledger.view'), getTempleLedger);
+router.get("/summary/:templeId", checkPermission('finance.ledger.view'), getTempleFinanceSummary);
+router.post("/withdraw", checkPermission('finance.withdrawals.view'), requestWithdrawal);
 
 export default router;

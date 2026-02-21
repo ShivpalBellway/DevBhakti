@@ -167,18 +167,11 @@ export const registerTemple = async (req: Request, res: Response) => {
 };
 
 export const getMyTempleProfile = async (req: Request, res: Response) => {
-  console.log("Fetching temple profile for user...");
   try {
-    const userId = (req as any).user?.userId;
+    const templeId = (req as any).owner.ownerId;
 
-    if (!userId) {
-      console.error("No userId found in request - Authentication failure suspected");
-      return res.status(401).json({ success: false, message: 'Unauthenticated' });
-    }
-
-    console.log(`Searching temple for userId: ${userId}`);
     const temple = await prisma.temple.findUnique({
-      where: { userId },
+      where: { id: templeId },
       include: {
         user: {
           select: {
@@ -191,7 +184,7 @@ export const getMyTempleProfile = async (req: Request, res: Response) => {
     });
 
     if (!temple) {
-      console.log(`No temple found for userId: ${userId}`);
+      console.log(`No temple found for templeId: ${templeId}`);
       return res.status(200).json({ success: false, message: 'Temple record not found for this account. Please register your temple.' });
     }
 
@@ -205,12 +198,12 @@ export const getMyTempleProfile = async (req: Request, res: Response) => {
 
 export const updateMyTempleProfile = async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user.userId;
+    const templeId = (req as any).owner.ownerId;
     const files = req.files as any;
     const data = req.body;
 
     const temple = await prisma.temple.findUnique({
-      where: { userId }
+      where: { id: templeId }
     });
 
     if (!temple) {
@@ -363,10 +356,10 @@ export const updateMyTempleProfile = async (req: Request, res: Response) => {
 
 export const getTempleDevotees = async (req: Request, res: Response) => {
   try {
-    const { userId } = (req as any).user;
+    const templeId = (req as any).owner.ownerId;
 
     const temple = await prisma.temple.findUnique({
-      where: { userId }
+      where: { id: templeId }
     });
 
     if (!temple) {

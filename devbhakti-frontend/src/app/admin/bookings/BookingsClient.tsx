@@ -37,6 +37,8 @@ import {
     PaginationPrevious,
 } from "@/components/ui/pagination";
 import { useDebounce } from "@/hooks/use-debounce";
+import { useAdminAuth } from "@/hooks/use-admin-auth";
+
 
 const statusConfig = {
     BOOKED: {
@@ -71,6 +73,8 @@ export default function BookingsClient() {
     const [loading, setLoading] = useState(true);
     const [selectedBooking, setSelectedBooking] = useState<any | null>(null);
     const { toast } = useToast();
+    const { hasPermission } = useAdminAuth();
+
 
     // Pagination state
     const [currentPage, setCurrentPage] = useState(1);
@@ -394,9 +398,11 @@ export default function BookingsClient() {
                                                     <Button variant="ghost" size="icon" onClick={() => setSelectedBooking(booking)}>
                                                         <Eye className="w-4 h-4" />
                                                     </Button>
-                                                    <Button variant="ghost" size="icon" className="text-rose-500 hover:text-rose-600 hover:bg-rose-50" onClick={() => handleDelete(booking.id)}>
-                                                        <Trash2 className="w-4 h-4" />
-                                                    </Button>
+                                                    {hasPermission("bookings.manage") && (
+                                                        <Button variant="ghost" size="icon" className="text-rose-500 hover:text-rose-600 hover:bg-rose-50" onClick={() => handleDelete(booking.id)}>
+                                                            <Trash2 className="w-4 h-4" />
+                                                        </Button>
+                                                    )}
                                                 </div>
                                             </td>
                                         </motion.tr>

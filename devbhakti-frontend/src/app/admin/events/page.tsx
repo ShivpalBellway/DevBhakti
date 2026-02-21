@@ -62,6 +62,8 @@ import {
     PaginationPrevious,
 } from "@/components/ui/pagination";
 import { useDebounce } from "@/hooks/use-debounce";
+import { useAdminAuth } from "@/hooks/use-admin-auth";
+
 
 export default function AdminEventsPage() {
     const [events, setEvents] = useState<any[]>([]);
@@ -72,6 +74,8 @@ export default function AdminEventsPage() {
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingEvent, setEditingEvent] = useState<any>(null);
     const { toast } = useToast();
+    const { hasPermission } = useAdminAuth();
+
 
     // Pagination state
     const [currentPage, setCurrentPage] = useState(1);
@@ -273,13 +277,15 @@ export default function AdminEventsPage() {
                         Manage upcoming events and festivals for temples
                     </p>
                 </div>
-                <Button
-                    onClick={() => handleOpenDialog()}
-                    className="bg-primary hover:bg-primary/90"
-                >
-                    <Plus className="w-4 h-4 mr-2" />
-                    Add New Event
-                </Button>
+                {hasPermission("events.create") && (
+                    <Button
+                        onClick={() => handleOpenDialog()}
+                        className="bg-primary hover:bg-primary/90"
+                    >
+                        <Plus className="w-4 h-4 mr-2" />
+                        Add New Event
+                    </Button>
+                )}
             </div>
 
             {/* Search */}
@@ -365,22 +371,26 @@ export default function AdminEventsPage() {
                                     </TableCell>
                                     <TableCell className="text-right">
                                         <div className="flex justify-end gap-1">
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                onClick={() => handleOpenDialog(event)}
-                                                title="Edit Event"
-                                            >
-                                                <Edit2 className="w-4 h-4 text-blue-600" />
-                                            </Button>
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                onClick={() => handleDelete(event.id)}
-                                                title="Delete Event"
-                                            >
-                                                <Trash2 className="w-4 h-4 text-destructive" />
-                                            </Button>
+                                            {hasPermission("events.edit") && (
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    onClick={() => handleOpenDialog(event)}
+                                                    title="Edit Event"
+                                                >
+                                                    <Edit2 className="w-4 h-4 text-blue-600" />
+                                                </Button>
+                                            )}
+                                            {hasPermission("events.delete") && (
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    onClick={() => handleDelete(event.id)}
+                                                    title="Delete Event"
+                                                >
+                                                    <Trash2 className="w-4 h-4 text-destructive" />
+                                                </Button>
+                                            )}
                                         </div>
                                     </TableCell>
                                 </TableRow>

@@ -274,3 +274,82 @@ export const fetchMyTempleDevotees = async () => {
     return response.data;
 };
 
+// Temple Staff Authentication
+export const staffLogin = async (data: any) => {
+    const response = await axios.post(`${API_URL}/temple-admin/team/login`, data);
+    return response.data;
+};
+
+// Temple Team Management
+export const fetchStaffMembers = async () => {
+    const token = localStorage.getItem("token");
+    const response = await axios.get(`${API_URL}/temple-admin/team/staff`, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+
+export const createStaffMember = async (data: any) => {
+    const token = localStorage.getItem("token");
+    const response = await axios.post(`${API_URL}/temple-admin/team/staff`, data, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+
+export const updateStaffMember = async (id: string, data: any) => {
+    const token = localStorage.getItem("token");
+    const response = await axios.patch(`${API_URL}/temple-admin/team/staff/${id}`, data, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+
+export const deleteStaffMember = async (id: string) => {
+    const token = localStorage.getItem("token");
+    const response = await axios.delete(`${API_URL}/temple-admin/team/staff/${id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+
+export const fetchRoles = async () => {
+    const token = localStorage.getItem("token");
+    const response = await axios.get(`${API_URL}/temple-admin/team/roles`, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+
+export const createRole = async (data: any) => {
+    const token = localStorage.getItem("token");
+    const response = await axios.post(`${API_URL}/temple-admin/team/roles`, data, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+
+export const updateRole = async (id: string, data: any) => {
+    const token = localStorage.getItem("token");
+    const response = await axios.patch(`${API_URL}/temple-admin/team/roles/${id}`, data, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+
+export const deleteRole = async (id: string) => {
+    const token = localStorage.getItem("token");
+    const response = await axios.delete(`${API_URL}/temple-admin/team/roles/${id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+
+export const fetchPermissions = async () => {
+    const token = localStorage.getItem("token");
+    const response = await axios.get(`${API_URL}/temple-admin/team/permissions`, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+

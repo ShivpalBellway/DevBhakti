@@ -3,9 +3,9 @@ import { prisma } from '../../lib/prisma';
 
 export const getBankDetails = async (req: Request, res: Response) => {
     try {
-        const userId = (req as any).user.userId;
+        const templeId = (req as any).owner.ownerId;
         const temple = await prisma.temple.findUnique({
-            where: { userId },
+            where: { id: templeId },
             select: {
                 id: true,
                 bankName: true,
@@ -43,10 +43,10 @@ export const getBankDetails = async (req: Request, res: Response) => {
 
 export const updateBankDetails = async (req: Request, res: Response) => {
     try {
-        const userId = (req as any).user.userId;
+        const templeId = (req as any).owner.ownerId;
         const { bankName, accountNumber, accountHolderName, ifscCode, upiId } = req.body;
 
-        const temple = await prisma.temple.findUnique({ where: { userId } });
+        const temple = await prisma.temple.findUnique({ where: { id: templeId } });
         if (!temple) return res.status(404).json({ success: false, message: 'Temple not found' });
 
         // Check if there is already a pending request

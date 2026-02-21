@@ -12,6 +12,7 @@ import Logo from "@/components/icons/Logo";
 import { GlobalSearch } from "./GlobalSearch";
 import TempleLoginModal from "@/components/temples/TempleLoginModal";
 import { useCart } from "@/context/CartContext";
+import { clearAllTokens } from "@/lib/auth-utils";
 import CartDrawer from "@/components/marketplace/CartDrawer";
 import {
   DropdownMenu,
@@ -57,8 +58,7 @@ const Navbar: React.FC<NavbarProps> = ({ variant = "default" }) => {
   }, []);
 
   const handleLogout = () => {
-    localStorage.removeItem("user");
-    localStorage.removeItem("token");
+    clearAllTokens();
     setUser(null);
     window.location.reload();
   };

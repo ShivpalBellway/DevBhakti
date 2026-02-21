@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Logo from "@/components/icons/Logo";
 import { sendOTP, verifyOTP, updateProfile } from "@/api/authController";
-
+import { clearAllTokens } from "@/lib/auth-utils";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import heroBg from "@/assets/hero-temple.jpg";
@@ -90,6 +90,10 @@ const AuthForm: React.FC = () => {
     const normalizedPhone = formData.phone.replace(/\D/g, '');
     try {
       const response = await verifyOTP(normalizedPhone, otp, "DEVOTEE");
+
+      // Clear any previous session metadata across all panels
+      clearAllTokens();
+
       localStorage.setItem("token", response.data.token);
       localStorage.setItem("user", JSON.stringify(response.data.user));
 

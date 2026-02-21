@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { createProduct, updateProduct, deleteProduct, getMyProducts, getMyProductById } from '../../controllers/temple_admin/templeProductController';
-import { authenticate, authorize } from '../../middleware/authMiddleware';
+import { authenticate, authorize, checkPermission, injectTempleContext } from '../../middleware/authMiddleware';
 import multer from 'multer';
 import path from 'path';
 
@@ -17,13 +17,12 @@ const upload = multer({ storage });
 
 const router = Router();
 
-router.use(authenticate);
-router.use(authorize('INSTITUTION'));
+router.use(authenticate, injectTempleContext);
 
-router.get('/', getMyProducts);
-router.get('/:id', getMyProductById);
-router.post('/', upload.any(), createProduct);
-router.put('/:id', upload.any(), updateProduct);
-router.delete('/:id', deleteProduct);
+router.get('/', checkPermission('products.view'), getMyProducts);
+router.get('/:id', checkPermission('products.view'), getMyProductById);
+router.post('/', checkPermission('products.create'), upload.any(), createProduct);
+router.put('/:id', checkPermission('products.edit'), upload.any(), updateProduct);
+router.delete('/:id', checkPermission('products.delete'), deleteProduct);
 
 export default router;

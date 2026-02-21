@@ -82,6 +82,8 @@ import {
 } from "@/api/adminController";
 import { useToast } from "@/hooks/use-toast";
 import TemplePreview from "@/components/admin/TemplePreview";
+import { useAdminAuth } from "@/hooks/use-admin-auth";
+
 
 export default function TemplesManagementPage() {
     const router = useRouter();
@@ -94,6 +96,8 @@ export default function TemplesManagementPage() {
     const [isPreviewOpen, setIsPreviewOpen] = useState(false);
     const [updateRequestsCount, setUpdateRequestsCount] = useState(0);
     const { toast } = useToast();
+    const { hasPermission } = useAdminAuth();
+
 
     // Pagination state
     const [currentPage, setCurrentPage] = useState(1);
@@ -430,19 +434,23 @@ export default function TemplesManagementPage() {
                     <p className="text-slate-600">Manage temple administrator accounts and temple profiles.</p>
                 </div>
                 <div className="flex gap-2">
-                    <Button variant="outline" onClick={() => router.push('/admin/temples/update-requests')} className="border-primary text-primary hover:bg-primary/10 relative">
-                        <Clock className="w-4 h-4 mr-2" />
-                        Update Requests
-                        {updateRequestsCount > 0 && (
-                            <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-medium text-white ring-2 ring-white">
-                                {updateRequestsCount}
-                            </span>
-                        )}
-                    </Button>
-                    <Button onClick={() => router.push('/admin/temples/create')} className="bg-primary">
-                        <Plus className="w-4 h-4 mr-2" />
-                        Add New Temple
-                    </Button>
+                    {hasPermission("temples.requests_view") && (
+                        <Button variant="outline" onClick={() => router.push('/admin/temples/update-requests')} className="border-primary text-primary hover:bg-primary/10 relative">
+                            <Clock className="w-4 h-4 mr-2" />
+                            Update Requests
+                            {updateRequestsCount > 0 && (
+                                <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-medium text-white ring-2 ring-white">
+                                    {updateRequestsCount}
+                                </span>
+                            )}
+                        </Button>
+                    )}
+                    {hasPermission("temples.create") && (
+                        <Button onClick={() => router.push('/admin/temples/create')} className="bg-primary">
+                            <Plus className="w-4 h-4 mr-2" />
+                            Add New Temple
+                        </Button>
+                    )}
                 </div>
             </div>
 
@@ -638,7 +646,7 @@ export default function TemplesManagementPage() {
                                                             )}
                                                         </DropdownMenuTrigger>
                                                         <DropdownMenuContent align="end">
-                                                            {!inst.isVerified && (
+                                                            {!inst.isVerified && hasPermission("temples.verify") && (
                                                                 <>
                                                                     <DropdownMenuItem
                                                                         onClick={() => handleToggleStatus(inst.userId, inst.templeId, inst.isVerified, inst.temple?.isActive || false, inst.templeName)}
@@ -650,13 +658,18 @@ export default function TemplesManagementPage() {
                                                                     <DropdownMenuSeparator />
                                                                 </>
                                                             )}
-                                                            {inst.isVerified && (
+                                                            {inst.isVerified && hasPermission("temples.verify") && (
                                                                 <DropdownMenuItem
                                                                     onClick={() => handleToggleStatus(inst.userId, inst.templeId, inst.isVerified, inst.temple?.isActive || false, inst.templeName)}
                                                                     className="text-amber-600"
                                                                 >
                                                                     <XCircle className="w-4 h-4 mr-2" />
                                                                     Revoke Verification
+                                                                </DropdownMenuItem>
+                                                            )}
+                                                            {!hasPermission("temples.verify") && (
+                                                                <DropdownMenuItem disabled>
+                                                                    No Action Allowed
                                                                 </DropdownMenuItem>
                                                             )}
                                                         </DropdownMenuContent>
@@ -677,7 +690,7 @@ export default function TemplesManagementPage() {
                                                         <Switch
                                                             checked={inst.temple?.isActive || false}
                                                             onCheckedChange={() => handleToggleActive(inst.userId, inst.isVerified, inst.temple?.isActive || false)}
-                                                            disabled={!inst.isVerified}
+                                                            disabled={!inst.isVerified || !hasPermission("temples.edit")}
                                                         />
                                                     </div>
                                                 </div>
@@ -705,34 +718,28 @@ export default function TemplesManagementPage() {
                                                     >
                                                         <Globe className="w-4 h-4" />
                                                     </Button>
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        className="h-8 w-8 text-blue-600"
-                                                        onClick={() => {
-                                                            console.log('=== TEMPLE DATA DEBUG ===');
-                                                            console.log('inst:', inst);
-                                                            console.log('User Email:', inst.email);
-                                                            console.log('User Phone:', inst.phone);
-                                                            console.log('User ID:', inst.userId);
-                                                            console.log('Temple Name:', inst.name);
-                                                            console.log('Temple Location:', inst.location);
-                                                            console.log('============================');
-                                                            router.push(`/admin/temples/edit/${inst.userId}`)
-                                                        }}
-                                                        title="Edit Temple Account"
-                                                    >
-                                                        <Edit2 className="w-4 h-4" />
-                                                    </Button>
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        className="h-8 w-8 text-destructive"
-                                                        onClick={() => handleDelete(inst.userId)}
-                                                        title="Delete Temple Account"
-                                                    >
-                                                        <Trash2 className="w-4 h-4" />
-                                                    </Button>
+                                                    {hasPermission("temples.edit") && (
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="h-8 w-8 text-blue-600"
+                                                            onClick={() => router.push(`/admin/temples/edit/${inst.userId}`)}
+                                                            title="Edit Temple Account"
+                                                        >
+                                                            <Edit2 className="w-4 h-4" />
+                                                        </Button>
+                                                    )}
+                                                    {hasPermission("temples.delete") && (
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="h-8 w-8 text-destructive"
+                                                            onClick={() => handleDelete(inst.userId)}
+                                                            title="Delete Temple Account"
+                                                        >
+                                                            <Trash2 className="w-4 h-4" />
+                                                        </Button>
+                                                    )}
                                                 </div>
                                             </TableCell>
                                         </TableRow>
@@ -850,7 +857,7 @@ export default function TemplesManagementPage() {
                                                             )}
                                                         </DropdownMenuTrigger>
                                                         <DropdownMenuContent align="end">
-                                                            {!inst.isVerified && (
+                                                            {!inst.isVerified && hasPermission("temples.verify") && (
                                                                 <>
                                                                     <DropdownMenuItem
                                                                         onClick={() => handleToggleStatus(inst.userId, inst.templeId, inst.isVerified, inst.temple?.isActive || false, inst.templeName)}
@@ -862,13 +869,18 @@ export default function TemplesManagementPage() {
                                                                     <DropdownMenuSeparator />
                                                                 </>
                                                             )}
-                                                            {inst.isVerified && (
+                                                            {inst.isVerified && hasPermission("temples.verify") && (
                                                                 <DropdownMenuItem
                                                                     onClick={() => handleToggleStatus(inst.userId, inst.templeId, inst.isVerified, inst.temple?.isActive || false, inst.templeName)}
                                                                     className="text-amber-600"
                                                                 >
                                                                     <XCircle className="w-4 h-4 mr-2" />
                                                                     Revoke Verification
+                                                                </DropdownMenuItem>
+                                                            )}
+                                                            {!hasPermission("temples.verify") && (
+                                                                <DropdownMenuItem disabled>
+                                                                    No Action Allowed
                                                                 </DropdownMenuItem>
                                                             )}
                                                         </DropdownMenuContent>
@@ -889,7 +901,7 @@ export default function TemplesManagementPage() {
                                                         <Switch
                                                             checked={inst.temple?.isActive || false}
                                                             onCheckedChange={() => handleToggleActive(inst.userId, inst.isVerified, inst.temple?.isActive || false)}
-                                                            disabled={!inst.isVerified}
+                                                            disabled={!inst.isVerified || !hasPermission("temples.edit")}
                                                         />
                                                     </div>
                                                 </div>
@@ -917,34 +929,28 @@ export default function TemplesManagementPage() {
                                                     >
                                                         <Globe className="w-4 h-4" />
                                                     </Button>
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        className="h-8 w-8 text-blue-600"
-                                                        onClick={() => {
-                                                            console.log('=== TEMPLE DATA DEBUG ===');
-                                                            console.log('inst:', inst);
-                                                            console.log('User Email:', inst.email);
-                                                            console.log('User Phone:', inst.phone);
-                                                            console.log('User ID:', inst.userId);
-                                                            console.log('Temple Name:', inst.name);
-                                                            console.log('Temple Location:', inst.location);
-                                                            console.log('============================');
-                                                            router.push(`/admin/temples/edit/${inst.userId}`)
-                                                        }}
-                                                        title="Edit Temple Account"
-                                                    >
-                                                        <Edit2 className="w-4 h-4" />
-                                                    </Button>
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        className="h-8 w-8 text-destructive"
-                                                        onClick={() => handleDelete(inst.userId)}
-                                                        title="Delete Temple Account"
-                                                    >
-                                                        <Trash2 className="w-4 h-4" />
-                                                    </Button>
+                                                    {hasPermission("temples.edit") && (
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="h-8 w-8 text-blue-600"
+                                                            onClick={() => router.push(`/admin/temples/edit/${inst.userId}`)}
+                                                            title="Edit Temple Account"
+                                                        >
+                                                            <Edit2 className="w-4 h-4" />
+                                                        </Button>
+                                                    )}
+                                                    {hasPermission("temples.delete") && (
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="h-8 w-8 text-destructive"
+                                                            onClick={() => handleDelete(inst.userId)}
+                                                            title="Delete Temple Account"
+                                                        >
+                                                            <Trash2 className="w-4 h-4" />
+                                                        </Button>
+                                                    )}
                                                 </div>
                                             </TableCell>
                                         </TableRow>

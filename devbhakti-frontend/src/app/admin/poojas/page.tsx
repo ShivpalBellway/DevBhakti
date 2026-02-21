@@ -25,6 +25,8 @@ import { Badge } from "@/components/ui/badge";
 import { fetchAllPoojasAdmin, deletePoojaAdmin, promotePoojaToMasterAdmin } from "@/api/adminController";
 import { useToast } from "@/hooks/use-toast";
 import { API_URL } from "@/config/apiConfig";
+import { useAdminAuth } from "@/hooks/use-admin-auth";
+
 
 export default function AdminPoojasListPage() {
     const router = useRouter();
@@ -33,6 +35,8 @@ export default function AdminPoojasListPage() {
     const [searchTerm, setSearchTerm] = useState("");
     const [activeTab, setActiveTab] = useState<'all' | 'master' | 'temple'>('all');
     const { toast } = useToast();
+    const { hasPermission } = useAdminAuth();
+
 
     useEffect(() => {
         loadPoojas();
@@ -114,13 +118,15 @@ export default function AdminPoojasListPage() {
                         Manage all poojas, rituals, and spiritual services.
                     </p>
                 </div>
-                <Button
-                    onClick={() => router.push('/admin/poojas/create')}
-                    className="bg-primary hover:bg-primary/90"
-                >
-                    <Plus className="w-4 h-4 mr-2" />
-                    Add New Pooja
-                </Button>
+                {hasPermission("poojas.create") && (
+                    <Button
+                        onClick={() => router.push('/admin/poojas/create')}
+                        className="bg-primary hover:bg-primary/90"
+                    >
+                        <Plus className="w-4 h-4 mr-2" />
+                        Add New Pooja
+                    </Button>
+                )}
             </div>
 
             {/* Tabs */}
@@ -132,7 +138,7 @@ export default function AdminPoojasListPage() {
                         : 'border-transparent text-slate-500 hover:text-slate-700'
                         }`}
                 >
-                   Poojas & Sevas Management
+                    Poojas & Sevas Management
                 </button>
                 <button
                     onClick={() => setActiveTab('master')}
@@ -245,7 +251,7 @@ export default function AdminPoojasListPage() {
                                             >
                                                 <Eye className="w-4 h-4 text-slate-600" />
                                             </Button>
-                                            {!pooja.isMaster && !pooja.masterPoojaId && (
+                                            {hasPermission("poojas.edit") && !pooja.isMaster && !pooja.masterPoojaId && (
                                                 <Button
                                                     variant="ghost"
                                                     size="icon"
@@ -255,22 +261,26 @@ export default function AdminPoojasListPage() {
                                                     <Plus className="w-4 h-4 text-green-600" />
                                                 </Button>
                                             )}
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                onClick={() => router.push(`/admin/poojas/edit/${pooja.id}`)}
-                                                title="Edit Pooja"
-                                            >
-                                                <Edit2 className="w-4 h-4 text-blue-600" />
-                                            </Button>
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                onClick={() => handleDelete(pooja.id)}
-                                                title="Delete Pooja"
-                                            >
-                                                <Trash2 className="w-4 h-4 text-destructive" />
-                                            </Button>
+                                            {hasPermission("poojas.edit") && (
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    onClick={() => router.push(`/admin/poojas/edit/${pooja.id}`)}
+                                                    title="Edit Pooja"
+                                                >
+                                                    <Edit2 className="w-4 h-4 text-blue-600" />
+                                                </Button>
+                                            )}
+                                            {hasPermission("poojas.delete") && (
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    onClick={() => handleDelete(pooja.id)}
+                                                    title="Delete Pooja"
+                                                >
+                                                    <Trash2 className="w-4 h-4 text-destructive" />
+                                                </Button>
+                                            )}
                                         </div>
                                     </TableCell>
                                 </TableRow>

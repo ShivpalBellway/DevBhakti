@@ -5,16 +5,15 @@ import {
     requestSellerWithdrawal,
     getSellerWithdrawals
 } from "../../controllers/seller/financeController";
-import { authenticate, authorize } from "../../middleware/authMiddleware";
+import { authenticate, checkPermission, injectSellerContext } from "../../middleware/authMiddleware";
 
 const router = Router();
 
-router.use(authenticate);
-router.use(authorize('SELLER'));
+router.use(authenticate, injectSellerContext);
 
-router.get("/ledger", getSellerLedger);
-router.get("/summary", getSellerFinanceSummary);
-router.post("/withdraw", requestSellerWithdrawal);
-router.get("/withdrawals", getSellerWithdrawals);
+router.get("/ledger", checkPermission('finance.ledger.view'), getSellerLedger);
+router.get("/summary", checkPermission('finance.ledger.view'), getSellerFinanceSummary);
+router.post("/withdraw", checkPermission('finance.withdrawals.view'), requestSellerWithdrawal);
+router.get("/withdrawals", checkPermission('finance.withdrawals.view'), getSellerWithdrawals);
 
 export default router;

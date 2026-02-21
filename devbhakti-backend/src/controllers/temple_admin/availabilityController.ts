@@ -3,26 +3,13 @@ import { prisma } from '../../lib/prisma';
 
 export const setAvailability = async (req: Request, res: Response) => {
     try {
-        const { userId } = (req as any).user;
+        const templeId = (req as any).owner.ownerId;
         const { poojaId, date, maxBookings, isClosed } = req.body;
-
-        if (!date) {
-            return res.status(400).json({ success: false, message: 'Date is required' });
-        }
-
-        // Verify temple ownership
-        const temple = await prisma.temple.findUnique({
-            where: { userId }
-        });
-
-        if (!temple) {
-            return res.status(404).json({ success: false, message: 'Temple not found' });
-        }
 
         // Validate pooja ownership if poojaId is provided
         if (poojaId) {
             const pooja = await prisma.pooja.findFirst({
-                where: { id: poojaId, templeId: temple.id }
+                where: { id: poojaId, templeId: templeId }
             });
             if (!pooja) {
                 return res.status(404).json({ success: false, message: 'Ritual not found' });
@@ -37,7 +24,7 @@ export const setAvailability = async (req: Request, res: Response) => {
         // Manual Find-then-Update/Create to avoid Prisma/DB issues with nullable fields in composite unique constraints
         const existingRule = await prisma.bookingAvailability.findFirst({
             where: {
-                templeId: temple.id,
+                templeId: templeId,
                 date: date,
                 poojaId: poojaId || null
             }
@@ -55,7 +42,7 @@ export const setAvailability = async (req: Request, res: Response) => {
         } else {
             availability = await prisma.bookingAvailability.create({
                 data: {
-                    templeId: temple.id,
+                    templeId: templeId,
                     poojaId: poojaId || null,
                     date,
                     maxBookings: maxBookings !== undefined ? parseInt(maxBookings) : 500,
@@ -78,19 +65,11 @@ export const setAvailability = async (req: Request, res: Response) => {
 
 export const getAvailability = async (req: Request, res: Response) => {
     try {
-        const { userId } = (req as any).user;
+        const templeId = (req as any).owner.ownerId;
         const { month, year, poojaId } = req.query;
 
-        const temple = await prisma.temple.findUnique({
-            where: { userId }
-        });
-
-        if (!temple) {
-            return res.status(404).json({ success: false, message: 'Temple not found' });
-        }
-
         const whereClause: any = {
-            templeId: temple.id
+            templeId
         };
 
         // Filter by month/year if provided (assuming date string YYYY-MM-DD)

@@ -7,9 +7,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Logo from "@/components/icons/Logo";
-import { sendOTP, verifyOTP } from "@/api/authController";
+import { verifyOTP, sendOTP } from "@/api/authController";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import { clearAllTokens } from "@/lib/auth-utils";
 
 const TempleAuthForm: React.FC = () => {
     const router = useRouter();
@@ -53,6 +54,9 @@ const TempleAuthForm: React.FC = () => {
                 setError("This login is only for sacred temples. Devotees please use the main login.");
                 return;
             }
+
+            // Clear conflicting sessions
+            clearAllTokens();
 
             localStorage.setItem("token", token);
             localStorage.setItem("user", JSON.stringify(user));
@@ -235,7 +239,10 @@ const TempleAuthForm: React.FC = () => {
                     </div>
 
                     {/* Footer Info */}
-                    <div className="p-6 bg-slate-50 border-t border-slate-100 text-center">
+                    <div className="p-6 bg-slate-50 border-t border-slate-100 text-center space-y-2">
+                        <p className="text-sm text-slate-500">
+                            Temple Staff? <a href="/temples/dashboard/staff-login" className="text-[#7b4623] font-bold hover:underline">Access Personnel Login</a>
+                        </p>
                         <p className="text-sm text-slate-500">
                             New temple? <a href="/temples/register" className="text-[#7b4623] font-bold hover:underline">Register your temple</a>
                         </p>

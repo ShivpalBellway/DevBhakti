@@ -1,16 +1,15 @@
 import { Router } from 'express';
-import { authenticate, authorize } from '../../middleware/authMiddleware';
+import { authenticate, authorize, checkPermission, injectTempleContext } from '../../middleware/authMiddleware';
 import * as eventController from '../../controllers/temple_admin/eventController';
 
 const router = Router();
 
-router.use(authenticate);
-router.use(authorize('INSTITUTION'));
+router.use(authenticate, injectTempleContext);
 
-router.get('/', eventController.getMyEvents);
-router.post('/', eventController.createMyEvent);
-router.put('/:id', eventController.updateMyEvent);
-router.delete('/:id', eventController.deleteMyEvent);
-router.patch('/:id/toggle-status', eventController.toggleEventStatus);
+router.get('/', checkPermission('events.view'), eventController.getMyEvents);
+router.post('/', checkPermission('events.create'), eventController.createMyEvent);
+router.put('/:id', checkPermission('events.edit'), eventController.updateMyEvent);
+router.delete('/:id', checkPermission('events.delete'), eventController.deleteMyEvent);
+router.patch('/:id/toggle-status', checkPermission('events.edit'), eventController.toggleEventStatus);
 
 export default router;

@@ -3,19 +3,10 @@ import { prisma } from '../../lib/prisma';
 
 export const getTempleBookings = async (req: Request, res: Response) => {
     try {
-        const { userId } = (req as any).user;
-
-        // Find temple owned by this user
-        const temple = await prisma.temple.findUnique({
-            where: { userId }
-        });
-
-        if (!temple) {
-            return res.status(404).json({ success: false, message: 'Temple not found' });
-        }
+        const templeId = (req as any).owner.ownerId;
 
         const bookings = await prisma.poojaBooking.findMany({
-            where: { templeId: temple.id },
+            where: { templeId },
             include: {
                 pooja: true,
                 user: {
@@ -45,7 +36,6 @@ export const updateBookingStatus = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
         const { status } = req.body;
-        const { userId } = (req as any).user;
 
         if (!['PENDING', 'BOOKED', 'COMPLETED', 'REJECTED', 'CANCELLED'].includes(status)) {
             return res.status(400).json({ success: false, message: 'Invalid status' });
@@ -61,7 +51,7 @@ export const updateBookingStatus = async (req: Request, res: Response) => {
             return res.status(404).json({ success: false, message: 'Booking not found' });
         }
 
-        if (booking.temple.userId !== userId) {
+        if (booking.temple.id !== (req as any).owner.ownerId) {
             return res.status(403).json({ success: false, message: 'Unauthorized' });
         }
 
@@ -97,7 +87,6 @@ export const updateBookingStatus = async (req: Request, res: Response) => {
 export const deleteBooking = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
-        const { userId } = (req as any).user;
 
         const booking = await prisma.poojaBooking.findUnique({
             where: { id: id as string },
@@ -108,7 +97,7 @@ export const deleteBooking = async (req: Request, res: Response) => {
             return res.status(404).json({ success: false, message: 'Booking not found' });
         }
 
-        if (booking.temple.userId !== userId) {
+        if (booking.temple.id !== (req as any).owner.ownerId) {
             return res.status(403).json({ success: false, message: 'Unauthorized' });
         }
 

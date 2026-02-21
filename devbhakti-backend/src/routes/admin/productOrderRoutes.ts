@@ -4,9 +4,14 @@ import {
   updateSubOrderStatusAdmin 
 } from "../../controllers/admin/productOrderManagementController";
 
+import { authenticate, checkPermission } from "../../middleware/authMiddleware";
+
 const router = Router();
 
-router.get("/", getAllOrdersAdmin);
-router.patch("/sub-order/:subOrderId", updateSubOrderStatusAdmin);
+// Authentication required
+router.use(authenticate);
+
+router.get("/", checkPermission('products.orders.view'), getAllOrdersAdmin);
+router.patch("/sub-order/:subOrderId", checkPermission('products.orders.manage'), updateSubOrderStatusAdmin);
 
 export default router;

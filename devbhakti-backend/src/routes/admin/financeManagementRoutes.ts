@@ -8,10 +8,9 @@ import {
   getAllPlatformTransactions
 } from "../../controllers/admin/financeManagementController";
 
-const router = Router();
+import { authenticate, checkPermission } from "../../middleware/authMiddleware";
 
-router.get("/platform-summary", getPlatformFinanceSummary);
-router.get("/transactions", getAllPlatformTransactions);
+const router = Router();
 
 // Multer setup for receipt uploads
 const storage = multer.diskStorage({
@@ -27,18 +26,25 @@ const upload = multer({
   limits: { fileSize: 3 * 1024 * 1024 } // 3MB limit
 });
 
-
 import {
   getPendingApprovals,
   approveRequest,
   rejectRequest
 } from "../../controllers/admin/adminApprovalsController";
 
-router.get("/approvals", getPendingApprovals);
-router.post("/approve", approveRequest);
-router.post("/reject", rejectRequest);
+// Authentication required for all finance routes
+router.use(authenticate);
 
-router.get("/withdrawals", getAllWithdrawalRequests);
-router.patch("/withdrawals/:requestId", upload.single("receiptImage"), updateWithdrawalStatus);
+router.get("/platform-summary", checkPermission('finance.ledger.view'), getPlatformFinanceSummary);
+router.get("/transactions", checkPermission('finance.ledger.view'), getAllPlatformTransactions);
+
+// ... (Multer setup remains same)
+
+router.get("/approvals", checkPermission('finance.ledger.view'), getPendingApprovals);
+router.post("/approve", checkPermission('finance.withdrawals.action'), approveRequest);
+router.post("/reject", checkPermission('finance.withdrawals.action'), rejectRequest);
+
+router.get("/withdrawals", checkPermission('finance.withdrawals.view'), getAllWithdrawalRequests);
+router.patch("/withdrawals/:requestId", checkPermission('finance.withdrawals.action'), upload.single("receiptImage"), updateWithdrawalStatus);
 
 export default router;

@@ -18,16 +18,16 @@ const getFilePaths = (files: any, fieldName: string) => {
 
 export const getSellerProfile = async (req: Request, res: Response) => {
     try {
-        const userId = (req as any).user.userId;
-        console.log(`Fetching seller profile for userId: ${userId}`);
+        const sellerId = (req as any).owner.ownerId;
+        console.log(`Fetching seller profile for sellerId: ${sellerId}`);
 
         const store = await prisma.sellerProfile.findUnique({
-            where: { userId },
+            where: { id: sellerId },
             include: { user: { select: { name: true, phone: true } } }
         });
 
         if (!store) {
-            console.log(`Seller profile not found for userId: ${userId}`);
+            console.log(`Seller profile not found for sellerId: ${sellerId}`);
             return res.status(404).json({ success: false, message: "Store not found" });
         }
 
@@ -57,12 +57,12 @@ export const getSellerProfile = async (req: Request, res: Response) => {
 
 export const updateSellerProfile = async (req: Request, res: Response) => {
     try {
-        const userId = (req as any).user.userId;
+        const sellerId = (req as any).owner.ownerId;
         const files = req.files as any;
         const data = req.body;
 
         const store = await prisma.sellerProfile.findUnique({
-            where: { userId }
+            where: { id: sellerId }
         });
 
         if (!store) {

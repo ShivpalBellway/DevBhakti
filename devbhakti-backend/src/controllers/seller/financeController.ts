@@ -1,19 +1,15 @@
 import { Request, Response } from "express";
 import { prisma } from "../../lib/prisma";
 
-// Helper to get sellerId from userId (Seller role)
+// Helper to get sellerId from userId (Bypassed in favor of injection)
 const getSellerStoreId = async (userId: string) => {
-    const store = await prisma.sellerProfile.findUnique({
-        where: { userId }
-    });
-    return store?.id;
+    return null;
 };
 
 // Get Ledger Entries for a Seller
 export const getSellerLedger = async (req: Request, res: Response) => {
     try {
-        const userId = (req as any).user.userId;
-        const sellerId = await getSellerStoreId(userId);
+        const sellerId = (req as any).owner.ownerId;
 
         if (!sellerId) {
             return res.status(404).json({ success: false, message: "Seller store not found" });
@@ -33,8 +29,7 @@ export const getSellerLedger = async (req: Request, res: Response) => {
 // Get Financial Summary for Seller Dashboard
 export const getSellerFinanceSummary = async (req: Request, res: Response) => {
     try {
-        const userId = (req as any).user.userId;
-        const sellerId = await getSellerStoreId(userId);
+        const sellerId = (req as any).owner.ownerId;
 
         if (!sellerId) {
             return res.status(404).json({ success: false, message: "Seller store not found" });
@@ -130,8 +125,7 @@ export const getSellerFinanceSummary = async (req: Request, res: Response) => {
 // Request Withdrawal
 export const requestSellerWithdrawal = async (req: Request, res: Response) => {
     try {
-        const userId = (req as any).user.userId;
-        const sellerId = await getSellerStoreId(userId);
+        const sellerId = (req as any).owner.ownerId;
         const { amount, bankDetails } = req.body;
 
         if (!sellerId) {
@@ -191,8 +185,7 @@ export const requestSellerWithdrawal = async (req: Request, res: Response) => {
 // Get Withdrawal History
 export const getSellerWithdrawals = async (req: Request, res: Response) => {
     try {
-        const userId = (req as any).user.userId;
-        const sellerId = await getSellerStoreId(userId);
+        const sellerId = (req as any).owner.ownerId;
 
         if (!sellerId) {
             return res.status(404).json({ success: false, message: "Seller store not found" });

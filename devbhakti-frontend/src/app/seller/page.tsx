@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { sendOTP, verifyOTP } from "@/api/authController";
 import { useRouter } from "next/navigation";
+import { clearAllTokens } from "@/lib/auth-utils";
 
 export default function SellerLoginPage() {
     const router = useRouter();
@@ -52,8 +53,11 @@ export default function SellerLoginPage() {
                 return;
             }
 
-            localStorage.setItem("seller_token", token);
-            localStorage.setItem("seller_user", JSON.stringify(user));
+            // Clear any old conflicting tokens
+            clearAllTokens();
+
+            localStorage.setItem("token", token);
+            localStorage.setItem("user", JSON.stringify(user));
             router.push("/seller/dashboard");
 
         } catch (error: any) {
@@ -230,6 +234,16 @@ export default function SellerLoginPage() {
                                 </div>
                             </form>
                         )}
+
+                        <div className="mt-8 text-center border-t border-slate-100 pt-8">
+                            <button
+                                onClick={() => router.push("/seller/staff-login")}
+                                className="text-sm font-bold text-[#7b4623] hover:underline flex items-center justify-center gap-2 mx-auto"
+                            >
+                                <ShieldCheck className="w-4 h-4" />
+                                Seller Staff? Login Here
+                            </button>
+                        </div>
                     </div>
 
                     {/* Footer Info */}
