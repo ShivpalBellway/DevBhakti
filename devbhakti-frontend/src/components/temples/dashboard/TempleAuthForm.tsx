@@ -239,10 +239,14 @@ const TempleAuthForm: React.FC = () => {
                     </div>
 
                     {/* Footer Info */}
-                    <div className="p-6 bg-slate-50 border-t border-slate-100 text-center space-y-2">
-                        <p className="text-sm text-slate-500">
-                            Temple Staff? <a href="/temples/dashboard/staff-login" className="text-[#7b4623] font-bold hover:underline">Access Personnel Login</a>
-                        </p>
+                    <div className="p-6 bg-slate-50 border-t border-slate-100 text-center space-y-4">
+                        <button
+                            onClick={() => router.push("/temples/dashboard/staff-login")}
+                            className="text-sm font-bold text-[#7b4623] hover:underline flex items-center justify-center gap-2 mx-auto"
+                        >
+                            <ShieldCheck className="w-4 h-4" />
+                            Temple Staff? Login Here
+                        </button>
                         <p className="text-sm text-slate-500">
                             New temple? <a href="/temples/register" className="text-[#7b4623] font-bold hover:underline">Register your temple</a>
                         </p>
