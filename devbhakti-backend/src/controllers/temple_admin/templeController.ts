@@ -368,7 +368,10 @@ export const getTempleDevotees = async (req: Request, res: Response) => {
 
     // 1. Fetch users who have booked poojas
     const poojaBookings = await prisma.poojaBooking.findMany({
-      where: { templeId: temple.id },
+      where: {
+        templeId: temple.id,
+        status: { not: 'PENDING' }
+      },
       include: {
         user: {
           select: {

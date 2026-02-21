@@ -6,7 +6,10 @@ export const getTempleBookings = async (req: Request, res: Response) => {
         const templeId = (req as any).owner.ownerId;
 
         const bookings = await prisma.poojaBooking.findMany({
-            where: { templeId },
+            where: {
+                templeId,
+                status: { not: 'PENDING' }
+            },
             include: {
                 pooja: true,
                 user: {
@@ -55,9 +58,19 @@ export const updateBookingStatus = async (req: Request, res: Response) => {
             return res.status(403).json({ success: false, message: 'Unauthorized' });
         }
 
+        const updateData: any = { status };
+
+        // Handle proof photos if status is COMPLETED
+        if (status === 'COMPLETED' && req.files && Array.isArray(req.files)) {
+            const photoUrls = (req.files as Express.Multer.File[]).map(
+                (file) => `${process.env.BASE_URL || ''}/uploads/proofs/${file.filename}`
+            );
+            updateData.proofPhotos = photoUrls;
+        }
+
         const updatedBooking = await prisma.poojaBooking.update({
             where: { id: id as string },
-            data: { status }
+            data: updateData
         });
 
         // Sync Ledger Status

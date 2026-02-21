@@ -309,7 +309,7 @@ export default function TempleAdminLayout({ children }: { children: React.ReactN
                     console.error("Auth error", e);
                 }
             }
-            setIsAuthenticated(isStaffLoginPath ? true : false); // Allow rendering for login pages
+            setIsAuthenticated(false); // Allow rendering for login pages
             return;
         }
 
@@ -339,8 +339,8 @@ export default function TempleAdminLayout({ children }: { children: React.ReactN
         router.push("/temples/dashboard/login");
     };
 
-    // Skip sidebar/layout for login page
-    if (pathname === "/temples/dashboard/login") {
+    // Skip sidebar/layout for login pages
+    if (pathname === "/temples/dashboard/login" || pathname === "/temples/dashboard/staff-login") {
         return <>{children}</>;
     }
 

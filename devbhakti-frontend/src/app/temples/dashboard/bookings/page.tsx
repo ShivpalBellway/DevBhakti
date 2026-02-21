@@ -63,18 +63,22 @@ import { cn } from "@/lib/utils";
 
 const statusConfig = {
     BOOKED: {
+        label: "Booked",
         color: "bg-blue-100 text-blue-700 border-blue-200",
         icon: CheckCircle,
     },
     COMPLETED: {
+        label: "Completed",
         color: "bg-emerald-100 text-emerald-700 border-emerald-200",
         icon: CheckCircle2,
     },
     REJECTED: {
+        label: "Rejected",
         color: "bg-rose-100 text-rose-700 border-rose-200",
         icon: XCircle,
     },
     CANCELLED: {
+        label: "Cancelled",
         color: "bg-slate-100 text-slate-700 border-slate-200",
         icon: X,
     },
@@ -91,6 +95,7 @@ export default function TempleBookingsPage() {
     // Confirmation dialog for Mark Complete
     const [confirmCompleteId, setConfirmCompleteId] = useState<string | null>(null);
     const [confirmCancelId, setConfirmCancelId] = useState<string | null>(null);
+    const [proofPhotos, setProofPhotos] = useState<File[]>([]);
 
     // View toggle: sort/display by ritual date or booking date
     const [viewMode, setViewMode] = useState<"ritual" | "booking">("ritual");
@@ -173,14 +178,29 @@ export default function TempleBookingsPage() {
         }
     };
 
-    const handleUpdateStatus = async (id: string, status: string) => {
+    const handleUpdateStatus = async (id: string, status: string, files?: File[]) => {
         setIsProcessing(true);
         try {
-            const res = await updateBookingStatus(id, status);
+            let data: any = { status };
+
+            if (status === 'COMPLETED' && files && files.length > 0) {
+                const formData = new FormData();
+                formData.append('status', status);
+                files.forEach((file) => {
+                    formData.append('photos', file);
+                });
+                data = formData;
+            }
+
+            const res = await updateBookingStatus(id, data);
             if (res.success) {
-                toast({ title: `Booking ${status === 'BOOKED' ? 'Accepted' : 'Rejected'}`, description: res.message });
+                toast({
+                    title: `Booking ${status === 'BOOKED' ? 'Accepted' : (status === 'COMPLETED' ? 'Completed' : 'Rejected')}`,
+                    description: res.message
+                });
                 loadBookings();
                 if (selectedBooking?.id === id) setSelectedBooking(null);
+                setProofPhotos([]); // Reset files
             } else {
                 toast({ title: "Update Failed", description: res.message, variant: "destructive" });
             }
@@ -685,7 +705,7 @@ export default function TempleBookingsPage() {
                                                 <td className="p-4 w-[150px]">
                                                     <Badge variant="outline" className={cn("whitespace-nowrap", status.color)}>
                                                         <status.icon className="w-3 h-3 mr-1" />
-                                                        {booking.status}
+                                                        {status.label || booking.status}
                                                     </Badge>
                                                 </td>
                                                 <td className="p-4 text-right w-[100px]">
@@ -872,6 +892,22 @@ export default function TempleBookingsPage() {
                                     </div>
                                 </div>
 
+                                {selectedBooking.status === 'COMPLETED' && selectedBooking.proofPhotos && selectedBooking.proofPhotos.length > 0 && (
+                                    <div className="pt-6 border-t border-slate-100">
+                                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-3">Pooja Completion Proof</p>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            {selectedBooking.proofPhotos.map((photo: string, i: number) => (
+                                                <a key={i} href={photo} target="_blank" rel="noopener noreferrer" className="relative aspect-video rounded-xl overflow-hidden border border-slate-100 group">
+                                                    <img src={photo} alt="Proof" className="w-full h-full object-cover transition-transform group-hover:scale-110" />
+                                                    <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                                        <Eye className="w-5 h-5 text-white" />
+                                                    </div>
+                                                </a>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
                                 {/* Summary & Actions */}
                                 <div className="pt-6 border-t border-slate-100 space-y-4">
                                     <div className="flex items-center justify-between">
@@ -1011,17 +1047,84 @@ export default function TempleBookingsPage() {
                             </div>
 
                             {/* Body */}
-                            <div className="p-6">
+                            <div className="p-6 space-y-4">
                                 <p className="text-slate-300 text-sm leading-relaxed">
                                     Are you sure you want to mark this booking as <span className="font-bold text-emerald-400">complete</span>? This is an <span className="font-bold text-red-400">irreversible action</span> and cannot be undone.
                                 </p>
+
+                                {/* Proof Photos Upload */}
+                                <div className="space-y-3 pt-2">
+                                    <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider block">
+                                        Upload Proof Photos (Max 2, Optional)
+                                    </label>
+                                    <div className="grid grid-cols-2 gap-3">
+                                        {[0, 1].map((index) => (
+                                            <div key={index} className="relative group">
+                                                <input
+                                                    type="file"
+                                                    accept="image/*"
+                                                    className="hidden"
+                                                    id={`proof-photo-${index}`}
+                                                    onChange={(e) => {
+                                                        const file = e.target.files?.[0];
+                                                        if (file) {
+                                                            const newPhotos = [...proofPhotos];
+                                                            newPhotos[index] = file;
+                                                            setProofPhotos(newPhotos);
+                                                        }
+                                                    }}
+                                                />
+                                                <label
+                                                    htmlFor={`proof-photo-${index}`}
+                                                    className={cn(
+                                                        "flex flex-col items-center justify-center aspect-square rounded-xl border-2 border-dashed transition-all cursor-pointer",
+                                                        proofPhotos[index]
+                                                            ? "border-emerald-500/50 bg-emerald-500/5"
+                                                            : "border-slate-600 hover:border-slate-500 bg-slate-800/50"
+                                                    )}
+                                                >
+                                                    {proofPhotos[index] ? (
+                                                        <div className="text-center p-2">
+                                                            <CheckCircle2 className="w-6 h-6 text-emerald-400 mx-auto mb-1" />
+                                                            <span className="text-[10px] text-emerald-300 font-medium truncate w-full block">
+                                                                {proofPhotos[index].name}
+                                                            </span>
+                                                        </div>
+                                                    ) : (
+                                                        <>
+                                                            <Plus className="w-6 h-6 text-slate-500 group-hover:text-slate-400 mb-1" />
+                                                            <span className="text-[10px] text-slate-500 group-hover:text-slate-400 font-medium">
+                                                                Add Photo
+                                                            </span>
+                                                        </>
+                                                    )}
+                                                </label>
+                                                {proofPhotos[index] && (
+                                                    <button
+                                                        onClick={() => {
+                                                            const newPhotos = [...proofPhotos];
+                                                            newPhotos.splice(index, 1);
+                                                            setProofPhotos(newPhotos);
+                                                        }}
+                                                        className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center shadow-lg hover:bg-red-600 transition-colors"
+                                                    >
+                                                        <X size={14} />
+                                                    </button>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
                             </div>
 
                             {/* Actions */}
-                            <div className="flex items-center justify-end gap-3 px-6 pb-6">
+                            <div className="flex items-center justify-end gap-3 px-6 pb-6 pt-2">
                                 <Button
                                     variant="ghost"
-                                    onClick={() => setConfirmCompleteId(null)}
+                                    onClick={() => {
+                                        setConfirmCompleteId(null);
+                                        setProofPhotos([]);
+                                    }}
                                     className="rounded-xl px-6 text-white/60 hover:text-white hover:bg-[#63391c]"
                                     disabled={isProcessing}
                                 >
@@ -1030,7 +1133,7 @@ export default function TempleBookingsPage() {
                                 <Button
                                     onClick={async () => {
                                         if (confirmCompleteId) {
-                                            await handleUpdateStatus(confirmCompleteId, 'COMPLETED');
+                                            await handleUpdateStatus(confirmCompleteId, 'COMPLETED', proofPhotos.filter(Boolean));
                                             setConfirmCompleteId(null);
                                         }
                                     }}

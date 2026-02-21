@@ -15,8 +15,9 @@ const cmsCTADir = 'uploads/cms/cta';
 const userUploadDir = 'uploads/users';
 const productUploadDir = 'uploads/products';
 const categoryUploadDir = 'uploads/categories';
+const proofUploadDir = 'uploads/proofs';
 
-[cmsBannerDir, cmsFeatureDir, cmsTestimonialDir, cmsCTADir, userUploadDir, productUploadDir, categoryUploadDir].forEach(dir => {
+[cmsBannerDir, cmsFeatureDir, cmsTestimonialDir, cmsCTADir, userUploadDir, productUploadDir, categoryUploadDir, proofUploadDir].forEach(dir => {
     if (!fs.existsSync(dir)) {
         fs.mkdirSync(dir, { recursive: true });
     }
@@ -110,4 +111,16 @@ export const uploadCategoryImage = multer({
     }),
     fileFilter: fileFilter,
     limits: { fileSize: 5 * 1024 * 1024 } // 5MB for category images
+});
+
+export const uploadProofPhotos = multer({
+    storage: multer.diskStorage({
+        destination: (req, file, cb) => cb(null, proofUploadDir),
+        filename: (req, file, cb) => {
+            const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+            cb(null, 'proof-' + uniqueSuffix + path.extname(file.originalname));
+        }
+    }),
+    fileFilter: fileFilter,
+    limits: { fileSize: 5 * 1024 * 1024 } // 5MB per proof image
 });

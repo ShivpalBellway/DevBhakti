@@ -15,10 +15,13 @@ export const getAdminDashboardStats = async (req: Request, res: Response) => {
         ] = await Promise.all([
             prisma.temple.count(),
             prisma.user.count({ where: { role: 'DEVOTEE' } }),
-            prisma.poojaBooking.count(),
+            prisma.poojaBooking.count({ where: { status: { not: 'PENDING' } } }),
             prisma.order.count(),
             // Reuse logic for revenue
-            prisma.poojaBooking.aggregate({ _sum: { packagePrice: true } }),
+            prisma.poojaBooking.aggregate({
+                where: { status: { not: 'PENDING' } },
+                _sum: { packagePrice: true }
+            }),
         ]);
 
         const orderRevenue = await prisma.order.aggregate({ _sum: { totalAmount: true } });
@@ -40,6 +43,7 @@ export const getAdminDashboardStats = async (req: Request, res: Response) => {
         // 3. Recent Activity (Combined)
         const [recentBookings, recentUsers, recentTemples] = await Promise.all([
             prisma.poojaBooking.findMany({
+                where: { status: { not: 'PENDING' } },
                 take: 5,
                 orderBy: { createdAt: 'desc' },
                 include: { pooja: true, temple: true }

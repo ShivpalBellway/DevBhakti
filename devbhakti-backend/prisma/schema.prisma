@@ -370,6 +370,7 @@ model PoojaBooking {
   updatedAt        DateTime      @updatedAt
   anniversary      String?
   dob              String?
+  proofPhotos      String[]      @default([])
   pooja            Pooja         @relation(fields: [poojaId], references: [id])
   temple           Temple        @relation(fields: [templeId], references: [id])
   user             User          @relation(fields: [userId], references: [id])

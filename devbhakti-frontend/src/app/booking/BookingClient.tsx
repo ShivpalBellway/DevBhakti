@@ -358,7 +358,7 @@ function BookingForm() {
                   razorpay_payment_id: responseData.razorpay_payment_id,
                   razorpay_signature: responseData.razorpay_signature,
                   orderType: "POOJA",
-                  orderData: bookingData,
+                  orderData: { ...bookingData, bookingId: res.data.id },
                   userId: parsedUser.id
                 })
               });

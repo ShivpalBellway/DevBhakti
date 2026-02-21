@@ -50,7 +50,7 @@ const sidebarItems = [
     permission: "temples.menu",
     subItems: [
       { label: "All Temples", href: "/admin/temples", permission: "temples.view" },
-      { label: "Verification Requests", href: "/admin/temples/requests", permission: "temples.requests_view" },
+      { label: "Verification Requests", href: "/admin/temples/update-requests", permission: "temples.requests_view" },
     ]
   },
   {
@@ -62,7 +62,7 @@ const sidebarItems = [
   {
     label: "Pooja Bookings",
     icon: Calendar,
-    href: "/admin/bookings",
+    href: "/admin/pooja-bookings",
     permission: "bookings.menu",
   },
   {

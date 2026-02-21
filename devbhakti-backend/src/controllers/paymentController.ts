@@ -36,8 +36,9 @@ export const verifyPayment = async (req: Request, res: Response) => {
             return res.status(200).json({ success: true, message: "Order created successfully", data: newOrder });
 
         } else if (orderType === "POOJA") {
-            // Full creation logic for Pooja
-            const { poojaId, packageName, packagePrice, devoteeName, devoteePhone, devoteeEmail, bookingDate, address, specialRequests } = orderData;
+            // Updated logic: Check if booking already exists and update it
+            const { bookingId, poojaId, packageName, packagePrice, devoteeName, devoteePhone, devoteeEmail, bookingDate, address, specialRequests } = orderData;
+            const targetBookingId = bookingId || referenceId;
 
             const pooja = await prisma.pooja.findUnique({ where: { id: poojaId }, include: { temple: true } });
             if (!pooja) return res.status(404).json({ success: false, message: "Pooja not found" });
@@ -45,13 +46,26 @@ export const verifyPayment = async (req: Request, res: Response) => {
             const commissionData = await getCommissionForAmount(packagePrice, SlabType.TEMPLE, pooja.templeId || undefined, CommissionCategory.POOJA);
 
             const booking = await prisma.$transaction(async (tx) => {
-                const b = await tx.poojaBooking.create({
-                    data: {
-                        userId, poojaId, templeId: pooja.templeId as string,
-                        packageName, packagePrice, devoteeName, devoteePhone, devoteeEmail, bookingDate, address, specialRequests,
-                        status: 'BOOKED', commissionAmount: commissionData.totalCommission, netEarning: packagePrice
-                    }
-                });
+                let b;
+                if (targetBookingId) {
+                    b = await tx.poojaBooking.update({
+                        where: { id: targetBookingId },
+                        data: {
+                            status: 'BOOKED',
+                            commissionAmount: commissionData.totalCommission,
+                            netEarning: packagePrice
+                        }
+                    });
+                } else {
+                    // Fallback to creation for legacy clients
+                    b = await tx.poojaBooking.create({
+                        data: {
+                            userId, poojaId, templeId: pooja.templeId as string,
+                            packageName, packagePrice, devoteeName, devoteePhone, devoteeEmail, bookingDate, address, specialRequests,
+                            status: 'BOOKED', commissionAmount: commissionData.totalCommission, netEarning: packagePrice
+                        }
+                    });
+                }
 
                 await tx.templeLedger.create({
                     data: {

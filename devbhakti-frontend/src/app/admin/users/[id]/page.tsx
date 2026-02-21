@@ -260,7 +260,7 @@ export default function DevoteeDetailPage() {
                                         <Card
                                             key={booking.id}
                                             className="group overflow-hidden border-slate-100 hover:border-primary/30 hover:shadow-lg transition-all duration-300 rounded-3xl cursor-pointer"
-                                            onClick={() => router.push(`/admin/bookings?id=${booking.id}`)}
+                                            onClick={() => router.push(`/admin/pooja-bookings?id=${booking.id}`)}
                                         >
                                             <CardContent className="p-6">
                                                 <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">

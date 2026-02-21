@@ -13,6 +13,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import {
     Calendar,
     ChevronRight,
+    CheckCircle2,
     Church,
     Clock,
     ArrowLeft,
@@ -89,11 +90,23 @@ export default function MyBookingsPage() {
 
     const getStatusColor = (status: string) => {
         switch (status) {
+            case "PENDING": return "bg-amber-100 text-amber-700 border-amber-200";
             case "BOOKED": return "bg-blue-100 text-blue-700 border-blue-200";
-            case "COMPLETED": return "bg-green-100 text-green-700 border-green-200";
+            case "COMPLETED": return "bg-emerald-100 text-emerald-700 border-emerald-200";
             case "REJECTED":
-            case "CANCELLED": return "bg-red-100 text-red-700 border-red-200";
+            case "CANCELLED": return "bg-rose-100 text-rose-700 border-rose-200";
             default: return "bg-slate-100 text-slate-700 border-slate-200";
+        }
+    };
+
+    const getStatusLabel = (status: string) => {
+        switch (status) {
+            case "PENDING": return "Pending";
+            case "BOOKED": return "Booked";
+            case "COMPLETED": return "Completed";
+            case "REJECTED": return "Rejected";
+            case "CANCELLED": return "Cancelled";
+            default: return status;
         }
     };
 
@@ -155,7 +168,7 @@ export default function MyBookingsPage() {
                                             <div className="flex flex-col items-end">
                                                 <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Status</p>
                                                 <Badge variant="outline" className={cn("rounded-full px-3 py-0.5 font-bold text-[10px]", getStatusColor(booking.status))}>
-                                                    {booking.status}
+                                                    {getStatusLabel(booking.status)}
                                                 </Badge>
                                             </div>
                                         </div>
@@ -281,6 +294,34 @@ export default function MyBookingsPage() {
                                                                 <p className="text-sm text-slate-700 font-medium whitespace-pre-wrap">
                                                                     {booking.specialRequests}
                                                                 </p>
+                                                            </div>
+                                                        )}
+
+                                                        {booking.status === 'COMPLETED' && booking.proofPhotos && booking.proofPhotos.length > 0 && (
+                                                            <div className="bg-emerald-50/30 p-6 rounded-3xl border border-emerald-100/50">
+                                                                <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                                                                    <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                                                                    Pooja Completion Proof
+                                                                </h4>
+                                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                                                    {booking.proofPhotos.map((photo: string, i: number) => (
+                                                                        <div key={i} className="relative aspect-video rounded-2xl overflow-hidden border border-emerald-100 shadow-sm group">
+                                                                            <img
+                                                                                src={photo}
+                                                                                alt={`Proof ${i + 1}`}
+                                                                                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                                                                            />
+                                                                            <a
+                                                                                href={photo}
+                                                                                target="_blank"
+                                                                                rel="noopener noreferrer"
+                                                                                className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
+                                                                            >
+                                                                                <span className="bg-white/90 text-emerald-700 text-xs font-bold py-2 px-4 rounded-full shadow-lg">View Full Size</span>
+                                                                            </a>
+                                                                        </div>
+                                                                    ))}
+                                                                </div>
                                                             </div>
                                                         )}
 

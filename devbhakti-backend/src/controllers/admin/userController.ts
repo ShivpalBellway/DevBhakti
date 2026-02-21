@@ -48,7 +48,7 @@ export const getAllUsers = async (req: Request, res: Response) => {
                 include: {
                     _count: {
                         select: {
-                            bookings: true,
+                            bookings: { where: { status: { not: 'PENDING' } } },
                             orders: true,
                         }
                     }

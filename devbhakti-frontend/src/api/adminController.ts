@@ -861,3 +861,15 @@ export const deleteBookingAdmin = async (id: string) => {
     });
     return response.data;
 };
+
+export const updateBookingStatusAdmin = async (id: string, data: any) => {
+    const token = getAdminToken();
+    const isFormData = data instanceof FormData;
+    const response = await axios.patch(`${API_URL}/admin/bookings/${id}/status`, data, {
+        headers: {
+            Authorization: `Bearer ${token}`,
+            ...(isFormData && { 'Content-Type': 'multipart/form-data' })
+        }
+    });
+    return response.data;
+};

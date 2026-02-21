@@ -135,10 +135,15 @@ export const fetchMyTempleBookings = async () => {
     return response.data;
 };
 
-export const updateBookingStatus = async (id: string, status: string) => {
+export const updateBookingStatus = async (id: string, data: any) => {
     const token = localStorage.getItem("token");
-    const response = await axios.patch(`${API_URL}/temple-admin/bookings/${id}/status`, { status }, {
-        headers: { Authorization: `Bearer ${token}` }
+    const isFormData = data instanceof FormData;
+
+    const response = await axios.patch(`${API_URL}/temple-admin/bookings/${id}/status`, data, {
+        headers: {
+            Authorization: `Bearer ${token}`,
+            ...(isFormData && { 'Content-Type': 'multipart/form-data' })
+        }
     });
     return response.data;
 };

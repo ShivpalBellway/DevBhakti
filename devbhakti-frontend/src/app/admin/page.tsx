@@ -62,7 +62,7 @@ export default function AdminDashboardPage() {
   const handleActivityClick = (activity: any) => {
     const { type, id } = activity;
     if (type === 'booking') {
-      router.push(`/admin/bookings?id=${id}`);
+      router.push(`/admin/pooja-bookings?id=${id}`);
     } else if (type === 'user') {
       router.push(`/admin/users/${id}`);
     } else if (type === 'temple' || type === 'institution') {
@@ -124,7 +124,7 @@ export default function AdminDashboardPage() {
       color: "text-amber-600",
       bg: "bg-amber-50",
       description: "Poojas & Product orders",
-      path: "/admin/bookings"
+      path: "/admin/pooja-bookings"
     },
     {
       title: "Gross Revenue",
@@ -215,7 +215,7 @@ export default function AdminDashboardPage() {
               <Clock className="w-5 h-5 text-primary" />
               Recent Spiritual Activity
             </h3>
-            <Button variant="ghost" size="sm" className="text-primary font-bold hover:bg-primary/5 rounded-lg" onClick={() => router.push('/admin/bookings')}>
+            <Button variant="ghost" size="sm" className="text-primary font-bold hover:bg-primary/5 rounded-lg" onClick={() => router.push('/admin/pooja-bookings')}>
               View full list
               <ChevronRight className="w-4 h-4 ml-1" />
             </Button>
@@ -370,7 +370,7 @@ export default function AdminDashboardPage() {
         <h3 className="text-xl font-serif font-bold text-slate-900">System Quick Access</h3>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[
-            { label: "Pooja & Sev Booking", icon: Calendar, path: "/admin/bookings", color: "bg-amber-100 text-amber-700" },
+            { label: "Pooja & Sev Booking", icon: Calendar, path: "/admin/pooja-bookings", color: "bg-amber-100 text-amber-700" },
             { label: "Withdrawal Requests", icon: Wallet, path: "/admin/finance/withdrawals", color: "bg-emerald-100 text-emerald-700" },
             { label: "Product Inventory", icon: Package, path: "/admin/products", color: "bg-blue-100 text-blue-700" },
             { label: "Donation", icon: AlertCircle, path: "/admin/donation", color: "bg-slate-100 text-slate-700" }
