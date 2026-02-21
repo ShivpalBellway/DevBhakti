@@ -40,6 +40,7 @@ import Footer from "@/components/landing/Footer";
 import { fetchMyOrders } from "@/api/productOrderController";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { clearAllTokens } from "@/lib/auth-utils";
 
 const ProfilePage = () => {
     const { toast } = useToast();
@@ -187,8 +188,7 @@ const ProfilePage = () => {
     };
 
     const handleLogout = () => {
-        localStorage.removeItem("user");
-        localStorage.removeItem("token");
+        clearAllTokens();
         router.push("/");
     };
 

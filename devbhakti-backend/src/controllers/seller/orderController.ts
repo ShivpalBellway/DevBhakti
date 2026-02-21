@@ -4,19 +4,10 @@ import { prisma } from "../../lib/prisma";
 // Get orders specifically for a Seller (Store)
 export const getSellerOrders = async (req: Request, res: Response) => {
     try {
-        const userId = (req as any).user.userId;
-
-        // Find the store (SellerProfile) associated with this user
-        const store = await prisma.sellerProfile.findUnique({
-            where: { userId }
-        });
-
-        if (!store) {
-            return res.status(404).json({ success: false, message: "Store not found" });
-        }
+        const sellerId = (req as any).owner.ownerId;
 
         const subOrders = await prisma.subOrder.findMany({
-            where: { sellerId: store.id },
+            where: { sellerId },
             include: {
                 order: {
                     include: {
@@ -42,24 +33,16 @@ export const getSellerOrders = async (req: Request, res: Response) => {
 // Seller updates their own sub-order status
 export const updateSellerOrderStatus = async (req: Request, res: Response) => {
     try {
-        const userId = (req as any).user.userId;
+        const sellerId = (req as any).owner.ownerId;
         const subOrderId = req.params.subOrderId as string;
         const { status, shippingLabel } = req.body;
-
-        const store = await prisma.sellerProfile.findUnique({
-            where: { userId }
-        });
-
-        if (!store) {
-            return res.status(404).json({ success: false, message: "Store not found" });
-        }
 
         // Verify this sub-order belongs to the store
         const existing = await prisma.subOrder.findUnique({
             where: { id: subOrderId }
         });
 
-        if (!existing || existing.sellerId !== store.id) {
+        if (!existing || existing.sellerId !== sellerId) {
             return res.status(403).json({ success: false, message: "Unauthorized or order not found" });
         }
 
@@ -123,20 +106,11 @@ export const updateSellerOrderStatus = async (req: Request, res: Response) => {
 // Get unique customers for a Seller
 export const getSellerCustomers = async (req: Request, res: Response) => {
     try {
-        const userId = (req as any).user.userId;
-
-        // Find the store (SellerProfile) associated with this user
-        const store = await prisma.sellerProfile.findUnique({
-            where: { userId }
-        });
-
-        if (!store) {
-            return res.status(404).json({ success: false, message: "Store not found" });
-        }
+        const sellerId = (req as any).owner.ownerId;
 
         // Find all sub-orders for this seller
         const subOrders = await prisma.subOrder.findMany({
-            where: { sellerId: store.id },
+            where: { sellerId },
             include: {
                 order: {
                     include: {

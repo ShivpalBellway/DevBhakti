@@ -10,9 +10,12 @@ export const loginAdmin = async (credentials: any) => {
 // Admin Temple Management
 // (Consolidated below)
 
+// Helper to get token (super admin or staff)
+const getAdminToken = () => localStorage.getItem("admin_token") || localStorage.getItem("staff_token");
+
 // Admin Pooja Management
 export const fetchAllPoojasAdmin = async (params?: { isMaster?: boolean, templeId?: string }) => {
-    const token = localStorage.getItem("admin_token");
+    const token = getAdminToken();
     let url = `${API_URL}/admin/poojas`;
     if (params) {
         const query = new URLSearchParams();
@@ -27,7 +30,7 @@ export const fetchAllPoojasAdmin = async (params?: { isMaster?: boolean, templeI
 };
 
 export const fetchMasterPoojasAdmin = async () => {
-    const token = localStorage.getItem("admin_token");
+    const token = getAdminToken();
     const response = await axios.get(`${API_URL}/admin/poojas?isMaster=true`, {
         headers: { Authorization: `Bearer ${token}` }
     });
@@ -35,7 +38,7 @@ export const fetchMasterPoojasAdmin = async () => {
 };
 
 export const promotePoojaToMasterAdmin = async (id: string) => {
-    const token = localStorage.getItem("admin_token");
+    const token = getAdminToken();
     const response = await axios.post(`${API_URL}/admin/poojas/${id}/promote`, {}, {
         headers: { Authorization: `Bearer ${token}` }
     });
@@ -43,7 +46,7 @@ export const promotePoojaToMasterAdmin = async (id: string) => {
 };
 
 export const createPoojaAdmin = async (formData: FormData) => {
-    const token = localStorage.getItem("admin_token");
+    const token = getAdminToken();
     const response = await axios.post(`${API_URL}/admin/poojas`, formData, {
         headers: {
             Authorization: `Bearer ${token}`,
@@ -54,7 +57,7 @@ export const createPoojaAdmin = async (formData: FormData) => {
 };
 
 export const updatePoojaAdmin = async (id: string, formData: FormData) => {
-    const token = localStorage.getItem("admin_token");
+    const token = getAdminToken();
     const response = await axios.put(`${API_URL}/admin/poojas/${id}`, formData, {
         headers: {
             Authorization: `Bearer ${token}`,
@@ -73,7 +76,7 @@ export const togglePoojaStatusAdmin = async (id: string) => {
 };
 
 export const deletePoojaAdmin = async (id: string) => {
-    const token = localStorage.getItem("admin_token");
+    const token = getAdminToken();
     const response = await axios.delete(`${API_URL}/admin/poojas/${id}`, {
         headers: { Authorization: `Bearer ${token}` }
     });
@@ -82,7 +85,7 @@ export const deletePoojaAdmin = async (id: string) => {
 
 // Admin Event Management
 export const fetchAllEventsAdmin = async (params?: { page?: number; limit?: number; search?: string }) => {
-    const token = localStorage.getItem("admin_token");
+    const token = getAdminToken();
     let url = `${API_URL}/admin/events`;
     if (params) {
         const query = new URLSearchParams();
@@ -98,7 +101,7 @@ export const fetchAllEventsAdmin = async (params?: { page?: number; limit?: numb
 };
 
 export const fetchEventsByTemple = async (templeId: string) => {
-    const token = localStorage.getItem("admin_token");
+    const token = getAdminToken();
     const response = await axios.get(`${API_URL}/admin/events/temple/${templeId}`, {
         headers: { Authorization: `Bearer ${token}` }
     });
@@ -106,7 +109,7 @@ export const fetchEventsByTemple = async (templeId: string) => {
 };
 
 export const createEventAdmin = async (data: any) => {
-    const token = localStorage.getItem("admin_token");
+    const token = getAdminToken();
     const response = await axios.post(`${API_URL}/admin/events`, data, {
         headers: { Authorization: `Bearer ${token}` }
     });
@@ -114,7 +117,7 @@ export const createEventAdmin = async (data: any) => {
 };
 
 export const updateEventAdmin = async (id: string, data: any) => {
-    const token = localStorage.getItem("admin_token");
+    const token = getAdminToken();
     const response = await axios.put(`${API_URL}/admin/events/${id}`, data, {
         headers: { Authorization: `Bearer ${token}` }
     });
@@ -122,7 +125,7 @@ export const updateEventAdmin = async (id: string, data: any) => {
 };
 
 export const deleteEventAdmin = async (id: string) => {
-    const token = localStorage.getItem("admin_token");
+    const token = getAdminToken();
     const response = await axios.delete(`${API_URL}/admin/events/${id}`, {
         headers: { Authorization: `Bearer ${token}` }
     });
@@ -131,7 +134,7 @@ export const deleteEventAdmin = async (id: string) => {
 
 // Admin Temple Management
 export const fetchAllTemplesAdmin = async (params?: { page?: number; limit?: number; search?: string; isVerified?: boolean; templeId?: string; date?: string }) => {
-    const token = localStorage.getItem("admin_token");
+    const token = getAdminToken();
     let url = `${API_URL}/admin/temples`;
     if (params) {
         const query = new URLSearchParams();
@@ -150,7 +153,7 @@ export const fetchAllTemplesAdmin = async (params?: { page?: number; limit?: num
 };
 
 export const createTempleAdmin = async (formData: FormData) => {
-    const token = localStorage.getItem("admin_token");
+    const token = getAdminToken();
     const response = await axios.post(`${API_URL}/admin/temples`, formData, {
         headers: {
             Authorization: `Bearer ${token}`,
@@ -161,7 +164,7 @@ export const createTempleAdmin = async (formData: FormData) => {
 };
 
 export const updateTempleAdmin = async (id: string, formData: FormData) => {
-    const token = localStorage.getItem("admin_token");
+    const token = getAdminToken();
     const response = await axios.put(`${API_URL}/admin/temples/${id}`, formData, {
         headers: {
             Authorization: `Bearer ${token}`,
@@ -172,7 +175,7 @@ export const updateTempleAdmin = async (id: string, formData: FormData) => {
 };
 
 export const deleteTempleAdmin = async (id: string) => {
-    const token = localStorage.getItem("admin_token");
+    const token = getAdminToken();
     const response = await axios.delete(`${API_URL}/admin/temples/${id}`, {
         headers: { Authorization: `Bearer ${token}` }
     });
@@ -180,7 +183,7 @@ export const deleteTempleAdmin = async (id: string) => {
 };
 
 export const toggleTempleStatusAdmin = async (id: string, isVerified: boolean, isActive: boolean, data?: { slug?: string, subdomain?: string, urlType?: string, productCommissionRate?: number, poojaCommissionRate?: number, liveStatus?: boolean, commissionSlabs?: any[] }) => {
-    const token = localStorage.getItem("admin_token");
+    const token = getAdminToken();
     const payload = {
         isVerified,
         isActive,
@@ -193,7 +196,7 @@ export const toggleTempleStatusAdmin = async (id: string, isVerified: boolean, i
 };
 
 export const updateTempleLiveConfigAdmin = async (id: string, data: { channelId?: string; liveUrl?: string; isLive?: boolean }) => {
-    const token = localStorage.getItem("admin_token");
+    const token = getAdminToken();
     const response = await axios.patch(`${API_URL}/admin/temples/${id}/live-config`, data, {
         headers: { Authorization: `Bearer ${token}` }
     });
@@ -201,7 +204,7 @@ export const updateTempleLiveConfigAdmin = async (id: string, data: { channelId?
 };
 
 export const setPrimaryLiveAdmin = async (id: string) => {
-    const token = localStorage.getItem("admin_token");
+    const token = getAdminToken();
     const response = await axios.patch(`${API_URL}/admin/temples/${id}/set-primary-live`, {}, {
         headers: { Authorization: `Bearer ${token}` }
     });
@@ -209,7 +212,7 @@ export const setPrimaryLiveAdmin = async (id: string) => {
 };
 
 export const fetchTempleUpdateRequests = async () => {
-    const token = localStorage.getItem("admin_token");
+    const token = getAdminToken();
     const response = await axios.get(`${API_URL}/admin/temples/update-requests`, {
         headers: { Authorization: `Bearer ${token}` }
     });
@@ -217,7 +220,7 @@ export const fetchTempleUpdateRequests = async () => {
 };
 
 export const approveTempleUpdate = async (requestId: string) => {
-    const token = localStorage.getItem("admin_token");
+    const token = getAdminToken();
     const response = await axios.post(`${API_URL}/admin/temples/update-requests/${requestId}/approve`, {}, {
         headers: { Authorization: `Bearer ${token}` }
     });
@@ -225,7 +228,7 @@ export const approveTempleUpdate = async (requestId: string) => {
 };
 
 export const rejectTempleUpdate = async (requestId: string) => {
-    const token = localStorage.getItem("admin_token");
+    const token = getAdminToken();
     const response = await axios.post(`${API_URL}/admin/temples/update-requests/${requestId}/reject`, {}, {
         headers: { Authorization: `Bearer ${token}` }
     });
@@ -234,7 +237,7 @@ export const rejectTempleUpdate = async (requestId: string) => {
 
 // Admin CMS Management
 export const fetchAllBannersAdmin = async () => {
-    const token = localStorage.getItem("admin_token");
+    const token = getAdminToken();
     const response = await axios.get(`${API_URL}/admin/cms/banners`, {
         headers: { Authorization: `Bearer ${token}` }
     });
@@ -242,7 +245,7 @@ export const fetchAllBannersAdmin = async () => {
 };
 
 export const createBannerAdmin = async (formData: FormData) => {
-    const token = localStorage.getItem("admin_token");
+    const token = getAdminToken();
     const response = await axios.post(`${API_URL}/admin/cms/banners`, formData, {
         headers: {
             Authorization: `Bearer ${token}`,
@@ -253,7 +256,7 @@ export const createBannerAdmin = async (formData: FormData) => {
 };
 
 export const updateBannerAdmin = async (id: string, formData: FormData) => {
-    const token = localStorage.getItem("admin_token");
+    const token = getAdminToken();
     const response = await axios.put(`${API_URL}/admin/cms/banners/${id}`, formData, {
         headers: {
             Authorization: `Bearer ${token}`,
@@ -264,7 +267,7 @@ export const updateBannerAdmin = async (id: string, formData: FormData) => {
 };
 
 export const deleteBannerAdmin = async (id: string) => {
-    const token = localStorage.getItem("admin_token");
+    const token = getAdminToken();
     const response = await axios.delete(`${API_URL}/admin/cms/banners/${id}`, {
         headers: { Authorization: `Bearer ${token}` }
     });
@@ -277,7 +280,7 @@ export const fetchBannerGlobalStatus = async () => {
 };
 
 export const toggleBannerGlobalStatus = async () => {
-    const token = localStorage.getItem("admin_token");
+    const token = getAdminToken();
     const response = await axios.patch(`${API_URL}/admin/cms/banners/global-status`, {}, {
         headers: { Authorization: `Bearer ${token}` }
     });
@@ -285,7 +288,7 @@ export const toggleBannerGlobalStatus = async () => {
 };
 
 export const fetchAllFeaturesAdmin = async () => {
-    const token = localStorage.getItem("admin_token");
+    const token = getAdminToken();
     const response = await axios.get(`${API_URL}/admin/cms/features`, {
         headers: { Authorization: `Bearer ${token}` }
     });
@@ -293,7 +296,7 @@ export const fetchAllFeaturesAdmin = async () => {
 };
 
 export const createFeatureAdmin = async (formData: FormData) => {
-    const token = localStorage.getItem("admin_token");
+    const token = getAdminToken();
     const response = await axios.post(`${API_URL}/admin/cms/features`, formData, {
         headers: {
             Authorization: `Bearer ${token}`,
@@ -304,7 +307,7 @@ export const createFeatureAdmin = async (formData: FormData) => {
 };
 
 export const updateFeatureAdmin = async (id: string, formData: FormData) => {
-    const token = localStorage.getItem("admin_token");
+    const token = getAdminToken();
     const response = await axios.put(`${API_URL}/admin/cms/features/${id}`, formData, {
         headers: {
             Authorization: `Bearer ${token}`,
@@ -315,7 +318,7 @@ export const updateFeatureAdmin = async (id: string, formData: FormData) => {
 };
 
 export const deleteFeatureAdmin = async (id: string) => {
-    const token = localStorage.getItem("admin_token");
+    const token = getAdminToken();
     const response = await axios.delete(`${API_URL}/admin/cms/features/${id}`, {
         headers: { Authorization: `Bearer ${token}` }
     });
@@ -324,7 +327,7 @@ export const deleteFeatureAdmin = async (id: string) => {
 
 
 export const fetchAllTestimonialsAdmin = async () => {
-    const token = localStorage.getItem("admin_token");
+    const token = getAdminToken();
     const response = await axios.get(`${API_URL}/admin/cms/testimonials`, {
         headers: { Authorization: `Bearer ${token}` }
     });
@@ -332,7 +335,7 @@ export const fetchAllTestimonialsAdmin = async () => {
 };
 
 export const createTestimonialAdmin = async (formData: FormData) => {
-    const token = localStorage.getItem("admin_token");
+    const token = getAdminToken();
     const response = await axios.post(`${API_URL}/admin/cms/testimonials`, formData, {
         headers: {
             Authorization: `Bearer ${token}`,
@@ -343,7 +346,7 @@ export const createTestimonialAdmin = async (formData: FormData) => {
 };
 
 export const updateTestimonialAdmin = async (id: string, formData: FormData) => {
-    const token = localStorage.getItem("admin_token");
+    const token = getAdminToken();
     const response = await axios.put(`${API_URL}/admin/cms/testimonials/${id}`, formData, {
         headers: {
             Authorization: `Bearer ${token}`,
@@ -354,7 +357,7 @@ export const updateTestimonialAdmin = async (id: string, formData: FormData) => 
 };
 
 export const deleteTestimonialAdmin = async (id: string) => {
-    const token = localStorage.getItem("admin_token");
+    const token = getAdminToken();
     const response = await axios.delete(`${API_URL}/admin/cms/testimonials/${id}`, {
         headers: { Authorization: `Bearer ${token}` }
     });
@@ -363,7 +366,7 @@ export const deleteTestimonialAdmin = async (id: string) => {
 
 // CTA Cards Management
 export const fetchAllCTACardsAdmin = async () => {
-    const token = localStorage.getItem("admin_token");
+    const token = getAdminToken();
     const response = await axios.get(`${API_URL}/admin/cms/cta-cards`, {
         headers: { Authorization: `Bearer ${token}` }
     });
@@ -371,7 +374,7 @@ export const fetchAllCTACardsAdmin = async () => {
 };
 
 export const createCTACardAdmin = async (formData: FormData) => {
-    const token = localStorage.getItem("admin_token");
+    const token = getAdminToken();
     const response = await axios.post(`${API_URL}/admin/cms/cta-cards`, formData, {
         headers: {
             Authorization: `Bearer ${token}`,
@@ -382,7 +385,7 @@ export const createCTACardAdmin = async (formData: FormData) => {
 };
 
 export const updateCTACardAdmin = async (id: string, formData: FormData) => {
-    const token = localStorage.getItem("admin_token");
+    const token = getAdminToken();
     const response = await axios.put(`${API_URL}/admin/cms/cta-cards/${id}`, formData, {
         headers: {
             Authorization: `Bearer ${token}`,
@@ -393,7 +396,7 @@ export const updateCTACardAdmin = async (id: string, formData: FormData) => {
 };
 
 export const deleteCTACardAdmin = async (id: string) => {
-    const token = localStorage.getItem("admin_token");
+    const token = getAdminToken();
     const response = await axios.delete(`${API_URL}/admin/cms/cta-cards/${id}`, {
         headers: { Authorization: `Bearer ${token}` }
     });
@@ -402,7 +405,7 @@ export const deleteCTACardAdmin = async (id: string) => {
 
 // Admin Product Management
 export const fetchAllProductsAdmin = async (params?: { page?: number; limit?: number; search?: string; status?: string; templeId?: string; date?: string }) => {
-    const token = localStorage.getItem("admin_token");
+    const token = getAdminToken();
     let url = `${API_URL}/admin/products`;
     if (params) {
         const query = new URLSearchParams();
@@ -421,7 +424,7 @@ export const fetchAllProductsAdmin = async (params?: { page?: number; limit?: nu
 };
 
 export const fetchProductOwnersAdmin = async () => {
-    const token = localStorage.getItem("admin_token");
+    const token = getAdminToken();
     const response = await axios.get(`${API_URL}/admin/products/owners`, {
         headers: { Authorization: `Bearer ${token}` }
     });
@@ -429,7 +432,7 @@ export const fetchProductOwnersAdmin = async () => {
 };
 
 export const fetchProductByIdAdmin = async (id: string) => {
-    const token = localStorage.getItem("admin_token");
+    const token = getAdminToken();
     const response = await axios.get(`${API_URL}/admin/products/${id}`, {
         headers: { Authorization: `Bearer ${token}` }
     });
@@ -437,7 +440,7 @@ export const fetchProductByIdAdmin = async (id: string) => {
 };
 
 export const createProductAdmin = async (productData: any) => {
-    const token = localStorage.getItem("admin_token");
+    const token = getAdminToken();
 
     // Check if productData is FormData
     if (productData instanceof FormData) {
@@ -458,7 +461,7 @@ export const createProductAdmin = async (productData: any) => {
 };
 
 export const updateProductAdmin = async (id: string, productData: any) => {
-    const token = localStorage.getItem("admin_token");
+    const token = getAdminToken();
 
     // Check if productData is FormData
     if (productData instanceof FormData) {
@@ -479,7 +482,7 @@ export const updateProductAdmin = async (id: string, productData: any) => {
 };
 
 export const deleteProductAdmin = async (id: string) => {
-    const token = localStorage.getItem("admin_token");
+    const token = getAdminToken();
     const response = await axios.delete(`${API_URL}/admin/products/${id}`, {
         headers: { Authorization: `Bearer ${token}` }
     });
@@ -488,7 +491,7 @@ export const deleteProductAdmin = async (id: string) => {
 
 // Admin Category Management
 export const fetchAllCategoriesAdmin = async () => {
-    const token = localStorage.getItem("admin_token");
+    const token = getAdminToken();
     const response = await axios.get(`${API_URL}/admin/categories`, {
         headers: { Authorization: `Bearer ${token}` }
     });
@@ -496,7 +499,7 @@ export const fetchAllCategoriesAdmin = async () => {
 };
 
 export const fetchActiveCategoriesAdmin = async () => {
-    const token = localStorage.getItem("admin_token");
+    const token = getAdminToken();
     const response = await axios.get(`${API_URL}/admin/categories/active`, {
         headers: { Authorization: `Bearer ${token}` }
     });
@@ -504,7 +507,7 @@ export const fetchActiveCategoriesAdmin = async () => {
 };
 
 export const fetchCategoryByIdAdmin = async (id: string) => {
-    const token = localStorage.getItem("admin_token");
+    const token = getAdminToken();
     const response = await axios.get(`${API_URL}/admin/categories/${id}`, {
         headers: { Authorization: `Bearer ${token}` }
     });
@@ -512,7 +515,7 @@ export const fetchCategoryByIdAdmin = async (id: string) => {
 };
 
 export const createCategoryAdmin = async (categoryData: any) => {
-    const token = localStorage.getItem("admin_token");
+    const token = getAdminToken();
 
     // Check if categoryData is FormData
     if (categoryData instanceof FormData) {
@@ -533,7 +536,7 @@ export const createCategoryAdmin = async (categoryData: any) => {
 };
 
 export const updateCategoryAdmin = async (id: string, categoryData: any) => {
-    const token = localStorage.getItem("admin_token");
+    const token = getAdminToken();
 
     // Check if categoryData is FormData
     if (categoryData instanceof FormData) {
@@ -554,7 +557,7 @@ export const updateCategoryAdmin = async (id: string, categoryData: any) => {
 };
 
 export const deleteCategoryAdmin = async (id: string) => {
-    const token = localStorage.getItem("admin_token");
+    const token = getAdminToken();
     const response = await axios.delete(`${API_URL}/admin/categories/${id}`, {
         headers: { Authorization: `Bearer ${token}` }
     });
@@ -562,7 +565,7 @@ export const deleteCategoryAdmin = async (id: string) => {
 };
 
 export const toggleCategoryStatusAdmin = async (id: string, status: boolean) => {
-    const token = localStorage.getItem("admin_token");
+    const token = getAdminToken();
     const response = await axios.patch(`${API_URL}/admin/categories/${id}/status`, { isActive: status }, {
         headers: { Authorization: `Bearer ${token}` }
     });
@@ -570,7 +573,7 @@ export const toggleCategoryStatusAdmin = async (id: string, status: boolean) => 
 };
 
 export const toggleProductStatusAdmin = async (id: string, status: string) => {
-    const token = localStorage.getItem("admin_token");
+    const token = getAdminToken();
     const response = await axios.patch(`${API_URL}/admin/products/${id}/status`, { status }, {
         headers: { Authorization: `Bearer ${token}` }
     });
@@ -578,7 +581,7 @@ export const toggleProductStatusAdmin = async (id: string, status: string) => {
 };
 
 export const fetchProductsByTempleAdmin = async (templeId: string) => {
-    const token = localStorage.getItem("admin_token");
+    const token = getAdminToken();
     const response = await axios.get(`${API_URL}/admin/products/temple/${templeId}`, {
         headers: { Authorization: `Bearer ${token}` }
     });
@@ -587,7 +590,7 @@ export const fetchProductsByTempleAdmin = async (templeId: string) => {
 
 // Admin Booking Management
 // export const fetchAllBookingsAdmin = async (params?: { page?: number; limit?: number; search?: string; status?: string; startDate?: string; endDate?: string }) => {
-//     const token = localStorage.getItem("admin_token");
+//     const token = getAdminToken();
 //     let url = `${API_URL}/admin/bookings`;
 //     if (params) {
 //         const query = new URLSearchParams();
@@ -606,7 +609,7 @@ export const fetchProductsByTempleAdmin = async (templeId: string) => {
 // };
 
 // export const deleteBookingAdmin = async (id: string) => {
-//     const token = localStorage.getItem("admin_token");
+//     const token = getAdminToken();
 //     const response = await axios.delete(`${API_URL}/admin/bookings/${id}`, {
 //         headers: { Authorization: `Bearer ${token}` }
 //     });
@@ -615,7 +618,7 @@ export const fetchProductsByTempleAdmin = async (templeId: string) => {
 
 // Admin Order Management
 export const fetchAllOrdersAdmin = async () => {
-    const token = localStorage.getItem("admin_token");
+    const token = getAdminToken();
     const response = await axios.get(`${API_URL}/admin/orders`, {
         headers: { Authorization: `Bearer ${token}` }
     });
@@ -623,7 +626,7 @@ export const fetchAllOrdersAdmin = async () => {
 };
 
 export const updateSubOrderStatusAdmin = async (subOrderId: string, data: { status: string; shippingLabel?: string }) => {
-    const token = localStorage.getItem("admin_token");
+    const token = getAdminToken();
     const response = await axios.patch(`${API_URL}/admin/orders/sub-order/${subOrderId}`, data, {
         headers: { Authorization: `Bearer ${token}` }
     });
@@ -632,7 +635,7 @@ export const updateSubOrderStatusAdmin = async (subOrderId: string, data: { stat
 
 // Admin Finance Management
 export const fetchWithdrawalRequestsAdmin = async () => {
-    const token = localStorage.getItem("admin_token");
+    const token = getAdminToken();
     const url = `${API_URL}/admin/finance/withdrawals`;
     console.log(`GET: ${url}`);
     const response = await axios.get(url, {
@@ -642,7 +645,7 @@ export const fetchWithdrawalRequestsAdmin = async () => {
 };
 
 export const updateWithdrawalStatusAdmin = async (requestId: string, data: any) => {
-    const token = localStorage.getItem("admin_token");
+    const token = getAdminToken();
     const response = await axios.patch(`${API_URL}/admin/finance/withdrawals/${requestId}`, data, {
         headers: {
             Authorization: `Bearer ${token}`,
@@ -653,7 +656,7 @@ export const updateWithdrawalStatusAdmin = async (requestId: string, data: any) 
 };
 
 export const fetchPlatformFinanceSummary = async () => {
-    const token = localStorage.getItem("admin_token");
+    const token = getAdminToken();
     const url = `${API_URL}/admin/finance/platform-summary`;
     console.log(`GET: ${url}`);
     const response = await axios.get(url, {
@@ -664,7 +667,7 @@ export const fetchPlatformFinanceSummary = async () => {
 
 // Admin Seller Management
 export const fetchAllSellersAdmin = async () => {
-    const token = localStorage.getItem("admin_token");
+    const token = getAdminToken();
     const response = await axios.get(`${API_URL}/admin/sellers`, {
         headers: { Authorization: `Bearer ${token}` }
     });
@@ -672,7 +675,7 @@ export const fetchAllSellersAdmin = async () => {
 };
 
 export const fetchSellerByIdAdmin = async (id: string) => {
-    const token = localStorage.getItem("admin_token");
+    const token = getAdminToken();
     const response = await axios.get(`${API_URL}/admin/sellers/${id}`, {
         headers: { Authorization: `Bearer ${token}` }
     });
@@ -680,7 +683,7 @@ export const fetchSellerByIdAdmin = async (id: string) => {
 };
 
 export const createSellerAdmin = async (data: any) => {
-    const token = localStorage.getItem("admin_token");
+    const token = getAdminToken();
     const response = await axios.post(`${API_URL}/admin/sellers`, data, {
         headers: { Authorization: `Bearer ${token}` }
     });
@@ -688,7 +691,7 @@ export const createSellerAdmin = async (data: any) => {
 };
 
 export const updateSellerAdmin = async (id: string, data: any) => {
-    const token = localStorage.getItem("admin_token");
+    const token = getAdminToken();
     const response = await axios.put(`${API_URL}/admin/sellers/${id}`, data, {
         headers: { Authorization: `Bearer ${token}` }
     });
@@ -696,7 +699,7 @@ export const updateSellerAdmin = async (id: string, data: any) => {
 };
 
 export const deleteSellerAdmin = async (id: string) => {
-    const token = localStorage.getItem("admin_token");
+    const token = getAdminToken();
     const response = await axios.delete(`${API_URL}/admin/sellers/${id}`, {
         headers: { Authorization: `Bearer ${token}` }
     });
@@ -704,7 +707,7 @@ export const deleteSellerAdmin = async (id: string) => {
 };
 
 export const toggleSellerStatusAdmin = async (id: string, status: string) => {
-    const token = localStorage.getItem("admin_token");
+    const token = getAdminToken();
     const response = await axios.patch(`${API_URL}/admin/sellers/${id}/status`, { status }, {
         headers: { Authorization: `Bearer ${token}` }
     });
@@ -712,7 +715,7 @@ export const toggleSellerStatusAdmin = async (id: string, status: string) => {
 };
 
 export const fetchAllTransactionsAdmin = async () => {
-    const token = localStorage.getItem("admin_token");
+    const token = getAdminToken();
     const url = `${API_URL}/admin/finance/transactions`;
     console.log(`GET: ${url}`);
     const response = await axios.get(url, {
@@ -722,7 +725,7 @@ export const fetchAllTransactionsAdmin = async () => {
 };
 
 export const fetchAdminDashboardStats = async () => {
-    const token = localStorage.getItem("admin_token");
+    const token = getAdminToken();
     const response = await axios.get(`${API_URL}/admin/dashboard/stats`, {
         headers: { Authorization: `Bearer ${token}` }
     });
@@ -731,7 +734,7 @@ export const fetchAdminDashboardStats = async () => {
 
 // Commission Slabs Management
 export const fetchCommissionSlabsAdmin = async (type?: string, targetId?: string, category?: string) => {
-    const token = localStorage.getItem("admin_token");
+    const token = getAdminToken();
     let url = `${API_URL}/admin/commission-slabs`;
     const params = new URLSearchParams();
     if (type) params.append("type", type);
@@ -746,7 +749,7 @@ export const fetchCommissionSlabsAdmin = async (type?: string, targetId?: string
 };
 
 export const createCommissionSlabAdmin = async (slabData: any) => {
-    const token = localStorage.getItem("admin_token");
+    const token = getAdminToken();
     const response = await axios.post(`${API_URL}/admin/commission-slabs`, slabData, {
         headers: { Authorization: `Bearer ${token}` }
     });
@@ -754,7 +757,7 @@ export const createCommissionSlabAdmin = async (slabData: any) => {
 };
 
 export const updateCommissionSlabAdmin = async (id: string, slabData: any) => {
-    const token = localStorage.getItem("admin_token");
+    const token = getAdminToken();
     const response = await axios.put(`${API_URL}/admin/commission-slabs/${id}`, slabData, {
         headers: { Authorization: `Bearer ${token}` }
     });
@@ -762,7 +765,7 @@ export const updateCommissionSlabAdmin = async (id: string, slabData: any) => {
 };
 
 export const deleteCommissionSlabAdmin = async (id: string) => {
-    const token = localStorage.getItem("admin_token");
+    const token = getAdminToken();
     const response = await axios.delete(`${API_URL}/admin/commission-slabs/${id}`, {
         headers: { Authorization: `Bearer ${token}` }
     });
@@ -772,7 +775,7 @@ export const deleteCommissionSlabAdmin = async (id: string) => {
 
 // Admin Finance Approvals
 export const fetchPendingApprovals = async () => {
-    const token = localStorage.getItem("admin_token");
+    const token = getAdminToken();
     const response = await axios.get(`${API_URL}/admin/finance/approvals`, {
         headers: { Authorization: `Bearer ${token}` }
     });
@@ -780,7 +783,7 @@ export const fetchPendingApprovals = async () => {
 };
 
 export const approveRequestAdmin = async (id: string, type: string) => {
-    const token = localStorage.getItem("admin_token");
+    const token = getAdminToken();
     const response = await axios.post(`${API_URL}/admin/finance/approve`, { id, type }, {
         headers: { Authorization: `Bearer ${token}` }
     });
@@ -788,7 +791,7 @@ export const approveRequestAdmin = async (id: string, type: string) => {
 };
 
 export const rejectRequestAdmin = async (id: string, type: string) => {
-    const token = localStorage.getItem("admin_token");
+    const token = getAdminToken();
     const response = await axios.post(`${API_URL}/admin/finance/reject`, { id, type }, {
         headers: { Authorization: `Bearer ${token}` }
     });
@@ -797,7 +800,7 @@ export const rejectRequestAdmin = async (id: string, type: string) => {
 
 // Admin User Management
 export const fetchAllUsersAdmin = async (params?: { page?: number; limit?: number; search?: string; role?: string; startDate?: string; endDate?: string }) => {
-    const token = localStorage.getItem("admin_token");
+    const token = getAdminToken();
     let url = `${API_URL}/admin/users`;
     if (params) {
         const query = new URLSearchParams();
@@ -816,7 +819,7 @@ export const fetchAllUsersAdmin = async (params?: { page?: number; limit?: numbe
 };
 
 export const fetchUserDetailAdmin = async (id: string) => {
-    const token = localStorage.getItem("admin_token");
+    const token = getAdminToken();
     const response = await axios.get(`${API_URL}/admin/users/${id}`, {
         headers: { Authorization: `Bearer ${token}` }
     });
@@ -832,7 +835,7 @@ export const fetchAllBookingsAdmin = async (params?: {
     startDate?: string;
     endDate?: string;
 }) => {
-    const token = localStorage.getItem("admin_token");
+    const token = getAdminToken();
     let url = `${API_URL}/admin/bookings`;
     if (params) {
         const query = new URLSearchParams();
@@ -852,7 +855,7 @@ export const fetchAllBookingsAdmin = async (params?: {
 };
 
 export const deleteBookingAdmin = async (id: string) => {
-    const token = localStorage.getItem("admin_token");
+    const token = getAdminToken();
     const response = await axios.delete(`${API_URL}/admin/bookings/${id}`, {
         headers: { Authorization: `Bearer ${token}` }
     });

@@ -24,111 +24,128 @@ import {
   Flower2,
   Package,
   Store,
+  UserCog,
+  ShieldCheck,
+  ShieldAlert,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 // import Logo from "@/components/icons/Logo";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
 import logo from "@/assets/logo2.png";
+import AccessDeniedPage from "./access-denied/page";
+import { clearAllTokens } from "@/lib/auth-utils";
 
 const sidebarItems = [
   {
     label: "Dashboard",
     icon: LayoutDashboard,
     href: "/admin",
+    permission: "dashboard.view",
   },
   {
     label: "Temples",
     icon: Building2,
-    href: "/admin/temples",
+    href: "#",
+    permission: "temples.menu",
+    subItems: [
+      { label: "All Temples", href: "/admin/temples", permission: "temples.view" },
+      { label: "Verification Requests", href: "/admin/temples/requests", permission: "temples.requests_view" },
+    ]
   },
   {
     label: "Users",
     icon: Users,
     href: "/admin/users",
+    permission: "users.menu",
   },
   {
     label: "Pooja Bookings",
     icon: Calendar,
     href: "/admin/bookings",
+    permission: "bookings.menu",
   },
   {
     label: "Donation",
     icon: Heart,
     href: "/admin/donation",
+    permission: "donations.menu",
   },
   {
     label: "Poojas",
     icon: Flower2,
     href: "/admin/poojas",
+    permission: "poojas.view",
   },
   {
     label: "Product Management",
     icon: Package,
     href: "#",
+    permission: "products.menu",
     subItems: [
-      { label: "All Products", href: "/admin/products" },
-      { label: "Product Categories", href: "/admin/products/categories" },
-      { label: "Product Orders", href: "/admin/products/orders" }
+      { label: "All Products", href: "/admin/products", permission: "products.view" },
+      { label: "Product Categories", href: "/admin/products/categories", permission: "categories.view" },
+      { label: "Product Orders", href: "/admin/products/orders", permission: "products.orders.view" }
     ]
   },
   {
     label: "Events",
     icon: Calendar,
     href: "/admin/events",
+    permission: "events.view",
   },
   {
     label: "CMS",
     icon: FileText,
     href: "#",
+    permission: "cms.menu",
     subItems: [
-      { label: "Manage Banners", href: "/admin/cms/banners" },
-      { label: "Manage Features", href: "/admin/cms/features" },
-      { label: "Manage Testimonials", href: "/admin/cms/testimonials" },
-      { label: "Manage CTA Cards", href: "/admin/cms/cta-cards" },
+      { label: "Manage Banners", href: "/admin/cms/banners", permission: "cms.banners" },
+      { label: "Manage Features", href: "/admin/cms/features", permission: "cms.features" },
+      { label: "Manage Testimonials", href: "/admin/cms/testimonials", permission: "cms.testimonials" },
+      { label: "Manage CTA Cards", href: "/admin/cms/cta-cards", permission: "cms.features" },
     ]
   },
-  // {
-  //   label: "Marketplace",
-  //   icon: ShoppingBag,
-  //   href: "/admin/marketplace",
-  // },
   {
     label: "Finance & Payouts",
     icon: IndianRupee,
     href: "#",
+    permission: "finance.menu",
     subItems: [
-      { label: "Transaction Ledger", href: "/admin/finance/ledger" },
-      { label: "Withdrawal Requests", href: "/admin/finance/withdrawals" },
-      { label: "Approvals", href: "/admin/finance/approvals" }
+      { label: "Transaction Ledger", href: "/admin/finance/ledger", permission: "finance.ledger.view" },
+      { label: "Withdrawal Requests", href: "/admin/finance/withdrawals", permission: "finance.withdrawals.view" },
+      { label: "Approvals", href: "/admin/finance/approvals", permission: "finance.withdrawals.action" }
     ]
   },
   {
     label: "Live Darshan",
     icon: Video,
     href: "/admin/live-darshan",
+    permission: "live_darshan.view",
   },
   {
     label: "Sellers",
     icon: Store,
     href: "/admin/sellers",
+    permission: "sellers.view",
   },
-  // {
-  //   label: "Analytics",
-  //   icon: BarChart3,
-  //   href: "/admin/analytics",
-  // },
-  // {
-  //   label: "Analytics",
-  //   icon: BarChart3,
-  //   href: "/admin/analytics",
-  // },
   {
     label: "Settings",
     icon: Settings,
     href: "#",
+    permission: "settings.commission",
     subItems: [
-      { label: "Commission Slabs", href: "/admin/commission-slabs" },
+      { label: "Commission Slabs", href: "/admin/commission-slabs", permission: "settings.commission" },
+    ]
+  },
+  {
+    label: "Team Management",
+    icon: UserCog,
+    href: "#",
+    permission: "team.menu",
+    subItems: [
+      { label: "Staff Members", href: "/admin/team/staff", permission: "team.staff.view" },
+      { label: "Roles & Permissions", href: "/admin/team/roles", permission: "team.roles.manage" },
     ]
   },
 ];
@@ -139,8 +156,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const [user, setUser] = useState<{ name: string; email: string; isStaff?: boolean; permissions?: string[] } | null>(null);
 
-  const isLoginPage = pathname?.startsWith("/admin/login");
+  const isLoginPage = pathname?.startsWith("/admin/login") || pathname?.startsWith("/admin/staff-login");
 
   useEffect(() => {
     // Check if user is logged in
@@ -148,9 +166,25 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       const cookies = document.cookie.split(";");
       const isLoggedIn = cookies.some((cookie) => cookie.trim().startsWith("admin_logged_in=true"));
 
-      setIsAuthenticated(isLoggedIn);
+      // Also check staff_token in localStorage
+      const staffToken = localStorage.getItem("staff_token");
+      const adminToken = localStorage.getItem("admin_token");
+      const hasToken = !!staffToken || !!adminToken;
 
-      if (!isLoggedIn && !isLoginPage) {
+      setIsAuthenticated(isLoggedIn && hasToken);
+
+      if (isLoggedIn && hasToken) {
+        const adminUser = localStorage.getItem("admin_user");
+        const staffUser = localStorage.getItem("staff_user");
+        if (staffUser) {
+          const parsed = JSON.parse(staffUser);
+          setUser({ ...parsed, isStaff: true });
+        } else if (adminUser) {
+          setUser(JSON.parse(adminUser));
+        }
+      }
+
+      if ((!isLoggedIn || !hasToken) && !isLoginPage) {
         router.push("/admin/login");
       }
     };
@@ -159,7 +193,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   }, [pathname, router, isLoginPage]);
 
   const handleSignOut = () => {
-    document.cookie = "admin_logged_in=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;";
+    clearAllTokens();
     router.push("/admin/login");
   };
 
@@ -186,9 +220,60 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     });
   }, [pathname]);
 
-  // If we're on the login page or print page, don't show the admin layout UI
-  const isPrintPage = pathname?.startsWith("/admin/products/orders/print");
-  if (isLoginPage || isPrintPage) {
+  // Permission check helper
+  const hasPermission = (permission?: string) => {
+    if (!user) return false;
+    if (!user.isStaff) return true; // Super Admin has all permissions
+    if (!permission) return true;
+    return user.permissions?.includes(permission);
+  };
+
+  // Filter sidebar items based on permissions
+  const filteredSidebarItems = sidebarItems.filter(item => {
+    const mainVisible = hasPermission(item.permission);
+    if (!mainVisible) return false;
+
+    // Optional: Filter sub-items too
+    if (item.subItems) {
+      const visibleSubItems = item.subItems.filter(sub => hasPermission(sub.permission));
+      // If none of the sub-items are visible, maybe hide the main category?
+      // For now, only hide if it's a category head ('#')
+      if (item.href === "#" && visibleSubItems.length === 0) return false;
+    }
+
+    return true;
+  });
+
+  // Direct access protection (URL protection)
+  const isAuthorized = () => {
+    if (!user) return false;
+    if (!user.isStaff) return true; // Super Admin always authorized
+
+    // Some pages are always public (e.g. Dashboard)
+    if (pathname === "/admin" || pathname === "/admin/access-denied") return true;
+
+    // Find the item corresponding to current pathname
+    const findItem = (items: any[]): any => {
+      for (const item of items) {
+        if (item.href === pathname) return item;
+        if (item.subItems) {
+          const found = findItem(item.subItems);
+          if (found) return found;
+        }
+      }
+      return null;
+    };
+
+    const currentItem = findItem(sidebarItems);
+    if (!currentItem) return true; // If page not in sidebar, allow (until we define more)
+
+    return hasPermission(currentItem.permission);
+  };
+
+  const authorized = isAuthorized();
+
+  // If we're on the login page, don't show the admin layout UI
+  if (isLoginPage) {
     return <>{children}</>;
   }
 
@@ -253,12 +338,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
         {/* Navigation */}
         <nav className="flex-1 py-4 px-3 space-y-1 overflow-y-auto premium-scrollbar">
-          {sidebarItems.map((item) => {
+          {filteredSidebarItems.map((item) => {
             const hasSubItems = item.subItems && item.subItems.length > 0;
             const isOpen = openMenus.includes(item.label);
             const isActive = pathname === item.href || (item.subItems?.some(sub => pathname === sub.href));
 
             if (hasSubItems) {
+              // Filter sub-items for rendering
+              const visibleSubItems = item.subItems!.filter(sub => hasPermission(sub.permission));
+
               return (
                 <div key={item.label} className="space-y-1">
                   <button
@@ -286,7 +374,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
                   {isOpen && sidebarOpen && (
                     <div className="ml-9 space-y-1">
-                      {item.subItems!.map((sub) => {
+                      {visibleSubItems.map((sub) => {
                         const isSubActive = pathname === sub.href;
                         return (
                           <Link
@@ -339,15 +427,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             sidebarOpen ? "" : "justify-center"
           )}>
             <div className="w-10 h-10 rounded-full bg-sidebar-accent flex items-center justify-center text-sidebar-foreground font-semibold">
-              A
+              {user?.name?.[0]?.toUpperCase() || "A"}
             </div>
             {sidebarOpen && (
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-sidebar-foreground truncate">
-                  Admin User
+                  {user?.name || "Loading..."}
                 </p>
                 <p className="text-xs text-sidebar-foreground/60 truncate">
-                  admin@devbhakti.com
+                  {user?.email || "..."}
                 </p>
               </div>
             )}
@@ -396,7 +484,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
         {/* Page content */}
         <main className="p-6">
-          {children}
+          {authorized ? children : <AccessDeniedPage />}
         </main>
       </div>
     </div>

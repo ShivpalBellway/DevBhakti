@@ -33,6 +33,8 @@ import {
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { BASE_URL } from "@/config/apiConfig";
+import { useAdminAuth } from "@/hooks/use-admin-auth";
+
 
 import {
   fetchAllCategoriesAdmin,
@@ -57,6 +59,8 @@ interface Category {
 export default function CategoriesManagementPage() {
   const router = useRouter();
   const { toast } = useToast();
+  const { hasPermission } = useAdminAuth();
+
 
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -163,13 +167,15 @@ export default function CategoriesManagementPage() {
           <h1 className="text-2xl font-bold tracking-tight text-slate-900">Product Categories</h1>
           <p className="text-muted-foreground">Manage product categories and their properties</p>
         </div>
-        <Button
-          onClick={() => router.push("/admin/products/categories/create")}
-          className="bg-primary hover:bg-secondary/40"
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          Add Category
-        </Button>
+        {hasPermission("categories.create") && (
+          <Button
+            onClick={() => router.push("/admin/products/categories/create")}
+            className="bg-primary hover:bg-secondary/40"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Add Category
+          </Button>
+        )}
       </div>
 
       <Card>
@@ -258,15 +264,17 @@ export default function CategoriesManagementPage() {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-1">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className={`h-8 w-8 ${category.isActive ? 'text-amber-600' : 'text-emerald-600'}`}
-                          onClick={() => handleToggleStatus(category.id, category.isActive)}
-                          title={category.isActive ? "Deactivate Category" : "Activate Category"}
-                        >
-                          {category.isActive ? <ToggleLeft className="w-4 h-4" /> : <ToggleRight className="w-4 h-4" />}
-                        </Button>
+                        {hasPermission("categories.edit") && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className={`h-8 w-8 ${category.isActive ? 'text-amber-600' : 'text-emerald-600'}`}
+                            onClick={() => handleToggleStatus(category.id, category.isActive)}
+                            title={category.isActive ? "Deactivate Category" : "Activate Category"}
+                          >
+                            {category.isActive ? <ToggleLeft className="w-4 h-4" /> : <ToggleRight className="w-4 h-4" />}
+                          </Button>
+                        )}
                         <Button
                           variant="ghost"
                           size="icon"
@@ -279,25 +287,29 @@ export default function CategoriesManagementPage() {
                         >
                           <Eye className="w-4 h-4" />
                         </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-blue-600"
-                          onClick={() => router.push(`/admin/products/categories/edit/${category.id}`)}
-                          title="Edit Category"
-                        >
-                          <Edit2 className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-destructive"
-                          onClick={() => handleDelete(category.id)}
-                          title="Delete Category"
-                          disabled={category._count.products > 0}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
+                        {hasPermission("categories.edit") && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-blue-600"
+                            onClick={() => router.push(`/admin/products/categories/edit/${category.id}`)}
+                            title="Edit Category"
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </Button>
+                        )}
+                        {hasPermission("categories.delete") && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-destructive"
+                            onClick={() => handleDelete(category.id)}
+                            title="Delete Category"
+                            disabled={category._count.products > 0}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>

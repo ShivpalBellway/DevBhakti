@@ -3,18 +3,10 @@ import { prisma } from '../../lib/prisma';
 
 export const getMyPoojas = async (req: Request, res: Response) => {
     try {
-        const userId = (req as any).user.userId;
-
-        const temple = await prisma.temple.findUnique({
-            where: { userId }
-        });
-
-        if (!temple) {
-            return res.status(200).json({ success: true, data: [], message: 'No temple associated with this account. Please complete your profile.' });
-        }
+        const templeId = (req as any).owner.ownerId;
 
         const poojas = await prisma.pooja.findMany({
-            where: { templeId: temple.id },
+            where: { templeId },
             orderBy: { createdAt: 'desc' }
         });
 
@@ -27,17 +19,9 @@ export const getMyPoojas = async (req: Request, res: Response) => {
 
 export const createMyPooja = async (req: Request, res: Response) => {
     try {
-        const userId = (req as any).user.userId;
+        const templeId = (req as any).owner.ownerId;
         const file = req.file;
         const data = req.body;
-
-        const temple = await prisma.temple.findUnique({
-            where: { userId }
-        });
-
-        if (!temple) {
-            return res.status(404).json({ success: false, message: 'Temple not found' });
-        }
 
         const pooja = await prisma.pooja.create({
             data: {
@@ -56,7 +40,7 @@ export const createMyPooja = async (req: Request, res: Response) => {
                 packages: data.packages ? JSON.parse(data.packages) : [],
                 faqs: data.faqs ? JSON.parse(data.faqs) : [],
                 image: file ? `/uploads/poojas/${file.filename}` : null,
-                templeId: temple.id,
+                templeId: templeId,
                 status: data.status === 'false' ? false : true
             }
         });
@@ -71,16 +55,12 @@ export const createMyPooja = async (req: Request, res: Response) => {
 export const updateMyPooja = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
-        const userId = (req as any).user.userId;
+        const templeId = (req as any).owner.ownerId;
         const file = req.file;
         const data = req.body;
 
-        const temple = await prisma.temple.findUnique({
-            where: { userId }
-        });
-
         const existingPooja = await prisma.pooja.findFirst({
-            where: { id: String(id), templeId: temple?.id }
+            where: { id: String(id), templeId }
         });
 
         if (!existingPooja) {
@@ -119,14 +99,10 @@ export const updateMyPooja = async (req: Request, res: Response) => {
 export const deleteMyPooja = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
-        const userId = (req as any).user.userId;
-
-        const temple = await prisma.temple.findUnique({
-            where: { userId }
-        });
+        const templeId = (req as any).owner.ownerId;
 
         const pooja = await prisma.pooja.findFirst({
-            where: { id: String(id), templeId: temple?.id }
+            where: { id: String(id), templeId }
         });
 
         if (!pooja) {
@@ -144,14 +120,10 @@ export const deleteMyPooja = async (req: Request, res: Response) => {
 export const togglePoojaStatus = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
-        const userId = (req as any).user.userId;
-
-        const temple = await prisma.temple.findUnique({
-            where: { userId }
-        });
+        const templeId = (req as any).owner.ownerId;
 
         const pooja = await prisma.pooja.findFirst({
-            where: { id: String(id), templeId: temple?.id }
+            where: { id: String(id), templeId }
         });
 
         if (!pooja) {

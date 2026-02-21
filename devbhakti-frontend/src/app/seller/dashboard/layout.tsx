@@ -32,53 +32,56 @@ import Logo from "@/components/icons/Logo";
 import { cn } from "@/lib/utils";
 import { fetchSellerProfile } from "@/api/sellerController";
 import { BASE_URL } from "@/config/apiConfig";
+import { clearAllTokens } from "@/lib/auth-utils";
+import { useAdminAuth } from "@/hooks/use-admin-auth";
+import { ShieldCheck } from "lucide-react";
 
 const sellerSidebarGroups = [
     {
         title: "Overview",
         items: [
-            { label: "Dashboard", icon: LayoutDashboard, href: "/seller/dashboard" }
+            { label: "Dashboard", icon: LayoutDashboard, href: "/seller/dashboard", permission: "dashboard.view" }
         ]
     },
     {
         title: "Inventory",
         items: [
-            { label: "Product List", icon: Package, href: "/seller/dashboard/products" },
-            { label: "Add Product", icon: PlusCircle, href: "/seller/dashboard/products/create" }
+            { label: "Product List", icon: Package, href: "/seller/dashboard/products", permission: "products.view" },
+            { label: "Add Product", icon: PlusCircle, href: "/seller/dashboard/products/create", permission: "products.create" }
         ]
     },
     {
         title: "Orders",
         items: [
-            { label: "All Orders", icon: ShoppingBag, href: "/seller/dashboard/orders" },
-            { label: "Pending", icon: Clock, href: "/seller/dashboard/orders?status=pending" },
-            { label: "Accepted", icon: CheckCircle, href: "/seller/dashboard/orders?status=accepted" },
-            { label: "Shipped", icon: Truck, href: "/seller/dashboard/orders?status=shipped" },
-            { label: "Delivered", icon: PackageCheck, href: "/seller/dashboard/orders?status=delivered" },
-            { label: "Cancelled", icon: XCircle, href: "/seller/dashboard/orders?status=cancelled" },
+            { label: "All Orders", icon: ShoppingBag, href: "/seller/dashboard/orders", permission: "products.orders.view" },
+            { label: "Pending", icon: Clock, href: "/seller/dashboard/orders?status=pending", permission: "products.orders.view" },
+            { label: "Accepted", icon: CheckCircle, href: "/seller/dashboard/orders?status=accepted", permission: "products.orders.view" },
+            { label: "Shipped", icon: Truck, href: "/seller/dashboard/orders?status=shipped", permission: "products.orders.view" },
+            { label: "Delivered", icon: PackageCheck, href: "/seller/dashboard/orders?status=delivered", permission: "products.orders.view" },
+            { label: "Cancelled", icon: XCircle, href: "/seller/dashboard/orders?status=cancelled", permission: "products.orders.view" },
+            { label: "Customers", icon: Users, href: "/seller/dashboard/customers", permission: "products.orders.view" },
         ]
     },
     {
-        title: "Business",
+        title: "Team Management",
         items: [
-            { label: "Customers", icon: Users, href: "/seller/dashboard/customers" },
-
-
+            { label: "Staff Members", icon: Users, href: "/seller/dashboard/team/staff", permission: "team.staff.view" },
+            { label: "Roles & Permissions", icon: ShieldCheck, href: "/seller/dashboard/team/roles", permission: "team.roles.manage" }
         ]
     },
     {
         title: "Finance",
         items: [
-            { label: "Transaction Ledger", icon: IndianRupee, href: "/seller/dashboard/payments" },
-            { label: "Withdraw Request", icon: Wallet, href: "/seller/dashboard/payments/withdraw" },
-            { label: "Payout History", icon: CalendarCheck, href: "/seller/dashboard/payments/history" },
-            { label: "Bank Details", icon: Building2, href: "/seller/dashboard/payments/bank-details" }
+            { label: "Transaction Ledger", icon: IndianRupee, href: "/seller/dashboard/payments", permission: "finance.ledger.view" },
+            { label: "Withdraw Request", icon: Wallet, href: "/seller/dashboard/payments/withdraw", permission: "finance.withdrawals.view" },
+            { label: "Payout History", icon: CalendarCheck, href: "/seller/dashboard/payments/history", permission: "finance.withdrawals.view" },
+            { label: "Bank Details", icon: Building2, href: "/seller/dashboard/payments/bank-details", permission: "seller.bank.manage" }
         ]
     },
     {
         title: "Profile",
         items: [
-            { label: "Store Profile", icon: Store, href: "/seller/dashboard/profile" }
+            { label: "Store Profile", icon: Store, href: "/seller/dashboard/profile", permission: "seller.profile.manage" }
         ]
     }
 ];
@@ -87,6 +90,7 @@ function SellerDashboardContent({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
     const router = useRouter();
     const searchParams = useSearchParams();
+    const { hasPermission } = useAdminAuth();
     const [sidebarOpen, setSidebarOpen] = useState(true);
     const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
     const [user, setUser] = useState<any>(null);
@@ -94,8 +98,8 @@ function SellerDashboardContent({ children }: { children: React.ReactNode }) {
 
     useEffect(() => {
         const checkAuth = async () => {
-            const token = localStorage.getItem("seller_token");
-            const storedUser = localStorage.getItem("seller_user");
+            const token = localStorage.getItem("token");
+            const storedUser = localStorage.getItem("user");
 
             if (token && storedUser) {
                 setIsAuthenticated(true);
@@ -119,8 +123,7 @@ function SellerDashboardContent({ children }: { children: React.ReactNode }) {
     }, [router]);
 
     const handleLogout = () => {
-        localStorage.removeItem("seller_token");
-        localStorage.removeItem("seller_user");
+        clearAllTokens();
         router.push("/seller");
     };
 
@@ -185,50 +188,56 @@ function SellerDashboardContent({ children }: { children: React.ReactNode }) {
 
                 {/* Navigation */}
                 <nav className="flex-1 py-6 px-3 space-y-6 overflow-y-auto premium-scrollbar">
-                    {sellerSidebarGroups.map((group, groupIndex) => (
-                        <div key={group.title}>
-                            {sidebarOpen && (
-                                <h3 className="px-3 mb-2 text-[10px] font-black uppercase tracking-widest text-sidebar-foreground/40">
-                                    {group.title}
-                                </h3>
-                            )}
-                            <div className="space-y-1">
-                                {group.items.map((item) => {
-                                    const itemPathname = item.href.split('?')[0];
-                                    const itemStatus = new URLSearchParams(item.href.split('?')[1] || "").get("status");
-                                    const currentStatus = searchParams.get("status");
+                    {sellerSidebarGroups
+                        .map(group => ({
+                            ...group,
+                            items: group.items.filter(item => !item.permission || hasPermission(item.permission))
+                        }))
+                        .filter(group => group.items.length > 0)
+                        .map((group, groupIndex, filteredGroups) => (
+                            <div key={group.title}>
+                                {sidebarOpen && (
+                                    <h3 className="px-3 mb-2 text-[10px] font-black uppercase tracking-widest text-sidebar-foreground/40">
+                                        {group.title}
+                                    </h3>
+                                )}
+                                <div className="space-y-1">
+                                    {group.items.map((item) => {
+                                        const itemPathname = item.href.split('?')[0];
+                                        const itemStatus = new URLSearchParams(item.href.split('?')[1] || "").get("status");
+                                        const currentStatus = searchParams.get("status");
 
-                                    const isActive = pathname === itemPathname && currentStatus === itemStatus;
+                                        const isActive = pathname === itemPathname && currentStatus === itemStatus;
 
-                                    return (
-                                        <Link
-                                            key={item.href}
-                                            href={item.href}
-                                            className={cn(
-                                                "flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 group relative overflow-hidden",
-                                                isActive
-                                                    ? "bg-sidebar-primary text-sidebar-primary-foreground font-medium shadow-sm"
-                                                    : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground"
-                                            )}
-                                        >
-                                            <item.icon
+                                        return (
+                                            <Link
+                                                key={item.href}
+                                                href={item.href}
                                                 className={cn(
-                                                    "w-5 h-5 flex-shrink-0 transition-colors",
-                                                    isActive ? "text-sidebar-primary-foreground" : "text-sidebar-foreground/60 group-hover:text-sidebar-foreground"
+                                                    "flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 group relative overflow-hidden",
+                                                    isActive
+                                                        ? "bg-sidebar-primary text-sidebar-primary-foreground font-medium shadow-sm"
+                                                        : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground"
                                                 )}
-                                            />
-                                            {sidebarOpen && (
-                                                <span className="text-sm">{item.label}</span>
-                                            )}
-                                        </Link>
-                                    );
-                                })}
+                                            >
+                                                <item.icon
+                                                    className={cn(
+                                                        "w-5 h-5 flex-shrink-0 transition-colors",
+                                                        isActive ? "text-sidebar-primary-foreground" : "text-sidebar-foreground/60 group-hover:text-sidebar-foreground"
+                                                    )}
+                                                />
+                                                {sidebarOpen && (
+                                                    <span className="text-sm">{item.label}</span>
+                                                )}
+                                            </Link>
+                                        );
+                                    })}
+                                </div>
+                                {sidebarOpen && groupIndex < filteredGroups.length - 1 && (
+                                    <div className="mx-3 mt-4 h-px bg-sidebar-border/50" />
+                                )}
                             </div>
-                            {sidebarOpen && groupIndex < sellerSidebarGroups.length - 1 && (
-                                <div className="mx-3 mt-4 h-px bg-sidebar-border/50" />
-                            )}
-                        </div>
-                    ))}
+                        ))}
                 </nav>
 
                 {/* User Profile */}
@@ -297,13 +306,15 @@ function SellerDashboardContent({ children }: { children: React.ReactNode }) {
                     </div>
 
                     <div className="flex items-center gap-4">
-                        <Button
-                            onClick={() => router.push('/seller/dashboard/products/create')}
-                            className="bg-sidebar-primary hover:bg-sidebar-primary/90 text-sidebar-primary-foreground gap-2 rounded-full shadow-lg hover:shadow-xl transition-all"
-                        >
-                            <PlusCircle className="w-4 h-4" />
-                            <span className="hidden sm:inline font-bold">Add Product</span>
-                        </Button>
+                        {hasPermission('products.create') && (
+                            <Button
+                                onClick={() => router.push('/seller/dashboard/products/create')}
+                                className="bg-sidebar-primary hover:bg-sidebar-primary/90 text-sidebar-primary-foreground gap-2 rounded-full shadow-lg hover:shadow-xl transition-all"
+                            >
+                                <PlusCircle className="w-4 h-4" />
+                                <span className="hidden sm:inline font-bold">Add Product</span>
+                            </Button>
+                        )}
                         <div className="w-px h-8 bg-slate-200" />
                         <Button variant="ghost" size="icon" className="relative text-slate-400 hover:text-sidebar-primary hover:bg-sidebar-accent rounded-full transition-colors">
                             <Bell className="w-5 h-5" />

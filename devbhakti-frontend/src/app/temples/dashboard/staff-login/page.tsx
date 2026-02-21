@@ -1,0 +1,193 @@
+"use client";
+
+import React, { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Mail, Lock, ArrowRight, ShieldCheck, Landmark, Eye, EyeOff, CheckCircle2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useRouter } from "next/navigation";
+import { staffLogin } from "@/api/templeAdminController";
+import { clearAllTokens } from "@/lib/auth-utils";
+
+export default function TempleStaffLoginPage() {
+    const router = useRouter();
+    const [loading, setLoading] = useState(false);
+    const [showPass, setShowPass] = useState(false);
+    const [form, setForm] = useState({ email: "", password: "" });
+    const [error, setError] = useState("");
+
+    const handleLogin = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setError("");
+        setLoading(true);
+
+        try {
+            const response = await staffLogin(form);
+
+            if (response.success) {
+                // Clear any distinct panel's old sessions to prevent conflict
+                clearAllTokens();
+
+                // Save staff-specific auth data
+                localStorage.setItem("token", response.token);
+                localStorage.setItem("staff_user", JSON.stringify(response.staff));
+                // Also set general 'user' for some shared layout hooks if needed
+                localStorage.setItem("user", JSON.stringify({ ...response.staff, isStaff: true }));
+
+                router.push("/temples/dashboard");
+            } else {
+                setError(response.error || "Login failed. Please check your credentials.");
+            }
+        } catch (err: any) {
+            console.error(err);
+            setError(err.response?.data?.error || "Invalid email or password");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <div className="min-h-screen flex items-center justify-center bg-[#FDFCF6] relative overflow-hidden font-sans">
+            {/* Background Decorations */}
+            <div className="absolute top-0 left-0 w-full h-full pointer-events-none">
+                <div className="absolute -top-24 -right-24 w-96 h-96 bg-primary/5 rounded-full blur-3xl animate-pulse" />
+                <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-secondary/5 rounded-full blur-3xl animate-pulse" />
+            </div>
+
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
+                className="w-full max-w-lg relative z-10 px-6"
+            >
+                <div className="bg-white/80 backdrop-blur-xl rounded-[2.5rem] shadow-2xl shadow-primary/10 border border-primary/10 overflow-hidden">
+                    {/* Top bar */}
+                    <div className="h-3 bg-gradient-to-r from-[#7b4623] via-[#a65d2e] to-[#7b4623]" />
+
+                    <div className="p-8 md:p-12">
+                        {/* Logo & Intro */}
+                        <div className="flex flex-col items-center text-center mb-10">
+                            <motion.div
+                                whileHover={{ rotate: 5, scale: 1.05 }}
+                                className="mb-6 p-4 bg-[#7b4623]/5 rounded-2xl border border-[#7b4623]/10"
+                            >
+                                <ShieldCheck className="w-12 h-12 text-[#7b4623]" />
+                            </motion.div>
+                            <h1 className="text-3xl font-serif font-bold text-slate-900 mb-2">
+                                Temple Staff Login
+                            </h1>
+                            <p className="text-slate-500 max-w-xs mx-auto text-sm">
+                                Administrative access for authorized temple personnel.
+                            </p>
+                        </div>
+
+                        {/* Error Message */}
+                        <AnimatePresence>
+                            {error && (
+                                <motion.div
+                                    initial={{ opacity: 0, x: -10 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    exit={{ opacity: 0, x: 10 }}
+                                    className="mb-8 p-4 bg-red-50 border-l-4 border-red-500 text-red-700 text-sm rounded-r-xl flex items-center gap-3 shadow-sm"
+                                >
+                                    <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                                    <span>{error}</span>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+
+                        {/* Login Form */}
+                        <form onSubmit={handleLogin} className="space-y-6">
+                            <div className="space-y-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="email" className="text-xs font-bold uppercase tracking-widest text-slate-500 ml-1">Official Email</Label>
+                                    <div className="relative group">
+                                        <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-[#7b4623] transition-colors" />
+                                        <Input
+                                            id="email"
+                                            type="email"
+                                            placeholder="officer@temple.com"
+                                            value={form.email}
+                                            onChange={(e) => setForm({ ...form, email: e.target.value })}
+                                            className="h-14 pl-12 bg-white border-slate-200 focus:border-[#7b4623] focus:ring-[#7b4623]/10 rounded-2xl shadow-sm"
+                                            required
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <div className="flex justify-between items-center ml-1">
+                                        <Label htmlFor="password" className="text-xs font-bold uppercase tracking-widest text-slate-500">Secure Password</Label>
+                                    </div>
+                                    <div className="relative group">
+                                        <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-[#7b4623] transition-colors" />
+                                        <Input
+                                            id="password"
+                                            type={showPass ? "text" : "password"}
+                                            placeholder="········"
+                                            value={form.password}
+                                            onChange={(e) => setForm({ ...form, password: e.target.value })}
+                                            className="h-14 pl-12 pr-12 bg-white border-slate-200 focus:border-[#7b4623] focus:ring-[#7b4623]/10 rounded-2xl shadow-sm"
+                                            required
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowPass(!showPass)}
+                                            className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                                        >
+                                            {showPass ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <Button
+                                type="submit"
+                                disabled={loading}
+                                className="w-full h-14 bg-gradient-to-r from-[#7b4623] to-[#a65d2e] hover:from-[#5d351a] hover:to-[#7b4623] text-white rounded-2xl text-lg font-bold shadow-xl shadow-[#7b4623]/20 transition-all hover:scale-[1.02] active:scale-[0.98] mt-4"
+                            >
+                                {loading ? (
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                                        Authenticating...
+                                    </div>
+                                ) : (
+                                    <div className="flex items-center gap-2">
+                                        Enter Digital Panel
+                                        <ArrowRight className="w-5 h-5" />
+                                    </div>
+                                )}
+                            </Button>
+                        </form>
+
+                        <div className="mt-8 text-center">
+                            <button
+                                onClick={() => router.push("/temples/dashboard/login")}
+                                className="text-sm font-bold text-[#7b4623] hover:underline flex items-center justify-center gap-2 mx-auto"
+                            >
+                                <Landmark className="w-4 h-4" />
+                                Not Staff? Login as Temple Owner
+                            </button>
+                        </div>
+                    </div>
+
+                    <div className="p-6 bg-slate-50 border-t border-slate-100 flex items-center justify-center gap-6 opacity-60">
+                        <div className="flex items-center gap-2">
+                            <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                            <span className="text-[10px] font-black uppercase tracking-widest text-slate-600">Encrypted</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                            <span className="text-[10px] font-black uppercase tracking-widest text-slate-600">Secure Node</span>
+                        </div>
+                    </div>
+                </div>
+
+                <p className="mt-8 text-center text-slate-400 text-xs">
+                    &copy; 2026 DevBhakti. Sacred Governance Platform.
+                </p>
+            </motion.div>
+        </div>
+    );
+}

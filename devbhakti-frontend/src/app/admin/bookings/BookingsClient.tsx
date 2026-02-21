@@ -26,6 +26,8 @@ import { Badge } from "@/components/ui/badge";
 import { fetchAllBookingsAdmin, deleteBookingAdmin } from "@/api/adminController";
 import { useToast } from "@/hooks/use-toast";
 import { useDebounce } from "@/hooks/use-debounce";
+import { useAdminAuth } from "@/hooks/use-admin-auth";
+
 
 const statusConfig = {
     BOOKED: { label: "Confirmed", color: "bg-emerald-100 text-emerald-700 border-emerald-200", icon: CheckCircle },
@@ -46,6 +48,8 @@ function BookingsContent() {
     const [loading, setLoading] = useState(true);
     const [selectedBooking, setSelectedBooking] = useState<any | null>(null);
     const { toast } = useToast();
+    const { hasPermission } = useAdminAuth();
+
 
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);

@@ -12,7 +12,7 @@ import {
     updateTempleLiveConfig,
     setPrimaryLive
 } from '../../controllers/admin/templeController';
-import { authenticate, authorize } from '../../middleware/authMiddleware';
+import { authenticate, authorize, checkPermission } from '../../middleware/authMiddleware';
 
 const router = express.Router();
 
@@ -34,21 +34,20 @@ const templeUpload = upload.fields([
     { name: 'heroImages', maxCount: 10 }
 ]);
 
-// All routes here require ADMIN role
+// Authentication is required for all routes
 router.use(authenticate);
-router.use(authorize('ADMIN'));
 
 // Update Request Routes
-router.get('/update-requests', getPendingUpdateRequests);
-router.post('/update-requests/:id/approve', approveUpdateRequest);
-router.post('/update-requests/:id/reject', rejectUpdateRequest);
+router.get('/update-requests', checkPermission('temples.requests_view'), getPendingUpdateRequests);
+router.post('/update-requests/:id/approve', checkPermission('temples.verify'), approveUpdateRequest);
+router.post('/update-requests/:id/reject', checkPermission('temples.verify'), rejectUpdateRequest);
 
-router.get('/', getAllTemples);
-router.post('/', templeUpload, createTemple);
-router.put('/:id', templeUpload, updateTemple);
-router.patch('/:id/status', toggleTempleStatus);
-router.patch('/:id/live-config', updateTempleLiveConfig);
-router.patch('/:id/set-primary-live', setPrimaryLive);
-router.delete('/:id', deleteTemple);
+router.get('/', checkPermission('temples.view'), getAllTemples);
+router.post('/', checkPermission('temples.create'), templeUpload, createTemple);
+router.put('/:id', checkPermission('temples.edit'), templeUpload, updateTemple);
+router.patch('/:id/status', checkPermission('temples.edit'), toggleTempleStatus);
+router.patch('/:id/live-config', checkPermission('temples.edit'), updateTempleLiveConfig);
+router.patch('/:id/set-primary-live', checkPermission('temples.edit'), setPrimaryLive);
+router.delete('/:id', checkPermission('temples.delete'), deleteTemple);
 
 export default router;

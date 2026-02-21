@@ -43,6 +43,9 @@ import sellerFinanceRoutes from './routes/seller/financeRoutes';
 import adminCommissionSlabRoutes from './routes/admin/commissionSlabRoutes';
 import adminUserRoutes from './routes/admin/userRoutes';
 import publicSearchRoutes from './routes/publicSearchRoutes';
+import adminStaffManagementRoutes from './routes/admin/staffManagementRoutes';
+import templeAdminStaffManagementRoutes from './routes/temple_admin/staffManagementRoutes';
+import sellerStaffManagementRoutes from './routes/seller/staffManagementRoutes';
 
 
 dotenv.config();
@@ -75,8 +78,7 @@ app.use('/api/admin/sellers', adminSellerRoutes);
 app.use('/api/admin/dashboard', adminDashboardRoutes);
 app.use('/api/admin/users', adminUserRoutes);
 app.use('/api/admin/commission-slabs', adminCommissionSlabRoutes);
-app.use("/api/admin/donations", adminDonationRoutes);
-app.use("/api/temple-admin/donations", templeDonationRoutes);
+app.use('/api/admin/team', adminStaffManagementRoutes);
 
 
 
@@ -90,9 +92,11 @@ app.use('/api/temple-admin/finance', templeAdminFinanceRoutes);
 app.use('/api/temple-admin/products', templeAdminProductRoutes);
 app.use('/api/temple-admin/bank', templeAdminBankRoutes);
 app.use('/api/temple-admin/devotees', templeAdminDevoteeRoutes);
+app.use('/api/temple-admin/team', templeAdminStaffManagementRoutes);
 app.use('/api/seller/products', sellerProductRoutes);
 app.use('/api/seller/orders', sellerOrderRoutes);
 app.use('/api/seller/finance', sellerFinanceRoutes);
+app.use('/api/seller/team', sellerStaffManagementRoutes);
 app.use('/api/seller', sellerGeneralRoutes);
 
 // Devotee Auth Routes

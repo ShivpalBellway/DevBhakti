@@ -20,7 +20,8 @@ import {
     Flower2,
     Heart,
     ChevronDown,
-    ChevronUp
+    ChevronUp,
+    ShieldCheck
 } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -32,42 +33,61 @@ import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { fetchMyTempleBookings, fetchTempleOrders, fetchMyTempleProfile } from "@/api/templeAdminController";
+import { useAdminAuth } from "@/hooks/use-admin-auth";
+import { clearAllTokens } from "@/lib/auth-utils";
 
 const sidebarItems = [
     {
         label: "Dashboard",
         icon: LayoutDashboard,
         href: "/temples/dashboard",
+        permission: "dashboard.view"
     },
     {
         label: "Poojas ",
         icon: Flower2,
         href: "/temples/dashboard/poojas",
+        permission: "poojas.view"
     },
     {
         label: "Events",
         icon: Calendar,
         href: "/temples/dashboard/events",
+        permission: "events.view"
     },
     {
         label: "Devotee Management",
         icon: Users,
         href: "/temples/dashboard/users",
+        permission: "users.view"
+    },
+    {
+        label: "Team Management",
+        icon: ShieldCheck,
+        href: "/temples/dashboard/team/staff",
+        permission: "team.menu",
+        subItems: [
+            { label: "Staff Members", href: "/temples/dashboard/team/staff" },
+            { label: "Roles & Permissions", href: "/temples/dashboard/team/roles" },
+        ]
     },
     {
         label: "Donations",
         icon: Heart,
         href: "/temples/dashboard/donation",
+        permission: "finance.menu"
     },
     {
         label: "Product Management",
         icon: Package,
         href: "/temples/dashboard/products",
+        permission: "products.menu"
     },
     {
         label: "Order Management",
         icon: ShoppingBag,
         href: "/temples/dashboard/orders",
+        permission: "products.orders.view",
         subItems: [
             { label: "All Orders", href: "/temples/dashboard/orders" },
             { label: "Pending", href: "/temples/dashboard/orders?status=PENDING" },
@@ -81,6 +101,7 @@ const sidebarItems = [
         label: "Pooja Bookings",
         icon: Calendar,
         href: "/temples/dashboard/bookings",
+        permission: "bookings.menu",
         subItems: [
             { label: "All Bookings", href: "/temples/dashboard/bookings" },
             { label: "Booked Poojas", href: "/temples/dashboard/bookings?status=BOOKED" },
@@ -97,16 +118,19 @@ const sidebarItems = [
         label: "Earnings & Settlement",
         icon: CreditCard,
         href: "/temples/dashboard/finance",
+        permission: "finance.menu"
     },
     {
         label: "Bank Details",
         icon: Building2,
         href: "/temples/dashboard/bank",
+        permission: "temple.bank.manage"
     },
     {
         label: "Profile",
         icon: Settings,
         href: "/temples/dashboard/profile",
+        permission: "temple.profile.manage"
     },
 ];
 const SidebarNavItem = ({ item, pathname, sidebarOpen }: { item: any, pathname: string, sidebarOpen: boolean }) => {
@@ -210,8 +234,9 @@ const SidebarNavItem = ({ item, pathname, sidebarOpen }: { item: any, pathname: 
 };
 
 export default function TempleAdminLayout({ children }: { children: React.ReactNode }) {
-    const pathname = usePathname();
     const router = useRouter();
+    const pathname = usePathname();
+    const { hasPermission } = useAdminAuth();
     const [sidebarOpen, setSidebarOpen] = useState(true);
     const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
     const [user, setUser] = useState<any>(null);
@@ -268,12 +293,13 @@ export default function TempleAdminLayout({ children }: { children: React.ReactN
     useEffect(() => {
         const token = localStorage.getItem("token");
         const storedUser = localStorage.getItem("user");
+        const isStaffLoginPath = pathname === "/temples/dashboard/staff-login";
 
-        if (pathname === "/temples/dashboard/login") {
+        if (pathname === "/temples/dashboard/login" || isStaffLoginPath) {
             if (token && storedUser) {
                 try {
                     const u = JSON.parse(storedUser);
-                    if (u.role === "INSTITUTION") {
+                    if (u.role === "INSTITUTION" || u.isStaff) {
                         router.push("/temples/dashboard");
                         setIsAuthenticated(true);
                         setUser(u);
@@ -283,7 +309,7 @@ export default function TempleAdminLayout({ children }: { children: React.ReactN
                     console.error("Auth error", e);
                 }
             }
-            setIsAuthenticated(false);
+            setIsAuthenticated(isStaffLoginPath ? true : false); // Allow rendering for login pages
             return;
         }
 
@@ -295,7 +321,7 @@ export default function TempleAdminLayout({ children }: { children: React.ReactN
 
         try {
             const u = JSON.parse(storedUser);
-            if (u.role !== "INSTITUTION") {
+            if (u.role !== "INSTITUTION" && !u.isStaff) {
                 setIsAuthenticated(false);
                 router.push("/auth?mode=login&type=devotee");
                 return;
@@ -309,13 +335,12 @@ export default function TempleAdminLayout({ children }: { children: React.ReactN
     }, [pathname, router]);
 
     const handleSignOut = () => {
-        localStorage.removeItem("token");
-        localStorage.removeItem("user");
+        clearAllTokens();
         router.push("/temples/dashboard/login");
     };
 
-    // Skip sidebar/layout for login page and print page
-    if (pathname === "/temples/dashboard/login" || pathname === "/temples/dashboard/orders/print") {
+    // Skip sidebar/layout for login page
+    if (pathname === "/temples/dashboard/login") {
         return <>{children}</>;
     }
 
@@ -384,38 +409,40 @@ export default function TempleAdminLayout({ children }: { children: React.ReactN
 
                 {/* Navigation */}
                 <nav className="flex-1 py-4 px-3 space-y-1 overflow-y-auto custom-scrollbar">
-                    {sidebarItems.map((item) => {
-                        // Dynamically inject counts into subItems
-                        let itemWithCounts = { ...item };
-                        if (item.label === "Pooja Bookings" && item.subItems) {
-                            itemWithCounts.subItems = item.subItems.map(sub => {
-                                if (sub.label === "All Bookings") return { ...sub, count: counts.bookings.total };
-                                if (sub.label === "Booked Poojas") return { ...sub, count: counts.bookings.booked };
-                                if (sub.label === "Completed") return { ...sub, count: counts.bookings.completed };
-                                if (sub.label === "Cancelled") return { ...sub, count: counts.bookings.cancelled };
-                                return sub;
-                            });
-                        } else if (item.label === "Order Management" && item.subItems) {
-                            itemWithCounts.subItems = item.subItems.map(sub => {
-                                if (sub.label === "All Orders") return { ...sub, count: counts.orders.total };
-                                if (sub.label === "Pending") return { ...sub, count: counts.orders.pending };
-                                if (sub.label === "Accepted") return { ...sub, count: counts.orders.accepted };
-                                if (sub.label === "Shipped") return { ...sub, count: counts.orders.shipped };
-                                if (sub.label === "Delivered") return { ...sub, count: counts.orders.delivered };
-                                if (sub.label === "Cancelled") return { ...sub, count: counts.orders.cancelled };
-                                return sub;
-                            });
-                        }
+                    {sidebarItems
+                        .filter(item => !item.permission || hasPermission(item.permission))
+                        .map((item) => {
+                            // Dynamically inject counts into subItems
+                            let itemWithCounts = { ...item };
+                            if (item.label === "Pooja Bookings" && item.subItems) {
+                                itemWithCounts.subItems = item.subItems.map(sub => {
+                                    if (sub.label === "All Bookings") return { ...sub, count: counts.bookings.total };
+                                    if (sub.label === "Booked Poojas") return { ...sub, count: counts.bookings.booked };
+                                    if (sub.label === "Completed") return { ...sub, count: counts.bookings.completed };
+                                    if (sub.label === "Cancelled") return { ...sub, count: counts.bookings.cancelled };
+                                    return sub;
+                                });
+                            } else if (item.label === "Order Management" && item.subItems) {
+                                itemWithCounts.subItems = item.subItems.map(sub => {
+                                    if (sub.label === "All Orders") return { ...sub, count: counts.orders.total };
+                                    if (sub.label === "Pending") return { ...sub, count: counts.orders.pending };
+                                    if (sub.label === "Accepted") return { ...sub, count: counts.orders.accepted };
+                                    if (sub.label === "Shipped") return { ...sub, count: counts.orders.shipped };
+                                    if (sub.label === "Delivered") return { ...sub, count: counts.orders.delivered };
+                                    if (sub.label === "Cancelled") return { ...sub, count: counts.orders.cancelled };
+                                    return sub;
+                                });
+                            }
 
-                        return (
-                            <SidebarNavItem
-                                key={item.label}
-                                item={itemWithCounts}
-                                pathname={pathname}
-                                sidebarOpen={sidebarOpen}
-                            />
-                        );
-                    })}
+                            return (
+                                <SidebarNavItem
+                                    key={item.label}
+                                    item={itemWithCounts}
+                                    pathname={pathname}
+                                    sidebarOpen={sidebarOpen}
+                                />
+                            );
+                        })}
                 </nav>
 
                 {/* User section */}

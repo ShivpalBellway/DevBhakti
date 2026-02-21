@@ -3,18 +3,10 @@ import { prisma } from '../../lib/prisma';
 
 export const getMyEvents = async (req: Request, res: Response) => {
     try {
-        const userId = (req as any).user.userId;
-
-        const temple = await prisma.temple.findUnique({
-            where: { userId }
-        });
-
-        if (!temple) {
-            return res.status(404).json({ success: false, message: 'Temple not found' });
-        }
+        const templeId = (req as any).owner.ownerId;
 
         const events = await prisma.event.findMany({
-            where: { templeId: temple.id },
+            where: { templeId },
             include: {
                 Pooja: {
                     select: {
@@ -38,16 +30,8 @@ export const getMyEvents = async (req: Request, res: Response) => {
 
 export const createMyEvent = async (req: Request, res: Response) => {
     try {
-        const userId = (req as any).user.userId;
+        const templeId = (req as any).owner.ownerId;
         const data = req.body;
-
-        const temple = await prisma.temple.findUnique({
-            where: { userId }
-        });
-
-        if (!temple) {
-            return res.status(404).json({ success: false, message: 'Temple not found' });
-        }
 
         // Extract recommended pooja IDs
         const { recommendedPoojaIds, ...eventData } = data;
@@ -57,7 +41,7 @@ export const createMyEvent = async (req: Request, res: Response) => {
                 name: eventData.name,
                 date: eventData.date,
                 description: eventData.description,
-                templeId: temple.id,
+                templeId: templeId,
                 status: eventData.status === false ? false : true,
                 // Connect recommended poojas if provided
                 ...(recommendedPoojaIds && recommendedPoojaIds.length > 0
@@ -91,15 +75,11 @@ export const createMyEvent = async (req: Request, res: Response) => {
 export const updateMyEvent = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
-        const userId = (req as any).user.userId;
+        const templeId = (req as any).owner.ownerId;
         const data = req.body;
 
-        const temple = await prisma.temple.findUnique({
-            where: { userId }
-        });
-
         const existingEvent = await prisma.event.findFirst({
-            where: { id: String(id), templeId: temple?.id }
+            where: { id: String(id), templeId }
         });
 
         if (!existingEvent) {
@@ -148,14 +128,10 @@ export const updateMyEvent = async (req: Request, res: Response) => {
 export const deleteMyEvent = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
-        const userId = (req as any).user.userId;
-
-        const temple = await prisma.temple.findUnique({
-            where: { userId }
-        });
+        const templeId = (req as any).owner.ownerId;
 
         const event = await prisma.event.findFirst({
-            where: { id: String(id), templeId: temple?.id }
+            where: { id: String(id), templeId }
         });
 
         if (!event) {
@@ -173,14 +149,10 @@ export const deleteMyEvent = async (req: Request, res: Response) => {
 export const toggleEventStatus = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
-        const userId = (req as any).user.userId;
-
-        const temple = await prisma.temple.findUnique({
-            where: { userId }
-        });
+        const templeId = (req as any).owner.ownerId;
 
         const event = await prisma.event.findFirst({
-            where: { id: String(id), templeId: temple?.id }
+            where: { id: String(id), templeId }
         });
 
         if (!event) {

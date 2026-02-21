@@ -57,6 +57,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { BASE_URL } from "@/config/apiConfig";
+import { useAdminAuth } from "@/hooks/use-admin-auth";
 
 import {
   fetchAllProductsAdmin,
@@ -80,6 +81,8 @@ export default function ProductsManagementPage() {
   const [selectedOwner, setSelectedOwner] = useState<string>("all");
   const [owners, setOwners] = useState<any[]>([]);
   const { toast } = useToast();
+  const { hasPermission } = useAdminAuth();
+
 
   useEffect(() => {
     loadProducts();
@@ -225,10 +228,12 @@ export default function ProductsManagementPage() {
           <h1 className="text-2xl font-bold tracking-tight text-slate-900">Product Management</h1>
           <p className="text-slate-600">Manage products, variants, and pricing.</p>
         </div>
-        <Button onClick={() => router.push('/admin/products/create')} className="bg-primary">
-          <Plus className="w-4 h-4 mr-2" />
-          Add New Product
-        </Button>
+        {hasPermission("products.create") && (
+          <Button onClick={() => router.push('/admin/products/create')} className="bg-primary">
+            <Plus className="w-4 h-4 mr-2" />
+            Add New Product
+          </Button>
+        )}
       </div>
 
       {/* Stats Cards */}
@@ -467,15 +472,17 @@ export default function ProductsManagementPage() {
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-1">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className={`h-8 w-8  ${product.status === 'approved' ? 'text-amber-600' : 'text-emerald-600'}`}
-                        onClick={() => handleToggleStatus(product.id, product.status)}
-                        title={product.status === 'approved' ? "Set to Pending" : "Approve Product"}
-                      >
-                        {product.status === 'approved' ? <XCircle className="w-4 h-4" /> : <CheckCircle className="w-4 h-4" />}
-                      </Button>
+                      {hasPermission("products.approval") && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className={`h-8 w-8  ${product.status === 'approved' ? 'text-amber-600' : 'text-emerald-600'}`}
+                          onClick={() => handleToggleStatus(product.id, product.status)}
+                          title={product.status === 'approved' ? "Set to Pending" : "Approve Product"}
+                        >
+                          {product.status === 'approved' ? <XCircle className="w-4 h-4" /> : <CheckCircle className="w-4 h-4" />}
+                        </Button>
+                      )}
                       <Button
                         variant="ghost"
                         size="icon"
@@ -488,24 +495,28 @@ export default function ProductsManagementPage() {
                       >
                         <Eye className="w-4 h-4" />
                       </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-blue-600"
-                        onClick={() => router.push(`/admin/products/edit/${product.id}`)}
-                        title="Edit Product"
-                      >
-                        <Edit2 className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-destructive"
-                        onClick={() => handleDelete(product.id)}
-                        title="Delete Product"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
+                      {hasPermission("products.edit") && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-blue-600"
+                          onClick={() => router.push(`/admin/products/edit/${product.id}`)}
+                          title="Edit Product"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </Button>
+                      )}
+                      {hasPermission("products.delete") && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-destructive"
+                          onClick={() => handleDelete(product.id)}
+                          title="Delete Product"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      )}
                     </div>
                   </TableCell>
                 </TableRow>

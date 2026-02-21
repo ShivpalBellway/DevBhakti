@@ -7,21 +7,20 @@ import {
     promoteToMaster,
     togglePoojaStatus
 } from '../../controllers/admin/poojaController';
-import { authenticate, authorize } from '../../middleware/authMiddleware';
+import { authenticate, authorize, checkPermission } from '../../middleware/authMiddleware';
 
 import { uploadPoojaImage } from '../../middleware/uploadMiddleware';
 
 const router = Router();
 
-// All routes here require ADMIN role
+// Authentication is required for all routes
 router.use(authenticate);
-router.use(authorize('ADMIN'));
 
-router.get('/', getAllPoojas);
-router.post('/', uploadPoojaImage.single('image'), createPooja);
-router.put('/:id', uploadPoojaImage.single('image'), updatePooja);
-router.post('/:id/promote', promoteToMaster);
-router.delete('/:id', deletePooja);
-router.patch('/:id/toggle-status', togglePoojaStatus);
+// Applying granular permissions
+router.get('/', checkPermission('poojas.view'), getAllPoojas);
+router.post('/', checkPermission('poojas.create'), uploadPoojaImage.single('image'), createPooja);
+router.put('/:id', checkPermission('poojas.edit'), uploadPoojaImage.single('image'), updatePooja);
+router.post('/:id/promote', checkPermission('poojas.promote'), promoteToMaster);
+router.delete('/:id', checkPermission('poojas.delete'), deletePooja);
 
 export default router;

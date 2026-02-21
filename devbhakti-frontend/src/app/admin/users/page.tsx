@@ -26,6 +26,7 @@ import {
     PaginationNext,
     PaginationPrevious,
 } from "@/components/ui/pagination";
+import { useAdminAuth } from "@/hooks/use-admin-auth";
 
 export default function AdminUsersPage() {
     const [users, setUsers] = useState<any[]>([]);
@@ -42,6 +43,7 @@ export default function AdminUsersPage() {
         newThisMonth: 0,
     });
     const [dateRange, setDateRange] = useState<"all" | "week" | "month" | "year">("all");
+    const { hasPermission } = useAdminAuth();
 
     // Debounce search
     useEffect(() => {
@@ -304,20 +306,24 @@ export default function AdminUsersPage() {
                                             </td>
                                             <td className="p-4 text-right">
                                                 <div className="flex items-center justify-end gap-2">
-                                                    <Button variant="ghost" size="icon" onClick={() => {
-                                                        if (user.role === "INSTITUTION") {
-                                                            window.location.href = `/admin/temples/${user.id}`;
-                                                        } else if (user.role === "SELLER") {
-                                                            window.location.href = `/admin/sellers/view/${user.id}`;
-                                                        } else {
-                                                            window.location.href = `/admin/users/${user.id}`;
-                                                        }
-                                                    }}>
-                                                        <Eye className="w-4 h-4" />
-                                                    </Button>
-                                                    <Button variant="ghost" size="icon">
-                                                        <MoreVertical className="w-4 h-4" />
-                                                    </Button>
+                                                    {hasPermission("users.view") && (
+                                                        <Button variant="ghost" size="icon" onClick={() => {
+                                                            if (user.role === "INSTITUTION") {
+                                                                window.location.href = `/admin/temples/${user.id}`;
+                                                            } else if (user.role === "SELLER") {
+                                                                window.location.href = `/admin/sellers/view/${user.id}`;
+                                                            } else {
+                                                                window.location.href = `/admin/users/${user.id}`;
+                                                            }
+                                                        }}>
+                                                            <Eye className="w-4 h-4" />
+                                                        </Button>
+                                                    )}
+                                                    {hasPermission("users.manage") && (
+                                                        <Button variant="ghost" size="icon">
+                                                            <MoreVertical className="w-4 h-4" />
+                                                        </Button>
+                                                    )}
                                                 </div>
                                             </td>
                                         </motion.tr>

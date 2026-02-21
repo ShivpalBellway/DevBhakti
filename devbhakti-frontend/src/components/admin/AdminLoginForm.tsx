@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Logo from "@/components/icons/Logo";
 import { loginAdmin } from "@/api/adminController";
+import { clearAllTokens } from "@/lib/auth-utils";
 
 const AdminLoginForm: React.FC = () => {
     const router = useRouter();
@@ -27,6 +28,9 @@ const AdminLoginForm: React.FC = () => {
 
         try {
             const data = await loginAdmin(formData);
+
+            // Clear any conflicting sessions
+            clearAllTokens();
 
             // Store token and user info simply in localStorage
             localStorage.setItem("admin_token", data.token);
