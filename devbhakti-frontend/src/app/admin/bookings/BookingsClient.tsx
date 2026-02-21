@@ -113,6 +113,22 @@ function BookingsContent() {
         loadBookings(currentPage);
     }, [debouncedSearch, statusFilter, dateRange, customStartDate, customEndDate, currentPage]);
 
+    const handleDelete = async (id: string) => {
+        if (!confirm("Are you sure you want to delete this booking?")) return;
+        try {
+            const res = await deleteBookingAdmin(id);
+            if (res && res.success) {
+                toast({ title: "Success", description: "Booking deleted successfully" });
+                loadBookings(currentPage);
+            } else {
+                toast({ title: "Error", description: res?.message || "Failed to delete booking", variant: "destructive" });
+            }
+        } catch (error) {
+            console.error("Delete Error:", error);
+            toast({ title: "Error", description: "An unexpected error occurred", variant: "destructive" });
+        }
+    };
+
     return (
         <div className="space-y-6">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -193,7 +209,16 @@ function BookingsContent() {
                                             </Badge>
                                         </td>
                                         <td className="p-4 text-right">
-                                            <Button variant="ghost" size="icon" onClick={() => setSelectedBooking(booking)} className="h-8 w-8 rounded-lg"><Eye className="w-4 h-4" /></Button>
+                                            <div className="flex items-center justify-end gap-2">
+                                                <Button variant="ghost" size="icon" onClick={() => setSelectedBooking(booking)} className="h-8 w-8 rounded-lg">
+                                                    <Eye className="w-4 h-4" />
+                                                </Button>
+                                                {hasPermission('bookings.delete') && (
+                                                    <Button variant="ghost" size="icon" onClick={() => handleDelete(booking.id)} className="h-8 w-8 rounded-lg text-rose-500 hover:text-rose-600 hover:bg-rose-50">
+                                                        <Trash2 className="w-4 h-4" />
+                                                    </Button>
+                                                )}
+                                            </div>
                                         </td>
                                     </tr>
                                 );

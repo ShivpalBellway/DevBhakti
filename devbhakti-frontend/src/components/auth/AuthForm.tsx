@@ -29,6 +29,7 @@ const AuthForm: React.FC = () => {
   const [showOtpInput, setShowOtpInput] = useState(false);
   const [receivedOtp, setReceivedOtp] = useState(""); // For development
   const [loading, setLoading] = useState(false);
+  const [resendTimer, setResendTimer] = useState(0);
 
   const [otp, setOtp] = useState("");
   const [formData, setFormData] = useState({
@@ -45,6 +46,42 @@ const AuthForm: React.FC = () => {
       const file = e.target.files[0];
       setProfileImage(file);
       setImagePreview(URL.createObjectURL(file));
+    }
+  };
+
+  React.useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (resendTimer > 0) {
+      interval = setInterval(() => {
+        setResendTimer((prev) => prev - 1);
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [resendTimer]);
+
+  const handleResendOTP = async () => {
+    if (resendTimer > 0 || loading) return;
+    setLoading(true);
+    try {
+      const normalizedPhone = formData.phone.replace(/\D/g, '');
+      const response = await sendOTP({
+        phone: normalizedPhone,
+        role: "DEVOTEE",
+        mode
+      });
+      setResendTimer(60); // 60 seconds cooldown
+      if (response.data?.otp) {
+        setReceivedOtp(response.data.otp);
+      }
+      toast({ title: "OTP Sent", description: "A new OTP has been sent to your phone." });
+    } catch (error: any) {
+      toast({
+        title: "OTP Failed",
+        description: error.response?.data?.message || "Failed to resend OTP",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -65,6 +102,7 @@ const AuthForm: React.FC = () => {
         mode
       });
       setShowOtpInput(true);
+      setResendTimer(60);
       if (response.data?.otp) {
         setReceivedOtp(response.data.otp);
       }
@@ -328,13 +366,28 @@ const AuthForm: React.FC = () => {
                   {!loading && <ArrowRight className="w-5 h-5 ml-2" />}
                 </Button>
 
-                <button
-                  type="button"
-                  onClick={() => setShowOtpInput(false)}
-                  className="w-full text-sm text-white/50 hover:text-primary transition-colors font-medium"
-                >
-                  Change Phone Number
-                </button>
+                <div className="flex flex-col items-center gap-4 pt-2">
+                  <button
+                    type="button"
+                    onClick={handleResendOTP}
+                    disabled={resendTimer > 0 || loading}
+                    className={`text-sm font-semibold transition-colors ${resendTimer > 0 ? "text-slate-400 cursor-not-allowed" : "text-primary hover:text-primary/80"}`}
+                  >
+                    {resendTimer > 0 ? `Resend OTP in ${resendTimer}s` : "Resend OTP"}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowOtpInput(false);
+                      setOtp("");
+                    }}
+                    className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700 transition-colors font-medium border-b border-slate-200 pb-0.5"
+                  >
+                    <ArrowLeft className="w-3.5 h-3.5" />
+                    Change Phone Number
+                  </button>
+                </div>
               </div>
             </form>
           )}
