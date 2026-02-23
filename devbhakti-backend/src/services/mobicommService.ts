@@ -3,6 +3,7 @@ import axios from 'axios';
 // Configuration from environment variables
 const MOBICOMM_USER = process.env.MOBICOMM_USER;
 const MOBICOMM_PASSWORD = process.env.MOBICOMM_PASSWORD;
+const MOBICOMM_API_KEY = process.env.MOBICOMM_API_KEY;
 const MOBICOMM_SENDER_ID = process.env.MOBICOMM_SENDER_ID;
 const MOBICOMM_ENTITY_ID = process.env.MOBICOMM_ENTITY_ID; // PE Id
 const MOBICOMM_TEMPLATE_ID = process.env.MOBICOMM_TEMPLATE_ID; // Template Id
@@ -20,8 +21,13 @@ const MOBICOMM_URL = 'https://api.dovesoft.io/api/sendsms';
  */
 export const sendSMS = async (phone: string, message: string, templateId?: string): Promise<boolean> => {
     // 1. Check if credentials exist
-    if (!MOBICOMM_USER || !MOBICOMM_PASSWORD || !MOBICOMM_SENDER_ID) {
-        console.warn('[Mobicomm] Missing credentials in .env. Skipping SMS send.');
+    if (!MOBICOMM_API_KEY && (!MOBICOMM_USER || !MOBICOMM_PASSWORD)) {
+        console.warn('[Mobicomm] Missing credentials (API Key or User/Pass) in .env. Skipping SMS send.');
+        return false;
+    }
+
+    if (!MOBICOMM_SENDER_ID) {
+        console.warn('[Mobicomm] Missing Sender ID in .env. Skipping SMS send.');
         return false;
     }
 
@@ -32,14 +38,20 @@ export const sendSMS = async (phone: string, message: string, templateId?: strin
 
         // 3. Prepare query parameters for Dovesoft HTTP API
         const params: any = {
-            user: MOBICOMM_USER,
-            password: MOBICOMM_PASSWORD,
             mobiles: formattedPhone,
             sms: message,
             senderid: MOBICOMM_SENDER_ID,
             entityid: MOBICOMM_ENTITY_ID,
             tempid: templateId || MOBICOMM_TEMPLATE_ID,
         };
+
+        // Add authentication
+        if (MOBICOMM_API_KEY) {
+            params.key = MOBICOMM_API_KEY;
+        } else {
+            params.user = MOBICOMM_USER;
+            params.password = MOBICOMM_PASSWORD;
+        }
 
         console.log(`[Mobicomm] Sending SMS via Dovesoft...`);
         console.log(`[Mobicomm] Destination: ${formattedPhone}`);

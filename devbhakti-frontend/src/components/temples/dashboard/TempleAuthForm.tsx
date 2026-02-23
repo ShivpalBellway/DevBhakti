@@ -15,7 +15,6 @@ import { clearAllTokens } from "@/lib/auth-utils";
 const TempleAuthForm: React.FC = () => {
     const router = useRouter();
     const [showOtpInput, setShowOtpInput] = useState(false);
-    const [receivedOtp, setReceivedOtp] = useState(""); // For development
     const [loading, setLoading] = useState(false);
     const [otp, setOtp] = useState("");
     const [phone, setPhone] = useState("");
@@ -29,9 +28,6 @@ const TempleAuthForm: React.FC = () => {
         try {
             const response = await sendOTP({ phone: normalizedPhone, role: "INSTITUTION" });
             setShowOtpInput(true);
-            if (response.data?.otp) {
-                setReceivedOtp(response.data.otp);
-            }
         } catch (error: any) {
             setError(error.response?.data?.message || "Failed to send OTP. Please try again.");
         } finally {
@@ -165,16 +161,6 @@ const TempleAuthForm: React.FC = () => {
                             </form>
                         ) : (
                             <form onSubmit={handleVerifyOTP} className="space-y-6">
-                                {receivedOtp && (
-                                    <motion.div
-                                        initial={{ scale: 0.9, opacity: 0 }}
-                                        animate={{ scale: 1, opacity: 1 }}
-                                        className="p-4 bg-[#7b4623]/5 border border-[#7b4623]/10 rounded-2xl text-center"
-                                    >
-                                        <p className="text-xs font-semibold text-[#7b4623] uppercase tracking-widest mb-1">Development OTP</p>
-                                        <p className="text-2xl font-bold text-[#7b4623] tracking-[0.5em]">{receivedOtp}</p>
-                                    </motion.div>
-                                )}
 
                                 <div className="space-y-3">
                                     <div className="flex justify-between items-center ml-1">

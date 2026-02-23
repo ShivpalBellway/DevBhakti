@@ -46,6 +46,7 @@ import { useDebounce } from "@/hooks/use-debounce";
 import { API_URL } from "@/config/apiConfig";
 import { generateReceiptHTML } from "@/utils/donationReceipt";
 import { Download } from "lucide-react";
+import axios from "axios";
 
 const statusConfig = {
     SUCCESS: {
@@ -101,8 +102,8 @@ export default function DonationClient() {
                 status: statusFilter
             });
 
-            const response = await fetch(`${API_URL}/admin/donations?${query}`);
-            const data = await response.json();
+            const response = await axios.get(`${API_URL}/admin/donations?${query}`, { validateStatus: () => true });
+            const data = response.data;
 
             if (data.success) {
                 setDonations(data.data);
@@ -119,8 +120,8 @@ export default function DonationClient() {
 
     const fetchStats = async () => {
         try {
-            const response = await fetch(`${API_URL}/admin/donations/stats`);
-            const data = await response.json();
+            const response = await axios.get(`${API_URL}/admin/donations/stats`, { validateStatus: () => true });
+            const data = response.data;
             if (data.success) {
                 setStats(data.data);
             }
@@ -161,10 +162,8 @@ export default function DonationClient() {
     const handleDelete = async (id: string) => {
         if (!confirm("Are you sure you want to delete this record?")) return;
         try {
-            const response = await fetch(`${API_URL}/admin/donations/${id}`, {
-                method: "DELETE"
-            });
-            const data = await response.json();
+            const response = await axios.delete(`${API_URL}/admin/donations/${id}`, { validateStatus: () => true });
+            const data = response.data;
             if (data.success) {
                 setDonations(donations.filter(d => d.id !== id));
                 toast({ title: "Success", description: "Donation record removed" });

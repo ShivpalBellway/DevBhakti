@@ -151,7 +151,7 @@ export const sendOTP = async (req: Request, res: Response) => {
         }
 
         // Send OTP via Mobicomm SMS
-        const message = `Welcome to DevBhakti. Verify your mobile number using OTP ${otp}. Valid for 5 minutes.`;
+        const message = `Your OTP for DevBhakti login is ${otp}. Valid for 5 minutes. Do not share this code with anyone. `;
         const smsSent = await sendSMS(normalizedPhone, message);
 
         if (smsSent) {
@@ -161,7 +161,7 @@ export const sendOTP = async (req: Request, res: Response) => {
         }
 
 
-        res.json({ success: true, message: 'OTP sent successfully', data: { phone: normalizedPhone, otp } });
+        res.json({ success: true, message: 'OTP sent successfully', data: { phone: normalizedPhone } });
 
     } catch (error: any) {
         console.error('Error in sendOTP:', error);

@@ -18,7 +18,6 @@ export default function TempleLoginModal({ onClose }: TempleLoginModalProps) {
     const router = useRouter();
     const { toast } = useToast();
     const [showOtpInput, setShowOtpInput] = useState(false);
-    const [receivedOtp, setReceivedOtp] = useState(""); // For development
     const [loading, setLoading] = useState(false);
     const [otp, setOtp] = useState("");
     const [phone, setPhone] = useState("");
@@ -32,9 +31,6 @@ export default function TempleLoginModal({ onClose }: TempleLoginModalProps) {
         try {
             const response = await sendOTP({ phone: normalizedPhone, role: "INSTITUTION" });
             setShowOtpInput(true);
-            if (response.data?.otp) {
-                setReceivedOtp(response.data.otp);
-            }
         } catch (error: any) {
             setError(error.response?.data?.message || "Failed to send OTP. Please try again.");
         } finally {
@@ -136,12 +132,6 @@ export default function TempleLoginModal({ onClose }: TempleLoginModalProps) {
                     </form>
                 ) : (
                     <form onSubmit={handleVerifyOTP} className="space-y-6">
-                        {receivedOtp && (
-                            <div className="p-3 bg-emerald-50 border border-emerald-100 rounded-xl text-center mb-4">
-                                <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest">Test Code</p>
-                                <p className="text-xl font-black text-emerald-700 tracking-widest">{receivedOtp}</p>
-                            </div>
-                        )}
 
                         <div className="space-y-2">
                             <div className="flex justify-between items-center ml-1">

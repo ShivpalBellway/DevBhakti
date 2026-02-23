@@ -33,6 +33,8 @@ import { useDebounce } from "@/hooks/use-debounce";
 
 import { fetchMyTempleProfile } from "@/api/templeAdminController";
 import { generateReceiptHTML } from "@/utils/donationReceipt";
+import { API_URL } from "@/config/apiConfig";
+import axios from "axios";
 
 const statusConfig = {
     SUCCESS: {
@@ -94,8 +96,8 @@ export default function DonationClient() {
                 limit: "100" // For now simplified
             });
 
-            const response = await fetch(`${API_URL}/temple-admin/donations/${templeId}?${query}`);
-            const data = await response.json();
+            const response = await axios.get(`${API_URL}/temple-admin/donations/${templeId}?${query}`, { validateStatus: () => true });
+            const data = response.data;
 
             if (data.success) {
                 setDonations(data.data);
@@ -110,8 +112,8 @@ export default function DonationClient() {
     const fetchStats = async () => {
         if (!templeId) return;
         try {
-            const response = await fetch(`${API_URL}/temple-admin/donations/${templeId}/stats`);
-            const data = await response.json();
+            const response = await axios.get(`${API_URL}/temple-admin/donations/${templeId}/stats`, { validateStatus: () => true });
+            const data = response.data;
             if (data.success) {
                 const s = data.data;
                 setStats(prev => ({
@@ -136,7 +138,7 @@ export default function DonationClient() {
     const handlePrintReceipt = (donation: any) => {
         const html = generateReceiptHTML({
             ...donation,
-            templeName: profiles?.name || "Temple" // Assuming profile data has temple name
+            templeName: donation.templeName || "Temple" // Assuming profile data has temple name
         });
         const printWindow = window.open('', '_blank');
         if (printWindow) {

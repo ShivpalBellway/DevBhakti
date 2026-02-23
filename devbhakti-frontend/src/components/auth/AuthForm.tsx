@@ -27,7 +27,6 @@ const AuthForm: React.FC = () => {
   const [userType, setUserType] = useState<"devotee" | "institution">(initialType);
 
   const [showOtpInput, setShowOtpInput] = useState(false);
-  const [receivedOtp, setReceivedOtp] = useState(""); // For development
   const [loading, setLoading] = useState(false);
   const [resendTimer, setResendTimer] = useState(0);
 
@@ -70,9 +69,6 @@ const AuthForm: React.FC = () => {
         mode
       });
       setResendTimer(60); // 60 seconds cooldown
-      if (response.data?.otp) {
-        setReceivedOtp(response.data.otp);
-      }
       toast({ title: "OTP Sent", description: "A new OTP has been sent to your phone." });
     } catch (error: any) {
       toast({
@@ -103,9 +99,6 @@ const AuthForm: React.FC = () => {
       });
       setShowOtpInput(true);
       setResendTimer(60);
-      if (response.data?.otp) {
-        setReceivedOtp(response.data.otp);
-      }
 
 
 
@@ -333,13 +326,6 @@ const AuthForm: React.FC = () => {
             </form>
           ) : (
             <form onSubmit={handleVerifyOTP} className="space-y-5">
-              {receivedOtp && (
-                <div className="p-4 bg-primary/5 border border-primary/10 rounded-2xl text-center mb-6">
-                  <p className="text-sm font-medium text-slate-900">
-                    Development OTP: <span className="text-xl font-bold tracking-widest ml-1 text-primary">{receivedOtp}</span>
-                  </p>
-                </div>
-              )}
               <div className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="otp" className="text-slate-700 ml-1">Enter 6-digit OTP</Label>

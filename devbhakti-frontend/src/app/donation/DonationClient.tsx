@@ -46,6 +46,7 @@ interface Temple {
 const suggestedAmounts = [101, 251, 501, 1100, 2100, 5001, 11000, 21000];
 import { fetchPublicTemples } from "@/api/publicController";
 import { API_URL } from "@/config/apiConfig";
+import axios from "axios";
 
 declare global {
     interface Window {
@@ -151,25 +152,21 @@ function DonationForm() {
             const user = savedUser ? JSON.parse(savedUser) : null;
 
             // 1. Initiate Donation with Backend
-            const initiateRes = await fetch(`${API_URL}/donations`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    templeId: selectedTemple,
-                    amount: parseFloat(finalAmount),
-                    donorName: formData.name,
-                    donorPhone: formData.phone,
-                    donorEmail: formData.email,
-                    isAnonymous,
-                    is80GRequired,
-                    panNumber: formData.pan,
-                    address: formData.address,
-                    message: formData.message,
-                    userId: user?.id
-                })
-            });
+            const initiateRes = await axios.post(`${API_URL}/donations`, {
+                templeId: selectedTemple,
+                amount: parseFloat(finalAmount),
+                donorName: formData.name,
+                donorPhone: formData.phone,
+                donorEmail: formData.email,
+                isAnonymous,
+                is80GRequired,
+                panNumber: formData.pan,
+                address: formData.address,
+                message: formData.message,
+                userId: user?.id
+            }, { validateStatus: () => true });
 
-            const initiateData = await initiateRes.json();
+            const initiateData = initiateRes.data;
 
             if (!initiateData.success) {
                 if (initiateData.message?.includes("token") || initiateRes.status === 401) {
@@ -191,21 +188,17 @@ function DonationForm() {
                 handler: async function (response: any) {
                     try {
                         // 3. Verify Payment
-                        const verifyRes = await fetch(`${API_URL}/payments/verify`, {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({
-                                razorpay_order_id: response.razorpay_order_id,
-                                razorpay_payment_id: response.razorpay_payment_id,
-                                razorpay_signature: response.razorpay_signature,
-                                orderType: "DONATION",
-                                referenceId: initiateData.donationId, // Using donationId as reference
-                                orderData: { donationId: initiateData.donationId },
-                                userId: user?.id
-                            })
-                        });
+                        const verifyRes = await axios.post(`${API_URL}/payments/verify`, {
+                            razorpay_order_id: response.razorpay_order_id,
+                            razorpay_payment_id: response.razorpay_payment_id,
+                            razorpay_signature: response.razorpay_signature,
+                            orderType: "DONATION",
+                            referenceId: initiateData.donationId, // Using donationId as reference
+                            orderData: { donationId: initiateData.donationId },
+                            userId: user?.id
+                        }, { validateStatus: () => true });
 
-                        const verifyData = await verifyRes.json();
+                        const verifyData = verifyRes.data;
 
                         if (verifyData.success) {
                             setTransactionId(response.razorpay_payment_id);
