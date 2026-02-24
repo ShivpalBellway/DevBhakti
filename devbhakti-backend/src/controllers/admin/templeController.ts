@@ -1,6 +1,8 @@
 import { Request, Response } from 'express';
 import { PrismaClient, UserRole, BookingStatus, SlabType, CommissionCategory, LedgerStatus } from '@prisma/client';
 import bcrypt from 'bcrypt';
+import { createShiprocketPickupLocation } from '../../services/shiprocketService';
+import { parseLocation, extractPincode } from '../../lib/shiprocketUtils';
 
 const prisma = new PrismaClient();
 
@@ -197,6 +199,7 @@ export const createTemple = async (req: Request, res: Response) => {
               slug: data.slug || undefined,
               subdomain: data.subdomain || undefined, // Added
               urlType: data.urlType || 'slug', // Added
+              pickupLocation: `TEMPLE_${Math.random().toString(36).substring(2, 7).toUpperCase()}`,
               isActive: data.isActive === 'true',
               liveStatus: data.liveStatus === 'true',
               productCommissionRate: data.productCommissionRate ? parseFloat(data.productCommissionRate) : 10.0,
@@ -250,6 +253,30 @@ export const createTemple = async (req: Request, res: Response) => {
 
       return user;
     });
+
+    // Register Pickup Location with Shiprocket
+    try {
+      if (result.temple) {
+        const { city, state } = parseLocation(data.location || "");
+        const pincode = extractPincode(data.fullAddress || "");
+
+        const pickupData = {
+          pickup_location: result.temple.pickupLocation,
+          name: data.name,
+          email: data.email,
+          phone: result.phone,
+          address: data.fullAddress || '',
+          city: city || "Delhi",
+          state: state || "Delhi",
+          country: "India",
+          pin_code: pincode || "110001"
+        };
+        await createShiprocketPickupLocation(pickupData);
+        console.log("Shiprocket Pickup Location Created Successfully for Temple from Admin");
+      }
+    } catch (srError) {
+      console.error("Failed to create Shiprocket Pickup Location for Temple from Admin:", srError);
+    }
 
     res.status(201).json(result);
   } catch (error: any) {
@@ -438,6 +465,38 @@ export const updateTemple = async (req: Request, res: Response) => {
       maxWait: 10000,
       timeout: 20000
     });
+
+    // Sync with Shiprocket if address or location changed
+    if (data.fullAddress || data.location || data.phone || data.templePhone) {
+      try {
+        if (result.temple) {
+          const { city, state } = parseLocation(data.location || result.temple.location || "");
+          const pincode = extractPincode(data.fullAddress || result.temple.fullAddress || "");
+
+          let pickupLoc = result.temple.pickupLocation;
+          if (!pickupLoc) {
+            pickupLoc = `TEMPLE_${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
+            await prisma.temple.update({ where: { id: result.temple.id }, data: { pickupLocation: pickupLoc } });
+          }
+
+          const pickupData = {
+            pickup_location: pickupLoc,
+            name: result.temple.name,
+            email: result.email || "",
+            phone: data.phone || result.phone,
+            address: data.fullAddress || result.temple.fullAddress || '',
+            city: city || "Delhi",
+            state: state || "Delhi",
+            country: "India",
+            pin_code: pincode || "110001"
+          };
+          await createShiprocketPickupLocation(pickupData);
+          console.log("Shiprocket Pickup Location Updated Successfully for Temple from Admin");
+        }
+      } catch (srError) {
+        console.error("Shiprocket update sync error for Admin Temple:", srError);
+      }
+    }
 
     res.json(result);
   } catch (error: any) {

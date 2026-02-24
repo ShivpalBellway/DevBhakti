@@ -239,7 +239,7 @@ export const createVerifiedOrder = async (orderData: any, userId: string) => {
           order_date: new Date().toISOString().split('T')[0],
           pickup_location: pickupLocation,
           billing_customer_name: shippingAddr.fullName || orderWithUser?.user?.name || "Customer",
-          billing_last_name: "",
+          billing_last_name: "Customer",
           billing_address: shippingAddr.street || "N/A",
           billing_city: shippingAddr.city || "N/A",
           billing_pincode: shippingAddr.pincode || "000000",
@@ -263,7 +263,7 @@ export const createVerifiedOrder = async (orderData: any, userId: string) => {
           payment_method: paymentMethod === "COD" ? "COD" : "Prepaid",
           sub_total: subOrderTotal,
           length: Math.max(...groupItems.map(item => productMap.get(item.productId)?.length || 10)),
-          width: Math.max(...groupItems.map(item => productMap.get(item.productId)?.width || 10)),
+          breadth: Math.max(...groupItems.map(item => productMap.get(item.productId)?.width || 10)),
           height: Math.max(...groupItems.map(item => productMap.get(item.productId)?.height || 10)),
           weight: groupItems.reduce((sum, item) => sum + ((productMap.get(item.productId)?.weight || 0.5) * item.quantity), 0)
         };
@@ -375,6 +375,8 @@ export const getOrderInvoice = async (req: Request, res: Response) => {
       include: {
         subOrders: {
           include: {
+            temple: { select: { name: true, fullAddress: true } },
+            seller: { select: { name: true, fullAddress: true } },
             items: {
               include: {
                 product: {
@@ -409,25 +411,16 @@ export const getOrderInvoice = async (req: Request, res: Response) => {
         <head>
             <meta charset="UTF-8">
             <title>Invoice #${order.id.slice(-8).toUpperCase()}</title>
-            <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+            <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
             <style>
-                :root {
-                    --primary: #794A05;
-                    --primary-light: #FFF8EB;
-                    --text-main: #1e293b;
-                    --text-muted: #64748b;
-                    --border: #e2e8f0;
-                }
                 body { 
-                    font-family: 'Inter', sans-serif; 
-                    background: #f8fafc; 
+                    font-family: 'Roboto', sans-serif; 
                     margin: 0; 
                     padding: 0; 
-                    color: var(--text-main); 
+                    color: #333; 
                     -webkit-print-color-adjust: exact; 
+                    background: #f1f5f9;
                 }
-                
-                /* Action Bar for Screen Only */
                 .action-bar {
                     background: white;
                     padding: 16px;
@@ -438,7 +431,7 @@ export const getOrderInvoice = async (req: Request, res: Response) => {
                     display: flex;
                     justify-content: center;
                     gap: 16px;
-                    border-bottom: 1px solid var(--border);
+                    border-bottom: 1px solid #e2e8f0;
                 }
                 .btn {
                     display: inline-flex;
@@ -447,306 +440,305 @@ export const getOrderInvoice = async (req: Request, res: Response) => {
                     padding: 10px 24px;
                     border-radius: 8px;
                     font-weight: 600;
-                    font-size: 14px;
                     cursor: pointer;
-                    transition: all 0.2s;
-                    border: none;
-                    text-decoration: none;
                 }
-                .btn-print {
-                    background: white;
-                    color: var(--text-main);
-                    border: 1px solid var(--border);
-                }
-                .btn-print:hover { background: #f1f5f9; }
-                .btn-download {
-                    background: var(--primary);
-                    color: white;
-                    box-shadow: 0 4px 6px -1px rgba(121, 74, 5, 0.2);
-                }
-                .btn-download:hover { background: #5d3904; transform: translateY(-1px); }
-
-                /* Invoice Container */
+                .btn-print { background: #794A05; color: white; border: none; }
+                .action-bar.no-print { display: flex; }
+                
                 .page {
                     background: white;
-                    max-width: 800px;
+                    width: 210mm;
+                    min-height: 297mm;
                     margin: 40px auto;
-                    padding: 48px;
-                    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-                    border-radius: 12px;
+                    padding: 30px;
+                    box-sizing: border-box;
+                    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
                 }
-
-                /* Header */
-                .header {
-                    display: flex;
-                    justify-content: space-between;
-                    margin-bottom: 48px;
-                    padding-bottom: 24px;
-                    border-bottom: 2px solid var(--border);
+                
+                .logo-section {
+                    text-align: center;
+                    margin-bottom: 15px;
                 }
-                .brand h1 {
-                    font-size: 28px;
-                    font-weight: 800;
-                    color: var(--primary);
-                    margin: 0;
-                    letter-spacing: -0.5px;
+                .logo-section img {
+                    height: 50px;
+                    margin-bottom: 5px;
                 }
-                .brand p {
-                    margin: 4px 0 0;
-                    color: var(--text-muted);
-                    font-size: 14px;
+                .logo-title {
+                    font-size: 20px;
+                    font-weight: 700;
+                    color: #794A05;
                 }
-                .invoice-meta {
-                    text-align: right;
+                
+                .invoice-title-wrapper {
+                    text-align: center;
+                    border-bottom: 2px solid #ccc;
+                    padding-bottom: 15px;
+                    margin-bottom: 25px;
                 }
-                .invoice-meta h2 {
-                    font-size: 32px;
-                    font-weight: 300;
-                    color: var(--text-main);
-                    margin: 0;
-                    letter-spacing: 2px;
-                }
-                .meta-group {
-                    margin-top: 8px;
-                }
-                .meta-label {
-                    color: var(--text-muted);
-                    font-size: 12px;
-                    text-transform: uppercase;
-                    letter-spacing: 0.5px;
-                    font-weight: 600;
-                }
-                .meta-value {
-                    font-weight: 600;
-                    color: var(--text-main);
-                    font-size: 15px;
-                }
-
-                /* Address Section */
-                .addresses {
-                    display: grid;
-                    grid-template-columns: 1fr 1fr;
-                    gap: 48px;
-                    margin-bottom: 48px;
-                }
-                .address-card h3 {
-                    font-size: 12px;
-                    text-transform: uppercase;
+                .invoice-title {
+                    font-size: 22px;
+                    font-weight: 500;
                     letter-spacing: 1px;
-                    color: var(--text-muted);
-                    margin-bottom: 12px;
-                    font-weight: 700;
+                    text-transform: uppercase;
                 }
-                .address-content {
-                    font-size: 14px;
-                    line-height: 1.6;
+                
+                .grid-3 {
+                    display: grid;
+                    grid-template-columns: 1fr 1fr 1fr;
+                    gap: 15px;
+                    margin-bottom: 30px;
+                    font-size: 11px;
                 }
-                .address-name {
+                
+                .column h4 {
+                    font-size: 11px;
                     font-weight: 700;
-                    color: var(--text-main);
+                    margin: 0 0 10px 0;
+                    text-transform: uppercase;
+                }
+                
+                .column-content {
+                    line-height: 1.5;
+                }
+                
+                .col-border {
+                    border-left: 1px dashed #ccc;
+                    padding-left: 15px;
+                }
+                
+                .detail-row {
+                    display: flex;
                     margin-bottom: 4px;
-                    display: block;
                 }
-
-                /* Table */
-                table {
+                .detail-label {
+                    width: 85px;
+                    font-weight: 700;
+                    text-transform: uppercase;
+                    font-size: 10px;
+                }
+                .detail-value {
+                    flex: 1;
+                }
+                
+                table.items {
                     width: 100%;
                     border-collapse: collapse;
-                    margin-bottom: 40px;
+                    margin-bottom: 20px;
+                    font-size: 10px;
                 }
-                th {
-                    text-align: left;
-                    font-size: 11px;
+                table.items th {
+                    text-align: center;
                     text-transform: uppercase;
-                    letter-spacing: 1px;
-                    color: var(--text-muted);
-                    padding: 16px 8px;
-                    border-bottom: 1px solid var(--border);
-                    background: #f8fafc;
+                    padding: 6px 4px;
+                    border-top: 1px solid #eee;
+                    border-bottom: 1px solid #ccc;
+                    font-weight: 700;
                 }
-                td {
-                    padding: 16px 8px;
-                    border-bottom: 1px solid var(--border);
-                    font-size: 14px;
-                    vertical-align: top;
+                table.items td {
+                    padding: 10px 4px;
+                    text-align: center;
+                    border-bottom: 1px solid #eee;
                 }
-                .item-main {
-                    font-weight: 600;
-                    color: var(--text-main);
+                table.items td.text-left, table.items th.text-left {
+                    text-align: left;
                 }
-                .item- sub {
-                    font-size: 12px;
-                    color: var(--text-muted);
-                    margin-top: 2px;
+                table.items td.text-right, table.items th.text-right {
+                    text-align: right;
                 }
-
-                /* Totals */
-                .totals {
-                    display: flex;
-                    justify-content: flex-end;
-                }
-                .totals-box {
-                    width: 320px;
-                    background: #f8fafc;
-                    padding: 24px;
-                    border-radius: 8px;
-                }
-                .total-row {
+                
+                .totals-section {
                     display: flex;
                     justify-content: space-between;
-                    margin-bottom: 12px;
-                    font-size: 14px;
-                    color: var(--text-muted);
+                    border-top: 1px solid #ccc;
+                    border-bottom: 1px solid #ccc;
+                    padding: 10px 0;
+                    margin-bottom: 20px;
                 }
-                .total-row.final {
-                    margin-top: 16px;
-                    padding-top: 16px;
-                    border-top: 2px solid #cbd5e1;
-                    color: var(--text-main);
+                .totals-left {
+                    flex: 1;
+                }
+                .totals-right {
+                    width: 250px;
+                }
+                .total-line {
+                    display: flex;
+                    justify-content: space-between;
+                    margin-bottom: 6px;
+                    font-size: 11px;
+                }
+                .total-line.grand {
+                    font-size: 13px;
                     font-weight: 700;
-                    font-size: 18px;
+                    margin-top: 8px;
                 }
-                .total-row.final span:last-child {
-                    color: var(--primary);
+                .total-line.text {
+                    font-size: 11px;
+                    font-weight: 500;
                 }
-
-                /* Footer */
-                .footer {
-                    margin-top: 60px;
-                    padding-top: 24px;
-                    border-top: 1px solid var(--border);
-                    text-align: center;
-                    color: var(--text-muted);
-                    font-size: 12px;
+                
+                .footer-box {
+                    border: 1px solid #999;
+                    width: 180px;
+                    height: 50px;
+                    margin-bottom: 8px;
                 }
-                .footer p { margin: 4px 0; }
-
-                /* Print Styles */
+                .footer-sign {
+                    font-size: 10px;
+                    font-weight: 700;
+                }
+                
                 @media print {
-                    .action-bar { display: none; }
+                    .action-bar { display: none !important; }
                     body { background: white; }
-                    .page { 
-                        box-shadow: none; 
-                        margin: 0; 
-                        padding: 0; 
-                        max-width: none; 
-                    }
+                    .page { box-shadow: none; margin: 0; padding: 0; width: 100%; height: auto; }
                 }
             </style>
         </head>
         <body>
             <div class="action-bar no-print">
                 <button onclick="window.print()" class="btn btn-print">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M6 9V2h12v7"></path>
-                        <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
-                        <path d="M6 14h12v8H6z"></path>
-                    </svg>
-                    Print Invoice
-                </button>
-                <button onclick="window.print()" class="btn btn-download">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                        <polyline points="7 10 12 15 17 10"></polyline>
-                        <line x1="12" y1="15" x2="12" y2="3"></line>
-                    </svg>
-                    Download as PDF
+                    Print / Download Invoice
                 </button>
             </div>
 
             <div class="page">
-                <div class="header">
-                    <div class="brand">
-                        <h1>DevBhakti</h1>
-                        <p>Sacred Offerings & Blessings</p>
-                    </div>
-                    <div class="invoice-meta">
-                        <h2>INVOICE</h2>
-                        <div class="meta-group">
-                            <span class="meta-label">Invoice No:</span>
-                            <span class="meta-value">#${order.id.slice(-8).toUpperCase()}</span>
-                        </div>
-                        <div class="meta-group">
-                            <span class="meta-label">Date:</span>
-                            <span class="meta-value">${formatDate(order.createdAt)}</span>
-                        </div>
-                    </div>
+                <div class="logo-section">
+                    <div class="logo-title">DevBhakti</div>
+                </div>
+                
+                <div class="invoice-title-wrapper">
+                    <span class="invoice-title"> INVOICE</span>
                 </div>
 
-                <div class="addresses">
-                    <div class="address-card">
-                        <h3>Bill To</h3>
-                        <div class="address-content">
-                            <span class="address-name">${shippingAddress?.fullName || 'N/A'}</span>
-                            ${shippingAddress?.street ? `<div>${shippingAddress.street}</div>` : ''}
-                            <div>
-                                ${shippingAddress?.city || ''}${shippingAddress?.state ? `, ${shippingAddress.state}` : ''} 
-                                ${shippingAddress?.pincode ? `- ${shippingAddress.pincode}` : ''}
+                <div class="grid-3">
+                    <div class="column">
+                        <h4>SHIPPING ADDRESS:</h4>
+                        <div class="column-content">
+                            <strong>${shippingAddress?.fullName || 'Customer'}</strong><br>
+                            ${shippingAddress?.street || 'N/A'}<br>
+                            ${shippingAddress?.city || ''} ${shippingAddress?.pincode || ''}<br>
+                            ${shippingAddress?.state || ''}<br>
+                            India<br>
+                            Ph: ${shippingAddress?.phone || order.user?.phone || 'N/A'}
+                        </div>
+                    </div>
+                    
+                    <div class="column col-border">
+                        <h4>SOLD BY:</h4>
+                        <div class="column-content" style="text-align: left;">
+                            ${order.subOrders.map((so: any) => {
+      const vName = so.temple?.name || so.seller?.name || 'DevBhakti Marketplace';
+      const vAddr = so.temple?.fullAddress || so.seller?.fullAddress || 'Indore, MP';
+      return `<strong>${vName}</strong><br>${vAddr}<br>`;
+    }).join('<br>')}
+                            <br>
+                            Website: DevBhakti.in<br>
+                            Email: admin@devbhakti.in
+                        </div>
+                    </div>
+                
+                    <div class="column col-border">
+                        <h4>INVOICE DETAILS:</h4>
+                        <div class="column-content">
+                            <div class="detail-row">
+                                <span class="detail-label">INVOICE NO</span>
+                                <span class="detail-value">: INV-${order.id.slice(-6).toUpperCase()}</span>
                             </div>
-                            ${shippingAddress?.phone ? `<div style="margin-top: 4px; color: var(--text-muted)">Ph: ${shippingAddress.phone}</div>` : ''}
-                        </div>
-                    </div>
-                    <div class="address-card">
-                        <h3>Sold By</h3>
-                        <div class="address-content">
-                            <span class="address-name">DevBhakti Marketplace</span>
-                            <div>Officially Authorized Platform</div>
-                            <div>Pan-India Distribution</div>
-                            <div style="margin-top: 4px; color: var(--text-muted)">admin@devbhakti.in</div>
+                            <div class="detail-row">
+                                <span class="detail-label">INVOICE DATE</span>
+                                <span class="detail-value">: ${formatDate(order.createdAt)}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">ORDER NO</span>
+                                <span class="detail-value">: ${order.id.slice(-8).toUpperCase()}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">ORDER DATE</span>
+                                <span class="detail-value">: ${formatDate(order.createdAt)}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">CHANNEL</span>
+                                <span class="detail-value">: CUSTOM DEVBHAKTI</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">PAYMENT<br>METHOD</span>
+                                <span class="detail-value">: ${order.paymentMethod === 'COD' ? 'cod' : 'prepaid'}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">REMARK</span>
+                                <span class="detail-value">: Custom Order</span>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <table>
+                <table class="items">
                     <thead>
                         <tr>
-                            <th style="width: 50%">Description</th>
-                            <th style="width: 15%; text-align: center">Quantity</th>
-                            <th style="width: 15%; text-align: right">Unit Price</th>
-                            <th style="width: 20%; text-align: right">Total</th>
+                            <th class="text-left" style="width: 5%">S.NO</th>
+                            <th class="text-left" style="width: 35%">PRODUCT NAME</th>
+                            <th style="width: 5%">HSN</th>
+                            <th style="width: 5%">QTY</th>
+                            <th class="text-right" style="width: 10%">UNIT PRICE</th>
+                            <th class="text-right" style="width: 10%">DISCOUNT</th>
+                            <th class="text-right" style="width: 10%">TAXABLE<br>VALUE</th>
+                            <th class="text-right" style="width: 10%">CGST<br>(Value | %)</th>
+                            <th class="text-right" style="width: 10%">SGST<br>(Value | %)</th>
+                            <th class="text-right" style="width: 10%">TOTAL<br>(Inc GST)</th>
                         </tr>
                     </thead>
                     <tbody>
-                        ${order.subOrders.flatMap((so: any) => so.items).map((item: any) => `
+                        ${order.subOrders.flatMap((so: any) => so.items).map((item: any, idx: number) => `
                             <tr>
-                                <td>
-                                    <div class="item-main">${item.product?.name || 'Unknown Product'}</div>
-                                    <div class="item-sub">${item.variantName || 'Standard Variant'}</div>
+                                <td class="text-left">${idx + 1}</td>
+                                <td class="text-left">
+                                    <strong>${item.product?.name || 'Item'}</strong> (${item.variantName || 'Standard'})<br>
+                                    <span style="color: #666; font-size: 10px;">SKU: ${item.variantId}</span>
                                 </td>
-                                <td style="text-align: center; vertical-align: middle;">${item.quantity}</td>
-                                <td style="text-align: right; vertical-align: middle;">₹${item.price.toLocaleString()}</td>
-                                <td style="text-align: right; vertical-align: middle; font-weight: 500;">₹${(item.price * item.quantity).toLocaleString()}</td>
+                                <td>0</td>
+                                <td>${item.quantity}</td>
+                                <td class="text-right">Rs. ${item.price.toFixed(2)}</td>
+                                <td class="text-right">0.00</td>
+                                <td class="text-right">${(item.price * item.quantity).toFixed(2)}</td>
+                                <td class="text-right">0.00 | 0.00</td>
+                                <td class="text-right">0.00 | 0.00</td>
+                                <td class="text-right">${(item.price * item.quantity).toFixed(2)}</td>
                             </tr>
                         `).join('')}
                     </tbody>
                 </table>
 
-                <div class="totals">
-                    <div class="totals-box">
-                        <div class="total-row">
-                            <span>Subtotal</span>
-                            <span>₹${(order.totalAmount - (order.platformFee || 0) - (order.shippingCost || 0)).toLocaleString()}</span>
-                        </div>
-                        <div class="total-row">
-                            <span>Platform Fee</span>
-                            <span>₹${(order.platformFee || 0).toLocaleString()}</span>
-                        </div>
-                        <div class="total-row">
-                            <span>Shipping Costs</span>
-                            <span style="${(order.shippingCost || 0) > 0 ? '' : 'color: #10b981; font-weight: 600;'}">
-                                ${(order.shippingCost || 0) > 0 ? '₹' + order.shippingCost.toLocaleString() : 'FREE'}
-                            </span>
-                        </div>
-                        <div class="total-row final">
-                            <span>Grand Total</span>
-                            <span>₹${order.totalAmount.toLocaleString()}</span>
+                <div class="totals-section">
+                    <div class="totals-left">
+                        <div class="footer-box"></div>
+                        <div class="footer-sign">
+                            Authorized Signature for<br>
+                            ${order.subOrders[0]?.temple?.name || order.subOrders[0]?.seller?.name || 'DevBhakti'}
                         </div>
                     </div>
-                </div>
-
-                <div class="footer">
-                    <p>Thank you for choosing DevBhakti for your spiritual journey.</p>
-                    <p>This is a computer-generated invoice and requires no signature.</p>
+                    
+                    <div class="totals-right">
+                        <div class="total-line">
+                            <span>Subtotal (In Value)</span>
+                            <span>Rs. ${(order.totalAmount - (order.platformFee || 0) - (order.shippingCost || 0)).toFixed(2)}</span>
+                        </div>
+                        <div class="total-line">
+                            <span>Platform fee</span>
+                            <span>Rs. ${(order.platformFee || 0).toFixed(2)}</span>
+                        </div>
+                        <div class="total-line">
+                            <span>Shipping Costs</span>
+                            <span>${(order.shippingCost || 0) > 0 ? 'Rs. ' + (order.shippingCost || 0).toFixed(2) : '0.00'}</span>
+                        </div>
+                        <div class="total-line grand">
+                            <span>NET TOTAL (In Value)</span>
+                            <span>Rs. ${order.totalAmount.toFixed(2)}</span>
+                        </div>
+                        <br>
+                        <div class="total-line text" style="justify-content: flex-end; font-size: 12px;">
+                            Whether tax is payable under reverse charge - No
+                        </div>
+                    </div>
                 </div>
             </div>
         </body>

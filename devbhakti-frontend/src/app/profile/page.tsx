@@ -31,7 +31,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { updateProfile, fetchProfile } from "@/api/authController";
-import { fetchMyBookings, downloadBookingReceipt } from "@/api/userController";
+import { fetchMyBookings, downloadBookingReceipt, fetchMyDonations, downloadDonationReceipt } from "@/api/userController";
 import { BASE_URL } from "@/config/apiConfig";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -60,6 +60,7 @@ const ProfilePage = () => {
         kuldevta: "",
         dob: "",
         anniversary: "",
+        address: "",
     });
     const [profilePreview, setProfilePreview] = useState<string | null>(null);
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -67,10 +68,13 @@ const ProfilePage = () => {
     const [isBookingsLoading, setIsBookingsLoading] = useState(false);
     const [selectedBooking, setSelectedBooking] = useState<any | null>(null);
     const [myOrders, setMyOrders] = useState<any[]>([]);
+    const [donations, setDonations] = useState<any[]>([]);
+    const [isDonationsLoading, setIsDonationsLoading] = useState(false);
 
     useEffect(() => {
         loadProfile();
         loadOrders();
+        loadDonations();
     }, []);
 
     const loadOrders = async () => {
@@ -98,6 +102,7 @@ const ProfilePage = () => {
                     kuldevta: u.kuldevta || "",
                     dob: u.dob || "",
                     anniversary: u.anniversary || "",
+                    address: u.address || "",
                 });
                 if (u.profileImage) {
                     const imgUrl = u.profileImage.startsWith('http')
@@ -139,6 +144,21 @@ const ProfilePage = () => {
         }
     };
 
+    const loadDonations = async () => {
+        setIsDonationsLoading(true);
+        try {
+            const res = await fetchMyDonations();
+            if (res.success) {
+                setDonations(res.data);
+            }
+        } catch (error) {
+            console.error("Failed to load donations", error);
+        } finally {
+            setIsDonationsLoading(false);
+        }
+    };
+
+
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
@@ -161,6 +181,7 @@ const ProfilePage = () => {
             fd.append("kuldevta", formData.kuldevta);
             fd.append("dob", formData.dob);
             fd.append("anniversary", formData.anniversary);
+            fd.append("address", formData.address);
             if (selectedFile) {
                 fd.append("profileImage", selectedFile);
             }
@@ -368,7 +389,7 @@ const ProfilePage = () => {
                                                 </div>
 
                                                 {/* Spiritual Details */}
-                                                {(user.gothra || user.kuldevi || user.kuldevta || user.dob || user.anniversary) && (
+                                                {(user.gothra || user.kuldevi || user.kuldevta || user.dob || user.anniversary || user.address) && (
                                                     <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-6 pt-4">
                                                         {user.gothra && (
                                                             <div className="space-y-1">
@@ -407,6 +428,14 @@ const ProfilePage = () => {
                                                                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Anniversary</p>
                                                                 <div className="p-3 bg-orange-50/30 rounded-xl border border-orange-100/50">
                                                                     <span className="font-bold text-slate-700">{format(new Date(user.anniversary), "dd MMM, yyyy")}</span>
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                        {user.address && (
+                                                            <div className="space-y-1 md:col-span-3">
+                                                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Delivery Address</p>
+                                                                <div className="p-3 bg-orange-50/30 rounded-xl border border-orange-100/50">
+                                                                    <span className="font-bold text-slate-700">{user.address}</span>
                                                                 </div>
                                                             </div>
                                                         )}
@@ -486,6 +515,85 @@ const ProfilePage = () => {
                                                     </Button>
                                                 )}
                                             </div>
+
+                                            {/* Donations Section */}
+                                            <div className="pt-6">
+                                                <div className="flex items-center gap-3 mb-6">
+                                                    <Heart className="w-5 h-5 text-orange-600" />
+                                                    <h4 className="font-bold text-lg text-slate-800">Your Sacred Donations</h4>
+                                                </div>
+                                                <div className="space-y-4">
+                                                    {isDonationsLoading ? (
+                                                        <div className="flex justify-center py-8">
+                                                            <Loader2 className="w-8 h-8 text-primary animate-spin" />
+                                                        </div>
+                                                    ) : donations.length > 0 ? (
+                                                        donations.map((donation: any) => (
+                                                            <div
+                                                                key={donation.id}
+                                                                className="flex flex-col md:flex-row md:items-center justify-between p-5 border border-slate-100 rounded-[1.5rem] hover:bg-orange-50/30 transition-all group shadow-sm hover:shadow-md"
+                                                            >
+                                                                <div className="flex items-center gap-4 mb-3 md:mb-0">
+                                                                    <div className="w-14 h-14 bg-orange-50 rounded-2xl flex items-center justify-center border border-orange-100/50 group-hover:bg-white transition-colors">
+                                                                        <Heart className="w-7 h-7 text-primary" />
+                                                                    </div>
+                                                                    <div>
+                                                                        <div className="flex items-center gap-2">
+                                                                            <p className="font-bold text-slate-800">Donation to {donation.temple?.name}</p>
+                                                                            <span className="text-[10px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full uppercase tracking-tighter">#{donation.id.slice(-6)}</span>
+                                                                        </div>
+                                                                        <p className="text-xs text-slate-500 flex items-center gap-1 mt-0.5">
+                                                                            <span>{donation.temple?.location}</span>
+                                                                        </p>
+                                                                        <p className="text-[10px] text-slate-400 mt-1 flex items-center gap-1">
+                                                                            <Calendar className="w-3 h-3" />
+                                                                            {new Date(donation.createdAt).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}
+                                                                        </p>
+                                                                    </div>
+                                                                </div>
+                                                                <div className="flex items-center justify-between md:justify-end gap-6 border-t md:border-t-0 pt-3 md:pt-0 border-slate-50">
+                                                                    <div className="text-right">
+                                                                        <p className="font-bold text-primary text-lg">
+                                                                            ₹{donation.amount}
+                                                                        </p>
+                                                                    </div>
+                                                                    <Button
+                                                                        variant="ghost"
+                                                                        size="icon"
+                                                                        className="text-primary hover:bg-primary/10 rounded-full"
+                                                                        onClick={async () => {
+                                                                            try {
+                                                                                const res = await downloadDonationReceipt(donation.id);
+                                                                                if (res.success) {
+                                                                                    const url = window.URL.createObjectURL(new Blob([res.data]));
+                                                                                    const link = document.createElement('a');
+                                                                                    link.href = url;
+                                                                                    link.setAttribute('download', `Donation-Receipt-${donation.id.slice(-6)}.pdf`);
+                                                                                    document.body.appendChild(link);
+                                                                                    link.click();
+                                                                                    link.remove();
+                                                                                }
+                                                                            } catch (e) {
+                                                                                console.error(e);
+                                                                            }
+                                                                        }}
+                                                                    >
+                                                                        <Receipt className="w-5 h-5" />
+                                                                    </Button>
+                                                                </div>
+                                                            </div>
+                                                        ))
+                                                    ) : (
+                                                        <div className="text-center py-10 bg-slate-50/50 rounded-3xl border border-dashed border-slate-200">
+                                                            <p className="text-slate-400 text-sm">No sacred donations yet.</p>
+                                                            <Button variant="link" className="text-primary mt-2" asChild>
+                                                                <Link href="/donation">Make a Donation</Link>
+                                                            </Button>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+
 
                                             <div className="pt-6">
                                                 <div className="flex items-center gap-3 mb-6">
@@ -621,6 +729,16 @@ const ProfilePage = () => {
                                                         type="date"
                                                         value={formData.anniversary}
                                                         onChange={(e) => setFormData({ ...formData, anniversary: e.target.value })}
+                                                        className="h-14 px-6 bg-slate-50 border-slate-100 focus:bg-white focus:border-primary rounded-2xl text-lg font-medium"
+                                                    />
+                                                </div>
+                                                <div className="space-y-2.5 md:col-span-2">
+                                                    <Label className="text-slate-700 font-bold ml-1">Delivery Address</Label>
+                                                    <Input
+                                                        type="text"
+                                                        value={formData.address}
+                                                        onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                                                        placeholder="Enter your complete address"
                                                         className="h-14 px-6 bg-slate-50 border-slate-100 focus:bg-white focus:border-primary rounded-2xl text-lg font-medium"
                                                     />
                                                 </div>

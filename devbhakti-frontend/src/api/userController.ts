@@ -38,6 +38,7 @@ export const removeFavorite = async (data: { templeId?: string; poojaId?: string
     });
     return response.data;
 };
+
 export const fetchMyBookings = async () => {
     const token = localStorage.getItem("token");
     if (!token) return { success: false, data: [] };
@@ -45,6 +46,20 @@ export const fetchMyBookings = async () => {
         headers: { Authorization: `Bearer ${token}` }
     });
     return response.data;
+};
+
+export const fetchMyDonations = async () => {
+    const token = localStorage.getItem("token");
+    if (!token) return { success: false, data: [] };
+    try {
+        const response = await axios.get(`${API_URL}/donations/my`, {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+        return response.data;
+    } catch (error) {
+        console.error("Fetch donations failed", error);
+        return { success: false, data: [] };
+    }
 };
 
 export const downloadBookingReceipt = async (bookingId: string) => {
@@ -59,6 +74,22 @@ export const downloadBookingReceipt = async (bookingId: string) => {
         return { success: true, data: response.data };
     } catch (error) {
         console.error("Download failed", error);
+        return { success: false };
+    }
+};
+
+export const downloadDonationReceipt = async (donationId: string) => {
+    const token = localStorage.getItem("token");
+    if (!token) return { success: false };
+
+    try {
+        const response = await axios.get(`${API_URL}/donations/${donationId}/receipt`, {
+            headers: { Authorization: `Bearer ${token}` },
+            responseType: 'blob'
+        });
+        return { success: true, data: response.data };
+    } catch (error) {
+        console.error("Donation download failed", error);
         return { success: false };
     }
 };

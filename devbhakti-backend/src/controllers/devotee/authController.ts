@@ -295,7 +295,7 @@ export const verifyOTP = async (req: Request, res: Response) => {
 export const updateProfile = async (req: Request, res: Response) => {
     try {
         const { userId } = (req as any).user; // From auth middleware
-        const { name, email, gothra, kuldevi, kuldevta, dob, anniversary } = req.body;
+        const { name, email, gothra, kuldevi, kuldevta, dob, anniversary, address } = req.body;
         const profileImage = req.file ? `/uploads/users/${req.file.filename}` : undefined;
 
         // If email is being updated, check if it's already taken by another user
@@ -319,7 +319,8 @@ export const updateProfile = async (req: Request, res: Response) => {
             kuldevi,
             kuldevta,
             dob,
-            anniversary
+            anniversary,
+            address
         };
 
         // Only update email if provided
@@ -352,7 +353,8 @@ export const updateProfile = async (req: Request, res: Response) => {
                     kuldevi: updatedUser.kuldevi,
                     kuldevta: updatedUser.kuldevta,
                     dob: updatedUser.dob,
-                    anniversary: updatedUser.anniversary
+                    anniversary: updatedUser.anniversary,
+                    address: updatedUser.address
                 }
             }
         });
@@ -392,6 +394,7 @@ export const getProfile = async (req: Request, res: Response) => {
                 kuldevta: true,
                 dob: true,
                 anniversary: true,
+                address: true,
                 isVerified: true,
                 createdAt: true
             }

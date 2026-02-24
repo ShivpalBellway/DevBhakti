@@ -344,6 +344,30 @@ export const updateMyTempleProfile = async (req: Request, res: Response) => {
         where: { id: temple.id },
         data: updateData
       });
+
+      // Sync with Shiprocket if address or location changed
+      if (updateData.fullAddress || updateData.location || updateData.phone) {
+        try {
+          const { city, state } = parseLocation(updateData.location || temple.location || "");
+          const pincode = extractPincode(updateData.fullAddress || temple.fullAddress || "");
+
+          const pickupData = {
+            pickup_location: temple.pickupLocation,
+            name: temple.name,
+            email: (temple as any).user?.email || "",
+            phone: updateData.phone || temple.phone,
+            address: updateData.fullAddress || temple.fullAddress || '',
+            city: city || "Delhi",
+            state: state || "Delhi",
+            country: "India",
+            pin_code: pincode || "110001"
+          };
+          await createShiprocketPickupLocation(pickupData);
+        } catch (srError) {
+          console.error("Shiprocket update sync error:", srError);
+        }
+      }
+
       return res.json({ success: true, data: updatedTemple, message: 'Profile updated successfully' });
     }
 

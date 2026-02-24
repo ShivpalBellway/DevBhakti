@@ -47,6 +47,7 @@ const suggestedAmounts = [101, 251, 501, 1100, 2100, 5001, 11000, 21000];
 import { fetchPublicTemples } from "@/api/publicController";
 import { API_URL } from "@/config/apiConfig";
 import axios from "axios";
+import { downloadDonationReceipt } from "@/api/userController";
 
 declare global {
     interface Window {
@@ -79,6 +80,7 @@ function DonationForm() {
     const [temples, setTemples] = useState<Temple[]>([]);
     const [loading, setLoading] = useState(false);
     const [transactionId, setTransactionId] = useState("");
+    const [donationId, setDonationId] = useState("");
 
     const RAZORPAY_KEY = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "";
 
@@ -176,6 +178,8 @@ function DonationForm() {
                 }
                 return;
             }
+
+            setDonationId(initiateData.donationId);
 
             // 2. Open Razorpay Checkout
             const options = {
@@ -670,6 +674,35 @@ function DonationForm() {
                                 </div>
 
                                 <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                                    <Button
+                                        onClick={async () => {
+                                            if (!donationId) return;
+                                            try {
+                                                const res = await downloadDonationReceipt(donationId);
+                                                if (res.success) {
+                                                    const url = window.URL.createObjectURL(new Blob([res.data]));
+                                                    const link = document.createElement('a');
+                                                    link.href = url;
+                                                    link.setAttribute('download', `Donation-Receipt-${donationId.slice(-6)}.pdf`);
+                                                    document.body.appendChild(link);
+                                                    link.click();
+                                                    link.remove();
+                                                } else {
+                                                    toast({
+                                                        title: "Download Failed",
+                                                        description: "Could not download receipt. Please try again.",
+                                                        variant: "destructive"
+                                                    });
+                                                }
+                                            } catch (e) {
+                                                console.error(e);
+                                            }
+                                        }}
+                                        size="lg"
+                                        className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                                    >
+                                        <FileText className="w-4 h-4 mr-2" /> Download Receipt
+                                    </Button>
                                     <Button asChild size="lg" className="bg-[#7c4624] hover:bg-[#63361c]">
                                         <Link href="/temples">Explore More Temples</Link>
                                     </Button>

@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { prisma } from "../../lib/prisma";
 import { createShiprocketPickupLocation } from '../../services/shiprocketService';
 import { SlabType, CommissionCategory } from "@prisma/client";
+import { parseLocation, extractPincode } from '../../lib/shiprocketUtils';
 
 // Helper to normalize phone number to +91XXXXXXXXXX format
 const normalizePhone = (phone: string): string => {
@@ -97,16 +98,19 @@ export const createSeller = async (req: Request, res: Response) => {
 
         // 3. Register Pickup Location with Shiprocket
         try {
+            const { city, state } = parseLocation(address as string || "");
+            const pincode = extractPincode(address as string || "");
+
             const pickupData = {
                 pickup_location: (result.sellerProfile as any).pickupLocation,
                 name: sellerName as string,
                 email: email as string,
                 phone: normalizedPhone,
                 address: (address as string) || '',
-                city: "Delhi", // Defaulting for now, ideally parsed from address
-                state: "Delhi",
+                city: city || "Delhi",
+                state: state || "Delhi",
                 country: "India",
-                pin_code: "110001" // Defaulting for now
+                pin_code: pincode || "110001"
             };
             await createShiprocketPickupLocation(pickupData);
             console.log("Shiprocket Pickup Location Created Successfully");

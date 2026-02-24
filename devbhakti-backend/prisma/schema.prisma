@@ -25,6 +25,7 @@ model User {
   kuldevta      String?
   anniversary   String?
   dob           String?
+  address       String?
   cart          Cart?
   favorites     Favorite[]
   orders        Order[]
