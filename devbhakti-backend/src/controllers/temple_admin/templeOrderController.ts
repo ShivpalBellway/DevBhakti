@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { PrismaClient } from "@prisma/client";
+import { syncOrderAndLedgerStatus } from "../../utils/orderStatusSync";
 
 const prisma = new PrismaClient();
 
@@ -7,7 +8,7 @@ const prisma = new PrismaClient();
 export const getTempleOrders = async (req: Request, res: Response) => {
   try {
     const templeId = req.params.templeId as string;
-    
+
     const subOrders = await prisma.subOrder.findMany({
       where: { templeId },
       include: {
@@ -46,47 +47,16 @@ export const updateTempleOrderStatus = async (req: Request, res: Response) => {
       return res.status(403).json({ success: false, message: "Unauthorized or order not found" });
     }
 
-    const updated = await prisma.subOrder.update({
-      where: { id: subOrderId },
-      data: { status, shippingLabel, updatedAt: new Date() }
-    });
-
-    // Sync Ledger Status
-    if (status === "DELIVERED") {
-      await prisma.templeLedger.updateMany({
-        where: { sourceId: subOrderId, type: "MARKETPLACE_EARNING" },
-        data: { status: "COMPLETED" }
-      });
-    } else if (status === "CANCELLED") {
-      await prisma.templeLedger.updateMany({
-        where: { sourceId: subOrderId, type: "MARKETPLACE_EARNING" },
-        data: { status: "CANCELLED" }
+    // Optional: Update shippingLabel if provided
+    if (shippingLabel) {
+      await prisma.subOrder.update({
+        where: { id: subOrderId },
+        data: { shippingLabel }
       });
     }
 
-    // Check if all sub-orders of the parent order are delivered/completed
-    const parentOrder = await prisma.order.findUnique({
-      where: { id: updated.orderId },
-      include: { subOrders: true }
-    });
-
-    if (parentOrder) {
-      const allDone = parentOrder.subOrders.every(so => so.status === "DELIVERED");
-      if (allDone) {
-        await prisma.order.update({
-          where: { id: parentOrder.id },
-          data: { status: "COMPLETED" }
-        });
-      } else {
-        const anyShipped = parentOrder.subOrders.some(so => so.status === "SHIPPED");
-        if (anyShipped) {
-          await prisma.order.update({
-            where: { id: parentOrder.id },
-            data: { status: "PARTIALLY_SHIPPED" }
-          });
-        }
-      }
-    }
+    // Use shared utility for status sync (Ledger, Parent Order, etc.)
+    const updated = await syncOrderAndLedgerStatus(subOrderId, status);
 
     return res.status(200).json({ success: true, message: "Order status updated", data: updated });
   } catch (error: any) {

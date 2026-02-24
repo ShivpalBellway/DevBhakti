@@ -12,7 +12,8 @@ import {
     History,
     MapPin,
     Loader2,
-    Search
+    Search,
+    Heart
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -33,6 +34,7 @@ export default function DevoteeDetailPage() {
     const [bookingStatus, setBookingStatus] = useState("all");
     const [orderSearch, setOrderSearch] = useState("");
     const [orderStatus, setOrderStatus] = useState("all");
+    const [donationSearch, setDonationSearch] = useState("");
 
     useEffect(() => {
         const loadUserDetail = async () => {
@@ -67,6 +69,11 @@ export default function DevoteeDetailPage() {
         );
         const matchesStatus = orderStatus === "all" || order.status === orderStatus;
         return (orderIdMatch || itemMatch) && matchesStatus;
+    });
+
+    const filteredDonations = (user?.donations || []).filter((donation: any) => {
+        const matchesSearch = donation.temple?.name?.toLowerCase().includes(donationSearch.toLowerCase());
+        return matchesSearch;
     });
 
     if (loading) {
@@ -115,11 +122,12 @@ export default function DevoteeDetailPage() {
             </div>
 
             {/* Quick Stats Overview */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
                 {[
                     { label: "Bookings", value: user.bookings?.length || 0, icon: History, color: "text-blue-600", bg: "bg-blue-50" },
                     { label: "Orders", value: user.orders?.length || 0, icon: ShoppingBag, color: "text-amber-600", bg: "bg-amber-50" },
-                    { label: "Total Spent", value: `₹${[...(user.bookings || []), ...(user.orders || [])].reduce((acc, curr) => acc + (curr.packagePrice || curr.totalAmount || 0), 0).toLocaleString()}`, icon: MapPin, color: "text-emerald-600", bg: "bg-emerald-50" },
+                    { label: "Donations", value: user.donations?.length || 0, icon: Heart, color: "text-rose-600", bg: "bg-rose-50" },
+                    { label: "Total Spent", value: `₹${[...(user.bookings || []), ...(user.orders || []), ...(user.donations || [])].reduce((acc, curr) => acc + (curr.packagePrice || curr.totalAmount || curr.amount || 0), 0).toLocaleString()}`, icon: MapPin, color: "text-emerald-600", bg: "bg-emerald-50" },
                     { label: "Join Date", value: user.createdAt ? format(new Date(user.createdAt), "MMM yyyy") : "N/A", icon: Calendar, color: "text-purple-600", bg: "bg-purple-50" },
                 ].map((stat, i) => (
                     <Card key={i} className="border-none shadow-sm bg-card hover:shadow-md transition-all duration-300">
@@ -216,7 +224,7 @@ export default function DevoteeDetailPage() {
                 <div className="lg:col-span-8 flex flex-col gap-6">
                     <Tabs defaultValue="bookings" className="w-full">
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 bg-white p-2 rounded-2xl shadow-sm border border-slate-100">
-                            <TabsList className="grid w-fit grid-cols-2 bg-slate-50/50">
+                            <TabsList className="grid w-fit grid-cols-3 bg-slate-50/50">
                                 <TabsTrigger value="bookings" className="data-[state=active]:bg-white data-[state=active]:shadow-sm px-6 font-bold">
                                     <History className="w-4 h-4 mr-2" />
                                     Bookings ({(user.bookings || []).length})
@@ -224,6 +232,10 @@ export default function DevoteeDetailPage() {
                                 <TabsTrigger value="orders" className="data-[state=active]:bg-white data-[state=active]:shadow-sm px-6 font-bold">
                                     <ShoppingBag className="w-4 h-4 mr-2" />
                                     Orders ({(user.orders || []).length})
+                                </TabsTrigger>
+                                <TabsTrigger value="donations" className="data-[state=active]:bg-white data-[state=active]:shadow-sm px-6 font-bold">
+                                    <Heart className="w-4 h-4 mr-2" />
+                                    Donations ({(user.donations || []).length})
                                 </TabsTrigger>
                             </TabsList>
                         </div>
@@ -382,6 +394,69 @@ export default function DevoteeDetailPage() {
                                 ) : (
                                     <div className="text-center py-20 bg-slate-50/50 rounded-[2rem] border-2 border-dashed border-slate-200">
                                         <p className="text-slate-400 font-serif italic text-lg">No orders found.</p>
+                                    </div>
+                                )}
+                            </div>
+                        </TabsContent>
+
+                        <TabsContent value="donations" className="mt-0 focus-visible:outline-none">
+                            <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 mb-6 flex flex-col md:flex-row gap-4">
+                                <div className="relative flex-1">
+                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                                    <Input
+                                        placeholder="Search by Temple Name..."
+                                        className="pl-10 h-11 border-slate-200 focus:ring-primary rounded-xl"
+                                        value={donationSearch}
+                                        onChange={(e) => setDonationSearch(e.target.value)}
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="space-y-4">
+                                {filteredDonations.length > 0 ? (
+                                    filteredDonations.map((donation: any) => (
+                                        <Card
+                                            key={donation.id}
+                                            className="group overflow-hidden border-slate-100 hover:border-rose-500/30 hover:shadow-lg transition-all duration-300 rounded-3xl"
+                                        >
+                                            <CardContent className="p-6">
+                                                <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+                                                    <div className="flex gap-4">
+                                                        <div className="w-14 h-14 rounded-2xl bg-rose-50 flex items-center justify-center shrink-0 group-hover:bg-rose-100 transition-colors">
+                                                            <Heart className="w-7 h-7 text-rose-500" />
+                                                        </div>
+                                                        <div className="space-y-1">
+                                                            <h4 className="text-lg font-bold text-slate-900 group-hover:text-rose-600 transition-colors">
+                                                                Temple Donation
+                                                            </h4>
+                                                            <p className="text-sm font-medium text-slate-600 flex items-center gap-1.5">
+                                                                <MapPin className="w-3.5 h-3.5 text-slate-400" />
+                                                                {donation.temple?.name || "DevBhakti Platform"}
+                                                            </p>
+                                                            <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground font-medium">
+                                                                <span className="flex items-center gap-1">
+                                                                    <Calendar className="w-3.5 h-3.5 opacity-60" />
+                                                                    {donation.createdAt ? format(new Date(donation.createdAt), "PPP") : "N/A"}
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex sm:flex-col items-center sm:items-end justify-between gap-2">
+                                                        <p className="text-xl font-black text-rose-600">₹{donation.amount}</p>
+                                                        <Badge
+                                                            variant="outline"
+                                                            className="rounded-full px-3 py-1 font-black text-[10px] tracking-wide border-none bg-emerald-50 text-emerald-700"
+                                                        >
+                                                            {donation.status}
+                                                        </Badge>
+                                                    </div>
+                                                </div>
+                                            </CardContent>
+                                        </Card>
+                                    ))
+                                ) : (
+                                    <div className="text-center py-20 bg-slate-50/50 rounded-[2rem] border-2 border-dashed border-slate-200">
+                                        <p className="text-slate-400 font-serif italic text-lg">No donations found.</p>
                                     </div>
                                 )}
                             </div>

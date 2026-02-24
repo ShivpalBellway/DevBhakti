@@ -161,6 +161,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [user, setUser] = useState<{ id?: string; name: string; email: string; isStaff?: boolean; permissions?: string[] } | null>(null);
 
   const isLoginPage = pathname?.startsWith("/admin/login") || pathname?.startsWith("/admin/staff-login");
+  const isPrintPage = pathname === "/admin/products/orders/print";
 
   useEffect(() => {
     // Check if user is logged in
@@ -281,8 +282,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   const authorized = isAuthorized();
 
-  // If we're on the login page, don't show the admin layout UI
-  if (isLoginPage) {
+  // If we're on the login or print page, don't show the admin layout UI
+  if (isLoginPage || isPrintPage) {
     return <>{children}</>;
   }
 

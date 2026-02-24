@@ -120,11 +120,18 @@ export default function SellerOrdersPage() {
 
     const getStatusStyle = (status: string) => {
         switch (status) {
-            case "DELIVERED": return "bg-emerald-50 text-emerald-700 border-emerald-200";
-            case "SHIPPED": return "bg-blue-50 text-blue-700 border-blue-200";
-            case "ACCEPTED": return "bg-orange-50 text-orange-700 border-orange-200";
             case "PENDING": return "bg-amber-50 text-amber-700 border-amber-200";
+            case "ACCEPTED": return "bg-blue-50 text-blue-700 border-blue-200";
+            case "PROCESSING": return "bg-indigo-50 text-indigo-700 border-indigo-200";
+            case "PICKED_UP": return "bg-violet-50 text-violet-700 border-violet-200";
+            case "SHIPPED": return "bg-blue-50 text-blue-700 border-blue-200";
+            case "PARTIALLY_SHIPPED": return "bg-sky-50 text-sky-700 border-sky-200";
+            case "OUT_FOR_DELIVERY": return "bg-orange-50 text-orange-700 border-orange-200";
+            case "DELIVERED": return "bg-emerald-50 text-emerald-700 border-emerald-200";
+            case "COMPLETED": return "bg-green-50 text-green-700 border-green-200";
             case "CANCELLED": return "bg-red-50 text-red-700 border-red-200";
+            case "RTO_INITIATED": return "bg-rose-50 text-rose-700 border-rose-200";
+            case "RTO_DELIVERED": return "bg-red-50 text-red-700 border-red-200";
             default: return "bg-slate-50 text-slate-700 border-slate-200";
         }
     };
@@ -293,9 +300,13 @@ export default function SellerOrdersPage() {
                                             <SelectContent className="rounded-2xl border-orange-50 shadow-xl">
                                                 <SelectItem value="PENDING" className="font-bold py-3">⏳ Pending</SelectItem>
                                                 <SelectItem value="ACCEPTED" className="font-bold py-3">✅ Accepted</SelectItem>
+                                                <SelectItem value="PICKED_UP" className="font-bold py-3">📦 Picked Up</SelectItem>
                                                 <SelectItem value="SHIPPED" className="font-bold py-3">🚚 Shipped</SelectItem>
+                                                <SelectItem value="OUT_FOR_DELIVERY" className="font-bold py-3">🛵 Out for Delivery</SelectItem>
                                                 <SelectItem value="DELIVERED" className="font-bold py-3">✨ Delivered</SelectItem>
                                                 <SelectItem value="CANCELLED" className="font-bold py-3 text-red-600">❌ Cancelled</SelectItem>
+                                                <SelectItem value="RTO_INITIATED" className="font-bold py-3">🔄 RTO Initiated</SelectItem>
+                                                <SelectItem value="RTO_DELIVERED" className="font-bold py-3">🚩 RTO Delivered</SelectItem>
                                             </SelectContent>
                                         </Select>
                                     </div>

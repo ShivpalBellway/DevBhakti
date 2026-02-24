@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { PrismaClient } from "@prisma/client";
+import { syncOrderAndLedgerStatus, mapShiprocketStatus } from "../utils/orderStatusSync";
 
 const prisma = new PrismaClient();
 
@@ -10,7 +11,7 @@ export const shiprocketWebhook = async (req: Request, res: Response) => {
 
         const {
             order_id,
-            status,
+            status: srStatus,
             awb,
             tracking_url,
             courier_name
@@ -23,16 +24,22 @@ export const shiprocketWebhook = async (req: Request, res: Response) => {
             });
 
             if (subOrder) {
+                const internalStatus = mapShiprocketStatus(srStatus);
+
+                // Update common tracking fields
                 await prisma.subOrder.update({
                     where: { id: subOrder.id },
                     data: {
-                        status: status.toUpperCase(),
                         awbCode: awb || subOrder.awbCode,
                         trackingUrl: tracking_url || subOrder.trackingUrl,
                         courierName: courier_name || subOrder.courierName
                     }
                 });
-                console.log(`Updated SubOrder ${subOrder.id} status to ${status}`);
+
+                // Use shared utility for status sync (Ledger, Parent Order, etc.)
+                await syncOrderAndLedgerStatus(subOrder.id, internalStatus);
+
+                console.log(`Updated SubOrder ${subOrder.id} status to ${internalStatus} (from SR: ${srStatus})`);
             }
         }
 

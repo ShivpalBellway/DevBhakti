@@ -7,7 +7,7 @@ import { format } from "date-fns";
 
 function PrintLabelsContent() {
     const searchParams = useSearchParams();
-    const [subOrders, setSubOrders] = useState<any[]>([]);
+    const [orders, setOrders] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
     const orderIds = searchParams.get("ids")?.split(",") ?? [];
@@ -17,19 +17,8 @@ function PrintLabelsContent() {
             try {
                 const res = await fetchAllOrdersAdmin();
                 if (res.success) {
-                    // Each "order" in admin has subOrders – flatten relevant subOrders
-                    // But the print IDs can be subOrder IDs or parent order IDs
-                    // We'll collect subOrders whose parent order id matches
-                    const allSubOrders: any[] = [];
-                    res.data.forEach((order: any) => {
-                        if (orderIds.includes(order.id)) {
-                            // Print all sub-orders for this parent order
-                            (order.subOrders || []).forEach((sub: any) => {
-                                allSubOrders.push({ ...sub, parentOrder: order });
-                            });
-                        }
-                    });
-                    setSubOrders(allSubOrders);
+                    const selected = res.data.filter((order: any) => orderIds.includes(order.id));
+                    setOrders(selected);
                 }
             } catch (e) {
                 console.error(e);
@@ -41,20 +30,20 @@ function PrintLabelsContent() {
     }, []);
 
     useEffect(() => {
-        if (!isLoading && subOrders.length > 0) {
-            setTimeout(() => window.print(), 500);
+        if (!isLoading && orders.length > 0) {
+            setTimeout(() => window.print(), 800);
         }
-    }, [isLoading, subOrders]);
+    }, [isLoading, orders]);
 
     if (isLoading) {
         return (
             <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100vh", fontFamily: "sans-serif" }}>
-                <p>Preparing labels, please wait...</p>
+                <p>Preparing invoices, please wait...</p>
             </div>
         );
     }
 
-    if (subOrders.length === 0) {
+    if (orders.length === 0) {
         return (
             <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100vh", fontFamily: "sans-serif" }}>
                 <p>No orders found to print.</p>
@@ -65,123 +54,355 @@ function PrintLabelsContent() {
     return (
         <>
             <link rel="preconnect" href="https://fonts.googleapis.com" />
-            <link href="https://fonts.googleapis.com/css2?family=Libre+Barcode+39&display=swap" rel="stylesheet" />
+            <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet" />
 
             <style>{`
                 * { box-sizing: border-box; }
-                body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #fff; }
-                .no-print { display: block; }
+                body { 
+                    font-family: 'Roboto', sans-serif; 
+                    margin: 0; 
+                    padding: 0; 
+                    color: #333; 
+                    background: #f1f5f9;
+                }
+                
+                .no-print {
+                    background: white;
+                    padding: 16px;
+                    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+                    position: sticky;
+                    top: 0;
+                    z-index: 100;
+                    display: flex;
+                    justify-content: center;
+                    gap: 16px;
+                    border-bottom: 1px solid #e2e8f0;
+                }
+                
+                .btn {
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 8px;
+                    padding: 10px 24px;
+                    border-radius: 8px;
+                    font-weight: 600;
+                    cursor: pointer;
+                    text-decoration: none;
+                }
+                .btn-print { background: #794A05; color: white; border: none; }
+                .btn-back { background: #fff; color: #333; border: 1px solid #ddd; }
+                
+                .page {
+                    background: white;
+                    width: 210mm;
+                    min-height: 297mm;
+                    margin: 40px auto;
+                    padding: 30px;
+                    box-sizing: border-box;
+                    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+                    position: relative;
+                }
+                
+                .logo-section {
+                    text-align: center;
+                    margin-bottom: 15px;
+                }
+                .logo-title {
+                    font-size: 20px;
+                    font-weight: 700;
+                    color: #794A05;
+                }
+                
+                .invoice-title-wrapper {
+                    text-align: center;
+                    border-bottom: 2px solid #ccc;
+                    padding-bottom: 15px;
+                    margin-bottom: 25px;
+                }
+                .invoice-title {
+                    font-size: 22px;
+                    font-weight: 500;
+                    letter-spacing: 1px;
+                    text-transform: uppercase;
+                }
+                
+                .grid-3 {
+                    display: grid;
+                    grid-template-columns: 1fr 1fr 1fr;
+                    gap: 15px;
+                    margin-bottom: 30px;
+                    font-size: 11px;
+                }
+                
+                .column h4 {
+                    font-size: 11px;
+                    font-weight: 700;
+                    margin: 0 0 10px 0;
+                    text-transform: uppercase;
+                }
+                
+                .column-content {
+                    line-height: 1.5;
+                }
+                
+                .col-border {
+                    border-left: 1px dashed #ccc;
+                    padding-left: 15px;
+                }
+                
+                .detail-row {
+                    display: flex;
+                    margin-bottom: 4px;
+                }
+                .detail-label {
+                    width: 85px;
+                    font-weight: 700;
+                    text-transform: uppercase;
+                    font-size: 10px;
+                }
+                .detail-value {
+                    flex: 1;
+                }
+                
+                table.items {
+                    width: 100%;
+                    border-collapse: collapse;
+                    margin-bottom: 20px;
+                    font-size: 10px;
+                }
+                table.items th {
+                    text-align: center;
+                    text-transform: uppercase;
+                    padding: 6px 4px;
+                    border-top: 1px solid #eee;
+                    border-bottom: 1px solid #ccc;
+                    font-weight: 700;
+                }
+                table.items td {
+                    padding: 10px 4px;
+                    text-align: center;
+                    border-bottom: 1px solid #eee;
+                }
+                table.items td.text-left, table.items th.text-left {
+                    text-align: left;
+                }
+                table.items td.text-right, table.items th.text-right {
+                    text-align: right;
+                }
+                
+                .totals-section {
+                    display: flex;
+                    justify-content: space-between;
+                    border-top: 1px solid #ccc;
+                    border-bottom: 1px solid #ccc;
+                    padding: 10px 0;
+                    margin-bottom: 20px;
+                }
+                .totals-left {
+                    flex: 1;
+                }
+                .totals-right {
+                    width: 250px;
+                }
+                .total-line {
+                    display: flex;
+                    justify-content: space-between;
+                    margin-bottom: 6px;
+                    font-size: 11px;
+                }
+                .total-line.grand {
+                    font-size: 13px;
+                    font-weight: 700;
+                    margin-top: 8px;
+                }
+                
+                .footer-box {
+                    border: 1px solid #999;
+                    width: 180px;
+                    height: 50px;
+                    margin-bottom: 8px;
+                }
+                .footer-sign {
+                    font-size: 10px;
+                    font-weight: 700;
+                }
+                
                 @media print {
                     .no-print { display: none !important; }
-                    .label-page { page-break-after: always; page-break-inside: avoid; }
-                    .label-page:last-child { page-break-after: auto; }
+                    body { background: white; }
+                    .page { 
+                        box-shadow: none; 
+                        margin: 0; 
+                        padding: 0; 
+                        width: 100%; 
+                        height: auto; 
+                        page-break-after: always;
+                    }
+                    .page:last-child {
+                        page-break-after: auto;
+                    }
                 }
             `}</style>
 
-            {/* Screen-only buttons */}
-            <div className="no-print" style={{ position: "fixed", top: 16, right: 16, zIndex: 9999, display: "flex", gap: 8 }}>
-                <button
-                    onClick={() => window.print()}
-                    style={{ background: "#794A05", color: "#fff", border: "none", padding: "10px 22px", borderRadius: 8, fontWeight: 700, fontSize: 15, cursor: "pointer" }}
-                >
-                    🖨️ Print Now
+            <div className="no-print">
+                <button onClick={() => window.history.back()} className="btn btn-back">
+                    Back to Orders
                 </button>
-                <button
-                    onClick={() => window.history.back()}
-                    style={{ background: "#eee", color: "#333", border: "none", padding: "10px 22px", borderRadius: 8, fontWeight: 700, fontSize: 15, cursor: "pointer" }}
-                >
-                    ← Back to Orders
+                <button onClick={() => window.print()} className="btn btn-print">
+                    Print Invoices
                 </button>
             </div>
 
-            {subOrders.map((sub, idx) => (
-                <div key={sub.id} className="label-page" style={{ padding: "30px 40px", maxWidth: 800, margin: "0 auto", borderBottom: idx < subOrders.length - 1 ? "2px dashed #ccc" : "none" }}>
+            <div style={{ paddingTop: "20px" }}>
+                {orders.map((order) => {
+                    const shippingAddress = order.shippingAddress || {};
+                    const allItems = order.subOrders.flatMap((so: any) => so.items);
 
-                    {/* Header */}
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", borderBottom: "3px solid #000", paddingBottom: 12, marginBottom: 20 }}>
-                        <div>
-                            <div style={{ fontSize: 22, fontWeight: 900, color: "#794A05" }}>DevBhakti</div>
-                            <div style={{ fontSize: 11, color: "#666", fontWeight: 600 }}>www.devbhakti.in</div>
-                        </div>
-                        <div style={{ textAlign: "right" }}>
-                            <div style={{ fontSize: 10, color: "#888", textTransform: "uppercase", fontWeight: 700 }}>Sub-Order ID</div>
-                            <div style={{ fontSize: 16, fontWeight: 900, letterSpacing: 1 }}>#{sub.id.slice(-12).toUpperCase()}</div>
-                            <div style={{ fontSize: 11, color: "#555", marginTop: 2 }}>
-                                {format(new Date(sub.createdAt || sub.parentOrder.createdAt), "dd MMM yyyy")}
+                    return (
+                        <div key={order.id} className="page">
+                            <div className="logo-section">
+                                <div className="logo-title">DevBhakti</div>
                             </div>
-                        </div>
-                    </div>
 
-                    {/* Addresses */}
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 30, marginBottom: 24 }}>
-                        <div style={{ background: "#f9f9f9", borderRadius: 8, padding: "12px 16px" }}>
-                            <div style={{ fontSize: 10, fontWeight: 800, color: "#888", textTransform: "uppercase", marginBottom: 8, letterSpacing: 1 }}>📦 Ship To</div>
-                            <div style={{ fontWeight: 800, fontSize: 15, marginBottom: 4 }}>
-                                {sub.parentOrder?.shippingAddress?.fullName || sub.parentOrder?.user?.name}
+                            <div className="invoice-title-wrapper">
+                                <span className="invoice-title">INVOICE</span>
                             </div>
-                            <div style={{ fontSize: 13, color: "#333", lineHeight: 1.6 }}>
-                                {sub.parentOrder?.shippingAddress?.street && <div>{sub.parentOrder.shippingAddress.street}</div>}
-                                {(sub.parentOrder?.shippingAddress?.city || sub.parentOrder?.shippingAddress?.state) && (
-                                    <div>{[sub.parentOrder?.shippingAddress?.city, sub.parentOrder?.shippingAddress?.state].filter(Boolean).join(", ")}</div>
-                                )}
-                                {sub.parentOrder?.shippingAddress?.pincode && (
-                                    <div style={{ fontWeight: 700, fontSize: 14, letterSpacing: 2, marginTop: 4 }}>{sub.parentOrder.shippingAddress.pincode}</div>
-                                )}
-                                {(sub.parentOrder?.shippingAddress?.phone || sub.parentOrder?.user?.phone) && (
-                                    <div style={{ marginTop: 6, color: "#555" }}>📞 {sub.parentOrder?.shippingAddress?.phone || sub.parentOrder?.user?.phone}</div>
-                                )}
+
+                            <div className="grid-3">
+                                <div className="column">
+                                    <h4>SHIPPING ADDRESS:</h4>
+                                    <div className="column-content">
+                                        <strong>{shippingAddress.fullName || order.user?.name}</strong><br />
+                                        {shippingAddress.street || "N/A"}<br />
+                                        {shippingAddress.city} {shippingAddress.pincode}<br />
+                                        {shippingAddress.state}<br />
+                                        India<br />
+                                        Ph: {shippingAddress.phone || order.user?.phone}
+                                    </div>
+                                </div>
+
+                                <div className="column col-border">
+                                    <h4>SOLD BY:</h4>
+                                    <div className="column-content">
+                                        {order.subOrders.map((so: any, sIdx: number) => (
+                                            <div key={so.id} style={{ marginBottom: sIdx < order.subOrders.length - 1 ? 8 : 0 }}>
+                                                <strong>{so.temple?.name || so.seller?.name || "DevBhakti Seller"}</strong><br />
+                                                {so.temple?.fullAddress || so.seller?.fullAddress || "Indore, MP"}
+                                            </div>
+                                        ))}
+                                        <br />
+                                        Website: DevBhakti.in<br />
+                                        Email: admin@devbhakti.in
+                                    </div>
+                                </div>
+
+                                <div className="column col-border">
+                                    <h4>INVOICE DETAILS:</h4>
+                                    <div className="column-content">
+                                        <div className="detail-row">
+                                            <span className="detail-label">INVOICE NO</span>
+                                            <span className="detail-value">: INV-{order.id.slice(-6).toUpperCase()}</span>
+                                        </div>
+                                        <div className="detail-row">
+                                            <span className="detail-label">INVOICE DATE</span>
+                                            <span className="detail-value">: {format(new Date(order.createdAt), "dd MMMM yyyy")}</span>
+                                        </div>
+                                        <div className="detail-row">
+                                            <span className="detail-label">ORDER NO</span>
+                                            <span className="detail-value">: {order.id.slice(-8).toUpperCase()}</span>
+                                        </div>
+                                        <div className="detail-row">
+                                            <span className="detail-label">ORDER DATE</span>
+                                            <span className="detail-value">: {format(new Date(order.createdAt), "dd MMMM yyyy")}</span>
+                                        </div>
+                                        <div className="detail-row">
+                                            <span className="detail-label">CHANNEL</span>
+                                            <span className="detail-value">: CUSTOM DEVBHAKTI</span>
+                                        </div>
+                                        <div className="detail-row">
+                                            <span className="detail-label">PAYMENT<br />METHOD</span>
+                                            <span className="detail-value">: {order.paymentMethod === 'COD' ? 'cod' : 'prepaid'}</span>
+                                        </div>
+                                        <div className="detail-row">
+                                            <span className="detail-label">REMARK</span>
+                                            <span className="detail-value">: Custom Order</span>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
-                        </div>
 
-                        <div style={{ background: "#fff8f0", borderRadius: 8, padding: "12px 16px" }}>
-                            <div style={{ fontSize: 10, fontWeight: 800, color: "#794A05", textTransform: "uppercase", marginBottom: 8, letterSpacing: 1 }}>🏛️ Ship From</div>
-                            <div style={{ fontWeight: 800, fontSize: 14, marginBottom: 4, color: "#794A05" }}>{sub.temple?.name || "DevBhakti Warehouse"}</div>
-                            <div style={{ fontSize: 12, color: "#555" }}>{sub.temple?.location || ""}</div>
+                            <table className="items">
+                                <thead>
+                                    <tr>
+                                        <th className="text-left" style={{ width: "5%" }}>S.NO</th>
+                                        <th className="text-left" style={{ width: "35%" }}>PRODUCT NAME</th>
+                                        <th style={{ width: "5%" }}>HSN</th>
+                                        <th style={{ width: "5%" }}>QTY</th>
+                                        <th className="text-right" style={{ width: "10%" }}>UNIT PRICE</th>
+                                        <th className="text-right" style={{ width: "10%" }}>DISCOUNT</th>
+                                        <th className="text-right" style={{ width: "10%" }}>TAXABLE<br />VALUE</th>
+                                        <th className="text-right" style={{ width: "10%" }}>CGST<br />(Value | %)</th>
+                                        <th className="text-right" style={{ width: "10%" }}>SGST<br />(Value | %)</th>
+                                        <th className="text-right" style={{ width: "10%" }}>TOTAL<br />(Inc GST)</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {allItems.map((item: any, idx: number) => (
+                                        <tr key={item.id}>
+                                            <td className="text-left">{idx + 1}</td>
+                                            <td className="text-left">
+                                                <strong>{item.product?.name || "Item"}</strong> ({item.variantName || "Standard"})<br />
+                                                <span style={{ color: "#666", fontSize: "10px" }}>SKU: {item.variantId}</span>
+                                            </td>
+                                            <td>0</td>
+                                            <td>{item.quantity}</td>
+                                            <td className="text-right">Rs. {item.price.toFixed(2)}</td>
+                                            <td className="text-right">0.00</td>
+                                            <td className="text-right">{(item.price * item.quantity).toFixed(2)}</td>
+                                            <td className="text-right">0.00 | 0.00</td>
+                                            <td className="text-right">0.00 | 0.00</td>
+                                            <td className="text-right">{(item.price * item.quantity).toFixed(2)}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
 
-                            <div style={{ marginTop: 12, border: "1.5px dashed #794A05", borderRadius: 6, padding: "8px 12px", textAlign: "center" }}>
-                                <div style={{ fontSize: 10, color: "#794A05", fontWeight: 700, textTransform: "uppercase" }}>Payment Mode</div>
-                                <div style={{ fontSize: 16, fontWeight: 900, marginTop: 2, color: "#333" }}>
-                                    {sub.parentOrder?.paymentMethod?.toUpperCase() || "PREPAID"}
+                            <div className="totals-section">
+                                <div className="totals-left">
+                                    <div className="footer-box"></div>
+                                    <div className="footer-sign">
+                                        Authorized Signature for<br />
+                                        {order.subOrders[0]?.temple?.name || order.subOrders[0]?.seller?.name || "DevBhakti"}
+                                    </div>
+                                </div>
+
+                                <div className="totals-right">
+                                    <div className="total-line">
+                                        <span>Subtotal (In Value)</span>
+                                        <span>Rs. {(order.totalAmount - (order.platformFee || 0) - (order.shippingCost || 0)).toFixed(2)}</span>
+                                    </div>
+                                    <div className="total-line">
+                                        <span>Platform fee</span>
+                                        <span>Rs. {(order.platformFee || 0).toFixed(2)}</span>
+                                    </div>
+                                    <div className="total-line">
+                                        <span>Shipping Costs</span>
+                                        <span>{(order.shippingCost || 0) > 0 ? "Rs. " + (order.shippingCost || 0).toFixed(2) : "0.00"}</span>
+                                    </div>
+                                    <div className="total-line grand">
+                                        <span>NET TOTAL (In Value)</span>
+                                        <span>Rs. {order.totalAmount.toFixed(2)}</span>
+                                    </div>
+                                    <br />
+                                    <div className="total-line text" style={{ justifyContent: "flex-end", fontSize: "12px", fontWeight: 500 }}>
+                                        Whether tax is payable under reverse charge - No
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-
-                    {/* Items Table */}
-                    <table style={{ width: "100%", borderCollapse: "collapse", marginBottom: 20 }}>
-                        <thead>
-                            <tr style={{ background: "#f9f9f9", borderBottom: "2px solid #eee" }}>
-                                <th style={{ padding: "8px 12px", textAlign: "left", fontSize: 10, fontWeight: 800, color: "#666", textTransform: "uppercase", letterSpacing: 1 }}>Item Description</th>
-                                <th style={{ padding: "8px 12px", textAlign: "left", fontSize: 10, fontWeight: 800, color: "#666", textTransform: "uppercase", letterSpacing: 1 }}>Variant</th>
-                                <th style={{ padding: "8px 12px", textAlign: "center", fontSize: 10, fontWeight: 800, color: "#666", textTransform: "uppercase", letterSpacing: 1 }}>Qty</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {sub.items?.map((item: any) => (
-                                <tr key={item.id} style={{ borderBottom: "1px solid #f0f0f0" }}>
-                                    <td style={{ padding: "10px 12px", fontWeight: 700, fontSize: 13 }}>{item.product?.name}</td>
-                                    <td style={{ padding: "10px 12px", color: "#555", fontSize: 12 }}>{item.variantName || "Standard"}</td>
-                                    <td style={{ padding: "10px 12px", textAlign: "center", fontWeight: 900, fontSize: 15 }}>{item.quantity}</td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-
-                    {/* Footer */}
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", borderTop: "2px solid #eee", paddingTop: 16 }}>
-                        <div style={{ fontSize: 10, color: "#aaa" }}>
-                            Printed via DevBhakti Admin<br />
-                            {new Date().toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
-                        </div>
-                        <div style={{ textAlign: "right" }}>
-                            <div style={{ fontFamily: "'Libre Barcode 39', cursive", fontSize: 38, fontWeight: 700, lineHeight: 1 }}>
-                                *{sub.id.slice(0, 10).toUpperCase()}*
-                            </div>
-                            <div style={{ fontSize: 9, color: "#999", marginTop: 2, letterSpacing: 1 }}>TRACKING CODE</div>
-                        </div>
-                    </div>
-                </div>
-            ))}
+                    );
+                })}
+            </div>
         </>
     );
 }

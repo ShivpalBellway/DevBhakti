@@ -153,6 +153,19 @@ export const getUserDetail = async (req: Request, res: Response) => {
                     orderBy: {
                         createdAt: 'desc'
                     }
+                },
+                donations: {
+                    where: {
+                        status: 'SUCCESS'
+                    },
+                    include: {
+                        temple: {
+                            select: { name: true }
+                        }
+                    },
+                    orderBy: {
+                        createdAt: 'desc'
+                    }
                 }
             }
         });
