@@ -4,6 +4,7 @@ import { PrismaClient, SlabType, CommissionCategory } from "@prisma/client";
 import razorpay from "../lib/razorpay";
 import { createVerifiedOrder } from "./marketplace/productOrderController";
 import { getCommissionForAmount } from "./admin/commissionSlabController";
+import { notifyUser } from "../services/firebaseService";
 
 const prisma = new PrismaClient();
 
@@ -77,6 +78,23 @@ export const verifyPayment = async (req: Request, res: Response) => {
                 return b;
             });
 
+
+            // Notify Devotee
+            await notifyUser(userId, 'devotee', {
+                title: 'Pooja Booking Confirmed! 🙏',
+                body: `Your booking for ${pooja.name} on ${new Date(booking.bookingDate as string).toLocaleDateString()} is confirmed.`,
+                data: { link: '/profile/bookings', bookingId: booking.id }
+            });
+
+            // Notify Temple
+            if (pooja.templeId) {
+                await notifyUser(pooja.templeId, 'temple_admin', {
+                    title: 'New Pooja Booking! ✨',
+                    body: `${devoteeName} has booked ${pooja.name} for ${new Date(booking.bookingDate as string).toLocaleDateString()}.`,
+                    data: { link: '/temples/dashboard/bookings', bookingId: booking.id }
+                });
+            }
+
             return res.status(200).json({ success: true, message: "Booking confirmed", data: booking });
         } else if (orderType === "DONATION") {
             const { donationId } = orderData; // Expect donationId to be passed in orderData or referenceId
@@ -111,6 +129,25 @@ export const verifyPayment = async (req: Request, res: Response) => {
                 });
                 return d;
             });
+
+
+            // Notify Devotee
+            if (userId || donation.userId) {
+                await notifyUser(userId || (donation.userId as string), 'devotee', {
+                    title: 'Donation Successful! ❤️',
+                    body: `Thank you for your generous donation of ₹${donation.amount} to ${donation.temple.name}.`,
+                    data: { link: '/profile/donations', donationId: updatedDonation.id }
+                });
+            }
+
+            // Notify Temple
+            if (donation.templeId) {
+                await notifyUser(donation.templeId, 'temple_admin', {
+                    title: 'New Donation Received! 🙏',
+                    body: `You have received a new donation of ₹${donation.amount} from ${donation.donorName}.`,
+                    data: { link: '/temples/dashboard/finance', donationId: updatedDonation.id }
+                });
+            }
 
             return res.status(200).json({ success: true, message: "Donation successful", data: updatedDonation });
         }

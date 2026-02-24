@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { prisma } from '../../lib/prisma';
+import { notifyUser } from '../../services/firebaseService';
 
 export const getTempleBookings = async (req: Request, res: Response) => {
     try {
@@ -70,7 +71,8 @@ export const updateBookingStatus = async (req: Request, res: Response) => {
 
         const updatedBooking = await prisma.poojaBooking.update({
             where: { id: id as string },
-            data: updateData
+            data: updateData,
+            include: { pooja: true }
         });
 
         // Sync Ledger Status
@@ -85,6 +87,13 @@ export const updateBookingStatus = async (req: Request, res: Response) => {
                 data: { status: "CANCELLED" }
             });
         }
+
+        // Notify Devotee
+        await notifyUser(booking.userId, 'devotee', {
+            title: `Pooja Booking ${status === 'COMPLETED' ? 'Completed 🎊' : status === 'CANCELLED' ? 'Cancelled ❌' : status === 'REJECTED' ? 'Rejected ❌' : 'Updated'}`,
+            body: `Your booking for ${updatedBooking.pooja.name} has been marked as ${status.toLowerCase()}.`,
+            data: { link: '/profile/bookings', bookingId: booking.id }
+        });
 
         res.json({
             success: true,

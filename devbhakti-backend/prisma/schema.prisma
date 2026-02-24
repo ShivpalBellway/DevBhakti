@@ -596,6 +596,31 @@ enum WithdrawalStatus {
   REJECTED
   PAID
 }
+// FCM Push Notification Tokens
+model FCMToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String   // ID of devotee/admin/staff
+  userType  String   // 'devotee' | 'admin' | 'temple_admin' | 'seller'
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// Persistent Notification History for UI (Bell Icon)
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String   // ID of devotee/admin/staff
+  userType  String   // 'devotee' | 'admin' | 'temple_admin' | 'seller'
+  title     String
+  body      String
+  data      Json?    // Extra data like link, orderId, etc.
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId, userType])
+}
+
 model Donation {
   id              String         @id @default(cuid())
   userId          String?

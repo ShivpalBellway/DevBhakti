@@ -35,6 +35,8 @@ import Image from "next/image";
 import logo from "@/assets/logo2.png";
 import AccessDeniedPage from "./access-denied/page";
 import { clearAllTokens } from "@/lib/auth-utils";
+import { useNotifications } from "@/hooks/useNotifications";
+import { NotificationBell } from "@/components/notifications/NotificationBell";
 
 const sidebarItems = [
   {
@@ -156,7 +158,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
-  const [user, setUser] = useState<{ name: string; email: string; isStaff?: boolean; permissions?: string[] } | null>(null);
+  const [user, setUser] = useState<{ id?: string; name: string; email: string; isStaff?: boolean; permissions?: string[] } | null>(null);
 
   const isLoginPage = pathname?.startsWith("/admin/login") || pathname?.startsWith("/admin/staff-login");
 
@@ -196,6 +198,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     clearAllTokens();
     router.push("/admin/login");
   };
+
+  // Initialize Firebase notifications for admin panel
+  useNotifications({
+    userId: user?.id || user?.email || '',
+    userType: 'admin',
+    enabled: !!(user?.id || user?.email) && isAuthenticated === true,
+  });
 
   const [openMenus, setOpenMenus] = useState<string[]>([]);
 
@@ -472,10 +481,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </div>
 
           <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" className="relative">
-              <Bell className="w-5 h-5" />
-              <span className="absolute top-1 right-1 w-2 h-2 bg-destructive rounded-full" />
-            </Button>
+            <NotificationBell userId={user?.id || user?.email || ''} userType="admin" />
             <Button variant="outline" size="sm" asChild>
               <Link href="/">View Site</Link>
             </Button>

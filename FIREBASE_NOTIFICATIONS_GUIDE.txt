@@ -1,0 +1,262 @@
+
+================================================================================
+         DevBhakti - Firebase Push Notification Complete Guide
+================================================================================
+Created: 2026-02-23
+Stack: Node.js (Backend) + Next.js (Admin/Temple/Seller Panel) + React Native (App)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 1: WHAT WE ARE BUILDING
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Firebase Cloud Messaging (FCM) se hum 4 jagah notifications bhej sakte hain:
+
+  1. ADMIN PANEL    (Next.js web - browser push notification + toast)
+  2. TEMPLE PANEL  (Next.js web - browser push notification + toast)
+  3. SELLER PANEL  (Next.js web - browser push notification + toast)
+  4. APP           (React Native - mobile push notification) [BAAD MEIN]
+
+Hamare paas PostgreSQL hai data ke liye.
+Firebase sirf notification delivery ke liye use hoga - database ke liye NAHI.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 2: HOW FCM WORKS (Simple Explanation)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+STEP A: Browser/App ka Token Register Hona
+  - Jab koi admin/temple/seller apne panel me login kare
+  - Uska browser Firebase se ek unique "FCM Token" leta hai
+  - Ye token hum apne PostgreSQL DB me save karte hain (FCMToken table)
+  - Token = us particular browser window ki identity
+
+STEP B: Event Trigger Hona (e.g., new booking)
+  - User koi action kare (booking, order, payment)
+  - Backend me event fire hota hai
+
+STEP C: Backend Notification Bhejta Hai
+  - Backend Firebase Admin SDK se FCM Token pe message bhejta hai
+  - Firebase usse us specific browser/device tak deliver karta hai
+
+STEP D: Frontend Notification Show Karta Hai
+  - Browser Service Worker notification receive karta hai
+  - Toast (Sonner) ya Browser Push notification show hoti hai
+
+  [USER] --> [Backend API] --> [Firebase Admin SDK] --> [FCM] --> [Browser/App]
+                  |                                                      |
+            [PostgreSQL]                                          [Toast/Push]
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 3: NOTIFICATION FLOW - KON KISKO NOTIFICATION MILEGI
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+━━━ SCENARIO 1: USER NE PRODUCT ORDER KIYA ━━━
+
+  PRODUCT TEMPLE KA HAI:
+    → TEMPLE PANEL: "Naya Order Aaya! [Product Name] - Rs. XXX" ✅
+    → ADMIN PANEL:  "Naya Order - [Temple Name] ka product - Rs. XXX" ✅
+    → SELLER PANEL: ❌ (seller ka product nahi hai)
+
+  PRODUCT SELLER KA HAI:
+    → SELLER PANEL: "Naya Order Aaya! [Product Name] - Rs. XXX" ✅
+    → ADMIN PANEL:  "Naya Order - [Seller Name] ka product - Rs. XXX" ✅
+    → TEMPLE PANEL: ❌ (temple ka product nahi hai)
+
+  PRODUCT ADMIN KA HAI (Direct Admin):
+    → ADMIN PANEL:  "Naya Order - [Product Name] - Rs. XXX" ✅
+    → TEMPLE PANEL: ❌
+    → SELLER PANEL: ❌
+
+━━━ SCENARIO 2: USER NE POOJA BOOKING KI ━━━
+
+  → TEMPLE PANEL (us temple ki): "Nayi Pooja Booking! [Pooja Name] - [Date]" ✅
+  → ADMIN PANEL:                 "Nayi Booking - [Temple Name] - [Pooja Name]" ✅
+
+━━━ SCENARIO 3: PAYMENT COMPLETE HUI ━━━
+
+  Order/Booking ka status check karo:
+  → Agar temple ka:  TEMPLE PANEL + ADMIN PANEL ✅
+  → Agar seller ka:  SELLER PANEL + ADMIN PANEL ✅
+
+━━━ SCENARIO 4: DONATION HUI ━━━
+
+  → TEMPLE PANEL (us temple ki): "Nayi Donation Rs. XXX [Donor Name] se" ✅
+  → ADMIN PANEL:                 "Donation - [Temple Name] - Rs. XXX" ✅
+
+━━━ SCENARIO 5: WITHDRAWAL REQUEST AYI ━━━
+
+  → ADMIN PANEL: "Withdrawal Request - [Temple/Seller Name] - Rs. XXX" ✅
+
+━━━ SCENARIO 6: ORDER STATUS CHANGE (Shipped/Delivered) ━━━
+
+  → USER APP/BROWSER: "Aapka order ship ho gaya! Track karein" ✅ [APP BAAD MEIN]
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 4: DATABASE DESIGN (FCMToken Table)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Table: FCMToken
+  id        - unique ID
+  token     - Firebase FCM Token (unique per browser)
+  userId    - Kis user ka token hai (User.id / Admin.id / StaffMember.id)
+  userType  - 'devotee' | 'admin' | 'temple_admin' | 'seller'
+  createdAt - Kab register hua
+  updatedAt - Last update
+
+Note: Ek hi user ke multiple tokens ho sakte hain
+(different browsers/devices se login kare toh)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 5: BACKEND IMPLEMENTATION STEPS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+ALREADY DONE ✅:
+  - firebase-admin installed
+  - src/services/firebaseService.ts created
+  - src/routes/notificationRoutes.ts created
+  - FCMToken model in Prisma schema
+  - DB pushed
+
+REMAINING - For each event controller, add notification trigger:
+
+  Example: jab order create ho (productOrderController.ts):
+  ┌─────────────────────────────────────────────────────────┐
+  │ import { sendNotificationToMultiple } from '../services/firebaseService';
+  │ import prisma from '../lib/prisma';
+  │                                                         │
+  │ // After order is saved in DB:                          │
+  │ const subOrder = await prisma.subOrder.findFirst(...)   │
+  │                                                         │
+  │ // Get tokens of relevant temple/seller admins          │
+  │ const tokens = await prisma.fCMToken.findMany({         │
+  │   where: {                                              │
+  │     userId: templeUserId,  // ya sellerId                │
+  │     userType: 'temple_admin'                            │
+  │   }                                                     │
+  │ });                                                     │
+  │                                                         │
+  │ await sendNotificationToMultiple(                       │
+  │   tokens.map(t => t.token),                             │
+  │   {                                                     │
+  │     title: '🛍️ Naya Order Aaya!',                       │
+  │     body: `${productName} - Rs. ${amount}`,             │
+  │     data: { type: 'new_order', orderId: order.id }      │
+  │   }                                                     │
+  │ );                                                      │
+  └─────────────────────────────────────────────────────────┘
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 6: FRONTEND IMPLEMENTATION (Admin/Temple/Seller Panel)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Files to create in frontend (Next.js):
+  1. src/lib/firebase.ts          - Firebase app initialize
+  2. src/lib/fcm.ts               - Token get karo + register karo
+  3. public/firebase-messaging-sw.js  - Service Worker (background notifications)
+  4. src/hooks/useNotifications.ts    - Custom hook
+  5. Add <NotificationProvider> in layout
+
+Flow in Panel (Admin/Temple/Seller):
+  Login --> useNotifications hook chale -->
+  Browser se FCM token maango (permission popup) -->
+  Token ko backend ko bhejo (POST /api/notifications/register-token) -->
+  Jab bhi koi notification aaye --> Sonner toast show karo -->
+  Browser tab band ho tab bhi Service Worker se notification aaye
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 7: FRONTEND IMPLEMENTATION STEPS (Admin Panel)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Step 1: src/lib/firebase.ts
+  → Firebase app initialize karo with firebaseConfig
+  → getMessaging() export karo
+
+Step 2: public/firebase-messaging-sw.js
+  → Service Worker banao jo background notifications handle kare
+  → importScripts firebase-app-compat + firebase-messaging-compat use karo
+  → firebaseConfig se initialize karo
+  → onBackgroundMessage listener lagao
+
+Step 3: src/lib/fcm.ts
+  → getToken(messaging, { vapidKey: VAPID_KEY }) se token lo
+  → POST /api/notifications/register-token ko call karo
+  → Notification permission request karo
+
+Step 4: src/hooks/useNotifications.ts
+  → onMessage(messaging) se foreground notifications sunna
+  → Sonner toast trigger karo
+
+Step 5: Layout me integrate karo
+  → Admin layout, Temple layout, Seller layout me
+  → useNotifications() hook call karo
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 8: APP IMPLEMENTATION (React Native - BAAD MEIN KARNA)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Library: @react-native-firebase/app + @react-native-firebase/messaging
+
+Steps:
+  1. google-services.json (Android) + GoogleService-Info.plist (iOS) add karo
+  2. Permissions request karo
+  3. FCM token lo
+  4. Backend register-token API call karo (userType: 'devotee')
+  5. onMessage (foreground) → local notification show karo
+  6. setBackgroundMessageHandler → background notifications handle karo
+
+Notifications for App (Devotee):
+  → Order placed confirmation
+  → Order shipped / delivered
+  → Booking confirmed
+  → Donation receipt
+  → Offers / announcements (topic-based)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 9: NOTIFICATION TYPES SUMMARY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  EVENT                    → ADMIN  → TEMPLE  → SELLER  → USER-APP
+  ─────────────────────────────────────────────────────────────────
+  New Product Order (T)    → ✅     → ✅      → ❌      → ✅ (confirm)
+  New Product Order (S)    → ✅     → ❌      → ✅      → ✅ (confirm)
+  New Pooja Booking        → ✅     → ✅      → ❌      → ✅ (confirm)
+  New Donation             → ✅     → ✅      → ❌      → ✅ (receipt)
+  Order Shipped            → ❌     → ❌      → ❌      → ✅
+  Withdrawal Request       → ✅     → ❌      → ❌      → ❌
+  Booking Status Change    → ❌     → ❌      → ❌      → ✅
+  New User Registered      → ✅     → ❌      → ❌      → ❌
+
+  T = Temple product | S = Seller product
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 10: FILES ALREADY CREATED
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+BACKEND (devbhakti-backend):
+  ✅ src/services/firebaseService.ts     - sendNotificationToToken/Multiple/Topic
+  ✅ src/routes/notificationRoutes.ts    - POST /register-token, DELETE /remove-token
+  ✅ prisma/schema.prisma                - FCMToken model added
+  ✅ src/firebase-service-account.json   - Service account credentials
+
+FRONTEND (devbhakti-frontend):
+  ✅ firebase package installed
+  ⏳ src/lib/firebase.ts                - TODO
+  ⏳ src/lib/fcm.ts                     - TODO
+  ⏳ public/firebase-messaging-sw.js    - TODO
+  ⏳ src/hooks/useNotifications.ts      - TODO
+  ⏳ Layout integration                  - TODO
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 11: ENV VARIABLES NEEDED
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Frontend .env:
+  NEXT_PUBLIC_FIREBASE_API_KEY=AIzaSyD6r2nCCpACMxmaIC6u1GEz7ICtz-LYt4M
+  NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=devbhakti-c7132.firebaseapp.com
+  NEXT_PUBLIC_FIREBASE_PROJECT_ID=devbhakti-c7132
+  NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=devbhakti-c7132.firebasestorage.app
+  NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=232153149807
+  NEXT_PUBLIC_FIREBASE_APP_ID=1:232153149807:web:80d0fd70a96f83e8fd389a
+  NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=G-2SY4DDRS3T
+  NEXT_PUBLIC_FIREBASE_VAPID_KEY=BCMyEjtB4FEStF9oVVSsBc9yECzp7-EOPdlOJfsTCOOOjCXlOCeJ7_N7fQDnFg1rk17oTqqvP3wO1C6vZVwJv8s
+
+================================================================================

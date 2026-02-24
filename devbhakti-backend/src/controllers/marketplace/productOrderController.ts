@@ -4,6 +4,7 @@ import { createShiprocketOrder } from "../../services/shiprocketService";
 import razorpay from "../../lib/razorpay";
 import { SlabType, CommissionCategory } from "@prisma/client";
 import { getCommissionForAmount } from "../admin/commissionSlabController";
+import { notifyUser, notifyAdmins } from "../../services/firebaseService";
 
 export const calculateFees = async (req: Request, res: Response) => {
   try {
@@ -285,7 +286,37 @@ export const createVerifiedOrder = async (orderData: any, userId: string) => {
       } catch (srError: any) {
         console.error(`Shiprocket Sync Error for SubOrder ${subOrder.id}:`, srError.message);
       }
+
+      // Notify Vendor (Temple or Seller)
+      if (templeId) {
+        await notifyUser(templeId, 'temple_admin', {
+          title: 'New Product Order! 📦',
+          body: `You have received a new order #${subOrder.id.slice(-6).toUpperCase()} for ₹${subOrderTotal}.`,
+          data: { link: `/temples/dashboard/orders/${subOrder.id}`, orderId: subOrder.id }
+        });
+      } else if (sellerId) {
+        await notifyUser(sellerId, 'seller', {
+          title: 'New Product Order! 📦',
+          body: `You have received a new order #${subOrder.id.slice(-6).toUpperCase()} for ₹${subOrderTotal}.`,
+          data: { link: `/seller/dashboard/orders/${subOrder.id}`, orderId: subOrder.id }
+        });
+      }
     }
+
+    // Notify Devotee
+    await notifyUser(userId, 'devotee', {
+      title: 'Order Placed Successfully! 🎉',
+      body: `Your order #${order.id.slice(-6).toUpperCase()} has been placed. We'll update you when it's shipped!`,
+      data: { link: `/profile/orders/${order.id}`, orderId: order.id }
+    });
+
+    // Notify Admin (New Order Alert)
+    await notifyAdmins({
+      title: 'New Master Order! 📢',
+      body: `Order #${order.id.slice(-6).toUpperCase()} placed for ₹${totalAmount}.`,
+      data: { link: `/admin/dashboard/orders/${order.id}`, orderId: order.id }
+    });
+
     return order;
   });
 };
