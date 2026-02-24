@@ -35,7 +35,6 @@ import { useEffect } from "react";
 import { fetchMyTempleBookings, fetchTempleOrders, fetchMyTempleProfile } from "@/api/templeAdminController";
 import { useAdminAuth } from "@/hooks/use-admin-auth";
 import { clearAllTokens } from "@/lib/auth-utils";
-import { useNotifications } from "@/hooks/useNotifications";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 
 const sidebarItems = [
@@ -341,12 +340,7 @@ export default function TempleAdminLayout({ children }: { children: React.ReactN
         router.push("/temples/dashboard/login");
     };
 
-    // Initialize Firebase notifications for temple panel
-    useNotifications({
-        userId: user?.id || user?.phone || user?.email || '',
-        userType: 'temple_admin',
-        enabled: !!(user?.id || user?.phone || user?.email) && isAuthenticated === true,
-    });
+
 
     // Skip sidebar/layout for login pages
     if (pathname === "/temples/dashboard/login" || pathname === "/temples/dashboard/staff-login") {

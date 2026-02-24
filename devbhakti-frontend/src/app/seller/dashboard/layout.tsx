@@ -35,7 +35,6 @@ import { BASE_URL } from "@/config/apiConfig";
 import { clearAllTokens } from "@/lib/auth-utils";
 import { useAdminAuth } from "@/hooks/use-admin-auth";
 import { ShieldCheck } from "lucide-react";
-import { useNotifications } from "@/hooks/useNotifications";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 
 const sellerSidebarGroups = [
@@ -129,12 +128,7 @@ function SellerDashboardContent({ children }: { children: React.ReactNode }) {
         router.push("/seller");
     };
 
-    // Initialize Firebase notifications for seller panel
-    useNotifications({
-        userId: user?.id || user?.phone || user?.email || '',
-        userType: 'seller',
-        enabled: !!(user?.id || user?.phone || user?.email) && isAuthenticated === true,
-    });
+
 
     if (isAuthenticated === null) {
         return (

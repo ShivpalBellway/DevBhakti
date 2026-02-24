@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useState } from "react";
 import { CartProvider } from "@/context/CartContext";
+import { NotificationManager } from "@/components/notifications/NotificationManager";
 
 export default function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(() => new QueryClient());
@@ -15,6 +16,7 @@ export default function Providers({ children }: { children: React.ReactNode }) {
       <TooltipProvider>
         <CartProvider>
           {children}
+          <NotificationManager />
           <Toaster />
           <Sonner />
         </CartProvider>

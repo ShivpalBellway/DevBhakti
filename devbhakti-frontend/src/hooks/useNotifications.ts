@@ -66,7 +66,7 @@ export const useNotifications = ({
           },
           action: data?.link
             ? {
-                label: 'Dekho',
+                label: 'View Order',
                 onClick: () => window.open(data.link, '_self'),
               }
             : undefined,

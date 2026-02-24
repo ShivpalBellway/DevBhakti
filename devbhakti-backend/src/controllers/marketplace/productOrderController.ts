@@ -133,8 +133,8 @@ export const createVerifiedOrder = async (orderData: any, userId: string) => {
         length: true,
         width: true,
         height: true,
-        temple: { select: { pickupLocation: true } },
-        seller: { select: { pickupLocation: true } }
+        temple: { select: { name: true, pickupLocation: true, userId: true } },
+        seller: { select: { name: true, pickupLocation: true, userId: true } }
       },
     });
     const productMap = new Map(products.map(p => [p.id, p]));
@@ -222,6 +222,13 @@ export const createVerifiedOrder = async (orderData: any, userId: string) => {
       }
 
       // 4. Shiprocket Sync
+      const firstProd = productMap.get(groupItems[0].productId);
+      if (!firstProd) {
+        console.warn(`⚠️ Skipping Shiprocket/Notify for group ${key}: Product not found`);
+        continue;
+      }
+      const vendorUserId = templeId ? (firstProd as any)?.temple?.userId : (firstProd as any)?.seller?.userId;
+
       try {
         const orderWithUser = await tx.order.findUnique({
           where: { id: order.id },
@@ -231,7 +238,6 @@ export const createVerifiedOrder = async (orderData: any, userId: string) => {
         const shippingAddr = shippingAddress as any;
 
         // Use the first product's vendor pickup location
-        const firstProd = productMap.get(groupItems[0].productId);
         const pickupLocation = (templeId ? (firstProd as any)?.temple?.pickupLocation : (firstProd as any)?.seller?.pickupLocation) || "Primary";
 
         // Prepare Shiprocket Order Payload
@@ -288,34 +294,55 @@ export const createVerifiedOrder = async (orderData: any, userId: string) => {
       }
 
       // Notify Vendor (Temple or Seller)
-      if (templeId) {
-        await notifyUser(templeId, 'temple_admin', {
-          title: 'New Product Order! 📦',
-          body: `You have received a new order #${subOrder.id.slice(-6).toUpperCase()} for ₹${subOrderTotal}.`,
-          data: { link: `/temples/dashboard/orders/${subOrder.id}`, orderId: subOrder.id }
-        });
-      } else if (sellerId) {
-        await notifyUser(sellerId, 'seller', {
-          title: 'New Product Order! 📦',
-          body: `You have received a new order #${subOrder.id.slice(-6).toUpperCase()} for ₹${subOrderTotal}.`,
-          data: { link: `/seller/dashboard/orders/${subOrder.id}`, orderId: subOrder.id }
-        });
+      // Notify Vendor (Temple Owner or Seller Owner)
+      if (vendorUserId) {
+        try {
+          await notifyUser(vendorUserId, templeId ? 'temple_admin' : 'seller', {
+            title: 'New Product Order! 📦',
+            body: `You have received a new order #${subOrder.id.slice(-6).toUpperCase()} for ₹${subOrderTotal}.`,
+            data: { link: templeId ? `/temples/dashboard/orders/${subOrder.id}` : `/seller/dashboard/orders/${subOrder.id}`, orderId: subOrder.id }
+          });
+        } catch (notifyErr) {
+          console.error(`❌ Vendor Notification Failed for ${vendorUserId}:`, notifyErr);
+        }
       }
     }
 
     // Notify Devotee
-    await notifyUser(userId, 'devotee', {
-      title: 'Order Placed Successfully! 🎉',
-      body: `Your order #${order.id.slice(-6).toUpperCase()} has been placed. We'll update you when it's shipped!`,
-      data: { link: `/profile/orders/${order.id}`, orderId: order.id }
-    });
+    try {
+      await notifyUser(userId, 'devotee', {
+        title: 'Order Placed Successfully! 🎉',
+        body: `Your order #${order.id.slice(-6).toUpperCase()} has been placed. We'll update you when it's shipped!`,
+        data: { link: `/profile/orders/${order.id}`, orderId: order.id }
+      });
+    } catch (notifyErr) {
+      console.error(`❌ Devotee Notification Failed for ${userId}:`, notifyErr);
+    }
 
-    // Notify Admin (New Order Alert)
-    await notifyAdmins({
-      title: 'New Master Order! 📢',
-      body: `Order #${order.id.slice(-6).toUpperCase()} placed for ₹${totalAmount}.`,
-      data: { link: `/admin/dashboard/orders/${order.id}`, orderId: order.id }
-    });
+    // Prepare details for Admin notification
+    const userDisplayName = order.user?.name || "A Devotee";
+    const productNames = items.map((item: any) => {
+      const p = productMap.get(item.productId);
+      return `${p?.name} (x${item.quantity})`;
+    }).join(', ');
+
+    const vendorSummary = Object.keys(groups).map(key => {
+      if (key === 'admin') return 'DevBhakti Admin';
+      const firstItem = groups[key][0];
+      const info = productMap.get(firstItem.productId);
+      return info?.temple?.name || info?.seller?.name || 'Vendor';
+    }).join(', ');
+
+    // Notify Admin (Comprehensive Order Alert)
+    try {
+      await notifyAdmins({
+        title: 'New Master Order! 📢',
+        body: `Customer: ${userDisplayName}\\nProducts: ${productNames}\\nVendors: ${vendorSummary}\\nTotal Amount: ₹${totalAmount}`,
+        data: { link: `/admin/dashboard/orders/${order.id}`, orderId: order.id }
+      });
+    } catch (notifyErr) {
+      console.error(`❌ Admin Notification Failed:`, notifyErr);
+    }
 
     return order;
   });

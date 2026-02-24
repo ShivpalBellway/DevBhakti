@@ -35,7 +35,6 @@ import Image from "next/image";
 import logo from "@/assets/logo2.png";
 import AccessDeniedPage from "./access-denied/page";
 import { clearAllTokens } from "@/lib/auth-utils";
-import { useNotifications } from "@/hooks/useNotifications";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 
 const sidebarItems = [
@@ -200,12 +199,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     router.push("/admin/login");
   };
 
-  // Initialize Firebase notifications for admin panel
-  useNotifications({
-    userId: user?.id || user?.email || '',
-    userType: 'admin',
-    enabled: !!(user?.id || user?.email) && isAuthenticated === true,
-  });
+
 
   const [openMenus, setOpenMenus] = useState<string[]>([]);
 
