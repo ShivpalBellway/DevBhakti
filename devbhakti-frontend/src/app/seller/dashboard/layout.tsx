@@ -35,6 +35,8 @@ import { BASE_URL } from "@/config/apiConfig";
 import { clearAllTokens } from "@/lib/auth-utils";
 import { useAdminAuth } from "@/hooks/use-admin-auth";
 import { ShieldCheck } from "lucide-react";
+import { useNotifications } from "@/hooks/useNotifications";
+import { NotificationBell } from "@/components/notifications/NotificationBell";
 
 const sellerSidebarGroups = [
     {
@@ -127,6 +129,12 @@ function SellerDashboardContent({ children }: { children: React.ReactNode }) {
         router.push("/seller");
     };
 
+    // Initialize Firebase notifications for seller panel
+    useNotifications({
+        userId: user?.id || user?.phone || user?.email || '',
+        userType: 'seller',
+        enabled: !!(user?.id || user?.phone || user?.email) && isAuthenticated === true,
+    });
 
     if (isAuthenticated === null) {
         return (
@@ -245,7 +253,7 @@ function SellerDashboardContent({ children }: { children: React.ReactNode }) {
                     <Link
                         href="/seller/dashboard/profile"
                         className={cn(
-                            "flex items-center gap-3 p-2 rounded-xl transition-colors hover:bg-sidebar-accent cursor-pointer block",
+                            "flex items-center gap-3 p-2 rounded-xl transition-colors hover:bg-sidebar-accent cursor-pointer",
                             sidebarOpen ? "" : "justify-center"
                         )}
                     >
@@ -316,10 +324,7 @@ function SellerDashboardContent({ children }: { children: React.ReactNode }) {
                             </Button>
                         )}
                         <div className="w-px h-8 bg-slate-200" />
-                        <Button variant="ghost" size="icon" className="relative text-slate-400 hover:text-sidebar-primary hover:bg-sidebar-accent rounded-full transition-colors">
-                            <Bell className="w-5 h-5" />
-                            <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full ring-2 ring-white" />
-                        </Button>
+                        <NotificationBell userId={user?.id || user?.email || ''} userType="seller" />
                     </div>
                 </header>
 

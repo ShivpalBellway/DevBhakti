@@ -46,6 +46,8 @@ import publicSearchRoutes from './routes/publicSearchRoutes';
 import adminStaffManagementRoutes from './routes/admin/staffManagementRoutes';
 import templeAdminStaffManagementRoutes from './routes/temple_admin/staffManagementRoutes';
 import sellerStaffManagementRoutes from './routes/seller/staffManagementRoutes';
+import notificationRoutes from './routes/notificationRoutes';
+import './services/firebaseService'; // Initialize Firebase Admin on startup
 
 
 dotenv.config();
@@ -115,6 +117,9 @@ app.use('/api/donations', donationRoutes);
 // General Routes (Temporary)
 app.use('/api/temples', templeRoutes);
 app.use('/api/search', publicSearchRoutes);
+
+// Notification Routes (FCM Token Register/Remove)
+app.use('/api/notifications', notificationRoutes);
 
 
 // Basic Error Handler

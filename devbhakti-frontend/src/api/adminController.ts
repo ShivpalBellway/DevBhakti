@@ -499,10 +499,7 @@ export const fetchAllCategoriesAdmin = async () => {
 };
 
 export const fetchActiveCategoriesAdmin = async () => {
-    const token = getAdminToken();
-    const response = await axios.get(`${API_URL}/admin/categories/active`, {
-        headers: { Authorization: `Bearer ${token}` }
-    });
+    const response = await axios.get(`${API_URL}/admin/categories/active`);
     return response.data.data;
 };
 

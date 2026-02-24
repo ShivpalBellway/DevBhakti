@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { prisma } from "../../lib/prisma";
+import { notifyUser } from "../../services/firebaseService";
 
 // Get orders specifically for a Seller (Store)
 export const getSellerOrders = async (req: Request, res: Response) => {
@@ -96,6 +97,13 @@ export const updateSellerOrderStatus = async (req: Request, res: Response) => {
                 }
             }
         }
+
+        // Notify devotee
+        await notifyUser(parentOrder!.userId || 'unknown', 'devotee', {
+            title: `Order Status Updated: ${status}`,
+            body: `Your order from your favorite seller has been marked as ${status.toLowerCase()}.`,
+            data: { link: `/profile/orders/${parentOrder!.id}`, orderId: parentOrder!.id }
+        });
 
         return res.status(200).json({ success: true, message: "Order status updated", data: updated });
     } catch (error: any) {
