@@ -1,8 +1,9 @@
 import { Router } from "express";
-import { getTempleDonations, getTempleDonationStats } from "../../controllers/temple_admin/templeDonationController";
+import { getTempleDonations, getTempleDonationStats, downloadDonationsExcel } from "../../controllers/temple_admin/templeDonationController";
 
 const router = Router();
 
+router.get("/:templeId/export/excel", downloadDonationsExcel);
 router.get("/:templeId", getTempleDonations);
 router.get("/:templeId/stats", getTempleDonationStats);
 

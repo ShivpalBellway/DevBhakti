@@ -19,7 +19,8 @@ import {
     X,
     Trash2,
     Plus,
-    ChevronDown
+    ChevronDown,
+    Download
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -30,14 +31,15 @@ import { useToast } from "@/hooks/use-toast";
 import { useDebounce } from "@/hooks/use-debounce";
 import { useAdminAuth } from "@/hooks/use-admin-auth";
 import { cn } from "@/lib/utils";
-
+import axios from "axios";
+import { API_URL } from "@/config/apiConfig";
 
 const statusConfig = {
     BOOKED: { label: "Booked", color: "bg-blue-100 text-blue-700 border-blue-200", icon: CheckCircle },
     COMPLETED: { label: "Completed", color: "bg-emerald-100 text-emerald-700 border-emerald-200", icon: CheckCircle2 },
     REJECTED: { label: "Rejected", color: "bg-rose-100 text-rose-700 border-rose-200", icon: XCircle },
     CANCELLED: { label: "Cancelled", color: "bg-slate-100 text-slate-700 border-slate-200", icon: X },
-    PENDING: { label: "Pending", color: "bg-amber-100 text-amber-700 border-amber-200", icon: Clock },
+    PENDING: { label: "Pending", color: "bg-amber-100   text-amber-700 border-amber-200", icon: Clock },
 };
 
 function BookingsContent() {
@@ -169,6 +171,45 @@ function BookingsContent() {
         }
     };
 
+
+    const handleExportBookings = async () => {
+        try {
+            toast({ title: "Exporting...", description: "Please wait while we prepare the Excel file." });
+
+
+            const token = localStorage.getItem('admin_token') || localStorage.getItem('staff_token');
+
+        
+            const response = await axios.get(`${API_URL}/admin/bookings/export/excel`, {
+                responseType: 'blob',
+                validateStatus: () => true,
+             
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (response.status === 200) {
+                const url = window.URL.createObjectURL(new Blob([response.data]));
+                const link = document.createElement('a');
+                link.href = url;
+                link.setAttribute('download', `pooja_bookings_${new Date().toISOString().slice(0, 10)}.xlsx`);
+                document.body.appendChild(link);
+                link.click();
+                link.parentNode?.removeChild(link);
+
+                toast({ title: "Success", description: "Bookings exported successfully!" });
+            } else {
+                throw new Error("Download failed (Unauthorized or Server Error)");
+            }
+        } catch (error) {
+            console.error(error);
+            toast({ title: "Error", description: "Failed to download Excel. Check Login.", variant: "destructive" });
+        }
+    };
+
+
     return (
         <div className="space-y-6">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -177,6 +218,14 @@ function BookingsContent() {
                     <p className="text-muted-foreground mt-1 text-sm font-medium">Manage all sacred service reservations</p>
                 </div>
             </div>
+
+            <Button
+                onClick={handleExportBookings}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white gap-2 rounded-xl h-11"
+            >
+                <Download className="w-4 h-4" />
+                Export Excel
+            </Button>
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {[
@@ -306,14 +355,14 @@ function BookingsContent() {
                                     <p className="text-[10px] font-bold text-slate-400 uppercase">Update Status</p>
 
                                     <div className="grid grid-cols-2 gap-3">
-                                        <Button
+                                        {/* <Button
                                             variant="outline"
                                             className="rounded-2xl h-12 border-rose-200 text-rose-600 hover:bg-rose-50"
                                             onClick={() => handleUpdateStatus(selectedBooking.id, 'REJECTED')}
                                             disabled={isProcessing}
                                         >
                                             Reject Booking
-                                        </Button>
+                                        </Button> */}
                                         <Button
                                             className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl h-12 font-bold"
                                             onClick={() => setConfirmCompleteId(selectedBooking.id)}

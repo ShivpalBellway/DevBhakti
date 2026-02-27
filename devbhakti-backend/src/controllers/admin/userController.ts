@@ -1,11 +1,12 @@
 import { Request, Response } from 'express';
 import { PrismaClient, UserRole } from '@prisma/client';
+import ExcelJS from 'exceljs';
 
 const prisma = new PrismaClient();
 
 export const getAllUsers = async (req: Request, res: Response) => {
     try {
-        const { page = 1, limit = 10, search = '', role, startDate, endDate } = req.query;
+        const { page = 1, limit = 10, search = '', role, startDate, endDate, dob, anniversary } = req.query;
         const skip = (Number(page) - 1) * Number(limit);
         const take = Number(limit);
 
@@ -33,13 +34,20 @@ export const getAllUsers = async (req: Request, res: Response) => {
             ];
         }
 
+        if (dob) {
+            where.dob = { contains: String(dob) };
+        }
+        if (anniversary) {
+            where.anniversary = { contains: String(anniversary) };
+        }
+
         if (startDate || endDate) {
             where.createdAt = {};
             if (startDate) where.createdAt.gte = new Date(String(startDate));
             if (endDate) where.createdAt.lte = new Date(String(endDate));
         }
 
-        const [users, total] = await Promise.all([
+        const [users, total, filteredStats] = await Promise.all([
             prisma.user.findMany({
                 where,
                 skip,
@@ -54,13 +62,40 @@ export const getAllUsers = async (req: Request, res: Response) => {
                     }
                 }
             }),
-            prisma.user.count({ where })
+            prisma.user.count({ where }),
+            prisma.user.aggregate({
+                where,
+                _count: {
+                    id: true
+                }
+            })
+        ]);
+
+        // Get total bookings and orders count for the filtered users
+        const filteredUserIds = await prisma.user.findMany({ where, select: { id: true } });
+        const userIds = filteredUserIds.map(u => u.id);
+
+        const [filteredBookings, filteredOrders] = await Promise.all([
+            prisma.poojaBooking.count({
+                where: {
+                    userId: { in: userIds },
+                    status: { not: 'PENDING' }
+                }
+            }),
+            prisma.subOrder.count({
+                where: {
+                    order: {
+                        userId: { in: userIds }
+                    }
+                }
+            })
         ]);
 
         // Get stats
         const now = new Date();
         const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
+        // Static stats (total counts)
         const [totalUsers, totalDevotees, totalInstitutions, newThisMonth] = await Promise.all([
             prisma.user.count({ where: { role: { not: 'ADMIN' } } }),
             prisma.user.count({ where: { role: 'DEVOTEE' } }),
@@ -97,7 +132,10 @@ export const getAllUsers = async (req: Request, res: Response) => {
                     totalUsers,
                     totalDevotees,
                     totalInstitutions,
-                    newThisMonth
+                    newThisMonth,
+                    filteredCount: total,
+                    filteredBookings,
+                    filteredOrders
                 }
             }
         });
@@ -181,5 +219,82 @@ export const getUserDetail = async (req: Request, res: Response) => {
     } catch (error) {
         console.error('Error fetching user detail:', error);
         res.status(500).json({ success: false, message: 'Internal server error' });
+    }
+};
+
+export const downloadUsersExcel = async (req: Request, res: Response) => {
+    try {
+        const { search = '', role, startDate, endDate, dob, anniversary } = req.query;
+
+        const where: any = { role: { not: 'ADMIN' } };
+        if (role && role !== 'all') {
+            if (role === 'institution') where.role = UserRole.INSTITUTION;
+            else if (role === 'devotee') where.role = UserRole.DEVOTEE;
+            else if (role === 'seller') where.role = UserRole.SELLER;
+        }
+
+        if (search) {
+            where.OR = [
+                { name: { contains: String(search), mode: 'insensitive' } },
+                { email: { contains: String(search), mode: 'insensitive' } },
+                { phone: { contains: String(search), mode: 'insensitive' } },
+            ];
+        }
+        if (dob) where.dob = { contains: String(dob) };
+        if (anniversary) where.anniversary = { contains: String(anniversary) };
+
+        if (startDate || endDate) {
+            where.createdAt = {};
+            if (startDate) where.createdAt.gte = new Date(String(startDate));
+            if (endDate) where.createdAt.lte = new Date(String(endDate));
+        }
+
+        const usersList = await prisma.user.findMany({ where, orderBy: { createdAt: 'desc' }, include: { _count: { select: { bookings: true, orders: true } } } });
+
+        const workbook = new ExcelJS.Workbook();
+        const worksheet = workbook.addWorksheet('Users Report');
+        worksheet.columns = [
+            { header: 'User ID', key: 'id', width: 25 },
+            { header: 'Name', key: 'name', width: 25 },
+            { header: 'Email', key: 'email', width: 25 },
+            { header: 'Phone', key: 'phone', width: 20 },
+            { header: 'Role', key: 'role', width: 15 },
+            { header: 'Date of Birth', key: 'dob', width: 15 },
+            { header: 'Anniversary', key: 'anniversary', width: 15 },
+            { header: 'Address', key: 'address', width: 30 },
+            { header: 'Bookings', key: 'bookings', width: 12 },
+            { header: 'Orders', key: 'orders', width: 12 },
+            { header: 'Joined Date', key: 'joined', width: 20 },
+        ];
+
+        const headerRow = worksheet.getRow(1);
+        headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+        headerRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF794A05' } };
+        headerRow.alignment = { vertical: 'middle', horizontal: 'center' };
+
+        usersList.forEach((u) => {
+            worksheet.addRow({
+                id: u.id,
+                name: u.name || "N/A",
+                email: u.email || "N/A",
+                phone: u.phone || "N/A",
+                role: u.role,
+                dob: u.dob ? new Date(u.dob).toLocaleDateString() : 'N/A',
+                anniversary: u.anniversary ? new Date(u.anniversary).toLocaleDateString() : 'N/A',
+                address: u.address || "N/A",
+                bookings: u._count.bookings,
+                orders: u._count.orders,
+                joined: new Date(u.createdAt).toLocaleString(),
+            });
+        });
+
+        const buffer = await workbook.xlsx.writeBuffer();
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        res.setHeader('Content-Disposition', `attachment; filename=users_${new Date().toISOString().slice(0, 10)}.xlsx`);
+
+        return res.status(200).send(buffer);
+    } catch (error: any) {
+        console.error("Users Export Error:", error);
+        return res.status(500).json({ success: false, message: error.message });
     }
 };

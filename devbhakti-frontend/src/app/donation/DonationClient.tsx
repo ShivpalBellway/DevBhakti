@@ -58,7 +58,7 @@ declare global {
 function DonationForm() {
     const searchParams = useSearchParams();
     const { toast } = useToast();
-    const [step, setStep] = useState(1);
+    const [step, setStep] = useState(searchParams.get("temple") ? 2 : 1);
     const [direction, setDirection] = useState(1);
 
     const [selectedTemple, setSelectedTemple] = useState(searchParams.get("temple") || "");
@@ -668,9 +668,7 @@ function DonationForm() {
                                         <span className="text-muted-foreground">Date</span>
                                         <span>{new Date().toLocaleDateString()}</span>
                                     </div>
-                                    <div className="mt-4 pt-4 border-t border-dashed">
-                                        <p className="text-xs text-muted-foreground">An email receipt has been sent to {formData.email}</p>
-                                    </div>
+
                                 </div>
 
                                 <div className="flex flex-col sm:flex-row gap-4 justify-center">

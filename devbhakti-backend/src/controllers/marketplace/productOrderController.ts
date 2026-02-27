@@ -5,6 +5,9 @@ import razorpay from "../../lib/razorpay";
 import { SlabType, CommissionCategory } from "@prisma/client";
 import { getCommissionForAmount } from "../admin/commissionSlabController";
 import { notifyUser, notifyAdmins } from "../../services/firebaseService";
+import PDFDocument from 'pdfkit';
+import path from 'path';
+import fs from 'fs';
 
 export const calculateFees = async (req: Request, res: Response) => {
   try {
@@ -809,5 +812,146 @@ export const getOrderInvoice = async (req: Request, res: Response) => {
   } catch (error: any) {
     console.error("Invoice Error:", error);
     return res.status(500).send("Failed to generate invoice");
+  }
+};
+
+export const generateOrderReceiptBuffer = async (orderId: string): Promise<{ buffer: Buffer, filename: string } | null> => {
+  try {
+    const order = await prisma.order.findUnique({
+      where: { id: orderId },
+      include: {
+        user: true,
+        subOrders: {
+          include: {
+            items: {
+              include: {
+                product: true
+              }
+            }
+          }
+        }
+      }
+    });
+
+    if (!order) return null;
+
+    return new Promise((resolve, reject) => {
+      const doc = new PDFDocument({ margin: 50, size: 'A4' });
+      const filename = `order-receipt-${order.id.slice(-6).toUpperCase()}.pdf`;
+      const chunks: Buffer[] = [];
+
+      doc.on('data', (chunk) => chunks.push(chunk));
+      doc.on('end', () => resolve({ buffer: Buffer.concat(chunks), filename }));
+      doc.on('error', (err) => reject(err));
+
+      // --- Colors ---
+      const primaryColor = '#794A05'; // DevBhakti Brown
+      const textColor = '#1e293b';
+      const lightGray = '#f8fafc';
+      const borderColor = '#e2e8f0';
+
+      // --- Header Section ---
+      const logoPath = path.join(__dirname, '../../../assets/logo.png');
+      if (fs.existsSync(logoPath)) {
+        doc.image(logoPath, 50, 45, { width: 60 });
+        doc.fillColor(primaryColor).fontSize(24).font('Helvetica-Bold').text('DevBhakti', 120, 55);
+        doc.fillColor(textColor).fontSize(10).font('Helvetica').text('Sacred Offerings & Temple Services', 120, 85);
+      } else {
+        doc.fillColor(primaryColor).fontSize(28).font('Helvetica-Bold').text('DevBhakti', { align: 'center' });
+        doc.fillColor(textColor).fontSize(12).font('Helvetica').text('Sacred Offerings & Temple Services', { align: 'center' });
+      }
+
+      // Receipt Info (Top Right)
+      doc.fillColor(textColor).fontSize(10).font('Helvetica-Bold').text('OFFICIAL INVOICE', 400, 55, { align: 'right' });
+      doc.font('Helvetica').fontSize(9).text(`Order ID: #${order.id.slice(-8).toUpperCase()}`, 400, 70, { align: 'right' });
+      doc.text(`Date: ${new Date(order.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}`, 400, 82, { align: 'right' });
+
+      doc.moveDown(4);
+      doc.strokeColor(borderColor).lineWidth(1).moveTo(50, doc.y).lineTo(550, doc.y).stroke();
+      doc.moveDown(2);
+
+      // --- Shipping & Billing Details ---
+      const topOfDetails = doc.y;
+      const shippingAddr = order.shippingAddress as any;
+
+      // Shipping Column
+      doc.fillColor(primaryColor).fontSize(11).font('Helvetica-Bold').text('SHIPPING ADDRESS', 50, topOfDetails);
+      doc.moveDown(0.5);
+      doc.fillColor(textColor).font('Helvetica-Bold').fontSize(12).text(shippingAddr?.fullName || order.user?.name || 'Customer');
+      doc.font('Helvetica').fontSize(10).text(`${shippingAddr?.street || 'N/A'}`);
+      doc.text(`${shippingAddr?.city || ''}, ${shippingAddr?.state || ''} - ${shippingAddr?.pincode || ''}`);
+      doc.text(`Phone: ${shippingAddr?.phone || order.user?.phone || 'N/A'}`);
+
+      // Order Summary Column (Right)
+      doc.fillColor(primaryColor).fontSize(11).font('Helvetica-Bold').text('ORDER SUMMARY', 350, topOfDetails);
+      doc.moveDown(0.5);
+      doc.fillColor('#059669').fontSize(10).font('Helvetica-Bold').text('PAYMENT: PREPAID (Razorpay)', 350, doc.y);
+      doc.fillColor(textColor).font('Helvetica').fontSize(10).text(`Status: ${order.status}`, 350, doc.y + 2);
+      doc.text(`Total Items: ${order.subOrders.reduce((acc, so) => acc + so.items.length, 0)}`, 350, doc.y + 2);
+
+      doc.moveDown(4);
+
+      // --- Items Table ---
+      const tableTop = doc.y;
+      doc.fillColor(lightGray).rect(50, tableTop, 500, 25).fill();
+      doc.fillColor(primaryColor).fontSize(10).font('Helvetica-Bold').text('ITEM DESCRIPTION', 60, tableTop + 7);
+      doc.text('QTY', 350, tableTop + 7, { width: 50, align: 'center' });
+      doc.text('PRICE', 400, tableTop + 7, { width: 70, align: 'right' });
+      doc.text('TOTAL', 470, tableTop + 7, { width: 70, align: 'right' });
+
+      let currentY = tableTop + 35;
+      order.subOrders.forEach(subOrder => {
+        subOrder.items.forEach(item => {
+          doc.fillColor(textColor).font('Helvetica').fontSize(10).text(item.product?.name || 'Product', 60, currentY, { width: 280 });
+          doc.fontSize(9).fillColor('#666').text(`Variant: ${item.variantName || 'Default'}`, 60, doc.y + 2);
+
+          doc.fillColor(textColor).fontSize(10).text(item.quantity.toString(), 350, currentY, { width: 50, align: 'center' });
+          doc.text(`Rs. ${item.price.toFixed(2)}`, 400, currentY, { width: 70, align: 'right' });
+          doc.text(`Rs. ${(item.price * item.quantity).toFixed(2)}`, 470, currentY, { width: 70, align: 'right' });
+
+          currentY = doc.y + 15;
+
+          if (currentY > 750) {
+            doc.addPage();
+            currentY = 50;
+          }
+        });
+      });
+
+      doc.moveDown(2);
+      doc.strokeColor(borderColor).lineWidth(1).moveTo(50, doc.y).lineTo(550, doc.y).stroke();
+      doc.moveDown(1);
+
+      // --- Totals Section ---
+      const totalsY = doc.y;
+      doc.fillColor(textColor).font('Helvetica').fontSize(10).text('Subtotal:', 350, totalsY);
+      doc.text(`Rs. ${(order.totalAmount - (order.platformFee || 0) - (order.shippingCost || 0)).toFixed(2)}`, 470, totalsY, { align: 'right' });
+
+      doc.moveDown(0.5);
+      doc.text('Platform Fee:', 350, doc.y);
+      doc.text(`Rs. ${(order.platformFee || 0).toFixed(2)}`, 470, doc.y, { align: 'right' });
+
+      doc.moveDown(0.5);
+      doc.text('Shipping:', 350, doc.y);
+      doc.text(`Rs. ${(order.shippingCost || 0).toFixed(2)}`, 470, doc.y, { align: 'right' });
+
+      doc.moveDown(1);
+      doc.font('Helvetica-Bold').fontSize(12).text('Grand Total:', 350, doc.y);
+      doc.fillColor(primaryColor).text(`INR ${order.totalAmount.toFixed(2)}`, 470, doc.y - 12, { align: 'right' });
+
+      // --- Footer ---
+      doc.moveDown(8);
+      doc.fillColor('#94a3b8').fontSize(9).font('Helvetica-Oblique').text('Thank you for shopping with DevBhakti. Your purchase supports our local artisans and temple communities.', { align: 'center' });
+      doc.moveDown(0.5);
+      doc.text('This is a computer-generated invoice and does not require a physical signature.', { align: 'center' });
+      doc.moveDown(1.5);
+      doc.fillColor(primaryColor).font('Helvetica-Bold').fontSize(10).text('www.devbhakti.com', { align: 'center' });
+
+      doc.end();
+    });
+
+  } catch (error) {
+    console.error('Error generating order receipt buffer:', error);
+    return null;
   }
 };

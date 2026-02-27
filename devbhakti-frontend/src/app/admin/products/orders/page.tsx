@@ -48,30 +48,40 @@ import {
     Store,
     IndianRupee,
     Phone,
-    Printer
+    Printer,
+    Download
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
-import { BASE_URL } from "@/config/apiConfig";
+import { BASE_URL, API_URL } from "@/config/apiConfig";
+import { useDebounce } from "@/hooks/use-debounce";
+import axios from "axios";
 
-export default function AdminOrdersPage() {
+function AdminOrdersContent() {
     const searchParams = useSearchParams();
     const router = useRouter();
     const idParam = searchParams.get("id");
     const [orders, setOrders] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState("");
+    const debouncedSearch = useDebounce(searchQuery, 500);
     const [selectedOrder, setSelectedOrder] = useState<any>(null);
     const [selectedOrders, setSelectedOrders] = useState<Set<string>>(new Set());
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+    const [totalItems, setTotalItems] = useState(0);
     const { toast } = useToast();
 
     useEffect(() => {
         if (idParam) {
             setSearchQuery(idParam);
         }
-        loadOrders();
     }, [idParam]);
+
+    useEffect(() => {
+        loadOrders(currentPage);
+    }, [debouncedSearch, currentPage]);
 
     useEffect(() => {
         if (idParam && orders.length > 0) {
@@ -82,12 +92,16 @@ export default function AdminOrdersPage() {
         }
     }, [idParam, orders]);
 
-    const loadOrders = async () => {
+    const loadOrders = async (page: number) => {
         setIsLoading(true);
         try {
-            const response = await fetchAllOrdersAdmin();
+            const response = await fetchAllOrdersAdmin({ page, limit: 10, search: debouncedSearch });
             if (response.success) {
                 setOrders(response.data);
+                if (response.pagination) {
+                    setTotalPages(response.pagination.totalPages || 1);
+                    setTotalItems(response.pagination.total || 0);
+                }
             }
         } catch (error) {
             console.error("Failed to load orders:", error);
@@ -112,14 +126,14 @@ export default function AdminOrdersPage() {
 
                 // Refresh local state for selected order if it's open
                 if (selectedOrder) {
-                    const updatedOrders = await fetchAllOrdersAdmin();
+                    const updatedOrders = await fetchAllOrdersAdmin({ page: currentPage, limit: 10, search: debouncedSearch });
                     if (updatedOrders.success) {
                         setOrders(updatedOrders.data);
                         const refreshed = updatedOrders.data.find((o: any) => o.id === selectedOrder.id);
                         if (refreshed) setSelectedOrder(refreshed);
                     }
                 } else {
-                    loadOrders();
+                    loadOrders(currentPage);
                 }
             }
         } catch (error) {
@@ -177,10 +191,38 @@ export default function AdminOrdersPage() {
         }
     };
 
-    const filteredOrders = orders.filter(order =>
-        order.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        order.user?.name?.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    const handleExportOrders = async () => {
+        try {
+            toast({ title: "Exporting...", description: "Please wait while we prepare the Excel file." });
+            const token = localStorage.getItem('admin_token') || localStorage.getItem('staff_token');
+            const response = await axios.get(`${API_URL}/admin/orders/export/excel`, {
+                responseType: 'blob',
+                validateStatus: () => true,
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (response.status === 200) {
+                const url = window.URL.createObjectURL(new Blob([response.data]));
+                const link = document.createElement('a');
+                link.href = url;
+                link.setAttribute('download', `admin_orders_${new Date().toISOString().slice(0, 10)}.xlsx`);
+                document.body.appendChild(link);
+                link.click();
+                link.parentNode?.removeChild(link);
+                toast({ title: "Success", description: "Orders exported successfully!" });
+            } else {
+                throw new Error("Download failed");
+            }
+        } catch (error) {
+            console.error(error);
+            toast({ title: "Error", description: "Failed to download Excel.", variant: "destructive" });
+        }
+    };
+
+    const filteredOrders = orders;
 
     return (
         <div className="space-y-6">
@@ -189,6 +231,9 @@ export default function AdminOrdersPage() {
                     <h1 className="text-3xl font-bold text-slate-900">Marketplace Orders</h1>
                     <p className="text-slate-600 font-medium">Manage and track all product orders across temples</p>
                 </div>
+
+
+
                 <div className="flex items-center gap-3 flex-wrap">
                     <div className="relative">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -216,7 +261,14 @@ export default function AdminOrdersPage() {
                             </Button>
                         </>
                     )}
-                    <Button onClick={loadOrders} variant="outline" className="border-slate-300 hover:bg-slate-50">
+                    <Button
+                        onClick={handleExportOrders}
+                        className="bg-emerald-600 hover:bg-emerald-700 text-white gap-2 rounded-xl h-10"
+                    >
+                        <Download className="w-4 h-4" />
+                        Export Excel
+                    </Button>
+                    <Button onClick={() => loadOrders(currentPage)} variant="outline" className="border-slate-300 hover:bg-slate-50 h-10">
                         <Clock className="w-4 h-4 mr-2" /> Refresh
                     </Button>
                 </div>
@@ -491,6 +543,22 @@ export default function AdminOrdersPage() {
                     )}
                 </DialogContent>
             </Dialog>
+
+            {totalPages > 1 && (
+                <div className="flex justify-center gap-2 mt-4 pb-12">
+                    <Button variant="outline" size="sm" onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1}>Prev</Button>
+                    <span className="flex items-center text-sm font-bold px-4">Page {currentPage} of {totalPages}</span>
+                    <Button variant="outline" size="sm" onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages}>Next</Button>
+                </div>
+            )}
         </div>
+    );
+}
+
+export default function AdminOrdersPage() {
+    return (
+        <React.Suspense fallback={<div className="p-12 text-center text-[#794A05] font-serif">Loading Orders...</div>}>
+            <AdminOrdersContent />
+        </React.Suspense>
     );
 }

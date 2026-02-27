@@ -1,6 +1,8 @@
 import { Request, Response } from 'express';
 import { prisma } from '../../lib/prisma';
 import { notifyUser } from '../../services/firebaseService';
+import ExcelJS from 'exceljs';
+
 
 export const getAllBookings = async (req: Request, res: Response) => {
     try {
@@ -164,3 +166,91 @@ export const updateBookingStatus = async (req: Request, res: Response) => {
         res.status(500).json({ success: false, message: 'Internal server error' });
     }
 };
+
+
+
+
+export const downloadBookingsExcel = async (req: Request, res: Response) => {
+    try {
+        console.log("Generating Bookings Excel...");
+
+        // 1. Data Fetch (Table name 'poojaBooking' use kiya hai aapke code ke hisaab se)
+        const bookings = await prisma.poojaBooking.findMany({
+            orderBy: { createdAt: 'desc' },
+            include: {
+                pooja: {
+                    select: { name: true }
+                }
+            }
+        });
+
+        // 2. Workbook Setup
+        const workbook = new ExcelJS.Workbook();
+        const worksheet = workbook.addWorksheet('Pooja Bookings Report');
+
+        // 3. Columns define karein
+        worksheet.columns = [
+            { header: 'Booking ID', key: 'id', width: 30 },
+            { header: 'Pooja Service', key: 'poojaName', width: 30 },
+            { header: 'Package Name', key: 'packageName', width: 30 },
+            { header: 'Devotee Name', key: 'devoteeName', width: 30 },
+            { header: 'Phone', key: 'devoteePhone', width: 20 },
+            { header: 'Email', key: 'devoteeEmail', width: 35 },
+            { header: 'Price', key: 'packagePrice', width: 15 },
+            { header: 'Status', key: 'status', width: 15 },
+            { header: 'Booking Date', key: 'bookingDate', width: 20 },
+            { header: 'Created At', key: 'createdAt', width: 20 },
+        ];
+
+        // 4. Header Styling
+        const headerRow = worksheet.getRow(1);
+        headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+        headerRow.fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: 'FF794A05' }, // Theme Color
+        };
+        headerRow.alignment = { vertical: 'middle', horizontal: 'center' };
+
+        // 5. Data Add karein
+        bookings.forEach((b: any) => {
+            worksheet.addRow({
+                id: b.id,
+                poojaName: b.pooja?.name || "N/A",
+                packageName: b.packageName || "",
+                devoteeName: b.devoteeName || "",
+                devoteePhone: b.devoteePhone || "",
+                devoteeEmail: b.devoteeEmail || "",
+                packagePrice: b.packagePrice || 0,
+                status: b.status,
+                bookingDate: b.bookingDate || "",
+                createdAt: b.createdAt ? new Date(b.createdAt).toLocaleDateString() : "",
+            });
+        });
+
+        // 6. Auto-Width
+        worksheet.columns?.forEach((column) => {
+            let maxLength = 0;
+            column?.eachCell?.({ includeEmpty: true }, (cell) => {
+                const cellLength = cell.value ? cell.value.toString().length : 0;
+                if (cellLength > maxLength) maxLength = cellLength;
+            });
+            if (column) column.width = maxLength < 10 ? 12 : maxLength + 4;
+        });
+
+        // 7. Buffer Generate
+        const buffer = await workbook.xlsx.writeBuffer();
+
+        // 8. Response
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        res.setHeader('Content-Disposition', `attachment; filename=pooja_bookings_${new Date().toISOString().slice(0, 10)}.xlsx`);
+
+        return res.status(200).send(buffer);
+
+    } catch (error: any) {
+        console.error("Bookings Export Error:", error);
+        return res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+

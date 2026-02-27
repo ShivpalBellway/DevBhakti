@@ -7,6 +7,7 @@ import Image from "next/image";
 import Link from "next/link";
 import logo from "@/assets/logo2.png";
 import { clearAllTokens } from "@/lib/auth-utils";
+import { useToast } from "@/hooks/use-toast";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
 
@@ -15,7 +16,43 @@ export default function StaffLoginPage() {
     const [form, setForm] = useState({ email: "", password: "" });
     const [showPass, setShowPass] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [forgotLoading, setForgotLoading] = useState(false);
     const [error, setError] = useState("");
+    const { toast } = useToast();
+
+    const handleForgotPassword = async () => {
+        if (!form.email) {
+            setError("Please enter your email address first.");
+            return;
+        }
+
+        setError("");
+        setForgotLoading(true);
+
+        try {
+            const res = await fetch(`${API}/admin/auth/staff-forgot-password`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email: form.email }),
+            });
+
+            const data = await res.json();
+
+            if (!res.ok) {
+                setError(data.error || "Failed to send request");
+                return;
+            }
+
+            toast({
+                title: "Request Sent",
+                description: data.message || "Password reset request sent to the administrator.",
+            });
+        } catch {
+            setError("Network error. Please try again.");
+        } finally {
+            setForgotLoading(false);
+        }
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -106,9 +143,19 @@ export default function StaffLoginPage() {
                         </div>
 
                         <div>
-                            <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1.5 block">
-                                Password
-                            </label>
+                            <div className="flex items-center justify-between mb-1.5">
+                                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide block">
+                                    Password
+                                </label>
+                                <button
+                                    type="button"
+                                    onClick={handleForgotPassword}
+                                    disabled={forgotLoading || loading}
+                                    className="text-xs text-primary hover:underline disabled:opacity-50"
+                                >
+                                    {forgotLoading ? "Sending..." : "Forgot password?"}
+                                </button>
+                            </div>
                             <div className="relative">
                                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                                 <input

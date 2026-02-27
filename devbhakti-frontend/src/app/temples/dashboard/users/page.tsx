@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import {
     Users,
@@ -12,7 +13,8 @@ import {
     Calendar,
     Eye,
     ShoppingCart,
-    Loader2
+    Loader2,
+    Download
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -21,6 +23,9 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { fetchMyTempleDevotees } from "@/api/templeAdminController";
 import { useToast } from "@/hooks/use-toast";
+import { API_URL } from "@/config/apiConfig";
+import { useDebounce } from "@/hooks/use-debounce";
+import axios from "axios";
 
 interface Devotee {
     id: string;
@@ -41,9 +46,11 @@ interface Stats {
 }
 
 export default function TempleUsersPage() {
+    const router = useRouter();
     const { toast } = useToast();
     const [isLoading, setIsLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState("");
+    const debouncedSearch = useDebounce(searchQuery, 500);
     const [poojaBookers, setPoojaBookers] = useState<Devotee[]>([]);
     const [productCustomers, setProductCustomers] = useState<Devotee[]>([]);
     const [stats, setStats] = useState<Stats>({
@@ -51,19 +58,35 @@ export default function TempleUsersPage() {
         poojaBookersCount: 0,
         productCustomersCount: 0,
     });
+    const [currentPage, setCurrentPage] = useState(1);
+    const [poojaTotalPages, setPoojaTotalPages] = useState(1);
+    const [productTotalPages, setProductTotalPages] = useState(1);
+    const [activeTab, setActiveTab] = useState("pooja");
+    const [dobFilter, setDobFilter] = useState("");
+    const [anniversaryFilter, setAnniversaryFilter] = useState("");
 
     useEffect(() => {
-        loadDevotees();
-    }, []);
+        loadDevotees(currentPage);
+    }, [debouncedSearch, currentPage, dobFilter, anniversaryFilter]);
 
-    const loadDevotees = async () => {
+    const loadDevotees = async (page: number) => {
         setIsLoading(true);
         try {
-            const response = await fetchMyTempleDevotees();
+            const response = await fetchMyTempleDevotees({
+                page,
+                limit: 10,
+                search: debouncedSearch,
+                dob: dobFilter,
+                anniversary: anniversaryFilter
+            });
             if (response.success) {
                 setPoojaBookers(response.data.poojaBookers);
                 setProductCustomers(response.data.productCustomers);
                 setStats(response.data.stats);
+                if (response.data.pagination) {
+                    setPoojaTotalPages(response.data.pagination.poojaTotalPages || 1);
+                    setProductTotalPages(response.data.pagination.productTotalPages || 1);
+                }
             }
         } catch (error: any) {
             console.error("Load Devotees Error:", error);
@@ -77,16 +100,39 @@ export default function TempleUsersPage() {
         }
     };
 
-    const filterDevotees = (list: Devotee[]) => {
-        return list.filter((user) =>
-            (user.name?.toLowerCase() || "").includes(searchQuery.toLowerCase()) ||
-            (user.email?.toLowerCase() || "").includes(searchQuery.toLowerCase()) ||
-            (user.phone || "").includes(searchQuery)
-        );
+    const handleExportDevotees = async () => {
+        try {
+            toast({ title: "Exporting...", description: "Please wait while we prepare the Excel file." });
+            const token = localStorage.getItem("token");
+            const response = await axios.get(`${API_URL}/temple-admin/devotees/export/excel?type=${activeTab}&search=${debouncedSearch}&dob=${dobFilter}&anniversary=${anniversaryFilter}`, {
+                responseType: 'blob',
+                validateStatus: () => true,
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (response.status === 200) {
+                const url = window.URL.createObjectURL(new Blob([response.data]));
+                const link = document.createElement('a');
+                link.href = url;
+                link.setAttribute('download', `temple_devotees_${new Date().toISOString().slice(0, 10)}.xlsx`);
+                document.body.appendChild(link);
+                link.click();
+                link.parentNode?.removeChild(link);
+                toast({ title: "Success", description: "Devotees exported successfully!" });
+            } else {
+                throw new Error("Download failed");
+            }
+        } catch (error) {
+            console.error(error);
+            toast({ title: "Error", description: "Failed to download Excel.", variant: "destructive" });
+        }
     };
 
     const DevoteeTable = ({ data, type }: { data: Devotee[], type: 'POOJA' | 'PRODUCT' }) => {
-        const filtered = filterDevotees(data);
+        const filtered = data;
 
         return (
             <div className="overflow-x-auto">
@@ -162,11 +208,12 @@ export default function TempleUsersPage() {
                                     </td>
                                     <td className="p-4 text-right">
                                         <div className="flex items-center justify-end gap-2">
-                                            <Button variant="ghost" size="icon">
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                onClick={() => router.push(`/temples/dashboard/users/${user.id}`)}
+                                            >
                                                 <Eye className="w-4 h-4" />
-                                            </Button>
-                                            <Button variant="ghost" size="icon">
-                                                <MoreVertical className="w-4 h-4" />
                                             </Button>
                                         </div>
                                     </td>
@@ -228,21 +275,58 @@ export default function TempleUsersPage() {
                 </Card>
             </div>
 
-            <div className="flex flex-col md:flex-row gap-4">
-                <div className="relative flex-1">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+            <div className="flex flex-col md:flex-row gap-4 items-end">
+                <div className="relative flex-1 w-full">
+                    <p className="text-[10px] font-bold uppercase text-muted-foreground mb-1 ml-1">Search Devotees</p>
+                    <div className="relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                        <Input
+                            placeholder="Name, email or phone..."
+                            value={searchQuery}
+                            onChange={(e) => {
+                                setSearchQuery(e.target.value);
+                                setCurrentPage(1);
+                            }}
+                            className="pl-10 h-11"
+                        />
+                    </div>
+                </div>
+                <div className="flex flex-col gap-1 w-full md:w-36">
+                    <p className="text-[10px] font-bold uppercase text-muted-foreground ml-1">Birthday</p>
                     <Input
-                        placeholder="Search by name, email or phone..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="pl-10"
+                        type="date"
+                        value={dobFilter}
+                        onChange={(e) => {
+                            setDobFilter(e.target.value);
+                            setCurrentPage(1);
+                        }}
+                        className="h-11"
                     />
                 </div>
+                <div className="flex flex-col gap-1 w-full md:w-36">
+                    <p className="text-[10px] font-bold uppercase text-muted-foreground ml-1">Anniversary</p>
+                    <Input
+                        type="date"
+                        value={anniversaryFilter}
+                        onChange={(e) => {
+                            setAnniversaryFilter(e.target.value);
+                            setCurrentPage(1);
+                        }}
+                        className="h-11"
+                    />
+                </div>
+                <Button
+                    onClick={handleExportDevotees}
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white gap-2 rounded-xl h-11 w-full md:w-auto shrink-0"
+                >
+                    <Download className="w-4 h-4" />
+                    Export Excel
+                </Button>
             </div>
 
             <Card>
                 <CardContent className="p-0">
-                    <Tabs defaultValue="pooja" className="w-full">
+                    <Tabs value={activeTab} onValueChange={(val) => { setActiveTab(val); setCurrentPage(1); }} className="w-full">
                         <div className="px-4 pt-4 border-b">
                             <TabsList className="bg-muted/50">
                                 <TabsTrigger value="pooja" className="gap-2">
@@ -264,6 +348,24 @@ export default function TempleUsersPage() {
                     </Tabs>
                 </CardContent>
             </Card>
+
+            {/* Pagination Controls */}
+            {(activeTab === 'pooja' ? poojaTotalPages : productTotalPages) > 1 && (
+                <div className="flex justify-center gap-2 mt-4 pb-12">
+                    <Button variant="outline" size="sm" onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1}>Prev</Button>
+                    <span className="flex items-center text-sm font-bold px-4">
+                        Page {currentPage} of {activeTab === 'pooja' ? poojaTotalPages : productTotalPages}
+                    </span>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCurrentPage(p => Math.min(activeTab === 'pooja' ? poojaTotalPages : productTotalPages, p + 1))}
+                        disabled={currentPage === (activeTab === 'pooja' ? poojaTotalPages : productTotalPages)}
+                    >
+                        Next
+                    </Button>
+                </div>
+            )}
         </div>
     );
 }

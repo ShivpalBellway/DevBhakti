@@ -2,7 +2,7 @@ import express, { Request, Response, NextFunction } from 'express';
 import { authenticate, authorize, checkPermission } from '../../middleware/authMiddleware';
 import { staffLogin, getStaffMe } from '../../controllers/shared/staffAuthController';
 import {
-  getStaffMembers, createStaffMember, updateStaffMember, deleteStaffMember,
+  getStaffMembers, createStaffMember, updateStaffMember, deleteStaffMember, resetStaffPassword,
   getRoles, createRole, updateRole, deleteRole, getPermissions,
 } from '../../controllers/shared/rbacController';
 
@@ -28,6 +28,7 @@ router.get('/staff', checkPermission('team.staff.view'), getStaffMembers);
 router.post('/staff', checkPermission('team.staff.manage'), createStaffMember);
 router.patch('/staff/:id', checkPermission('team.staff.manage'), updateStaffMember);
 router.delete('/staff/:id', checkPermission('team.staff.manage'), deleteStaffMember);
+router.post('/staff/:id/reset-password', checkPermission('team.staff.manage'), resetStaffPassword);
 
 // Roles
 router.get('/roles', checkPermission('team.roles.manage'), getRoles);

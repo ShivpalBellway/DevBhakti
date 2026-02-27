@@ -907,9 +907,9 @@ function BookingForm() {
                   <CheckCircle2 className="h-10 w-10 text-green-600" />
                 </div>
                 <h2 className="text-2xl font-display font-bold text-foreground mb-2">Booking Confirmed!</h2>
-                <p className="text-muted-foreground mb-6">
+                {/* <p className="text-muted-foreground mb-6">
                   Your booking reference number is <span className="font-bold text-foreground">DBK{Date.now().toString().slice(-8)}</span>
-                </p>
+                </p> */}
 
                 <div className="bg-muted/50 rounded-lg p-6 max-w-md mx-auto text-left space-y-3 mb-8">
                   <div className="flex justify-between">
@@ -946,9 +946,9 @@ function BookingForm() {
                   </div>
                 </div>
 
-                <p className="text-sm text-muted-foreground mb-6">
+                {/* <p className="text-sm text-muted-foreground mb-6">
                   Confirmation details have been sent to {formData.email}
-                </p>
+                </p> */}
 
                 <div className="flex flex-col sm:flex-row gap-3 justify-center">
                   <Button variant="outline" asChild>

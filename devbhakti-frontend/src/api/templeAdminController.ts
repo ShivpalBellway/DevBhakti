@@ -271,9 +271,27 @@ export const deleteMyProduct = async (id: string) => {
     return response.data;
 };
 
-export const fetchMyTempleDevotees = async () => {
+export const fetchMyTempleDevotees = async (params?: { page?: number; limit?: number; search?: string; dob?: string; anniversary?: string }) => {
     const token = localStorage.getItem("token");
-    const response = await axios.get(`${API_URL}/temple-admin/devotees`, {
+    let url = `${API_URL}/temple-admin/devotees`;
+    if (params) {
+        const query = new URLSearchParams();
+        if (params.page !== undefined) query.append('page', params.page.toString());
+        if (params.limit !== undefined) query.append('limit', params.limit.toString());
+        if (params.search) query.append('search', params.search);
+        if (params.dob) query.append('dob', params.dob);
+        if (params.anniversary) query.append('anniversary', params.anniversary);
+        url += `?${query.toString()}`;
+    }
+    const response = await axios.get(url, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+
+export const fetchDevoteeDetailMyTemple = async (id: string) => {
+    const token = localStorage.getItem("token");
+    const response = await axios.get(`${API_URL}/temple-admin/devotees/${id}`, {
         headers: { Authorization: `Bearer ${token}` }
     });
     return response.data;

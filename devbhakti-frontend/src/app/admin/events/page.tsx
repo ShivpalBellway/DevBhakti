@@ -196,13 +196,11 @@ export default function AdminEventsPage() {
             }
         } else {
             setEditingEvent(null);
-            // Extract temple IDs from actual temples array
-            const templeIds = temples.map((t: any) => t.id);
             setFormData({
                 name: "",
                 date: "",
                 description: "",
-                templeId: templeIds.length > 0 ? templeIds[0] : "",
+                templeId: "",
             });
             setSelectedPoojaIds([]);
         }
@@ -338,8 +336,16 @@ export default function AdminEventsPage() {
                                     </TableCell>
                                     <TableCell>
                                         <div className="flex items-center gap-2">
-                                            <MapPin className="w-3.5 h-3.5 text-muted-foreground" />
-                                            <span className="text-sm">{event.temple?.name}</span>
+                                            {event.temple ? (
+                                                <>
+                                                    <MapPin className="w-3.5 h-3.5 text-muted-foreground" />
+                                                    <span className="text-sm">{event.temple.name}</span>
+                                                </>
+                                            ) : (
+                                                <Badge variant="secondary" className="bg-slate-50 text-slate-500 border-slate-200">
+                                                    General Event
+                                                </Badge>
+                                            )}
                                         </div>
                                     </TableCell>
                                     <TableCell>
@@ -490,7 +496,7 @@ export default function AdminEventsPage() {
                         </div>
 
                         <div className="space-y-2">
-                            <Label htmlFor="templeId">Temple *</Label>
+                            <Label htmlFor="templeId">Temple (Optional)</Label>
                             <select
                                 id="templeId"
                                 className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
@@ -498,9 +504,8 @@ export default function AdminEventsPage() {
                                 onChange={(e) =>
                                     setFormData({ ...formData, templeId: e.target.value })
                                 }
-                                required
                             >
-                                <option value="">Select a Temple</option>
+                                <option value="">Global / No Temple Select</option>
                                 {temples.map((temple) => (
                                     <option key={temple.id} value={temple.id}>
                                         {temple.name}

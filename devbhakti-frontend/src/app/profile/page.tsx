@@ -21,9 +21,11 @@ import {
     Edit3,
     Calendar,
     Award,
+    Download,
     X,
     Receipt,
-    ExternalLink
+    ExternalLink,
+    MapPin
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -323,6 +325,13 @@ const ProfilePage = () => {
                                     {user.isVerified && <CheckCircle2 className="w-4 h-4 text-emerald-500 ml-1" />}
                                 </div>
 
+                                {user.address && (
+                                    <div className="flex items-center justify-center gap-1.5 text-slate-400 text-[11px] mb-6 px-4 italic leading-tight">
+                                        <MapPin className="w-3 h-3 text-primary shrink-0" />
+                                        <span className="line-clamp-2">{user.address}</span>
+                                    </div>
+                                )}
+
                                 <div className="grid grid-cols-2 gap-4 w-full pt-6 border-t border-slate-50">
                                     <div className="text-center p-3 bg-orange-50/50 rounded-2xl">
                                         <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1">Rituals</p>
@@ -385,6 +394,13 @@ const ProfilePage = () => {
                                                     <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-100/50">
                                                         <Mail className="w-5 h-5 text-primary" />
                                                         <span className="text-lg font-bold text-slate-700">{user.email || "No email linked"}</span>
+                                                    </div>
+                                                </div>
+                                                <div className="space-y-1.5 md:col-span-2">
+                                                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">Current Address</p>
+                                                    <div className="flex items-start gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-100/50">
+                                                        <MapPin className="w-5 h-5 text-primary mt-1" />
+                                                        <span className="text-lg font-bold text-slate-700 leading-relaxed">{user.address || "Address not provided"}</span>
                                                     </div>
                                                 </div>
 
@@ -578,7 +594,7 @@ const ProfilePage = () => {
                                                                             }
                                                                         }}
                                                                     >
-                                                                        <Receipt className="w-5 h-5" />
+                                                                        <Download className="w-5 h-5" />
                                                                     </Button>
                                                                 </div>
                                                             </div>

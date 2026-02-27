@@ -188,6 +188,23 @@ export default function TempleDetail() {
         }
     };
 
+    const handleDonation = () => {
+        const donationUrl = `/donation?temple=${temple.id}`;
+        router.push(donationUrl);
+    };
+
+    const handleBookPooja = () => {
+        const bookingUrl = `/booking?temple=${temple.id}`;
+        const token = localStorage.getItem("token");
+        const savedUser = localStorage.getItem("user");
+        const parsedUser = savedUser ? JSON.parse(savedUser) : null;
+        if (!token || !parsedUser || parsedUser.role !== "DEVOTEE") {
+            router.push(`/auth?redirect=${encodeURIComponent(bookingUrl)}`);
+            return;
+        }
+        router.push(bookingUrl);
+    };
+
     return (
         <div className="min-h-screen bg-background">
             <Navbar />
@@ -539,58 +556,55 @@ export default function TempleDetail() {
                         <Card className="border-border/50 sticky top-24 overflow-hidden shadow-warm bg-white/80 backdrop-blur-md">
                             <CardContent className="p-5 space-y-6">
                                 {/* Primary Actions */}
-                                <div className={`grid ${temple.liveStatus ? "grid-cols-2" : "grid-cols-1"} gap-3`}>
-                                    <Button
-                                        variant="gold"
-                                        className="w-full gap-2 h-11 text-sm font-bold shadow-sm group px-2"
-                                        onClick={() => {
-                                            const bookingUrl = `/booking?temple=${temple.id}`;
-                                            const token = localStorage.getItem("token");
-                                            const savedUser = localStorage.getItem("user");
-                                            const parsedUser = savedUser ? JSON.parse(savedUser) : null;
-                                            if (!token || !parsedUser) {
-                                                router.push(`/auth?redirect=${encodeURIComponent(bookingUrl)}`);
-                                                return;
-                                            }
-                                            if (parsedUser.role !== "DEVOTEE") {
-                                                router.push(`/auth?redirect=${encodeURIComponent(bookingUrl)}`);
-                                                return;
-                                            }
-                                            router.push(bookingUrl);
-                                        }}
-                                    >
-                                        <Calendar className="h-4 w-4 shrink-0 group-hover:scale-110 transition-transform" />
-                                        <span className="truncate">Book Pooja</span>
-                                    </Button>
-
-                                    {temple.liveStatus && (
+                                <div className="space-y-3">
+                                    <div className={`grid ${temple.liveStatus ? "grid-cols-2" : "grid-cols-1"} gap-3`}>
                                         <Button
-                                            variant="outline"
-                                            className="w-full gap-2 h-11 text-sm font-bold border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 hover:border-red-300 transition-all shadow-sm group px-2"
-                                            asChild
+                                            variant="gold"
+                                            className="w-full gap-2 h-12 text-base font-bold shadow-sm group transition-all"
+                                            onClick={handleBookPooja}
                                         >
-                                            <Link href={`/live-darshan?templeId=${temple.id}`}>
-                                                <div className="relative shrink-0">
-                                                    <Video className="h-4 w-4 group-hover:scale-110 transition-transform" />
-                                                    <span className="absolute -top-0.5 -right-0.5 flex h-1.5 w-1.5">
-                                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                                                        <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-red-500"></span>
-                                                    </span>
-                                                </div>
-                                                <span className="truncate">Live Darshan</span>
-                                            </Link>
+                                            <Calendar className="h-5 w-5 shrink-0 group-hover:scale-110 transition-transform" />
+                                            <span className="truncate">Book Pooja</span>
                                         </Button>
-                                    )}
+
+                                        {temple.liveStatus && (
+                                            <Button
+                                                variant="outline"
+                                                className="w-full gap-2 h-12 text-sm font-bold border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 hover:border-red-300 transition-all shadow-sm group px-2"
+                                                asChild
+                                            >
+                                                <Link href={`/live-darshan?templeId=${temple.id}`}>
+                                                    <div className="relative shrink-0">
+                                                        <Video className="h-5 w-5 group-hover:scale-110 transition-transform" />
+                                                        <span className="absolute -top-0.5 -right-0.5 flex h-1.5 w-1.5">
+                                                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                                                            <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-red-500"></span>
+                                                        </span>
+                                                    </div>
+                                                    <span className="truncate">Live Darshan</span>
+                                                </Link>
+                                            </Button>
+                                        )}
+                                    </div>
+
+                                    {/* Prominent Donation Button */}
+                                    <Button
+                                        className="w-full gap-3 h-14 text-lg font-black shadow-lg group bg-gradient-to-r from-[#7c4624] to-[#a05a2c] hover:from-[#a05a2c] hover:to-[#7c4624] text-white border-none transition-all duration-500 rounded-xl"
+                                        onClick={handleDonation}
+                                    >
+                                        <Heart className="h-6 w-6 fill-white animate-pulse group-hover:scale-125 transition-transform" />
+                                        <span>Donate to Temple</span>
+                                    </Button>
                                 </div>
 
                                 {/* Creative Location Integration */}
                                 {temple.mapUrl && (
-                                    <div className="group pt-2">
+                                    <div className="space-y-3 pt-2">
                                         <a
                                             href={temple.mapUrl}
                                             target="_blank"
                                             rel="noopener noreferrer"
-                                            className="flex items-center gap-4 p-4 rounded-2xl bg-primary/5 border border-primary/10 group-hover:bg-primary/10 group-hover:border-primary/20 transition-all duration-300"
+                                            className="flex items-center gap-4 p-4 rounded-2xl bg-primary/5 border border-primary/10 hover:bg-primary/10 hover:border-primary/20 transition-all duration-300 group"
                                         >
                                             <div className="h-11 w-11 shrink-0 bg-primary/20 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-sm">
                                                 <MapPin className="h-6 w-6 text-primary" />
@@ -601,6 +615,15 @@ export default function TempleDetail() {
                                             </div>
                                             <ChevronRight className="h-4 w-4 text-primary/30 group-hover:text-primary transition-all group-hover:translate-x-1" />
                                         </a>
+
+                                        <Button
+                                            variant="outline"
+                                            className="w-full h-12 rounded-2xl border-dashed border-primary/30 text-primary hover:bg-primary/5 font-bold gap-2"
+                                            onClick={handleDonation}
+                                        >
+                                            <Heart className="h-4 w-4" />
+                                            Contribute to Temple Development
+                                        </Button>
                                     </div>
                                 )}
 

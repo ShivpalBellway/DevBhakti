@@ -42,16 +42,16 @@ const statusConfig = {
         color: "bg-emerald-100 text-emerald-700 border-emerald-200",
         icon: CheckCircle2,
     },
-    PENDING: {
-        label: "Pending",
-        color: "bg-amber-100 text-amber-700 border-amber-200",
-        icon: Clock,
-    },
-    FAILED: {
-        label: "Failed",
-        color: "bg-rose-100 text-rose-700 border-rose-200",
-        icon: XCircle,
-    },
+    // PENDING: {
+    //     label: "Pending",
+    //     color: "bg-amber-100 text-amber-700 border-amber-200",
+    //     icon: Clock,
+    // },
+    // FAILED: {
+    //     label: "Failed",
+    //     color: "bg-rose-100 text-rose-700 border-rose-200",
+    //     icon: XCircle,
+    // },
 };
 
 export default function DonationClient() {
@@ -62,6 +62,9 @@ export default function DonationClient() {
     const [selectedDonation, setSelectedDonation] = useState<any | null>(null);
     const [loading, setLoading] = useState(true);
     const [templeId, setTempleId] = useState<string | null>(null);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+    const [totalItems, setTotalItems] = useState(0);
     const { toast } = useToast();
 
     const [stats, setStats] = useState({
@@ -86,14 +89,15 @@ export default function DonationClient() {
         loadInitialData();
     }, []);
 
-    const fetchDonations = async () => {
+    const fetchDonations = async (page: number) => {
         if (!templeId) return;
         try {
             setLoading(true);
             const query = new URLSearchParams({
                 search: debouncedSearch,
                 status: statusFilter,
-                limit: "100" // For now simplified
+                page: page.toString(),
+                limit: "10"
             });
 
             const response = await axios.get(`${API_URL}/temple-admin/donations/${templeId}?${query}`, { validateStatus: () => true });
@@ -101,6 +105,10 @@ export default function DonationClient() {
 
             if (data.success) {
                 setDonations(data.data);
+                if (data.pagination) {
+                    setTotalPages(data.pagination.totalPages || 1);
+                    setTotalItems(data.pagination.total || 0);
+                }
             }
         } catch (error) {
             console.error("Fetch Donations Error:", error);
@@ -130,10 +138,15 @@ export default function DonationClient() {
 
     useEffect(() => {
         if (templeId) {
-            fetchDonations();
             fetchStats();
         }
-    }, [templeId, debouncedSearch, statusFilter]);
+    }, [templeId]);
+
+    useEffect(() => {
+        if (templeId) {
+            fetchDonations(currentPage);
+        }
+    }, [templeId, debouncedSearch, statusFilter, currentPage]);
 
     const handlePrintReceipt = (donation: any) => {
         const html = generateReceiptHTML({
@@ -150,11 +163,36 @@ export default function DonationClient() {
         }
     };
 
-    const handleDownloadReport = () => {
-        toast({
-            title: "Report Generated",
-            description: "Your donation report is being downloaded.",
-        });
+    const handleDownloadReport = async () => {
+        if (!templeId) return;
+        try {
+            toast({ title: "Exporting...", description: "Please wait while we prepare the Excel file." });
+            const token = localStorage.getItem("token");
+            const response = await axios.get(`${API_URL}/temple-admin/donations/${templeId}/export/excel?status=${statusFilter}`, {
+                responseType: 'blob',
+                validateStatus: () => true,
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (response.status === 200) {
+                const url = window.URL.createObjectURL(new Blob([response.data]));
+                const link = document.createElement('a');
+                link.href = url;
+                link.setAttribute('download', `temple_donations_${new Date().toISOString().slice(0, 10)}.xlsx`);
+                document.body.appendChild(link);
+                link.click();
+                link.parentNode?.removeChild(link);
+                toast({ title: "Success", description: "Donations exported successfully!" });
+            } else {
+                throw new Error("Download failed");
+            }
+        } catch (error) {
+            console.error(error);
+            toast({ title: "Error", description: "Failed to download Excel.", variant: "destructive" });
+        }
     };
 
     return (
@@ -260,7 +298,10 @@ export default function DonationClient() {
                                         <Input
                                             placeholder="Search by ID or Donor..."
                                             value={searchQuery}
-                                            onChange={(e) => setSearchQuery(e.target.value)}
+                                            onChange={(e) => {
+                                                setSearchQuery(e.target.value);
+                                                setCurrentPage(1);
+                                            }}
                                             className="pl-9 h-9 w-[200px] text-sm bg-background/50 border-primary/10 rounded-xl"
                                         />
                                     </div>
@@ -270,12 +311,15 @@ export default function DonationClient() {
                                 </div>
                             </div>
                             <div className="flex gap-2 mt-4 overflow-x-auto pb-2 scrollbar-none">
-                                {["all", "SUCCESS", "PENDING", "FAILED"].map((status) => (
+                                {["all", "SUCCESS"].map((status) => (
                                     <Button
                                         key={status}
                                         variant={statusFilter === status ? "sacred" : "outline"}
                                         size="sm"
-                                        onClick={() => setStatusFilter(status)}
+                                        onClick={() => {
+                                            setStatusFilter(status);
+                                            setCurrentPage(1);
+                                        }}
                                         className="capitalize rounded-full text-xs h-8 px-4"
                                     >
                                         {status === "all" ? "All Status" : status.toLowerCase()}
@@ -353,6 +397,14 @@ export default function DonationClient() {
                             </div>
                         </CardContent>
                     </Card>
+
+                    {totalPages > 1 && (
+                        <div className="flex justify-center gap-2 mt-4 pb-4">
+                            <Button variant="outline" size="sm" onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1}>Prev</Button>
+                            <span className="flex items-center text-sm font-bold px-4">Page {currentPage} of {totalPages}</span>
+                            <Button variant="outline" size="sm" onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages}>Next</Button>
+                        </div>
+                    )}
                 </div>
 
                 {/* Sidebar Column - Top Donors & Activity */}

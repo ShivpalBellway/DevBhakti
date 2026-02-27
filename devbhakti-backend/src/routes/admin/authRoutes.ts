@@ -1,8 +1,9 @@
 import { Router } from 'express';
-import { adminLogin } from '../../controllers/admin/authController';
+import { adminLogin, staffForgotPasswordRequest } from '../../controllers/admin/authController';
 
 const router = Router();
 
 router.post('/login', adminLogin);
+router.post('/staff-forgot-password', staffForgotPasswordRequest);
 
 export default router;

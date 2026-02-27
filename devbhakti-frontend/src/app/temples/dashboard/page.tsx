@@ -391,7 +391,7 @@ export default function TempleDashboardPage() {
                                     { label: "Add Product", icon: Package, color: "bg-green-500", href: "/temples/dashboard/products", tooltip: "Add new products to your temple marketplace for devotees to purchase." },
                                     { label: "Offer Pooja", icon: Calendar, color: "bg-orange-500", href: "/temples/dashboard/poojas/create", tooltip: "Create a new Pooja or Seva offering for devotees to book online." },
                                     { label: "New Event", icon: Calendar, color: "bg-red-500", href: "/temples/dashboard/events", tooltip: "Create and manage upcoming temple events, festivals, and celebrations." },
-                                    { label: "View Reports", icon: TrendingUp, color: "bg-blue-500", href: "/temples/dashboard", tooltip: "View detailed analytics and financial reports of your temple." },
+                                    { label: "Donation", icon: TrendingUp, color: "bg-blue-500", href: "/temples/dashboard/donation", tooltip: "View detailed Donation reports of your temple." },
                                 ].map((action) => (
                                     <button
                                         key={action.label}

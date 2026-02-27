@@ -3,8 +3,9 @@
 import { useEffect, useState } from "react";
 import {
     UserPlus, Pencil, Trash2, ShieldCheck, Mail, Power,
-    PowerOff, Search, X, Eye, EyeOff, Users, CheckCircle2,
+    PowerOff, Search, X, Eye, EyeOff, Users, CheckCircle2, ChevronDown
 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
 
@@ -36,6 +37,9 @@ export default function StaffMembersPage() {
     const [saving, setSaving] = useState(false);
     const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
     const [error, setError] = useState("");
+    const [roleDropdownOpen, setRoleDropdownOpen] = useState(false);
+    const [resettingId, setResettingId] = useState<string | null>(null);
+    const { toast } = useToast();
 
     const fetchData = async () => {
         setLoading(true);
@@ -103,6 +107,13 @@ export default function StaffMembersPage() {
             );
             const data = await res.json();
             if (!res.ok) { setError(data.error || "Something went wrong"); return; }
+
+            // Show success message with email notification confirmation
+            toast({
+                title: "Success",
+                description: data.message || (editingStaff ? "Staff updated successfully" : "Staff created successfully"),
+            });
+
             setModalOpen(false);
             fetchData();
         } catch { setError("Network error"); }
@@ -119,6 +130,50 @@ export default function StaffMembersPage() {
             setDeleteConfirm(null);
             fetchData();
         } catch { setError("Delete failed"); }
+    };
+
+    const handleResetPassword = async (id: string) => {
+        if (!form.password || form.password.length < 6) {
+            setError("Please enter a new password of at least 6 characters before resetting.");
+            return;
+        }
+
+        if (!confirm(`Are you sure you want to reset this staff member's password to the one you just entered? It will be emailed to them immediately.`)) {
+            return;
+        }
+
+        setResettingId(id);
+        setError("");
+
+        try {
+            const token = getToken();
+            const res = await fetch(`${API}/admin/team/staff/${id}/reset-password`, {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ newPassword: form.password })
+            });
+            const data = await res.json();
+
+            if (!res.ok) {
+                setError(data.error || "Failed to reset password");
+                return;
+            }
+
+            toast({
+                title: "Password Reset",
+                description: data.message || "Password reset successful. An email has been sent.",
+            });
+
+            // Clear the password field after successful reset
+            setForm(f => ({ ...f, password: "" }));
+        } catch {
+            setError("Network error. Could not reset password.");
+        } finally {
+            setResettingId(null);
+        }
     };
 
     const filtered = staffList.filter(
@@ -281,7 +336,7 @@ export default function StaffMembersPage() {
                                 </div>
                                 <div>
                                     <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1.5 block">
-                                        Password {editingStaff ? "(leave blank to keep current)" : "*"}
+                                        Password {editingStaff ? "(leave blank unless changing)" : "*"}
                                     </label>
                                     <div className="relative">
                                         <input value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })}
@@ -291,6 +346,11 @@ export default function StaffMembersPage() {
                                             {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                                         </button>
                                     </div>
+                                    {editingStaff && (
+                                        <p className="text-[10px] text-muted-foreground mt-1">
+                                            If you wish to force a password reset, type the new password here and click "Reset Password" below.
+                                        </p>
+                                    )}
                                 </div>
 
                                 {/* Role selection */}
@@ -303,32 +363,85 @@ export default function StaffMembersPage() {
                                             No roles created yet. Create roles first from "Roles & Permissions" page.
                                         </p>
                                     ) : (
-                                        <div className="grid grid-cols-2 gap-2">
-                                            {roles.map((role) => {
-                                                const selected = form.roleIds.includes(role.id);
-                                                return (
-                                                    <button key={role.id} type="button" onClick={() => toggleRole(role.id)}
-                                                        className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-sm font-medium transition-all ${selected ? "border-primary bg-primary/10 text-primary" : "border-border bg-background text-foreground hover:border-primary/50"}`}>
-                                                        <CheckCircle2 className={`w-4 h-4 flex-shrink-0 ${selected ? "text-primary" : "text-muted-foreground"}`} />
-                                                        {role.name}
-                                                    </button>
-                                                );
-                                            })}
+                                        <div className="relative">
+                                            <button
+                                                type="button"
+                                                onClick={() => setRoleDropdownOpen(!roleDropdownOpen)}
+                                                className="w-full px-3 py-2.5 bg-background border border-border rounded-lg text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 flex justify-between items-center"
+                                            >
+                                                <span className="truncate">
+                                                    {form.roleIds.length === 0 ? (
+                                                        <span className="text-muted-foreground">Select role(s)</span>
+                                                    ) : (
+                                                        roles.filter(r => form.roleIds.includes(r.id)).map(r => r.name).join(", ")
+                                                    )}
+                                                </span>
+                                                <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${roleDropdownOpen ? "rotate-180" : ""}`} />
+                                            </button>
+
+                                            {roleDropdownOpen && (
+                                                <>
+                                                    <div
+                                                        className="fixed inset-0 z-10"
+                                                        onClick={() => setRoleDropdownOpen(false)}
+                                                    />
+                                                    <div className="absolute z-20 w-full mt-1 bg-card border border-border rounded-lg shadow-lg max-h-48 overflow-y-auto py-1">
+                                                        {roles.map((role) => {
+                                                            const selected = form.roleIds.includes(role.id);
+                                                            return (
+                                                                <div
+                                                                    key={role.id}
+                                                                    onClick={() => toggleRole(role.id)}
+                                                                    className="flex items-center gap-3 px-3 py-2 hover:bg-muted/50 cursor-pointer text-sm transition-colors"
+                                                                >
+                                                                    <input
+                                                                        type="checkbox"
+                                                                        checked={selected}
+                                                                        readOnly
+                                                                        className="w-4 h-4 rounded border-border text-primary focus:ring-primary/30 pointer-events-none"
+                                                                    />
+                                                                    <span className={selected ? "font-medium text-foreground" : "text-foreground"}>
+                                                                        {role.name}
+                                                                    </span>
+                                                                </div>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                </>
+                                            )}
                                         </div>
                                     )}
                                 </div>
 
                                 {/* Status toggle (only for edit) */}
                                 {editingStaff && (
-                                    <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-                                        <div>
-                                            <p className="text-sm font-medium text-foreground">Account Status</p>
-                                            <p className="text-xs text-muted-foreground">Disable to block login access</p>
+                                    <div className="space-y-4">
+                                        <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+                                            <div>
+                                                <p className="text-sm font-medium text-foreground">Account Status</p>
+                                                <p className="text-xs text-muted-foreground">Disable to block login access</p>
+                                            </div>
+                                            <button type="button" onClick={() => setForm({ ...form, isActive: !form.isActive })}
+                                                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${form.isActive ? "bg-green-500" : "bg-muted"}`}>
+                                                <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${form.isActive ? "translate-x-6" : "translate-x-1"}`} />
+                                            </button>
                                         </div>
-                                        <button type="button" onClick={() => setForm({ ...form, isActive: !form.isActive })}
-                                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${form.isActive ? "bg-green-500" : "bg-muted"}`}>
-                                            <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${form.isActive ? "translate-x-6" : "translate-x-1"}`} />
-                                        </button>
+                                        <div className="flex flex-col gap-2 p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
+                                            <div>
+                                                <p className="text-sm font-medium text-red-600 dark:text-red-400">Force Password Reset</p>
+                                                <p className="text-xs text-red-600/80 dark:text-red-400/80">Type a new password in the field above, then click this button to reset their password and email them the new credentials immediately.</p>
+                                            </div>
+                                            <div className="flex justify-end mt-1">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleResetPassword(editingStaff.id)}
+                                                    disabled={resettingId === editingStaff.id}
+                                                    className="px-3 py-1.5 bg-red-600 text-white rounded-md text-xs font-semibold hover:bg-red-700 transition-colors disabled:opacity-50"
+                                                >
+                                                    {resettingId === editingStaff.id ? "Resetting..." : "Reset Password Now"}
+                                                </button>
+                                            </div>
+                                        </div>
                                     </div>
                                 )}
                             </div>

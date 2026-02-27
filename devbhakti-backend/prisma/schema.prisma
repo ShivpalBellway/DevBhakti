@@ -217,12 +217,12 @@ model Event {
   name        String
   date        String
   description String?
-  templeId    String
+  templeId    String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   status      Boolean  @default(true)
   time        String?
-  temple      Temple   @relation(fields: [templeId], references: [id], onDelete: Cascade)
+  temple      Temple?  @relation(fields: [templeId], references: [id], onDelete: Cascade)
   Pooja       Pooja[]
 }
 

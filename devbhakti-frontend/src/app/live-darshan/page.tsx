@@ -240,19 +240,46 @@ function LiveDarshanContent() {
 
             {/* Bottom Info (Generic Focus - Permanently Visible) */}
             <div className={`pointer-events-auto bg-gradient-to-t from-black via-black/60 to-transparent p-8 rounded-2xl transition-opacity duration-300 ${isPlaying ? 'opacity-0 hover:opacity-100' : 'opacity-100'}`}>
-              <div className="flex items-center gap-3 mb-3 text-white/90">
-                <Play className="text-sacred fill-sacred" size={24} />
-                <span className="text-sm md:text-md font-bold tracking-[0.3em] uppercase drop-shadow-lg">Universal Divine Presence</span>
-              </div>
-              <h2 className="text-4xl md:text-6xl font-black text-white drop-shadow-2xl font-serif mb-2 italic">Live Darshan</h2>
-              <p className="text-white/80 text-sm md:text-lg max-w-2xl font-medium tracking-wide leading-relaxed">
-                Experience the sacred aartis and divine rituals from India's most revered shrines. Choose your preferred sanctuary below to begin your spiritual journey.
-              </p>
+              <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+                <div className="flex-1">
+                  <div className="flex items-center gap-3 mb-3 text-white/90">
+                    <Play className="text-sacred fill-sacred" size={24} />
+                    <span className="text-sm md:text-md font-bold tracking-[0.3em] uppercase drop-shadow-lg">Universal Divine Presence</span>
+                  </div>
+                  <h2 className="text-4xl md:text-6xl font-black text-white drop-shadow-2xl font-serif mb-2 italic">Live Darshan</h2>
+                  <p className="text-white/80 text-sm md:text-lg max-w-2xl font-medium tracking-wide leading-relaxed">
+                    Experience the sacred aartis and divine rituals from India's most revered shrines. Choose your preferred sanctuary below to begin your spiritual journey.
+                  </p>
 
-              {/* Selective Temple Highlight */}
-              <div className="mt-4 flex items-center gap-2 bg-white/10 backdrop-blur-sm w-fit px-4 py-2 rounded-full border border-white/10">
-                <MapPin className="text-sacred" size={14} />
-                <span className="text-xs font-bold text-white uppercase tracking-widest">{selectedTemple.name}, {selectedTemple.location}</span>
+                  {/* Selective Temple Highlight */}
+                  <div className="mt-4 flex items-center gap-2 bg-white/10 backdrop-blur-sm w-fit px-4 py-2 rounded-full border border-white/10">
+                    <MapPin className="text-sacred" size={14} />
+                    <span className="text-xs font-bold text-white uppercase tracking-widest">{selectedTemple.name}, {selectedTemple.location}</span>
+                  </div>
+                </div>
+
+                {/* Primary Actions for Live Viewer */}
+                <div className="flex flex-wrap gap-3 shrink-0">
+                  <Button
+                    className="h-12 px-8 rounded-full bg-sacred hover:bg-[#ff8c33] text-white font-black text-sm uppercase tracking-widest gap-2 shadow-[0_0_20px_rgba(255,107,0,0.4)] transition-all"
+                    asChild
+                  >
+                    <Link href={`/donation?temple=${selectedTemple.id}`}>
+                      <Heart className="w-4 h-4 fill-white" />
+                      Donate Now
+                    </Link>
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="h-12 px-8 rounded-full border-white/20 bg-white/10 backdrop-blur-md text-white hover:bg-white/20 font-black text-sm uppercase tracking-widest gap-2 transition-all"
+                    asChild
+                  >
+                    <Link href={`/booking?temple=${selectedTemple.id}`}>
+                      <Calendar className="w-4 h-4" />
+                      Book Pooja
+                    </Link>
+                  </Button>
+                </div>
               </div>
             </div>
 

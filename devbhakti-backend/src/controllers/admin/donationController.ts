@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { PrismaClient } from "@prisma/client";
+import ExcelJS from 'exceljs';
 
 const prisma = new PrismaClient();
 
@@ -109,5 +110,105 @@ export const deleteDonation = async (req: Request, res: Response) => {
     } catch (error: any) {
         console.error("Delete Donation Error:", error);
         res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+
+
+
+
+// Helper function to safely escape CSV values (handles commas and quotes)
+const escapeCSV = (str: any) => {
+    if (str === null || str === undefined) return '';
+    return `"${String(str).replace(/"/g, '""')}"`;
+};
+
+export const downloadDonationsExcel = async (req: Request, res: Response) => {
+    try {
+        console.log("Starting Excel Export...");
+
+        // 1. Database se data layein
+        const donations = await prisma.donation.findMany({
+            orderBy: { createdAt: 'desc' },
+            select: {
+                id: true,
+                donorName: true,
+                donorEmail: true,
+                donorPhone: true,
+                amount: true,
+                status: true,
+                paymentMethod: true,
+                // templeName: true,
+                createdAt: true,
+                panNumber: true,
+                address: true,
+                message: true,
+                isAnonymous: true
+            }
+        });
+
+        // 2. Naya Workbook aur Worksheet banayein
+        const workbook = new ExcelJS.Workbook();
+        const worksheet = workbook.addWorksheet('Donations Report');
+
+        // 3. Columns define karein (Headers)
+        worksheet.columns = [
+            { header: 'ID', key: 'id', width: 25 },
+            { header: 'Donor Name', key: 'donorName', width: 30 },
+            { header: 'Email', key: 'donorEmail', width: 30 },
+            { header: 'Phone', key: 'donorPhone', width: 15 },
+            { header: 'Temple', key: 'templeName', width: 25 },
+            { header: 'Amount', key: 'amount', width: 15 },
+            { header: 'Status', key: 'status', width: 15 },
+            { header: 'Date', key: 'date', width: 15 },
+            { header: 'PAN', key: 'panNumber', width: 20 },
+            { header: 'Address', key: 'address', width: 40 },
+            { header: 'Message', key: 'message', width: 50 },
+        ];
+
+        // 4. Styling apply karein (Headers ko sundar banayein)
+        worksheet.eachRow((row, rowNumber) => {
+            if (rowNumber === 1) {
+                // Header row ke liye style
+                row.font = { bold: true, color: { argb: 'FFFFFFFF' } }; // White text
+                row.fill = {
+                    type: 'pattern',
+                    pattern: 'solid',
+                    fgColor: { argb: 'FF7C4624' }, // Brown background (aapka theme color)
+                };
+            }
+            row.alignment = { vertical: 'middle', wrapText: true };
+        });
+
+        // 5. Data add karein
+        donations.forEach((d: any) => {
+            worksheet.addRow({
+                id: d.id,
+                donorName: d.donorName,
+                donorEmail: d.donorEmail,
+                donorPhone: d.donorPhone,
+                templeName: d.templeName,
+                amount: d.amount,
+                status: d.status,
+                date: d.createdAt.toISOString().split('T')[0],
+                panNumber: d.panNumber,
+                address: d.address,
+                message: d.message,
+            });
+        });
+
+        // 6. Excel file ko Buffer me convert karein
+        const buffer = await workbook.xlsx.writeBuffer();
+
+        // 7. Response headers set karein
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        res.setHeader('Content-Disposition', `attachment; filename=donations_report_${new Date().toISOString().slice(0, 10)}.xlsx`);
+
+        // 8. Response bhejein
+        return res.status(200).send(buffer);
+
+    } catch (error: any) {
+        console.error("Excel Export Error:", error);
+        return res.status(500).json({ success: false, message: "Failed to export Excel" });
     }
 };

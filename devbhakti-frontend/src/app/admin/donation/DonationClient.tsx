@@ -177,6 +177,44 @@ export default function DonationClient() {
         }
     };
 
+
+
+
+    // ... handleDelete function ends here ...
+
+    const handleDownloadExcel = async () => {
+        try {
+            toast({ title: "Generating Excel...", description: "Please wait." });
+
+            // URL me 'excel' lagaya hai
+            const response = await axios.get(`${API_URL}/admin/donations/export/excel`, {
+                responseType: 'blob',
+                validateStatus: () => true
+            });
+
+            if (response.status === 200) {
+                const url = window.URL.createObjectURL(new Blob([response.data]));
+                const link = document.createElement('a');
+                link.href = url;
+
+                // File extension .xlsx kar di
+                link.setAttribute('download', `donations_report_${new Date().toISOString().slice(0, 10)}.xlsx`);
+
+                document.body.appendChild(link);
+                link.click();
+                link.parentNode?.removeChild(link);
+
+                toast({ title: "Success", description: "Excel file downloaded!" });
+            } else {
+                throw new Error("Download failed");
+            }
+        } catch (error) {
+            console.error(error);
+            toast({ title: "Error", description: "Failed to download Excel", variant: "destructive" });
+        }
+    };
+
+
     return (
         <div className="space-y-6">
             {/* Page header */}
@@ -189,6 +227,13 @@ export default function DonationClient() {
                         View and manage all sacred contributions from devotees
                     </p>
                 </div>
+                <Button
+                    onClick={handleDownloadExcel}
+                    className="bg-green-600 hover:bg-green-700 text-white gap-2"
+                >
+                    <Download className="w-4 h-4" />
+                    Export All
+                </Button>
             </div>
 
 
