@@ -64,7 +64,7 @@ const AdminLoginForm: React.FC = () => {
                     {/* Header */}
                     <div className="text-center mb-8">
                         <h1 className="text-2xl font-bold text-slate-900 mb-2">
-                            Admin Portal
+                            DevBhakti Admin Portal
                         </h1>
                         <p className="text-slate-500">
                             Please sign in to access the management dashboard
@@ -150,7 +150,7 @@ const AdminLoginForm: React.FC = () => {
                             className="text-sm font-semibold text-primary hover:underline flex items-center justify-center gap-2 mx-auto"
                         >
                             <ShieldCheck className="w-4 h-4" />
-                            Admin Staff? Login Here
+                            DevBhakti Admin Staff? Login Here
                         </button>
                         <p className="text-sm text-slate-500">
                             Secure access for authorized personnel only.

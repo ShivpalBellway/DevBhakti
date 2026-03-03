@@ -6,6 +6,8 @@ import { PrismaClient } from "@prisma/client";
 
 import razorpay from "../lib/razorpay";
 
+import { sendBookingReceiptEmail } from "../services/bookingMailService";
+
 
 
 const prisma = new PrismaClient();
@@ -86,9 +88,17 @@ export const verifyPayment = async (req: Request, res: Response) => {
 
         } else if (orderType === "POOJA") {
 
-            await prisma.poojaBooking.update({
+            const updatedBooking = await prisma.poojaBooking.update({
 
                 where: { id: referenceId },
+
+                include: {
+
+                    pooja: true,
+
+                    temple: true
+
+                },
 
                 data: {
 
@@ -109,6 +119,122 @@ export const verifyPayment = async (req: Request, res: Response) => {
                 data: { status: "COMPLETED" },
 
             });
+
+
+
+            // Send Email Receipt
+
+            if (updatedBooking.devoteeEmail) {
+
+                try {
+
+                    await sendBookingReceiptEmail({
+
+                        bookingId: updatedBooking.id,
+
+                        devoteeName: updatedBooking.devoteeName,
+
+                        devoteePhone: updatedBooking.devoteePhone,
+
+                        devoteeEmail: updatedBooking.devoteeEmail,
+
+                        poojaName: updatedBooking.pooja.name,
+
+                        templeName: updatedBooking.temple?.name || "Dev Bhakti",
+
+                        bookingDate: updatedBooking.bookingDate || "N/A",
+
+                        packageName: updatedBooking.packageName,
+
+                        packagePrice: updatedBooking.packagePrice,
+
+                        platformFee: updatedBooking.platformFee,
+
+                        totalAmount: updatedBooking.packagePrice + updatedBooking.platformFee,
+
+                        status: "BOOKED",
+
+                        createdAt: updatedBooking.createdAt.toISOString(),
+
+                        gothra: updatedBooking.gothra || undefined,
+
+                        kuldevi: updatedBooking.kuldevi || undefined,
+
+                        kuldevta: updatedBooking.kuldevta || undefined,
+
+                        dob: updatedBooking.dob || undefined,
+
+                        anniversary: updatedBooking.anniversary || undefined,
+
+                        additionalDevotees: updatedBooking.additionalDevotees as any
+
+                    });
+
+                } catch (emailError) {
+
+                    console.error("Failed to send booking email:", emailError);
+
+                    // We don't want to fail the payment verification if email fails
+
+                }
+
+            }
+
+        } else if (orderType === "DONATION") {
+
+            await prisma.donation.update({
+
+                where: { id: referenceId },
+
+                data: {
+
+                    status: "SUCCESS",
+
+                },
+
+            });
+
+
+
+            // Create ledger entry for donation earning
+
+            const donation = await prisma.donation.findUnique({
+
+                where: { id: referenceId },
+
+                include: { temple: true }
+
+            });
+
+
+
+            if (donation && donation.templeId) {
+
+                await prisma.templeLedger.create({
+
+                    data: {
+
+                        templeId: donation.templeId,
+
+                        amount: donation.amount,
+
+                        grossAmount: donation.amount,
+
+                        commission: 0, // Assume 0 commission for donations for now
+
+                        type: "DONATION_EARNING",
+
+                        sourceId: donation.id,
+
+                        description: `Donation: ${donation.donorName}${donation.isAnonymous ? ' (Anonymous)' : ''}`,
+
+                        status: "COMPLETED"
+
+                    }
+
+                });
+
+            }
 
         }
 

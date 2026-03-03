@@ -37,7 +37,7 @@ export default function AdminUsersPage() {
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState("");
     const [debouncedSearch, setDebouncedSearch] = useState("");
-    const [typeFilter, setTypeFilter] = useState<"all" | "devotee" | "institution" | "seller">("devotee");
+    const [typeFilter, setTypeFilter] = useState<"devotee">("devotee");
     const [dobFilter, setDobFilter] = useState("");
     const [anniversaryFilter, setAnniversaryFilter] = useState("");
     const [page, setPage] = useState(1);
@@ -212,10 +212,10 @@ export default function AdminUsersPage() {
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                     <h1 className="text-2xl md:text-3xl font-serif font-bold text-foreground">
-                        Users & Devotees
+                        Devotee Management
                     </h1>
                     <p className="text-muted-foreground mt-1">
-                        Manage all stakeholders registered on DevBhakti
+                        Manage all devotees registered on DevBhakti
                     </p>
                 </div>
                 <Button variant="sacred" onClick={handleExportExcel}>
@@ -227,7 +227,7 @@ export default function AdminUsersPage() {
             {/* Stats */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {[
-                    { label: `Total ${typeFilter === 'devotee' ? 'Devotees' : typeFilter === 'institution' ? 'Temples' : 'Users'}`, value: stats.filteredCount.toLocaleString(), color: "text-primary" },
+                    { label: `Total Devotees`, value: stats.filteredCount.toLocaleString(), color: "text-primary" },
                     { label: "Bookings", value: stats.filteredBookings.toLocaleString(), color: "text-blue-600" },
                     { label: "Orders", value: stats.filteredOrders.toLocaleString(), color: "text-amber-600" },
                     { label: "New This Month", value: stats.newThisMonth.toLocaleString(), color: "text-emerald-600" },
@@ -262,20 +262,13 @@ export default function AdminUsersPage() {
                     />
                 </div>
                 <div className="flex gap-2 overflow-x-auto pb-2 md:pb-0">
-                    {["all", "devotee", "institution", "seller"].map((type) => (
-                        <Button
-                            key={type}
-                            variant={typeFilter === type ? "sacred" : "outline"}
-                            size="sm"
-                            onClick={() => {
-                                setTypeFilter(type as any);
-                                setPage(1);
-                            }}
-                            className="capitalize whitespace-nowrap h-10 px-4 rounded-xl"
-                        >
-                            {type === "all" ? "All" : type === "institution" ? "Temple Admin" : type === "seller" ? "Seller" : "Devotee"}
-                        </Button>
-                    ))}
+                    <Button
+                        variant="sacred"
+                        size="sm"
+                        className="capitalize whitespace-nowrap h-10 px-4 rounded-xl"
+                    >
+                        Devotees Only
+                    </Button>
                 </div>
 
                 <div className="flex gap-2">
@@ -339,10 +332,7 @@ export default function AdminUsersPage() {
                                         />
                                     </th>
                                     <th className="text-left p-4 text-sm font-medium text-muted-foreground">
-                                        Stakeholder
-                                    </th>
-                                    <th className="text-left p-4 text-sm font-medium text-muted-foreground">
-                                        Role
+                                        Devotee
                                     </th>
                                     <th className="text-left p-4 text-sm font-medium text-muted-foreground">
                                         Contact
@@ -411,19 +401,6 @@ export default function AdminUsersPage() {
                                                 </div>
                                             </td>
                                             <td className="p-4">
-                                                <Badge
-                                                    variant="outline"
-                                                    className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold border-none ${user.role === "INSTITUTION"
-                                                        ? "bg-secondary/10 text-secondary"
-                                                        : user.role === "SELLER"
-                                                            ? "bg-amber-100 text-amber-700"
-                                                            : "bg-emerald-50 text-emerald-700"
-                                                        }`}
-                                                >
-                                                    {user.role === "INSTITUTION" ? "Temple Admin" : user.role === "SELLER" ? "Seller" : "Devotee"}
-                                                </Badge>
-                                            </td>
-                                            <td className="p-4">
                                                 <div className="space-y-1">
                                                     <p className="text-sm text-foreground flex items-center gap-1">
                                                         <Mail className="w-3 h-3 text-muted-foreground" />
@@ -455,13 +432,7 @@ export default function AdminUsersPage() {
                                                 <div className="flex items-center justify-end gap-2">
                                                     {hasPermission("users.view") && (
                                                         <Button variant="ghost" size="icon" className="rounded-full hover:bg-primary/10 hover:text-primary" onClick={() => {
-                                                            if (user.role === "INSTITUTION") {
-                                                                window.location.href = `/admin/temples/${user.id}`;
-                                                            } else if (user.role === "SELLER") {
-                                                                window.location.href = `/admin/sellers/view/${user.id}`;
-                                                            } else {
-                                                                window.location.href = `/admin/users/${user.id}`;
-                                                            }
+                                                            window.location.href = `/admin/users/${user.id}`;
                                                         }}>
                                                             <Eye className="w-4 h-4" />
                                                         </Button>

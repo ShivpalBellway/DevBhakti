@@ -40,7 +40,9 @@ export const createBooking = async (req: Request, res: Response) => {
 
             address,
 
-            specialRequests
+            specialRequests,
+
+            additionalDevotees
 
         } = req.body;
 
@@ -140,111 +142,61 @@ export const createBooking = async (req: Request, res: Response) => {
 
 
 
-        // 1. Global Temple Availability
 
-        // We use 'findFirst' because 'poojaId: null' might be tricky with some prisma versions in composite unique constraints if not handled perfectly, 
+        // --- AVAILABILITY CHECK ---
 
-        // but finding by composite unique key is standard. 
-
-        // Note: Prisma treats null in unique constraint fields differently depending on DB. 
-
-        // For safety/simplicity in this context, we can use findFirst.
-
-        const globalAvailability = await prisma.bookingAvailability.findFirst({
-
-            where: {
-
-                templeId: pooja.templeId as string,
-
-                poojaId: undefined, // Using undefined to represent NULL in some prisma versions or use { equals: null }
-
-                date: bookingDate as string
-
-            }
-
-        });
-
-
-
-        if (globalAvailability) {
-
-            if (globalAvailability.isClosed) {
-
-                return res.status(400).json({ success: false, message: 'Bookings are closed for this date.' });
-
-            }
-
-            const totalTempleBookings = await prisma.poojaBooking.count({
-
+        if (pooja.templeId) {
+            // 1. Global Temple Availability
+            const globalAvailability = await prisma.bookingAvailability.findFirst({
                 where: {
-
                     templeId: pooja.templeId as string,
-
-                    bookingDate: bookingDate,
-
-                    status: { not: 'CANCELLED' }
-
+                    poojaId: undefined,
+                    date: bookingDate as string
                 }
-
             });
 
-            if (totalTempleBookings >= globalAvailability.maxBookings) {
-
-                return res.status(400).json({ success: false, message: 'Temple is fully booked for this date.' });
-
+            if (globalAvailability) {
+                if (globalAvailability.isClosed) {
+                    return res.status(400).json({ success: false, message: 'Bookings are closed for this date.' });
+                }
+                const totalTempleBookings = await prisma.poojaBooking.count({
+                    where: {
+                        templeId: pooja.templeId as string,
+                        bookingDate: bookingDate,
+                        status: { not: 'CANCELLED' }
+                    }
+                });
+                if (totalTempleBookings >= globalAvailability.maxBookings) {
+                    return res.status(400).json({ success: false, message: 'Temple is fully booked for this date.' });
+                }
             }
 
-        }
-
-
-
-        // 2. Specific Pooja Availability
-
-        const poojaAvailability = await prisma.bookingAvailability.findFirst({
-
-            where: {
-
-                templeId: pooja.templeId as string,
-
-                poojaId: poojaId as string,
-
-                date: bookingDate as string
-
-            }
-
-        });
-
-
-
-        if (poojaAvailability) {
-
-            if (poojaAvailability.isClosed) {
-
-                return res.status(400).json({ success: false, message: 'This ritual is unavailable on this date.' });
-
-            }
-
-            const totalPoojaBookings = await prisma.poojaBooking.count({
-
+            // 2. Specific Pooja Availability
+            const poojaAvailability = await prisma.bookingAvailability.findFirst({
                 where: {
-
-                    poojaId: poojaId,
-
-                    bookingDate: bookingDate,
-
-                    status: { not: 'CANCELLED' }
-
+                    templeId: pooja.templeId as string,
+                    poojaId: poojaId as string,
+                    date: bookingDate as string
                 }
-
             });
 
-            if (totalPoojaBookings >= poojaAvailability.maxBookings) {
-
-                return res.status(400).json({ success: false, message: 'Daily limit reached for this ritual.' });
-
+            if (poojaAvailability) {
+                if (poojaAvailability.isClosed) {
+                    return res.status(400).json({ success: false, message: 'This ritual is unavailable on this date.' });
+                }
+                const totalPoojaBookings = await prisma.poojaBooking.count({
+                    where: {
+                        poojaId: poojaId,
+                        bookingDate: bookingDate,
+                        status: { not: 'CANCELLED' }
+                    }
+                });
+                if (totalPoojaBookings >= poojaAvailability.maxBookings) {
+                    return res.status(400).json({ success: false, message: 'Daily limit reached for this ritual.' });
+                }
             }
-
         }
+
 
         // (Existing availability check code stays here...)
 
@@ -265,8 +217,8 @@ export const createBooking = async (req: Request, res: Response) => {
                     userId,
 
                     poojaId,
+                    templeId: pooja.templeId || null,
 
-                    templeId: pooja.templeId as string,
 
                     packageName,
 
@@ -284,6 +236,8 @@ export const createBooking = async (req: Request, res: Response) => {
 
                     specialRequests: specialRequests as string | null,
 
+                    additionalDevotees: additionalDevotees || null,
+
                     status: 'PENDING', // Mark as pending until Razorpay payment is verified
 
                     commissionAmount,
@@ -297,30 +251,19 @@ export const createBooking = async (req: Request, res: Response) => {
 
 
             // Create ledger entry for temple
-
             await tx.templeLedger.create({
-
                 data: {
-
-                    templeId: pooja.templeId,
-
+                    templeId: pooja.templeId || null,
                     amount: netEarning,
-
                     grossAmount: finalPrice, // Use verified price
-
                     commission: commissionAmount,
-
                     type: "POOJA_EARNING",
-
                     sourceId: newBooking.id,
-
                     description: `Pooja Booking: ${pooja.name} (${packageName})`,
-
                     status: "PENDING"
-
                 }
-
             });
+
 
 
 
@@ -420,11 +363,18 @@ export const checkAvailability = async (req: Request, res: Response) => {
 
 
 
-        if (!templeId || !date) {
-
-            return res.status(400).json({ success: false, message: 'Temple ID and Date are required' });
-
+        if (!date) {
+            return res.status(400).json({ success: false, message: 'Date is required' });
         }
+
+        if (!templeId) {
+            return res.json({
+                success: true,
+                available: true,
+                message: "Slot available"
+            });
+        }
+
 
 
 
@@ -835,10 +785,9 @@ export const getUnavailableDates = async (req: Request, res: Response) => {
 
 
         if (!templeId) {
-
-            return res.status(400).json({ success: false, message: 'Temple ID is required' });
-
+            return res.json({ success: true, data: [] });
         }
+
 
 
 

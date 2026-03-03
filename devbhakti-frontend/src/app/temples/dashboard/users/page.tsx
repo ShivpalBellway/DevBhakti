@@ -317,7 +317,7 @@ export default function TempleUsersPage() {
                 </div>
                 <Button
                     onClick={handleExportDevotees}
-                    className="bg-emerald-600 hover:bg-emerald-700 text-white gap-2 rounded-xl h-11 w-full md:w-auto shrink-0"
+                    variant="sacred"
                 >
                     <Download className="w-4 h-4" />
                     Export Excel

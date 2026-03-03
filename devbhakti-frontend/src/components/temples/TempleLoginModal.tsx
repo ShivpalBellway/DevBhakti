@@ -18,6 +18,7 @@ export default function TempleLoginModal({ onClose }: TempleLoginModalProps) {
     const router = useRouter();
     const { toast } = useToast();
     const [showOtpInput, setShowOtpInput] = useState(false);
+    const [devOtp, setDevOtp] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
     const [otp, setOtp] = useState("");
     const [phone, setPhone] = useState("");
@@ -31,6 +32,12 @@ export default function TempleLoginModal({ onClose }: TempleLoginModalProps) {
         try {
             const response = await sendOTP({ phone: normalizedPhone, role: "INSTITUTION" });
             setShowOtpInput(true);
+            if (response.data?.otp) {
+                setDevOtp(response.data.otp);
+            }
+            // Original code:
+            // const response = await sendOTP({ phone: normalizedPhone, role: "INSTITUTION" });
+            // setShowOtpInput(true);
         } catch (error: any) {
             setError(error.response?.data?.message || "Failed to send OTP. Please try again.");
         } finally {
@@ -132,7 +139,16 @@ export default function TempleLoginModal({ onClose }: TempleLoginModalProps) {
                     </form>
                 ) : (
                     <form onSubmit={handleVerifyOTP} className="space-y-6">
-
+                        {devOtp && (
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                className="bg-[#FDF6F0] border border-[#7b4623]/10 p-3 rounded-xl mb-4 text-center shadow-sm"
+                            >
+                                <p className="text-slate-500 text-xs font-medium mb-0.5">Development OTP</p>
+                                <p className="text-xl font-serif font-bold text-[#7b4623] tracking-widest">{devOtp}</p>
+                            </motion.div>
+                        )}
                         <div className="space-y-2">
                             <div className="flex justify-between items-center ml-1">
                                 <Label htmlFor="otp" className="text-slate-700">Verification Code</Label>

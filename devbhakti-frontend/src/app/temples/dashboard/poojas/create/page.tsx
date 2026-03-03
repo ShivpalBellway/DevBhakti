@@ -21,7 +21,7 @@ export default function TempleCreatePoojaPage() {
     const [tempImage, setTempImage] = useState<string | null>(null);
 
     const STATIC_PACKAGE_TYPES = [
-        // { name: "Single", description: "For 1 person" },
+        { name: "Single", description: "For 1 person" },
         { name: "Couple", description: "For 2 people" },
         { name: "Family", description: "Upto 5 people" },
         { name: "Group", description: "Upto 8 people" },

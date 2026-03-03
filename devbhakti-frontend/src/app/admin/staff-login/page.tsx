@@ -112,7 +112,7 @@ export default function StaffLoginPage() {
                         </div>
                         <h1 className="text-2xl font-bold text-foreground">Staff Login</h1>
                         <p className="text-muted-foreground text-sm mt-1">
-                            Admin Panel — Staff Access Portal
+                            DevBhakti Admin Panel — Staff Access Portal
                         </p>
                     </div>
 
@@ -196,7 +196,7 @@ export default function StaffLoginPage() {
                         <p className="text-xs text-muted-foreground">
                             Are you the Super Admin?{" "}
                             <Link href="/admin/login" className="text-primary hover:underline font-medium">
-                                Admin Login →
+                                DevBhakti Admin Login →
                             </Link>
                         </p>
                     </div>

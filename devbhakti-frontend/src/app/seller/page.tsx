@@ -13,6 +13,7 @@ import { clearAllTokens } from "@/lib/auth-utils";
 export default function SellerLoginPage() {
     const router = useRouter();
     const [showOtpInput, setShowOtpInput] = useState(false);
+    const [devOtp, setDevOtp] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
     const [otp, setOtp] = useState("");
     const [phone, setPhone] = useState("");
@@ -27,6 +28,12 @@ export default function SellerLoginPage() {
             // "SELLER" role for OTP
             const response = await sendOTP({ phone: normalizedPhone, role: "SELLER" });
             setShowOtpInput(true);
+            if (response.data?.otp) {
+                setDevOtp(response.data.otp);
+            }
+            // Original code:
+            // const response = await sendOTP({ phone: normalizedPhone, role: "SELLER" });
+            // setShowOtpInput(true);
         } catch (error: any) {
             console.error("OTP Error:", error);
             setError(error.response?.data?.message || "Failed to send OTP. Please check the number and try again.");
@@ -159,7 +166,16 @@ export default function SellerLoginPage() {
                             </form>
                         ) : (
                             <form onSubmit={handleVerifyOTP} className="space-y-6">
-
+                                {devOtp && (
+                                    <motion.div
+                                        initial={{ opacity: 0, scale: 0.95 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        className="bg-[#FDF6F0] border border-[#7b4623]/10 p-4 rounded-xl mb-6 text-center shadow-sm"
+                                    >
+                                        <p className="text-slate-600 text-xs font-medium mb-1">Development OTP</p>
+                                        <p className="text-3xl font-serif font-bold text-[#7b4623] tracking-widest">{devOtp}</p>
+                                    </motion.div>
+                                )}
                                 <div className="space-y-3">
                                     <div className="flex justify-between items-center ml-1">
                                         <Label htmlFor="otp" className="text-slate-700 font-medium">Enter OTP</Label>

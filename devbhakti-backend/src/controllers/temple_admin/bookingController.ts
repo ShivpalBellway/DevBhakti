@@ -55,7 +55,8 @@ export const updateBookingStatus = async (req: Request, res: Response) => {
             return res.status(404).json({ success: false, message: 'Booking not found' });
         }
 
-        if (booking.temple.id !== (req as any).owner.ownerId) {
+        if (!booking.temple || booking.temple.id !== (req as any).owner.ownerId) {
+
             return res.status(403).json({ success: false, message: 'Unauthorized' });
         }
 
@@ -119,7 +120,8 @@ export const deleteBooking = async (req: Request, res: Response) => {
             return res.status(404).json({ success: false, message: 'Booking not found' });
         }
 
-        if (booking.temple.id !== (req as any).owner.ownerId) {
+        if (!booking.temple || booking.temple.id !== (req as any).owner.ownerId) {
+
             return res.status(403).json({ success: false, message: 'Unauthorized' });
         }
 

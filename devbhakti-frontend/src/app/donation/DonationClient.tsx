@@ -2,7 +2,7 @@
 
 import React, { useState, Suspense } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
     Heart,
@@ -19,6 +19,7 @@ import {
     ChevronRight,
     ShieldCheck,
     MapPin
+
 } from "lucide-react";
 
 import Navbar from "@/components/landing/Navbar";
@@ -57,6 +58,7 @@ declare global {
 
 function DonationForm() {
     const searchParams = useSearchParams();
+    const router = useRouter();
     const { toast } = useToast();
     const [step, setStep] = useState(searchParams.get("temple") ? 2 : 1);
     const [direction, setDirection] = useState(1);
@@ -117,9 +119,10 @@ function DonationForm() {
             if (!token) {
                 toast({
                     title: "Authentication Required",
-                    description: "Please login to proceed with your donation.",
+                    description: "Please login as a devotee to proceed with your donation.",
                     variant: "destructive"
                 });
+                router.push("/login?redirect=/donation" + (selectedTemple ? `&temple=${selectedTemple}` : ""));
                 return;
             }
         }
@@ -486,7 +489,7 @@ function DonationForm() {
                                         {!isAnonymous && (
                                             <div className="grid md:grid-cols-2 gap-6 animate-in fade-in slide-in-from-top-4 duration-500">
                                                 <div className="space-y-2">
-                                                    <Label htmlFor="name">Full Name <span className="text-red-500">*</span></Label>
+                                                    <Label htmlFor="name">Donar Name <span className="text-red-500">*</span></Label>
                                                     <div className="relative">
                                                         <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                                                         <Input
@@ -624,14 +627,7 @@ function DonationForm() {
                                             <RadioGroupItem value="upi" id="upi" />
                                             <Label htmlFor="upi" className="cursor-pointer flex-1 font-medium">UPI (Google Pay, PhonePe, Paytm)</Label>
                                         </div>
-                                        <div className={`flex items-center space-x-3 p-4 rounded-lg border cursor-pointer transition-all ${paymentMethod === 'card' ? 'border-[#7c4624] bg-[#f5ebe0]/50' : 'border-border'}`} onClick={() => setPaymentMethod('card')}>
-                                            <RadioGroupItem value="card" id="card" />
-                                            <Label htmlFor="card" className="cursor-pointer flex-1 font-medium">Credit / Debit Card</Label>
-                                        </div>
-                                        <div className={`flex items-center space-x-3 p-4 rounded-lg border cursor-pointer transition-all ${paymentMethod === 'netbanking' ? 'border-[#7c4624] bg-[#f5ebe0]/50' : 'border-border'}`} onClick={() => setPaymentMethod('netbanking')}>
-                                            <RadioGroupItem value="netbanking" id="netbanking" />
-                                            <Label htmlFor="netbanking" className="cursor-pointer flex-1 font-medium">Net Banking</Label>
-                                        </div>
+
                                     </RadioGroup>
                                 </div>
                             </motion.div>

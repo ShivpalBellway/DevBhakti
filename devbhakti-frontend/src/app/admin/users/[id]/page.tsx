@@ -22,6 +22,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { fetchUserDetailAdmin } from "@/api/adminController";
 import { format } from "date-fns";
+import { BASE_URL } from "@/config/apiConfig";
 
 export default function DevoteeDetailPage() {
     const { id } = useParams();
@@ -370,51 +371,59 @@ export default function DevoteeDetailPage() {
 
                             <div className="space-y-4">
                                 {filteredOrders.length > 0 ? (
-                                    filteredOrders.map((order: any) => (
-                                        <Card
-                                            key={order.id}
-                                            className="group overflow-hidden border-slate-100 hover:border-primary/30 hover:shadow-lg transition-all duration-300 rounded-3xl cursor-pointer"
-                                            onClick={() => router.push(`/admin/products/orders?id=${order.id}`)}
-                                        >
-                                            <CardContent className="p-6">
-                                                <div className="flex flex-col gap-4">
-                                                    <div className="flex justify-between items-center bg-slate-50/80 p-4 rounded-2xl mb-2">
-                                                        <div className="space-y-1">
-                                                            <h4 className="text-xs font-black text-slate-400 tracking-widest uppercase">ORDER #{order.id.substring(0, 8)}</h4>
-                                                            <p className="text-xs text-slate-600 flex items-center gap-1.5 font-bold">
-                                                                <Calendar className="w-3.5 h-3.5 opacity-50 text-primary" />
-                                                                {order.createdAt ? format(new Date(order.createdAt), "PPP") : "N/A"}
-                                                            </p>
-                                                        </div>
-                                                        <div className="text-right">
-                                                            <p className="text-lg font-black text-primary">₹{order.totalAmount}</p>
-                                                            <Badge variant="outline" className={`rounded-full px-2.5 font-bold text-[9px] border-none ${order.status === "COMPLETED" ? "bg-emerald-50 text-emerald-700" : "bg-blue-50 text-blue-700"
-                                                                }`}>{order.status}</Badge>
-                                                        </div>
-                                                    </div>
+                                    filteredOrders.map((order: any) => {
+                                        const firstItem = order.subOrders?.[0]?.items?.[0];
+                                        const productName = firstItem?.product?.name || `Order #${order.id.substring(0, 8)}`;
+                                        const productImage = firstItem?.product?.image;
+                                        const totalItems = (order.subOrders || []).reduce((acc: number, so: any) => acc + (so.items || []).length, 0);
 
-                                                    <div className="px-2 space-y-3">
-                                                        {order.subOrders?.map((so: any) => (
-                                                            so.items?.map((item: any) => (
-                                                                <div key={item.id} className="flex items-center justify-between group/item">
-                                                                    <div className="flex items-center gap-3">
-                                                                        <div className="w-10 h-10 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center group-hover/item:border-primary/20 transition-all">
-                                                                            <ShoppingBag className="w-5 h-5 text-slate-400 group-hover/item:text-primary transition-colors" />
-                                                                        </div>
-                                                                        <div>
-                                                                            <p className="text-sm font-bold text-slate-700 leading-tight">{item.product?.name}</p>
-                                                                            <p className="text-[11px] text-muted-foreground font-bold">Qty: {item.quantity} • {item.variantName}</p>
-                                                                        </div>
-                                                                    </div>
-                                                                    <span className="text-sm font-black text-slate-900 tracking-tight">₹{item.price * item.quantity}</span>
+                                        return (
+                                            <Card
+                                                key={order.id}
+                                                className="group overflow-hidden border-slate-100 hover:border-primary/30 hover:shadow-lg transition-all duration-300 rounded-3xl cursor-pointer"
+                                                onClick={() => router.push(`/admin/products/orders?id=${order.id}`)}
+                                            >
+                                                <CardContent className="p-6">
+                                                    <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+                                                        <div className="flex gap-4">
+                                                            <div className="w-14 h-14 rounded-2xl bg-primary/5 flex items-center justify-center shrink-0 group-hover:bg-primary/10 transition-colors overflow-hidden">
+                                                                {productImage ? (
+                                                                    <img src={`${BASE_URL}${productImage}`} alt={productName} className="w-full h-full object-cover" />
+                                                                ) : (
+                                                                    <ShoppingBag className="w-7 h-7 text-primary" />
+                                                                )}
+                                                            </div>
+                                                            <div className="space-y-1">
+                                                                <h4 className="text-lg font-bold text-slate-900 group-hover:text-primary transition-colors">
+                                                                    {productName}
+                                                                    {totalItems > 1 && <span className="text-xs text-muted-foreground ml-2 font-medium">(+{totalItems - 1} more items)</span>}
+                                                                </h4>
+                                                                <p className="text-xs font-black text-slate-400 tracking-widest uppercase">ORDER #{order.id.substring(0, 8)}</p>
+                                                                <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground font-medium">
+                                                                    <span className="flex items-center gap-1">
+                                                                        <Calendar className="w-3.5 h-3.5 opacity-60" />
+                                                                        {order.createdAt ? format(new Date(order.createdAt), "PPP") : "N/A"}
+                                                                    </span>
                                                                 </div>
-                                                            ))
-                                                        ))}
+                                                            </div>
+                                                        </div>
+                                                        <div className="flex sm:flex-col items-center sm:items-end justify-between gap-2">
+                                                            <p className="text-xl font-black text-primary">₹{order.totalAmount}</p>
+                                                            <Badge
+                                                                variant="outline"
+                                                                className={`rounded-full px-3 py-1 font-black text-[10px] tracking-wide border-none ${order.status === "COMPLETED" ? "bg-emerald-50 text-emerald-700" :
+                                                                    order.status === "CANCELLED" ? "bg-red-50 text-red-700" :
+                                                                        "bg-blue-50 text-blue-700"
+                                                                    }`}
+                                                            >
+                                                                {order.status}
+                                                            </Badge>
+                                                        </div>
                                                     </div>
-                                                </div>
-                                            </CardContent>
-                                        </Card>
-                                    ))
+                                                </CardContent>
+                                            </Card>
+                                        );
+                                    })
                                 ) : (
                                     <div className="text-center py-20 bg-slate-50/50 rounded-[2rem] border-2 border-dashed border-slate-200">
                                         <p className="text-slate-400 font-serif italic text-lg">No orders found.</p>

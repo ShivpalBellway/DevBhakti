@@ -351,7 +351,7 @@ model PoojaBooking {
   id               String        @id @default(cuid())
   userId           String
   poojaId          String
-  templeId         String
+  templeId         String?
   packageName      String
   packagePrice     Float
   devoteeName      String
@@ -371,11 +371,13 @@ model PoojaBooking {
   updatedAt        DateTime      @updatedAt
   anniversary      String?
   dob              String?
+  additionalDevotees Json?
   proofPhotos      String[]      @default([])
   pooja            Pooja         @relation(fields: [poojaId], references: [id])
-  temple           Temple        @relation(fields: [templeId], references: [id])
+  temple           Temple?       @relation(fields: [templeId], references: [id])
   user             User          @relation(fields: [userId], references: [id])
 }
+
 
 model Order {
   id              String     @id @default(cuid())

@@ -5,34 +5,34 @@ import Logo from "@/components/icons/Logo";
 
 const Footer: React.FC = () => {
   const footerLinks = {
-    platform: [
-      // { label: "Features", href: "/#features" },
+    offerings: [
       { label: "Marketplace", href: "/marketplace" },
       { label: "Live Darshan", href: "/live-darshan" },
       { label: "Sacred Temples", href: "/temples" },
       { label: "Register as Temple", href: "/temples/register" },
       { label: "Trust & Transparency", href: "/#trust" },
-
     ],
-    company: [
+    platform: [
       { label: "About Us", href: "/about" },
-      { label: "Privacy Policy", href: "/privacy-policy" },
+      { label: "Contact Us", href: "/contact" },
+    ],
+    legal: [
       { label: "Terms of Service", href: "/terms-of-service" },
-
-      // { label: "Contact", href: "/contact" },
-      // { label: "Blog", href: "/blog" },
-      // { label: "Careers", href: "/careers" },
+      { label: "Privacy Policy", href: "/privacy-policy" },
+      { label: "Returns & Refund Policy", href: "/returns-refund-policy" },
+      { label: "Shipping Policy", href: "/shipping-policy" },
+      { label: "Grievance Officer", href: "/grievance-officer" },
     ],
     support: [
-      { label: "admin@devbhakti.in", href: "mailto:[EMAIL_ADDRESS]" },
-
+      { label: "support@devbhakti.in", href: "mailto:support@devbhakti.in" },
+      { label: "grievance.officer@devbhakti.in", href: "mailto:grievance.officer@devbhakti.in" },
     ],
   };
 
   return (
     <footer className="bg-warm-brown text-sidebar-foreground">
-      <div className="container mx-auto px-4 py-16">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-12">
+      <div className="container mx-auto px-4 py-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-6 gap-x-4">
           {/* Brand */}
           <div className="lg:col-span-2">
             <Logo size="lg" variant="full" className="text-white bg-[#DCB35D] rounded-2xl" />
@@ -44,11 +44,11 @@ const Footer: React.FC = () => {
             {/* Social icons disabled as requested */}
           </div>
 
-          {/* Platform Links */}
+          {/* Offerings Links */}
           <div>
-            <h4 className="font-semibold text-lg mb-4">Offerings</h4>
+            <h4 className="font-semibold text-lg mb-2">Offerings</h4>
             <ul className="space-y-3">
-              {footerLinks.platform.map((link) => (
+              {footerLinks.offerings.map((link) => (
                 <li key={link.label}>
                   <Link
                     href={link.href}
@@ -61,11 +61,28 @@ const Footer: React.FC = () => {
             </ul>
           </div>
 
-          {/* Company Links */}
+          {/* Platform Links */}
           <div>
-            <h4 className="font-semibold text-lg mb-4">Platform</h4>
+            <h4 className="font-semibold text-lg mb-2">Platform</h4>
             <ul className="space-y-3">
-              {footerLinks.company.map((link) => (
+              {footerLinks.platform.map((link) => (
+                <li key={link.label}>
+                  <Link
+                    href={link.href}
+                    className="text-sidebar-foreground/70 hover:text-[#46daffc7] transition-colors"
+                  >
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Legal Links */}
+          <div>
+            <h4 className="font-semibold text-lg mb-2">Legal</h4>
+            <ul className="space-y-3">
+              {footerLinks.legal.map((link) => (
                 <li key={link.label}>
                   <Link
                     href={link.href}
@@ -80,13 +97,13 @@ const Footer: React.FC = () => {
 
           {/* Support Links */}
           <div>
-            <h4 className="font-semibold text-lg mb-4">Support</h4>
+            <h4 className="font-semibold text-lg mb-2">Support</h4>
             <ul className="space-y-3">
               {footerLinks.support.map((link) => (
                 <li key={link.label}>
-                  <a href="mailto:admin@devbhakti.in" className="flex items-center gap-2 hover:text-white transition-colors">
-                    <Mail className="w-4 h-4" />
-                    admin@devbhakti.in
+                  <a href={link.href} className="flex items-center gap-2 hover:text-white transition-colors text-sm">
+                    <Mail className="w-4 h-4 flex-shrink-0" />
+                    {link.label}
                   </a>
                 </li>
               ))}
@@ -98,9 +115,9 @@ const Footer: React.FC = () => {
         <div className="border-t border-[#DCB35D] mt-12 pt-8">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="flex flex-wrap items-center justify-center gap-6 text-sm text-sidebar-foreground/70">
-              <a href="mailto:admin@devbhakti.in" className="flex items-center gap-2 hover:text-white transition-colors">
+              <a href="mailto:support@devbhakti.in" className="flex items-center gap-2 hover:text-white transition-colors">
                 <Mail className="w-4 h-4" />
-                admin@devbhakti.in
+                support@devbhakti.in
               </a>
               {/* <a href="tel:+911234567890" className="flex items-center gap-2 hover:text-white transition-colors">
                 <Phone className="w-4 h-4" />
@@ -109,7 +126,7 @@ const Footer: React.FC = () => {
             </div>
             <p className="text-sm text-sidebar-foreground/50">
               © {new Date().getFullYear()}DevBhakti™
-              . All rights reserved.
+              DevBhakti is owned and operated by Divinity Labs Private Limited. All rights reserved.
 
             </p>
           </div>

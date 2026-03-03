@@ -65,7 +65,8 @@ export const getAdminDashboardStats = async (req: Request, res: Response) => {
                 id: b.id,
                 type: 'booking',
                 title: `New booking for ${b.pooja.name}`,
-                description: `At ${b.temple.name}`,
+                description: `At ${b.temple?.name || 'Platform'}`,
+
                 time: b.createdAt
             })),
             ...recentUsers.map(u => ({

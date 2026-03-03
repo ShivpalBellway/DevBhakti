@@ -14,39 +14,70 @@ export default function TermsOfServicePage() {
         transition: { duration: 0.6 }
     };
 
-    const terms = [
+    const clauses = [
         {
-            icon: CheckCircle2,
-            title: "Acceptance of Terms",
-            content: "By accessing or using DevBhakti.in, you agree to be bound by these Terms of Service. If you do not agree, please refrain from using the platform."
+            title: "1. Nature of Platform",
+            content: "DevBhakti is a technology-enabled marketplace platform that facilitates interaction between devotees and temples and enables:",
+            points: [
+                "Online pooja and seva bookings",
+                "Live darshan access",
+                "Sale of devotional products (where applicable)",
+                "(Donation-related services — currently not activated on the platform)"
+            ],
+            extra: "DevBhakti does not own, manage, operate, or control temples listed on the Platform. Temples and vendors are independent entities responsible for performing services and fulfilling obligations. DevBhakti does not guarantee religious, spiritual, or ritual outcomes."
         },
         {
-            icon: Globe,
-            title: "Nature of the Platform",
-            content: "DevBhakti.in is a technology platform that facilitates interaction between devotees and temples. We do not own, manage, or control any temple listed on the platform."
+            title: "2. Platform Content & Information Disclaimer",
+            content: "The Platform aggregates and displays information provided by temples, vendors, and service providers. While the Company makes reasonable efforts to ensure accuracy, DevBhakti does not warrant or guarantee the completeness, reliability, or real-time accuracy of listings, pricing, schedules, ritual descriptions, or availability.",
+            secondaryContent: "Certain information may:",
+            points: [
+                "Be subject to change without prior notice",
+                "Be temporarily inaccurate due to updates",
+                "Require confirmation from the concerned temple"
+            ],
+            extra: "Users should not rely solely on website content and should refer to booking confirmations or direct communication where necessary. Divinity Labs Private Limited shall not be liable for loss arising from reliance on provisional or updated information."
         },
         {
-            icon: Info,
-            title: "Poojas and Sevas",
-            content: "All rituals, schedules, and religious services are managed entirely by the respective temple. Availability, customs, and fulfilment depend on temple practices and circumstances.",
-            extra: "DevBhakti.in does not guarantee the performance of any ritual but facilitates the booking and communication process."
+            title: "3. Eligibility",
+            content: "Users must:",
+            points: [
+                "Be at least 18 years of age",
+                "Provide accurate information",
+                "Use the Platform lawfully"
+            ],
+            extra: "The Company reserves the right to suspend or terminate accounts for misuse or violations."
         },
         {
-            icon: CreditCard,
-            title: "Payments",
-            content: "Payments made through the platform are intended for the temple or its authorised entity. DevBhakti.in does not act as a trustee or custodian of religious offerings.",
-            extra: "Any applicable platform or convenience charges are disclosed during the booking process."
+            title: "4. Bookings and Payments",
+            content: "All bookings and purchases are subject to availability and confirmation. Payments are processed through third-party payment gateways. Divinity Labs Private Limited does not store full card details.",
+            extra: "The Company is not responsible for failures caused by banking systems or gateway outages beyond reasonable control."
         },
         {
-            icon: AlertTriangle,
-            title: "Limitations",
-            content: "DevBhakti.in is not responsible for:",
-            list: ["Changes in ritual dates or schedules", "Delays caused by temple-specific factors", "Events beyond reasonable control"]
+            title: "5. Cancellations and Refunds",
+            content: "All transactions are governed by the Returns & Refund Policy available separately on the Platform.",
+            extra: "By completing a transaction, you acknowledge that bookings are final and non-cancellable except as expressly provided in that policy."
         },
         {
-            icon: Gavel,
-            title: "Governing Law",
-            content: "These terms are governed by applicable laws of India. Any disputes shall be subject to the jurisdiction of competent courts in Mumbai."
+            title: "6. Intellectual Property",
+            content: "All content, branding, logos, design elements, and software are the property of Divinity Labs Private Limited. Unauthorized use is prohibited."
+        },
+        {
+            title: "7. Limitation of Liability",
+            content: "To the maximum extent permitted by law, the total liability of Divinity Labs Private Limited shall be limited to the transaction amount paid by the user. The Company shall not be liable for:",
+            points: [
+                "Indirect or consequential damages",
+                "Emotional or religious dissatisfaction",
+                "Conduct of independent temples",
+                "Third-party service failures"
+            ]
+        },
+        {
+            title: "8. Force Majeure",
+            content: "The Company shall not be liable for delays or failures caused by events beyond reasonable control, including natural disasters, government restrictions, temple closures, or technical outages."
+        },
+        {
+            title: "9. Governing Law & Jurisdiction",
+            content: "These Terms are governed by the laws of India. All disputes shall be subject to the exclusive jurisdiction of courts in Mumbai, Maharashtra."
         }
     ];
 
@@ -66,80 +97,62 @@ export default function TermsOfServicePage() {
                         <div className="inline-flex p-3 rounded-2xl bg-primary text-white mb-6 shadow-glow">
                             <Scale className="w-8 h-8" />
                         </div>
-                        <h1 className="text-5xl md:text-7xl font-serif font-bold mb-6 text-primary">
+                        <h1 className="text-5xl md:text-7xl font-serif font-bold mb-4 text-primary">
                             Terms of Service
                         </h1>
-                        <p className="text-xl text-muted-foreground leading-relaxed max-w-2xl mx-auto">
-                            The framework that ensures trust, clarity, and respect for all users of the DevBhakti platform.
-                        </p>
+                        <p className="text-sm font-bold text-primary mb-6 uppercase tracking-widest">Effective Date: 7 February 2026</p>
+                        <div className="text-xl text-muted-foreground leading-relaxed max-w-3xl mx-auto space-y-4">
+                            <p>
+                                These Terms of Service (“Terms”) govern your access to and use of the DevBhakti website, mobile applications, and related services (collectively, the “Platform”).
+                            </p>
+                            <p>
+                                DevBhakti is owned and operated by <span className="font-bold">Divinity Labs Private Limited</span>, a company incorporated under the Companies Act, 2013, having its registered office in India (hereinafter referred to as “Company”, “DevBhakti”, “we”, “our”, or “us”).
+                            </p>
+                            <p>
+                                By accessing or using the Platform, you agree to be bound by these Terms.
+                            </p>
+                        </div>
                     </motion.div>
                 </div>
             </section>
 
-            {/* Terms Grid */}
+            {/* Terms List */}
             <section className="pb-24 container mx-auto px-4">
-                <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-8">
-                    {terms.map((term, idx) => (
+                <div className="max-w-4xl mx-auto space-y-8">
+                    {clauses.map((clause, idx) => (
                         <motion.div
                             key={idx}
-                            initial={{ opacity: 0, scale: 0.95 }}
-                            whileInView={{ opacity: 1, scale: 1 }}
+                            initial={{ opacity: 0, y: 20 }}
+                            whileInView={{ opacity: 1, y: 0 }}
                             viewport={{ once: true }}
-                            transition={{ duration: 0.5, delay: idx * 0.1 }}
-                            className="bg-white/70 backdrop-blur-md p-10 rounded-[2.5rem] border border-border/50 shadow-soft hover:shadow-elevated transition-all flex flex-col items-start text-left group"
+                            transition={{ duration: 0.5, delay: idx * 0.05 }}
+                            className="bg-white p-8 md:p-10 rounded-[2rem] border border-border shadow-soft hover:shadow-warm transition-all"
                         >
-                            <div className="w-14 h-14 rounded-2xl bg-secondary/20 flex items-center justify-center mb-6 border border-secondary/20 shadow-sm group-hover:scale-110 transition-transform">
-                                <term.icon className="w-7 h-7 text-primary" />
-                            </div>
-                            <h3 className="text-2xl font-serif font-bold mb-4 text-foreground">{term.title}</h3>
-                            <p className="text-lg text-foreground/80 leading-relaxed mb-4">{term.content}</p>
-                            {term.list && (
-                                <ul className="space-y-3 mb-4 w-full">
-                                    {term.list.map((item, i) => (
-                                        <li key={i} className="flex items-start gap-3 bg-primary/5 p-3 rounded-xl border border-primary/10">
-                                            <div className="mt-1.5 flex-shrink-0 w-2 h-2 rounded-full bg-secondary" />
-                                            <span className="text-base text-foreground/90">{item}</span>
+                            <h3 className="text-2xl font-serif font-bold mb-4 text-primary">{clause.title}</h3>
+                            <p className="text-lg text-foreground/80 leading-relaxed mb-4">{clause.content}</p>
+
+                            {clause.points && (
+                                <ul className="space-y-2 mb-4">
+                                    {clause.points.map((point, pIdx) => (
+                                        <li key={pIdx} className="flex items-start gap-3 text-foreground/80">
+                                            <span className="w-2 h-2 rounded-full bg-primary/60 mt-2 flex-shrink-0" />
+                                            <span>{point}</span>
                                         </li>
                                     ))}
                                 </ul>
                             )}
-                            {term.extra && (
-                                <div className="mt-auto pt-4 border-t border-border/50 w-full italic text-primary/70 font-medium">
-                                    {term.extra}
-                                </div>
+
+                            {clause.secondaryContent && (
+                                <p className="text-lg text-foreground/80 leading-relaxed mb-4">{clause.secondaryContent}</p>
+                            )}
+
+                            {clause.extra && (
+                                <p className="text-base text-muted-foreground italic border-l-4 border-secondary/30 pl-4 py-1">
+                                    {clause.extra}
+                                </p>
                             )}
                         </motion.div>
                     ))}
-                </div>
-            </section>
-
-            {/* Platform Information Disclaimer Section */}
-            <section className="py-20 relative overflow-hidden">
-                <div className="absolute inset-0 bg-primary opacity-[0.03]" />
-                <div className="container mx-auto px-4 relative z-10">
-                    <motion.div
-                        {...fadeIn}
-                        className="max-w-4xl mx-auto bg-gradient-to-br from-white to-secondary/5 p-12 rounded-[3rem] border border-secondary/30 shadow-warm text-center"
-                    >
-                        <h2 className="text-3xl font-serif font-bold mb-8 text-primary">Platform Information Disclaimer</h2>
-                        <div className="space-y-6 text-lg text-muted-foreground leading-relaxed text-left md:text-center">
-                            <p>
-                                Certain information displayed on DevBhakti.in is in the process of being updated and refined as the platform continues to evolve.
-                            </p>
-                            <p>
-                                While we make reasonable efforts to ensure accuracy, some content may be provisional or subject to change. Users are advised not to rely solely on website content for final confirmation and to refer to booking confirmations or direct communication from the temple where applicable.
-                            </p>
-                        </div>
-                        <div className="mt-10 pt-10 border-t border-border flex flex-col items-center">
-                            <p className="text-foreground font-semibold mb-2">Have any questions?</p>
-                            <a
-                                href="mailto:admin@devbhakti.in"
-                                className="text-2xl font-bold text-primary hover:text-secondary transition-colors underline underline-offset-8 decoration-secondary/30"
-                            >
-                                admin@devbhakti.in
-                            </a>
-                        </div>
-                    </motion.div>
                 </div>
             </section>
 

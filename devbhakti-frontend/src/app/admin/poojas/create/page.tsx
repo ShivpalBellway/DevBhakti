@@ -31,14 +31,14 @@ export default function CreatePoojaPage() {
     const [tempImage, setTempImage] = useState<string | null>(null);
 
     const STATIC_PACKAGE_TYPES = [
-        // { name: "Single", description: "For 1 person" },
-        { name: "Couple", description: "For 2 people" },
-        { name: "Family", description: "Upto 5 people" },
-        { name: "Group", description: "Upto 8 people" },
-        { name: "Big Group", description: "Upto 25 people" },
-        { name: "Small Business", description: "Upto 50 people" },
-        { name: "Large Business", description: "Upto 100 people" },
-        { name: "Corporates", description: "Upto 500 people" }
+        { name: "Single", description: "For 1 person", maxPersons: 1 },
+        { name: "Couple", description: "For 2 people", maxPersons: 2 },
+        { name: "Family", description: "Upto 5 people", maxPersons: 5 },
+        { name: "Group", description: "Upto 8 people", maxPersons: 8 },
+        { name: "Big Group", description: "Upto 25 people", maxPersons: 25 },
+        { name: "Small Business", description: "Upto 50 people", maxPersons: 50 },
+        { name: "Large Business", description: "Upto 100 people", maxPersons: 100 },
+        { name: "Corporates", description: "Upto 500 people", maxPersons: 500 }
     ];
 
     const [formData, setFormData] = useState({

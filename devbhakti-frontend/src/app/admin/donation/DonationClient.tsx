@@ -227,13 +227,13 @@ export default function DonationClient() {
                         View and manage all sacred contributions from devotees
                     </p>
                 </div>
-                <Button
+                {/* <Button
                     onClick={handleDownloadExcel}
-                    className="bg-green-600 hover:bg-green-700 text-white gap-2"
+                    variant="sacred"
                 >
                     <Download className="w-4 h-4" />
                     Export All
-                </Button>
+                </Button> */}
             </div>
 
 

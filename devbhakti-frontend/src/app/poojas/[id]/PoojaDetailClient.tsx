@@ -207,9 +207,10 @@ const PoojaDetailClient = ({ id }: PoojaDetailClientProps) => {
                                             const token = localStorage.getItem("token");
                                             const savedUser = localStorage.getItem("user");
                                             const parsedUser = savedUser ? JSON.parse(savedUser) : null;
+
                                             const bookingUrl = pooja.temple?.id
                                                 ? `/booking?pooja=${id}&temple=${pooja.temple.id}`
-                                                : window.location.pathname + window.location.search;
+                                                : `/booking?pooja=${id}`;
 
                                             if (!token || !parsedUser || parsedUser.role !== "DEVOTEE") {
                                                 toast({ title: "Please login as devotee to book pooja", variant: "destructive" });
@@ -217,11 +218,11 @@ const PoojaDetailClient = ({ id }: PoojaDetailClientProps) => {
                                                 return;
                                             }
 
-                                            // If temple is available, navigate directly to booking with both params
-                                            if (pooja.temple?.id) {
+                                            // If temple is available OR it's a master pooja, navigate directly to booking
+                                            if (pooja.temple?.id || pooja.isMaster) {
                                                 router.push(bookingUrl);
                                             } else {
-                                                // Otherwise scroll to temple tab to select temple first
+                                                // Otherwise scroll to temple tab to select temple first (for temple-specific poojas without direct temple relation shown)
                                                 setActiveTab("temple");
                                                 document.getElementById('content-tabs')?.scrollIntoView({ behavior: 'smooth' });
                                             }

@@ -27,6 +27,7 @@ const AuthForm: React.FC = () => {
   const [userType, setUserType] = useState<"devotee" | "institution">(initialType);
 
   const [showOtpInput, setShowOtpInput] = useState(false);
+  const [devOtp, setDevOtp] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [resendTimer, setResendTimer] = useState(0);
 
@@ -98,6 +99,9 @@ const AuthForm: React.FC = () => {
         mode
       });
       setShowOtpInput(true);
+      if (response.data?.otp) {
+        setDevOtp(response.data.otp);
+      }
       setResendTimer(60);
 
 
@@ -326,6 +330,16 @@ const AuthForm: React.FC = () => {
             </form>
           ) : (
             <form onSubmit={handleVerifyOTP} className="space-y-5">
+              {devOtp && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="bg-[#FDF6F0] border border-orange-100 p-4 rounded-2xl mb-6 text-center shadow-sm"
+                >
+                  <p className="text-slate-600 text-sm font-medium mb-1">Development OTP</p>
+                  <p className="text-3xl font-serif font-bold text-primary tracking-widest">{devOtp}</p>
+                </motion.div>
+              )}
               <div className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="otp" className="text-slate-700 ml-1">Enter 6-digit OTP</Label>

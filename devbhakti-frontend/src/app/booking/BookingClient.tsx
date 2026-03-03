@@ -45,6 +45,8 @@ import {
 import { useToast } from "@/hooks/use-toast";
 
 import { fetchPublicTemples, fetchPublicPoojas, fetchPublicPoojaById } from "@/api/publicController";
+import { generatePoojaReceiptHTML } from "@/utils/poojaReceipt";
+
 
 function BookingForm() {
   const searchParams = useSearchParams();
@@ -78,16 +80,22 @@ function BookingForm() {
     kuldevta: "",
     dob: "",
     anniversary: "",
+    additionalDevotees: [] as { name: string; gothra: string; kuldevi: string; kuldevta: string }[],
   });
 
   const [availabilityStatus, setAvailabilityStatus] = useState<{ available: boolean, message: string } | null>(null);
   const [platformFee, setPlatformFee] = useState(0);
   const [unavailableDates, setUnavailableDates] = useState<string[]>([]);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  const [bookingId, setBookingId] = useState("");
+
 
   useEffect(() => {
     const fetchUnavailable = async () => {
-      if (!selectedTemple) return;
+      if (!selectedTemple) {
+        setUnavailableDates([]);
+        return;
+      }
       try {
         const query = new URLSearchParams({
           templeId: selectedTemple,
@@ -102,13 +110,19 @@ function BookingForm() {
         console.error("Failed to fetch unavailable dates", error);
       }
     };
+
     fetchUnavailable();
   }, [selectedTemple, selectedPooja]);
 
   useEffect(() => {
     const checkDate = async () => {
-      if (!selectedDate || !selectedTemple) {
+      if (!selectedDate) {
         setAvailabilityStatus(null);
+        return;
+      }
+
+      if (!selectedTemple) {
+        setAvailabilityStatus({ available: true, message: "Slot available" });
         return;
       }
 
@@ -228,10 +242,49 @@ function BookingForm() {
   const basePrice = selectedPackageData?.price || selectedPoojaData?.price || 0;
   const totalAmount = basePrice + (platformFee || 0);
 
+  // Helper to determine max persons allowed in the package
+  const getMaxPersons = () => {
+    if (!selectedPackageData) return 1;
+    if (selectedPackageData.maxPersons) return selectedPackageData.maxPersons;
+
+    // Fallback mapping for older pooja packages that don't have maxPersons
+    const name = selectedPackageData.name?.toLowerCase() || "";
+    if (name.includes("couple")) return 2;
+    if (name.includes("family")) return 5;
+    if (name.includes("group") && !name.includes("big")) return 8;
+    if (name.includes("big group")) return 25;
+    if (name.includes("small business")) return 50;
+    if (name.includes("large business")) return 100;
+    if (name.includes("corporate")) return 500;
+    return 1; // Default for "Single" or unknown
+  };
+
+  const additionalDevoteeCount = Math.max(0, getMaxPersons() - 1);
+
+  // Sync additionalDevotees array length with additionalDevoteeCount
+  useEffect(() => {
+    setFormData(prev => {
+      const currentCount = prev.additionalDevotees.length;
+      if (currentCount === additionalDevoteeCount) return prev;
+
+      let newDevotees = [...prev.additionalDevotees];
+      if (currentCount < additionalDevoteeCount) {
+        // Add more fields
+        for (let i = currentCount; i < additionalDevoteeCount; i++) {
+          newDevotees.push({ name: "", gothra: "", kuldevi: "", kuldevta: "" });
+        }
+      } else {
+        // Remove extra fields
+        newDevotees = newDevotees.slice(0, additionalDevoteeCount);
+      }
+      return { ...prev, additionalDevotees: newDevotees };
+    });
+  }, [additionalDevoteeCount]);
+
   // Fetch Commission Slab based Platform Fee
   useEffect(() => {
     const fetchFee = async () => {
-      if (!basePrice || !selectedTemple) {
+      if (!basePrice) {
         setPlatformFee(0);
         return;
       }
@@ -242,8 +295,8 @@ function BookingForm() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             amount: basePrice,
-            vendorType: 'TEMPLE',
-            vendorId: selectedTemple,
+            vendorType: selectedTemple ? 'TEMPLE' : 'GLOBAL',
+            vendorId: selectedTemple || undefined,
             category: 'POOJA'
           })
         });
@@ -260,9 +313,18 @@ function BookingForm() {
   }, [basePrice, selectedTemple]);
 
   const handleNext = () => {
-    if (step === 1 && (!selectedTemple || !selectedPooja)) {
-      toast({ title: "Please select temple and pooja service", variant: "destructive" });
-      return;
+    if (step === 1) {
+      if (!selectedPooja) {
+        toast({ title: "Please select a pooja service", variant: "destructive" });
+        return;
+      }
+
+      const isMaster = selectedPoojaData?.isMaster;
+
+      if (!selectedTemple && !isMaster) {
+        toast({ title: "Please select a temple", variant: "destructive" });
+        return;
+      }
     }
     if (step === 2) {
       if (!selectedDate || !selectedPackage) {
@@ -323,6 +385,7 @@ function BookingForm() {
         kuldevta: formData.kuldevta,
         dob: formData.dob,
         anniversary: formData.anniversary,
+        additionalDevotees: formData.additionalDevotees,
         platformFee: platformFee, // Send platform fee to backend
       };
 
@@ -358,17 +421,21 @@ function BookingForm() {
                   razorpay_payment_id: responseData.razorpay_payment_id,
                   razorpay_signature: responseData.razorpay_signature,
                   orderType: "POOJA",
+                  referenceId: res.data.id, // The backend expects referenceId
                   orderData: { ...bookingData, bookingId: res.data.id },
                   userId: parsedUser.id
+
                 })
               });
 
               const verifyData = await verifyRes.json();
 
               if (verifyData.success) {
+                setBookingId(res.data.id);
                 setStep(5); // Show confirmation
                 toast({ title: "Booking Confirmed!", description: "You will receive confirmation via email and SMS." });
               }
+
             } catch (error) {
               console.error("Verification error:", error);
               toast({
@@ -713,14 +780,14 @@ function BookingForm() {
                 <CardTitle>Devotee Information</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid md:grid-cols-2 gap-4">
+                <div className="grid md:grid-cols-3 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="name">Full Name *</Label>
                     <div className="relative">
                       <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                       <Input
                         id="name"
-                        placeholder="Enter your full name"
+                        placeholder="Enter full name"
                         className="pl-10"
                         value={formData.name}
                         onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -733,45 +800,27 @@ function BookingForm() {
                       <Phone className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                       <Input
                         id="phone"
-                        placeholder="Enter phone number"
+                        placeholder="Enter phone"
                         className="pl-10"
                         value={formData.phone}
                         onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                       />
                     </div>
                   </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email Address *</Label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      id="email"
-                      type="email"
-                      placeholder="Enter email address"
-                      className="pl-10"
-                      value={formData.email}
-                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    />
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email Address *</Label>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="email"
+                        type="email"
+                        placeholder="Enter email"
+                        className="pl-10"
+                        value={formData.email}
+                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      />
+                    </div>
                   </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="address">Address</Label>
-                  <Textarea
-                    id="address"
-                    placeholder="Enter your address (optional)"
-                    value={formData.address}
-                    onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="requests">Special Requests</Label>
-                  <Textarea
-                    id="requests"
-                    placeholder="Any special requests"
-                    value={formData.specialRequests}
-                    onChange={(e) => setFormData({ ...formData, specialRequests: e.target.value })}
-                  />
                 </div>
 
                 <div className="grid md:grid-cols-3 gap-4 border-t pt-4 mt-4">
@@ -824,6 +873,95 @@ function BookingForm() {
                     />
                   </div>
                 </div>
+
+                <div className="space-y-2 border-t pt-4 mt-4">
+                  <Label htmlFor="address">Address</Label>
+                  <Textarea
+                    id="address"
+                    placeholder="Enter your address (optional)"
+                    value={formData.address}
+                    onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="requests">Special Requests</Label>
+                  <Textarea
+                    id="requests"
+                    placeholder="Any special requests"
+                    value={formData.specialRequests}
+                    onChange={(e) => setFormData({ ...formData, specialRequests: e.target.value })}
+                  />
+                </div>
+
+                {/* Dynamic Additional Devotee Fields */}
+                {formData.additionalDevotees.length > 0 && (
+                  <div className="space-y-6 pt-6 border-t mt-6">
+                    <h3 className="font-semibold text-lg flex items-center gap-2">
+                      <User className="h-5 w-5 text-primary" />
+                      Additional Devotee Information (Optional)
+                    </h3>
+                    {formData.additionalDevotees.map((devotee, index) => (
+                      <div key={index} className="space-y-4 p-4 rounded-lg bg-muted/30 border border-border/50">
+                        <Label className="text-primary font-bold">Devotee {index + 2}</Label>
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                          <div className="space-y-2">
+                            <Label htmlFor={`name-${index}`}>Full Name</Label>
+                            <Input
+                              id={`name-${index}`}
+                              placeholder="Enter name"
+                              value={devotee.name}
+                              onChange={(e) => {
+                                const newDevotees = [...formData.additionalDevotees];
+                                newDevotees[index].name = e.target.value;
+                                setFormData({ ...formData, additionalDevotees: newDevotees });
+                              }}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor={`gothra-${index}`}>Gothra</Label>
+                            <Input
+                              id={`gothra-${index}`}
+                              placeholder="Enter Gothra"
+                              value={devotee.gothra}
+                              onChange={(e) => {
+                                const newDevotees = [...formData.additionalDevotees];
+                                newDevotees[index].gothra = e.target.value;
+                                setFormData({ ...formData, additionalDevotees: newDevotees });
+                              }}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor={`kuldevi-${index}`}>Kuldevi</Label>
+                            <Input
+                              id={`kuldevi-${index}`}
+                              placeholder="Enter Kuldevi"
+                              value={devotee.kuldevi}
+                              onChange={(e) => {
+                                const newDevotees = [...formData.additionalDevotees];
+                                newDevotees[index].kuldevi = e.target.value;
+                                setFormData({ ...formData, additionalDevotees: newDevotees });
+                              }}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor={`kuldevta-${index}`}>Kuldevta</Label>
+                            <Input
+                              id={`kuldevta-${index}`}
+                              placeholder="Enter Kuldevta"
+                              value={devotee.kuldevta}
+                              onChange={(e) => {
+                                const newDevotees = [...formData.additionalDevotees];
+                                newDevotees[index].kuldevta = e.target.value;
+                                setFormData({ ...formData, additionalDevotees: newDevotees });
+                              }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
               </CardContent>
             </Card>
           )}
@@ -838,7 +976,8 @@ function BookingForm() {
                 <CardContent className="space-y-4">
                   <div className="flex justify-between py-2 border-b border-border">
                     <span className="text-muted-foreground">Temple</span>
-                    <span className="font-medium">{allTemples.find(t => t.id === selectedTemple)?.name}</span>
+                    <span className="font-medium">{allTemples.find(t => t.id === selectedTemple)?.name || "DevBhakti Sacred Services"}</span>
+
                   </div>
                   <div className="flex justify-between py-2 border-b border-border">
                     <span className="text-muted-foreground">Service</span>
@@ -914,7 +1053,8 @@ function BookingForm() {
                 <div className="bg-muted/50 rounded-lg p-6 max-w-md mx-auto text-left space-y-3 mb-8">
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Temple</span>
-                    <span className="font-medium">{allTemples.find(t => t.id === selectedTemple)?.name}</span>
+                    <span className="font-medium">{allTemples.find(t => t.id === selectedTemple)?.name || "DevBhakti Sacred Services"}</span>
+
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Service</span>
@@ -951,6 +1091,44 @@ function BookingForm() {
                 </p> */}
 
                 <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                  <Button
+                    variant="outline"
+                    className="border-primary/20 text-primary hover:bg-primary/5"
+                    onClick={() => {
+                      const html = generatePoojaReceiptHTML({
+                        id: bookingId,
+                        devoteeName: formData.name,
+                        devoteePhone: formData.phone,
+                        devoteeEmail: formData.email,
+                        poojaName: selectedPoojaData?.name || "",
+                        templeName: allTemples.find(t => t.id === selectedTemple)?.name || "DevBhakti Sacred Services",
+
+                        bookingDate: selectedDate,
+                        packageName: selectedPackageData?.name || "",
+                        packagePrice: basePrice,
+                        platformFee: platformFee,
+                        totalAmount: totalAmount,
+                        status: "BOOKED",
+                        createdAt: new Date().toISOString(),
+                        gothra: formData.gothra,
+                        kuldevi: formData.kuldevi,
+                        kuldevta: formData.kuldevta,
+                        dob: formData.dob,
+                        anniversary: formData.anniversary,
+                        additionalDevotees: formData.additionalDevotees
+                      });
+                      const printWindow = window.open('', '_blank');
+                      if (printWindow) {
+                        printWindow.document.write(html);
+                        printWindow.document.close();
+                        setTimeout(() => {
+                          printWindow.print();
+                        }, 500);
+                      }
+                    }}
+                  >
+                    Download Receipt
+                  </Button>
                   <Button variant="outline" asChild>
                     <Link href="/profile">View My Bookings</Link>
                   </Button>
@@ -958,6 +1136,7 @@ function BookingForm() {
                     <Link href="/temples">Book Another Pooja</Link>
                   </Button>
                 </div>
+
               </CardContent>
             </Card>
           )}

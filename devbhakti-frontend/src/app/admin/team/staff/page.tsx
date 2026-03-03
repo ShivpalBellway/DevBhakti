@@ -426,7 +426,7 @@ export default function StaffMembersPage() {
                                                 <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${form.isActive ? "translate-x-6" : "translate-x-1"}`} />
                                             </button>
                                         </div>
-                                        <div className="flex flex-col gap-2 p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
+                                        {/* <div className="flex flex-col gap-2 p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
                                             <div>
                                                 <p className="text-sm font-medium text-red-600 dark:text-red-400">Force Password Reset</p>
                                                 <p className="text-xs text-red-600/80 dark:text-red-400/80">Type a new password in the field above, then click this button to reset their password and email them the new credentials immediately.</p>
@@ -441,7 +441,7 @@ export default function StaffMembersPage() {
                                                     {resettingId === editingStaff.id ? "Resetting..." : "Reset Password Now"}
                                                 </button>
                                             </div>
-                                        </div>
+                                        </div> */}
                                     </div>
                                 )}
                             </div>

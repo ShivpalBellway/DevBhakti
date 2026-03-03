@@ -171,7 +171,7 @@ export default function EditProductPage() {
         }));
 
       const allVendors = [
-        { id: "general", name: "DevBhakti Exclusive", role: "ADMIN", icon: <ShieldCheck className="w-4 h-4 text-amber-600" />, searchText: "devbhakti exclusive admin general" },
+        { id: "general", name: "DevBhakti Exclusive", role: "DevBhakti Admin", icon: <ShieldCheck className="w-4 h-4 text-amber-600" />, searchText: "devbhakti exclusive admin general" },
         ...formattedTemples,
         ...formattedSellers
       ];

@@ -179,11 +179,11 @@ function BookingsContent() {
 
             const token = localStorage.getItem('admin_token') || localStorage.getItem('staff_token');
 
-        
+
             const response = await axios.get(`${API_URL}/admin/bookings/export/excel`, {
                 responseType: 'blob',
                 validateStatus: () => true,
-             
+
                 headers: {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json'
@@ -219,13 +219,14 @@ function BookingsContent() {
                 </div>
             </div>
 
-            <Button
+            {/* <Button
                 onClick={handleExportBookings}
-                className="bg-emerald-600 hover:bg-emerald-700 text-white gap-2 rounded-xl h-11"
+                variant="sacred"
             >
                 <Download className="w-4 h-4" />
                 Export Excel
-            </Button>
+            </Button> */}
+
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {[

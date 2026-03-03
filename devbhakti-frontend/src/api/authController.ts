@@ -4,7 +4,7 @@ import { API_URL } from "@/config/apiConfig";
 
 
 
-export const sendOTP = async (data: { phone: string; name?: string; email?: string; role?: string }) => {
+export const sendOTP = async (data: { phone: string; name?: string; email?: string; role?: string; mode?: string }) => {
 
     const response = await axios.post(`${API_URL}/auth/send-otp`, data);
 

@@ -66,12 +66,12 @@ const sidebarItems = [
     href: "/admin/pooja-bookings",
     permission: "bookings.menu",
   },
-  {
-    label: "Donation",
-    icon: Heart,
-    href: "/admin/donation",
-    permission: "donations.menu",
-  },
+  // {
+  //   label: "Donation",
+  //   icon: Heart,
+  //   href: "/admin/donation",
+  //   permission: "donations.menu",
+  // },
   {
     label: "Poojas",
     icon: Flower2,
@@ -139,16 +139,16 @@ const sidebarItems = [
       { label: "Commission Slabs", href: "/admin/commission-slabs", permission: "settings.commission" },
     ]
   },
-  {
-    label: "Team Management",
-    icon: UserCog,
-    href: "#",
-    permission: "team.menu",
-    subItems: [
-      { label: "Staff Members", href: "/admin/team/staff", permission: "team.staff.view" },
-      { label: "Roles & Permissions", href: "/admin/team/roles", permission: "team.roles.manage" },
-    ]
-  },
+  // {
+  //   label: "Team Management",
+  //   icon: UserCog,
+  //   href: "#",
+  //   permission: "team.menu",
+  //   subItems: [
+  //     { label: "Staff Members", href: "/admin/team/staff", permission: "team.staff.view" },
+  //     { label: "Roles & Permissions", href: "/admin/team/roles", permission: "team.roles.manage" },
+  //   ]
+  // },
 ];
 
 
@@ -157,7 +157,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
-  const [user, setUser] = useState<{ id?: string; name: string; email: string; isStaff?: boolean; permissions?: string[] } | null>(null);
+  const [user, setUser] = useState<{ id?: string; name: string; email: string; isStaff?: boolean; permissions?: string[]; role?: string } | null>(null);
 
   const isLoginPage = pathname?.startsWith("/admin/login") || pathname?.startsWith("/admin/staff-login");
   const isPrintPage = pathname === "/admin/products/orders/print";
@@ -180,9 +180,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         const staffUser = localStorage.getItem("staff_user");
         if (staffUser) {
           const parsed = JSON.parse(staffUser);
-          setUser({ ...parsed, isStaff: true });
+          setUser({ ...parsed, isStaff: true, role: parsed.role || "DevBhakti Staff" });
         } else if (adminUser) {
-          setUser(JSON.parse(adminUser));
+          const parsed = JSON.parse(adminUser);
+          setUser({ ...parsed, isStaff: false, role: parsed.role || "DevBhakti Admin" });
         }
       }
 
@@ -317,8 +318,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                   priority
                 />
               </div>
-              <span className="text-[15px] font-bold text-sidebar-foreground/90 uppercase tracking-widest pl-2 mt-1">
-                Devbhakti Admin
+              <span className="text-[14px] font-bold text-sidebar-foreground uppercase tracking-wider pl-2 mt-1">
+                {user?.role?.toUpperCase() === "ADMIN" ? "DevBhakti Admin" : (user?.role ? user.role.replace(/_/g, " ") : "DevBhakti Admin")}
               </span>
             </div>
           ) : (
