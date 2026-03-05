@@ -27,6 +27,7 @@ import {
   UserCog,
   ShieldCheck,
   ShieldAlert,
+  Megaphone,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 // import Logo from "@/components/icons/Logo";
@@ -66,12 +67,12 @@ const sidebarItems = [
     href: "/admin/pooja-bookings",
     permission: "bookings.menu",
   },
-  // {
-  //   label: "Donation",
-  //   icon: Heart,
-  //   href: "/admin/donation",
-  //   permission: "donations.menu",
-  // },
+  {
+    label: "Donation",
+    icon: Heart,
+    href: "/admin/donation",
+    permission: "donations.menu",
+  },
   {
     label: "Poojas",
     icon: Flower2,
@@ -139,15 +140,21 @@ const sidebarItems = [
       { label: "Commission Slabs", href: "/admin/commission-slabs", permission: "settings.commission" },
     ]
   },
+  {
+    label: "Team Management",
+    icon: UserCog,
+    href: "#",
+    permission: "team.menu",
+    subItems: [
+      { label: "Staff Members", href: "/admin/team/staff", permission: "team.staff.view" },
+      { label: "Roles & Permissions", href: "/admin/team/roles", permission: "team.roles.manage" },
+    ]
+  },
   // {
-  //   label: "Team Management",
-  //   icon: UserCog,
-  //   href: "#",
-  //   permission: "team.menu",
-  //   subItems: [
-  //     { label: "Staff Members", href: "/admin/team/staff", permission: "team.staff.view" },
-  //     { label: "Roles & Permissions", href: "/admin/team/roles", permission: "team.roles.manage" },
-  //   ]
+  //   label: "Marketing",
+  //   icon: Megaphone,
+  //   href: "/admin/marketing",
+  //   permission: "marketing.view",
   // },
 ];
 
@@ -477,7 +484,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </div>
 
           <div className="flex items-center gap-3">
-            <NotificationBell userId={user?.id || user?.email || ''} userType="admin" />
+            <NotificationBell userId={user?.id || ''} userType="admin" />
             <Button variant="outline" size="sm" asChild>
               <Link href="/">View Site</Link>
             </Button>

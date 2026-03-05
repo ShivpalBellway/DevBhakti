@@ -509,7 +509,8 @@ export default function EditProductPage() {
             setShowCropper(false);
             setTempImage(null);
           }}
-          initialAspect={5 / 4}
+          initialAspect={3 / 2}
+          lockAspect={true}
           title="Adjust Product Image"
         />
       )}

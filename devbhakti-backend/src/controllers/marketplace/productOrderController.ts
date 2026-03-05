@@ -341,7 +341,8 @@ export const createVerifiedOrder = async (orderData: any, userId: string) => {
       await notifyAdmins({
         title: 'New Master Order! 📢',
         body: `Customer: ${userDisplayName}\\nProducts: ${productNames}\\nVendors: ${vendorSummary}\\nTotal Amount: ₹${totalAmount}`,
-        data: { link: `/admin/dashboard/orders/${order.id}`, orderId: order.id }
+        // Admin notification link format: /admin/products/orders?id=ORDER_ID
+        data: { link: `/admin/products/orders?id=${order.id}`, orderId: order.id }
       });
     } catch (notifyErr) {
       console.error(`❌ Admin Notification Failed:`, notifyErr);

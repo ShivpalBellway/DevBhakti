@@ -62,22 +62,22 @@ const sidebarItems = [
         href: "/temples/dashboard/users",
         permission: "users.view"
     },
-    // {
-    //     label: "Team Management",
-    //     icon: ShieldCheck,
-    //     href: "/temples/dashboard/team/staff",
-    //     permission: "team.menu",
-    //     subItems: [
-    //         { label: "Staff Members", href: "/temples/dashboard/team/staff" },
-    //         { label: "Roles & Permissions", href: "/temples/dashboard/team/roles" },
-    //     ]
-    // },
-    // {
-    //     label: "Donations",
-    //     icon: Heart,
-    //     href: "/temples/dashboard/donation",
-    //     permission: "finance.menu"
-    // },
+    {
+        label: "Team Management",
+        icon: ShieldCheck,
+        href: "/temples/dashboard/team/staff",
+        permission: "team.menu",
+        subItems: [
+            { label: "Staff Members", href: "/temples/dashboard/team/staff" },
+            { label: "Roles & Permissions", href: "/temples/dashboard/team/roles" },
+        ]
+    },
+    {
+        label: "Donations",
+        icon: Heart,
+        href: "/temples/dashboard/donation",
+        permission: "finance.menu"
+    },
     {
         label: "Product Management",
         icon: Package,
@@ -110,11 +110,11 @@ const sidebarItems = [
             { label: "Cancelled", href: "/temples/dashboard/bookings?status=CANCELLED" },
         ]
     },
-    // {
-    //     label: "Live Stream",
-    //     icon: Video,
-    //     href: "/temples/dashboard/live-stream",
-    // },
+    {
+        label: "Live Stream",
+        icon: Video,
+        href: "/temples/dashboard/live-stream",
+    },
     {
         label: "Earnings & Settlement",
         icon: CreditCard,

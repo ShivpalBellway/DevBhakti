@@ -43,12 +43,20 @@ import {
 import { fetchMyTempleProfile, updateMyTempleProfile } from "@/api/templeAdminController";
 import { useToast } from "@/hooks/use-toast";
 import { API_URL } from "@/config/apiConfig";
+import { ImageCropper } from "@/components/admin/ImageCropper";
 
 export default function TempleProfilePage() {
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
     const [profile, setProfile] = useState<any>(null);
     const { toast } = useToast();
+
+    // Cropping states
+    const [showCropper, setShowCropper] = useState(false);
+    const [tempImage, setTempImage] = useState<string | null>(null);
+    const [croppingTarget, setCroppingTarget] = useState<{ type: 'main' | 'hero' } | null>(null);
+    const [cropTitle, setCropTitle] = useState("");
+    const [initialAspect, setInitialAspect] = useState(3 / 2);
 
     // File refs
     const mainImageRef = useRef<HTMLInputElement>(null);
@@ -162,49 +170,72 @@ export default function TempleProfilePage() {
         return `${API_URL.replace('/api', '')}${path}`;
     };
 
+    const handleCropComplete = (croppedBlob: Blob) => {
+        const file = new File([croppedBlob], "image.jpg", { type: "image/jpeg" });
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            if (croppingTarget?.type === 'main') {
+                setSelectedMainFile(file);
+                setMainImagePreview(reader.result as string);
+            } else if (croppingTarget?.type === 'hero') {
+                setSelectedHeroFiles(prev => [...prev, file]);
+                setHeroPreviews(prev => [...prev, reader.result as string]);
+            }
+        };
+        reader.readAsDataURL(file);
+        setShowCropper(false);
+        setTempImage(null);
+        setCroppingTarget(null);
+    };
+
     const handleMainImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
-        const MAX_SIZE = 2 * 1024 * 1024; // 2MB
+        const MAX_SIZE = 5 * 1024 * 1024; // 5MB for initial upload
         if (file) {
             if (file.size > MAX_SIZE) {
                 toast({
                     title: "File Too Large",
-                    description: `Image "${file.name}" exceeds 2MB limit. Please select a smaller file.`,
+                    description: `Image "${file.name}" exceeds 5MB limit.`,
                     variant: "destructive"
                 });
-                e.target.value = ''; // Reset input
                 return;
             }
-            setSelectedMainFile(file);
             const reader = new FileReader();
-            reader.onloadend = () => setMainImagePreview(reader.result as string);
+            reader.onload = () => {
+                setTempImage(reader.result as string);
+                setCroppingTarget({ type: 'main' });
+                setCropTitle("Crop Profile Image");
+                setInitialAspect(3 / 2);
+                setShowCropper(true);
+            };
             reader.readAsDataURL(file);
+            e.target.value = '';
         }
     };
 
     const handleHeroImagesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = Array.from(e.target.files || []);
-        const MAX_SIZE = 2 * 1024 * 1024; // 2MB
+        const MAX_SIZE = 5 * 1024 * 1024; // 5MB
         if (files.length > 0) {
-            const largeFiles = files.filter(f => f.size > MAX_SIZE);
-            if (largeFiles.length > 0) {
+            const validFiles = files.filter(f => f.size <= MAX_SIZE);
+            if (validFiles.length > 0) {
+                const reader = new FileReader();
+                reader.onload = () => {
+                    setTempImage(reader.result as string);
+                    setCroppingTarget({ type: 'hero' });
+                    setCropTitle("Crop Banner Image");
+                    setInitialAspect(1920 / 600);
+                    setShowCropper(true);
+                };
+                reader.readAsDataURL(validFiles[0]);
+            } else {
                 toast({
                     title: "Files Too Large",
-                    description: `${largeFiles.length} file(s) exceed the 2MB limit. Those were skipped.`,
+                    description: "Selected files exceed 5MB limit.",
                     variant: "destructive"
                 });
             }
-
-            const validFiles = files.filter(f => f.size <= MAX_SIZE);
-            if (validFiles.length > 0) {
-                setSelectedHeroFiles(prev => [...prev, ...validFiles]);
-                validFiles.forEach(file => {
-                    const reader = new FileReader();
-                    reader.onloadend = () => setHeroPreviews(prev => [...prev, reader.result as string]);
-                    reader.readAsDataURL(file);
-                });
-            }
-            e.target.value = ''; // Reset input
+            e.target.value = '';
         }
     };
 
@@ -781,6 +812,23 @@ export default function TempleProfilePage() {
                     </motion.div>
                 </div>
             </form>
+
+            <AnimatePresence>
+                {showCropper && tempImage && (
+                    <ImageCropper
+                        image={tempImage}
+                        onCropComplete={handleCropComplete}
+                        onCancel={() => {
+                            setShowCropper(false);
+                            setTempImage(null);
+                            setCroppingTarget(null);
+                        }}
+                        initialAspect={initialAspect}
+                        lockAspect={true}
+                        title={cropTitle}
+                    />
+                )}
+            </AnimatePresence>
         </motion.div>
     );
 }

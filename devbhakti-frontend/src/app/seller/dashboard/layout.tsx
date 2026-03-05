@@ -63,13 +63,13 @@ const sellerSidebarGroups = [
             { label: "Customers", icon: Users, href: "/seller/dashboard/customers", permission: "products.orders.view" },
         ]
     },
-    // {
-    //     title: "Team Management",
-    //     items: [
-    //         { label: "Staff Members", icon: Users, href: "/seller/dashboard/team/staff", permission: "team.staff.view" },
-    //         { label: "Roles & Permissions", icon: ShieldCheck, href: "/seller/dashboard/team/roles", permission: "team.roles.manage" }
-    //     ]
-    // },
+    {
+        title: "Team Management",
+        items: [
+            { label: "Staff Members", icon: Users, href: "/seller/dashboard/team/staff", permission: "team.staff.view" },
+            { label: "Roles & Permissions", icon: ShieldCheck, href: "/seller/dashboard/team/roles", permission: "team.roles.manage" }
+        ]
+    },
     {
         title: "Finance",
         items: [

@@ -219,13 +219,13 @@ function BookingsContent() {
                 </div>
             </div>
 
-            {/* <Button
+            <Button
                 onClick={handleExportBookings}
                 variant="sacred"
             >
                 <Download className="w-4 h-4" />
                 Export Excel
-            </Button> */}
+            </Button>
 
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

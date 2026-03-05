@@ -190,7 +190,7 @@ export default function CreateTemplePage() {
                     setTempImage(reader.result as string);
                     setCropType("hero");
                     setCropTitle("Adjust Temple Banner Image");
-                    setInitialAspect(16 / 9);
+                    setInitialAspect(1920 / 600);
                     setShowCropper(true);
                 };
                 reader.readAsDataURL(validFiles[0]);
@@ -404,6 +404,7 @@ export default function CreateTemplePage() {
                     image={tempImage}
                     title={cropTitle}
                     initialAspect={initialAspect}
+                    lockAspect={true}
                     onCropComplete={handleCropComplete}
                     onCancel={() => {
                         setShowCropper(false);

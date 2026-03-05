@@ -115,10 +115,17 @@ export default function EditTemplePage() {
             const inst = allInst.find((i: any) => i.id === instId);
 
             if (inst) {
+                const stripPrefix = (ph: string) => {
+                    if (!ph) return "";
+                    let clean = ph.replace(/\D/g, '');
+                    if (clean.length === 12 && clean.startsWith('91')) return clean.substring(2);
+                    return clean;
+                };
+
                 setFormData({
                     name: inst.name || "",
                     email: inst.email || "",
-                    phone: inst.phone || "",
+                    phone: stripPrefix(inst.phone || ""),
                     templeName: inst.temple?.name || "",
                     location: inst.temple?.location || "",
                     fullAddress: inst.temple?.fullAddress || "",
@@ -127,7 +134,7 @@ export default function EditTemplePage() {
                     description: inst.temple?.description || "",
                     // history: inst.temple?.history || "",
                     viewers: inst.temple?.viewers || "",
-                    templePhone: inst.temple?.phone || "",
+                    templePhone: stripPrefix(inst.temple?.phone || ""),
                     website: inst.temple?.website || "",
                     mapUrl: inst.temple?.mapUrl || "",
                     rating: String(inst.temple?.rating || "0"),
@@ -268,7 +275,7 @@ export default function EditTemplePage() {
                     setTempImage(reader.result as string);
                     setCropType("hero");
                     setCropTitle("Adjust Temple Banner Image");
-                    setInitialAspect(16 / 9);
+                    setInitialAspect(1920 / 600);
                     setShowCropper(true);
                 };
                 reader.readAsDataURL(validFiles[0]);
@@ -473,6 +480,7 @@ export default function EditTemplePage() {
                     image={tempImage}
                     title={cropTitle}
                     initialAspect={initialAspect}
+                    lockAspect={true}
                     onCropComplete={handleCropComplete}
                     onCancel={() => {
                         setShowCropper(false);

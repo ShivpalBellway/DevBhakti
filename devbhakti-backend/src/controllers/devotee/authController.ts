@@ -152,29 +152,29 @@ export const sendOTP = async (req: Request, res: Response) => {
 
         // Send OTP via Mobicomm SMS
         const message = `Your OTP for DevBhakti login is ${otp}. Valid for 5 minutes. Do not share this code with anyone. `;
-        // const smsSent = await sendSMS(normalizedPhone, message);
+        const smsSent = await sendSMS(normalizedPhone, message);
 
-        // if (smsSent) {
-        //     console.log(`[Auth] OTP sent successfully to ${normalizedPhone}`);
-        // } else {
-        //     console.log(`[Auth] Failed to send OTP to ${normalizedPhone}. Check Mobicomm logs.`);
-        // }
+        if (smsSent) {
+            console.log(`[Auth] OTP sent successfully to ${normalizedPhone}`);
+        } else {
+            console.log(`[Auth] Failed to send OTP to ${normalizedPhone}. Check Mobicomm logs.`);
+        }
 
-        console.log(`\n-----------------------------------------`);
-        console.log(`[DEVELOPMENT] OTP for ${normalizedPhone}: ${otp}`);
-        console.log(`-----------------------------------------\n`);
+        // console.log(`\n-----------------------------------------`);
+        // console.log(`[DEVELOPMENT] OTP for ${normalizedPhone}: ${otp}`);
+        // console.log(`-----------------------------------------\n`);
 
-        res.json({
-            success: true,
-            message: 'OTP sent successfully (Development Mode)',
-            data: {
-                phone: normalizedPhone,
-                otp: otp // Crucial: send OTP to frontend for UI display
-            }
-        });
+        // res.json({
+        //     success: true,
+        //     message: 'OTP sent successfully (Development Mode)',
+        //     data: {
+        //         phone: normalizedPhone,
+        //         otp: otp // Crucial: send OTP to frontend for UI display
+        //     }
+        // });
 
         // Original response (keep for later restoration):
-        // res.json({ success: true, message: 'OTP sent successfully', data: { phone: normalizedPhone } });
+        res.json({ success: true, message: 'OTP sent successfully', data: { phone: normalizedPhone } });
 
     } catch (error: any) {
         console.error('Error in sendOTP:', error);

@@ -8,7 +8,7 @@ export const getBanners = async (req: Request, res: Response) => {
             where: {
                 NOT: { id: "GLOBAL_SECTION_toggle" }
             },
-            orderBy: { order: 'asc' }
+            orderBy: { createdAt: 'asc' }
         });
         res.json({ success: true, data: banners });
     } catch (error) {

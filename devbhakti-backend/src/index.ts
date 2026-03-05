@@ -30,6 +30,7 @@ import paymentRoutes from './routes/paymentRoutes';
 import adminDonationRoutes from "./routes/admin/donationRoutes";
 import templeDonationRoutes from "./routes/temple_admin/templeDonationRoutes";
 import donationRoutes from './routes/devotee/donationRoutes';
+import adminMarketingRoutes from './routes/admin/marketingRoutes';
 
 import adminFinanceManagementRoutes from './routes/admin/financeManagementRoutes';
 import templeAdminFinanceRoutes from './routes/temple_admin/financeRoutes';
@@ -82,6 +83,7 @@ app.use('/api/admin/users', adminUserRoutes);
 app.use('/api/admin/commission-slabs', adminCommissionSlabRoutes);
 app.use('/api/admin/team', adminStaffManagementRoutes);
 app.use("/api/admin/donations", adminDonationRoutes);
+app.use('/api/admin/marketing', adminMarketingRoutes);
 
 
 

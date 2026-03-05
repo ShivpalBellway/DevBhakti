@@ -615,6 +615,8 @@ export default function CreatePoojaPage() {
                     image={tempImage}
                     onCropComplete={handleCropComplete}
                     onCancel={handleCropCancel}
+                    initialAspect={3 / 2}
+                    lockAspect={true}
                     title="Crop Pooja Image"
                 />
             )}

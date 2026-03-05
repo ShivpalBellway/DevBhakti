@@ -261,13 +261,13 @@ function AdminOrdersContent() {
                             </Button>
                         </>
                     )}
-                    {/* <Button
+                    <Button
                         onClick={handleExportOrders}
-                        className="bg-emerald-600 hover:bg-emerald-700 text-white gap-2 rounded-xl h-10"
+                        variant="sacred"
                     >
                         <Download className="w-4 h-4" />
                         Export Excel
-                    </Button> */}
+                    </Button>
                     <Button onClick={() => loadOrders(currentPage)} variant="outline" className="border-slate-300 hover:bg-slate-50 h-10">
                         <Clock className="w-4 h-4 mr-2" /> Refresh
                     </Button>

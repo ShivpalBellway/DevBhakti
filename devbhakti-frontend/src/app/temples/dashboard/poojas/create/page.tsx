@@ -137,7 +137,8 @@ export default function TempleCreatePoojaPage() {
                         setShowCropper(false);
                         setTempImage(null);
                     }}
-                    initialAspect={1 / 1}
+                    initialAspect={3 / 2}
+                    lockAspect={true}
                     title="Crop Pooja Image"
                 />
             )}

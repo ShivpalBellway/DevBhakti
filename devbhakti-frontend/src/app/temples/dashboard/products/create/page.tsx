@@ -267,7 +267,8 @@ export default function CreateTempleProductPage() {
                         setTempImage(null);
                         setCroppingTarget(null);
                     }}
-                    initialAspect={1 / 1}
+                    initialAspect={3 / 2}
+                    lockAspect={true}
                     title={croppingTarget?.type === 'product' ? "Crop Product Image" : "Crop Variant Image"}
                 />
             )}

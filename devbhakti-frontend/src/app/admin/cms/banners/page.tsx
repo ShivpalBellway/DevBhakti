@@ -4,14 +4,12 @@ import React, { useState, useEffect } from "react";
 import {
     Plus,
     Search,
-    Filter,
     Edit2,
     Trash2,
     Upload,
     X,
     CheckCircle2,
     AlertCircle,
-    Crop
 } from "lucide-react";
 import { ImageCropper } from "@/components/admin/ImageCropper";
 import { Button } from "@/components/ui/button";
@@ -49,7 +47,6 @@ export default function BannersPage() {
     const [formData, setFormData] = useState({
         link: "",
         active: "true",
-        order: 1,
     });
     const [imageFile, setImageFile] = useState<File | null>(null);
     const [imagePreview, setImagePreview] = useState<string>("");
@@ -82,17 +79,14 @@ export default function BannersPage() {
             setFormData({
                 link: banner.link || "",
                 active: banner.active ? "true" : "false",
-                order: banner.order,
             });
             setImagePreview(banner.image.startsWith('http') ? banner.image : `${BASE_URL}${banner.image}`);
-
             setImageFile(null);
         } else {
             setEditingBanner(null);
             setFormData({
                 link: "",
                 active: "true",
-                order: banners.length + 1,
             });
             setImagePreview("");
             setImageFile(null);
@@ -126,7 +120,7 @@ export default function BannersPage() {
             const data = new FormData();
             data.append('link', formData.link);
             data.append('active', formData.active);
-            data.append('order', formData.order.toString());
+            data.append('order', '1');
 
             if (imageFile) {
                 data.append('image', imageFile);
@@ -177,7 +171,7 @@ export default function BannersPage() {
     );
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-8 p-6">
             {showCropper && tempImage && (
                 <ImageCropper
                     image={tempImage}
@@ -187,52 +181,52 @@ export default function BannersPage() {
                         setTempImage(null);
                     }}
                     initialAspect={1920 / 600}
+                    lockAspect={true}
                     title="Adjust Banner Image"
                 />
             )}
+
             {/* Page Header */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div>
-                    <h1 className="text-2xl font-bold tracking-tight">Banners Management</h1>
-                    <p className="text-muted-foreground">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                <div className="space-y-1">
+                    <h1 className="text-3xl font-bold tracking-tight text-foreground">Banners Management</h1>
+                    <p className="text-muted-foreground text-base">
                         Manage your homepage carousel banners and promotions.
                     </p>
                 </div>
-                <Button onClick={() => handleOpenDialog()} className="bg-primary hover:bg-primary/90">
-                    <Plus className="w-4 h-4 mr-2" />
+                <Button onClick={() => handleOpenDialog()} className="bg-primary hover:bg-primary/90 h-11 px-6 shadow-md">
+                    <Plus className="w-5 h-5 mr-2" />
                     Add New Banner
                 </Button>
             </div>
 
             {/* Global Toggle Section */}
-            <div className="bg-card border rounded-xl p-5 shadow-sm">
-                <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                        <Label className="text-base font-semibold">Banner Section Visibility</Label>
-                        <p className="text-sm text-muted-foreground">
-                            When disabled, the entire carousel section will be hidden from the home page.
-                        </p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                        <span className={`text-sm font-medium ${bannerSectionActive ? "text-green-600" : "text-muted-foreground"}`}>
-                            {bannerSectionActive ? "Section Enabled" : "Section Disabled"}
-                        </span>
-                        <Switch
-                            checked={bannerSectionActive}
-                            onCheckedChange={handleToggleSection}
-                            className="scale-110"
-                        />
-                    </div>
+            <div className="bg-card border border-border rounded-xl p-6 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="space-y-1">
+                    <Label className="text-base font-semibold text-foreground">Banner Section Visibility</Label>
+                    <p className="text-sm text-muted-foreground">
+                        When disabled, the entire carousel section will be hidden from the home page.
+                    </p>
+                </div>
+                <div className="flex items-center gap-3 bg-muted/50 px-4 py-2 rounded-lg border border-border/50">
+                    <span className={`text-sm font-medium ${bannerSectionActive ? "text-green-600 dark:text-green-400" : "text-muted-foreground"}`}>
+                        {bannerSectionActive ? "Enabled" : "Disabled"}
+                    </span>
+                    <Switch
+                        checked={bannerSectionActive}
+                        onCheckedChange={handleToggleSection}
+                        className="scale-110"
+                    />
                 </div>
             </div>
 
             {/* Filters & Search */}
             <div className="flex flex-col md:flex-row gap-4">
-                <div className="relative flex-1">
+                <div className="relative w-full md:max-w-sm">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                     <Input
                         placeholder="Search banners..."
-                        className="pl-10"
+                        className="pl-10 h-10"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                     />
@@ -240,54 +234,63 @@ export default function BannersPage() {
             </div>
 
             {/* Banners Table */}
-            <div className="border rounded-lg bg-card">
+            <div className="border border-border rounded-xl bg-card overflow-hidden shadow-sm">
                 {loading ? (
-                    <div className="p-8 text-center">Loading banners...</div>
+                    <div className="p-12 text-center text-muted-foreground flex flex-col items-center justify-center gap-3">
+                        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                        <span>Loading banners...</span>
+                    </div>
                 ) : (
                     <Table>
                         <TableHeader>
-                            <TableRow>
-                                <TableHead className="w-[100px]">Preview</TableHead>
-                                <TableHead>Status</TableHead>
-                                <TableHead>Order</TableHead>
-                                {/* <TableHead>Link</TableHead> */}
-                                <TableHead className="text-right">Actions</TableHead>
+                            <TableRow className="hover:bg-transparent border-b border-border">
+                                <TableHead className="w-[350px] pl-6 py-4">Preview</TableHead>
+                                {/* Added min-w and pl-4 to create gap */}
+                                <TableHead className="min-w-[120px] pl-6 py-4">Status</TableHead>
+                                <TableHead className="min-w-[140px] pl-6 py-4">Uploaded Date</TableHead>
+                                <TableHead className="text-right min-w-[120px] pr-6 py-4">Actions</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {filteredBanners.map((banner) => (
-                                <TableRow key={banner.id}>
-                                    <TableCell>
-                                        <div className="w-24 h-14 rounded overflow-hidden bg-muted border flex items-center justify-center">
+                                <TableRow key={banner.id} className="border-b border-border/50 hover:bg-muted/30 transition-colors">
+                                    <TableCell className="pl-6 py-4">
+                                        <div className="w-[350px] h-[100px] rounded-md overflow-hidden bg-muted border border-border flex items-center justify-center relative group shadow-sm">
                                             <img
                                                 src={banner.image.startsWith('http') ? banner.image : `${BASE_URL}${banner.image}`}
                                                 alt="Banner"
-                                                className="max-w-full max-h-full object-contain"
+                                                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                                             />
                                         </div>
                                     </TableCell>
-                                    <TableCell>
-                                        <Badge variant={banner.active ? "default" : "secondary"}>
+                                    {/* Matching padding to headers */}
+                                    <TableCell className="pl-6 py-4">
+                                        <Badge variant={banner.active ? "default" : "secondary"} className="px-3 py-1">
                                             {banner.active ? "Active" : "Inactive"}
                                         </Badge>
                                     </TableCell>
-                                    <TableCell>{banner.order}</TableCell>
-                                    {/* <TableCell className="max-w-[200px] truncate">{banner.link || "-"}</TableCell> */}
-                                    <TableCell className="text-right">
-                                        <div className="flex justify-end gap-2">
+                                    <TableCell className="pl-6 py-4">
+                                        <span className="text-sm font-medium text-muted-foreground">
+                                            {new Date(banner.createdAt || new Date()).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                        </span>
+                                    </TableCell>
+                                    <TableCell className="text-right pr-6 py-4">
+                                        <div className="flex justify-end gap-3">
                                             <Button
                                                 variant="ghost"
                                                 size="icon"
                                                 onClick={() => handleOpenDialog(banner)}
+                                                className="h-9 w-9 hover:bg-blue-50 hover:text-blue-600 text-muted-foreground"
                                             >
-                                                <Edit2 className="w-4 h-4 text-blue-600" />
+                                                <Edit2 className="w-4 h-4" />
                                             </Button>
                                             <Button
                                                 variant="ghost"
                                                 size="icon"
                                                 onClick={() => handleDelete(banner.id)}
+                                                className="h-9 w-9 hover:bg-red-50 hover:text-red-600 text-muted-foreground"
                                             >
-                                                <Trash2 className="w-4 h-4 text-destructive" />
+                                                <Trash2 className="w-4 h-4" />
                                             </Button>
                                         </div>
                                     </TableCell>
@@ -295,7 +298,7 @@ export default function BannersPage() {
                             ))}
                             {filteredBanners.length === 0 && (
                                 <TableRow>
-                                    <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                                    <TableCell colSpan={4} className="text-center py-12 text-muted-foreground">
                                         No banners found
                                     </TableCell>
                                 </TableRow>
@@ -307,29 +310,20 @@ export default function BannersPage() {
 
             {/* Add/Edit Dialog */}
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <DialogContent className="sm:max-w-[500px]">
-                    <DialogHeader>
-                        <DialogTitle>{editingBanner ? "Edit Banner" : "Add New Banner"}</DialogTitle>
-                        <DialogDescription>
-                            Enter the details for the banner. Click save when you're done.
+                <DialogContent className="sm:max-w-[600px] gap-0 p-0">
+                    <DialogHeader className="p-6 pb-2">
+                        <DialogTitle className="text-xl">{editingBanner ? "Edit Banner" : "Add New Banner"}</DialogTitle>
+                        <DialogDescription className="text-base">
+                            {editingBanner ? "Update the banner details below." : "Configure the new banner settings."}
                         </DialogDescription>
                     </DialogHeader>
-                    <form onSubmit={handleSubmit} className="space-y-4 py-4">
-                        {/* <div className="space-y-2">
-                             <Label htmlFor="link">Redirect Link (Optional)</Label>
-                             <Input
-                                 id="link"
-                                 placeholder="e.g. /poojas/mahashivratri"
-                                 value={formData.link}
-                                 onChange={(e) => setFormData({ ...formData, link: e.target.value })}
-                             />
-                         </div> */}
-                        <div className="grid grid-cols-2 gap-4">
+                    <form onSubmit={handleSubmit} className="flex flex-col gap-6 p-6 pt-4">
+                        <div className="grid grid-cols-1 gap-6">
                             <div className="space-y-2">
-                                <Label htmlFor="status">Status</Label>
+                                <Label htmlFor="status" className="text-sm font-medium">Status</Label>
                                 <select
                                     id="status"
-                                    className="w-full h-10 px-3 rounded-md border border-input bg-background"
+                                    className="w-full h-10 px-3 rounded-md border border-input bg-background focus:ring-2 focus:ring-ring focus:ring-offset-2 outline-none transition-all"
                                     value={formData.active}
                                     onChange={(e) => setFormData({ ...formData, active: e.target.value })}
                                 >
@@ -337,30 +331,27 @@ export default function BannersPage() {
                                     <option value="false">Inactive</option>
                                 </select>
                             </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="order">Display Order</Label>
-                                <Input
-                                    id="order"
-                                    type="number"
-                                    value={formData.order}
-                                    onChange={(e) => setFormData({ ...formData, order: parseInt(e.target.value) })}
-                                />
-                            </div>
                         </div>
-                        <div className="space-y-2">
-                            <Label>Banner Image</Label>
-                            <div className="border-2 border-dashed rounded-lg p-6 flex flex-col items-center justify-center gap-2 hover:bg-muted/50 transition-colors cursor-pointer relative">
-                                <Upload className="w-8 h-8 text-muted-foreground" />
-                                <div className="text-sm font-medium">Click to upload or drag and drop</div>
-                                <div className="text-xs text-muted-foreground">PNG, JPG or WEBP (1920x600 px Recommended)</div>
+
+                        <div className="space-y-3">
+                            <Label className="text-sm font-medium">Banner Image</Label>
+                            <div className="border-2 border-dashed border-border rounded-lg p-8 flex flex-col items-center justify-center gap-3 hover:bg-muted/50 transition-colors cursor-pointer relative group">
+                                <div className="p-3 bg-primary/10 rounded-full text-primary group-hover:scale-110 transition-transform">
+                                    <Upload className="w-6 h-6" />
+                                </div>
+                                <div className="text-center space-y-1">
+                                    <div className="text-sm font-medium text-foreground">Click to upload image</div>
+                                    <div className="text-xs text-muted-foreground">Recommended: 1920x600 px (PNG, JPG, WEBP)</div>
+                                </div>
                                 <Input
                                     type="file"
-                                    className="absolute inset-0 opacity-0 cursor-pointer"
+                                    className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
                                     onChange={handleFileChange}
                                 />
                             </div>
+
                             {imagePreview && (
-                                <div className="mt-2 relative w-full h-48 bg-black/5 rounded-lg overflow-hidden border flex items-center justify-center">
+                                <div className="mt-2 relative w-full h-48 bg-muted rounded-lg overflow-hidden border border-border shadow-inner flex items-center justify-center">
                                     <img src={imagePreview} className="max-w-full max-h-full object-contain" alt="Preview" />
                                     <button
                                         type="button"
@@ -368,18 +359,19 @@ export default function BannersPage() {
                                             setImagePreview("");
                                             setImageFile(null);
                                         }}
-                                        className="absolute top-2 right-2 p-1 bg-black/50 rounded-full text-white hover:bg-black/70"
+                                        className="absolute top-2 right-2 p-1.5 bg-background/80 backdrop-blur-sm border border-border rounded-full text-foreground hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-all shadow-sm"
                                     >
                                         <X className="w-4 h-4" />
                                     </button>
                                 </div>
                             )}
                         </div>
-                        <DialogFooter>
-                            <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
+
+                        <DialogFooter className="pt-2 gap-2">
+                            <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)} className="h-10 px-6">
                                 Cancel
                             </Button>
-                            <Button type="submit">
+                            <Button type="submit" className="h-10 px-6">
                                 {editingBanner ? "Update Banner" : "Create Banner"}
                             </Button>
                         </DialogFooter>

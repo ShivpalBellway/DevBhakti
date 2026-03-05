@@ -53,6 +53,11 @@ export function NotificationBell({ userId, userType }: NotificationBellProps) {
     useEffect(() => {
         loadNotifications();
 
+        // 💡 Periodically refresh every 30 seconds
+        const interval = setInterval(() => {
+            loadNotifications();
+        }, 30000);
+
         // 💡 Signal sunne wala function
         const handleNewNotification = (event: any) => {
             console.log("⚡ [Bell Component] Signal RECEIVED! Refreshing fast...");
@@ -65,6 +70,7 @@ export function NotificationBell({ userId, userType }: NotificationBellProps) {
         window.addEventListener('notification-received', handleNewNotification);
 
         return () => {
+            clearInterval(interval);
             window.removeEventListener('notification-received', handleNewNotification);
         };
     }, [userId, userType, loadNotifications]);
@@ -100,11 +106,11 @@ export function NotificationBell({ userId, userType }: NotificationBellProps) {
     return (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="relative hover:bg-sidebar-accent/50 transition-colors rounded-full">
-                    <Bell className="w-5 h-5" />
+                <Button variant="ghost" size="icon" className="relative hover:bg-sidebar-accent/50 transition-colors rounded-full w-10 h-10">
+                    <Bell className="w-5 h-5 text-foreground/70" />
                     {unreadCount > 0 && (
-                        <span className="absolute top-1.5 right-1.5 w-4 h-4 bg-destructive text-[10px] font-bold text-white flex items-center justify-center rounded-full animate-pulse ring-2 ring-background">
-                            {unreadCount > 9 ? "9+" : unreadCount}
+                        <span className="absolute top-1.5 right-1.5 min-w-[18px] h-[18px] px-1 bg-red-600 text-[10px] font-bold text-white flex items-center justify-center rounded-full ring-2 ring-background shadow-lg z-10 transition-transform scale-100 hover:scale-110">
+                            {unreadCount > 99 ? "99+" : unreadCount}
                         </span>
                     )}
                 </Button>

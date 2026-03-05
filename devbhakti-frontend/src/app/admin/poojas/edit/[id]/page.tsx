@@ -642,6 +642,8 @@ export default function EditPoojaPage() {
                     image={tempImage}
                     onCropComplete={handleCropComplete}
                     onCancel={handleCropCancel}
+                    initialAspect={3 / 2}
+                    lockAspect={true}
                     title="Edit Pooja Image"
                 />
             )}

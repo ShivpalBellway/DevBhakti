@@ -1,40 +1,49 @@
 "use client";
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import Cropper from 'react-easy-crop';
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { X, Minus, Plus, Check, RotateCw } from "lucide-react";
+import { X, Check, RotateCw, ZoomIn, Crop as CropIcon } from "lucide-react";
 
 interface ImageCropperProps {
     image: string;
-    onCropComplete: (croppedFile: File) => void;
+    onCropComplete: (file: File) => void;
     onCancel: () => void;
     initialAspect?: number;
     title?: string;
+    lockAspect?: boolean;
 }
 
 const ASPECT_RATIOS = [
-    { label: "Square (1:1)", value: 1 / 1 },
-    { label: "Classic (4:3)", value: 4 / 3 },
-    { label: "Photo (3:2)", value: 3 / 2 },
-    { label: "Wide (16:9)", value: 16 / 9 },
+    { label: "1:1", value: 1 / 1 },
+    { label: "3:2", value: 3 / 2 },
+    { label: "4:3", value: 4 / 3 },
+    { label: "16:9", value: 16 / 9 },
     { label: "Banner (1920:600)", value: 1920 / 600 },
 ];
 
-export const ImageCropper: React.FC<ImageCropperProps> = ({
+export function ImageCropper({
     image,
     onCropComplete,
     onCancel,
-    initialAspect = 4 / 3,
-    title = "Crop Image"
-}) => {
+    initialAspect = 1,
+    title = "Crop Image",
+    lockAspect = false
+}: ImageCropperProps) {
     const [crop, setCrop] = useState({ x: 0, y: 0 });
     const [zoom, setZoom] = useState(1);
-    const [rotation, setRotation] = useState(0);
     const [aspect, setAspect] = useState(initialAspect);
+    const [rotation, setRotation] = useState(0);
     const [croppedAreaPixels, setCroppedAreaPixels] = useState<any>(null);
+    const [isLoading, setIsLoading] = useState(false);
+
+    useEffect(() => {
+        if (lockAspect) {
+            setAspect(initialAspect);
+        }
+    }, [initialAspect, lockAspect]);
 
     const onCropCompleteCallback = useCallback((_croppedArea: any, croppedAreaPixels: any) => {
         setCroppedAreaPixels(croppedAreaPixels);
@@ -49,11 +58,20 @@ export const ImageCropper: React.FC<ImageCropperProps> = ({
             image.src = url;
         });
 
+    function getRadianChatSize(width: number, height: number, rotation: number) {
+        const cos = Math.abs(Math.cos(rotation));
+        const sin = Math.abs(Math.sin(rotation));
+        return {
+            width: width * cos + height * sin,
+            height: width * sin + height * cos,
+        };
+    }
+
     const getCroppedImg = async (
         imageSrc: string,
         pixelCrop: any,
         rotation = 0
-    ): Promise<File | null> => {
+    ): Promise<Blob | null> => {
         const image = await createImage(imageSrc);
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
@@ -67,19 +85,15 @@ export const ImageCropper: React.FC<ImageCropperProps> = ({
             rotRad
         );
 
-        // Set canvas size to the bounding box of the rotated image
         canvas.width = bBoxWidth;
         canvas.height = bBoxHeight;
 
-        // Origin at the center of the canvas
         ctx.translate(bBoxWidth / 2, bBoxHeight / 2);
         ctx.rotate(rotRad);
         ctx.translate(-image.width / 2, -image.height / 2);
 
-        // Draw rotated image
         ctx.drawImage(image, 0, 0);
 
-        // Create a temporary canvas for the final cropped output
         const croppedCanvas = document.createElement('canvas');
         const croppedCtx = croppedCanvas.getContext('2d');
 
@@ -88,7 +102,6 @@ export const ImageCropper: React.FC<ImageCropperProps> = ({
         croppedCanvas.width = pixelCrop.width;
         croppedCanvas.height = pixelCrop.height;
 
-        // Draw the cropped portion from the transformed canvas
         croppedCtx.drawImage(
             canvas,
             pixelCrop.x,
@@ -103,171 +116,156 @@ export const ImageCropper: React.FC<ImageCropperProps> = ({
 
         return new Promise((resolve) => {
             croppedCanvas.toBlob((blob) => {
-                if (!blob) return resolve(null);
-                const file = new File([blob], 'cropped-image.jpg', { type: 'image/jpeg' });
-                resolve(file);
+                resolve(blob);
             }, 'image/jpeg', 0.95);
         });
     };
 
-    const getRadianChatSize = (width: number, height: number, rotation: number) => {
-        const cos = Math.abs(Math.cos(rotation));
-        const sin = Math.abs(Math.sin(rotation));
-        return {
-            width: width * cos + height * sin,
-            height: width * sin + height * cos,
-        };
-    };
-
-    const handleCrop = async () => {
+    const handleSave = async () => {
         try {
-            const croppedFile = await getCroppedImg(image, croppedAreaPixels, rotation);
-            if (croppedFile) {
-                onCropComplete(croppedFile);
+            setIsLoading(true);
+            const blob = await getCroppedImg(image, croppedAreaPixels, rotation);
+            if (blob) {
+                const file = new File([blob], "cropped-image.jpg", { type: "image/jpeg" });
+                onCropComplete(file);
             }
         } catch (e) {
             console.error(e);
+        } finally {
+            setIsLoading(false);
         }
     };
 
     return (
-        <Dialog open={true} onOpenChange={(open) => !open && onCancel()}>
-            <DialogContent className="max-w-[90vw] w-[1000px] p-0 gap-0 overflow-hidden bg-[#FAF9F6] border-none shadow-2xl">
-                {/* Header */}
-                <div className="flex items-center justify-between px-6 py-4 border-b border-[#E5E1DA]">
-                    <DialogHeader>
-                        <DialogTitle className="text-xl font-serif text-[#4A3728] flex items-center gap-2">
-                            <span className="p-1 border border-[#4A3728]/20 rounded stroke-[1.5]">
-                                <CropIcon className="w-5 h-5" />
-                            </span>
-                            {title}
-                        </DialogTitle>
-                    </DialogHeader>
-                    <button
-                        onClick={onCancel}
-                        className="p-2 hover:bg-[#E5E1DA] rounded-full transition-colors text-[#4A3728]"
-                    >
-                        <X className="w-5 h-5" />
-                    </button>
-                </div>
+        <Dialog open={true} onOpenChange={() => !isLoading && onCancel()}>
+            <DialogContent className="max-w-4xl h-[90vh] flex flex-col p-0 overflow-hidden bg-[#FAF9F6]">
+                <DialogHeader className="p-6 border-b border-[#E5E1DA]">
+                    <DialogTitle className="flex items-center gap-2 text-[#4A3728]">
+                        <CropIcon className="w-5 h-5 text-[#8B4513]" />
+                        {title}
+                    </DialogTitle>
+                </DialogHeader>
 
-                {/* Cropper Main Area */}
-                <div className="relative w-full h-[60vh] bg-[#121212]">
+                <div className="flex-1 relative bg-black flex items-center justify-center overflow-hidden">
                     <Cropper
                         image={image}
                         crop={crop}
                         zoom={zoom}
-                        rotation={rotation}
                         aspect={aspect}
-                        showGrid={true}
+                        rotation={rotation}
                         onCropChange={setCrop}
-                        onCropComplete={onCropCompleteCallback}
                         onZoomChange={setZoom}
                         onRotationChange={setRotation}
+                        onCropComplete={onCropCompleteCallback}
                         classes={{
-                            containerClassName: "bg-[#121212]",
-                            mediaClassName: "bg-[#121212]",
-                            cropAreaClassName: "border-2 border-white/50 shadow-[0_0_0_9999px_rgba(0,0,0,0.6)]"
+                            containerClassName: "bg-black",
+                            mediaClassName: "bg-black",
+                            cropAreaClassName: "border-2 border-white/50"
                         }}
                     />
                 </div>
 
-                {/* Footer Area */}
-                <div className="p-6 space-y-6">
-                    <div className="max-w-2xl mx-auto space-y-4">
-                        {/* Zoom Controls */}
-                        <div className="flex items-center gap-4">
-                            <Minus className="w-5 h-5 text-[#8B735B]" />
-                            <div className="flex-1 px-2">
-                                <Slider
-                                    value={[zoom]}
-                                    min={1}
-                                    max={3}
-                                    step={0.01}
-                                    onValueChange={(value) => setZoom(value[0])}
-                                    className="[&>[role=slider]]:bg-[#8B4513] [&>[role=slider]]:border-[#8B4513] [&>.relative>.absolute]:bg-[#8B735B]/30"
-                                />
+                <div className="p-6 bg-white border-t border-[#E5E1DA] space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div className="space-y-3">
+                            <div className="flex items-center justify-between">
+                                <span className="text-sm font-semibold text-[#4A3728] flex items-center gap-2">
+                                    <ZoomIn className="w-4 h-4 text-[#8B735B]" /> Zoom
+                                </span>
+                                <span className="text-xs font-bold text-[#8B4513]">{Math.round(zoom * 100)}%</span>
                             </div>
-                            <Plus className="w-5 h-5 text-[#8B735B]" />
-                            <span className="text-sm font-medium w-16 text-[#4A3728]">
-                                Zoom: {Math.round(zoom * 100)}%
-                            </span>
+                            <Slider
+                                value={[zoom]}
+                                min={1}
+                                max={3}
+                                step={0.01}
+                                onValueChange={([v]) => setZoom(v)}
+                                className="cursor-pointer"
+                            />
                         </div>
 
-                        {/* Rotation Controls */}
-                        <div className="flex items-center gap-4">
-                            <RotateCw className="w-5 h-5 text-[#8B735B]" />
-                            <div className="flex-1 px-2">
-                                <Slider
-                                    value={[rotation]}
-                                    min={0}
-                                    max={360}
-                                    step={1}
-                                    onValueChange={(value) => setRotation(value[0])}
-                                    className="[&>[role=slider]]:bg-[#8B4513] [&>[role=slider]]:border-[#8B4513] [&>.relative>.absolute]:bg-[#8B735B]/30"
-                                />
+                        <div className="space-y-3">
+                            <div className="flex items-center justify-between">
+                                <span className="text-sm font-semibold text-[#4A3728] flex items-center gap-2">
+                                    <RotateCw className="w-4 h-4 text-[#8B735B]" /> Rotation
+                                </span>
+                                <span className="text-xs font-bold text-[#8B4513]">{rotation}°</span>
                             </div>
-                            <span className="text-sm font-medium w-16 text-[#4A3728]">
-                                Rot: {rotation}°
-                            </span>
+                            <Slider
+                                value={[rotation]}
+                                min={0}
+                                max={360}
+                                step={1}
+                                onValueChange={([v]) => setRotation(v)}
+                                className="cursor-pointer"
+                            />
                         </div>
                     </div>
 
-                    <div className="flex flex-col md:flex-row items-center justify-between gap-6 pt-2">
-                        {/* Aspect Ratio Options */}
-                        <div className="flex items-center gap-3">
-                            <span className="text-sm font-semibold text-[#4A3728] mr-2">Aspect Ratio:</span>
-                            <div className="flex flex-wrap gap-2">
-                                {ASPECT_RATIOS.map((ratio) => (
-                                    <button
-                                        key={ratio.label}
-                                        onClick={() => setAspect(ratio.value)}
-                                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${Math.abs(aspect - ratio.value) < 0.01
-                                            ? "bg-[#8B4513] text-white shadow-md"
-                                            : "bg-[#F3EFEC] text-[#4A3728] hover:bg-[#E5E1DA] border border-[#E5E1DA]"
+                    <div className="space-y-3">
+                        <span className="text-sm font-semibold text-[#4A3728]">Aspect Ratio</span>
+                        <div className="flex flex-wrap gap-2">
+                            {lockAspect ? (
+                                <div className="h-9 px-4 rounded-lg bg-[#8B4513] text-white flex items-center text-sm font-medium">
+                                    {ASPECT_RATIOS.find(r => Math.abs(r.value - aspect) < 0.01)?.label || "Locked"}
+                                </div>
+                            ) : (
+                                ASPECT_RATIOS.map((r) => (
+                                    <Button
+                                        key={r.label}
+                                        type="button"
+                                        variant={Math.abs(aspect - r.value) < 0.01 ? "default" : "outline"}
+                                        size="sm"
+                                        onClick={() => setAspect(r.value)}
+                                        className={`h-9 px-4 rounded-lg transition-all ${Math.abs(aspect - r.value) < 0.01
+                                            ? "bg-[#8B4513] text-white"
+                                            : "text-[#4A3728] border-[#E5E1DA] hover:bg-[#F3EFEC]"
                                             }`}
                                     >
-                                        {ratio.label}
-                                    </button>
-                                ))}
-                            </div>
+                                        {r.label}
+                                    </Button>
+                                ))
+                            )}
                         </div>
+                    </div>
 
-                        {/* Action Buttons */}
-                        <div className="flex items-center gap-3">
-                            <Button
-                                variant="outline"
-                                onClick={onCancel}
-                                className="px-8 h-12 rounded-xl border-[#8B735B] text-[#8B735B] hover:bg-[#F3EFEC]"
-                            >
-                                Cancel
-                            </Button>
-                            <Button
-                                onClick={handleCrop}
-                                className="px-10 h-12 rounded-xl bg-[#8B4513] hover:bg-[#6F3710] text-white shadow-lg flex items-center gap-2"
-                            >
-                                <Check className="w-5 h-5" />
-                                Save Crop
-                            </Button>
-                        </div>
+                    <div className="flex justify-end gap-3 pt-2">
+                        <Button
+                            variant="outline"
+                            onClick={onCancel}
+                            disabled={isLoading}
+                            className="px-6 h-11 rounded-xl border-[#8B735B] text-[#8B735B] hover:bg-[#F3EFEC]"
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            onClick={handleSave}
+                            disabled={isLoading}
+                            className="px-8 h-11 rounded-xl bg-[#8B4513] hover:bg-[#6F3710] text-white shadow-lg flex items-center gap-2 min-w-[120px]"
+                        >
+                            {isLoading ? (
+                                <RotateCw className="w-4 h-4 animate-spin" />
+                            ) : (
+                                <>
+                                    <Check className="w-4 h-4" />
+                                    Save Crop
+                                </>
+                            )}
+                        </Button>
                     </div>
                 </div>
             </DialogContent>
         </Dialog>
     );
-};
+}
 
-const CropIcon = ({ className }: { className?: string }) => (
-    <svg
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        className={className}
-    >
-        <path d="M6 2v14a2 2 0 0 0 2 2h14" />
-        <path d="M18 22V8a2 2 0 0 0-2-2H2" />
-    </svg>
-);
+const getCroppedImg = async (
+    imageSrc: string,
+    pixelCrop: any,
+    rotation = 0
+): Promise<Blob | null> => {
+    // This is redundant but kept to match the structure if needed externally, 
+    // actually it's better defined inside or passed as helper.
+    // I already defined it inside for simplicity.
+    return null; // Not used as it's defined inside
+};
