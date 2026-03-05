@@ -15,6 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { fetchSellerFinanceSummary, requestSellerWithdrawal, fetchSellerProfile } from "@/api/sellerController";
+import { isPayoutAllowed, nextPayoutDate } from "@/utils/payoutSchedule";
 
 export default function SellerWithdrawPage() {
     const router = useRouter();
@@ -193,17 +194,28 @@ export default function SellerWithdrawPage() {
                         </div>
 
                         {/* Info Alert */}
-                        <div className="flex gap-4 p-5 bg-amber-50 rounded-2xl border border-amber-100/50">
-                            <AlertCircle className="w-5 h-5 text-[#794A05] flex-shrink-0" />
-                            <p className="text-xs text-[#794A05] font-bold leading-relaxed">
-                                Payouts are processed within 24 hours. Please ensure your bank details are correct to avoid delays.
-                            </p>
-                        </div>
+                        {!isPayoutAllowed() ? (
+                            <div className="flex gap-4 p-5 bg-orange-50 rounded-2xl border border-orange-100/50">
+                                <AlertCircle className="w-5 h-5 text-orange-600 flex-shrink-0" />
+                                <p className="text-xs text-orange-700 font-bold leading-relaxed">
+                                    Payouts are only allowed on the 15th and 28th of each month.
+                                    The next payout window opens on {nextPayoutDate().toLocaleDateString('en-IN', { day: 'numeric', month: 'long' })}.
+                                </p>
+                            </div>
+                        ) : (
+                            <div className="flex gap-4 p-5 bg-amber-50 rounded-2xl border border-amber-100/50">
+                                <AlertCircle className="w-5 h-5 text-[#794A05] flex-shrink-0" />
+                                <p className="text-xs text-[#794A05] font-bold leading-relaxed">
+                                    Payout window is currently open (15th / 28th).
+                                    Requests will be processed within 24 hours.
+                                </p>
+                            </div>
+                        )}
 
                         <Button
                             onClick={handleWithdrawal}
-                            disabled={isSubmitting || summary.availableBalance <= 0}
-                            className="w-full bg-[#794A05] hover:bg-[#5D3804] text-white rounded-xl h-14 font-bold text-lg shadow-xl shadow-[#794A05]/20 gap-2 transition-all active:scale-95"
+                            disabled={isSubmitting || summary.availableBalance <= 0 || !isPayoutAllowed()}
+                            className="w-full bg-[#794A05] hover:bg-[#5D3804] text-white rounded-xl h-14 font-bold text-lg shadow-xl shadow-[#794A05]/20 gap-2 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             {isSubmitting ? "Processing..." : "Confirm Withdrawal"}
                         </Button>

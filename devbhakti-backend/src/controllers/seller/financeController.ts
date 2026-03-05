@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { prisma } from "../../lib/prisma";
+import { isPayoutAllowed, nextPayoutDate } from "../../utils/payoutSchedule";
 
 // Helper to get sellerId from userId (Bypassed in favor of injection)
 const getSellerStoreId = async (userId: string) => {
@@ -82,7 +83,12 @@ export const getSellerFinanceSummary = async (req: Request, res: Response) => {
             .reduce((sum: number, w: any) => sum + w.amount, 0);
 
         // --- 4. Final Balance ---
-        const finalAvailable = settledIncome - totalPaidPayouts - processingWithdrawals;
+        let finalAvailable = settledIncome - totalPaidPayouts - processingWithdrawals;
+
+        // Payout Schedule Restricted: If not 15th or 28th, the "Available" for withdrawal is 0
+        if (!isPayoutAllowed(now)) {
+            finalAvailable = 0;
+        }
 
         const pendingOrdersCount = validIncomeEntries.filter((e: any) => e.status === "PENDING").length;
 
@@ -138,8 +144,16 @@ export const requestSellerWithdrawal = async (req: Request, res: Response) => {
 
         await prisma.$transaction(async (tx) => {
             const now = new Date();
-            // const escrowThreshold = new Date(now.getTime() - (3 * 24 * 60 * 60 * 1000)); // Original 3 Days
-            const escrowThreshold = new Date(now.getTime()); // Testing: 0 Days (Immediate)
+
+            // ---- NEW SCHEDULE CHECK ----
+            if (!isPayoutAllowed(now)) {
+                const next = nextPayoutDate(now);
+                throw new Error(`Payouts are only processed on the 15th and 28th. Next allowed date: ${next.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}`);
+            }
+
+            // Original 3 Days escrow window check is still valid for "settled" income, 
+            // but we use the schedule check as a hard gate.
+            const escrowThreshold = new Date(now.getTime() - (3 * 24 * 60 * 60 * 1000));
 
             const ledger = await tx.templeLedger.findMany({
                 where: {
