@@ -85,81 +85,73 @@ const Navbar: React.FC<NavbarProps> = ({ variant = "default" }) => {
       >
         <div className="container mx-auto px-4">
           <nav className="flex items-center justify-between h-16 md:h-20 gap-4">
-            {/* Logo & Search Bar Container */}
-            <div className="flex items-center gap-4 lg:gap-8 min-w-0">
-              <Link href="/" className="relative z-10 flex-shrink-0">
-                {/* <Logo className="h-28 w-28 " /> */}
+            {/* Logo Section */}
+            <div className="flex items-center flex-shrink-0 relative z-10">
+              <Link href="/" className="block">
                 <Logo
-                  className={`h-28 w-28 transition-colors duration-300 ${isScrolled ? "" : "h-28 w-24"
+                  className={`h-24 w-auto md:h-28 transition-all duration-300 ${isScrolled ? "scale-90" : "scale-100"
                     }`}
                 />
               </Link>
-
-
             </div>
 
-            {/* Desktop Navigation */}
-            <div className="hidden lg:flex items-center gap-4 xl:gap-8">
-
-              {/* Desktop Search Bar - Hidden on temple registration page */}
-              {!isTempleRegistrationPage && (
+            {/* Desktop Navigation & Search (Wide Screens Only) */}
+            <div className="hidden xl:flex flex-1 items-center justify-between gap-8 mx-4">
+              {/* Desktop Search Bar */}
+              {!isTempleRegistrationPage ? (
                 <div
                   onClick={() => setIsSearchOpen(true)}
-                  className="flex items-center gap-2 px-4 py-2.5
-               w-[200px] lg:w-[280px] xl:w-[350px]
-               bg-white/30 dark:bg-zinc-900/80 backdrop-blur-md rounded-xl
-               cursor-pointer transition-all border border-black/50
-               dark:border-zinc-800/50 hover:border-primary/60
-               shadow-sm hover:shadow-md"
+                  className="flex items-center gap-2 px-4 py-2
+                             w-[300px] 2xl:w-[400px]
+                             bg-white/40 dark:bg-zinc-900/80 backdrop-blur-md rounded-xl
+                             cursor-pointer transition-all border border-black/10
+                             dark:border-zinc-800/50 hover:border-primary/60
+                             shadow-sm hover:shadow-md shrink-0"
                 >
-                  <Search className="w-4 h-4 text-primary group-hover:scale-110 transition-transform" />
-                  <span className="text-black dark:text-black text-sm font-medium truncate">
-                    Search...temples, poojas, products
+                  <Search className="w-4 h-4 text-primary shrink-0" />
+                  <span className="text-black/70 dark:text-white/70 text-sm font-medium truncate">
+                    Search temples, poojas, products...
                   </span>
                 </div>
+              ) : (
+                <div className="flex-1" />
               )}
 
-              {/* Navigation Links - Hidden on temple registration page */}
-              {!isTempleRegistrationPage && navLinks.map((link) => (
-                <Link
-                  key={link.label}
-                  href={link.href}
-                  className="text-sm xl:text-base font-medium text-foreground hover:text-primary transition-colors whitespace-nowrap"
-                >
-                  {link.label}
-                </Link>
-              ))}
-
-              {/* Go to Devotee Home Page - Only on temple registration page */}
-              {isTempleRegistrationPage && (
-                <Link
-                  href="/"
-                  className="text-sm font-medium text-dark-foreground hover:text-foreground transition-colors"
-                >
-                  Go to Devotee Home Page
-                </Link>
-              )}
+              {/* Navigation Links */}
+              <div className="flex items-center gap-6 2xl:gap-8">
+                {!isTempleRegistrationPage && navLinks.map((link) => (
+                  <Link
+                    key={link.label}
+                    href={link.href}
+                    className="text-sm font-bold text-foreground hover:text-primary transition-colors whitespace-nowrap uppercase tracking-wider"
+                  >
+                    {link.label}
+                  </Link>
+                ))}
+              </div>
             </div>
 
             {/* Action Group */}
             <div className="flex items-center gap-2 md:gap-3">
 
 
-              {/* Mobile Search Icon - Only shows on very small screens */}
-              <Button
-                variant="ghost"
-                size="icon"
-                className="sm:hidden text-muted-foreground"
-                onClick={() => setIsSearchOpen(true)}
-              >
-                <Search className="w-2 h-3" />
-              </Button>
+              {/* Search Icon - Visible when desktop search bar is hidden */}
+              {!isTempleRegistrationPage && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="xl:hidden text-muted-foreground w-10 h-10 rounded-full bg-black/5 hover:bg-black/10"
+                  onClick={() => setIsSearchOpen(true)}
+                >
+                  <Search className="w-5 h-5 text-primary" />
+                </Button>
+              )}
 
               {variant === "default" ? (
                 !user && (
                   <Button
                     variant="outline"
-                    className="hidden md:flex bg-[#88542B] border-[#c2a087] text-white hover:bg-[#CA9E52] hover:text-white rounded-full px-4 h-9 mr-2 text-sm font-medium transition-all hover:border-[#864c20]"
+                    className="hidden sm:flex bg-[#88542B] border-[#c2a087] text-white hover:bg-[#CA9E52] hover:text-white rounded-full px-4 xl:px-6 h-10 text-xs xl:text-sm font-bold shadow-md transition-all whitespace-nowrap"
                     asChild
                   >
                     <Link href="/temples/register">
@@ -327,7 +319,7 @@ const Navbar: React.FC<NavbarProps> = ({ variant = "default" }) => {
               {/* Mobile Menu Button */}
               <button
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                className="lg:hidden relative z-10 p-2 text-foreground"
+                className="xl:hidden relative z-10 p-2 text-foreground hover:bg-black/5 rounded-lg"
               >
                 {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
               </button>
@@ -366,10 +358,11 @@ const Navbar: React.FC<NavbarProps> = ({ variant = "default" }) => {
         {
           isMobileMenuOpen && (
             <motion.div
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              className="fixed inset-0 z-40 bg-background pt-20 md:hidden"
+              initial={{ opacity: 0, x: "100%" }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: "100%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 200 }}
+              className="fixed inset-0 z-40 bg-background/98 backdrop-blur-xl pt-24 xl:hidden"
             >
               <div className="container px-4 py-8">
                 <div className="flex flex-col gap-4">

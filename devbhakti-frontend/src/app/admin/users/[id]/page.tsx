@@ -10,10 +10,18 @@ import {
     User,
     ShoppingBag,
     History,
-    MapPin,
+    Eye,
     Loader2,
     Search,
-    Heart
+    Heart,
+    Store,
+    Building2,
+    LayoutDashboard,
+    TrendingUp,
+    MapPin,
+    Wallet,
+    Package,
+    Shield
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -54,6 +62,14 @@ export default function DevoteeDetailPage() {
 
         if (id) loadUserDetail();
     }, [id]);
+
+    useEffect(() => {
+        if (user?.name) {
+            window.dispatchEvent(new CustomEvent('updateBreadcrumb', { detail: user.name }));
+        }
+    }, [user]);
+
+
 
     // Filtering Logic
     const filteredBookings = (user?.bookings || []).filter((booking: any) => {
@@ -113,32 +129,51 @@ export default function DevoteeDetailPage() {
                         <ArrowLeft className="w-5 h-5" />
                     </Button>
                     <div>
-                        <h1 className="text-3xl font-serif font-bold text-slate-900 tracking-tight">Devotee Profile</h1>
+                        <h1 className="text-3xl font-serif font-bold text-slate-900 tracking-tight">
+                            {user.role === 'SELLER' ? 'Seller Profile' :
+                                user.role === 'INSTITUTION' ? 'Temple Admin Profile' :
+                                    user.role === 'ADMIN' ? 'Staff Profile' : 'Devotee Profile'}
+                        </h1>
                         <div className="flex items-center gap-2 mt-1">
                             <Badge variant="secondary" className="bg-primary/10 text-primary border-none shadow-none font-bold">ADMIN VIEW</Badge>
-                            <span className="text-muted-foreground text-sm">Spiritual and commercial journey</span>
+                            <span className="text-muted-foreground text-sm">
+                                {user.role === 'SELLER' ? 'Vendor management and sales overview' :
+                                    user.role === 'INSTITUTION' ? 'Temple operations and pooja management' :
+                                        'Spiritual and commercial journey'}
+                            </span>
                         </div>
                     </div>
                 </div>
             </div>
 
             {/* Quick Stats Overview */}
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
                 {[
-                    { label: "Bookings", value: user.bookings?.length || 0, icon: History, color: "text-blue-600", bg: "bg-blue-50" },
-                    { label: "Orders", value: user.orders?.length || 0, icon: ShoppingBag, color: "text-amber-600", bg: "bg-amber-50" },
-                    { label: "Donations", value: user.donations?.length || 0, icon: Heart, color: "text-rose-600", bg: "bg-rose-50" },
-                    { label: "Total Spent", value: `₹${[...(user.bookings || []), ...(user.orders || []), ...(user.donations || [])].reduce((acc, curr) => acc + (curr.packagePrice || curr.totalAmount || curr.amount || 0), 0).toLocaleString()}`, icon: MapPin, color: "text-emerald-600", bg: "bg-emerald-50" },
+                    ...(user.role === 'SELLER' ? [
+                        { label: "Sales", value: (user.sellerProfile?.subOrders || []).length, icon: TrendingUp, color: "text-emerald-600", bg: "bg-emerald-50" },
+                        { label: "Products", value: (user.sellerProfile?.products || []).length, icon: Package, color: "text-blue-600", bg: "bg-blue-50" },
+                        { label: "Earnings", value: `₹${(user.sellerProfile?.subOrders || []).reduce((acc: any, curr: any) => acc + (curr.netEarning || 0), 0).toFixed(0)}`, icon: Wallet, color: "text-amber-600", bg: "bg-amber-50" }
+                    ] : user.role === 'INSTITUTION' ? [
+                        { label: "Bookings", value: user.bookings?.length || 0, icon: History, color: "text-blue-600", bg: "bg-blue-50" },
+                        { label: "Pooja", value: (user.temple?.poojas || []).length, icon: Shield, color: "text-purple-600", bg: "bg-purple-50" },
+                        { label: "Donations", value: (user.temple?.donations || user.donations || []).length, icon: Heart, color: "text-rose-600", bg: "bg-rose-50" },
+                        { label: "Earnings", value: `₹${(user.temple?.bookings || []).reduce((acc: any, curr: any) => acc + (curr.netEarning || 0), 0).toFixed(0)}`, icon: Wallet, color: "text-amber-600", bg: "bg-amber-50" }
+                    ] : [
+                        { label: "Bookings", value: user.bookings?.length || 0, icon: History, color: "text-blue-600", bg: "bg-blue-50" },
+                        { label: "Orders", value: user.orders?.length || 0, icon: ShoppingBag, color: "text-amber-600", bg: "bg-amber-50" },
+                        { label: "Donations", value: user.donations?.length || 0, icon: Heart, color: "text-rose-600", bg: "bg-rose-50" },
+                        { label: "Spent", value: `₹${[...(user.bookings || []), ...(user.orders || []), ...(user.donations || [])].reduce((acc, curr) => acc + (curr.packagePrice || curr.totalAmount || curr.amount || 0), 0).toLocaleString()}`, icon: MapPin, color: "text-emerald-600", bg: "bg-emerald-50" },
+                    ]),
                     { label: "Join Date", value: user.createdAt ? format(new Date(user.createdAt), "MMM yyyy") : "N/A", icon: Calendar, color: "text-purple-600", bg: "bg-purple-50" },
                 ].map((stat, i) => (
                     <Card key={i} className="border-none shadow-sm bg-card hover:shadow-md transition-all duration-300">
-                        <CardContent className="p-4 flex items-center gap-4">
-                            <div className={`p-2.5 rounded-xl ${stat.bg}`}>
+                        <CardContent className="p-4 flex flex-col sm:flex-row items-center sm:items-start gap-3 sm:gap-4">
+                            <div className={`p-2.5 rounded-xl shrink-0 ${stat.bg}`}>
                                 <stat.icon className={`w-5 h-5 ${stat.color}`} />
                             </div>
-                            <div>
-                                <p className="text-xs text-muted-foreground font-bold uppercase tracking-wider">{stat.label}</p>
-                                <p className="text-xl font-bold text-slate-900">{stat.value}</p>
+                            <div className="text-center sm:text-left">
+                                <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">{stat.label}</p>
+                                <p className="text-lg sm:text-xl font-bold text-slate-900 truncate">{stat.value}</p>
                             </div>
                         </CardContent>
                     </Card>
@@ -147,7 +182,7 @@ export default function DevoteeDetailPage() {
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
                 {/* Left Column: Personal Information */}
-                <Card className="lg:col-span-4 border-none shadow-lg bg-white/80 backdrop-blur-md sticky top-6 h-fit overflow-hidden">
+                <Card className="lg:col-span-4 border-none shadow-lg bg-white/80 backdrop-blur-md lg:sticky lg:top-6 h-fit overflow-hidden">
                     <div className="h-24 bg-gradient-to-r from-primary/20 via-primary/10 to-transparent absolute top-0 left-0 right-0" />
                     <CardHeader className="flex flex-col items-center pb-6 relative pt-12">
                         <div className="relative group">
@@ -242,26 +277,92 @@ export default function DevoteeDetailPage() {
                                 </div>
                             </div>
                         )}
+
+                        {user.sellerProfile && (
+                            <div className="pt-6 border-t border-slate-100 space-y-4">
+                                <h4 className="text-xs font-bold uppercase text-slate-400 tracking-widest flex items-center gap-2">
+                                    <Store className="w-3.5 h-3.5" />
+                                    Seller Information
+                                </h4>
+                                <div className="grid grid-cols-1 gap-3">
+                                    <div className="bg-emerald-50/30 p-4 rounded-xl border border-emerald-100">
+                                        <p className="text-[10px] text-emerald-600 font-bold uppercase">Shop Name</p>
+                                        <p className="text-base font-bold text-slate-900">{user.sellerProfile.name}</p>
+                                        <p className="text-xs text-slate-500 mt-1">{user.sellerProfile.location || "Online Seller"}</p>
+                                    </div>
+                                    <div className="flex items-center justify-between px-2">
+                                        <span className="text-sm text-slate-500">Service Fee</span>
+                                        <span className="text-sm font-bold text-slate-900">{user.sellerProfile.productCommissionRate}%</span>
+                                    </div>
+                                    <div className="flex items-center justify-between px-2">
+                                        <span className="text-sm text-slate-500">Status</span>
+                                        <Badge className={user.sellerProfile.isVerified ? "bg-emerald-500" : "bg-amber-500"}>
+                                            {user.sellerProfile.isVerified ? "Verified" : "Pending Approval"}
+                                        </Badge>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {user.temple && (
+                            <div className="pt-6 border-t border-slate-100 space-y-4">
+                                <h4 className="text-xs font-bold uppercase text-slate-400 tracking-widest flex items-center gap-2">
+                                    <Building2 className="w-3.5 h-3.5" />
+                                    Temple Management
+                                </h4>
+                                <div className="grid grid-cols-1 gap-3">
+                                    <div className="bg-blue-50/30 p-4 rounded-xl border border-blue-100">
+                                        <p className="text-[10px] text-blue-600 font-bold uppercase">Temple Linked</p>
+                                        <p className="text-base font-bold text-slate-900">{user.temple.name}</p>
+                                        <p className="text-xs text-slate-500 mt-1">{user.temple.location}</p>
+                                    </div>
+                                    <div className="flex items-center justify-between px-2">
+                                        <span className="text-sm text-slate-500">Pooja Comm.</span>
+                                        <span className="text-sm font-bold text-slate-900">{user.temple.poojaCommissionRate}%</span>
+                                    </div>
+                                    <div className="flex items-center justify-between px-2">
+                                        <span className="text-sm text-slate-500">Product Comm.</span>
+                                        <span className="text-sm font-bold text-slate-900">{user.temple.productCommissionRate}%</span>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
                     </CardContent>
                 </Card>
 
                 {/* Right Column: Activity Tabs with Search & Filters */}
-                <div className="lg:col-span-8 flex flex-col gap-6">
-                    <Tabs defaultValue="bookings" className="w-full">
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 bg-white p-2 rounded-2xl shadow-sm border border-slate-100">
-                            <TabsList className="grid w-fit grid-cols-3 bg-slate-50/50">
-                                <TabsTrigger value="bookings" className="data-[state=active]:bg-white data-[state=active]:shadow-sm px-6 font-bold">
-                                    <History className="w-4 h-4 mr-2" />
-                                    Bookings ({(user.bookings || []).length})
-                                </TabsTrigger>
-                                <TabsTrigger value="orders" className="data-[state=active]:bg-white data-[state=active]:shadow-sm px-6 font-bold">
+                <div className="lg:col-span-8 flex flex-col gap-6 w-full">
+                    <Tabs defaultValue={user.role === 'SELLER' ? 'inventory' : 'bookings'} className="w-full">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 bg-white p-2 rounded-2xl shadow-sm border border-slate-100 overflow-x-auto premium-scrollbar">
+                            <TabsList className="flex w-fit bg-slate-50/50 p-1">
+                                {user.role !== 'SELLER' && (
+                                    <TabsTrigger value="bookings" className="data-[state=active]:bg-white data-[state=active]:shadow-sm px-4 font-bold whitespace-nowrap">
+                                        <History className="w-4 h-4 mr-2" />
+                                        Bookings ({(user.bookings || []).length})
+                                    </TabsTrigger>
+                                )}
+                                <TabsTrigger value="orders" className="data-[state=active]:bg-white data-[state=active]:shadow-sm px-4 font-bold whitespace-nowrap">
                                     <ShoppingBag className="w-4 h-4 mr-2" />
                                     Orders ({(user.orders || []).length})
                                 </TabsTrigger>
-                                <TabsTrigger value="donations" className="data-[state=active]:bg-white data-[state=active]:shadow-sm px-6 font-bold">
-                                    <Heart className="w-4 h-4 mr-2" />
-                                    Donations ({(user.donations || []).length})
-                                </TabsTrigger>
+                                {(user.role === 'DEVOTEE' || user.role === 'INSTITUTION') && (
+                                    <TabsTrigger value="donations" className="data-[state=active]:bg-white data-[state=active]:shadow-sm px-4 font-bold whitespace-nowrap">
+                                        <Heart className="w-4 h-4 mr-2" />
+                                        Donations ({(user.temple?.donations || user.donations || []).length})
+                                    </TabsTrigger>
+                                )}
+                                {(user.role === 'SELLER' || user.role === 'INSTITUTION') && (
+                                    <>
+                                        <TabsTrigger value="inventory" className="data-[state=active]:bg-white data-[state=active]:shadow-sm px-4 font-bold whitespace-nowrap">
+                                            <Package className="w-4 h-4 mr-2" />
+                                            Products ({(user.sellerProfile?.products || user.temple?.products || []).length})
+                                        </TabsTrigger>
+                                        <TabsTrigger value="withdrawals" className="data-[state=active]:bg-white data-[state=active]:shadow-sm px-4 font-bold whitespace-nowrap">
+                                            <Wallet className="w-4 h-4 mr-2" />
+                                            Withdrawals ({(user.sellerProfile?.withdrawals || user.temple?.withdrawals || []).length})
+                                        </TabsTrigger>
+                                    </>
+                                )}
                             </TabsList>
                         </div>
 
@@ -492,6 +593,46 @@ export default function DevoteeDetailPage() {
                                         <p className="text-slate-400 font-serif italic text-lg">No donations found.</p>
                                     </div>
                                 )}
+                            </div>
+                        </TabsContent>
+
+                        <TabsContent value="inventory" className="mt-0 focus-visible:outline-none">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {(user.sellerProfile?.products || user.temple?.products || []).map((product: any) => (
+                                    <Card key={product.id} className="rounded-2xl border-slate-100 hover:shadow-md transition-all">
+                                        <CardContent className="p-4 flex gap-4">
+                                            <div className="w-16 h-16 rounded-xl bg-slate-100 overflow-hidden shrink-0">
+                                                {product.image && <img src={`${BASE_URL}${product.image}`} className="w-full h-full object-cover" />}
+                                            </div>
+                                            <div>
+                                                <h4 className="font-bold text-slate-900">{product.name}</h4>
+                                                <p className="text-xs text-slate-500">{product.category}</p>
+                                                <Badge className="mt-2" variant={product.status === 'active' ? 'outline' : 'outline'}>{product.status}</Badge>
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+                                ))}
+                            </div>
+                        </TabsContent>
+
+                        <TabsContent value="withdrawals" className="mt-0 focus-visible:outline-none">
+                            <div className="space-y-4">
+                                {(user.sellerProfile?.withdrawals || user.temple?.withdrawals || []).map((withdrawal: any) => (
+                                    <Card key={withdrawal.id} className="rounded-2xl border-slate-100">
+                                        <CardContent className="p-4 flex justify-between items-center">
+                                            <div className="flex gap-4 items-center">
+                                                <div className="p-2 rounded-lg bg-emerald-50 text-emerald-600">
+                                                    <Wallet className="w-5 h-5" />
+                                                </div>
+                                                <div>
+                                                    <p className="font-black text-lg text-slate-900">₹{withdrawal.amount}</p>
+                                                    <p className="text-xs text-slate-500">{format(new Date(withdrawal.createdAt), "PPP")}</p>
+                                                </div>
+                                            </div>
+                                            <Badge variant={withdrawal.status === 'PAID' ? 'outline' : 'outline'}>{withdrawal.status}</Badge>
+                                        </CardContent>
+                                    </Card>
+                                ))}
                             </div>
                         </TabsContent>
                     </Tabs>

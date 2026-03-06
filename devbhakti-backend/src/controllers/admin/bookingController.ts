@@ -10,7 +10,7 @@ export const getAllBookings = async (req: Request, res: Response) => {
         const limit = parseInt(req.query.limit as string) || 10;
         const skip = (page - 1) * limit;
 
-        const { status, search, startDate, endDate } = req.query;
+        const { status, search, startDate, endDate, dateType, sortBy, sortOrder } = req.query;
 
         let where: any = {};
 
@@ -31,9 +31,29 @@ export const getAllBookings = async (req: Request, res: Response) => {
         }
 
         if (startDate || endDate) {
-            where.createdAt = {};
-            if (startDate) where.createdAt.gte = new Date(String(startDate));
-            if (endDate) where.createdAt.lte = new Date(String(endDate));
+            if (dateType === 'ritualDate') {
+                where.bookingDate = {};
+                if (startDate) {
+                    // bookingDate is string like 'YYYY-MM-DD'
+                    const s = new Date(String(startDate)).toISOString().split('T')[0];
+                    where.bookingDate.gte = s;
+                }
+                if (endDate) {
+                    const e = new Date(String(endDate)).toISOString().split('T')[0];
+                    where.bookingDate.lte = e;
+                }
+            } else {
+                where.createdAt = {};
+                if (startDate) where.createdAt.gte = new Date(String(startDate));
+                if (endDate) where.createdAt.lte = new Date(String(endDate));
+            }
+        }
+
+        let orderByProp: any = { createdAt: 'desc' };
+        if (sortBy === 'ritualDate') {
+            orderByProp = { bookingDate: sortOrder === 'asc' ? 'asc' : 'desc' };
+        } else if (sortBy === 'bookingDate') {
+            orderByProp = { createdAt: sortOrder === 'asc' ? 'asc' : 'desc' };
         }
 
         const [bookings, total, bookedCount, completedCount, cancelledCount, rejectedCount] = await Promise.all([
@@ -50,9 +70,7 @@ export const getAllBookings = async (req: Request, res: Response) => {
                         }
                     }
                 },
-                orderBy: {
-                    createdAt: 'desc'
-                },
+                orderBy: orderByProp,
                 skip,
                 take: limit,
             }),

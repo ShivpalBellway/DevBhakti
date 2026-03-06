@@ -39,7 +39,36 @@ const statusConfig = {
     COMPLETED: { label: "Completed", color: "bg-emerald-100 text-emerald-700 border-emerald-200", icon: CheckCircle2 },
     REJECTED: { label: "Rejected", color: "bg-rose-100 text-rose-700 border-rose-200", icon: XCircle },
     CANCELLED: { label: "Cancelled", color: "bg-slate-100 text-slate-700 border-slate-200", icon: X },
-    PENDING: { label: "Pending", color: "bg-amber-100   text-amber-700 border-amber-200", icon: Clock },
+    PENDING: { label: "Pending", color: "bg-amber-100 text-amber-700 border-amber-200", icon: Clock },
+};
+
+const formatDateDDMMYYYY = (dateString: string | null | undefined, includeTime = false) => {
+    if (!dateString) return "N/A";
+    try {
+        const date = new Date(dateString);
+        if (isNaN(date.getTime())) return dateString;
+
+        const dd = String(date.getDate()).padStart(2, '0');
+        const mm = String(date.getMonth() + 1).padStart(2, '0');
+        const yyyy = date.getFullYear();
+
+        const weekdays = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+        const dayName = weekdays[date.getDay()];
+
+        let result = `${dayName} ${dd}/${mm}/${yyyy}`;
+        if (includeTime) {
+            let hours = date.getHours();
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            const ampm = hours >= 12 ? 'PM' : 'AM';
+            hours = hours % 12;
+            hours = hours ? hours : 12; // the hour '0' should be '12'
+            const strTime = String(hours).padStart(2, '0') + ':' + minutes + ' ' + ampm;
+            result += ` ${strTime}`;
+        }
+        return result;
+    } catch {
+        return dateString;
+    }
 };
 
 function BookingsContent() {
@@ -69,6 +98,11 @@ function BookingsContent() {
     const [customEndDate, setCustomEndDate] = useState("");
     const [showCustomDate, setShowCustomDate] = useState(false);
 
+    // New filters
+    const [filterDateType, setFilterDateType] = useState<"bookingDate" | "ritualDate">("bookingDate");
+    const [sortBy, setSortBy] = useState<"bookingDate" | "ritualDate">("bookingDate");
+    const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
+
     const loadBookings = async (page: number) => {
         setLoading(true);
         try {
@@ -95,7 +129,10 @@ function BookingsContent() {
                 search: debouncedSearch,
                 status: statusFilter,
                 startDate,
-                endDate
+                endDate,
+                dateType: filterDateType,
+                sortBy: sortBy,
+                sortOrder: sortOrder
             });
 
             if (res && res.success) {
@@ -119,7 +156,7 @@ function BookingsContent() {
 
     useEffect(() => {
         loadBookings(currentPage);
-    }, [debouncedSearch, statusFilter, dateRange, customStartDate, customEndDate, currentPage]);
+    }, [debouncedSearch, statusFilter, dateRange, customStartDate, customEndDate, currentPage, filterDateType, sortBy, sortOrder]);
 
     const handleDelete = async (id: string) => {
         if (!confirm("Are you sure you want to delete this booking?")) return;
@@ -214,7 +251,7 @@ function BookingsContent() {
         <div className="space-y-6">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-2xl md:text-3xl font-serif font-bold text-[#794A05]">Pooja Bookings</h1>
+                    <h1 className="text-2xl md:text-3xl font-serif font-bold text-[#794A05]">Pooja & Seva Bookings</h1>
                     <p className="text-muted-foreground mt-1 text-sm font-medium">Manage all sacred service reservations</p>
                 </div>
             </div>
@@ -244,28 +281,112 @@ function BookingsContent() {
                 ))}
             </div>
 
-            <div className="flex flex-col md:flex-row gap-4">
-                <div className="relative flex-1">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <Input
-                        placeholder="Search IDs, Devotees, Temples..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="pl-9 h-11 rounded-xl"
-                    />
+            <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex flex-col gap-4">
+                {/* Search & Status Filters */}
+                <div className="flex flex-col lg:flex-row gap-4 justify-between items-start lg:items-center">
+                    <div className="relative w-full lg:max-w-md">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                        <Input
+                            placeholder="Search IDs, Devotees, Temples..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="pl-10 h-11 rounded-xl bg-slate-50 border-transparent focus-visible:ring-2 focus-visible:ring-[#794A05] transition-all"
+                        />
+                    </div>
+                    <div className="flex gap-2 flex-wrap">
+                        {["all", "BOOKED", "COMPLETED", "CANCELLED", "REJECTED"].map((status) => (
+                            <Button
+                                key={status}
+                                variant={statusFilter === status ? "default" : "outline"}
+                                size="sm"
+                                onClick={() => setStatusFilter(status)}
+                                className={cn(
+                                    "rounded-xl px-4 h-11 font-semibold transition-all shadow-sm border",
+                                    statusFilter === status
+                                        ? "bg-[#794A05] hover:bg-[#5d3904] text-white border-transparent"
+                                        : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50 hover:text-slate-900"
+                                )}
+                            >
+                                {status === "all" ? "All" : statusConfig[status as keyof typeof statusConfig]?.label || status}
+                            </Button>
+                        ))}
+                    </div>
                 </div>
-                <div className="flex gap-2 flex-wrap">
-                    {["all", "BOOKED", "COMPLETED", "CANCELLED", "REJECTED"].map((status) => (
-                        <Button
-                            key={status}
-                            variant={statusFilter === status ? "default" : "outline"}
-                            size="sm"
-                            onClick={() => setStatusFilter(status)}
-                            className="rounded-xl px-4 h-10"
+
+                {/* Divider */}
+                <div className="h-px w-full bg-slate-100"></div>
+
+                {/* Date & Sort Filters */}
+                <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
+                    <div className="flex flex-wrap gap-3 items-center w-full md:w-auto">
+                        <div className="flex items-center gap-2 bg-slate-50 p-1.5 rounded-xl border border-slate-200/60 shadow-sm transition-all hover:border-slate-300">
+                            <Calendar className="w-4 h-4 text-slate-400 ml-2" />
+                            <select
+                                className="h-8 bg-transparent text-sm font-medium focus:outline-none text-slate-700 cursor-pointer pr-1"
+                                value={filterDateType}
+                                onChange={(e) => setFilterDateType(e.target.value as any)}
+                            >
+                                <option value="bookingDate">Booking Date</option>
+                                <option value="ritualDate">Ritual Date</option>
+                            </select>
+                            <span className="text-slate-300">|</span>
+                            <select
+                                className="h-8 bg-transparent text-sm font-medium focus:outline-none text-slate-700 cursor-pointer pl-1 pr-2"
+                                value={dateRange}
+                                onChange={(e) => setDateRange(e.target.value as any)}
+                            >
+                                <option value="all">All Time</option>
+                                <option value="week">Past Week</option>
+                                <option value="month">Past Month</option>
+                                <option value="year">Past Year</option>
+                                <option value="custom">Custom Range</option>
+                            </select>
+                        </div>
+
+                        {dateRange === "custom" && (
+                            <div className="flex gap-2 items-center bg-slate-50 p-1.5 rounded-xl border border-slate-200/60 shadow-sm">
+                                <input
+                                    type="date"
+                                    className="text-sm h-8 bg-transparent border-none focus:ring-0 cursor-pointer text-slate-700 font-medium px-2"
+                                    value={customStartDate}
+                                    onChange={(e) => setCustomStartDate(e.target.value)}
+                                />
+                                <span className="text-slate-400 text-sm font-medium">to</span>
+                                <input
+                                    type="date"
+                                    className="text-sm h-8 bg-transparent border-none focus:ring-0 cursor-pointer text-slate-700 font-medium px-2"
+                                    value={customEndDate}
+                                    onChange={(e) => setCustomEndDate(e.target.value)}
+                                />
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="flex items-center gap-2 bg-slate-50 p-1.5 rounded-xl border border-slate-200/60 shadow-sm transition-all hover:border-slate-300 w-full md:w-auto justify-end">
+                        <Clock className="w-4 h-4 text-slate-400 ml-2" />
+                        <span className="text-sm text-slate-500 font-medium">Sort by:</span>
+                        <select
+                            className="h-8 bg-transparent text-sm font-semibold focus:outline-none text-slate-800 cursor-pointer pr-1"
+                            value={sortBy}
+                            onChange={(e) => setSortBy(e.target.value as any)}
                         >
-                            {status === "all" ? "All" : statusConfig[status as keyof typeof statusConfig]?.label || status}
+                            <option value="bookingDate">Booking Date</option>
+                            <option value="ritualDate">Ritual Date</option>
+                        </select>
+                        <span className="text-slate-300">|</span>
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setSortOrder(prev => prev === 'desc' ? 'asc' : 'desc')}
+                            className="h-8 px-2 text-sm font-medium text-slate-700 hover:text-[#794A05] hover:bg-orange-50 rounded-lg"
+                        >
+                            {sortOrder === 'desc' ? (
+                                <span className="flex items-center gap-1">Latest First <ChevronDown className="w-4 h-4 ml-0.5" /></span>
+                            ) : (
+                                <span className="flex items-center gap-1">Oldest First <ChevronDown className="w-4 h-4 ml-0.5 rotate-180" /></span>
+                            )}
                         </Button>
-                    ))}
+                    </div>
                 </div>
             </div>
 
@@ -274,25 +395,60 @@ function BookingsContent() {
                     <table className="w-full text-left">
                         <thead className="bg-[#FAF9F6] border-b border-slate-100">
                             <tr>
-                                <th className="p-4 text-[11px] font-bold text-slate-400 uppercase tracking-widest">ID</th>
-                                <th className="p-4 text-[11px] font-bold text-slate-400 uppercase tracking-widest">Service</th>
-                                <th className="p-4 text-[11px] font-bold text-slate-400 uppercase tracking-widest">Devotee</th>
-                                <th className="p-4 text-[11px] font-bold text-slate-400 uppercase tracking-widest">Status</th>
-                                <th className="p-4 text-right text-[11px] font-bold text-slate-400 uppercase tracking-widest">Action</th>
+                                <th className="p-4 text-[11px] font-bold text-slate-400 uppercase tracking-widest whitespace-nowrap">ID</th>
+                                <th className="p-4 text-[11px] font-bold text-slate-400 uppercase tracking-widest whitespace-nowrap">Service</th>
+                                <th className="p-4 text-[11px] font-bold text-slate-400 uppercase tracking-widest whitespace-nowrap">Temple</th>
+                                <th className="p-4 text-[11px] font-bold text-slate-400 uppercase tracking-widest whitespace-nowrap">Devotee</th>
+                                <th className="p-4 text-[11px] font-bold text-slate-400 uppercase tracking-widest whitespace-nowrap" title="DDMMYYYY format">Booking Date & Time</th>
+                                <th className="p-4 text-[11px] font-bold text-slate-400 uppercase tracking-widest whitespace-nowrap" title="DDMMYYYY format">Ritual Date</th>
+                                <th className="p-4 text-[11px] font-bold text-slate-400 uppercase tracking-widest whitespace-nowrap">Amount</th>
+                                <th className="p-4 text-[11px] font-bold text-slate-400 uppercase tracking-widest whitespace-nowrap">Status</th>
+                                <th className="p-4 text-right text-[11px] font-bold text-slate-400 uppercase tracking-widest whitespace-nowrap">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             {loading ? (
-                                <tr><td colSpan={5} className="p-12 text-center text-slate-400">Loading Sacred Data...</td></tr>
+                                <tr><td colSpan={9} className="p-12 text-center text-slate-400">Loading Sacred Data...</td></tr>
                             ) : bookings.length === 0 ? (
-                                <tr><td colSpan={5} className="p-12 text-center text-slate-400">No results found</td></tr>
+                                <tr><td colSpan={9} className="p-12 text-center text-slate-400">No results found</td></tr>
                             ) : bookings.map((booking) => {
                                 const status = statusConfig[booking.status as keyof typeof statusConfig] || statusConfig.BOOKED;
                                 return (
                                     <tr key={booking.id} className="border-b border-slate-50 hover:bg-slate-50 transition-colors">
                                         <td className="p-4 font-mono text-[11px] font-bold text-[#794A05]">#{booking.id.slice(-8).toUpperCase()}</td>
-                                        <td className="p-4"><p className="text-sm font-bold text-slate-900">{booking.pooja?.name}</p></td>
-                                        <td className="p-4"><p className="text-sm font-bold text-slate-900">{booking.devoteeName}</p></td>
+                                        <td className="p-4">
+                                            <p className="text-sm font-bold text-slate-900">{booking.pooja?.name}</p>
+                                            {booking.packageName && <p className="text-xs text-slate-500 mt-0.5">{booking.packageName}</p>}
+                                        </td>
+                                        <td className="p-4">
+                                            {booking.temple ? (
+                                                <div className="flex items-center gap-2">
+                                                    <Building2 className="w-4 h-4 text-slate-400" />
+                                                    <p className="text-sm font-bold text-slate-900">{booking.temple.name}</p>
+                                                </div>
+                                            ) : (
+                                                <p className="text-sm font-bold text-slate-400">N/A</p>
+                                            )}
+                                        </td>
+                                        <td className="p-4">
+                                            <div className="flex items-center gap-2">
+                                                <User className="w-4 h-4 text-slate-400" />
+                                                <p className="text-sm font-bold text-slate-900">{booking.devoteeName}</p>
+                                            </div>
+                                        </td>
+                                        <td className="p-4">
+                                            <p className="text-sm font-medium text-slate-900" title="Date is in DDMMYYYY format">
+                                                {formatDateDDMMYYYY(booking.createdAt, true)}
+                                            </p>
+                                        </td>
+                                        <td className="p-4">
+                                            <p className="text-sm font-medium text-slate-900" title="Date is in DDMMYYYY format">
+                                                {formatDateDDMMYYYY(booking.bookingDate, false)}
+                                            </p>
+                                        </td>
+                                        <td className="p-4">
+                                            <p className="text-sm font-bold text-slate-900">₹{booking.packagePrice}</p>
+                                        </td>
                                         <td className="p-4">
                                             <Badge variant="outline" className={`rounded-full px-3 py-1 font-extrabold text-[10px] ${status.color}`}>
                                                 {status.label}

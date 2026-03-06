@@ -298,12 +298,35 @@ function SellerDashboardContent({ children }: { children: React.ReactNode }) {
                         ) : (
                             <Logo size="sm" className="w-8 h-8 sm:hidden shadow-sm rounded-lg bg-white" />
                         )}
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 capitalize overflow-x-auto whitespace-nowrap premium-scrollbar pb-1 w-full max-w-[calc(100vw-220px)] sm:max-w-none">
                             <Link href="/seller/dashboard" className="hover:text-sidebar-primary transition-colors font-bold text-slate-900 hidden sm:block">
                                 {storeProfile?.name || "DevBhakti Seller"}
                             </Link>
-                            <ChevronRight className="w-4 h-4 hidden sm:block" />
-                            <span className="text-slate-500 font-medium">Dashboard</span>
+                            {pathname === '/seller/dashboard' ? (
+                                <>
+                                    <ChevronRight className="w-4 h-4 hidden sm:block flex-shrink-0" />
+                                    <span className="text-slate-500 font-medium">Dashboard</span>
+                                </>
+                            ) : (
+                                pathname?.split('/').filter(Boolean).slice(2).map((path, index, array) => {
+                                    const isLast = index === array.length - 1;
+                                    const pathUrl = `/seller/dashboard/${array.slice(0, index + 1).join('/')}`;
+                                    const title = path.replace(/-/g, ' ');
+
+                                    return (
+                                        <React.Fragment key={pathUrl}>
+                                            <ChevronRight className="w-4 h-4 flex-shrink-0 text-slate-500" />
+                                            {isLast ? (
+                                                <span className="text-slate-500 font-medium">{title}</span>
+                                            ) : (
+                                                <Link href={pathUrl} className="hover:text-sidebar-primary transition-colors text-slate-900">
+                                                    {title}
+                                                </Link>
+                                            )}
+                                        </React.Fragment>
+                                    );
+                                })
+                            )}
                         </div>
                     </div>
 

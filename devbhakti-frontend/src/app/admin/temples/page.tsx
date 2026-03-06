@@ -20,6 +20,7 @@ import {
     Calendar as CalendarIcon,
     X,
     Filter,
+    ChevronRight,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -430,7 +431,13 @@ export default function TemplesManagementPage() {
         <div className="space-y-6">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold tracking-tight text-slate-900">Temple Management</h1>
+                    <h1 className="text-2xl font-bold tracking-tight text-slate-900 flex items-center gap-2">
+                        Temple Management
+                        {/* <ChevronRight className="w-6 h-6 text-slate-400" />
+                        <span className="text-slate-500 font-medium text-[20px]">
+                            {activeTab === 'verified' ? 'Verified Temples' : 'Pending Verification'}
+                        </span> */}
+                    </h1>
                     <p className="text-slate-600">Manage temple administrator accounts and temple profiles.</p>
                 </div>
                 <div className="flex gap-2">
@@ -544,9 +551,9 @@ export default function TemplesManagementPage() {
                         <Table>
                             <TableHeader className="bg-slate-50/100">
                                 <TableRow>
-                                    <TableHead>Temple Owner</TableHead>
-                                    <TableHead>Temple ID</TableHead>
                                     <TableHead>Temple Profile</TableHead>
+                                    <TableHead>Temple ID</TableHead>
+                                    <TableHead>Temple Owner</TableHead>
                                     {/* <TableHead>Statistics</TableHead> */}
                                     <TableHead>Status</TableHead>
                                     <TableHead>Live</TableHead>
@@ -573,18 +580,6 @@ export default function TemplesManagementPage() {
                                     temples.map((inst) => (
                                         <TableRow key={inst.userId} className="hover:bg-slate-50/50 transition-colors">
                                             <TableCell>
-                                                <div className="flex flex-col">
-                                                    <span className="font-semibold text-slate-900">{inst.userName || "N/A"}</span>
-                                                    <span className="text-[13px] text-slate-800">{inst.userEmail || inst.userPhone || "N/A"}</span>
-                                                    <span className="text-[13px] text-slate-800">{inst.userPhone || "N/A"}</span>
-                                                </div>
-                                            </TableCell>
-                                            <TableCell>
-                                                <Badge variant="outline" className="font-mono text-xs">
-                                                    {inst.templeId || "N/A"}
-                                                </Badge>
-                                            </TableCell>
-                                            <TableCell>
                                                 <div className="flex flex-col gap-0.5">
                                                     <div className="flex items-center gap-1.5 font-medium text-slate-900">
                                                         <Building2 className="w-4 h-4 text-primary" />
@@ -594,6 +589,18 @@ export default function TemplesManagementPage() {
                                                         <MapPin className="w-4 h-4" />
                                                         <span>{inst.templeLocation || "N/A"}</span>
                                                     </div>
+                                                </div>
+                                            </TableCell>
+                                            <TableCell>
+                                                <Badge variant="outline" className="font-mono text-xs">
+                                                    {inst.templeId || "N/A"}
+                                                </Badge>
+                                            </TableCell>
+                                            <TableCell>
+                                                <div className="flex flex-col">
+                                                    <span className="font-semibold text-slate-900">{inst.userName || "N/A"}</span>
+                                                    <span className="text-[13px] text-slate-800">{inst.userEmail || inst.userPhone || "N/A"}</span>
+                                                    <span className="text-[13px] text-slate-800">{inst.userPhone || "N/A"}</span>
                                                 </div>
                                             </TableCell>
                                             {/* <TableCell>
@@ -755,9 +762,9 @@ export default function TemplesManagementPage() {
                         <Table>
                             <TableHeader className="bg-slate-50/100">
                                 <TableRow>
-                                    <TableHead>Temple Owner</TableHead>
-                                    <TableHead>Temple ID</TableHead>
                                     <TableHead>Temple Profile</TableHead>
+                                    <TableHead>Temple ID</TableHead>
+                                    <TableHead>Temple Owner</TableHead>
                                     {/* <TableHead>Statistics</TableHead> */}
                                     <TableHead>Status</TableHead>
                                     <TableHead>Live</TableHead>
@@ -784,18 +791,6 @@ export default function TemplesManagementPage() {
                                     temples.map((inst) => (
                                         <TableRow key={inst.userId} className="hover:bg-slate-50/50 transition-colors">
                                             <TableCell>
-                                                <div className="flex flex-col">
-                                                    <span className="font-semibold text-slate-900">{inst.userName || "N/A"}</span>
-                                                    <span className="text-[13px] text-slate-800">{inst.userEmail || inst.userPhone || "N/A"}</span>
-                                                    <span className="text-[13px] text-slate-800">{inst.userPhone || "N/A"}</span>
-                                                </div>
-                                            </TableCell>
-                                            <TableCell>
-                                                <Badge variant="outline" className="font-mono text-xs">
-                                                    {inst.templeId || "N/A"}
-                                                </Badge>
-                                            </TableCell>
-                                            <TableCell>
                                                 <div className="flex flex-col gap-0.5">
                                                     <div className="flex items-center gap-1.5 font-medium text-slate-900">
                                                         <Building2 className="w-4 h-4 text-primary" />
@@ -805,6 +800,18 @@ export default function TemplesManagementPage() {
                                                         <MapPin className="w-4 h-4" />
                                                         <span>{inst.templeLocation || "N/A"}</span>
                                                     </div>
+                                                </div>
+                                            </TableCell>
+                                            <TableCell>
+                                                <Badge variant="outline" className="font-mono text-xs">
+                                                    {inst.templeId || "N/A"}
+                                                </Badge>
+                                            </TableCell>
+                                            <TableCell>
+                                                <div className="flex flex-col">
+                                                    <span className="font-semibold text-slate-900">{inst.userName || "N/A"}</span>
+                                                    <span className="text-[13px] text-slate-800">{inst.userEmail || inst.userPhone || "N/A"}</span>
+                                                    <span className="text-[13px] text-slate-800">{inst.userPhone || "N/A"}</span>
                                                 </div>
                                             </TableCell>
                                             {/* <TableCell>

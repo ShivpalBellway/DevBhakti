@@ -139,7 +139,7 @@ export default function AdminDashboardPage() {
   ];
 
   return (
-    <div className="space-y-8 pb-12">
+    <div className="space-y-8 pb-32">
       {/* Page Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
@@ -162,7 +162,7 @@ export default function AdminDashboardPage() {
       </div>
 
       {/* Stats Grid - Premium Style */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
         {stats.map((stat, index) => (
           <motion.div
             key={stat.title}
@@ -181,9 +181,11 @@ export default function AdminDashboardPage() {
                   {/* <Badge variant="outline" className="text-[10px] font-bold border-slate-200 text-slate-500 uppercase tracking-widest">Live</Badge> */}
                 </div>
                 <div>
-                  <h3 className="text-2xl font-extrabold text-slate-900 flex items-center">
-                    {stat.isCurrency && <IndianRupee className="w-4 h-4 mr-0.5 opacity-50" strokeWidth={3} />}
-                    {stat.isCurrency ? stat.value.toLocaleString() : stat.value}
+                  <h3 className="text-xl md:text-2xl font-extrabold text-slate-900 flex items-center truncate">
+                    {stat.isCurrency && <IndianRupee className="w-4 h-4 mr-0.5 opacity-50 shrink-0" strokeWidth={3} />}
+                    <span className="truncate">
+                      {stat.isCurrency ? stat.value.toLocaleString() : stat.value}
+                    </span>
                   </h3>
                   <div className="flex items-center gap-1.5 mt-1">
                     <p className="text-sm font-bold text-slate-900">{stat.title}</p>
@@ -194,7 +196,7 @@ export default function AdminDashboardPage() {
                             <Info className="w-3.5 h-3.5" />
                           </button>
                         </TooltipTrigger>
-                        <TooltipContent side="right" className="bg-slate-900 text-white border-slate-800 rounded-xl p-3 shadow-2xl max-w-xs">
+                        <TooltipContent side="top" sideOffset={8} className="bg-slate-900 z-50 text-white border-slate-800 rounded-xl p-3 shadow-2xl max-w-xs break-words">
                           <p className="text-xs font-medium leading-relaxed">{stat.description}</p>
                         </TooltipContent>
                       </Tooltip>
@@ -221,8 +223,8 @@ export default function AdminDashboardPage() {
             </Button>
           </div>
 
-          <Card className="border-none shadow-xl rounded-[2rem] overflow-hidden bg-white">
-            <CardContent className="p-4">
+          <Card className="border-none shadow-xl rounded-[2rem] overflow-hidden bg-white max-h-[600px] flex flex-col">
+            <CardContent className="p-4 overflow-y-auto custom-scrollbar flex-1">
               <div className="space-y-1">
                 {data?.activities?.length > 0 ? (
                   data.activities.map((activity: any, index: number) => (
@@ -330,7 +332,7 @@ export default function AdminDashboardPage() {
                   </div>
                 </div>
 
-                <Button variant="ghost" className="w-full rounded-xl font-bold text-primary group" onClick={() => router.push('/admin/temples')}>
+                <Button variant="ghost" className="w-full rounded-xl font-bold text-primary group" onClick={() => router.push('/admin/pending-requests')}>
                   Review All Requests
                   <ChevronRight className="w-4 h-4 ml-1 transition-transform group-hover:translate-x-1" />
                 </Button>
@@ -365,26 +367,26 @@ export default function AdminDashboardPage() {
         </div>
       </div>
 
-      {/* Quick Navigation Cards */}
-      <div className="space-y-6">
-        <h3 className="text-xl font-serif font-bold text-slate-900">System Quick Access</h3>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      {/* Quick Navigation Cards - Fixed Bottom */}
+      <div className="fixed bottom-0 left-0 right-0 bg-[#FDFCF6]/95 backdrop-blur-sm border-t border-slate-200 py-4 px-6 z-40 md:pl-72 pl-24 shadow-[0_-4px_10px_-4px_rgba(0,0,0,0.05)] transition-all duration-300">
+        <h3 className="text-[14px] font-serif font-bold text-slate-900 mb-2.5 tracking-tight flex items-center gap-2">System Quick Access</h3>
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {[
-            { label: "Pooja & Sev Booking", icon: Calendar, path: "/admin/pooja-bookings", color: "bg-amber-100 text-amber-700" },
-            { label: "Withdrawal Requests", icon: Wallet, path: "/admin/finance/withdrawals", color: "bg-emerald-100 text-emerald-700" },
-            { label: "Product Inventory", icon: Package, path: "/admin/products", color: "bg-blue-100 text-blue-700" },
-            { label: "Donation", icon: AlertCircle, path: "/admin/donation", color: "bg-slate-100 text-slate-700" }
+            { label: "Pooja & Sev Booking", icon: Calendar, path: "/admin/pooja-bookings", color: "text-amber-600 bg-amber-50" },
+            { label: "Withdrawal Requests", icon: Wallet, path: "/admin/finance/withdrawals", color: "text-emerald-600 bg-emerald-50" },
+            { label: "Product Inventory", icon: Package, path: "/admin/products", color: "text-blue-600 bg-blue-50" },
+            { label: "Donation", icon: AlertCircle, path: "/admin/donation", color: "text-slate-600 bg-slate-100" }
           ].map((action, i) => (
-            <button
+            <div
               key={i}
-              className="flex items-center gap-3 p-4 rounded-2xl bg-white border border-slate-100 shadow-sm hover:shadow-md hover:border-primary/20 transition-all group"
+              className="flex items-center gap-4 p-3.5 rounded-[1rem] bg-white shadow-sm border border-slate-100 hover:shadow-md transition-all cursor-pointer select-none active:scale-[0.98]"
               onClick={() => router.push(action.path)}
             >
-              <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110", action.color)}>
+              <div className={cn("w-9 h-9 rounded-md flex items-center justify-center shrink-0", action.color)}>
                 <action.icon className="w-5 h-5" />
               </div>
-              <span className="text-sm font-bold text-slate-900">{action.label}</span>
-            </button>
+              <span className="text-[13px] font-extrabold text-slate-800 tracking-tight leading-tight">{action.label}</span>
+            </div>
           ))}
         </div>
       </div>

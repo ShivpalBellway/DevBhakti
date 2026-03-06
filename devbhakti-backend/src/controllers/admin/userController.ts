@@ -17,7 +17,7 @@ export const getAllUsers = async (req: Request, res: Response) => {
         };
 
         if (role && role !== 'all') {
-            if (role === 'institution') {
+            if (role === 'institution' || role === 'temple_admin') {
                 where.role = UserRole.INSTITUTION;
             } else if (role === 'devotee') {
                 where.role = UserRole.DEVOTEE;
@@ -61,7 +61,9 @@ export const getAllUsers = async (req: Request, res: Response) => {
                         }
                     }
                 }
-            }),
+            }) as unknown as any[],
+
+
             prisma.user.count({ where }),
             prisma.user.aggregate({
                 where,
@@ -96,7 +98,7 @@ export const getAllUsers = async (req: Request, res: Response) => {
         const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
         // Static stats (total counts)
-        const [totalUsers, totalDevotees, totalInstitutions, newThisMonth] = await Promise.all([
+        const [totalUsersCount, totalDevotees, totalInstitutions, newThisMonth] = await Promise.all([
             prisma.user.count({ where: { role: { not: 'ADMIN' } } }),
             prisma.user.count({ where: { role: 'DEVOTEE' } }),
             prisma.user.count({ where: { role: 'INSTITUTION' } }),
@@ -121,6 +123,7 @@ export const getAllUsers = async (req: Request, res: Response) => {
                     orders: user._count.orders,
                     joinedDate: user.createdAt,
                     profileImage: user.profileImage,
+                    isActive: user.isActive,
                 })),
                 pagination: {
                     total,
@@ -129,11 +132,11 @@ export const getAllUsers = async (req: Request, res: Response) => {
                     totalPages: Math.ceil(total / take)
                 },
                 stats: {
-                    totalUsers,
+                    totalUsers: totalUsersCount, // Global total
                     totalDevotees,
                     totalInstitutions,
                     newThisMonth,
-                    filteredCount: total,
+                    filteredCount: total, // Count for current search/filter
                     filteredBookings,
                     filteredOrders
                 }
@@ -203,6 +206,20 @@ export const getUserDetail = async (req: Request, res: Response) => {
                     },
                     orderBy: {
                         createdAt: 'desc'
+                    }
+                },
+                sellerProfile: {
+                    include: {
+                        products: true,
+                        withdrawals: true,
+                    }
+                },
+                temple: {
+                    include: {
+                        poojas: true,
+                        products: true,
+                        bookings: true,
+                        withdrawals: true,
                     }
                 }
             }
@@ -298,3 +315,49 @@ export const downloadUsersExcel = async (req: Request, res: Response) => {
         return res.status(500).json({ success: false, message: error.message });
     }
 };
+
+export const toggleUserStatus = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+        const { isActive } = req.body;
+
+        const user = await prisma.user.update({
+            where: { id: id as string },
+            data: { isActive },
+            select: { id: true, isActive: true }
+        });
+
+        res.json({
+            success: true,
+            message: `User ${isActive ? 'activated' : 'deactivated'} successfully`,
+            data: user
+        });
+    } catch (error) {
+        console.error('Error toggling user status:', error);
+        res.status(500).json({ success: false, message: 'Internal server error' });
+    }
+};
+
+export const bulkToggleUserStatus = async (req: Request, res: Response) => {
+    try {
+        const { ids, isActive } = req.body;
+
+        if (!Array.isArray(ids) || ids.length === 0) {
+            return res.status(400).json({ success: false, message: 'Invalid or empty user IDs' });
+        }
+
+        await prisma.user.updateMany({
+            where: { id: { in: ids } },
+            data: { isActive }
+        });
+
+        res.json({
+            success: true,
+            message: `${ids.length} users ${isActive ? 'activated' : 'deactivated'} successfully`
+        });
+    } catch (error) {
+        console.error('Error bulk toggling user status:', error);
+        res.status(500).json({ success: false, message: 'Internal server error' });
+    }
+}
+

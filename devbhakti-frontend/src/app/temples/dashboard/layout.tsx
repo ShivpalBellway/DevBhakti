@@ -493,13 +493,36 @@ export default function TempleAdminLayout({ children }: { children: React.ReactN
                 )}
             >
                 {/* Header */}
-                <header className="sticky top-0 z-40 h-16 bg-background/95 backdrop-blur-md border-b border-border flex items-center justify-between px-6">
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <header className="sticky top-0 z-40 h-16 bg-background/95 backdrop-blur-md border-b border-border flex items-center justify-between px-6 w-full overflow-hidden">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground capitalize overflow-x-auto whitespace-nowrap custom-scrollbar pb-1">
                         <Link href="/temples/dashboard" className="hover:text-foreground transition-colors">
                             Temple Admin
                         </Link>
-                        <ChevronRight className="w-4 h-4" />
-                        <span className="text-foreground font-medium">Dashboard</span>
+                        {pathname === '/temples/dashboard' ? (
+                            <>
+                                <ChevronRight className="w-4 h-4 flex-shrink-0" />
+                                <span className="text-foreground font-medium">Dashboard</span>
+                            </>
+                        ) : (
+                            pathname?.split('/').filter(Boolean).slice(2).map((path, index, array) => {
+                                const isLast = index === array.length - 1;
+                                const pathUrl = `/temples/dashboard/${array.slice(0, index + 1).join('/')}`;
+                                const title = path.replace(/-/g, ' ');
+
+                                return (
+                                    <React.Fragment key={pathUrl}>
+                                        <ChevronRight className="w-4 h-4 flex-shrink-0" />
+                                        {isLast ? (
+                                            <span className="text-foreground font-medium">{title}</span>
+                                        ) : (
+                                            <Link href={pathUrl} className="hover:text-foreground transition-colors">
+                                                {title}
+                                            </Link>
+                                        )}
+                                    </React.Fragment>
+                                );
+                            })
+                        )}
                     </div>
 
                     <div className="flex items-center gap-3">

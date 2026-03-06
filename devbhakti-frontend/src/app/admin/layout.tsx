@@ -162,14 +162,20 @@ const sidebarItems = [
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false); // Default closed on mobile
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [user, setUser] = useState<{ id?: string; name: string; email: string; isStaff?: boolean; permissions?: string[]; role?: string } | null>(null);
+  const [breadcrumbOverride, setBreadcrumbOverride] = useState<string | null>(null);
+
 
   const isLoginPage = pathname?.startsWith("/admin/login") || pathname?.startsWith("/admin/staff-login");
   const isPrintPage = pathname === "/admin/products/orders/print";
 
   useEffect(() => {
+    // Open sidebar by default on large screens
+    if (typeof window !== 'undefined' && window.innerWidth >= 1024) {
+      setSidebarOpen(true);
+    }
     // Check if user is logged in
     const checkAuth = () => {
       const cookies = document.cookie.split(";");
@@ -201,6 +207,19 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
     checkAuth();
   }, [pathname, router, isLoginPage]);
+
+  useEffect(() => {
+    const handleUpdate = (e: any) => setBreadcrumbOverride(e.detail);
+    window.addEventListener('updateBreadcrumb', handleUpdate);
+    return () => {
+      window.removeEventListener('updateBreadcrumb', handleUpdate);
+    };
+  }, []);
+
+  useEffect(() => {
+    setBreadcrumbOverride(null);
+  }, [pathname]);
+
 
   const handleSignOut = () => {
     clearAllTokens();
@@ -305,11 +324,19 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   return (
     <div className="min-h-screen bg-background flex">
+      {/* Mobile Sidebar Overlay */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
       {/* Sidebar */}
       <aside
         className={cn(
           "fixed inset-y-0 left-0 z-50 flex flex-col bg-sidebar transition-all duration-300",
-          sidebarOpen ? "w-64" : "w-20"
+          sidebarOpen ? "translate-x-0 w-64" : "-translate-x-full lg:translate-x-0 lg:w-20"
         )}
       >
         {/* Logo */}
@@ -470,17 +497,44 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       <div
         className={cn(
           "flex-1 transition-all duration-300",
-          sidebarOpen ? "ml-64" : "ml-20"
+          sidebarOpen ? "lg:ml-64" : "lg:ml-20"
         )}
       >
         {/* Header */}
-        <header className="sticky top-0 z-40 h-16 bg-background/95 backdrop-blur-md border-b border-border flex items-center justify-between px-6">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <header className="sticky top-0 z-40 h-16 bg-background/95 backdrop-blur-md border-b border-border flex items-center justify-between px-6 w-full overflow-hidden">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground capitalize overflow-x-auto whitespace-nowrap premium-scrollbar pb-1">
             <Link href="/admin" className="hover:text-foreground transition-colors">
               Admin
             </Link>
-            <ChevronRight className="w-4 h-4" />
-            <span className="text-foreground font-medium">Dashboard</span>
+            {pathname === '/admin' ? (
+              <>
+                <ChevronRight className="w-4 h-4 flex-shrink-0" />
+                <span className="text-foreground font-medium">Dashboard</span>
+              </>
+            ) : (
+              pathname?.split('/').filter(Boolean).slice(1).map((path, index, array) => {
+                const isLast = index === array.length - 1;
+                const pathUrl = `/admin/${array.slice(0, index + 1).join('/')}`;
+                const title = path.replace(/-/g, ' ');
+
+                return (
+                  <React.Fragment key={pathUrl}>
+                    <ChevronRight className="w-4 h-4 flex-shrink-0" />
+                    {isLast ? (
+                      <span className="text-foreground font-medium">
+                        {breadcrumbOverride || title}
+                      </span>
+                    ) : (
+                      <Link href={pathUrl} className="hover:text-foreground transition-colors">
+                        {title}
+                      </Link>
+
+                    )}
+
+                  </React.Fragment>
+                );
+              })
+            )}
           </div>
 
           <div className="flex items-center gap-3">

@@ -14,6 +14,7 @@ import {
     Loader2,
     CheckSquare,
     Trash2,
+
     Download
 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -21,7 +22,17 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { fetchAllUsersAdmin, downloadUsersExcelAdmin } from "@/api/adminController";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { fetchAllUsersAdmin, downloadUsersExcelAdmin, toggleUserStatusAdmin, bulkToggleUserStatusAdmin } from "@/api/adminController";
+import { toast } from "sonner"; // Assuming sonner is used for notifications
+
 import {
     Pagination,
     PaginationContent,
@@ -37,7 +48,7 @@ export default function AdminUsersPage() {
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState("");
     const [debouncedSearch, setDebouncedSearch] = useState("");
-    const [typeFilter, setTypeFilter] = useState<"devotee">("devotee");
+    const [typeFilter, setTypeFilter] = useState<string>("all");
     const [dobFilter, setDobFilter] = useState("");
     const [anniversaryFilter, setAnniversaryFilter] = useState("");
     const [page, setPage] = useState(1);
@@ -72,9 +83,19 @@ export default function AdminUsersPage() {
                 const now = new Date();
                 endDate = now.toISOString();
                 const start = new Date();
-                if (dateRange === "week") start.setDate(now.getDate() - 7);
-                else if (dateRange === "month") start.setMonth(now.getMonth() - 1);
-                else if (dateRange === "year") start.setFullYear(now.getFullYear() - 1);
+                if (dateRange === "week") {
+                    // Start of the week (Sunday)
+                    start.setDate(now.getDate() - now.getDay());
+                    start.setHours(0, 0, 0, 0);
+                } else if (dateRange === "month") {
+                    // Start of the month
+                    start.setDate(1);
+                    start.setHours(0, 0, 0, 0);
+                } else if (dateRange === "year") {
+                    // Start of the year
+                    start.setMonth(0, 1);
+                    start.setHours(0, 0, 0, 0);
+                }
                 startDate = start.toISOString();
             }
 
@@ -108,9 +129,16 @@ export default function AdminUsersPage() {
                 const now = new Date();
                 endDate = now.toISOString();
                 const start = new Date();
-                if (dateRange === "week") start.setDate(now.getDate() - 7);
-                else if (dateRange === "month") start.setMonth(now.getMonth() - 1);
-                else if (dateRange === "year") start.setFullYear(now.getFullYear() - 1);
+                if (dateRange === "week") {
+                    start.setDate(now.getDate() - now.getDay());
+                    start.setHours(0, 0, 0, 0);
+                } else if (dateRange === "month") {
+                    start.setDate(1);
+                    start.setHours(0, 0, 0, 0);
+                } else if (dateRange === "year") {
+                    start.setMonth(0, 1);
+                    start.setHours(0, 0, 0, 0);
+                }
                 startDate = start.toISOString();
             }
 
@@ -144,6 +172,21 @@ export default function AdminUsersPage() {
         return name.split(" ").map(n => n[0]).join("").toUpperCase().substring(0, 2);
     };
 
+    const formatRoleLabel = (role: string) => {
+        if (role === 'INSTITUTION') return 'Temple Admin';
+        if (role === 'SELLER') return 'Seller';
+        if (role === 'DEVOTEE') return 'Devotee';
+        if (role === 'ADMIN') return 'Admin';
+        return role?.replace('_', ' ') || 'Devotee';
+    };
+
+    const getRoleBadgeClass = (role: string) => {
+        if (role === 'ADMIN') return 'bg-rose-50 text-rose-600 border-rose-200';
+        if (role === 'INSTITUTION') return 'bg-amber-50 text-amber-600 border-amber-200';
+        if (role === 'SELLER') return 'bg-blue-50 text-blue-600 border-blue-200';
+        return 'bg-emerald-50 text-emerald-600 border-emerald-200';
+    };
+
     const toggleSelectAll = () => {
         if (selectedUserIds.length === users.length) {
             setSelectedUserIds([]);
@@ -159,10 +202,38 @@ export default function AdminUsersPage() {
     };
 
     const handleExportSelected = async () => {
-        // Here we could implement a specific export for selected IDs
-        // For now, let's keep it simple or use the filtered export logic
         handleExportExcel();
     };
+
+
+    const handleToggleStatus = async (userId: string, currentStatus: boolean) => {
+        try {
+            const response = await toggleUserStatusAdmin(userId, !currentStatus);
+            if (response.success) {
+                toast.success(response.message);
+                loadUsers();
+            }
+        } catch (err) {
+            console.error('Failed to toggle user status', err);
+            toast.error("Failed to update user status");
+        }
+    };
+
+    const handleBulkToggleStatus = async (status: boolean) => {
+        try {
+            const response = await bulkToggleUserStatusAdmin(selectedUserIds, status);
+            if (response.success) {
+                toast.success(response.message);
+                setSelectedUserIds([]);
+                loadUsers();
+            }
+        } catch (err) {
+            console.error('Failed to bulk toggle status', err);
+            toast.error("Failed to update users status");
+        }
+    };
+
+
 
     return (
         <div className="space-y-6 relative">
@@ -192,11 +263,22 @@ export default function AdminUsersPage() {
                         <Button
                             variant="ghost"
                             size="sm"
+                            className="text-emerald-400 hover:bg-emerald-500/10 hover:text-emerald-300 gap-2 h-10 px-4 rounded-xl font-bold"
+                            onClick={() => handleBulkToggleStatus(true)}
+                        >
+                            <CheckSquare className="w-4 h-4" />
+                            Activate
+                        </Button>
+                        <Button
+                            variant="ghost"
+                            size="sm"
                             className="text-rose-400 hover:bg-rose-500/10 hover:text-rose-300 gap-2 h-10 px-4 rounded-xl font-bold"
+                            onClick={() => handleBulkToggleStatus(false)}
                         >
                             <Trash2 className="w-4 h-4" />
-                            Delete
+                            Deactivate
                         </Button>
+
                         <Button
                             variant="outline"
                             size="sm"
@@ -212,10 +294,10 @@ export default function AdminUsersPage() {
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                     <h1 className="text-2xl md:text-3xl font-serif font-bold text-foreground">
-                        Devotee Management
+                        User Management
                     </h1>
                     <p className="text-muted-foreground mt-1">
-                        Manage all devotees registered on DevBhakti
+                        Manage all users registered on DevBhakti
                     </p>
                 </div>
                 <Button variant="sacred" onClick={handleExportExcel}>
@@ -225,9 +307,9 @@ export default function AdminUsersPage() {
             </div>
 
             {/* Stats */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 {[
-                    { label: `Total Devotees`, value: stats.filteredCount.toLocaleString(), color: "text-primary" },
+                    { label: `Total Users`, value: stats.filteredCount?.toLocaleString() || "0", color: "text-primary" },
                     { label: "Bookings", value: stats.filteredBookings.toLocaleString(), color: "text-blue-600" },
                     { label: "Orders", value: stats.filteredOrders.toLocaleString(), color: "text-amber-600" },
                     { label: "New This Month", value: stats.newThisMonth.toLocaleString(), color: "text-emerald-600" },
@@ -251,70 +333,82 @@ export default function AdminUsersPage() {
             </div>
 
             {/* Filters */}
-            <div className="flex flex-col md:flex-row gap-4">
-                <div className="relative flex-1">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                    <Input
-                        placeholder="Search users by name or email or phone..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="pl-10"
-                    />
-                </div>
-                <div className="flex gap-2 overflow-x-auto pb-2 md:pb-0">
-                    <Button
-                        variant="sacred"
-                        size="sm"
-                        className="capitalize whitespace-nowrap h-10 px-4 rounded-xl"
-                    >
-                        Devotees Only
-                    </Button>
+            <div className="flex flex-col space-y-4">
+                <div className="flex flex-col md:flex-row gap-4">
+                    <div className="relative flex-1">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                        <Input
+                            placeholder="Search users by name or email..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="pl-10 h-11"
+                        />
+                    </div>
+                    <div className="flex gap-2 overflow-x-auto pb-2 md:pb-0 premium-scrollbar">
+                        {[
+                            { label: "All Users", value: "all" },
+                            { label: "Devotees", value: "devotee" },
+                            { label: "Temple Admins", value: "temple_admin" },
+                            { label: "Sellers", value: "seller" }
+                        ].map((type) => (
+                            <Button
+                                key={type.value}
+                                variant={typeFilter === type.value ? "sacred" : "outline"}
+                                size="sm"
+                                onClick={() => {
+                                    setTypeFilter(type.value);
+                                    setPage(1);
+                                }}
+                                className="capitalize whitespace-nowrap h-11 px-4 rounded-xl"
+                            >
+                                {type.label}
+                            </Button>
+                        ))}
+                    </div>
                 </div>
 
-                <div className="flex gap-2">
-                    {["all", "week", "month", "year"].map((range) => (
-                        <Button
-                            key={range}
-                            variant={dateRange === range ? "sacred" : "outline"}
-                            size="sm"
-                            onClick={() => {
-                                setDateRange(range as any);
+                <div className="flex flex-wrap items-end gap-4 overflow-x-auto pb-2 md:pb-0 premium-scrollbar">
+                    <div className="flex gap-2 bg-muted/20 p-1 rounded-xl">
+                        {["all", "week", "month", "year"].map((range) => (
+                            <Button
+                                key={range}
+                                variant={dateRange === range ? "sacred" : "outline"}
+                                size="sm"
+                                onClick={() => {
+                                    setDateRange(range as any);
+                                    setPage(1);
+                                }}
+                                className="capitalize whitespace-nowrap h-9 px-4 rounded-lg border-none shadow-none"
+                            >
+                                {range === "all" ? "All Time" : range === "week" ? "This Week" : range === "month" ? "This Month" : "This Year"}
+                            </Button>
+                        ))}
+                    </div>
+                    <div className="flex flex-col gap-1 min-w-[140px] flex-1 sm:flex-initial">
+                        <p className="text-[10px] font-bold uppercase text-muted-foreground ml-1">Birthday</p>
+                        <Input
+                            type="date"
+                            value={dobFilter}
+                            onChange={(e) => {
+                                setDobFilter(e.target.value);
                                 setPage(1);
                             }}
-                            className="capitalize whitespace-nowrap"
-                        >
-                            {range === "all" ? "All Time" : range === "week" ? "This Week" : range === "month" ? "This Month" : "This Year"}
-                        </Button>
-                    ))}
+                            className="h-9 text-xs rounded-lg"
+                        />
+                    </div>
+                    <div className="flex flex-col gap-1 min-w-[140px] flex-1 sm:flex-initial">
+                        <p className="text-[10px] font-bold uppercase text-muted-foreground ml-1">Anniversary</p>
+                        <Input
+                            type="date"
+                            value={anniversaryFilter}
+                            onChange={(e) => {
+                                setAnniversaryFilter(e.target.value);
+                                setPage(1);
+                            }}
+                            className="h-9 text-xs rounded-lg"
+                        />
+                    </div>
                 </div>
-                <div className="flex flex-col gap-1 min-w-[150px]">
-                    <p className="text-[10px] font-bold uppercase text-muted-foreground ml-1">Birthday Filter</p>
-                    <Input
-                        type="date"
-                        value={dobFilter}
-                        onChange={(e) => {
-                            setDobFilter(e.target.value);
-                            setPage(1);
-                        }}
-                        className="h-9 text-xs"
-                    />
-                </div>
-                <div className="flex flex-col gap-1 min-w-[150px]">
-                    <p className="text-[10px] font-bold uppercase text-muted-foreground ml-1">Anniversary Filter</p>
-                    <Input
-                        type="date"
-                        value={anniversaryFilter}
-                        onChange={(e) => {
-                            setAnniversaryFilter(e.target.value);
-                            setPage(1);
-                        }}
-                        className="h-9 text-xs"
-                    />
-                </div>
-                {/* <Button variant="outline" className="gap-2">
-                    <Filter className="w-4 h-4" />
-                    More Filters
-                </Button> */}
             </div>
 
             {/* Users Table */}
@@ -332,7 +426,10 @@ export default function AdminUsersPage() {
                                         />
                                     </th>
                                     <th className="text-left p-4 text-sm font-medium text-muted-foreground">
-                                        Devotee
+                                        User
+                                    </th>
+                                    <th className="text-left p-4 text-sm font-medium text-muted-foreground">
+                                        Type
                                     </th>
                                     <th className="text-left p-4 text-sm font-medium text-muted-foreground">
                                         Contact
@@ -401,6 +498,17 @@ export default function AdminUsersPage() {
                                                 </div>
                                             </td>
                                             <td className="p-4">
+                                                <div className="flex flex-col gap-1">
+                                                    <Badge variant="outline" className={`font-bold text-[10px] ${getRoleBadgeClass(user.role)}`}>
+                                                        {formatRoleLabel(user.role)}
+                                                    </Badge>
+                                                    <Badge variant="outline" className={`w-fit text-[9px] font-bold ${user.isActive ? 'bg-emerald-50 text-emerald-600 border-emerald-200' : 'bg-slate-50 text-slate-500 border-slate-200'}`}>
+                                                        {user.isActive ? 'ACTIVE' : 'INACTIVE'}
+                                                    </Badge>
+                                                </div>
+                                            </td>
+
+                                            <td className="p-4">
                                                 <div className="space-y-1">
                                                     <p className="text-sm text-foreground flex items-center gap-1">
                                                         <Mail className="w-3 h-3 text-muted-foreground" />
@@ -438,9 +546,39 @@ export default function AdminUsersPage() {
                                                         </Button>
                                                     )}
                                                     {hasPermission("users.manage") && (
-                                                        <Button variant="ghost" size="icon">
-                                                            <MoreVertical className="w-4 h-4" />
-                                                        </Button>
+                                                        <DropdownMenu>
+                                                            <DropdownMenuTrigger asChild>
+                                                                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">
+                                                                    <MoreVertical className="w-4 h-4" />
+                                                                </Button>
+                                                            </DropdownMenuTrigger>
+                                                            <DropdownMenuContent align="end" className="w-48 rounded-xl">
+                                                                <DropdownMenuLabel>User Actions</DropdownMenuLabel>
+                                                                <DropdownMenuSeparator />
+                                                                <DropdownMenuItem onClick={() => window.location.href = `/admin/users/${user.id}`}>
+                                                                    <Eye className="mr-2 h-4 w-4" />
+                                                                    View Profile
+                                                                </DropdownMenuItem>
+
+                                                                <DropdownMenuItem
+                                                                    className={`${user.isActive ? 'text-rose-600 focus:text-rose-600' : 'text-emerald-600 focus:text-emerald-600'}`}
+                                                                    onClick={() => handleToggleStatus(user.id, user.isActive)}
+                                                                >
+                                                                    {user.isActive ? (
+                                                                        <>
+                                                                            <Trash2 className="mr-2 h-4 w-4" />
+                                                                            Deactivate
+                                                                        </>
+                                                                    ) : (
+                                                                        <>
+                                                                            <CheckSquare className="mr-2 h-4 w-4" />
+                                                                            Activate
+                                                                        </>
+                                                                    )}
+                                                                </DropdownMenuItem>
+
+                                                            </DropdownMenuContent>
+                                                        </DropdownMenu>
                                                     )}
                                                 </div>
                                             </td>

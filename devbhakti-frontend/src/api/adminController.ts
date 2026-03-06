@@ -847,7 +847,24 @@ export const fetchUserDetailAdmin = async (id: string) => {
     return response.data;
 };
 
+export const toggleUserStatusAdmin = async (id: string, isActive: boolean) => {
+    const token = getAdminToken();
+    const response = await axios.patch(`${API_URL}/admin/users/${id}/status`, { isActive }, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+
+export const bulkToggleUserStatusAdmin = async (ids: string[], isActive: boolean) => {
+    const token = getAdminToken();
+    const response = await axios.patch(`${API_URL}/admin/users/bulk/status`, { ids, isActive }, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+
 // Admin Booking Management
+
 export const fetchAllBookingsAdmin = async (params?: {
     page?: number;
     limit?: number;
@@ -855,6 +872,9 @@ export const fetchAllBookingsAdmin = async (params?: {
     status?: string;
     startDate?: string;
     endDate?: string;
+    dateType?: string;
+    sortBy?: string;
+    sortOrder?: string;
 }) => {
     const token = getAdminToken();
     let url = `${API_URL}/admin/bookings`;
@@ -866,6 +886,9 @@ export const fetchAllBookingsAdmin = async (params?: {
         if (params.status && params.status !== 'all') query.append('status', params.status);
         if (params.startDate) query.append('startDate', params.startDate);
         if (params.endDate) query.append('endDate', params.endDate);
+        if (params.dateType) query.append('dateType', params.dateType);
+        if (params.sortBy) query.append('sortBy', params.sortBy);
+        if (params.sortOrder) query.append('sortOrder', params.sortOrder);
         const qs = query.toString();
         if (qs) url += `?${qs}`;
     }
