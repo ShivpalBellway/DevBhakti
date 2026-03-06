@@ -20,6 +20,7 @@ interface PoojaReceiptProps {
         kuldevta?: string;
         dob?: string;
         anniversary?: string;
+        nativePlace?: string;
         additionalDevotees?: { name: string; gothra: string; kuldevi: string; kuldevta: string }[];
     };
 }
@@ -153,6 +154,12 @@ export const generatePoojaReceiptHTML = (booking: PoojaReceiptProps["booking"]) 
                         <div class="item">
                             <div class="label">Anniversary</div>
                             <div class="value">${booking.anniversary}</div>
+                        </div>` : ''}
+                        
+                        ${booking.nativePlace ? `
+                        <div class="item">
+                            <div class="label">Native Place</div>
+                            <div class="value">${booking.nativePlace}</div>
                         </div>` : ''}
                     </div>
 

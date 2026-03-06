@@ -293,6 +293,8 @@ export const verifyOTP = async (req: Request, res: Response) => {
                     kuldevta: updatedUser.kuldevta,
                     dob: updatedUser.dob,
                     anniversary: updatedUser.anniversary,
+                    address: updatedUser.address,
+                    nativePlace: updatedUser.nativePlace,
                     isVerified: updatedUser.isVerified
                 }
             }
@@ -308,7 +310,7 @@ export const verifyOTP = async (req: Request, res: Response) => {
 export const updateProfile = async (req: Request, res: Response) => {
     try {
         const { userId } = (req as any).user; // From auth middleware
-        const { name, email, gothra, kuldevi, kuldevta, dob, anniversary, address } = req.body;
+        const { name, email, gothra, kuldevi, kuldevta, dob, anniversary, address, nativePlace } = req.body;
         const profileImage = req.file ? `/uploads/users/${req.file.filename}` : undefined;
 
         // If email is being updated, check if it's already taken by another user
@@ -333,7 +335,8 @@ export const updateProfile = async (req: Request, res: Response) => {
             kuldevta,
             dob,
             anniversary,
-            address
+            address,
+            nativePlace
         };
 
         // Only update email if provided
@@ -367,7 +370,8 @@ export const updateProfile = async (req: Request, res: Response) => {
                     kuldevta: updatedUser.kuldevta,
                     dob: updatedUser.dob,
                     anniversary: updatedUser.anniversary,
-                    address: updatedUser.address
+                    address: updatedUser.address,
+                    nativePlace: updatedUser.nativePlace
                 }
             }
         });
@@ -408,6 +412,7 @@ export const getProfile = async (req: Request, res: Response) => {
                 dob: true,
                 anniversary: true,
                 address: true,
+                nativePlace: true,
                 isVerified: true,
                 createdAt: true
             }

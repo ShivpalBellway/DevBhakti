@@ -27,6 +27,7 @@ model User {
   anniversary   String?
   dob           String?
   address       String?
+  nativePlace   String?
   cart          Cart?
   favorites     Favorite[]
   orders        Order[]
@@ -372,6 +373,7 @@ model PoojaBooking {
   updatedAt        DateTime      @updatedAt
   anniversary      String?
   dob              String?
+  nativePlace      String?
   additionalDevotees Json?
   proofPhotos      String[]      @default([])
   pooja            Pooja         @relation(fields: [poojaId], references: [id])

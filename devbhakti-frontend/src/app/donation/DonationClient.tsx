@@ -118,11 +118,16 @@ function DonationForm() {
             const token = localStorage.getItem("token");
             if (!token) {
                 toast({
-                    title: "Authentication Required",
-                    description: "Please login as a devotee to proceed with your donation.",
-                    variant: "destructive"
+                    title: "Har Har Mahadev!",
+                    description: "Please login to proceed with your divine offering. Taking you to the login page...",
+                    variant: "default",
+                    className: "bg-[#794A05] text-white border-none font-bold"
                 });
-                router.push("/login?redirect=/donation" + (selectedTemple ? `&temple=${selectedTemple}` : ""));
+
+                // Redirecting to correct /auth path instead of 404 /login
+                setTimeout(() => {
+                    router.push("/auth?redirect=/donation" + (selectedTemple ? `&temple=${selectedTemple}` : ""));
+                }, 1500);
                 return;
             }
         }

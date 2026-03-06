@@ -217,6 +217,14 @@ export const downloadBookingsExcel = async (req: Request, res: Response) => {
             { header: 'Price', key: 'packagePrice', width: 15 },
             { header: 'Status', key: 'status', width: 15 },
             { header: 'Booking Date', key: 'bookingDate', width: 20 },
+            { header: 'Gothra', key: 'gothra', width: 20 },
+            { header: 'Kuldevi', key: 'kuldevi', width: 20 },
+            { header: 'Kuldevta', key: 'kuldevta', width: 20 },
+            { header: 'DOB', key: 'dob', width: 15 },
+            { header: 'Native Place', key: 'nativePlace', width: 25 },
+            { header: 'Address', key: 'address', width: 40 },
+            { header: 'Special Requests', key: 'specialRequests', width: 40 },
+            { header: 'Additional Devotees', key: 'additionalDevotees', width: 50 },
             { header: 'Created At', key: 'createdAt', width: 20 },
         ];
 
@@ -242,6 +250,14 @@ export const downloadBookingsExcel = async (req: Request, res: Response) => {
                 packagePrice: b.packagePrice || 0,
                 status: b.status,
                 bookingDate: b.bookingDate || "",
+                gothra: b.gothra || "",
+                kuldevi: b.kuldevi || "",
+                kuldevta: b.kuldevta || "",
+                dob: b.dob || "",
+                nativePlace: b.nativePlace || "",
+                address: b.address || "",
+                specialRequests: b.specialRequests || "",
+                additionalDevotees: b.additionalDevotees ? JSON.stringify(b.additionalDevotees) : "",
                 createdAt: b.createdAt ? new Date(b.createdAt).toLocaleDateString() : "",
             });
         });

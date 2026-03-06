@@ -63,6 +63,7 @@ const ProfilePage = () => {
         dob: "",
         anniversary: "",
         address: "",
+        nativePlace: "",
     });
     const [profilePreview, setProfilePreview] = useState<string | null>(null);
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -105,6 +106,7 @@ const ProfilePage = () => {
                     dob: u.dob || "",
                     anniversary: u.anniversary || "",
                     address: u.address || "",
+                    nativePlace: u.nativePlace || "",
                 });
                 if (u.profileImage) {
                     const imgUrl = u.profileImage.startsWith('http')
@@ -184,6 +186,7 @@ const ProfilePage = () => {
             fd.append("dob", formData.dob);
             fd.append("anniversary", formData.anniversary);
             fd.append("address", formData.address);
+            fd.append("nativePlace", formData.nativePlace);
             if (selectedFile) {
                 fd.append("profileImage", selectedFile);
             }
@@ -401,6 +404,13 @@ const ProfilePage = () => {
                                                     <div className="flex items-start gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-100/50">
                                                         <MapPin className="w-5 h-5 text-primary mt-1" />
                                                         <span className="text-lg font-bold text-slate-700 leading-relaxed">{user.address || "Address not provided"}</span>
+                                                    </div>
+                                                </div>
+                                                <div className="space-y-1.5 md:col-span-2">
+                                                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">Native Place</p>
+                                                    <div className="flex items-start gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-100/50">
+                                                        <MapPin className="w-5 h-5 text-primary mt-1" />
+                                                        <span className="text-lg font-bold text-slate-700 leading-relaxed">{user.nativePlace || "Native place not provided"}</span>
                                                     </div>
                                                 </div>
 
@@ -755,6 +765,16 @@ const ProfilePage = () => {
                                                         value={formData.address}
                                                         onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                                                         placeholder="Enter your complete address"
+                                                        className="h-14 px-6 bg-slate-50 border-slate-100 focus:bg-white focus:border-primary rounded-2xl text-lg font-medium"
+                                                    />
+                                                </div>
+                                                <div className="space-y-2.5 md:col-span-2">
+                                                    <Label className="text-slate-700 font-bold ml-1">Native Place</Label>
+                                                    <Input
+                                                        type="text"
+                                                        value={formData.nativePlace}
+                                                        onChange={(e) => setFormData({ ...formData, nativePlace: e.target.value })}
+                                                        placeholder="Enter your native place / home town"
                                                         className="h-14 px-6 bg-slate-50 border-slate-100 focus:bg-white focus:border-primary rounded-2xl text-lg font-medium"
                                                     />
                                                 </div>

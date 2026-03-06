@@ -80,6 +80,7 @@ function BookingForm() {
     kuldevta: "",
     dob: "",
     anniversary: "",
+    nativePlace: "",
     additionalDevotees: [] as { name: string; gothra: string; kuldevi: string; kuldevta: string }[],
   });
 
@@ -175,6 +176,7 @@ function BookingForm() {
             kuldevta: user.kuldevta || "",
             dob: user.dob || "",
             anniversary: user.anniversary || "",
+            nativePlace: user.nativePlace || "",
           }));
         }
 
@@ -337,8 +339,8 @@ function BookingForm() {
       }
     }
     if (step === 3) {
-      if (!formData.name || !formData.phone || !formData.email) {
-        toast({ title: "Please fill all required fields", variant: "destructive" });
+      if (!formData.name || !formData.phone || !formData.email || !formData.gothra || !formData.kuldevi || !formData.kuldevta || !formData.dob || !formData.nativePlace) {
+        toast({ title: "Please fill all compulsory fields", description: "Name, Phone, Email, Gothra, Kuldevi, Kuldevta, DOB, and Native Place are required.", variant: "destructive" });
         return;
       }
 
@@ -385,6 +387,7 @@ function BookingForm() {
         kuldevta: formData.kuldevta,
         dob: formData.dob,
         anniversary: formData.anniversary,
+        nativePlace: formData.nativePlace,
         additionalDevotees: formData.additionalDevotees,
         platformFee: platformFee, // Send platform fee to backend
       };
@@ -825,7 +828,7 @@ function BookingForm() {
 
                 <div className="grid md:grid-cols-3 gap-4 border-t pt-4 mt-4">
                   <div className="space-y-2">
-                    <Label htmlFor="gothra">Gothra (Optional)</Label>
+                    <Label htmlFor="gothra">Gothra *</Label>
                     <Input
                       id="gothra"
                       placeholder="e.g. Kashyap"
@@ -834,7 +837,16 @@ function BookingForm() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="kuldevi">Kuldevi (Optional)</Label>
+                    <div className="flex justify-between items-center">
+                      <Label htmlFor="kuldevi">Kuldevi *</Label>
+                      <button
+                        type="button"
+                        className="text-[10px] text-primary hover:underline font-bold"
+                        onClick={() => setFormData({ ...formData, kuldevi: "Dont Know" })}
+                      >
+                        Don't Know?
+                      </button>
+                    </div>
                     <Input
                       id="kuldevi"
                       placeholder="Enter Kuldevi"
@@ -843,7 +855,16 @@ function BookingForm() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="kuldevta">Kuldevta (Optional)</Label>
+                    <div className="flex justify-between items-center">
+                      <Label htmlFor="kuldevta">Kuldevta *</Label>
+                      <button
+                        type="button"
+                        className="text-[10px] text-primary hover:underline font-bold"
+                        onClick={() => setFormData({ ...formData, kuldevta: "Dont Know" })}
+                      >
+                        Don't Know?
+                      </button>
+                    </div>
                     <Input
                       id="kuldevta"
                       placeholder="Enter Kuldevta"
@@ -853,14 +874,23 @@ function BookingForm() {
                   </div>
                 </div>
 
-                <div className="grid md:grid-cols-2 gap-4 border-t pt-4 mt-4">
+                <div className="grid md:grid-cols-3 gap-4 border-t pt-4 mt-4">
                   <div className="space-y-2">
-                    <Label htmlFor="dob">Date of Birth (Optional)</Label>
+                    <Label htmlFor="dob">Date of Birth *</Label>
                     <Input
                       id="dob"
                       type="date"
                       value={formData.dob}
                       onChange={(e) => setFormData({ ...formData, dob: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="nativePlace">Native Place *</Label>
+                    <Input
+                      id="nativePlace"
+                      placeholder="E.g. Ayodhya"
+                      value={formData.nativePlace}
+                      onChange={(e) => setFormData({ ...formData, nativePlace: e.target.value })}
                     />
                   </div>
                   <div className="space-y-2">
@@ -1076,6 +1106,12 @@ function BookingForm() {
                     <span className="text-muted-foreground">Package</span>
                     <span className="font-medium">{selectedPackageData?.name}</span>
                   </div>
+                  {formData.nativePlace && (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Native Place</span>
+                      <span className="font-medium">{formData.nativePlace}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Platform Fee</span>
                     <span className="font-medium text-primary">₹{platformFee}</span>
@@ -1115,6 +1151,7 @@ function BookingForm() {
                         kuldevta: formData.kuldevta,
                         dob: formData.dob,
                         anniversary: formData.anniversary,
+                        nativePlace: formData.nativePlace,
                         additionalDevotees: formData.additionalDevotees
                       });
                       const printWindow = window.open('', '_blank');

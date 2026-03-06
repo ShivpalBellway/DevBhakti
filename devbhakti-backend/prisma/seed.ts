@@ -12,6 +12,8 @@ async function main() {
   await prisma.templeUpdateRequest.deleteMany();
   await prisma.favorite.deleteMany();
   await prisma.poojaBooking.deleteMany();
+  await prisma.cartItem.deleteMany();
+  await prisma.cart.deleteMany();
   await prisma.orderItem.deleteMany();
   await prisma.subOrder.deleteMany();
   await prisma.order.deleteMany();

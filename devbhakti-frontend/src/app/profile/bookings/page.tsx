@@ -21,7 +21,9 @@ import {
     Mail,
     User,
     MapPin,
-    AlertCircle
+    AlertCircle,
+    Sparkles,
+    Users
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
@@ -280,10 +282,92 @@ export default function MyBookingsPage() {
                                                                     Prasad Delivery Address
                                                                 </h4>
                                                                 <p className="text-sm text-slate-700 leading-relaxed font-medium italic">
-                                                                    {booking.address || "No physical prasad delivery requested or address not provided."}
-                                                                </p>
+                                                                 </p>
                                                             </div> */}
                                                         </div>
+
+                                                        {(booking.gothra || booking.kuldevi || booking.kuldevta || booking.dob || booking.anniversary || booking.nativePlace) && (
+                                                            <div className="bg-orange-50/20 p-6 rounded-3xl border border-orange-100/50">
+                                                                <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                                                                    <Sparkles className="w-4 h-4 text-[#794A05]" />
+                                                                    Spiritual Details
+                                                                </h4>
+                                                                <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+                                                                    {booking.gothra && (
+                                                                        <div>
+                                                                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">Gothra</p>
+                                                                            <p className="text-sm font-bold text-slate-700">{booking.gothra}</p>
+                                                                        </div>
+                                                                    )}
+                                                                    {booking.kuldevi && (
+                                                                        <div>
+                                                                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">Kuldevi</p>
+                                                                            <p className="text-sm font-bold text-slate-700">{booking.kuldevi}</p>
+                                                                        </div>
+                                                                    )}
+                                                                    {booking.kuldevta && (
+                                                                        <div>
+                                                                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">Kuldevta</p>
+                                                                            <p className="text-sm font-bold text-slate-700">{booking.kuldevta}</p>
+                                                                        </div>
+                                                                    )}
+                                                                    {booking.dob && (
+                                                                        <div>
+                                                                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">Date of Birth</p>
+                                                                            <p className="text-sm font-bold text-slate-700">{booking.dob}</p>
+                                                                        </div>
+                                                                    )}
+                                                                    {booking.anniversary && (
+                                                                        <div>
+                                                                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">Anniversary</p>
+                                                                            <p className="text-sm font-bold text-slate-700">{booking.anniversary}</p>
+                                                                        </div>
+                                                                    )}
+                                                                    {booking.nativePlace && (
+                                                                        <div>
+                                                                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">Native Place</p>
+                                                                            <p className="text-sm font-bold text-slate-700">{booking.nativePlace}</p>
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                        )}
+
+                                                        {booking.additionalDevotees && booking.additionalDevotees.length > 0 && (
+                                                            <div className="bg-slate-50/50 p-6 rounded-3xl border border-slate-100">
+                                                                <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                                                                    <Users className="w-4 h-4 text-[#794A05]" />
+                                                                    Additional Devotees
+                                                                </h4>
+                                                                <div className="space-y-4">
+                                                                    {booking.additionalDevotees.map((devotee: any, i: number) => (
+                                                                        <div key={i} className="bg-white p-4 rounded-2xl border border-slate-100/50 shadow-sm">
+                                                                            <p className="text-sm font-bold text-[#794A05] mb-2">Devotee #{i + 2}: {devotee.name}</p>
+                                                                            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                                                                                {devotee.gothra && (
+                                                                                    <div>
+                                                                                        <p className="text-[10px] text-slate-400 font-bold tracking-tight">Gothra</p>
+                                                                                        <p className="text-xs font-medium text-slate-600">{devotee.gothra}</p>
+                                                                                    </div>
+                                                                                )}
+                                                                                {devotee.kuldevi && (
+                                                                                    <div>
+                                                                                        <p className="text-[10px] text-slate-400 font-bold tracking-tight">Kuldevi</p>
+                                                                                        <p className="text-xs font-medium text-slate-600">{devotee.kuldevi}</p>
+                                                                                    </div>
+                                                                                )}
+                                                                                {devotee.kuldevta && (
+                                                                                    <div>
+                                                                                        <p className="text-[10px] text-slate-400 font-bold tracking-tight">Kuldevta</p>
+                                                                                        <p className="text-xs font-medium text-slate-600">{devotee.kuldevta}</p>
+                                                                                    </div>
+                                                                                )}
+                                                                            </div>
+                                                                        </div>
+                                                                    ))}
+                                                                </div>
+                                                            </div>
+                                                        )}
 
                                                         {booking.specialRequests && (
                                                             <div className="bg-amber-50/30 p-6 rounded-3xl border border-amber-100/50">

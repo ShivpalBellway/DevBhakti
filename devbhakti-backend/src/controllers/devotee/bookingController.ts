@@ -41,7 +41,12 @@ export const createBooking = async (req: Request, res: Response) => {
             address,
 
             specialRequests,
-
+            gothra,
+            kuldevi,
+            kuldevta,
+            dob,
+            anniversary,
+            nativePlace,
             additionalDevotees
 
         } = req.body;
@@ -235,7 +240,12 @@ export const createBooking = async (req: Request, res: Response) => {
                     address: address as string | null,
 
                     specialRequests: specialRequests as string | null,
-
+                    gothra: gothra as string | null,
+                    kuldevi: kuldevi as string | null,
+                    kuldevta: kuldevta as string | null,
+                    dob: dob as string | null,
+                    anniversary: anniversary as string | null,
+                    nativePlace: nativePlace as string | null,
                     additionalDevotees: additionalDevotees || null,
 
                     status: 'PENDING', // Mark as pending until Razorpay payment is verified
@@ -666,6 +676,15 @@ export const getBookingReceipt = async (req: Request, res: Response) => {
 
         if (booking.devoteeEmail) doc.text(`Email: ${booking.devoteeEmail}`);
 
+        // Spiritual Details Below Devotee Initials
+        doc.moveDown(1);
+        doc.fillColor(primaryColor).fontSize(10).font('Helvetica-Bold').text('SPIRITUAL DETAILS', 50, doc.y);
+        doc.fillColor(textColor).font('Helvetica').fontSize(9);
+        if (booking.gothra) doc.text(`Gothra: ${booking.gothra}`);
+        if (booking.kuldevi) doc.text(`Kuldevi: ${booking.kuldevi}`);
+        if (booking.kuldevta) doc.text(`Kuldevta: ${booking.kuldevta}`);
+        if (booking.dob) doc.text(`DOB: ${booking.dob}`);
+        if (booking.nativePlace) doc.text(`Native Place: ${booking.nativePlace}`);
 
 
         // Booking Status Column (Right)
