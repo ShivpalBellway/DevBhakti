@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { prisma } from "../../lib/prisma";
-import { createShiprocketOrder } from "../../services/shiprocketService";
+import { createShiprocketOrder, checkShiprocketServiceability } from "../../services/shiprocketService";
+import { extractPincode } from "../../lib/shiprocketUtils";
 import razorpay from "../../lib/razorpay";
 import { SlabType, CommissionCategory } from "@prisma/client";
 import { getCommissionForAmount } from "../admin/commissionSlabController";
@@ -954,5 +955,67 @@ export const generateOrderReceiptBuffer = async (orderId: string): Promise<{ buf
   } catch (error) {
     console.error('Error generating order receipt buffer:', error);
     return null;
+  }
+};
+
+export const checkShippingAvailability = async (req: Request, res: Response) => {
+  try {
+    const { productId, pincode } = req.body;
+
+    if (!productId || !pincode) {
+      return res.status(400).json({ success: false, message: "Product ID and Pincode are required" });
+    }
+
+    const product = await prisma.product.findUnique({
+      where: { id: productId },
+      include: {
+        temple: { select: { fullAddress: true, location: true } },
+        seller: { select: { fullAddress: true, location: true } }
+      }
+    });
+
+    if (!product) {
+      return res.status(404).json({ success: false, message: "Product not found" });
+    }
+
+    // Get Pickup Pincode
+    const vendorAddress = product.temple?.fullAddress || product.temple?.location ||
+      product.seller?.fullAddress || product.seller?.location;
+
+    if (!vendorAddress) {
+      return res.status(400).json({ success: false, message: "Vendor address not configured for this product" });
+    }
+
+    const pickupPincode = extractPincode(vendorAddress);
+
+    // Call Shiprocket
+    const srResponse = await checkShiprocketServiceability(
+      pickupPincode,
+      pincode.toString(),
+      product.weight || 0.5,
+      0 // Prepaid check
+    );
+
+    if (srResponse && srResponse.status === 200) {
+      const { data } = srResponse;
+      const courier = data.available_courier_companies?.[0]; // Get first available courier
+
+      return res.json({
+        success: true,
+        serviceable: true,
+        edd: courier?.etd || "3-5 Business Days",
+        courier: courier?.courier_name || "Shiprocket Standard",
+        pincode: pincode
+      });
+    } else {
+      return res.json({
+        success: true,
+        serviceable: false,
+        message: srResponse.message || "Delivery not available for this pincode"
+      });
+    }
+  } catch (error: any) {
+    console.error("Check Shipping Availability Error:", error);
+    return res.status(500).json({ success: false, message: error.message });
   }
 };

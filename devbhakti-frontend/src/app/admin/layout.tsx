@@ -340,39 +340,50 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         )}
       >
         {/* Logo */}
-        <div className="flex items-center justify-between h-20 px-4 border-b border-sidebar-border">
+        <div className="flex items-center gap-3 h-20 px-4 border-b border-sidebar-border bg-sidebar/50 backdrop-blur-sm">
           {sidebarOpen ? (
-            <div className="flex flex-col gap-0.5">
-              <div className="relative h-10 w-32">
+            <div className="flex items-center gap-3 w-full">
+              <div className="bg-white p-1.5 rounded-xl shadow-inner border border-sidebar-border/50 shrink-0">
+                <div className="relative h-9 w-9">
+                  <Image
+                    src={logo}
+                    alt="DevBhakti Admin Logo"
+                    fill
+                    className="object-contain"
+                    priority
+                  />
+                </div>
+              </div>
+              <div className="flex flex-col min-w-0">
+                <span className="text-[13px] font-black text-sidebar-primary uppercase tracking-wider leading-none">
+                  DevBhakti Admin
+                </span>
+                <span className="text-[11px] font-bold text-sidebar-foreground/60 truncate mt-1">
+                  {user?.role?.toUpperCase() === "ADMIN" ? "Super Admin" : (user?.role ? user.role.replace(/_/g, " ") : "Admin Access")}
+                </span>
+              </div>
+            </div>
+          ) : (
+            <div className="bg-white p-1.5 rounded-xl shadow-sm border border-sidebar-border/50 mx-auto">
+              <div className="relative h-8 w-8">
                 <Image
                   src={logo}
-                  alt="Temple Logo"
+                  alt="DevBhakti Admin Logo"
                   fill
-                  className="object-contain object-center"
+                  className="object-contain"
                   priority
                 />
               </div>
-              <span className="text-[14px] font-bold text-sidebar-foreground uppercase tracking-wider pl-2 mt-1">
-                {user?.role?.toUpperCase() === "ADMIN" ? "DevBhakti Admin" : (user?.role ? user.role.replace(/_/g, " ") : "DevBhakti Admin")}
-              </span>
-            </div>
-          ) : (
-            <div className="relative h-8 w-8">
-              <Image
-                src={logo}
-                alt="Temple Logo"
-                fill
-                className="object-contain"
-                priority
-              />
             </div>
           )}
-          <button
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="p-2 rounded-lg hover:bg-sidebar-accent text-sidebar-foreground transition-colors"
-          >
-            <Menu className="w-5 h-5" />
-          </button>
+          {sidebarOpen && (
+            <button
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              className="p-1.5 rounded-lg hover:bg-sidebar-accent text-sidebar-foreground/50 hover:text-sidebar-foreground transition-all ml-auto shrink-0"
+            >
+              <Menu className="w-5 h-5" />
+            </button>
+          )}
         </div>
 
         {/* Navigation */}

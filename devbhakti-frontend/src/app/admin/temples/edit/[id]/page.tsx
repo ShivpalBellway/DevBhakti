@@ -455,10 +455,12 @@ export default function EditTemplePage() {
             await updateTempleAdmin(instId, fd);
             toast({ title: "Success", description: "Temple updated successfully" });
             router.push('/admin/temples');
-        } catch (error) {
+        } catch (error: any) {
+            console.error("Update error detail:", error.response?.data);
+            const errMsg = error.response?.data?.error || error.message || "Failed to update temple";
             toast({
-                title: "Error",
-                description: "Failed to update temple",
+                title: "Update Failed",
+                description: errMsg,
                 variant: "destructive"
             });
         } finally {

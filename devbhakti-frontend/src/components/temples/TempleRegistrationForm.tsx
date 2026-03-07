@@ -33,6 +33,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { registerTemple, fetchAllPoojasPublic } from "@/api/templeAdminController";
+import { checkPhone } from "@/api/authController";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 
@@ -41,6 +42,7 @@ export default function TempleRegistrationForm({ onClose }: { onClose?: () => vo
     const [isLoading, setIsLoading] = useState(false);
     const [allPoojas, setAllPoojas] = useState<any[]>([]);
     const [showSuccess, setShowSuccess] = useState(false);
+    const [phoneError, setPhoneError] = useState<string | null>(null);
 
     // Form State
     const [formData, setFormData] = useState({
@@ -67,6 +69,28 @@ export default function TempleRegistrationForm({ onClose }: { onClose?: () => vo
         rating: "0",
         reviewsCount: "0"
     });
+
+    useEffect(() => {
+        const phoneDigits = formData.phone.replace(/\D/g, '');
+        if (phoneDigits.length === 10) {
+            validatePhone(phoneDigits);
+        } else {
+            setPhoneError(null);
+        }
+    }, [formData.phone]);
+
+    const validatePhone = async (phone: string) => {
+        try {
+            const response = await checkPhone(phone);
+            if (response.success && response.exists) {
+                setPhoneError("This number is already registered with us. Use another number to register as temple");
+            } else {
+                setPhoneError(null);
+            }
+        } catch (error) {
+            console.error("Error validating phone:", error);
+        }
+    };
 
     // Crop State
     const [showCropper, setShowCropper] = useState(false);
@@ -235,6 +259,15 @@ export default function TempleRegistrationForm({ onClose }: { onClose?: () => vo
             return;
         }
 
+        if (phoneError) {
+            toast({
+                title: "Registration Blocked",
+                description: phoneError,
+                variant: "destructive"
+            });
+            return;
+        }
+
         // 2. Hero Images Count Validation
         if (heroImages.length > 5) {
             toast({
@@ -381,6 +414,11 @@ export default function TempleRegistrationForm({ onClose }: { onClose?: () => vo
                                     required
                                 />
                             </div>
+                            {phoneError && (
+                                <p className="text-[10px] text-red-500 font-bold mt-1 ml-1 animate-pulse">
+                                    {phoneError}
+                                </p>
+                            )}
                         </div>
                         <div className="space-y-2">
                             <label className="text-sm font-bold text-slate-600 ml-1">Email Address</label>

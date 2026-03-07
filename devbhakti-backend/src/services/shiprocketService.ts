@@ -101,3 +101,27 @@ export const createShiprocketPickupLocation = async (pickupData: any) => {
         throw error;
     }
 };
+export const checkShiprocketServiceability = async (pickupPincode: string, deliveryPincode: string, weight: number = 0.5, cod: number = 0) => {
+    try {
+        const token = await authenticateShiprocket();
+        const url = new URL(`${SHIPROCKET_API_URL}/courier/serviceability`);
+        url.searchParams.append('pickup_postcode', pickupPincode);
+        url.searchParams.append('delivery_postcode', deliveryPincode);
+        url.searchParams.append('weight', weight.toString());
+        url.searchParams.append('cod', cod.toString());
+
+        const response = await fetch(url.toString(), {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        const data: any = await response.json();
+        return data;
+    } catch (error: any) {
+        console.error('Shiprocket Serviceability Error:', error.message);
+        throw error;
+    }
+};

@@ -32,7 +32,10 @@ import CartDrawer from "@/components/marketplace/CartDrawer";
 import { useToast } from "@/hooks/use-toast";
 import { fetchProductByIdPublic } from "@/api/publicController";
 import { fetchUserFavorites, addFavorite, removeFavorite } from "@/api/userController";
-import { BASE_URL } from "@/config/apiConfig";
+import { BASE_URL, API_URL } from "@/config/apiConfig";
+import axios from "axios";
+import { Input } from "@/components/ui/input";
+import { Loader2, MapPin } from "lucide-react";
 
 interface Product {
   id: string;
@@ -88,6 +91,9 @@ export default function ProductDetailsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [userHasSelectedVariant, setUserHasSelectedVariant] = useState(false);
+  const [pincode, setPincode] = useState("");
+  const [checkingServiceability, setCheckingServiceability] = useState(false);
+  const [serviceabilityData, setServiceabilityData] = useState<any>(null);
 
   useEffect(() => {
     if (params.id) {
@@ -105,6 +111,45 @@ export default function ProductDetailsPage() {
       }
     } catch (error) {
       console.error("Error checking favorite status", error);
+    }
+  };
+
+  const checkServiceability = async () => {
+    if (!pincode || pincode.length !== 6) {
+      toast({
+        title: "Invalid Pincode",
+        description: "Please enter a valid 6-digit pincode.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setCheckingServiceability(true);
+    setServiceabilityData(null);
+    try {
+      const response = await axios.post(`${API_URL}/orders/check-serviceability`, {
+        productId: params.id,
+        pincode: pincode
+      });
+
+      if (response.data.success) {
+        setServiceabilityData(response.data);
+      } else {
+        toast({
+          title: "Serviceability Check Failed",
+          description: response.data.message || "Something went wrong.",
+          variant: "destructive",
+        });
+      }
+    } catch (error: any) {
+      console.error("Serviceability error:", error);
+      toast({
+        title: "Error",
+        description: "Could not check serviceability at this moment.",
+        variant: "destructive",
+      });
+    } finally {
+      setCheckingServiceability(false);
     }
   };
 
@@ -236,7 +281,7 @@ export default function ProductDetailsPage() {
             <span className="text-[#4A2c01]">{product.name}</span>
           </nav>
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-4">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
             {/* Left Column: Product Images */}
             <div className="lg:col-span-6 space-y-6">
               <motion.div
@@ -329,31 +374,27 @@ export default function ProductDetailsPage() {
                 ))}
               </motion.div>
 
-              {/* Trust Badges - Aligned with images on the left side */}
+              {/* Highlights Section */}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3 }}
-                className="flex flex-wrap gap-12 pt-10 border-t border-[#794A05]/10 mt-6"
+                className="bg-white rounded-[2rem] p-8 space-y-6 shadow-xl shadow-[#794A05]/5 border border-[#794A05]/5"
               >
-                <div className="flex flex-col items-center gap-2">
-                  <div className="w-12 h-12 rounded-xl bg-white flex items-center justify-center shadow-sm border border-[#794A05]/5">
-                    <Truck className="w-5 h-5 text-[#794A05]" />
-                  </div>
-                  <span className="text-[10px] font-bold text-[#794A05]/60 uppercase tracking-widest">Fast Delivery</span>
-                </div>
-                <div className="flex flex-col items-center gap-2">
-                  <div className="w-12 h-12 rounded-xl bg-white flex items-center justify-center shadow-sm border border-[#794A05]/5">
-                    <Shield className="w-5 h-5 text-[#794A05]" />
-                  </div>
-                  <span className="text-[10px] font-bold text-[#794A05]/60 uppercase tracking-widest">Safe & Secure</span>
-                </div>
-                <div className="flex flex-col items-center gap-2">
-                  <div className="w-12 h-12 rounded-xl bg-white flex items-center justify-center shadow-sm border border-[#794A05]/5">
-                    <Package className="w-5 h-5 text-[#794A05]" />
-                  </div>
-                  <span className="text-[10px] font-bold text-[#794A05]/60 uppercase tracking-widest">Temple Blessed</span>
-                </div>
+                <h3 className="text-xl font-display font-bold text-[#4A2c01] border-b border-[#794A05]/10 pb-4">Highlights</h3>
+                <ul className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {(product.highlights ? product.highlights.split(',').map(s => s.trim()) : [
+                    "Directly from Temple Source",
+                    "Blessed by Ved Pathis",
+                    "Traditional Quality Standards",
+                    "Carefully Packaged with Holy Ash",
+                    "Community Support Contribution"
+                  ]).map((item, id) => (
+                    <li key={id} className="flex items-start gap-3 text-sm text-[#794A05] font-medium">
+                      <div className="w-1.5 h-1.5 rounded-full bg-[#794A05] mt-2 flex-shrink-0" />
+                      {item}
+                    </li>
+                  ))}
+                </ul>
               </motion.div>
             </div>
 
@@ -364,12 +405,9 @@ export default function ProductDetailsPage() {
                 animate={{ opacity: 1, x: 0 }}
                 className="space-y-6"
               >
-                {/* Product Info */}
+                {/* Product Title & Rating */}
                 <div>
                   <div className="flex items-center justify-between mb-4">
-                    {/* <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#794A05]/60 pr-4">
-                        {product.temple?.name || product.seller?.name || "DevBhakti Exclusive"}
-                      </span> */}
                     <div className="flex items-center gap-1.5 bg-amber-50 px-3 py-1.5 rounded-full border border-amber-200 shadow-sm">
                       <Star className="w-6 h-6 text-amber-500 fill-amber-500" />
                       <span className="text-sm font-bold text-amber-700">{product.rating || "4.2"}</span>
@@ -397,35 +435,93 @@ export default function ProductDetailsPage() {
 
                 {/* Description */}
                 <div className="space-y-3">
-                  <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-[#794A05] opacity-70">Description</h3>
-                  <p className="text-slate-600 leading-relaxed text-sm">
+                  <h3 className="text-sm font-black uppercase tracking-widest text-[#794A05] opacity-70">Description</h3>
+                  <p className="text-slate-600 leading-relaxed text-base">
                     {product.description}
                   </p>
                 </div>
 
-                {/* Variant Selection */}
-                {/* {product.variants.length > 1 && (
-                  <div className="space-y-3">
-                    <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-[#4A2c01]">Select Option</h3>
-                    <div className="grid grid-cols-2 gap-2">
-                      {product.variants.map((variant) => (
-                        <button
-                          key={variant.id}
-                          onClick={() => {
-                            setSelectedVariant(variant.id);
-                            setUserHasSelectedVariant(true);
-                          }}
-                          className={`p-3 rounded-xl border text-sm font-medium transition-all ${selectedVariant === variant.id
-                            ? "border-[#794A05] bg-[#794A05]/5 text-[#794A05]"
-                            : "border-slate-200 bg-white text-slate-500 hover:border-[#794A05]/30"
-                            }`}
-                        >
-                          {variant.name}
-                        </button>
-                      ))}
-                    </div>
+                {/* Meta Information Grid (Moved Up) */}
+                <div className="grid grid-cols-2 gap-6 p-6 bg-white rounded-3xl border border-[#794A05]/5 shadow-sm">
+                  <div className="space-y-1">
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Origin</span>
+                    <p className="text-base font-bold text-[#2a1b01]">{product.origin || product.temple?.location || product.seller?.location || "India"}</p>
                   </div>
-                )} */}
+                  <div className="space-y-1">
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Category</span>
+                    <p className="text-base font-bold text-[#2a1b01]">{product.categoryObj?.name || product.category}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">SKU Code</span>
+                    <p className="text-base font-mono font-bold text-[#2a1b01]">{currentVariant?.id.slice(-8).toUpperCase() || "N/A"}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Source</span>
+                    <p className="text-base font-bold text-[#794A05]">{product.temple?.name || product.seller?.name || "DevBhakti"}</p>
+                  </div>
+                </div>
+
+                {/* Shipping Serviceability Check */}
+                <div className="space-y-4 p-6 bg-amber-50/50 rounded-3xl border border-[#794A05]/10">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Truck className="w-5 h-5 text-[#794A05]" />
+                    <h3 className="text-sm font-black uppercase tracking-widest text-[#794A05]">Check Delivery Availability</h3>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <div className="relative flex-1">
+                      <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#794A05] z-10" />
+                      <Input
+                        placeholder="Enter 6-digit Pincode"
+                        value={pincode}
+                        onChange={(e) => setPincode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                        className="pl-10 h-12 rounded-xl border-[#794A05]/20 focus-visible:ring-[#794A05] font-bold bg-white"
+                      />
+                    </div>
+                    <Button
+                      onClick={checkServiceability}
+                      disabled={checkingServiceability || pincode.length !== 6}
+                      className="bg-[#794A05] hover:bg-[#5d3804] text-white rounded-xl px-8 h-12 font-bold shadow-lg"
+                    >
+                      {checkingServiceability ? <Loader2 className="w-5 h-5 animate-spin" /> : "Verify"}
+                    </Button>
+                  </div>
+
+                  <p className="text-xs font-semibold text-red-600/90 mt-2 flex items-center gap-1.5">
+                    <span className="w-1 h-1 rounded-full bg-red-600 animate-pulse" />
+                    Note: Currently Shipping to International locations is not available.
+                  </p>
+
+                  {serviceabilityData && (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      className={`p-4 rounded-2xl border-2 ${serviceabilityData.serviceable ? 'bg-emerald-50 border-emerald-200' : 'bg-red-50 border-red-200'}`}
+                    >
+                      {serviceabilityData.serviceable ? (
+                        <div className="flex items-start gap-3">
+                          <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0">
+                            <Check className="w-6 h-6 text-emerald-600" />
+                          </div>
+                          <div className="space-y-1">
+                            <p className="font-bold text-emerald-800">Hurray! Serviceable at {serviceabilityData.pincode}</p>
+                            <p className="text-sm text-emerald-700/80 font-medium">Estimated Delivery by: <span className="font-black underline">{serviceabilityData.edd}</span></p>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex items-start gap-3">
+                          <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
+                            <RotateCcw className="w-6 h-6 text-red-600" />
+                          </div>
+                          <div className="space-y-1">
+                            <p className="font-bold text-red-800">Oops! Delivery Not Available</p>
+                            <p className="text-sm text-red-700/80 font-medium">{serviceabilityData.message || "We don't ship to this pincode yet."}</p>
+                          </div>
+                        </div>
+                      )}
+                    </motion.div>
+                  )}
+                </div>
 
                 {/* Quantity and Actions */}
                 <div className="space-y-6 pt-6">
@@ -436,19 +532,19 @@ export default function ProductDetailsPage() {
                         size="icon"
                         onClick={() => setQuantity(Math.max(1, quantity - 1))}
                         disabled={quantity <= 1}
-                        className="h-8 w-8 text-[#794A05] hover:bg-[#794A05]/5 rounded-lg"
+                        className="h-10 w-10 text-[#794A05] hover:bg-[#794A05]/5 rounded-lg"
                       >
-                        <Minus className="w-3 h-3" />
+                        <Minus className="w-4 h-4" />
                       </Button>
-                      <span className="w-8 text-center font-bold text-[#794A05] text-sm">{quantity}</span>
+                      <span className="w-10 text-center font-bold text-[#794A05] text-lg">{quantity}</span>
                       <Button
                         variant="ghost"
                         size="icon"
                         onClick={() => setQuantity(quantity + 1)}
                         disabled={currentVariant?.stock ? quantity >= currentVariant.stock : true}
-                        className="h-8 w-8 text-[#794A05] hover:bg-[#794A05]/5 rounded-lg"
+                        className="h-10 w-10 text-[#794A05] hover:bg-[#794A05]/5 rounded-lg"
                       >
-                        <Plus className="w-3 h-3" />
+                        <Plus className="w-4 h-4" />
                       </Button>
                     </div>
 
@@ -456,95 +552,32 @@ export default function ProductDetailsPage() {
                       variant="outline"
                       size="icon"
                       onClick={toggleFavorite}
-                      className={`h-10 w-10 rounded-xl transition-all shadow-sm ${isFavorite ? "border-red-100 bg-red-50 text-red-500" : "border-[#794A05]/10 bg-white text-[#794A05]"
+                      className={`h-12 w-12 rounded-xl transition-all shadow-sm ${isFavorite ? "border-red-100 bg-red-50 text-red-500" : "border-[#794A05]/10 bg-white text-[#794A05]"
                         }`}
                     >
-                      <Heart className={`w-4 h-4 ${isFavorite ? "fill-red-500" : ""}`} />
+                      <Heart className={`w-5 h-5 ${isFavorite ? "fill-red-500" : ""}`} />
                     </Button>
                   </div>
 
                   <div className="flex flex-col gap-3">
                     <Button
                       size="lg"
-                      className="w-full h-14 bg-[#794A05] hover:bg-[#5d3804] text-white rounded-2xl text-md font-bold shadow-xl shadow-[#794A05]/20 transition-all hover:scale-[1.02]"
+                      className="w-full h-16 bg-[#794A05] hover:bg-[#5d3804] text-white rounded-2xl text-lg font-bold shadow-xl shadow-[#794A05]/20 transition-all hover:scale-[1.02]"
                       onClick={addToCart}
                       disabled={!currentVariant || currentVariant.stock === 0}
                     >
-                      <ShoppingCart className="w-5 h-5 mr-3" />
+                      <ShoppingCart className="w-6 h-6 mr-3" />
                       Add to Sacred Cart — {currentVariant ? formatPrice(totalPrice) : ""}
                     </Button>
 
-                    <p className="text-[10px] text-center text-slate-400 font-medium">
+                    <p className="text-xs text-center text-slate-400 font-medium">
                       Part of the proceeds are contributed toward temple maintenance
                     </p>
                   </div>
                 </div>
-
-
               </motion.div>
             </div>
           </div>
-
-          {/* Product Deep Info Section */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="mt-20"
-          >
-            <div className="bg-white rounded-[3rem] p-8 lg:p-12 shadow-xl shadow-[#794A05]/5 border border-[#794A05]/5">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
-                <div className="md:col-span-2 space-y-6">
-                  <div className="inline-block px-4 py-1.5 bg-[#794A05]/5 text-[#794A05] text-[10px] font-bold uppercase tracking-widest rounded-full mb-2">
-                    Detailed Information
-                  </div>
-                  {/* <h2 className="text-3xl font-display font-bold text-[#2a1b01]">About this Sacred Offering</h2>
-                  <p className="text-slate-600 leading-relaxed">
-                    {product.longDescription || `Every product in our marketplace is carefully selected for its spiritual significance and quality. 
-                    This ${product.name} is crafted following traditional guidelines to ensure it serves as a meaningful 
-                    addition to your spiritual journey.`}
-                  </p> */}
-
-                  <div className="grid grid-cols-2 gap-8 pt-4">
-                    <div className="space-y-1.5">
-                      <span className="text-[11px] font-bold text-slate-500 uppercase tracking-[0.15em]">Origin</span>
-                      <p className="text-md font-bold text-[#2a1b01]">{product.origin || product.temple?.location || product.seller?.location || "India"}</p>
-                    </div>
-                    <div className="space-y-1.5">
-                      <span className="text-[11px] font-bold text-slate-500 uppercase tracking-[0.15em]">Category</span>
-                      <p className="text-md font-bold text-[#2a1b01]">{product.categoryObj?.name || product.category}</p>
-                    </div>
-                    <div className="space-y-1.5">
-                      <span className="text-[14px] font-bold text-slate-500 uppercase tracking-[0.15em]">SKU</span>
-                      <p className="text-md font-mono font-bold text-[#2a1b01]">{currentVariant?.id.slice(-8) || "N/A"}</p>
-                    </div>
-                    <div className="space-y-1.5">
-                      <span className="text-[14px] font-bold text-slate-500 uppercase tracking-[0.15em]">Availability</span>
-                      <p className="text-md font-bold text-green-700">{product.shippingInfo || "Ships in 24-48 Hours"}</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-[#fdf6e9] rounded-[2rem] p-8 space-y-6">
-                  <h3 className="text-lg font-display font-bold text-[#4A2c01]">Highlights</h3>
-                  <ul className="space-y-4">
-                    {(product.highlights ? product.highlights.split(',').map(s => s.trim()) : [
-                      "Directly from Temple Source",
-                      "Blessed by Ved Pathis",
-                      "Traditional Quality Standards",
-                      "Carefully Packaged with Holy Ash",
-                      "Community Support Contribution"
-                    ]).map((item, id) => (
-                      <li key={id} className="flex items-start gap-3 text-xs text-[#794A05] font-medium">
-                        <div className="w-1.5 h-1.5 rounded-full bg-[#794A05] mt-1 flex-shrink-0" />
-                        {item}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-            </div>
-          </motion.div>
         </div>
       </main>
 

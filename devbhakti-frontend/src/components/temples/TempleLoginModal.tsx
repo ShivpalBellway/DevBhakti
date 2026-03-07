@@ -24,6 +24,20 @@ export default function TempleLoginModal({ onClose }: TempleLoginModalProps) {
     const [phone, setPhone] = useState("");
     const [error, setError] = useState("");
 
+    const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        let value = e.target.value.replace(/\D/g, '');
+
+        // If the number starts with 91 and is more than 10 digits, it's likely has country code
+        if (value.length > 10 && value.startsWith('91')) {
+            value = value.substring(2);
+        } else if (value.length > 10 && value.startsWith('0')) {
+            value = value.substring(1);
+        }
+
+        // Limit to 10 digits
+        setPhone(value.slice(0, 10));
+    };
+
     const handleSendOTP = async (e: React.FormEvent) => {
         e.preventDefault();
         setError("");
@@ -35,9 +49,6 @@ export default function TempleLoginModal({ onClose }: TempleLoginModalProps) {
             if (response.data?.otp) {
                 setDevOtp(response.data.otp);
             }
-            // Original code:
-            // const response = await sendOTP({ phone: normalizedPhone, role: "INSTITUTION" });
-            // setShowOtpInput(true);
         } catch (error: any) {
             setError(error.response?.data?.message || "Failed to send OTP. Please try again.");
         } finally {
@@ -110,7 +121,7 @@ export default function TempleLoginModal({ onClose }: TempleLoginModalProps) {
                 {!showOtpInput ? (
                     <form onSubmit={handleSendOTP} className="space-y-6">
                         <div className="space-y-2">
-                            <Label htmlFor="phone" className="text-slate-700 ml-1">Phone Number</Label>
+                            <Label htmlFor="phone" className="text-slate-700 ml-1">Temple Owner Authority’s Mobile Number</Label>
                             <div className="relative group">
                                 <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
                                     <Phone className="w-5 h-5 text-slate-400 group-focus-within:text-[#7b4623] transition-colors" />
@@ -119,10 +130,9 @@ export default function TempleLoginModal({ onClose }: TempleLoginModalProps) {
                                 <Input
                                     id="phone"
                                     type="tel"
-                                    maxLength={10}
                                     placeholder="XXXXX XXXXX"
                                     value={phone}
-                                    onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))}
+                                    onChange={handlePhoneChange}
                                     className="h-12 pl-24 bg-slate-50 border-slate-200 focus:border-[#7b4623] focus:ring-[#7b4623]/10 rounded-xl"
                                     required
                                 />

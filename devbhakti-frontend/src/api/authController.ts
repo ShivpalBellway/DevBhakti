@@ -62,3 +62,7 @@ export const fetchProfile = async () => {
 
 };
 
+export const checkPhone = async (phone: string) => {
+    const response = await axios.get(`${API_URL}/auth/check-phone?phone=${phone}`);
+    return response.data;
+};

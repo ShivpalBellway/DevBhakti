@@ -19,17 +19,13 @@ export const verifyPayment = async (req: Request, res: Response) => {
     try {
 
         const {
-
             razorpay_order_id,
-
             razorpay_payment_id,
-
             razorpay_signature,
-
             orderType, // 'MARKETPLACE' or 'POOJA'
-
             referenceId, // Our internal Order ID or Booking ID
-
+            orderData, // For MARKETPLACE
+            userId,    // For MARKETPLACE
         } = req.body;
 
 
@@ -57,35 +53,12 @@ export const verifyPayment = async (req: Request, res: Response) => {
         // Payment is verified
 
         if (orderType === "MARKETPLACE") {
+            if (!orderData || !userId) {
+                return res.status(400).json({ success: false, message: "Missing orderData or userId for Marketplace checkout" });
+            }
 
-            await prisma.order.update({
-
-                where: { id: referenceId },
-
-                data: {
-
-                    paymentStatus: "PAID",
-
-                    status: "BOOKED", // or whatever represents a paid order
-
-                },
-
-            });
-
-
-
-            // Update SubOrders status too
-
-            await prisma.subOrder.updateMany({
-
-                where: { orderId: referenceId },
-
-                data: { status: "PAID" },
-
-            });
-
-
-
+            const { createVerifiedOrder } = require('./marketplace/productOrderController');
+            await createVerifiedOrder(orderData, userId);
         } else if (orderType === "POOJA") {
 
             const updatedBooking = await prisma.poojaBooking.update({

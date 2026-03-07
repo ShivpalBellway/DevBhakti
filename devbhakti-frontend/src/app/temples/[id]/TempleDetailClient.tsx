@@ -344,11 +344,12 @@ export default function TempleDetail() {
                                         <MapPin className="h-4 w-4 text-primary" />
                                         <span>{temple.fullAddress}</span>
                                     </div>
-                                    {/* <div className="flex items-center gap-2">
-                                        <Clock className="h-4 w-4 text-primary" />
-                                        <span>{temple.openTime}</span>
-                                    </div> */}
-
+                                    {/* {temple.openTime && (
+                                        <div className="flex items-center gap-2">
+                                            <Clock className="h-4 w-4 text-primary" />
+                                            <span>Operating Hours: {temple.openTime}</span>
+                                        </div>
+                                    )} */}
                                 </div>
 
                                 <div className="flex flex-wrap gap-3">
@@ -596,13 +597,27 @@ export default function TempleDetail() {
                                     </div>
 
                                     {/* Prominent Donation Button */}
-                                    <Button
-                                        className="w-full gap-3 h-14 text-lg font-black shadow-lg group bg-gradient-to-r from-[#7c4624] to-[#a05a2c] hover:from-[#a05a2c] hover:to-[#7c4624] text-white border-none transition-all duration-500 rounded-xl"
-                                        onClick={handleDonation}
-                                    >
-                                        <Heart className="h-6 w-6 fill-white animate-pulse group-hover:scale-125 transition-transform" />
-                                        <span>Donate to Temple</span>
-                                    </Button>
+                                    <div className="space-y-4">
+                                        {temple.openTime && (
+                                            <div className="flex items-center gap-3 p-3 bg-primary/5 rounded-xl border border-primary/10">
+                                                <div className="h-8 w-8 shrink-0 bg-primary/20 rounded-lg flex items-center justify-center">
+                                                    <Clock className="h-4 w-4 text-primary" />
+                                                </div>
+                                                <div className="flex-1">
+                                                    <p className="text-[10px] uppercase tracking-wider font-bold text-primary/60 leading-tight">Operating Hours</p>
+                                                    <p className="font-bold text-foreground text-sm uppercase">{temple.openTime}</p>
+                                                </div>
+                                            </div>
+                                        )}
+                                        <Button
+                                            className="w-full gap-3 h-14 text-lg font-black shadow-lg group bg-gradient-to-r from-[#7c4624] to-[#a05a2c] hover:from-[#a05a2c] hover:to-[#7c4624] text-white border-none transition-all duration-500 rounded-xl"
+                                            onClick={handleDonation}
+                                        >
+                                            <Heart className="h-6 w-6 fill-white animate-pulse group-hover:scale-125 transition-transform" />
+                                            <span>Donate to Temple</span>
+                                        </Button>
+
+                                    </div>
                                 </div>
 
                                 {/* Creative Location Integration */}
@@ -624,14 +639,14 @@ export default function TempleDetail() {
                                             <ChevronRight className="h-4 w-4 text-primary/30 group-hover:text-primary transition-all group-hover:translate-x-1" />
                                         </a>
 
-                                        <Button
+                                        {/* <Button
                                             variant="outline"
                                             className="w-full h-12 rounded-2xl border-dashed border-primary/30 text-primary hover:bg-primary/5 font-bold gap-2"
                                             onClick={handleDonation}
                                         >
                                             <Heart className="h-4 w-4" />
                                             Contribute to Temple Development
-                                        </Button>
+                                        </Button> */}
                                     </div>
                                 )}
 
@@ -640,7 +655,7 @@ export default function TempleDetail() {
                                     <div className="pt-2 space-y-4">
                                         <div className="flex items-center gap-2 px-1">
                                             <div className="h-1 w-8 bg-primary/20 rounded-full" />
-                                            <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-muted-foreground"> Events</h3>
+                                            <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-muted-foreground">Upcoming Events</h3>
                                         </div>
                                         <div className="space-y-3">
                                             {temple.events.slice(0, 3).map((event: any, index: number) => (

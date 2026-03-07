@@ -47,6 +47,37 @@ const logToFile = (message: string) => {
     fs.appendFileSync(logPath, `[${timestamp}] ${message}\n`);
 };
 
+export const checkPhoneExistence = async (req: Request, res: Response) => {
+    try {
+        const { phone } = req.query;
+        if (!phone) {
+            return res.status(400).json({ success: false, message: 'Phone number is required' });
+        }
+
+        const normalizedPhone = normalizePhone(phone as string);
+        const user = await prisma.user.findFirst({
+            where: { phone: normalizedPhone }
+        });
+
+        if (user) {
+            return res.json({
+                success: true,
+                exists: true,
+                role: user.role,
+                message: `This mobile number is already registered as a ${user.role}.`
+            });
+        }
+
+        return res.json({
+            success: true,
+            exists: false
+        });
+    } catch (error: any) {
+        console.error('Error in checkPhoneExistence:', error);
+        res.status(500).json({ success: false, message: 'Internal server error' });
+    }
+};
+
 
 export const sendOTP = async (req: Request, res: Response) => {
     logToFile(`[sendOTP] Request body: ${JSON.stringify(req.body)}`);

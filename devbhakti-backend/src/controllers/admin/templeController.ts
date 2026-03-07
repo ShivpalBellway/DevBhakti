@@ -292,10 +292,26 @@ export const updateTemple = async (req: Request, res: Response) => {
     const files = req.files as any;
     const data = req.body;
 
-    const poojaIds = data.poojaIds ? JSON.parse(data.poojaIds) : [];
-    const inlineEvents = data.inlineEvents ? JSON.parse(data.inlineEvents) : [];
-    const existingHeroImages = data.existingHeroImages ? JSON.parse(data.existingHeroImages) : [];
-    const commissionSlabs = data.commissionSlabs ? JSON.parse(data.commissionSlabs) : null;
+    console.log('Update Temple Called for ID:', id);
+    console.log('Body Keys:', Object.keys(data));
+
+    // Robust JSON parsing
+    const safeParse = (str: string, fallback: any) => {
+      if (!str) return fallback;
+      try {
+        // If it's already an object (sometimes happens with some middlewares), return it
+        if (typeof str === 'object') return str;
+        return JSON.parse(str);
+      } catch (e) {
+        console.error('JSON Parse Error for string:', str);
+        return fallback;
+      }
+    };
+
+    const poojaIds = safeParse(data.poojaIds, []);
+    const inlineEvents = safeParse(data.inlineEvents, []);
+    const existingHeroImages = safeParse(data.existingHeroImages, []);
+    const commissionSlabs = safeParse(data.commissionSlabs, null);
 
     if (data.phone) {
       const cleaned = data.phone.replace(/\D/g, '');
@@ -323,7 +339,25 @@ export const updateTemple = async (req: Request, res: Response) => {
       }
     }
 
+    console.log('Validations passed, starting transaction...');
+
     const result = await prisma.$transaction(async (tx) => {
+      // Find the user first to ensure they exist and have a temple
+      const existingUser = await tx.user.findUnique({
+        where: { id: String(id) },
+        include: { temple: true }
+      });
+
+      if (!existingUser) {
+        throw new Error('User not found');
+      }
+
+      if (!existingUser.temple) {
+        // Option A: Throw error. Option B: Create it if it should exist. 
+        // For update, let's throw error as it's an 'update' of an existing temple.
+        throw new Error('This user account does not have an associated temple profile');
+      }
+
       // 1. Update User & Temple
       const user = await tx.user.update({
         where: { id: String(id) },
@@ -344,14 +378,14 @@ export const updateTemple = async (req: Request, res: Response) => {
               website: data.website,
               mapUrl: data.mapUrl,
               viewers: data.viewers,
-              rating: parseFloat(data.rating || '0'),
-              reviewsCount: parseInt(data.reviewsCount || '0'),
+              rating: isNaN(parseFloat(data.rating)) ? 0 : parseFloat(data.rating),
+              reviewsCount: isNaN(parseInt(data.reviewsCount)) ? 0 : parseInt(data.reviewsCount),
               slug: data.slug || undefined,
               subdomain: data.subdomain || undefined,
               urlType: data.urlType || 'slug',
               liveStatus: data.liveStatus === 'true',
-              productCommissionRate: data.productCommissionRate ? parseFloat(data.productCommissionRate) : undefined,
-              poojaCommissionRate: data.poojaCommissionRate ? parseFloat(data.poojaCommissionRate) : undefined,
+              productCommissionRate: (data.productCommissionRate && !isNaN(parseFloat(data.productCommissionRate))) ? parseFloat(data.productCommissionRate) : undefined,
+              poojaCommissionRate: (data.poojaCommissionRate && !isNaN(parseFloat(data.poojaCommissionRate))) ? parseFloat(data.poojaCommissionRate) : undefined,
               ...(files?.image && { image: getFilePath(files, 'image') }),
               heroImages: [
                 ...existingHeroImages,
@@ -366,6 +400,7 @@ export const updateTemple = async (req: Request, res: Response) => {
       const templeId = user.temple!.id;
 
       // 2. Sync Poojas (Master-Template Logic)
+      console.log('Syncing Poojas for Temple:', templeId);
       const currentPoojas = await tx.pooja.findMany({
         where: { templeId: templeId },
         select: { id: true, masterPoojaId: true }
@@ -378,7 +413,7 @@ export const updateTemple = async (req: Request, res: Response) => {
       });
 
       if (poojaIds.length > 0) {
-        // Fetch all selected poojas in one query to avoid N+1 inside transaction
+        // Fetch all selected poojas in one query
         const selectedPoojasData = await tx.pooja.findMany({
           where: { id: { in: poojaIds } }
         });
@@ -425,6 +460,7 @@ export const updateTemple = async (req: Request, res: Response) => {
 
       // 3. Sync Events
       if (data.inlineEvents) {
+        console.log('Syncing Events...');
         await tx.event.deleteMany({ where: { templeId: templeId } });
         if (inlineEvents.length > 0) {
           await tx.event.createMany({
@@ -440,6 +476,7 @@ export const updateTemple = async (req: Request, res: Response) => {
 
       // 4. Update Commission Slabs
       if (commissionSlabs) {
+        console.log('Updating Commission Slabs...');
         await tx.commissionSlab.deleteMany({
           where: { targetId: templeId, slabType: SlabType.TEMPLE }
         });
@@ -447,10 +484,10 @@ export const updateTemple = async (req: Request, res: Response) => {
         if (commissionSlabs.length > 0) {
           await tx.commissionSlab.createMany({
             data: commissionSlabs.map((s: any) => ({
-              minAmount: parseFloat(s.minAmount),
+              minAmount: parseFloat(s.minAmount) || 0,
               maxAmount: s.maxAmount ? parseFloat(s.maxAmount) : null,
-              platformFee: parseFloat(s.platformFee),
-              percentage: parseFloat(s.percentage),
+              platformFee: parseFloat(s.platformFee) || 0,
+              percentage: parseFloat(s.percentage) || 0,
               slabType: SlabType.TEMPLE,
               targetId: templeId,
               category: s.category || CommissionCategory.MARKETPLACE,
@@ -462,9 +499,11 @@ export const updateTemple = async (req: Request, res: Response) => {
 
       return user;
     }, {
-      maxWait: 10000,
-      timeout: 20000
+      maxWait: 15000,
+      timeout: 30000
     });
+
+    console.log('Transaction completed successfully');
 
     // Sync with Shiprocket if address or location changed
     if (data.fullAddress || data.location || data.phone || data.templePhone) {
@@ -491,17 +530,22 @@ export const updateTemple = async (req: Request, res: Response) => {
             pin_code: pincode || "110001"
           };
           await createShiprocketPickupLocation(pickupData);
-          console.log("Shiprocket Pickup Location Updated Successfully for Temple from Admin");
         }
       } catch (srError) {
-        console.error("Shiprocket update sync error for Admin Temple:", srError);
+        console.error("Shiprocket update sync error:", srError);
       }
     }
 
     res.json(result);
   } catch (error: any) {
-    console.error('Update error:', error);
-    res.status(500).json({ error: error.message || 'Failed to update temple' });
+    console.error('Update Temple Controller Error:', error);
+    // Explicit 400 for structural errors vs 500 for generic ones
+    const statusCode = error.message?.includes('not found') ? 404 : 500;
+    res.status(statusCode).json({
+      success: false,
+      error: error.message || 'Failed to update temple',
+      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
   }
 };
 

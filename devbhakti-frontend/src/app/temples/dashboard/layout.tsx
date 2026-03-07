@@ -241,6 +241,7 @@ export default function TempleAdminLayout({ children }: { children: React.ReactN
     const [sidebarOpen, setSidebarOpen] = useState(true);
     const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
     const [user, setUser] = useState<any>(null);
+    const [templeProfile, setTempleProfile] = useState<any>(null);
     const [counts, setCounts] = useState({
         bookings: { total: 0, booked: 0, completed: 0, cancelled: 0 },
         orders: { total: 0, pending: 0, accepted: 0, shipped: 0, delivered: 0, cancelled: 0 }
@@ -252,6 +253,10 @@ export default function TempleAdminLayout({ children }: { children: React.ReactN
                 fetchMyTempleBookings(),
                 fetchMyTempleProfile()
             ]);
+
+            if (profileRes.success) {
+                setTempleProfile(profileRes.data);
+            }
 
             let newCounts = { ...counts };
 
@@ -375,39 +380,50 @@ export default function TempleAdminLayout({ children }: { children: React.ReactN
             >
                 {/* Logo */}
                 {/* Logo */}
-                <div className="flex items-center justify-between h-20 px-4 border-b border-sidebar-border">
+                <div className="flex items-center gap-3 h-20 px-4 border-b border-sidebar-border bg-sidebar/50 backdrop-blur-sm">
                     {sidebarOpen ? (
-                        <div className="flex flex-col gap-0.5">
-                            <div className="relative h-10 w-32">
+                        <div className="flex items-center gap-3 w-full">
+                            <div className="bg-white p-1.5 rounded-xl shadow-inner border border-sidebar-border/50 shrink-0">
+                                <div className="relative h-9 w-9">
+                                    <Image
+                                        src={logo}
+                                        alt="Temple Logo"
+                                        fill
+                                        className="object-contain"
+                                        priority
+                                    />
+                                </div>
+                            </div>
+                            <div className="flex flex-col min-w-0">
+                                <span className="text-[13px] font-black text-sidebar-primary uppercase tracking-wider leading-none">
+                                    Temple Dashboard
+                                </span>
+                                <span className="text-[11px] font-bold text-sidebar-foreground/60 truncate mt-1">
+                                    {templeProfile?.name || user?.name || "Sacred Portal"}
+                                </span>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="bg-white p-1.5 rounded-xl shadow-sm border border-sidebar-border/50 mx-auto">
+                            <div className="relative h-8 w-8">
                                 <Image
                                     src={logo}
                                     alt="Temple Logo"
                                     fill
-                                    className="object-contain object-center"
+                                    className="object-contain"
                                     priority
                                 />
                             </div>
-                            <span className="text-[15px] font-bold text-sidebar-foreground/90 uppercase tracking-widest pl-2 mt-1">
-                                Temple Dashboard
-                            </span>
-                        </div>
-                    ) : (
-                        <div className="relative h-8 w-8">
-                            <Image
-                                src={logo}
-                                alt="Temple Logo"
-                                fill
-                                className="object-contain"
-                                priority
-                            />
                         </div>
                     )}
-                    <button
-                        onClick={() => setSidebarOpen(!sidebarOpen)}
-                        className="p-2 rounded-lg hover:bg-sidebar-accent text-sidebar-foreground transition-colors"
-                    >
-                        <Menu className="w-5 h-5" />
-                    </button>
+                    {sidebarOpen && (
+                        <button
+                            onClick={() => setSidebarOpen(!sidebarOpen)}
+                            className="p-1.5 rounded-lg hover:bg-sidebar-accent text-sidebar-foreground/50 hover:text-sidebar-foreground transition-all ml-auto shrink-0"
+                        >
+                            <Menu className="w-5 h-5" />
+                        </button>
+                    )}
                 </div>
 
                 {/* Navigation */}
@@ -458,12 +474,12 @@ export default function TempleAdminLayout({ children }: { children: React.ReactN
                         )}
                     >
                         <div className="w-10 h-10 rounded-full bg-sidebar-accent border border-sidebar-border flex items-center justify-center text-sidebar-foreground font-semibold">
-                            {user?.name?.charAt(0) || "I"}
+                            {(templeProfile?.name || user?.name || "I").charAt(0)}
                         </div>
                         {sidebarOpen && (
                             <div className="flex-1 min-w-0">
                                 <p className="text-sm font-medium text-sidebar-foreground truncate">
-                                    {user?.name || "Temple Admin"}
+                                    {templeProfile?.name || user?.name || "Temple Admin"}
                                 </p>
                                 <p className="text-xs text-sidebar-foreground/60 truncate">
                                     {user?.phone || user?.email || "admin@temple.com"}

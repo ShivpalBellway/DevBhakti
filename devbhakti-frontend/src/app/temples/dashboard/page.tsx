@@ -76,9 +76,9 @@ export default function TempleDashboardPage() {
     const router = useRouter();
     const [bookings, setBookings] = useState<any[]>([]);
     const [orders, setOrders] = useState<any[]>([]);
-    const [products, setProducts] = useState<any[]>([]);
     const [totalProducts, setTotalProducts] = useState(0);
     const [isLoading, setIsLoading] = useState(true);
+    const [templeProfile, setTempleProfile] = useState<any>(null);
 
     useEffect(() => {
         loadDashboardData();
@@ -93,14 +93,16 @@ export default function TempleDashboardPage() {
                 fetchMyProducts() // Fetch products for count
             ]);
 
+            if (profileRes.success) {
+                setTempleProfile(profileRes.data);
+            }
+
             if (bookingsRes.success) {
                 setBookings(bookingsRes.data || []); // Ensure array
             }
 
             if (productsRes.success) {
-                // content is nested in data.products due to pagination
                 const productsData = productsRes.data?.products || productsRes.data || [];
-                setProducts(productsData);
 
                 if (productsRes.data?.pagination?.total !== undefined) {
                     setTotalProducts(productsRes.data.pagination.total);
@@ -202,13 +204,23 @@ export default function TempleDashboardPage() {
     return (
         <div className="space-y-6">
             {/* Page header */}
-            <div>
-                <h1 className="text-2xl md:text-3xl font-serif font-bold text-foreground">
-                    Temple Dashboard
-                </h1>
-                <p className="text-muted-foreground mt-1">
-                    Manage your temple's digital presence, devotees, and offerings.
-                </p>
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 bg-white p-8 rounded-[2rem] shadow-sm border border-sidebar-border/20 relative overflow-hidden group">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-sidebar-primary/5 rounded-full -mr-16 -mt-16 blur-3xl" />
+                <div className="relative z-10">
+                    <h1 className="text-3xl md:text-4xl font-serif font-black text-sidebar-primary tracking-tight uppercase">
+                        Temple Dashboard
+                    </h1>
+                    <div className="flex items-center gap-3 mt-3">
+                        <div className="h-6 w-1.5 bg-sidebar-primary rounded-full shadow-[0_0_10px_rgba(var(--sidebar-primary),0.5)]" />
+                        <p className="text-xl md:text-2xl font-bold text-slate-800">
+                            {templeProfile?.name || "Sacred Temple"}
+                        </p>
+                    </div>
+                    <p className="text-slate-500 mt-2 text-sm font-medium flex items-center gap-2">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                        Administrator Control Center
+                    </p>
+                </div>
             </div>
 
             {/* Stats Grid */}
@@ -253,8 +265,11 @@ export default function TempleDashboardPage() {
                                                         <Info className="w-3.5 h-3.5 text-slate-400 hover:text-slate-600" />
                                                     </div>
                                                 </TooltipTrigger>
-                                                <TooltipContent side="bottom" className="max-w-[220px] text-xs">
-                                                    <p>{stat.tooltip}</p>
+                                                <TooltipContent side="bottom" className="max-w-[240px] bg-[#1e293b] text-white border-none shadow-2xl p-3 rounded-xl animate-in fade-in zoom-in duration-200">
+                                                    <div className="flex gap-2">
+                                                        <Info className="w-4 h-4 text-sky-400 shrink-0 mt-0.5" />
+                                                        <p className="text-[11px] leading-relaxed font-medium">{stat.tooltip}</p>
+                                                    </div>
                                                 </TooltipContent>
                                             </Tooltip>
                                         </div>
@@ -407,8 +422,11 @@ export default function TempleDashboardPage() {
                                                     <Info className="w-3.5 h-3.5 text-slate-400 hover:text-slate-600" />
                                                 </div>
                                             </TooltipTrigger>
-                                            <TooltipContent side="top" className="max-w-[220px] text-xs">
-                                                <p>{action.tooltip}</p>
+                                            <TooltipContent side="top" className="max-w-[240px] bg-[#1e293b] text-white border-none shadow-2xl p-3 rounded-xl animate-in fade-in zoom-in duration-200">
+                                                <div className="flex gap-2">
+                                                    <Info className="w-4 h-4 text-sky-400 shrink-0 mt-0.5" />
+                                                    <p className="text-[11px] leading-relaxed font-medium">{action.tooltip}</p>
+                                                </div>
                                             </TooltipContent>
                                         </Tooltip>
                                         <div
