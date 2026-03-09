@@ -172,9 +172,9 @@ const AartiAnimation = ({ trigger }: { trigger: number }) => {
 
         <div className="relative w-full h-full filter drop-shadow-[0_0_40px_rgba(255,165,0,0.8)]">
           <img
-            src="https://assets-v2.lottiefiles.com/a/37696f16-1183-11ee-a264-e7a7d8ad61bd/pUzAYIBZwq.gif"
+            src="/images/aarti_thali.gif"
             alt="Live Aarti Thali"
-            className="w-full h-full object-contain"
+            className="w-full h-full object-contain mix-blend-multiply"
           />
         </div>
       </motion.div>
@@ -457,10 +457,14 @@ function LiveDarshanContent() {
                         setAartiTrigger(prev => prev + 1);
                         setBellTrigger(prev => prev + 1);
                       }}
-                      className="w-12 h-12 rounded-full bg-orange-500/20 backdrop-blur-md border border-orange-500/40 flex items-center justify-center text-2xl shadow-lg hover:bg-orange-500/40 transition-all pointer-events-auto"
+                      className="w-12 h-12 rounded-full bg-orange-500/20 backdrop-blur-md border border-orange-500/40 flex items-center justify-center shadow-lg hover:bg-orange-500/40 transition-all pointer-events-auto"
                       title="Perform Aarti"
                     >
-                      🪔
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 2C12 2 15 6 15 9C15 10.6569 13.6569 12 12 12C10.3431 12 9 10.6569 9 9C9 6 12 2 12 2Z" fill="#F97316" />
+                        <circle cx="12" cy="18" r="4" stroke="#F97316" strokeWidth="2" />
+                        <path d="M8 18H16" stroke="#F97316" strokeWidth="2" strokeLinecap="round" />
+                      </svg>
                     </motion.button>
                   </div>
 

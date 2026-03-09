@@ -73,7 +73,7 @@ export const updatePoojaCategoryStatus = async (req: Request, res: Response) => 
         }
 
         const category = await prisma.poojaCategory.update({
-            where: { id },
+            where: { id: id as string },
             data: { status }
         });
 
@@ -91,7 +91,7 @@ export const updatePoojaCategoryStatus = async (req: Request, res: Response) => 
 export const deletePoojaCategory = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
-        await prisma.poojaCategory.delete({ where: { id } });
+        await prisma.poojaCategory.delete({ where: { id: id as string } });
         res.status(200).json({ success: true, message: "Category deleted successfully" });
     } catch (error: any) {
         res.status(500).json({ success: false, message: error.message });

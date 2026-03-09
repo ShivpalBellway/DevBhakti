@@ -949,7 +949,7 @@ export const getTempleCategories = async (req: Request, res: Response) => {
   try {
     const temples = await prisma.temple.findMany({
       where: {
-        category: { not: null }
+        category: { not: "" }
       },
       select: { category: true },
       distinct: ['category']
