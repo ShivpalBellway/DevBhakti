@@ -62,7 +62,7 @@ export default function AdminDashboardPage() {
   const handleActivityClick = (activity: any) => {
     const { type, id } = activity;
     if (type === 'booking') {
-      router.push(`/admin/pooja-bookings?id=${id}`);
+      router.push(`/admin/pooja-bookings?id=${id}&q=${encodeURIComponent(activity.title)}`);
     } else if (type === 'user') {
       router.push(`/admin/users/${id}`);
     } else if (type === 'temple' || type === 'institution') {
@@ -78,14 +78,17 @@ export default function AdminDashboardPage() {
 
   const handlePendingItemClick = (item: any) => {
     const type = item.type.toLowerCase();
+    const id = item.id;
+    const name = encodeURIComponent(item.name);
+
     if (type === 'temple') {
-      router.push('/admin/temples');
+      router.push(`/admin/temples?id=${id}&q=${name}`);
     } else if (type === 'product') {
-      router.push('/admin/products');
+      router.push(`/admin/products?id=${id}&q=${name}`);
     } else if (type === 'payout' || type === 'withdrawal') {
       router.push('/admin/finance/withdrawals');
     } else if (type === 'pooja') {
-      router.push('/admin/poojas');
+      router.push(`/admin/poojas?id=${id}&q=${name}`);
     }
   };
 

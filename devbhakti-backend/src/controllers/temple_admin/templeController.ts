@@ -44,7 +44,7 @@ export const registerTemple = async (req: Request, res: Response) => {
       const cleaned = data.phone.replace(/\D/g, '');
       // Allow 10 digits OR 12 digits if starting with 91
       if (!(cleaned.length === 10 || (cleaned.length === 12 && cleaned.startsWith('91')))) {
-        return res.status(400).json({ success: false, message: 'Mobile number must be exactly 10 digits' });
+        return res.status(400).json({ success: false, message: 'Invalid phone number. Use 10 digits or include 91 prefix.' });
       }
       data.phone = normalizePhone(data.phone);
     }
@@ -227,7 +227,7 @@ export const updateMyTempleProfile = async (req: Request, res: Response) => {
       const cleaned = data.phone.replace(/\D/g, '');
       // Allow 10 digits OR 12 digits if starting with 91
       if (!(cleaned.length === 10 || (cleaned.length === 12 && cleaned.startsWith('91')))) {
-        return res.status(400).json({ success: false, message: 'Mobile number must be exactly 10 digits' });
+        return res.status(400).json({ success: false, message: 'Invalid phone number. Use 10 digits or include 91 prefix.' });
       }
       data.phone = normalizePhone(data.phone);
     }

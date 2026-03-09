@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, Suspense } from "react";
+import React, { useState, useEffect, Suspense, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Play, MapPin, Users, Heart, Share2, Calendar } from "lucide-react";
@@ -42,6 +42,146 @@ const getEmbedUrl = (url: string) => {
   }
 };
 
+// --- Divine Animation Components ---
+
+const BellAnimation = ({ trigger, isLooping = false }: { trigger: number; isLooping?: boolean }) => {
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  useEffect(() => {
+    // Preload audio from a more reliable source
+    // Using an authentic temple bell (Ghanta) sound
+    audioRef.current = new Audio("https://www.soundjay.com/misc/sounds/bell-ringing-05.mp3");
+    audioRef.current.volume = 1.0;
+    audioRef.current.load();
+
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (audioRef.current) {
+      if (isLooping) {
+        audioRef.current.loop = true;
+        audioRef.current.play().catch(e => console.warn("Bell loop blocked", e));
+      } else if (trigger > 0) {
+        audioRef.current.loop = false;
+        audioRef.current.currentTime = 0;
+        audioRef.current.play().catch(e => console.warn("Bell play blocked", e));
+      } else if (!isLooping) {
+        audioRef.current.pause();
+      }
+    }
+  }, [trigger, isLooping]);
+
+  return null; // Visual bell removed as requested
+};
+
+const FlowerShower = ({ trigger }: { trigger: number }) => {
+  const [flowers, setFlowers] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (trigger > 0) {
+      const newFlowers = Array.from({ length: 40 }).map((_, i) => ({
+        id: `${trigger}-${i}`,
+        left: Math.random() * 100,
+        delay: Math.random() * 2,
+        duration: 4 + Math.random() * 3,
+        size: 15 + Math.random() * 25,
+        rotation: Math.random() * 360,
+        type: ['🌸', '🌼', '🌷', '🌹'][Math.floor(Math.random() * 4)]
+      }));
+      setFlowers(prev => [...prev.slice(-40), ...newFlowers]);
+
+      const timer = setTimeout(() => {
+        setFlowers(prev => prev.filter(f => !f.id.startsWith(`${trigger}-`)));
+      }, 8000);
+      return () => clearTimeout(timer);
+    }
+  }, [trigger]);
+
+  return (
+    <div className="fixed inset-0 pointer-events-none z-[99] overflow-hidden">
+      <AnimatePresence>
+        {flowers.map((f) => (
+          <motion.div
+            key={f.id}
+            initial={{ y: -100, opacity: 0, x: `${f.left}vw`, rotate: 0 }}
+            animate={{
+              y: "110vh",
+              opacity: [0, 1, 1, 0.8, 0],
+              rotate: f.rotation + 720,
+              x: `${f.left + (Math.random() * 10 - 5)}vw`
+            }}
+            transition={{ duration: f.duration, delay: f.delay, ease: "linear" }}
+            style={{ fontSize: f.size }}
+            className="absolute select-none"
+          >
+            {f.type}
+          </motion.div>
+        ))}
+      </AnimatePresence>
+    </div>
+  );
+};
+
+const AartiAnimation = ({ trigger }: { trigger: number }) => {
+  const [show, setShow] = useState(false);
+
+  useEffect(() => {
+    if (trigger > 0) {
+      setShow(true);
+      const timer = setTimeout(() => setShow(false), 12000); // 12 seconds for a complete ritual
+      return () => clearTimeout(timer);
+    }
+  }, [trigger]);
+
+  if (!show) return null;
+
+  return (
+    <div className="fixed inset-0 pointer-events-none z-[100] flex items-center justify-center">
+      <motion.div
+        initial={{ opacity: 0, scale: 0, y: 100 }}
+        animate={{
+          opacity: [0, 1, 1, 1, 0],
+          scale: [0.3, 1.2, 1, 1, 0.5],
+          // Realistic Aarti motion: Spiraling circular motion with depth (y-offset)
+          x: [0, 80, 0, -80, 0, 100, 0, -100, 0, 60, 0],
+          y: [100, 30, -50, 30, 100, 0, -120, 0, 100, 50, 150],
+          rotate: [0, 10, -10, 8, -8, 5, -5, 0],
+        }}
+        transition={{
+          duration: 12,
+          ease: "easeInOut",
+          times: [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1]
+        }}
+        className="relative w-80 h-80 flex items-center justify-center"
+      >
+        {/* Divine Glow Effect Behind the Thali */}
+        <motion.div
+          animate={{
+            scale: [1, 1.2, 1],
+            opacity: [0.4, 0.7, 0.4],
+          }}
+          transition={{ duration: 2, repeat: Infinity }}
+          className="absolute inset-0 bg-gradient-to-r from-orange-500/40 via-yellow-400/40 to-orange-500/40 rounded-full blur-[80px]"
+        />
+
+        <div className="relative w-full h-full filter drop-shadow-[0_0_40px_rgba(255,165,0,0.8)]">
+          <img
+            src="https://assets-v2.lottiefiles.com/a/37696f16-1183-11ee-a264-e7a7d8ad61bd/pUzAYIBZwq.gif"
+            alt="Live Aarti Thali"
+            className="w-full h-full object-contain"
+          />
+        </div>
+      </motion.div>
+    </div>
+  );
+};
+
 export default function LiveDarshanPage() {
   return (
     <Suspense fallback={<div>Loading...</div>}>
@@ -56,7 +196,32 @@ function LiveDarshanContent() {
   const [isLikeActive, setIsLikeActive] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [bellTrigger, setBellTrigger] = useState(0);
+  const [flowerTrigger, setFlowerTrigger] = useState(0);
+  const [aartiTrigger, setAartiTrigger] = useState(0);
+  const [isAartiActive, setIsAartiActive] = useState(false);
   const searchParams = useSearchParams();
+
+  useEffect(() => {
+    if (aartiTrigger > 0) {
+      setIsAartiActive(true);
+      const timer = setTimeout(() => setIsAartiActive(false), 10000);
+      return () => clearTimeout(timer);
+    }
+  }, [aartiTrigger]);
+
+  // Automatic Trigger on Temple Change
+  useEffect(() => {
+    if (selectedTemple && isPlaying) {
+      // Delay slightly for video to load
+      const timer = setTimeout(() => {
+        setBellTrigger(prev => prev + 1);
+        setFlowerTrigger(prev => prev + 1);
+        setAartiTrigger(prev => prev + 1);
+      }, 1500);
+      return () => clearTimeout(timer);
+    }
+  }, [selectedTemple?.id, isPlaying]);
 
   // Fetch Live Temples
   useEffect(() => {
@@ -167,6 +332,11 @@ function LiveDarshanContent() {
     <div className="min-h-screen bg-background selection:bg-sacred/30">
       <Navbar />
 
+      {/* Divine Overlays */}
+      <BellAnimation trigger={bellTrigger} isLooping={isAartiActive} />
+      <FlowerShower trigger={flowerTrigger} />
+      <AartiAnimation trigger={aartiTrigger} />
+
       <main className="relative pb-20 pt-20 overflow-x-hidden">
         {/* FULL WIDTH HERO VIDEO SECTION */}
         <section className="relative w-full h-[60vh] md:h-[85vh] bg-black overflow-hidden group">
@@ -260,6 +430,40 @@ function LiveDarshanContent() {
 
                 {/* Primary Actions for Live Viewer */}
                 <div className="flex flex-wrap gap-3 shrink-0">
+                  {/* Manual Devotion Buttons */}
+                  <div className="flex gap-2 mr-4">
+                    <motion.button
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.9 }}
+                      onClick={() => setBellTrigger(prev => prev + 1)}
+                      className="w-12 h-12 rounded-full bg-amber-500/20 backdrop-blur-md border border-amber-500/40 flex items-center justify-center text-2xl shadow-lg hover:bg-amber-500/40 transition-all pointer-events-auto"
+                      title="Ring Bell"
+                    >
+                      🔔
+                    </motion.button>
+                    <motion.button
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.9 }}
+                      onClick={() => setFlowerTrigger(prev => prev + 1)}
+                      className="w-12 h-12 rounded-full bg-pink-500/20 backdrop-blur-md border border-pink-500/40 flex items-center justify-center text-2xl shadow-lg hover:bg-pink-500/40 transition-all pointer-events-auto"
+                      title="Offer Flowers"
+                    >
+                      🌸
+                    </motion.button>
+                    <motion.button
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.9 }}
+                      onClick={() => {
+                        setAartiTrigger(prev => prev + 1);
+                        setBellTrigger(prev => prev + 1);
+                      }}
+                      className="w-12 h-12 rounded-full bg-orange-500/20 backdrop-blur-md border border-orange-500/40 flex items-center justify-center text-2xl shadow-lg hover:bg-orange-500/40 transition-all pointer-events-auto"
+                      title="Perform Aarti"
+                    >
+                      🪔
+                    </motion.button>
+                  </div>
+
                   <Button
                     className="h-12 px-8 rounded-full bg-sacred hover:bg-[#ff8c33] text-white font-black text-sm uppercase tracking-widest gap-2 shadow-[0_0_20px_rgba(255,107,0,0.4)] transition-all"
                     asChild

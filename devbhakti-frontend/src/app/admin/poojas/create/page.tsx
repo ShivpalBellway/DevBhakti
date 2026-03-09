@@ -7,9 +7,25 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { createPoojaAdmin, fetchAllTemplesAdmin } from "@/api/adminController";
+import { createPoojaAdmin, fetchAllTemplesAdmin, fetchPoojaCategoriesAdmin } from "@/api/adminController";
 import { useToast } from "@/hooks/use-toast";
 import { ImageCropper } from "@/components/admin/ImageCropper";
+import { Badge } from "@/components/ui/badge";
+import { Check, ChevronsUpDown } from "lucide-react";
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+    Command,
+    CommandEmpty,
+    CommandGroup,
+    CommandInput,
+    CommandItem,
+    CommandList,
+} from "@/components/ui/command";
+import { cn } from "@/lib/utils";
 import {
     Tooltip,
     TooltipContent,
@@ -21,6 +37,7 @@ export default function CreatePoojaPage() {
     const router = useRouter();
     const { toast } = useToast();
     const [temples, setTemples] = useState<any[]>([]);
+    const [availableCategories, setAvailableCategories] = useState<any[]>([]);
     const [imageFile, setImageFile] = useState<File | null>(null);
     const [imagePreview, setImagePreview] = useState<string>("");
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -59,7 +76,19 @@ export default function CreatePoojaPage() {
 
     useEffect(() => {
         loadTemples();
+        loadCategories();
     }, []);
+
+    const loadCategories = async () => {
+        try {
+            const res = await fetchPoojaCategoriesAdmin({ status: "APPROVED" });
+            if (res.success) {
+                setAvailableCategories(res.data);
+            }
+        } catch (error) {
+            console.error("Failed to load categories", error);
+        }
+    };
 
     const loadTemples = async () => {
         try {
@@ -299,14 +328,69 @@ export default function CreatePoojaPage() {
 
                 <div className="grid grid-cols-3 gap-6">
                     <div className="space-y-2">
-                        <Label htmlFor="category">Category *</Label>
-                        <Input
-                            id="category"
-                            placeholder="e.g. Aarti, Pooja"
-                            value={formData.category}
-                            onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                            required
-                        />
+                        <Label htmlFor="category">Category / Purpose*</Label>
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <Button
+                                    variant="outline"
+                                    role="combobox"
+                                    className={cn(
+                                        "w-full justify-between h-auto min-h-10 py-2 px-3",
+                                        !formData.category && "text-muted-foreground"
+                                    )}
+                                >
+                                    <div className="flex flex-wrap gap-1">
+                                        {formData.category ? (
+                                            formData.category.split(', ').map((cat) => (
+                                                <Badge key={cat} variant="secondary" className="mr-1">
+                                                    {cat}
+                                                </Badge>
+                                            ))
+                                        ) : (
+                                            "Select categories..."
+                                        )}
+                                    </div>
+                                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-[300px] p-0">
+                                <Command>
+                                    <CommandInput placeholder="Search categories..." />
+                                    <CommandList>
+                                        <CommandEmpty>No category found.</CommandEmpty>
+                                        <CommandGroup>
+                                            {availableCategories.map((category) => {
+                                                const selectedArr = formData.category ? formData.category.split(', ') : [];
+                                                const isSelected = selectedArr.includes(category.name);
+                                                return (
+                                                    <CommandItem
+                                                        key={category.id}
+                                                        value={category.name}
+                                                        onSelect={() => {
+                                                            let newArr = [...selectedArr];
+                                                            if (isSelected) {
+                                                                newArr = newArr.filter(c => c !== category.name);
+                                                            } else {
+                                                                newArr.push(category.name);
+                                                            }
+                                                            setFormData({ ...formData, category: newArr.join(', ') });
+                                                        }}
+                                                    >
+                                                        <Check
+                                                            className={cn(
+                                                                "mr-2 h-4 w-4",
+                                                                isSelected ? "opacity-100" : "opacity-0"
+                                                            )}
+                                                        />
+                                                        {category.name}
+                                                    </CommandItem>
+                                                );
+                                            })}
+                                        </CommandGroup>
+                                    </CommandList>
+                                </Command>
+                            </PopoverContent>
+                        </Popover>
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="price">Single Person Price (₹) *</Label>

@@ -14,13 +14,15 @@ export const loginAdmin = async (credentials: any) => {
 const getAdminToken = () => localStorage.getItem("admin_token") || localStorage.getItem("staff_token");
 
 // Admin Pooja Management
-export const fetchAllPoojasAdmin = async (params?: { isMaster?: boolean, templeId?: string }) => {
+export const fetchAllPoojasAdmin = async (params?: { isMaster?: boolean, templeId?: string, search?: string, poojaId?: string }) => {
     const token = getAdminToken();
     let url = `${API_URL}/admin/poojas`;
     if (params) {
         const query = new URLSearchParams();
         if (params.isMaster !== undefined) query.append('isMaster', params.isMaster.toString());
         if (params.templeId) query.append('templeId', params.templeId);
+        if (params.search) query.append('search', params.search);
+        if (params.poojaId) query.append('poojaId', params.poojaId);
         url += `?${query.toString()}`;
     }
     const response = await axios.get(url, {
@@ -83,6 +85,40 @@ export const deletePoojaAdmin = async (id: string) => {
     return response.data;
 };
 
+// Admin Pooja Category Management
+export const fetchPoojaCategoriesAdmin = async (params?: { status?: string, search?: string }) => {
+    const token = getAdminToken();
+    const response = await axios.get(`${API_URL}/admin/pooja-categories`, {
+        headers: { Authorization: `Bearer ${token}` },
+        params
+    });
+    return response.data;
+};
+
+export const createPoojaCategoryAdmin = async (data: { name: string, status?: string }) => {
+    const token = getAdminToken();
+    const response = await axios.post(`${API_URL}/admin/pooja-categories`, data, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+
+export const updatePoojaCategoryStatusAdmin = async (id: string, status: string) => {
+    const token = getAdminToken();
+    const response = await axios.put(`${API_URL}/admin/pooja-categories/${id}/status`, { status }, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+
+export const deletePoojaCategoryAdmin = async (id: string) => {
+    const token = getAdminToken();
+    const response = await axios.delete(`${API_URL}/admin/pooja-categories/${id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+
 // Admin Event Management
 export const fetchAllEventsAdmin = async (params?: { page?: number; limit?: number; search?: string }) => {
     const token = getAdminToken();
@@ -133,7 +169,7 @@ export const deleteEventAdmin = async (id: string) => {
 };
 
 // Admin Temple Management
-export const fetchAllTemplesAdmin = async (params?: { page?: number; limit?: number; search?: string; isVerified?: boolean; templeId?: string; date?: string }) => {
+export const fetchAllTemplesAdmin = async (params?: { page?: number; limit?: number; search?: string; isVerified?: boolean; templeId?: string; date?: string; deity?: string; state?: string; district?: string; transactionRange?: string }) => {
     const token = getAdminToken();
     let url = `${API_URL}/admin/temples`;
     if (params) {
@@ -144,9 +180,21 @@ export const fetchAllTemplesAdmin = async (params?: { page?: number; limit?: num
         if (params.isVerified !== undefined) query.append('isVerified', params.isVerified.toString());
         if (params.templeId) query.append('templeId', params.templeId);
         if (params.date) query.append('date', params.date);
+        if (params.deity) query.append('deity', params.deity);
+        if (params.state) query.append('state', params.state);
+        if (params.district) query.append('district', params.district);
+        if (params.transactionRange) query.append('transactionRange', params.transactionRange);
         url += `?${query.toString()}`;
     }
     const response = await axios.get(url, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+
+export const fetchTempleCategories = async () => {
+    const token = getAdminToken();
+    const response = await axios.get(`${API_URL}/admin/temples/categories`, {
         headers: { Authorization: `Bearer ${token}` }
     });
     return response.data;
@@ -404,7 +452,7 @@ export const deleteCTACardAdmin = async (id: string) => {
 };
 
 // Admin Product Management
-export const fetchAllProductsAdmin = async (params?: { page?: number; limit?: number; search?: string; status?: string; templeId?: string; date?: string }) => {
+export const fetchAllProductsAdmin = async (params?: { page?: number; limit?: number; search?: string; status?: string; templeId?: string; date?: string; productId?: string }) => {
     const token = getAdminToken();
     let url = `${API_URL}/admin/products`;
     if (params) {
@@ -412,6 +460,7 @@ export const fetchAllProductsAdmin = async (params?: { page?: number; limit?: nu
         if (params.page !== undefined) query.append('page', params.page.toString());
         if (params.limit !== undefined) query.append('limit', params.limit.toString());
         if (params.search) query.append('search', params.search);
+        if (params.productId) query.append('productId', params.productId);
         if (params.status) query.append('status', params.status);
         if (params.templeId) query.append('templeId', params.templeId);
         if (params.date) query.append('date', params.date);
@@ -875,6 +924,7 @@ export const fetchAllBookingsAdmin = async (params?: {
     dateType?: string;
     sortBy?: string;
     sortOrder?: string;
+    bookingId?: string;
 }) => {
     const token = getAdminToken();
     let url = `${API_URL}/admin/bookings`;
@@ -883,6 +933,7 @@ export const fetchAllBookingsAdmin = async (params?: {
         if (params.page) query.append('page', params.page.toString());
         if (params.limit) query.append('limit', params.limit.toString());
         if (params.search) query.append('search', params.search);
+        if (params.bookingId) query.append('bookingId', params.bookingId);
         if (params.status && params.status !== 'all') query.append('status', params.status);
         if (params.startDate) query.append('startDate', params.startDate);
         if (params.endDate) query.append('endDate', params.endDate);

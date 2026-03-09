@@ -3,14 +3,23 @@ import { prisma } from '../../lib/prisma';
 
 export const getAllPoojas = async (req: Request, res: Response) => {
     try {
-        const { isMaster, templeId } = req.query;
+        const { isMaster, templeId, search, poojaId } = req.query;
 
         const where: any = {};
+        if (poojaId) {
+            where.id = String(poojaId);
+        }
         if (isMaster !== undefined) {
             where.isMaster = isMaster === 'true';
         }
         if (templeId) {
             where.templeId = String(templeId);
+        }
+        if (search) {
+            where.OR = [
+                { name: { contains: String(search), mode: 'insensitive' } },
+                { category: { contains: String(search), mode: 'insensitive' } }
+            ];
         }
 
         const poojas = await prisma.pooja.findMany({

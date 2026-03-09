@@ -10,11 +10,13 @@ import adminProductRoutes from './routes/admin/productRoutes';
 import adminCategoryRoutes from './routes/admin/categoryRoutes';
 // (adminInstitutionRoutes merged into adminTempleRoutes)
 import adminCmsRoutes from './routes/admin/cmsRoutes';
+import adminPoojaCategoryRoutes from './routes/admin/poojaCategoryRoutes';
 import templeAdminTempleRoutes from './routes/temple_admin/templeRoutes';
 import templeAdminPoojaRoutes from './routes/temple_admin/poojaRoutes';
 import adminSellerRoutes from './routes/admin/sellerRoutes';
 import templeAdminEventRoutes from './routes/temple_admin/eventRoutes';
 import templeRoutes from './routes/templeRoutes';
+import poojaCategoryRoutes from './routes/poojaCategoryRoutes';
 import authRoutes from './routes/devotee/authRoutes';
 import favoriteRoutes from './routes/devotee/favoriteRoutes';
 import bookingRoutes from './routes/devotee/bookingRoutes';
@@ -71,6 +73,7 @@ app.use('/api/admin/temples', adminTempleRoutes);
 app.use('/api/admin/poojas', adminPoojaRoutes);
 app.use('/api/admin/products', adminProductRoutes);
 app.use('/api/admin/categories', adminCategoryRoutes);
+app.use('/api/admin/pooja-categories', adminPoojaCategoryRoutes);
 app.use('/api/admin/events', adminEventRoutes);
 app.use('/api/admin/bookings', adminBookingRoutes);
 // (institutions merged into temples)
@@ -99,6 +102,8 @@ app.use('/api/temple-admin/bank', templeAdminBankRoutes);
 app.use('/api/temple-admin/devotees', templeAdminDevoteeRoutes);
 app.use('/api/temple-admin/team', templeAdminStaffManagementRoutes);
 app.use("/api/temple-admin/donations", templeDonationRoutes);
+// (Donations are mostly public/temple managed)
+app.use('/api/pooja-categories', poojaCategoryRoutes);
 app.use('/api/seller/products', sellerProductRoutes);
 app.use('/api/seller/orders', sellerOrderRoutes);
 app.use('/api/seller/finance', sellerFinanceRoutes);

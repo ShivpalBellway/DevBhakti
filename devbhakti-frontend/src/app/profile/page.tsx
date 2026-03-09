@@ -671,7 +671,7 @@ const ProfilePage = () => {
                                                 <Edit3 className="w-6 h-6" />
                                             </div>
                                             <div>
-                                                <h2 className="text-2xl font-bold text-slate-900">Update Wisdom</h2>
+                                                <h2 className="text-2xl font-bold text-slate-900">Update Profile</h2>
                                                 <p className="text-slate-500 text-sm">Synchronize your official details.</p>
                                             </div>
                                         </div>

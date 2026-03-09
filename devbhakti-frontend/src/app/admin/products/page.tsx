@@ -59,6 +59,8 @@ import { useToast } from "@/hooks/use-toast";
 import { BASE_URL } from "@/config/apiConfig";
 import { useAdminAuth } from "@/hooks/use-admin-auth";
 
+import { Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import {
   fetchAllProductsAdmin,
   deleteProductAdmin,
@@ -66,7 +68,11 @@ import {
   fetchProductOwnersAdmin,
 } from "@/api/adminController";
 
-export default function ProductsManagementPage() {
+function ProductsContent() {
+  const searchParams = useSearchParams();
+  const idParam = searchParams.get("id");
+  const qParam = searchParams.get("q");
+
   const router = useRouter();
   const [products, setProducts] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -87,6 +93,11 @@ export default function ProductsManagementPage() {
   useEffect(() => {
     loadProducts();
   }, [currentPage, selectedOwner, date]);
+
+  useEffect(() => {
+    if (qParam) setSearchTerm(qParam);
+    else if (idParam) setSearchTerm(idParam);
+  }, [idParam, qParam]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -121,6 +132,7 @@ export default function ProductsManagementPage() {
         page: currentPage,
         limit: itemsPerPage,
         search: searchTerm,
+        productId: idParam || undefined,
         templeId: selectedOwner === "all" ? undefined : selectedOwner,
         date: date ? date.toISOString() : undefined
       });
@@ -675,5 +687,13 @@ export default function ProductsManagementPage() {
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+export default function ProductsManagementPage() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center min-h-[400px]">Loading Products...</div>}>
+      <ProductsContent />
+    </Suspense>
   );
 }

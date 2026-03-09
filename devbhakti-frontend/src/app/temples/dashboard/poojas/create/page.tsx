@@ -2,14 +2,17 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Plus, X, Upload, Loader2 } from "lucide-react";
+import { ArrowLeft, Plus, X, Upload, Loader2, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ImageCropper } from "@/components/admin/ImageCropper";
-import { createMyPooja } from "@/api/templeAdminController";
+import { createMyPooja, fetchPoojaCategories, suggestPoojaCategory } from "@/api/templeAdminController";
 import { useToast } from "@/hooks/use-toast";
+import { useEffect } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 
 export default function TempleCreatePoojaPage() {
     const router = useRouter();
@@ -19,6 +22,49 @@ export default function TempleCreatePoojaPage() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [showCropper, setShowCropper] = useState(false);
     const [tempImage, setTempImage] = useState<string | null>(null);
+    const [poojaCategories, setPoojaCategories] = useState<any[]>([]);
+    const [selectedCats, setSelectedCats] = useState<string[]>([]);
+    const [showAddCategory, setShowAddCategory] = useState(false);
+    const [newCategoryName, setNewCategoryName] = useState("");
+    const [isSuggesting, setIsSuggesting] = useState(false);
+
+    useEffect(() => {
+        loadCategories();
+    }, []);
+
+    const loadCategories = async () => {
+        try {
+            const res = await fetchPoojaCategories();
+            if (res.success) setPoojaCategories(res.data);
+        } catch (error) {
+            console.error("Failed to load categories", error);
+        }
+    };
+
+    const toggleCategory = (catName: string) => {
+        setSelectedCats(prev =>
+            prev.includes(catName)
+                ? prev.filter(c => c !== catName)
+                : [...prev, catName]
+        );
+    };
+
+    const handleSuggestCategory = async () => {
+        if (!newCategoryName.trim()) return;
+        setIsSuggesting(true);
+        try {
+            const res = await suggestPoojaCategory(newCategoryName);
+            if (res.success) {
+                toast({ title: "Suggested", description: "Your suggestion has been sent to admin for approval." });
+                setNewCategoryName("");
+                setShowAddCategory(false);
+            }
+        } catch (error: any) {
+            toast({ title: "Error", description: error.response?.data?.message || "Failed to suggest", variant: "destructive" });
+        } finally {
+            setIsSuggesting(false);
+        }
+    };
 
     const STATIC_PACKAGE_TYPES = [
         { name: "Single", description: "For 1 person" },
@@ -112,6 +158,9 @@ export default function TempleCreatePoojaPage() {
             submissionData.append('image', imageFile);
         }
 
+        // Add the combined categories
+        submissionData.set('category', selectedCats.join(", "));
+
         try {
             await createMyPooja(submissionData);
             toast({ title: "Success", description: "Pooja offered successfully" });
@@ -172,16 +221,55 @@ export default function TempleCreatePoojaPage() {
                                 required
                             />
                         </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="category">Category/Purpose *</Label>
-                            <Input
-                                id="category"
-                                placeholder="e.g. Special Ritual"
-                                value={formData.category}
-                                onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                                className="rounded-xl h-11 border-slate-200 focus:border-[#7b4623] focus:ring-[#7b4623]/10"
-                                required
-                            />
+                        <div className="space-y-4 md:col-span-2">
+                            <div className="flex items-center justify-between">
+                                <Label className="text-base font-semibold text-[#7b4623]">Category/Purpose *</Label>
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={() => setShowAddCategory(true)}
+                                    className="rounded-full px-4 h-9 text-sm border-dashed border-[#7b4623] text-[#7b4623] hover:bg-orange-50"
+                                >
+                                    <Plus className="w-4 h-4 mr-1" />
+                                    Add New
+                                </Button>
+                            </div>
+
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="outline" className="w-full justify-between h-11 rounded-xl border-slate-200 text-slate-600 hover:bg-transparent">
+                                        <span>Select purposes...</span>
+                                        <ChevronDown className="w-4 h-4 opacity-50" />
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent className="w-[var(--radix-dropdown-menu-trigger-width)] max-h-64 overflow-y-auto">
+                                    {poojaCategories.map((cat) => (
+                                        <DropdownMenuCheckboxItem
+                                            key={cat.id}
+                                            checked={selectedCats.includes(cat.name)}
+                                            onCheckedChange={() => toggleCategory(cat.name)}
+                                        >
+                                            {cat.name}
+                                        </DropdownMenuCheckboxItem>
+                                    ))}
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+
+                            <div className="flex flex-wrap gap-2 mt-3">
+                                {selectedCats.map(catName => (
+                                    <div key={catName} className="flex items-center gap-1.5 bg-[#7b4623] text-white px-3 py-1.5 rounded-full text-sm">
+                                        <span>{catName}</span>
+                                        <X
+                                            className="w-3.5 h-3.5 cursor-pointer hover:text-red-300"
+                                            onClick={() => toggleCategory(catName)}
+                                        />
+                                    </div>
+                                ))}
+                            </div>
+
+                            {selectedCats.length === 0 && (
+                                <p className="text-[10px] text-slate-400 italic">Select one or more purposes for this pooja</p>
+                            )}
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="price">Single Person Price(₹) *</Label>
@@ -367,6 +455,38 @@ export default function TempleCreatePoojaPage() {
                     </Button>
                 </div>
             </form>
+
+            <Dialog open={showAddCategory} onOpenChange={setShowAddCategory}>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle>Suggest New Purpose/Category</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="newCat">Purpose Name</Label>
+                            <Input
+                                id="newCat"
+                                placeholder="e.g. Baby Shower"
+                                value={newCategoryName}
+                                onChange={(e) => setNewCategoryName(e.target.value)}
+                                className="rounded-xl"
+                            />
+                            <p className="text-xs text-slate-500 italic">New purposes will be visible to everyone once approved by DevBhakti Admin.</p>
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setShowAddCategory(false)} className="rounded-xl">Cancel</Button>
+                        <Button
+                            onClick={handleSuggestCategory}
+                            disabled={isSuggesting || !newCategoryName.trim()}
+                            className="bg-[#7b4623] hover:bg-[#5d351a] rounded-xl text-white"
+                        >
+                            {isSuggesting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+                            Send Request
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

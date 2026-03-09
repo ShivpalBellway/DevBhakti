@@ -85,7 +85,7 @@ export const getEventsByTemple = async (req: Request, res: Response) => {
 // Create event
 export const createEvent = async (req: Request, res: Response) => {
     try {
-        const { name, date, description, templeId, recommendedPoojaIds } = req.body;
+        const { name, date, time, description, templeId, recommendedPoojaIds } = req.body;
 
         if (!name || !date) {
             return res.status(400).json({ error: 'Name and date are required' });
@@ -95,6 +95,7 @@ export const createEvent = async (req: Request, res: Response) => {
             data: {
                 name,
                 date,
+                time: time || null,
                 description: description || null,
                 templeId: templeId || null,
                 // Connect recommended poojas if provided
@@ -137,13 +138,14 @@ export const createEvent = async (req: Request, res: Response) => {
 export const updateEvent = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
-        const { name, date, description, templeId, recommendedPoojaIds } = req.body;
+        const { name, date, time, description, templeId, recommendedPoojaIds } = req.body;
 
         const event = await prisma.event.update({
             where: { id: String(id) },
             data: {
                 name,
                 date,
+                time: time !== undefined ? time : undefined,
                 description,
                 templeId: templeId || null,
                 // Sync recommended poojas if provided

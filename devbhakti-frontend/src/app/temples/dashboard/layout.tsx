@@ -110,11 +110,11 @@ const sidebarItems = [
             { label: "Cancelled", href: "/temples/dashboard/bookings?status=CANCELLED" },
         ]
     },
-    {
-        label: "Live Stream",
-        icon: Video,
-        href: "/temples/dashboard/live-stream",
-    },
+    // {
+    //     label: "Live Stream",
+    //     icon: Video,
+    //     href: "/temples/dashboard/live-stream",
+    // },
     {
         label: "Earnings & Settlement",
         icon: CreditCard,
@@ -374,7 +374,7 @@ export default function TempleAdminLayout({ children }: { children: React.ReactN
             {/* Sidebar */}
             <aside
                 className={cn(
-                    "fixed inset-y-0 left-0 z-50 flex flex-col bg-sidebar transition-all duration-300",
+                    "fixed inset-y-0 left-0 z-50 flex flex-col bg-sidebar transition-all duration-300 print:hidden",
                     sidebarOpen ? "w-64" : "w-20"
                 )}
             >
@@ -504,12 +504,12 @@ export default function TempleAdminLayout({ children }: { children: React.ReactN
             {/* Main content */}
             <div
                 className={cn(
-                    "flex-1 transition-all duration-300",
+                    "flex-1 transition-all duration-300 print:ml-0 print:w-full",
                     sidebarOpen ? "ml-64" : "ml-20"
                 )}
             >
                 {/* Header */}
-                <header className="sticky top-0 z-40 h-16 bg-background/95 backdrop-blur-md border-b border-border flex items-center justify-between px-6 w-full overflow-hidden">
+                <header className="sticky top-0 z-40 h-16 bg-background/95 backdrop-blur-md border-b border-border flex items-center justify-between px-6 w-full overflow-hidden print:hidden">
                     <div className="flex items-center gap-2 text-sm text-muted-foreground capitalize overflow-x-auto whitespace-nowrap custom-scrollbar pb-1">
                         <Link href="/temples/dashboard" className="hover:text-foreground transition-colors">
                             Temple Admin
@@ -519,6 +519,7 @@ export default function TempleAdminLayout({ children }: { children: React.ReactN
                                 <ChevronRight className="w-4 h-4 flex-shrink-0" />
                                 <span className="text-foreground font-medium">Dashboard</span>
                             </>
+
                         ) : (
                             pathname?.split('/').filter(Boolean).slice(2).map((path, index, array) => {
                                 const isLast = index === array.length - 1;
@@ -550,7 +551,7 @@ export default function TempleAdminLayout({ children }: { children: React.ReactN
                 </header>
 
                 {/* Page content */}
-                <main className="p-6">
+                <main className="p-6 print:p-0">
                     {children}
                 </main>
             </div>

@@ -79,14 +79,20 @@ import {
     deleteTempleAdmin,
     toggleTempleStatusAdmin,
     fetchTempleUpdateRequests,
-    fetchCommissionSlabsAdmin
+    fetchCommissionSlabsAdmin,
+    fetchTempleCategories
 } from "@/api/adminController";
 import { useToast } from "@/hooks/use-toast";
 import TemplePreview from "@/components/admin/TemplePreview";
+import { Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { useAdminAuth } from "@/hooks/use-admin-auth";
 
+function TemplesContent() {
+    const searchParams = useSearchParams();
+    const idParam = searchParams.get("id");
+    const qParam = searchParams.get("q");
 
-export default function TemplesManagementPage() {
     const router = useRouter();
     const [temples, setTemples] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -123,6 +129,17 @@ export default function TemplesManagementPage() {
     });
 
     useEffect(() => {
+        if (qParam) setSearchTerm(qParam);
+        else if (idParam) setSearchTerm(idParam);
+
+        // If coming from dashboard pending approvals, it's likely unverified
+        if (idParam && window.location.search.includes('q=')) {
+            // We can guess it's unverified if it came from pending
+            setActiveTab("unverified");
+        }
+    }, [idParam, qParam]);
+
+    useEffect(() => {
         fetchAllTemplesAdmin().then(data => {
             if (Array.isArray(data)) {
                 setAllTemplesForFilter(data.filter((u: any) => u.temple).map((u: any) => ({
@@ -138,7 +155,19 @@ export default function TemplesManagementPage() {
                 })));
             }
         });
+
+        fetchTempleCategories().then(res => {
+            if (res.success && Array.isArray(res.data)) {
+                setDynamicDeities(res.data);
+            }
+        });
     }, []);
+
+    const [selectedDeity, setSelectedDeity] = useState<string>("all");
+    const [transactionRange, setTransactionRange] = useState<string>("all");
+    const [stateFilter, setStateFilter] = useState<string>("");
+    const [districtFilter, setDistrictFilter] = useState<string>("");
+    const [dynamicDeities, setDynamicDeities] = useState<string[]>([]);
 
     useEffect(() => {
         if (currentPage === 1) {
@@ -147,7 +176,7 @@ export default function TemplesManagementPage() {
             setCurrentPage(1);
         }
         loadUpdateRequestsCount();
-    }, [debouncedSearch, activeTab, selectedTempleFilter, date]);
+    }, [debouncedSearch, activeTab, selectedTempleFilter, date, selectedDeity, transactionRange, stateFilter, districtFilter]);
 
     useEffect(() => {
         if (currentPage !== 1) {
@@ -172,8 +201,12 @@ export default function TemplesManagementPage() {
                 limit: itemsPerPage,
                 search: debouncedSearch,
                 isVerified: activeTab === "verified",
-                templeId: selectedTempleFilter,
-                date: date ? date.toISOString() : undefined
+                templeId: idParam || (selectedTempleFilter === "all" ? undefined : selectedTempleFilter),
+                date: date ? date.toISOString() : undefined,
+                deity: selectedDeity === "all" ? undefined : selectedDeity,
+                transactionRange: transactionRange === "all" ? undefined : transactionRange,
+                state: stateFilter || undefined,
+                district: districtFilter || undefined
             });
 
             const data = Array.isArray(res) ? res : res.data;
@@ -473,20 +506,52 @@ export default function TemplesManagementPage() {
                 </div>
 
                 <div className="flex gap-2 w-full md:w-auto">
-                    <div className="w-full md:w-[200px]">
-                        <Select value={selectedTempleFilter} onValueChange={setSelectedTempleFilter}>
+                    <div className="w-full md:w-[150px]">
+                        <Select value={selectedDeity} onValueChange={setSelectedDeity}>
                             <SelectTrigger className="h-10">
-                                <SelectValue placeholder="Select Temple" />
+                                <SelectValue placeholder="Deity/God" />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="all">All Temples</SelectItem>
-                                {allTemplesForFilter.map((inst) => (
-                                    <SelectItem key={inst.userId} value={inst.templeId || inst.userId}>
-                                        {inst.templeName}
-                                    </SelectItem>
+                                <SelectItem value="all">All Deities</SelectItem>
+                                {dynamicDeities.map(deity => (
+                                    <SelectItem key={deity} value={deity}>{deity}</SelectItem>
                                 ))}
                             </SelectContent>
                         </Select>
+                    </div>
+
+                    <div className="w-full md:w-[150px]">
+                        <Select value={transactionRange} onValueChange={setTransactionRange}>
+                            <SelectTrigger className="h-10">
+                                <SelectValue placeholder="Transactions" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">All Trans.</SelectItem>
+                                <SelectItem value="less_100">Less than 100 PM</SelectItem>
+                                <SelectItem value="101_250">101 to 250 PM</SelectItem>
+                                <SelectItem value="251_500">251 to 500 PM</SelectItem>
+                                <SelectItem value="501_1000">501 to 1000 PM</SelectItem>
+                                <SelectItem value="more_1000">1000+ PM</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                    <div className="w-full md:w-[150px]">
+                        <Input
+                            placeholder="State..."
+                            className="h-10"
+                            value={stateFilter}
+                            onChange={(e) => setStateFilter(e.target.value)}
+                        />
+                    </div>
+
+                    <div className="w-full md:w-[150px]">
+                        <Input
+                            placeholder="District..."
+                            className="h-10"
+                            value={districtFilter}
+                            onChange={(e) => setDistrictFilter(e.target.value)}
+                        />
                     </div>
 
                     <div className="flex gap-2">
@@ -512,7 +577,7 @@ export default function TemplesManagementPage() {
                                 />
                             </PopoverContent>
                         </Popover>
-                        {(date || selectedTempleFilter !== "all" || searchTerm) && (
+                        {(date || selectedTempleFilter !== "all" || searchTerm || selectedDeity !== "all" || transactionRange !== "all" || stateFilter || districtFilter) && (
                             <Button
                                 variant="ghost"
                                 size="icon"
@@ -520,6 +585,10 @@ export default function TemplesManagementPage() {
                                     setDate(undefined);
                                     setSelectedTempleFilter("all");
                                     setSearchTerm("");
+                                    setSelectedDeity("all");
+                                    setTransactionRange("all");
+                                    setStateFilter("");
+                                    setDistrictFilter("");
                                 }}
                                 className="h-10 w-10 text-muted-foreground"
                                 title="Clear all filters"
@@ -1232,5 +1301,13 @@ export default function TemplesManagementPage() {
                 </DialogContent>
             </Dialog>
         </div>
+    );
+}
+
+export default function TemplesManagementPage() {
+    return (
+        <Suspense fallback={<div className="flex items-center justify-center min-h-[400px]">Loading Temples...</div>}>
+            <TemplesContent />
+        </Suspense>
     );
 }

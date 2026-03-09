@@ -1,8 +1,8 @@
 import { Router } from "express";
-import { 
-  getTempleLedger, 
-  getTempleFinanceSummary, 
-  requestWithdrawal 
+import {
+  getTempleLedger,
+  getTempleFinanceSummary,
+  requestWithdrawal
 } from "../../controllers/temple_admin/financeController";
 
 import { authenticate, checkPermission } from "../../middleware/authMiddleware";

@@ -10,7 +10,8 @@ import {
     approveUpdateRequest,
     rejectUpdateRequest,
     updateTempleLiveConfig,
-    setPrimaryLive
+    setPrimaryLive,
+    getTempleCategories
 } from '../../controllers/admin/templeController';
 import { authenticate, authorize, checkPermission } from '../../middleware/authMiddleware';
 
@@ -42,6 +43,7 @@ router.get('/update-requests', checkPermission('temples.requests_view'), getPend
 router.post('/update-requests/:id/approve', checkPermission('temples.verify'), approveUpdateRequest);
 router.post('/update-requests/:id/reject', checkPermission('temples.verify'), rejectUpdateRequest);
 
+router.get('/categories', checkPermission('temples.view'), getTempleCategories);
 router.get('/', checkPermission('temples.view'), getAllTemples);
 router.post('/', checkPermission('temples.create'), templeUpload, createTemple);
 router.put('/:id', checkPermission('temples.edit'), templeUpload, updateTemple);

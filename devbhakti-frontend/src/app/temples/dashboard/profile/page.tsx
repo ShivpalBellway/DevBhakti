@@ -279,11 +279,17 @@ export default function TempleProfilePage() {
         e.preventDefault();
 
         // 1. Phone Number Validation
-        const phoneDigits = formData.phone.replace(/\D/g, '');
-        if (phoneDigits.length !== 10) {
+        const phoneValue = formData.phone || "";
+        const phoneDigits = phoneValue.replace(/\D/g, '');
+        const isValidPhone = !phoneValue ||
+            phoneDigits.length === 10 ||
+            (phoneDigits.length === 11 && phoneDigits.startsWith('0')) ||
+            (phoneDigits.length === 12 && phoneDigits.startsWith('91'));
+
+        if (!isValidPhone) {
             toast({
                 title: "Invalid Phone Number",
-                description: "Contact phone must be exactly 10 digits.",
+                description: "Official phone must be a valid 10-digit number (prefix with 91 or 0 is allowed).",
                 variant: "destructive"
             });
             return;

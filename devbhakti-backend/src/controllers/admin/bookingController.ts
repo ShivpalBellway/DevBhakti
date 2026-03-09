@@ -10,9 +10,13 @@ export const getAllBookings = async (req: Request, res: Response) => {
         const limit = parseInt(req.query.limit as string) || 10;
         const skip = (page - 1) * limit;
 
-        const { status, search, startDate, endDate, dateType, sortBy, sortOrder } = req.query;
+        const { status, search, startDate, endDate, dateType, sortBy, sortOrder, bookingId } = req.query;
 
         let where: any = {};
+
+        if (bookingId) {
+            where.id = bookingId as string;
+        }
 
         if (status && status !== 'all') {
             where.status = status;

@@ -8,6 +8,7 @@ import {
     Trash2,
     Calendar as CalendarIcon,
     MapPin,
+    Clock,
     Sparkles,
     Check,
     ChevronsUpDown,
@@ -91,9 +92,28 @@ export default function AdminEventsPage() {
     const [formData, setFormData] = useState({
         name: "",
         date: "",
+        time: "",
         description: "",
         templeId: "",
     });
+
+    const [timeData, setTimeData] = useState({
+        hours: "10",
+        minutes: "00",
+        period: "AM"
+    });
+
+    // Helper to format time for storage
+    const getFormattedTime = (h: string, m: string, p: string) => `${h}:${m} ${p}`;
+
+    // Helper to parse stored time
+    const parseStoredTime = (timeStr: string) => {
+        if (!timeStr) return { hours: "10", minutes: "00", period: "AM" };
+        const [time, period] = timeStr.split(" ");
+        if (!time || !period) return { hours: "10", minutes: "00", period: "AM" };
+        const [hours, minutes] = time.split(":");
+        return { hours: hours || "10", minutes: minutes || "00", period: period || "AM" };
+    };
 
     useEffect(() => {
         loadEvents(1);
@@ -185,9 +205,11 @@ export default function AdminEventsPage() {
             setFormData({
                 name: event.name,
                 date: event.date,
+                time: event.time || "",
                 description: event.description || "",
                 templeId: event.templeId,
             });
+            setTimeData(parseStoredTime(event.time));
             // Pre-populate selected poojas in edit mode
             if (event.Pooja && Array.isArray(event.Pooja)) {
                 setSelectedPoojaIds(event.Pooja.map((p: any) => p.id));
@@ -199,9 +221,11 @@ export default function AdminEventsPage() {
             setFormData({
                 name: "",
                 date: "",
+                time: "",
                 description: "",
                 templeId: "",
             });
+            setTimeData({ hours: "10", minutes: "00", period: "AM" });
             setSelectedPoojaIds([]);
         }
         setIsDialogOpen(true);
@@ -221,6 +245,7 @@ export default function AdminEventsPage() {
         try {
             const payload = {
                 ...formData,
+                time: getFormattedTime(timeData.hours, timeData.minutes, timeData.period),
                 recommendedPoojaIds: selectedPoojaIds,
             };
 
@@ -306,7 +331,7 @@ export default function AdminEventsPage() {
                         <TableRow>
                             <TableHead>Event Name</TableHead>
                             <TableHead>Temple</TableHead>
-                            <TableHead>Date</TableHead>
+                            <TableHead>Date & Time</TableHead>
                             <TableHead>Description</TableHead>
                             <TableHead>Recommended Poojas</TableHead>
                             <TableHead className="text-right">Actions</TableHead>
@@ -349,7 +374,15 @@ export default function AdminEventsPage() {
                                         </div>
                                     </TableCell>
                                     <TableCell>
-                                        <Badge variant="outline">{event.date}</Badge>
+                                        <div className="flex flex-col gap-1">
+                                            <Badge variant="outline" className="w-fit">{event.date}</Badge>
+                                            {event.time && (
+                                                <div className="flex items-center text-[10px] font-bold text-muted-foreground ml-1">
+                                                    <Clock className="w-3 h-3 mr-1" />
+                                                    {event.time}
+                                                </div>
+                                            )}
+                                        </div>
                                     </TableCell>
                                     <TableCell>
                                         <div className="text-sm text-muted-foreground line-clamp-1 max-w-[300px]">
@@ -514,39 +547,73 @@ export default function AdminEventsPage() {
                             </select>
                         </div>
 
-                        <div className="space-y-2">
-                            <Label htmlFor="date">Date *</Label>
-                            <Popover>
-                                <PopoverTrigger asChild>
-                                    <Button
-                                        variant={"outline"}
-                                        className={cn(
-                                            "w-full justify-start text-left font-normal h-10 border-input",
-                                            !formData.date && "text-muted-foreground"
-                                        )}
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="date">Date *</Label>
+                                <Popover>
+                                    <PopoverTrigger asChild>
+                                        <Button
+                                            variant={"outline"}
+                                            className={cn(
+                                                "w-full justify-start text-left font-normal h-10 border-input rounded-xl",
+                                                !formData.date && "text-muted-foreground"
+                                            )}
+                                        >
+                                            <CalendarIcon className="mr-2 h-4 w-4" />
+                                            {formData.date ? (
+                                                formData.date
+                                            ) : (
+                                                <span>Pick a date</span>
+                                            )}
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-auto p-0" align="start">
+                                        <Calendar
+                                            mode="single"
+                                            selected={formData.date ? new Date(formData.date) : undefined}
+                                            onSelect={(date) =>
+                                                setFormData({
+                                                    ...formData,
+                                                    date: date ? format(date, "PPP") : "",
+                                                })
+                                            }
+                                            initialFocus
+                                        />
+                                    </PopoverContent>
+                                </Popover>
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label className="font-medium">Time *</Label>
+                                <div className="flex gap-1">
+                                    <select
+                                        className="flex-1 h-10 rounded-xl border border-input bg-background px-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+                                        value={timeData.hours}
+                                        onChange={(e) => setTimeData({ ...timeData, hours: e.target.value })}
                                     >
-                                        <CalendarIcon className="mr-2 h-4 w-4" />
-                                        {formData.date ? (
-                                            formData.date
-                                        ) : (
-                                            <span>Pick a date</span>
-                                        )}
-                                    </Button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-auto p-0" align="start">
-                                    <Calendar
-                                        mode="single"
-                                        selected={formData.date ? new Date(formData.date) : undefined}
-                                        onSelect={(date) =>
-                                            setFormData({
-                                                ...formData,
-                                                date: date ? format(date, "PPP") : "",
-                                            })
-                                        }
-                                        initialFocus
-                                    />
-                                </PopoverContent>
-                            </Popover>
+                                        {Array.from({ length: 12 }, (_, i) => (i + 1).toString().padStart(2, '0')).map(h => (
+                                            <option key={h} value={h}>{h}</option>
+                                        ))}
+                                    </select>
+                                    <select
+                                        className="flex-1 h-10 rounded-xl border border-input bg-background px-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+                                        value={timeData.minutes}
+                                        onChange={(e) => setTimeData({ ...timeData, minutes: e.target.value })}
+                                    >
+                                        {["00", "15", "30", "45"].map(m => (
+                                            <option key={m} value={m}>{m}</option>
+                                        ))}
+                                    </select>
+                                    <select
+                                        className="w-16 h-10 rounded-xl border border-input bg-background px-2 text-sm font-bold text-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                                        value={timeData.period}
+                                        onChange={(e) => setTimeData({ ...timeData, period: e.target.value })}
+                                    >
+                                        <option value="AM">AM</option>
+                                        <option value="PM">PM</option>
+                                    </select>
+                                </div>
+                            </div>
                         </div>
 
                         <div className="space-y-2">

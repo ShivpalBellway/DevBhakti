@@ -25,10 +25,15 @@ import { fetchAllPoojasAdmin, deletePoojaAdmin, promotePoojaToMasterAdmin, updat
 import { Pause, Play, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { API_URL } from "@/config/apiConfig";
+import { Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { useAdminAuth } from "@/hooks/use-admin-auth";
 
+function PoojasContent() {
+    const searchParams = useSearchParams();
+    const idParam = searchParams.get("id");
+    const qParam = searchParams.get("q");
 
-export default function AdminPoojasListPage() {
     const router = useRouter();
     const [poojas, setPoojas] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -39,13 +44,21 @@ export default function AdminPoojasListPage() {
 
 
     useEffect(() => {
+        if (qParam) setSearchTerm(qParam);
+        else if (idParam) setSearchTerm(idParam);
+    }, [idParam, qParam]);
+
+    useEffect(() => {
         loadPoojas();
-    }, [activeTab]);
+    }, [activeTab, searchTerm]);
 
     const loadPoojas = async () => {
         setIsLoading(true);
         try {
-            const params: any = {};
+            const params: any = {
+                search: searchTerm,
+                poojaId: idParam || undefined
+            };
             if (activeTab === 'master') params.isMaster = true;
             if (activeTab === 'temple') params.isMaster = false;
 
@@ -164,7 +177,8 @@ export default function AdminPoojasListPage() {
                         : 'border-transparent text-slate-500 hover:text-slate-700'
                         }`}
                 >
-                    Master Templates
+                    {/* Master Templates */}
+                    Non Temple Specific
                 </button>
                 <button
                     onClick={() => setActiveTab('temple')}
@@ -327,5 +341,13 @@ export default function AdminPoojasListPage() {
                 </Table>
             </div>
         </div>
+    );
+}
+
+export default function AdminPoojasListPage() {
+    return (
+        <Suspense fallback={<div className="flex items-center justify-center min-h-[400px]">Loading Poojas...</div>}>
+            <PoojasContent />
+        </Suspense>
     );
 }

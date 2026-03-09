@@ -214,6 +214,13 @@ model Pooja {
   Event         Event[]
 }
 
+model PoojaCategory {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  status    String   @default("APPROVED") // PENDING, APPROVED, REJECTED
+  createdAt DateTime @default(now())
+}
+
 model Event {
   id          String   @id @default(cuid())
   name        String

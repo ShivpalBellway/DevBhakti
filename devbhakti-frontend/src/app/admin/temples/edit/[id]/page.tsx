@@ -556,7 +556,7 @@ export default function EditTemplePage() {
                                 <Input value={formData.location} onChange={e => setFormData({ ...formData, location: e.target.value })} required />
                             </div>
                             <div className="space-y-2">
-                                <label className="text-sm font-semibold text-slate-700">Category *</label>
+                                <label className="text-sm font-semibold text-slate-700">Primary Deity/God *</label>
                                 <Input value={formData.category} onChange={e => setFormData({ ...formData, category: e.target.value })} required />
                             </div>
                             <div className="space-y-2">

@@ -56,7 +56,7 @@ const sidebarItems = [
     ]
   },
   {
-    label: "Users",
+    label: "Users Management",
     icon: Users,
     href: "/admin/users",
     permission: "users.menu",
@@ -76,8 +76,12 @@ const sidebarItems = [
   {
     label: "Poojas",
     icon: Flower2,
-    href: "/admin/poojas",
+    href: "#",
     permission: "poojas.view",
+    subItems: [
+      { label: "All Poojas", href: "/admin/poojas", permission: "poojas.view" },
+      { label: "Pooja Purposes", href: "/admin/poojas/categories", permission: "poojas.view" },
+    ]
   },
   {
     label: "Product Management",
@@ -343,13 +347,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <div className="flex items-center gap-3 h-20 px-4 border-b border-sidebar-border bg-sidebar/50 backdrop-blur-sm">
           {sidebarOpen ? (
             <div className="flex items-center gap-3 w-full">
-              <div className="bg-white p-1.5 rounded-xl shadow-inner border border-sidebar-border/50 shrink-0">
+              <div className="bg-white p-1.5 rounded-full shadow-inner border border-sidebar-border/50 shrink-0">
                 <div className="relative h-9 w-9">
                   <Image
                     src={logo}
                     alt="DevBhakti Admin Logo"
                     fill
-                    className="object-contain"
+                    className="object-contain rounded-full"
                     priority
                   />
                 </div>
@@ -364,13 +368,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               </div>
             </div>
           ) : (
-            <div className="bg-white p-1.5 rounded-xl shadow-sm border border-sidebar-border/50 mx-auto">
+            <div className="bg-white p-1.5 rounded-full shadow-sm border border-sidebar-border/50 mx-auto">
               <div className="relative h-8 w-8">
                 <Image
                   src={logo}
                   alt="DevBhakti Admin Logo"
                   fill
-                  className="object-contain"
+                  className="object-contain rounded-full"
                   priority
                 />
               </div>

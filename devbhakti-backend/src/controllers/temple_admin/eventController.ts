@@ -40,6 +40,7 @@ export const createMyEvent = async (req: Request, res: Response) => {
             data: {
                 name: eventData.name,
                 date: eventData.date,
+                time: eventData.time || null,
                 description: eventData.description,
                 templeId: templeId,
                 status: eventData.status === false ? false : true,
@@ -94,6 +95,7 @@ export const updateMyEvent = async (req: Request, res: Response) => {
             data: {
                 name: eventData.name,
                 date: eventData.date,
+                time: eventData.time !== undefined ? eventData.time : undefined,
                 description: eventData.description,
                 status: eventData.status !== undefined ? eventData.status : undefined,
                 // Sync recommended poojas if provided

@@ -27,7 +27,7 @@ const normalizePhone = (phone: string): string => {
 // Get all Temples (via User accounts)
 export const getAllTemples = async (req: Request, res: Response) => {
   try {
-    const { page, limit, search, isVerified, templeId, date } = req.query;
+    const { page, limit, search, isVerified, templeId, date, deity, state, district, transactionRange } = req.query;
 
     const where: any = {
       role: 'INSTITUTION'
@@ -38,7 +38,65 @@ export const getAllTemples = async (req: Request, res: Response) => {
     }
 
     if (templeId && templeId !== 'all') {
-      where.temple = { id: String(templeId) };
+      where.temple = { ...where.temple, id: String(templeId) };
+    }
+
+    if (deity && deity !== 'all') {
+      where.temple = { ...where.temple, category: { contains: String(deity), mode: 'insensitive' } };
+    }
+
+    if (state) {
+      where.temple = { ...where.temple, location: { contains: String(state), mode: 'insensitive' } };
+    }
+
+    if (district) {
+      where.temple = { ...where.temple, location: { contains: String(district), mode: 'insensitive' } };
+    }
+
+    if (transactionRange && transactionRange !== 'all') {
+      const monthStart = new Date();
+      monthStart.setDate(1);
+      monthStart.setHours(0, 0, 0, 0);
+
+      // Get count of earnings for the current month
+      const ledgerGroups = await prisma.templeLedger.groupBy({
+        by: ['templeId'],
+        where: {
+          createdAt: { gte: monthStart },
+          type: { in: ['MARKETPLACE_EARNING', 'POOJA_EARNING', 'DONATION_EARNING'] },
+          templeId: { not: null }
+        },
+        _count: { id: true }
+      });
+
+      const filteredTempleIds = ledgerGroups
+        .filter(group => {
+          const count = group._count.id;
+          if (transactionRange === 'less_100') return count < 100;
+          if (transactionRange === '101_250') return count >= 101 && count <= 250;
+          if (transactionRange === '251_500') return count >= 251 && count <= 500;
+          if (transactionRange === '501_1000') return count >= 501 && count <= 1000;
+          if (transactionRange === 'more_1000') return count > 1000;
+          return true;
+        })
+        .map(group => group.templeId) as string[];
+
+      // Special case: If "less_100" is selected, temples with 0 transactions should also be included
+      if (transactionRange === 'less_100') {
+        // Temples with NO ledger entries this month also count as less than 100
+        const allTempleIdsWithLedger = ledgerGroups.map(g => g.templeId);
+        const templesWithNoLedger = await prisma.temple.findMany({
+          where: { id: { notIn: allTempleIdsWithLedger.filter(Boolean) as string[] } },
+          select: { id: true }
+        });
+        filteredTempleIds.push(...templesWithNoLedger.map(t => t.id));
+      }
+
+      if (filteredTempleIds.length > 0) {
+        where.temple = { ...where.temple, id: { in: filteredTempleIds } };
+      } else {
+        where.temple = { ...where.temple, id: 'NONE_MATCH' };
+      }
     }
 
     if (date) {
@@ -147,8 +205,8 @@ export const createTemple = async (req: Request, res: Response) => {
 
     if (data.phone) {
       const cleaned = data.phone.replace(/\D/g, '');
-      if (cleaned.length !== 10) {
-        return res.status(400).json({ error: 'Mobile number must be exactly 10 digits' });
+      if (!(cleaned.length === 10 || (cleaned.length === 12 && cleaned.startsWith('91')))) {
+        return res.status(400).json({ error: 'Invalid phone number. Use 10 digits or include 91 prefix.' });
       }
       data.phone = normalizePhone(data.phone);
     }
@@ -315,8 +373,8 @@ export const updateTemple = async (req: Request, res: Response) => {
 
     if (data.phone) {
       const cleaned = data.phone.replace(/\D/g, '');
-      if (cleaned.length !== 10) {
-        return res.status(400).json({ error: 'Mobile number must be exactly 10 digits' });
+      if (!(cleaned.length === 10 || (cleaned.length === 12 && cleaned.startsWith('91')))) {
+        return res.status(400).json({ error: 'Invalid phone number. Use 10 digits or include 91 prefix.' });
       }
       data.phone = normalizePhone(data.phone);
     }
@@ -887,6 +945,24 @@ export const rejectUpdateRequest = async (req: Request, res: Response) => {
     res.status(500).json({ error: error.message || 'Failed to reject update request' });
   }
 };
+export const getTempleCategories = async (req: Request, res: Response) => {
+  try {
+    const temples = await prisma.temple.findMany({
+      where: {
+        category: { not: null }
+      },
+      select: { category: true },
+      distinct: ['category']
+    });
 
+    const categories = temples
+      .map(t => t.category)
+      .filter((c): c is string => !!c && c.trim() !== "");
 
+    res.json({ success: true, data: categories });
+  } catch (error: any) {
+    console.error('Fetch categories error:', error);
+    res.status(500).json({ error: 'Failed to fetch temple categories' });
+  }
+};
 

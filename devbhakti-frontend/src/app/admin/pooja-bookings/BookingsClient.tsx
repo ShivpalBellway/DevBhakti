@@ -74,6 +74,7 @@ const formatDateDDMMYYYY = (dateString: string | null | undefined, includeTime =
 function BookingsContent() {
     const searchParams = useSearchParams();
     const idParam = searchParams.get("id");
+    const qParam = searchParams.get("q");
 
     const [searchQuery, setSearchQuery] = useState("");
     const debouncedSearch = useDebounce(searchQuery, 500);
@@ -127,6 +128,7 @@ function BookingsContent() {
                 page,
                 limit: 10,
                 search: debouncedSearch,
+                bookingId: idParam || undefined,
                 status: statusFilter,
                 startDate,
                 endDate,
@@ -151,8 +153,9 @@ function BookingsContent() {
     };
 
     useEffect(() => {
-        if (idParam) setSearchQuery(idParam);
-    }, [idParam]);
+        if (qParam) setSearchQuery(qParam);
+        else if (idParam) setSearchQuery(idParam);
+    }, [idParam, qParam]);
 
     useEffect(() => {
         loadBookings(currentPage);

@@ -236,9 +236,21 @@ export const fetchMyProductById = async (id: string) => {
 export const fetchCategories = async () => {
     // Currently using the public admin endpoint
     const response = await axios.get(`${API_URL}/admin/categories/active`);
-    return response.data.data; // Note: admin endpoint returns { success: true, data: { categories: [...] } } or { data: [...] }?
-    // Admin controller says: return response.data.data;
-    // Let's stick to that.
+    return response.data.data;
+};
+
+// Pooja Categories (Master List)
+export const fetchPoojaCategories = async () => {
+    const response = await axios.get(`${API_URL}/pooja-categories`);
+    return response.data;
+};
+
+export const suggestPoojaCategory = async (name: string) => {
+    const token = localStorage.getItem("token");
+    const response = await axios.post(`${API_URL}/pooja-categories/suggest`, { name }, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
 };
 
 export const createMyProduct = async (formData: FormData) => {

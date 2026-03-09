@@ -169,12 +169,16 @@ export const createProduct = async (req: Request, res: Response) => {
 // Get All Products (Admin)
 export const getAllProducts = async (req: Request, res: Response) => {
   try {
-    const { page = 1, limit = 10, search, category, status, templeId, date } = req.query;
+    const { page = 1, limit = 10, search, category, status, templeId, date, productId } = req.query;
 
     const skip = (Number(page) - 1) * Number(limit);
 
     // Build where clause
     const where: any = { AND: [] };
+
+    if (productId) {
+      where.AND.push({ id: productId as string });
+    }
 
     if (search) {
       where.AND.push({
