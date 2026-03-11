@@ -14,7 +14,7 @@ import {
     Loader2,
     CheckSquare,
     Trash2,
-
+    Send,
     Download
 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -30,7 +30,7 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { fetchAllUsersAdmin, downloadUsersExcelAdmin, toggleUserStatusAdmin, bulkToggleUserStatusAdmin } from "@/api/adminController";
+import { fetchAllUsersAdmin, downloadUsersExcelAdmin, downloadUsersAiSensyCSVAdmin, toggleUserStatusAdmin, bulkToggleUserStatusAdmin, sendBulkWhatsAppAdmin } from "@/api/adminController";
 import { toast } from "sonner"; // Assuming sonner is used for notifications
 
 import {
@@ -64,6 +64,7 @@ export default function AdminUsersPage() {
     });
     const [dateRange, setDateRange] = useState<"all" | "week" | "month" | "year">("all");
     const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
+    const [filterType, setFilterType] = useState<string>("");
     const { hasPermission } = useAdminAuth();
 
     // Debounce search
@@ -107,7 +108,8 @@ export default function AdminUsersPage() {
                 startDate,
                 endDate,
                 dob: dobFilter,
-                anniversary: anniversaryFilter
+                anniversary: anniversaryFilter,
+                filterType: filterType
             });
             if (response.success) {
                 setUsers(response.data.users);
@@ -120,9 +122,10 @@ export default function AdminUsersPage() {
         } finally {
             setLoading(false);
         }
-    }, [page, debouncedSearch, typeFilter, dateRange, dobFilter, anniversaryFilter]);
+    }, [page, debouncedSearch, typeFilter, dateRange, dobFilter, anniversaryFilter, filterType]);
 
     const handleExportExcel = async () => {
+        // ... (existing handleExportExcel logic remains)
         try {
             let startDate, endDate;
             if (dateRange !== "all") {
@@ -147,8 +150,9 @@ export default function AdminUsersPage() {
                 role: typeFilter,
                 startDate,
                 endDate,
-                dob: dobFilter,
-                anniversary: anniversaryFilter
+                dob: dobFilter === 'upcoming' ? 'upcoming' : dobFilter,
+                anniversary: anniversaryFilter === 'upcoming' ? 'upcoming' : anniversaryFilter,
+                filterType: filterType
             });
 
             const url = window.URL.createObjectURL(new Blob([response.data]));
@@ -163,9 +167,34 @@ export default function AdminUsersPage() {
         }
     };
 
+    const handleExportAiSensy = async () => {
+        try {
+            const response = await downloadUsersAiSensyCSVAdmin({
+                ids: selectedUserIds.length > 0 ? selectedUserIds.join(',') : undefined,
+                search: selectedUserIds.length > 0 ? undefined : debouncedSearch,
+                role: selectedUserIds.length > 0 ? undefined : typeFilter,
+                dob: dobFilter,
+                anniversary: anniversaryFilter,
+                filterType: filterType
+            });
+
+            const url = window.URL.createObjectURL(new Blob([response.data]));
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', `aisensy_export_${new Date().toISOString().split('T')[0]}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            toast.success("AiSensy CSV exported successfully!");
+        } catch (error) {
+            console.error("AiSensy Export failed:", error);
+            toast.error("Failed to export AiSensy CSV");
+        }
+    };
+
     useEffect(() => {
         loadUsers();
-    }, [loadUsers]);
+    }, [loadUsers, filterType]);
 
     const formatAvatar = (name: string) => {
         if (!name) return "U";
@@ -233,63 +262,37 @@ export default function AdminUsersPage() {
         }
     };
 
+    const handleSendWhatsAppCampaign = async (campaign: 'birthday_reminder' | 'anniversary_reminder_lugrs') => {
+        if (selectedUserIds.length === 0) {
+            toast.error("Please select at least one user to send a message.");
+            return;
+        }
+
+        const promise = sendBulkWhatsAppAdmin({
+            userIds: selectedUserIds,
+            campaignName: campaign,
+            templateParams: ['{{name}}'] // Personalized with name
+        });
+
+        toast.promise(promise, {
+            loading: `Sending ${campaign.replace('_', ' ')}s...`,
+            success: (data) => `Successfully sent ${data.results.filter((r: any) => r.success).length} messages!`,
+            error: "Failed to send WhatsApp messages"
+        });
+
+        try {
+            await promise;
+            setSelectedUserIds([]);
+        } catch (err) {
+            console.error("WhatsApp Campaign Error:", err);
+        }
+    };
+
 
 
     return (
         <div className="space-y-6 relative">
-            {/* Bulk Action Bar */}
-            {selectedUserIds.length > 0 && (
-                <motion.div
-                    initial={{ y: 50, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 bg-slate-900 text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-6 border border-slate-700 backdrop-blur-lg"
-                >
-                    <div className="flex items-center gap-3 pr-6 border-r border-slate-700">
-                        <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-xs ring-2 ring-primary/20">
-                            {selectedUserIds.length}
-                        </div>
-                        <p className="text-sm font-bold tracking-wide">Selected</p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            className="text-white hover:bg-white/10 gap-2 h-10 px-4 rounded-xl font-bold"
-                            onClick={handleExportSelected}
-                        >
-                            <Download className="w-4 h-4" />
-                            Export Data
-                        </Button>
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            className="text-emerald-400 hover:bg-emerald-500/10 hover:text-emerald-300 gap-2 h-10 px-4 rounded-xl font-bold"
-                            onClick={() => handleBulkToggleStatus(true)}
-                        >
-                            <CheckSquare className="w-4 h-4" />
-                            Activate
-                        </Button>
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            className="text-rose-400 hover:bg-rose-500/10 hover:text-rose-300 gap-2 h-10 px-4 rounded-xl font-bold"
-                            onClick={() => handleBulkToggleStatus(false)}
-                        >
-                            <Trash2 className="w-4 h-4" />
-                            Deactivate
-                        </Button>
-
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            className="bg-transparent border-slate-700 text-slate-400 hover:bg-white/5 h-10 px-4 rounded-xl font-bold"
-                            onClick={() => setSelectedUserIds([])}
-                        >
-                            Deselect All
-                        </Button>
-                    </div>
-                </motion.div>
-            )}
+            {/* Removed Bulk Action Bar */}
             {/* Page header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
@@ -300,10 +303,39 @@ export default function AdminUsersPage() {
                         Manage all users registered on DevBhakti
                     </p>
                 </div>
-                <Button variant="sacred" onClick={handleExportExcel}>
-                    <Users className="w-4 h-4 mr-2" />
-                    Export Users
-                </Button>
+                <div className="flex gap-2">
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button
+                                variant="outline"
+                                className="border-primary text-primary hover:bg-primary/5 h-10 px-4 rounded-xl font-bold"
+                            >
+                                <Send className="w-4 h-4 mr-2" />
+                                Send WhatsApp
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-56 bg-white rounded-xl shadow-xl border-slate-200">
+                            <DropdownMenuLabel>Choose Template</DropdownMenuLabel>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem className="cursor-pointer" onClick={() => handleSendWhatsAppCampaign('birthday_reminder')}>
+                                <Calendar className="mr-2 h-4 w-4 text-emerald-500" />
+                                <span>Birthday Reminder</span>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem className="cursor-pointer" onClick={() => handleSendWhatsAppCampaign('anniversary_reminder_lugrs')}>
+                                <Calendar className="mr-2 h-4 w-4 text-rose-500" />
+                                <span>Anniversary Reminder</span>
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                    <Button variant="outline" className="border-amber-200 text-amber-600 hover:bg-amber-50 h-10 px-4 rounded-xl font-bold" onClick={handleExportAiSensy}>
+                        <Send className="w-4 h-4 mr-2" />
+                        AiSensy CSV
+                    </Button>
+                    <Button variant="sacred" onClick={handleExportExcel} className="h-10 px-4 rounded-xl">
+                        <Users className="w-4 h-4 mr-2" />
+                        Export Users
+                    </Button>
+                </div>
             </div>
 
             {/* Stats */}
@@ -365,6 +397,17 @@ export default function AdminUsersPage() {
                             </Button>
                         ))}
                     </div>
+                    <Button
+                        variant={filterType === 'pooja_last_year' ? "sacred" : "outline"}
+                        size="sm"
+                        onClick={() => {
+                            setFilterType(filterType === 'pooja_last_year' ? "" : "pooja_last_year");
+                            setPage(1);
+                        }}
+                        className="h-11 px-4 rounded-xl"
+                    >
+                        Last Year Pooja
+                    </Button>
                 </div>
 
                 <div className="flex flex-wrap items-end gap-4 overflow-x-auto pb-2 md:pb-0 premium-scrollbar">
@@ -386,28 +429,71 @@ export default function AdminUsersPage() {
                     </div>
                     <div className="flex flex-col gap-1 min-w-[140px] flex-1 sm:flex-initial">
                         <p className="text-[10px] font-bold uppercase text-muted-foreground ml-1">Birthday</p>
-                        <Input
-                            type="date"
-                            value={dobFilter}
-                            onChange={(e) => {
-                                setDobFilter(e.target.value);
-                                setPage(1);
-                            }}
-                            className="h-9 text-xs rounded-lg"
-                        />
+                        <div className="flex gap-1">
+                            <Input
+                                type="date"
+                                value={dobFilter === 'upcoming' ? '' : dobFilter}
+                                onChange={(e) => {
+                                    setDobFilter(e.target.value);
+                                    setPage(1);
+                                }}
+                                className="h-9 text-xs rounded-lg"
+                                disabled={dobFilter === 'upcoming'}
+                            />
+                            <Button
+                                size="sm"
+                                variant={dobFilter === 'upcoming' ? 'sacred' : 'outline'}
+                                className="h-9 text-[10px]"
+                                onClick={() => {
+                                    setDobFilter(dobFilter === 'upcoming' ? '' : 'upcoming');
+                                    setPage(1);
+                                }}
+                            >
+                                Upcoming
+                            </Button>
+                        </div>
                     </div>
                     <div className="flex flex-col gap-1 min-w-[140px] flex-1 sm:flex-initial">
                         <p className="text-[10px] font-bold uppercase text-muted-foreground ml-1">Anniversary</p>
-                        <Input
-                            type="date"
-                            value={anniversaryFilter}
-                            onChange={(e) => {
-                                setAnniversaryFilter(e.target.value);
-                                setPage(1);
-                            }}
-                            className="h-9 text-xs rounded-lg"
-                        />
+                        <div className="flex gap-1">
+                            <Input
+                                type="date"
+                                value={anniversaryFilter === 'upcoming' ? '' : anniversaryFilter}
+                                onChange={(e) => {
+                                    setAnniversaryFilter(e.target.value);
+                                    setPage(1);
+                                }}
+                                className="h-9 text-xs rounded-lg"
+                                disabled={anniversaryFilter === 'upcoming'}
+                            />
+                            <Button
+                                size="sm"
+                                variant={anniversaryFilter === 'upcoming' ? 'sacred' : 'outline'}
+                                className="h-9 text-[10px]"
+                                onClick={() => {
+                                    setAnniversaryFilter(anniversaryFilter === 'upcoming' ? '' : 'upcoming');
+                                    setPage(1);
+                                }}
+                            >
+                                Upcoming
+                            </Button>
+                        </div>
                     </div>
+                    <Button
+                        size="sm"
+                        variant={dateRange === 'all' && debouncedSearch === '' && typeFilter === 'all' && dobFilter === '' && anniversaryFilter === '' ? 'outline' : 'sacred'}
+                        className="h-9 px-4 rounded-lg self-end"
+                        onClick={() => {
+                            setSearchQuery("");
+                            setTypeFilter("all");
+                            setDobFilter("");
+                            setAnniversaryFilter("");
+                            setDateRange("all");
+                            setPage(1);
+                        }}
+                    >
+                        Reset All
+                    </Button>
                 </div>
             </div>
 

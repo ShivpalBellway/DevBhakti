@@ -65,6 +65,7 @@ function TempleOrdersClient() {
     const [templeId, setTempleId] = useState<string | null>(null);
     const [selectedOrder, setSelectedOrder] = useState<any>(null);
     const [templeData, setTempleData] = useState<any>(null);
+    const [statusConfirm, setStatusConfirm] = useState<{ id: string; status: string } | null>(null);
 
     const { toast } = useToast();
 
@@ -328,9 +329,12 @@ function TempleOrdersClient() {
                                         />
                                     </td>
                                     <td className="py-6">
-                                        <span className="font-mono text-xs font-bold text-[#794A05] bg-orange-50 px-2 py-1 rounded">
-                                            #{order.id.slice(-8).toUpperCase()}
+                                        <span className="font-bold text-[#794A05] text-sm">
+                                            {order.items.map((i: any) => i.product?.name).join(", ").length > 30 
+                                                ? order.items.map((i: any) => i.product?.name).join(", ").substring(0, 30) + "..."
+                                                : order.items.map((i: any) => i.product?.name).join(", ")}
                                         </span>
+                                        <p className="text-[10px] text-slate-400 font-mono mt-0.5">#{order.id.slice(-8).toUpperCase()}</p>
                                     </td>
                                     <td className="py-6">
                                         <div className="flex items-center gap-3">
@@ -392,8 +396,9 @@ function TempleOrdersClient() {
                                     <div>
                                         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-1">Consignment Details</p>
                                         <DialogTitle className="text-2xl font-bold text-slate-900 font-serif">
-                                            ID: #{selectedOrder.id.toUpperCase()}
+                                            {selectedOrder.items.map((i: any) => i.product?.name).join(", ")}
                                         </DialogTitle>
+                                        <p className="text-[10px] font-mono text-slate-400 mt-1">ID: #{selectedOrder.id.toUpperCase()}</p>
                                         <p className="text-slate-500 font-bold mt-1 text-xs uppercase tracking-widest">
                                             Placed on {format(new Date(selectedOrder.createdAt), "dd MMMM yyyy")}
                                         </p>
@@ -407,8 +412,8 @@ function TempleOrdersClient() {
                                             Print Label
                                         </Button>
                                         <Select
-                                            defaultValue={selectedOrder.status}
-                                            onValueChange={(val) => handleStatusUpdate(selectedOrder.id, val)}
+                                            value={selectedOrder.status}
+                                            onValueChange={(val) => setStatusConfirm({ id: selectedOrder.id, status: val })}
                                         >
                                             <SelectTrigger className="w-[180px] h-11 font-extrabold border-slate-200 rounded-2xl bg-white shadow-sm ring-offset-orange-50 focus:ring-[#794A05]">
                                                 <SelectValue />
@@ -541,6 +546,43 @@ function TempleOrdersClient() {
                             </div>
                         </div>
                     )}
+                </DialogContent>
+            </Dialog>
+
+            {/* Status Change Confirmation Dialog */}
+            <Dialog open={!!statusConfirm} onOpenChange={(open) => !open && setStatusConfirm(null)}>
+                <DialogContent className="max-w-md rounded-3xl p-8 border-none shadow-2xl bg-white">
+                    <DialogHeader>
+                        <div className="w-16 h-16 bg-amber-50 rounded-full flex items-center justify-center mb-4 mx-auto border border-amber-100">
+                            <Truck className="w-8 h-8 text-[#794A05]" />
+                        </div>
+                        <DialogTitle className="text-xl font-bold text-slate-900 text-center">
+                            Confirm Status Change
+                        </DialogTitle>
+                        <div className="text-slate-500 text-center mt-2 font-medium">
+                            Are you sure you want to change the status of this sacred order to <span className="text-[#794A05] font-black underline decoration-orange-200">{statusConfirm?.status}</span>?
+                        </div>
+                    </DialogHeader>
+                    <div className="flex gap-4 mt-8">
+                        <Button 
+                            variant="outline" 
+                            className="flex-1 h-12 rounded-2xl font-bold border-slate-200 hover:bg-slate-50"
+                            onClick={() => setStatusConfirm(null)}
+                        >
+                            Cancel
+                        </Button>
+                        <Button 
+                            className="flex-1 h-12 rounded-2xl font-black bg-[#794A05] hover:bg-[#5d3904] text-white shadow-lg shadow-orange-100"
+                            onClick={() => {
+                                if (statusConfirm) {
+                                    handleStatusUpdate(statusConfirm.id, statusConfirm.status);
+                                    setStatusConfirm(null);
+                                }
+                            }}
+                        >
+                            Yes, Update
+                        </Button>
+                    </div>
                 </DialogContent>
             </Dialog>
         </div>

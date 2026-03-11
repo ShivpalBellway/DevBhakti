@@ -10,42 +10,91 @@ export const getAllUsers = async (req: Request, res: Response) => {
         const skip = (Number(page) - 1) * Number(limit);
         const take = Number(limit);
 
-        const where: any = {
-            role: {
-                not: 'ADMIN' // Exclude admins from the general user list
-            }
-        };
+        const andConditions: any[] = [{ role: { not: 'ADMIN' } }];
 
         if (role && role !== 'all') {
             if (role === 'institution' || role === 'temple_admin') {
-                where.role = UserRole.INSTITUTION;
+                andConditions.push({ role: UserRole.INSTITUTION });
             } else if (role === 'devotee') {
-                where.role = UserRole.DEVOTEE;
+                andConditions.push({ role: UserRole.DEVOTEE });
             } else if (role === 'seller') {
-                where.role = UserRole.SELLER;
+                andConditions.push({ role: UserRole.SELLER });
             }
         }
 
         if (search) {
-            where.OR = [
-                { name: { contains: String(search), mode: 'insensitive' } },
-                { email: { contains: String(search), mode: 'insensitive' } },
-                { phone: { contains: String(search), mode: 'insensitive' } },
-            ];
+            andConditions.push({
+                OR: [
+                    { name: { contains: String(search), mode: 'insensitive' } },
+                    { email: { contains: String(search), mode: 'insensitive' } },
+                    { phone: { contains: String(search), mode: 'insensitive' } },
+                ]
+            });
         }
 
         if (dob) {
-            where.dob = { contains: String(dob) };
+            if (dob === 'upcoming') {
+                const today = new Date();
+                const upcomingDays = [];
+                for (let i = 0; i < 7; i++) {
+                    const d = new Date();
+                    d.setDate(today.getDate() + i);
+                    upcomingDays.push(`${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`);
+                }
+                andConditions.push({
+                    OR: upcomingDays.map(day => ({ dob: { startsWith: day } }))
+                });
+            } else {
+                andConditions.push({ dob: { contains: String(dob) } });
+            }
         }
+
         if (anniversary) {
-            where.anniversary = { contains: String(anniversary) };
+            if (anniversary === 'upcoming') {
+                const today = new Date();
+                const upcomingDays = [];
+                for (let i = 0; i < 7; i++) {
+                    const d = new Date();
+                    d.setDate(today.getDate() + i);
+                    upcomingDays.push(`${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`);
+                }
+                andConditions.push({
+                    OR: upcomingDays.map(day => ({ anniversary: { startsWith: day } }))
+                });
+            } else {
+                andConditions.push({ anniversary: { contains: String(anniversary) } });
+            }
+        }
+
+        // New: Pooja Last Year Filter
+        if (req.query.filterType === 'pooja_last_year') {
+            const lastYear = new Date().getFullYear() - 1;
+            const startOfLastYear = new Date(lastYear, 0, 1);
+            const endOfLastYear = new Date(lastYear, 11, 31, 23, 59, 59);
+
+            const lastYearBookers = await prisma.poojaBooking.findMany({
+                where: {
+                    createdAt: {
+                        gte: startOfLastYear,
+                        lte: endOfLastYear
+                    },
+                    status: 'COMPLETED'
+                },
+                select: { userId: true }
+            });
+
+            const uniqueUserIds = Array.from(new Set(lastYearBookers.map(b => b.userId)));
+            andConditions.push({ id: { in: uniqueUserIds } });
         }
 
         if (startDate || endDate) {
-            where.createdAt = {};
-            if (startDate) where.createdAt.gte = new Date(String(startDate));
-            if (endDate) where.createdAt.lte = new Date(String(endDate));
+            const createdAt: any = {};
+            if (startDate) createdAt.gte = new Date(String(startDate));
+            if (endDate) createdAt.lte = new Date(String(endDate));
+            andConditions.push({ createdAt });
         }
+
+        const where: any = { AND: andConditions };
 
         const [users, total, filteredStats] = await Promise.all([
             prisma.user.findMany({
@@ -359,5 +408,92 @@ export const bulkToggleUserStatus = async (req: Request, res: Response) => {
         console.error('Error bulk toggling user status:', error);
         res.status(500).json({ success: false, message: 'Internal server error' });
     }
-}
+};
 
+export const downloadUsersAiSensyCSV = async (req: Request, res: Response) => {
+    try {
+        const { ids, search, role, dob, anniversary, filterType } = req.query;
+        const andConditions: any[] = [{ role: { not: 'ADMIN' } }];
+
+        if (ids) {
+            const idList = String(ids).split(',');
+            andConditions.push({ id: { in: idList } });
+        } else {
+            if (role && role !== 'all') {
+                if (role === 'institution' || role === 'temple_admin') andConditions.push({ role: UserRole.INSTITUTION });
+                else if (role === 'devotee') andConditions.push({ role: UserRole.DEVOTEE });
+                else if (role === 'seller') andConditions.push({ role: UserRole.SELLER });
+            }
+            if (search) {
+                andConditions.push({
+                    OR: [
+                        { name: { contains: String(search), mode: 'insensitive' } },
+                        { email: { contains: String(search), mode: 'insensitive' } },
+                        { phone: { contains: String(search), mode: 'insensitive' } },
+                    ]
+                });
+            }
+            if (dob) {
+                if (dob === 'upcoming') {
+                    const today = new Date();
+                    const upcomingDays = [];
+                    for (let i = 0; i < 7; i++) {
+                        const d = new Date(); d.setDate(today.getDate() + i);
+                        upcomingDays.push(`${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`);
+                    }
+                    andConditions.push({ OR: upcomingDays.map(day => ({ dob: { startsWith: day } })) });
+                } else {
+                    andConditions.push({ dob: { contains: String(dob) } });
+                }
+            }
+            if (filterType === 'pooja_last_year') {
+                const lastYear = new Date().getFullYear() - 1;
+                const startOfLastYear = new Date(lastYear, 0, 1);
+                const endOfLastYear = new Date(lastYear, 11, 31, 23, 59, 59);
+                const lastYearBookers = await prisma.poojaBooking.findMany({
+                    where: { createdAt: { gte: startOfLastYear, lte: endOfLastYear }, status: 'COMPLETED' },
+                    select: { userId: true }
+                });
+                const uniqueUserIds = Array.from(new Set(lastYearBookers.map(b => b.userId)));
+                andConditions.push({ id: { in: uniqueUserIds } });
+            }
+        }
+
+        const usersList = await prisma.user.findMany({
+            where: { AND: andConditions },
+            orderBy: { name: 'asc' },
+            select: {
+                name: true,
+                phone: true,
+                email: true,
+                role: true,
+                dob: true,
+                anniversary: true,
+                nativePlace: true
+            }
+        });
+
+        let csvContent = "destination,userName,email,role,dob,anniversary,nativePlace\n";
+        usersList.forEach(u => {
+            const phone = u.phone ? (u.phone.startsWith('+') ? u.phone : `+91${u.phone}`) : '';
+            if (phone) {
+                const safeName = u.name?.replace(/"/g, '""') || 'Bhakt';
+                const safeEmail = u.email || '';
+                const safeRole = u.role || '';
+                const safeDob = u.dob || '';
+                const safeAnniversary = u.anniversary || '';
+                const safeNativePlace = u.nativePlace?.replace(/"/g, '""') || '';
+
+                csvContent += `${phone},"${safeName}","${safeEmail}","${safeRole}","${safeDob}","${safeAnniversary}","${safeNativePlace}"\n`;
+            }
+        });
+
+        res.setHeader('Content-Type', 'text/csv');
+        res.setHeader('Content-Disposition', `attachment; filename=aisensy_export_${new Date().toISOString().slice(0, 10)}.csv`);
+
+        return res.status(200).send(csvContent);
+    } catch (error: any) {
+        console.error("AiSensy Export Error:", error);
+        return res.status(500).json({ success: false, message: error.message });
+    }
+};

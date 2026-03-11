@@ -1,4 +1,5 @@
 import { PrismaClient } from "@prisma/client";
+import { sendWhatsAppMessage } from "../services/whatsappService";
 
 const prisma = new PrismaClient();
 
@@ -13,8 +14,37 @@ export const syncOrderAndLedgerStatus = async (subOrderId: string, status: strin
         data: {
             status: status.toUpperCase(),
             updatedAt: new Date()
+        },
+        include: {
+            order: {
+                include: {
+                    user: true
+                }
+            }
         }
     });
+
+    // Notify Devotee via WhatsApp for Dispatch
+    if (status.toUpperCase() === "SHIPPED") {
+        try {
+            const user = subOrder.order.user;
+            if (user && user.phone) {
+                const phone = user.phone.startsWith('+') ? user.phone : `+91${user.phone}`;
+                await sendWhatsAppMessage(
+                    phone,
+                    user.name || 'Bhakt',
+                    "prasad_dispatched",
+                    [
+                        user.name || 'Bhakt',
+                        subOrderId, // Or a more human readable name if available
+                        subOrder.awbCode || 'N/A'
+                    ]
+                );
+            }
+        } catch (waError) {
+            console.error("Failed to send dispatch WhatsApp:", waError);
+        }
+    }
 
     // 2. Sync Ledger Status (Earnings for Temple/Seller)
     if (status.toUpperCase() === "DELIVERED") {

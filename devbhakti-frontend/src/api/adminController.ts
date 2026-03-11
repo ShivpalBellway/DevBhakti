@@ -853,7 +853,7 @@ export const rejectRequestAdmin = async (id: string, type: string) => {
 };
 
 // Admin User Management
-export const fetchAllUsersAdmin = async (params?: { page?: number; limit?: number; search?: string; role?: string; startDate?: string; endDate?: string; dob?: string; anniversary?: string }) => {
+export const fetchAllUsersAdmin = async (params?: { page?: number; limit?: number; search?: string; role?: string; startDate?: string; endDate?: string; dob?: string; anniversary?: string; filterType?: string }) => {
     const token = getAdminToken();
     let url = `${API_URL}/admin/users`;
     if (params) {
@@ -866,6 +866,7 @@ export const fetchAllUsersAdmin = async (params?: { page?: number; limit?: numbe
         if (params.endDate) query.append('endDate', params.endDate);
         if (params.dob) query.append('dob', params.dob);
         if (params.anniversary) query.append('anniversary', params.anniversary);
+        if (params.filterType) query.append('filterType', params.filterType);
         url += `?${query.toString()}`;
     }
     const response = await axios.get(url, {
@@ -882,6 +883,20 @@ export const downloadUsersExcelAdmin = async (params: any) => {
     });
 
     const response = await axios.get(`${API_URL}/admin/users/export/excel?${query.toString()}`, {
+        headers: { Authorization: `Bearer ${token}` },
+        responseType: 'blob'
+    });
+    return response;
+};
+
+export const downloadUsersAiSensyCSVAdmin = async (params: any) => {
+    const token = getAdminToken();
+    const query = new URLSearchParams();
+    Object.keys(params).forEach(key => {
+        if (params[key]) query.append(key, params[key]);
+    });
+
+    const response = await axios.get(`${API_URL}/admin/users/export/aisensy?${query.toString()}`, {
         headers: { Authorization: `Bearer ${token}` },
         responseType: 'blob'
     });
@@ -966,5 +981,20 @@ export const updateBookingStatusAdmin = async (id: string, data: any) => {
             ...(isFormData && { 'Content-Type': 'multipart/form-data' })
         }
     });
+    return response.data;
+};
+
+// WhatsApp Marketing & Notifications
+export const sendBulkWhatsAppAdmin = async (data: { userIds: string[], campaignName: string, templateParams?: string[] }) => {
+    const token = getAdminToken();
+    const response = await axios.post(`${API_URL}/admin/marketing/send-bulk-whatsapp`, data, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+
+export const notifyFailedPayment = async (data: { phone: string, userName?: string, referenceId?: string }) => {
+    // This can be called by anyone (devotee) when payment fails
+    const response = await axios.post(`${API_URL}/payments/failed`, data);
     return response.data;
 };

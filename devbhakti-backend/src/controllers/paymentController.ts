@@ -5,10 +5,8 @@ import crypto from "crypto";
 import { PrismaClient } from "@prisma/client";
 
 import razorpay from "../lib/razorpay";
-
 import { sendBookingReceiptEmail } from "../services/bookingMailService";
-
-
+import { sendWhatsAppMessage } from "../services/whatsappService";
 
 const prisma = new PrismaClient();
 
@@ -150,9 +148,42 @@ export const verifyPayment = async (req: Request, res: Response) => {
                     // We don't want to fail the payment verification if email fails
 
                 }
-
             }
 
+            // Send WhatsApp Confirmation
+            try {
+                const phone = updatedBooking.devoteePhone.startsWith('+') ? updatedBooking.devoteePhone : `+91${updatedBooking.devoteePhone}`;
+                await sendWhatsAppMessage(
+                    phone,
+                    updatedBooking.devoteeName,
+                    "booking_confirmed",
+                    [
+                        updatedBooking.devoteeName,
+                        updatedBooking.pooja.name
+                    ]
+                );
+            } catch (waError) {
+                console.error("Failed to send booking WhatsApp:", waError);
+            }
+
+            // Notify Temple Admin via WhatsApp
+            try {
+                if (updatedBooking.temple?.phone) {
+                    const templePhone = updatedBooking.temple.phone.startsWith('+') ? updatedBooking.temple.phone : `+91${updatedBooking.temple.phone}`;
+                    await sendWhatsAppMessage(
+                        templePhone,
+                        "Temple Admin",
+                        "temple_admin_new_booking_received",
+                        [
+                            updatedBooking.devoteeName,
+                            updatedBooking.pooja.name,
+                            updatedBooking.bookingDate || "N/A"
+                        ]
+                    );
+                }
+            } catch (adminWaError) {
+                console.error("Failed to send Temple Admin WhatsApp:", adminWaError);
+            }
         } else if (orderType === "DONATION") {
 
             await prisma.donation.update({
@@ -182,31 +213,34 @@ export const verifyPayment = async (req: Request, res: Response) => {
 
 
             if (donation && donation.templeId) {
-
                 await prisma.templeLedger.create({
-
                     data: {
-
                         templeId: donation.templeId,
-
                         amount: donation.amount,
-
                         grossAmount: donation.amount,
-
-                        commission: 0, // Assume 0 commission for donations for now
-
+                        commission: 0,
                         type: "DONATION_EARNING",
-
                         sourceId: donation.id,
-
                         description: `Donation: ${donation.donorName}${donation.isAnonymous ? ' (Anonymous)' : ''}`,
-
                         status: "COMPLETED"
-
                     }
-
                 });
 
+                // Send WhatsApp Confirmation
+                try {
+                    const phone = donation.donorPhone.startsWith('+') ? donation.donorPhone : `+91${donation.donorPhone}`;
+                    await sendWhatsAppMessage(
+                        phone,
+                        donation.donorName,
+                        "donation_confirmation",
+                        [
+                            donation.donorName,
+                            donation.temple?.name || "Dev Bhakti"
+                        ]
+                    );
+                } catch (waError) {
+                    console.error("Failed to send donation WhatsApp:", waError);
+                }
             }
 
         }

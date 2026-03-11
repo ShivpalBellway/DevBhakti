@@ -172,9 +172,20 @@ export default function CreatePoojaPage() {
     };
 
     const updatePackage = (index: number, field: string, value: any) => {
-        const newPackages = [...formData.packages];
-        newPackages[index] = { ...newPackages[index], [field]: value };
-        setFormData({ ...formData, packages: newPackages });
+        setFormData(prev => {
+            const newPackages = [...prev.packages];
+            if (newPackages[index]) {
+                newPackages[index] = { ...newPackages[index], [field]: value };
+                
+                const update: any = { packages: newPackages };
+                // If it's a Single package and price changed, sync top price
+                if (newPackages[index].name === "Single" && field === 'price') {
+                    update.price = value;
+                }
+                return { ...prev, ...update };
+            }
+            return prev;
+        });
     };
 
     const addStep = () => {

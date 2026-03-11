@@ -49,6 +49,7 @@ import { fetchPublicTemples } from "@/api/publicController";
 import { API_URL } from "@/config/apiConfig";
 import axios from "axios";
 import { downloadDonationReceipt } from "@/api/userController";
+import { notifyFailedPayment } from "@/api/adminController";
 
 declare global {
     interface Window {
@@ -237,6 +238,25 @@ function DonationForm() {
             };
 
             const rzp = new window.Razorpay(options);
+
+            rzp.on('payment.failed', function (response: any) {
+                console.error("Payment failed event:", response.error);
+                notifyFailedPayment({
+                    phone: formData.phone,
+                    userName: formData.name,
+                    referenceId: initiateData.donationId || response.error.metadata.order_id
+                }).catch(console.error);
+            });
+
+            rzp.on('modal.dismiss', function () {
+                console.log("Payment modal dismissed");
+                notifyFailedPayment({
+                    phone: formData.phone,
+                    userName: formData.name,
+                    referenceId: initiateData.donationId || "CANCELLED"
+                }).catch(console.error);
+            });
+
             rzp.open();
 
         } catch (error: any) {

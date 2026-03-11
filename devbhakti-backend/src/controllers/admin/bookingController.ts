@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { prisma } from '../../lib/prisma';
 import { notifyUser } from '../../services/firebaseService';
 import ExcelJS from 'exceljs';
+import { sendWhatsAppMessage } from '../../services/whatsappService';
 
 
 export const getAllBookings = async (req: Request, res: Response) => {
@@ -171,12 +172,38 @@ export const updateBookingStatus = async (req: Request, res: Response) => {
             });
         }
 
-        // Notify Devotee
+        // Notify Devotee via Firebase
         await notifyUser(booking.userId, 'devotee', {
             title: `Pooja Booking ${status === 'COMPLETED' ? 'Completed 🎊' : status === 'CANCELLED' ? 'Cancelled ❌' : status === 'REJECTED' ? 'Rejected ❌' : 'Updated'}`,
             body: `Your booking for ${updatedBooking.pooja.name} has been marked as ${status.toLowerCase()}.`,
             data: { link: '/profile/bookings', bookingId: booking.id }
         });
+
+        // Notify Devotee via WhatsApp
+        try {
+            const user = await prisma.user.findUnique({ where: { id: booking.userId } });
+            if (user && user.phone) {
+                const phone = user.phone.startsWith('+') ? user.phone : `+91${user.phone}`;
+
+                if (status === 'COMPLETED') {
+                    await sendWhatsAppMessage(
+                        phone,
+                        user.name || 'Bhakt',
+                        "pooja_completed",
+                        [user.name || 'Bhakt', updatedBooking.pooja.name]
+                    );
+                } else if (status === 'CANCELLED' || status === 'REJECTED') {
+                    await sendWhatsAppMessage(
+                        phone,
+                        user.name || 'Bhakt',
+                        "booking_cancelled",
+                        [user.name || 'Bhakt', updatedBooking.pooja.name]
+                    );
+                }
+            }
+        } catch (waError) {
+            console.error("Failed to send status update WhatsApp:", waError);
+        }
 
         res.json({
             success: true,

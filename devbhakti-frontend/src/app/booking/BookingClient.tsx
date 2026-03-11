@@ -45,6 +45,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 
 import { fetchPublicTemples, fetchPublicPoojas, fetchPublicPoojaById } from "@/api/publicController";
+import { notifyFailedPayment } from "@/api/adminController";
 import { generatePoojaReceiptHTML } from "@/utils/poojaReceipt";
 
 
@@ -457,6 +458,25 @@ function BookingForm() {
         };
 
         const rzp = new (window as any).Razorpay(options);
+
+        rzp.on('payment.failed', function (response: any) {
+          console.error("Payment failed event:", response.error);
+          notifyFailedPayment({
+            phone: formData.phone,
+            userName: formData.name,
+            referenceId: res.data.id || response.error.metadata.order_id
+          }).catch(console.error);
+        });
+
+        rzp.on('modal.dismiss', function () {
+          console.log("Payment modal dismissed");
+          notifyFailedPayment({
+            phone: formData.phone,
+            userName: formData.name,
+            referenceId: res.data.id || "CANCELLED"
+          }).catch(console.error);
+        });
+
         rzp.open();
       } else {
         toast({ title: "Booking Failed", description: res.message || "Something went wrong", variant: "destructive" });

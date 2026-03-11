@@ -13,6 +13,7 @@ import { IndianRupee, MapPin, Truck, ShieldCheck, ArrowLeft } from "lucide-react
 import { useToast } from "@/hooks/use-toast";
 import axios from "axios";
 import { API_URL } from "@/config/apiConfig";
+import { notifyFailedPayment } from "@/api/adminController";
 
 export default function CheckoutPage() {
     const router = useRouter();
@@ -203,6 +204,25 @@ export default function CheckoutPage() {
                     };
 
                     const rzp = new (window as any).Razorpay(options);
+
+                    rzp.on('payment.failed', function (response: any) {
+                        console.error("Payment failed event:", response.error);
+                        notifyFailedPayment({
+                            phone: address.phone,
+                            userName: address.fullName,
+                            referenceId: response.data.orderId || response.error.metadata.order_id
+                        }).catch(console.error);
+                    });
+
+                    rzp.on('modal.dismiss', function () {
+                        console.log("Payment modal dismissed");
+                        notifyFailedPayment({
+                            phone: address.phone,
+                            userName: address.fullName,
+                            referenceId: "MARKETPLACE_CANCEL"
+                        }).catch(console.error);
+                    });
+
                     rzp.open();
                 } else {
                     toast({

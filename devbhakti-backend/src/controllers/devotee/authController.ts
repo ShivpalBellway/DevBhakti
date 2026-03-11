@@ -5,6 +5,7 @@ import path from 'path';
 
 import jwt from 'jsonwebtoken';
 import { sendSMS } from '../../services/mobicommService';
+import { sendWhatsAppMessage } from '../../services/whatsappService';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'devbhakti_secret_key_2026';
 
@@ -189,6 +190,18 @@ export const sendOTP = async (req: Request, res: Response) => {
             console.log(`[Auth] OTP sent successfully to ${normalizedPhone}`);
         } else {
             console.log(`[Auth] Failed to send OTP to ${normalizedPhone}. Check Mobicomm logs.`);
+        }
+
+        // Send OTP via WhatsApp (AiSensy)
+        try {
+            await sendWhatsAppMessage(
+                normalizedPhone,
+                name || 'Bhakt',
+                "otp_login", // Assuming this template name
+                [otp]
+            );
+        } catch (waError) {
+            console.error("Failed to send WhatsApp OTP:", waError);
         }
 
         // console.log(`\n-----------------------------------------`);

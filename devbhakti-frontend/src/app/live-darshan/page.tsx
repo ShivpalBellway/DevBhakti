@@ -49,9 +49,12 @@ const BellAnimation = ({ trigger, isLooping = false }: { trigger: number; isLoop
 
   useEffect(() => {
     // Preload audio from a more reliable source
-    // Using an authentic temple bell (Ghanta) sound
-    audioRef.current = new Audio("https://www.soundjay.com/misc/sounds/bell-ringing-05.mp3");
+    // Using a clear bell sound from Mixkit
+    const bellUrl = "https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3";
+    audioRef.current = new Audio(bellUrl);
     audioRef.current.volume = 1.0;
+
+    // Attempt to load
     audioRef.current.load();
 
     return () => {
@@ -66,11 +69,17 @@ const BellAnimation = ({ trigger, isLooping = false }: { trigger: number; isLoop
     if (audioRef.current) {
       if (isLooping) {
         audioRef.current.loop = true;
-        audioRef.current.play().catch(e => console.warn("Bell loop blocked", e));
+        audioRef.current.play().catch(e => {
+          console.warn("Bell loop blocked or failed:", e);
+        });
       } else if (trigger > 0) {
         audioRef.current.loop = false;
         audioRef.current.currentTime = 0;
-        audioRef.current.play().catch(e => console.warn("Bell play blocked", e));
+        audioRef.current.play().catch(e => {
+          console.warn("Bell play blocked or failed:", e.message);
+          // If blocked by browser, we can't do much without user interaction,
+          // but logging helps debug why it's silent.
+        });
       } else if (!isLooping) {
         audioRef.current.pause();
       }
@@ -134,47 +143,54 @@ const AartiAnimation = ({ trigger }: { trigger: number }) => {
   useEffect(() => {
     if (trigger > 0) {
       setShow(true);
-      const timer = setTimeout(() => setShow(false), 12000); // 12 seconds for a complete ritual
+      const timer = setTimeout(() => setShow(false), 15000); // 15 seconds for a complete ritual
       return () => clearTimeout(timer);
     }
   }, [trigger]);
 
   if (!show) return null;
 
+  // Mathematically smooth circular path (12 points)
+  const circlePoints = [0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330, 360];
+  const radius = 150;
+
+  const xPath = circlePoints.map(deg => radius * Math.sin((deg * Math.PI) / 180));
+  const yPath = circlePoints.map(deg => -radius * (1 - Math.cos((deg * Math.PI) / 180)));
+
   return (
     <div className="fixed inset-0 pointer-events-none z-[100] flex items-center justify-center">
       <motion.div
-        initial={{ opacity: 0, scale: 0, y: 100 }}
+        initial={{ opacity: 0, scale: 0, y: 300 }}
         animate={{
-          opacity: [0, 1, 1, 1, 0],
-          scale: [0.3, 1.2, 1, 1, 0.5],
-          // Realistic Aarti motion: Spiraling circular motion with depth (y-offset)
-          x: [0, 80, 0, -80, 0, 100, 0, -100, 0, 60, 0],
-          y: [100, 30, -50, 30, 100, 0, -120, 0, 100, 50, 150],
-          rotate: [0, 10, -10, 8, -8, 5, -5, 0],
+          opacity: [0, 1, 1, 1, 1, 0],
+          // Smooth Continuous Circular Motion (3 rotations)
+          x: [...xPath, ...xPath.slice(1), ...xPath.slice(1)],
+          y: [...yPath, ...yPath.slice(1), ...yPath.slice(1)],
+          scale: [0.3, 1, 1, 1, 1, 0.5],
+          rotate: [0, 5, 0, -5, 0, 5, 0, -5, 0],
         }}
         transition={{
-          duration: 12,
-          ease: "easeInOut",
-          times: [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1]
+          duration: 15,
+          ease: "linear",
+          times: [0, 0.1, 0.3, 0.6, 0.9, 1] // Adjusting broad timing, motion paths handle details
         }}
-        className="relative w-80 h-80 flex items-center justify-center"
+        className="relative w-[30rem] h-[30rem] flex items-center justify-center"
       >
         {/* Divine Glow Effect Behind the Thali */}
         <motion.div
           animate={{
-            scale: [1, 1.2, 1],
-            opacity: [0.4, 0.7, 0.4],
+            scale: [1, 1.3, 1],
+            opacity: [0.3, 0.6, 0.3],
           }}
-          transition={{ duration: 2, repeat: Infinity }}
-          className="absolute inset-0 bg-gradient-to-r from-orange-500/40 via-yellow-400/40 to-orange-500/40 rounded-full blur-[80px]"
+          transition={{ duration: 3, repeat: Infinity }}
+          className="absolute inset-0 bg-gradient-to-r from-orange-500/30 via-yellow-400/30 to-orange-500/30 rounded-full blur-[110px]"
         />
 
-        <div className="relative w-full h-full filter drop-shadow-[0_0_40px_rgba(255,165,0,0.8)]">
+        <div className="relative w-full h-full filter drop-shadow-[0_0_70px_rgba(255,165,0,0.9)]">
           <img
-            src="/images/aarti_thali.gif"
-            alt="Live Aarti Thali"
-            className="w-full h-full object-contain mix-blend-multiply"
+            src="/images/aarti_thali_classic.png"
+            alt="Classic Golden Aarti Thali"
+            className="w-full h-full object-contain"
           />
         </div>
       </motion.div>

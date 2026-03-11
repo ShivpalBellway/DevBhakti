@@ -80,9 +80,11 @@ export const sendBulkWhatsApp = async (req: Request, res: Response) => {
         for (const user of users) {
             if (user.phone) {
                 try {
-                    // Inject user name if required by template (assuming first param is often name)
+                    // Inject user name if required by template
                     const params = templateParams || [];
-                    const personalizedParams = params.map((p: string) => p === '{{name}}' ? (user.name || 'Bhakt') : p);
+                    const personalizedParams = params.map((p: string) =>
+                        (p === '{{name}}' || p === '"$FirstName"') ? (user.name || 'Bhakt') : p
+                    );
 
                     const result = await sendWhatsAppMessage(
                         user.phone.startsWith('+') ? user.phone : `+91${user.phone}`,

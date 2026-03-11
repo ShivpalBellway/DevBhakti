@@ -27,9 +27,11 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { fetchSellerFinanceSummary, fetchSellerWithdrawalHistory, requestSellerWithdrawal } from "@/api/sellerController";
+import { isPayoutAllowed, nextPayoutDate } from "@/utils/payoutSchedule";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { BASE_URL } from "@/config/apiConfig";
+import { cn } from "@/lib/utils";
 
 export default function SellerWithdrawalsPage() {
     const { toast } = useToast();
@@ -119,6 +121,42 @@ export default function SellerWithdrawalsPage() {
                     <Plus className="w-4 h-4" />
                     New Withdrawal
                 </Button>
+            </div>
+
+            {/* Payout Schedule Alert */}
+            <div className={cn(
+                "p-5 rounded-[2rem] border flex items-start gap-4 transition-all duration-500",
+                isPayoutAllowed() 
+                    ? "bg-emerald-50 border-emerald-100 shadow-lg shadow-emerald-600/5 mt-4" 
+                    : "bg-amber-50 border-amber-100 shadow-lg shadow-amber-600/5 mt-4"
+            )}>
+                <div className={cn(
+                    "p-3 rounded-2xl flex-shrink-0",
+                    isPayoutAllowed() ? "bg-emerald-500/10" : "bg-amber-500/10"
+                )}>
+                    {isPayoutAllowed() ? (
+                        <CheckCircle2 className="w-6 h-6 text-emerald-600" />
+                    ) : (
+                        <Clock className="w-6 h-6 text-amber-600" />
+                    )}
+                </div>
+                <div className="flex-1 space-y-1">
+                    <h4 className={cn(
+                        "font-black text-sm uppercase tracking-wider",
+                        isPayoutAllowed() ? "text-emerald-900" : "text-amber-900"
+                    )}>
+                        {isPayoutAllowed() ? "Payout Window Open" : "Payout Schedule"}
+                    </h4>
+                    <p className={cn(
+                        "text-xs font-semibold leading-relaxed",
+                        isPayoutAllowed() ? "text-emerald-700/80" : "text-amber-700/80"
+                    )}>
+                        {isPayoutAllowed() 
+                            ? "Marketplace payouts are currently being processed (15th / 28th). Your settled funds are ready for withdrawal."
+                            : `Payouts are processed on the 15th and 28th of every month. The next window opens on ${format(nextPayoutDate(), "do MMMM yyyy")}.`
+                        }
+                    </p>
+                </div>
             </div>
 
             {/* Quick Stats */}

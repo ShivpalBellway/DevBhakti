@@ -36,6 +36,7 @@ import {
     fetchTempleFinanceSummary,
     fetchMyTempleProfile
 } from "@/api/templeAdminController";
+import { isPayoutAllowed, nextPayoutDate } from "@/utils/payoutSchedule";
 
 
 export default function EarningsPage() {
@@ -106,6 +107,52 @@ export default function EarningsPage() {
         entry.type.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
+    const handleDownloadCSV = () => {
+        if (ledger.length === 0) {
+            toast({
+                title: "Error",
+                description: "No data available to download",
+                variant: "destructive",
+            });
+            return;
+        }
+
+        // CSV Headers
+        const headers = ["Date", "Description", "Type", "Status", "Amount (₹)"];
+        
+        // Map data to rows
+        const rows = ledger.map(entry => [
+            format(new Date(entry.createdAt), "dd MMM yyyy"),
+            entry.description.replace(/,/g, " "), // Escape commas
+            entry.type.replace('_', ' '),
+            entry.status,
+            entry.amount
+        ]);
+
+        // Combine headers and rows
+        const csvContent = [
+            headers.join(","),
+            ...rows.map(row => row.join(","))
+        ].join("\n");
+
+        // Create blob and download
+        const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+        const link = document.createElement("a");
+        const url = URL.createObjectURL(blob);
+        
+        link.setAttribute("href", url);
+        link.setAttribute("download", `temple_ledger_${format(new Date(), "dd_MM_yyyy")}.csv`);
+        link.style.visibility = "hidden";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        toast({
+            title: "Success",
+            description: "Ledger downloaded successfully",
+        });
+    };
+
     if (isLoading) {
         return (
             <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
@@ -155,24 +202,6 @@ export default function EarningsPage() {
                             </h2>
                         </CardContent>
                     </Card>
-
-                    {/* Hiding Commission Card as it's charged to users now
-                    <Card className="border-none shadow-xl bg-red-50 text-red-900 rounded-[1.5rem] overflow-hidden border border-red-100">
-                        <CardContent className="p-6">
-                            <div className="flex items-center gap-1.5 mb-2">
-                                <p className="text-red-400 font-bold uppercase tracking-widest text-[10px]">Total Commission Paid</p>
-                                <Tooltip>
-                                    <TooltipTrigger><Info className="w-3 h-3 text-red-300 cursor-help" /></TooltipTrigger>
-                                    <TooltipContent className="bg-white text-slate-900 border-red-100 text-[12px]">Total administrative fee paid to DevBhakti platform.</TooltipContent>
-                                </Tooltip>
-                            </div>
-                            <h2 className="text-2xl font-extrabold text-red-600 flex items-center gap-1">
-                                <IndianRupee className="w-5 h-5 text-red-400" strokeWidth={3} />
-                                {summary?.totalCommission?.toLocaleString() || "0"}
-                            </h2>
-                        </CardContent>
-                    </Card>
-                    */}
 
                     <Card className="border-none shadow-xl bg-white rounded-[1.5rem] overflow-hidden border border-slate-100">
                         <CardContent className="p-6">
@@ -225,6 +254,42 @@ export default function EarningsPage() {
                 </div>
             </TooltipProvider>
 
+            {/* Payout Schedule Alert */}
+            <div className={cn(
+                "p-5 rounded-[2rem] border flex items-start gap-4 transition-all duration-500",
+                isPayoutAllowed() 
+                    ? "bg-emerald-50 border-emerald-100 shadow-lg shadow-emerald-600/5 mt-4" 
+                    : "bg-amber-50 border-amber-100 shadow-lg shadow-amber-600/5 mt-4"
+            )}>
+                <div className={cn(
+                    "p-3 rounded-2xl flex-shrink-0",
+                    isPayoutAllowed() ? "bg-emerald-500/10" : "bg-amber-500/10"
+                )}>
+                    {isPayoutAllowed() ? (
+                        <CheckCircle2 className="w-6 h-6 text-emerald-600" />
+                    ) : (
+                        <Clock className="w-6 h-6 text-amber-600" />
+                    )}
+                </div>
+                <div className="flex-1 space-y-1">
+                    <h4 className={cn(
+                        "font-black text-sm uppercase tracking-wider",
+                        isPayoutAllowed() ? "text-emerald-900" : "text-amber-900"
+                    )}>
+                        {isPayoutAllowed() ? "Payout Window Open" : "Payout Schedule"}
+                    </h4>
+                    <p className={cn(
+                        "text-xs font-semibold leading-relaxed",
+                        isPayoutAllowed() ? "text-emerald-700/80" : "text-amber-700/80"
+                    )}>
+                        {isPayoutAllowed() 
+                            ? "Sacred payouts are currently being processed (15th / 28th). Your settled funds are ready for withdrawal."
+                            : `Payouts are processed on the 15th and 28th of every month. The next window opens on ${format(nextPayoutDate(), "do MMMM yyyy")}.`
+                        }
+                    </p>
+                </div>
+            </div>
+
             {/* Processing Payouts Info (If any) */}
             {summary?.processingWithdrawals > 0 && (
                 <div className="bg-amber-50 border border-amber-200 rounded-3xl p-6 flex items-center justify-between">
@@ -248,14 +313,24 @@ export default function EarningsPage() {
                         <History className="w-5 h-5 text-[#794A05]" />
                         Transaction Ledger
                     </h3>
-                    <div className="relative w-full md:w-80">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                        <Input
-                            placeholder="Search transactions..."
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            className="pl-10 h-10 rounded-xl border-slate-200"
-                        />
+                    <div className="flex flex-col md:flex-row items-center gap-3 w-full md:w-auto">
+                        <div className="relative w-full md:w-80">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                            <Input
+                                placeholder="Search transactions..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className="pl-10 h-10 rounded-xl border-slate-200"
+                            />
+                        </div>
+                        <Button
+                            variant="outline"
+                            onClick={handleDownloadCSV}
+                            className="w-full md:w-auto h-10 rounded-xl border-slate-200 font-bold flex items-center gap-2 hover:bg-slate-50"
+                        >
+                            <Download className="w-4 h-4" />
+                            Download CSV
+                        </Button>
                     </div>
                 </div>
 

@@ -87,7 +87,7 @@ export default function TempleEditPoojaPage() {
     };
 
     const STATIC_PACKAGE_TYPES = [
-        // { name: "Single", description: "For 1 person" },
+        { name: "Single", description: "For 1 person" },
         { name: "Couple", description: "For 2 people" },
         { name: "Family", description: "Upto 5 people" },
         { name: "Group", description: "Upto 8 people" },
@@ -185,9 +185,20 @@ export default function TempleEditPoojaPage() {
     };
 
     const updatePackage = (index: number, field: string, value: any) => {
-        const newPackages = [...formData.packages];
-        newPackages[index] = { ...newPackages[index], [field]: value };
-        setFormData({ ...formData, packages: newPackages });
+        setFormData(prev => {
+            const newPackages = [...prev.packages];
+            if (newPackages[index]) {
+                newPackages[index] = { ...newPackages[index], [field]: value };
+                
+                const update: any = { packages: newPackages };
+                // If it's a Single package and price changed, sync top price
+                if (newPackages[index].name === "Single" && field === 'price') {
+                    update.price = value;
+                }
+                return { ...prev, ...update };
+            }
+            return prev;
+        });
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
