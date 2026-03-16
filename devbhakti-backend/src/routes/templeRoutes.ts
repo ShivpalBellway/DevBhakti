@@ -1,9 +1,10 @@
 import { Router } from 'express';
-import { getAllTemples, getTempleById, getAllPoojas, getPoojaById, registerTemple } from '../controllers/templeController';
+import { getAllTemples, getTempleById, getAllPoojas, getPoojaById, registerTemple, getTempleFilters } from '../controllers/templeController';
 
 
 const router = Router();
 
+router.get('/filters', getTempleFilters);
 router.get('/', getAllTemples);
 router.get('/poojas', getAllPoojas);
 router.get('/:id', getTempleById);

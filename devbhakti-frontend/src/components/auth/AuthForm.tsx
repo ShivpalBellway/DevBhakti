@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Logo from "@/components/icons/Logo";
-import { sendOTP, verifyOTP, updateProfile } from "@/api/authController";
+import { sendOTP, verifyOTP, updateProfile, checkPhoneOnly } from "@/api/authController";
 import { clearAllTokens } from "@/lib/auth-utils";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
@@ -86,11 +86,23 @@ const AuthForm: React.FC = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      // In a real app with profile image during register, we might need to upload it after verification 
-      // or send as multipart if backend supports it in send-otp. 
-      // For now, let's just send basic info.
-      // Strip spaces/hyphens for cleaner transmission
       const normalizedPhone = formData.phone.replace(/\D/g, '');
+      
+      // ✅ Step 1: Pehle check karo bina OTP bheje
+      const checkResponse = await checkPhoneOnly(normalizedPhone);
+      
+      if (checkResponse.isNewUser && mode === "login") {
+        // New user hai - Signup mode pe switch karo
+        setMode("register");
+        toast({
+          title: "Welcome to DevBhakti!",
+          description: "Please fill your name to create an account.",
+        });
+        setLoading(false);
+        return;
+      }
+      
+      // ✅ Step 2: Ab OTP bhejo
       const response = await sendOTP({
         phone: normalizedPhone,
         name: mode === "register" ? formData.name : undefined,
@@ -103,10 +115,6 @@ const AuthForm: React.FC = () => {
         setDevOtp(response.data.otp);
       }
       setResendTimer(60);
-
-
-
-
     } catch (error: any) {
       toast({
         title: "OTP Failed",

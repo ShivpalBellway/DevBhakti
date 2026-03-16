@@ -12,6 +12,7 @@ router.get('/test', (req, res) => res.json({ message: 'Auth routes are working' 
 router.post('/send-otp', authController.sendOTP);
 router.post('/verify-otp', authController.verifyOTP);
 router.get('/check-phone', authController.checkPhoneExistence);
+router.post('/check-phone', authController.checkPhoneOnly); // ✅ New API - POST method, no OTP
 
 // Profile Management (Protected)
 router.get('/profile', authenticate, authController.getProfile);

@@ -5,12 +5,40 @@ import { notifyUser } from '../../services/firebaseService';
 export const getTempleBookings = async (req: Request, res: Response) => {
     try {
         const templeId = (req as any).owner.ownerId;
+        const { status, poojaId, search, startDate, endDate } = req.query;
+
+        const where: any = {
+            templeId,
+            status: { not: 'PENDING' }
+        };
+
+        // Filter by Status
+        if (status) {
+            where.status = status;
+        }
+
+        // Filter by Pooja
+        if (poojaId) {
+            where.poojaId = poojaId;
+        }
+
+        // Filter by Search (Devotee Name or Phone)
+        if (search) {
+            where.OR = [
+                { devoteeName: { contains: search as string, mode: 'insensitive' } },
+                { devoteePhone: { contains: search as string, mode: 'insensitive' } }
+            ];
+        }
+
+        // Filter by Date Range (Created At)
+        if (startDate || endDate) {
+            where.createdAt = {};
+            if (startDate) where.createdAt.gte = new Date(startDate as string);
+            if (endDate) where.createdAt.lte = new Date(endDate as string);
+        }
 
         const bookings = await prisma.poojaBooking.findMany({
-            where: {
-                templeId,
-                status: { not: 'PENDING' }
-            },
+            where,
             include: {
                 pooja: true,
                 user: {

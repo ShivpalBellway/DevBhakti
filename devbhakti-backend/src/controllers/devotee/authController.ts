@@ -48,9 +48,14 @@ const logToFile = (message: string) => {
     fs.appendFileSync(logPath, `[${timestamp}] ${message}\n`);
 };
 
+
+
+
+
 export const checkPhoneExistence = async (req: Request, res: Response) => {
     try {
-        const { phone } = req.query;
+        const { phone } = req.query || req.body;
+        
         if (!phone) {
             return res.status(400).json({ success: false, message: 'Phone number is required' });
         }
@@ -60,18 +65,10 @@ export const checkPhoneExistence = async (req: Request, res: Response) => {
             where: { phone: normalizedPhone }
         });
 
-        if (user) {
-            return res.json({
-                success: true,
-                exists: true,
-                role: user.role,
-                message: `This mobile number is already registered as a ${user.role}.`
-            });
-        }
-
         return res.json({
             success: true,
-            exists: false
+            exists: !!user,
+            isNewUser: !user  // true = new user, false = existing
         });
     } catch (error: any) {
         console.error('Error in checkPhoneExistence:', error);
@@ -79,6 +76,29 @@ export const checkPhoneExistence = async (req: Request, res: Response) => {
     }
 };
 
+export const checkPhoneOnly = async (req: Request, res: Response) => {
+    try {
+        const { phone } = req.body;
+        
+        if (!phone) {
+            return res.status(400).json({ success: false, message: 'Phone number is required' });
+        }
+
+        const normalizedPhone = normalizePhone(phone);
+        const user = await prisma.user.findFirst({
+            where: { phone: normalizedPhone }
+        });
+
+        return res.json({
+            success: true,
+            exists: !!user,
+            isNewUser: !user  // true = new user, false = existing
+        });
+    } catch (error: any) {
+        console.error('Error in checkPhoneOnly:', error);
+        res.status(500).json({ success: false, message: 'Internal server error' });
+    }
+};
 
 export const sendOTP = async (req: Request, res: Response) => {
     logToFile(`[sendOTP] Request body: ${JSON.stringify(req.body)}`);
@@ -99,7 +119,7 @@ export const sendOTP = async (req: Request, res: Response) => {
 
         const checkRole = role || 'DEVOTEE';
 
-        // Infer mode if missing
+        // Infer mode if missing - Smart detection
         let effectiveMode = mode;
         if (!effectiveMode) {
             if (name) {
@@ -111,7 +131,7 @@ export const sendOTP = async (req: Request, res: Response) => {
                 });
                 effectiveMode = tempUser ? 'login' : 'register';
             }
-            logToFile(`[sendOTP] Inferred mode: ${effectiveMode} (original mode was missing)`);
+            // Silent mode - no logging for missing mode
         }
 
         const isRegisterFlow = effectiveMode === 'register';
@@ -218,7 +238,14 @@ export const sendOTP = async (req: Request, res: Response) => {
         // });
 
         // Original response (keep for later restoration):
-        res.json({ success: true, message: 'OTP sent successfully', data: { phone: normalizedPhone } });
+        res.json({ 
+            success: true, 
+            message: 'OTP sent successfully', 
+            data: { 
+                phone: normalizedPhone,
+                isNewUser: !existingUser  // ✅ true = new user, false = existing
+            } 
+        });
 
     } catch (error: any) {
         console.error('Error in sendOTP:', error);

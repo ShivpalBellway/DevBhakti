@@ -52,7 +52,7 @@ import { Check, ChevronsUpDown } from "lucide-react";
 import Navbar from "@/components/landing/Navbar";
 import Footer from "@/components/landing/Footer";
 
-import { fetchPublicTemples } from "@/api/publicController";
+import { fetchPublicTemples, fetchPublicFilters } from "@/api/publicController";
 import { fetchUserFavorites, addFavorite, removeFavorite } from "@/api/userController";
 import { API_URL } from "@/config/apiConfig";
 import { getTempleUrl } from "@/lib/utils/templeUtils";
@@ -72,32 +72,39 @@ export function TemplesList() {
   const router = useRouter();
   const [user, setUser] = useState<any>(null);
 
-  const categories = React.useMemo(() => {
-    // Get unique categories and remove any empty strings or undefined values
-    const uniqueCategories = Array.from(new Set(temples.map((t) => t.category?.trim()).filter(Boolean)));
-    // Always start with "All"
-    return ["All", ...uniqueCategories];
-  }, [temples]);
-
-  const locations = React.useMemo(() => {
-    const uniqueLocations = Array.from(new Set(temples.map((t) => t.location?.trim()).filter(Boolean)));
-    return ["All", ...uniqueLocations.sort()];
-  }, [temples]);
-
-  const poojaOptions = React.useMemo(() => {
-    const poojaNames = temples.flatMap(t => (t.poojas || []).map((p: any) => p.name?.trim()));
-    const uniquePoojas = Array.from(new Set(poojaNames)).filter(Boolean);
-    return ["All", ...uniquePoojas.sort()];
-  }, [temples]);
-
   React.useEffect(() => {
     const savedUser = localStorage.getItem("user");
     if (savedUser) {
       setUser(JSON.parse(savedUser));
       loadFavorites();
     }
-    loadTemples();
+    fetchInitialOptions();
   }, []);
+
+  const [allOptions, setAllOptions] = useState({ categories: ["All"], locations: ["All"], poojas: ["All"] });
+
+  const fetchInitialOptions = async () => {
+    try {
+      const data = await fetchPublicFilters();
+      if (data) {
+        setAllOptions({
+          categories: ["All", ...(data.categories || [])],
+          locations: ["All", ...(data.locations || [])],
+          poojas: ["All", ...(data.poojas || [])]
+        });
+      }
+    } catch (error) {
+      console.error("Error fetching initial options:", error);
+    }
+  };
+
+  const categories = allOptions.categories;
+  const locations = allOptions.locations;
+  const poojaOptions = allOptions.poojas;
+
+  React.useEffect(() => {
+    loadTemples();
+  }, [searchQuery, selectedCategory, selectedLocation, selectedPooja]);
 
   const loadFavorites = async () => {
     try {
@@ -111,8 +118,15 @@ export function TemplesList() {
   };
 
   const loadTemples = async () => {
-    const data = await fetchPublicTemples();
-    setTemples(data);
+    setLoading(true);
+    const params: any = {};
+    if (searchQuery) params.search = searchQuery;
+    if (selectedCategory !== "All") params.category = selectedCategory;
+    if (selectedLocation !== "All") params.location = selectedLocation;
+    if (selectedPooja !== "All") params.pooja = selectedPooja;
+
+    const data = await fetchPublicTemples(params);
+    setTemples(data || []);
     setLoading(false);
   };
 
@@ -151,19 +165,8 @@ export function TemplesList() {
     }
   };
 
-  const filteredTemples = temples.filter((temple) => {
-    const matchesSearch =
-      temple.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      temple.location.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory =
-      selectedCategory === "All" || temple.category === selectedCategory;
-    const matchesLocation =
-      selectedLocation === "All" || temple.location === selectedLocation;
-    const matchesPooja =
-      selectedPooja === "All" || (temple.poojas || []).some((p: any) => p.name === selectedPooja);
-
-    return matchesSearch && matchesCategory && matchesLocation && matchesPooja;
-  });
+  // Use the fetched temples directly as they are already filtered by the backend
+  const filteredTemples = temples;
 
   if (loading) {
     return (

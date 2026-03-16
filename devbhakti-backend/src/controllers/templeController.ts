@@ -19,15 +19,85 @@ const getUserIdFromRequest = (req: Request): string | null => {
   }
 };
 
+export const getTempleFilters = async (req: Request, res: Response) => {
+  try {
+    // We fetch distinct categories and locations from Active Temples
+    const temples = await prisma.temple.findMany({
+      where: { isActive: true },
+      select: { category: true, location: true }
+    });
+
+    const categoriesSet = new Set<string>();
+    const locationsSet = new Set<string>();
+
+    temples.forEach(t => {
+      if (t.category) categoriesSet.add(t.category.trim());
+      if (t.location) locationsSet.add(t.location.trim());
+    });
+
+    // We fetch distinct pooja names that are exposed
+    const poojas = await prisma.pooja.findMany({
+      where: { status: true },
+      select: { name: true }
+    });
+
+    const poojasSet = new Set<string>();
+    poojas.forEach(p => {
+      if (p.name) poojasSet.add(p.name.trim());
+    });
+
+    res.json({
+      success: true,
+      data: {
+        categories: Array.from(categoriesSet).sort(),
+        locations: Array.from(locationsSet).sort(),
+        poojas: Array.from(poojasSet).sort(),
+      }
+    });
+
+  } catch (error) {
+    console.error('Fetch temple filters error:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch filters' });
+  }
+};
+
 export const getAllTemples = async (req: Request, res: Response) => {
   try {
     const userId = getUserIdFromRequest(req);
+    const { search, category, location, pooja } = req.query;
+
+    const whereClause: any = {
+      isActive: true,
+    };
+
+    if (search) {
+      whereClause.OR = [
+        { name: { contains: String(search), mode: 'insensitive' } },
+        { location: { contains: String(search), mode: 'insensitive' } },
+      ];
+    }
+
+    if (category && category !== 'All') {
+      whereClause.category = String(category);
+    }
+
+    if (location && location !== 'All') {
+      whereClause.location = String(location);
+    }
+
+    // Pooja filtering needs to join on the poojas relation
+    if (pooja && pooja !== 'All') {
+      whereClause.poojas = {
+        some: {
+          name: String(pooja),
+          status: true // Make sure the pooja is also active
+        }
+      };
+    }
 
     // Fetch only temples that are active (removed strict isVerified check to show all as requested)
     const temples = await prisma.temple.findMany({
-      where: {
-        isActive: true,
-      },
+      where: whereClause,
       include: {
         poojas: {
           where: { status: true }

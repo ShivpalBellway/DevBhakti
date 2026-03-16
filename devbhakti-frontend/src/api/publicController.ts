@@ -1,13 +1,28 @@
 import axios from "axios";
 import { API_URL } from "@/config/apiConfig";
 
-export const fetchPublicTemples = async () => {
+export const fetchPublicTemples = async (params?: {
+  search?: string;
+  category?: string;
+  location?: string;
+  pooja?: string;
+}) => {
     try {
-        const response = await axios.get(`${API_URL}/temples`);
+        const response = await axios.get(`${API_URL}/temples`, { params });
         return response.data.data;
     } catch (error) {
         console.error("Error fetching public temples:", error);
         return [];
+    }
+};
+
+export const fetchPublicFilters = async () => {
+    try {
+        const response = await axios.get(`${API_URL}/temples/filters`);
+        return response.data.data;
+    } catch (error) {
+        console.error("Error fetching public filters:", error);
+        return { categories: [], locations: [], poojas: [] };
     }
 };
 

@@ -66,3 +66,9 @@ export const checkPhone = async (phone: string) => {
     const response = await axios.get(`${API_URL}/auth/check-phone?phone=${phone}`);
     return response.data;
 };
+
+// ✅ New: POST method - sirf check kare bina OTP bheje
+export const checkPhoneOnly = async (phone: string) => {
+    const response = await axios.post(`${API_URL}/auth/check-phone`, { phone });
+    return response.data;
+};
