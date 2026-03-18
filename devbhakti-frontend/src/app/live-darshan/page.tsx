@@ -483,30 +483,21 @@ function LiveDarshanContent() {
         {/* Info Area Below Video */}
         <section className="bg-white border-b border-border/50 py-4">
           <div className="max-w-[1400px] mx-auto px-4">
-            <div className="flex flex-col lg:flex-row md:items-center justify-between gap-6">
-              <div className="flex-1">
-                <div className="flex items-center gap-3 text-primary mb-1">
-                  {/* <Play className="fill-primary" size={16} /> */}
-                  {/* <span className="text-[10px] md:text-xs font-black tracking-[0.3em] uppercase">Sacred Live Presence</span> */}
-                </div>
-
-                <div className="flex flex-col md:flex-row md:items-center gap-4">
+            <div className="grid grid-cols-1 lg:grid-cols-3 items-center gap-6">
+              {/* Temple Info */}
+              <div className="text-center lg:text-left">
+                <div className="flex flex-col md:flex-row md:items-center gap-4 justify-center lg:justify-start">
                   <Link href={`/temples/${selectedTemple.id}`} className="block group">
                     <h2 className="text-2xl md:text-3xl font-black text-[#2a1b01] font-serif group-hover:text-primary transition-colors leading-tight">
                       {selectedTemple.name}, {selectedTemple.location}
                     </h2>
                   </Link>
-                  {/* <Link href={`/temples/${selectedTemple.id}`} className="flex items-center gap-2 bg-orange-50 px-4 py-1.5 rounded-full border border-orange-100 hover:bg-orange-100 transition-colors">
-                    <MapPin className="text-primary" size={12} />
-                    <span className="text-[10px] font-bold text-primary/80 uppercase tracking-widest whitespace-nowrap">
-                      {selectedTemple.name}, {selectedTemple.location}
-                    </span>
-                  </Link> */}
                 </div>
               </div>
 
-
-             <div className="flex items-center gap-1 bg-slate-50 rounded-full border border-slate-200">
+              {/* Devotion Buttons (Centered) */}
+              <div className="flex justify-center order-first lg:order-none">
+                <div className="flex items-center gap-1 bg-slate-50 rounded-full border border-slate-200 p-1 shadow-sm">
                   <motion.button
                     whileHover={{ scale: 1.1 }}
                     whileTap={{ scale: 0.9 }}
@@ -535,34 +526,33 @@ function LiveDarshanContent() {
                     <img src="/images/rotate_thali.gif" alt="Aarti" className="w-10 h-10 object-contain" />
                   </motion.button>
                 </div>
-
-
+              </div>
 
               {/* Primary Actions */}
-              <div className="flex flex-wrap items-center gap-4 shrink-0 bg-white shadow-soft p-3 md:p-4 rounded-[1.5rem] border border-orange-50/50">
-                {/* Manual Devotion Buttons */}
-             
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    className="h-10 px-6 rounded-full border-2 border-primary/20 bg-white text-primary hover:bg-primary/5 font-black text-[10px] uppercase tracking-widest gap-2 transition-all shadow-none"
-                    asChild
-                  >
-                    <Link href={`/donation?temple=${selectedTemple.id}`}>
-                      <Heart className="w-3.5 h-3.5" />
-                      Donate
-                    </Link>
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="h-10 px-6 rounded-full border-2 border-primary/20 bg-white text-primary hover:bg-primary/5 font-black text-[10px] uppercase tracking-widest gap-2 transition-all shadow-none"
-                    asChild
-                  >
-                    <Link href={`/booking?temple=${selectedTemple.id}`}>
-                      <Calendar className="w-3.5 h-3.5" />
-                      Book Pooja
-                    </Link>
-                  </Button>
+              <div className="flex justify-center lg:justify-end">
+                <div className="flex flex-wrap items-center gap-4 shrink-0 bg-white shadow-soft p-3 md:p-4 rounded-[1.5rem] border border-orange-50/50">
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      className="h-10 px-6 rounded-full border-2 border-primary/20 bg-white text-primary hover:bg-primary/5 font-black text-[10px] uppercase tracking-widest gap-2 transition-all shadow-none"
+                      asChild
+                    >
+                      <Link href={`/donation?temple=${selectedTemple.id}`}>
+                        <Heart className="w-3.5 h-3.5" />
+                        Donate
+                      </Link>
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="h-10 px-6 rounded-full border-2 border-primary/20 bg-white text-primary hover:bg-primary/5 font-black text-[10px] uppercase tracking-widest gap-2 transition-all shadow-none"
+                      asChild
+                    >
+                      <Link href={`/booking?temple=${selectedTemple.id}`}>
+                        <Calendar className="w-3.5 h-3.5" />
+                        Book Pooja
+                      </Link>
+                    </Button>
+                  </div>
                 </div>
               </div>
             </div>

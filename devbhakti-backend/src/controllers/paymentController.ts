@@ -184,6 +184,39 @@ export const verifyPayment = async (req: Request, res: Response) => {
             } catch (adminWaError) {
                 console.error("Failed to send Temple Admin WhatsApp:", adminWaError);
             }
+            // Notify Devotee via Push Notification
+            try {
+                const { notifyUser } = require("../services/firebaseService");
+                await notifyUser(updatedBooking.userId, 'devotee', {
+                    title: 'Pooja Booking Confirmed! 🙏',
+                    body: `Your booking for "${updatedBooking.pooja.name}" has been confirmed for ${new Date(updatedBooking.bookingDate as string).toLocaleDateString()}.`,
+                    data: { 
+                        link: `/profile/bookings/${updatedBooking.id}`, 
+                        type: 'POOJA_BOOKING',
+                        bookingId: updatedBooking.id 
+                    }
+                });
+            } catch (pNotifyErr) {
+                console.error("Failed to send devotee push notification:", pNotifyErr);
+            }
+
+            // Notify Temple Admin via Push Notification
+            try {
+                if (updatedBooking.temple?.userId) {
+                    const { notifyUser } = require("../services/firebaseService");
+                    await notifyUser(updatedBooking.temple.userId, 'temple_admin', {
+                        title: 'New Pooja Booking Received! 🔔',
+                        body: `Devotee ${updatedBooking.devoteeName} booked "${updatedBooking.pooja.name}" for ${new Date(updatedBooking.bookingDate as string).toLocaleDateString()}.`,
+                        data: { 
+                            link: `/temples/dashboard/bookings/${updatedBooking.id}`, 
+                            type: 'NEW_POOJA_BOOKING',
+                            bookingId: updatedBooking.id 
+                        }
+                    });
+                }
+            } catch (tNotifyErr) {
+                console.error("Failed to send temple admin push notification:", tNotifyErr);
+            }
         } else if (orderType === "DONATION") {
 
             await prisma.donation.update({

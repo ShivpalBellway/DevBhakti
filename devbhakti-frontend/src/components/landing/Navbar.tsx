@@ -95,7 +95,7 @@ const Navbar: React.FC<NavbarProps> = ({ variant = "default" }) => {
         <div className="container mx-auto px-4">
           <nav className={`flex items-center justify-between transition-all duration-300 ${isScrolled ? "h-12 md:h-14" : "h-18 md:h-20"} gap-4`}>
             {/* Logo Section */}
-            <div className="flex items-center shrink-0 relative z-10 pt-8">
+            <div className="flex items-center shrink-0 relative z-10">
               <Link href="/" className="block">
                 <Logo
                   className={`h-12 md:h-16 xl:h-18 w-auto transition-all duration-300 ${isScrolled ? "scale-90" : "scale-100"
@@ -110,14 +110,14 @@ const Navbar: React.FC<NavbarProps> = ({ variant = "default" }) => {
               {!isTempleRegistrationPage ? (
                 <div
                   onClick={() => setIsSearchOpen(true)}
-                  className="flex items-center gap-2 px-4 py-2
-                             flex-1 max-w-[400px] min-w-[200px]
-                             bg-white/40 dark:bg-zinc-900/80 backdrop-blur-md rounded-xl
-                             cursor-pointer transition-all border border-black/10
+                  className="flex items-center gap-3 px-6 py-2.5
+                             flex-1 max-w-[450px] min-w-[200px]
+                             bg-orange-50/60 dark:bg-zinc-900/80 backdrop-blur-md rounded-full
+                             cursor-pointer transition-all border border-orange-200/50
                              dark:border-zinc-800/50 hover:border-primary/60
-                             shadow-sm hover:shadow-md"
+                             shadow-sm hover:shadow-md hover:bg-orange-50/80"
                 >
-                  <Search className="w-4 h-4 text-primary shrink-0" />
+                  <Search className="w-5 h-5 text-primary shrink-0" />
                   <span className="text-black/70 dark:text-white/70 text-sm font-medium truncate">
                     Search temples, poojas, products...
                   </span>
