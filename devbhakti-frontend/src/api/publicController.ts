@@ -26,9 +26,14 @@ export const fetchPublicFilters = async () => {
     }
 };
 
-export const fetchPublicPoojas = async () => {
+export const fetchPublicPoojas = async (params?: {
+    search?: string;
+    category?: string;
+    location?: string;
+    templeId?: string;
+}) => {
     try {
-        const response = await axios.get(`${API_URL}/temples/poojas`);
+        const response = await axios.get(`${API_URL}/temples/poojas`, { params });
         return response.data.data;
     } catch (error) {
         console.error("Error fetching public poojas:", error);

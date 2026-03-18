@@ -335,6 +335,16 @@ export const updateMyTempleProfile = async (req: Request, res: Response) => {
         }
       });
 
+      // Notify Admins
+      await notifyAdmins({
+        title: "Temple Profile Update",
+        body: `${temple.name || 'A Temple'} has updated sensitive profile details requiring verification.`,
+        data: {
+          link: '/admin/temples/update-requests',
+          type: 'TEMPLE_UPDATE'
+        }
+      });
+
       // Update non-sensitive fields immediately if any
       if (Object.keys(updateData).length > 0) {
         await prisma.temple.update({

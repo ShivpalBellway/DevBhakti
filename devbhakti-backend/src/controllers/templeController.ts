@@ -313,16 +313,45 @@ export const getPoojaById = async (req: Request, res: Response) => {
 export const getAllPoojas = async (req: Request, res: Response) => {
   try {
     const userId = getUserIdFromRequest(req);
-    const { templeId } = req.query;
+    const { templeId, category, location, search } = req.query;
 
     const where: any = {
       status: true
     };
 
+    if (search) {
+      where.OR = [
+        { name: { contains: String(search), mode: 'insensitive' } },
+        { category: { contains: String(search), mode: 'insensitive' } },
+        { about: { contains: String(search), mode: 'insensitive' } },
+      ];
+    }
+
     if (templeId) {
       where.templeId = String(templeId);
     } else {
       where.isMaster = true; // Global list only shows Master templates
+    }
+
+    if (category && category !== 'All') {
+      where.category = String(category);
+    }
+
+    // Location filtering needs to look at the temple relation or templeCopies
+    if (location && location !== 'All') {
+      // For master poojas, we might check if any of their templeCopies are in this location
+      // or if the pooja itself is associated with a specific temple
+      if (templeId) {
+        where.temple = { location: String(location) };
+      } else {
+        // For global poojas, we check if they have temple copies in that location
+        where.templeCopies = {
+          some: {
+            temple: { location: String(location) },
+            status: true
+          }
+        };
+      }
     }
 
     const poojas = await prisma.pooja.findMany({

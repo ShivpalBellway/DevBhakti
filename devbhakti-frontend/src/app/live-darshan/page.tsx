@@ -3,7 +3,7 @@
 import React, { useState, useEffect, Suspense, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Play, MapPin, Users, Heart, Share2, Calendar } from "lucide-react";
+import { Play, MapPin, Users, Heart, Share2, Calendar, Search, Sparkles } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -94,7 +94,7 @@ const FlowerShower = ({ trigger }: { trigger: number }) => {
 
   useEffect(() => {
     if (trigger > 0) {
-      const newFlowers = Array.from({ length: 40 }).map((_, i) => ({
+      const newFlowers = Array.from({ length: 60 }).map((_, i) => ({
         id: `${trigger}-${i}`,
         left: Math.random() * 100,
         delay: Math.random() * 2,
@@ -113,21 +113,28 @@ const FlowerShower = ({ trigger }: { trigger: number }) => {
   }, [trigger]);
 
   return (
-    <div className="fixed inset-0 pointer-events-none z-[99] overflow-hidden">
+    <div className="absolute inset-0 pointer-events-none z-[99] overflow-hidden">
       <AnimatePresence>
         {flowers.map((f) => (
           <motion.div
             key={f.id}
-            initial={{ y: -100, opacity: 0, x: `${f.left}vw`, rotate: 0 }}
-            animate={{
-              y: "110vh",
+            initial={{ top: "-10%", opacity: 0, left: `${f.left}%` }}
+            animate={{ 
+              top: "110%",
               opacity: [0, 1, 1, 0.8, 0],
               rotate: f.rotation + 720,
-              x: `${f.left + (Math.random() * 10 - 5)}vw`
+              x: [0, (Math.random() * 50 - 25)]
             }}
-            transition={{ duration: f.duration, delay: f.delay, ease: "linear" }}
-            style={{ fontSize: f.size }}
-            className="absolute select-none"
+            transition={{ 
+              duration: f.duration, 
+              delay: f.delay, 
+              ease: "linear" 
+            }}
+            style={{ 
+              fontSize: f.size,
+              position: 'absolute'
+            }}
+            className="select-none"
           >
             {f.type}
           </motion.div>
@@ -143,60 +150,44 @@ const AartiAnimation = ({ trigger }: { trigger: number }) => {
   useEffect(() => {
     if (trigger > 0) {
       setShow(true);
-      const timer = setTimeout(() => setShow(false), 15000); // 15 seconds for a complete ritual
+      const timer = setTimeout(() => setShow(false), 8000);
       return () => clearTimeout(timer);
     }
   }, [trigger]);
 
-  if (!show) return null;
-
-  // Mathematically smooth circular path (12 points)
-  const circlePoints = [0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330, 360];
-  const radius = 150;
-
-  const xPath = circlePoints.map(deg => radius * Math.sin((deg * Math.PI) / 180));
-  const yPath = circlePoints.map(deg => -radius * (1 - Math.cos((deg * Math.PI) / 180)));
-
   return (
-    <div className="fixed inset-0 pointer-events-none z-[100] flex items-center justify-center">
-      <motion.div
-        initial={{ opacity: 0, scale: 0, y: 300 }}
-        animate={{
-          opacity: [0, 1, 1, 1, 1, 0],
-          // Smooth Continuous Circular Motion (3 rotations)
-          x: [...xPath, ...xPath.slice(1), ...xPath.slice(1)],
-          y: [...yPath, ...yPath.slice(1), ...yPath.slice(1)],
-          scale: [0.3, 1, 1, 1, 1, 0.5],
-          rotate: [0, 5, 0, -5, 0, 5, 0, -5, 0],
-        }}
-        transition={{
-          duration: 15,
-          ease: "linear",
-          times: [0, 0.1, 0.3, 0.6, 0.9, 1] // Adjusting broad timing, motion paths handle details
-        }}
-        className="relative w-[30rem] h-[30rem] flex items-center justify-center"
-      >
-        {/* Divine Glow Effect Behind the Thali */}
+    <AnimatePresence>
+      {show && (
         <motion.div
+          initial={{ opacity: 0, scale: 0.5, x: "-50%", y: 200 }}
           animate={{
-            scale: [1, 1.3, 1],
-            opacity: [0.3, 0.6, 0.3],
+            opacity: [0, 1, 1, 0],
+            scale: [0.7, 1.2, 1, 0.7],
+            y: [150, 0, 0, 100],
           }}
-          transition={{ duration: 3, repeat: Infinity }}
-          className="absolute inset-0 bg-gradient-to-r from-orange-500/30 via-yellow-400/30 to-orange-500/30 rounded-full blur-[110px]"
-        />
-
-        <div className="relative w-full h-full filter drop-shadow-[0_0_70px_rgba(255,165,0,0.9)]">
-          <img
-            src="/images/aarti_thali_classic.png"
-            alt="Classic Golden Aarti Thali"
-            className="w-full h-full object-contain"
-          />
-        </div>
-      </motion.div>
-    </div>
+          transition={{
+            duration: 8,
+            times: [0, 0.15, 0.85, 1],
+            ease: "easeOut"
+          }}
+          className="absolute bottom-10 left-1/2 -translate-x-1/2 pointer-events-none z-[100]"
+        >
+          <div className="relative">
+            <img
+              src="/images/rotate_thali.gif"
+              alt="Aarti Thali"
+              className="w-64 h-64 md:w-[500px] md:h-[500px] object-contain drop-shadow-[0_20px_60px_rgba(255,107,0,0.6)]"
+            />
+            {/* Sacred Glow */}
+            <div className="absolute inset-0 bg-primary/20 rounded-full blur-[80px] -z-10 animate-pulse" />
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 };
+
+
 
 export default function LiveDarshanPage() {
   return (
@@ -216,6 +207,7 @@ function LiveDarshanContent() {
   const [flowerTrigger, setFlowerTrigger] = useState(0);
   const [aartiTrigger, setAartiTrigger] = useState(0);
   const [isAartiActive, setIsAartiActive] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const searchParams = useSearchParams();
 
   useEffect(() => {
@@ -245,10 +237,7 @@ function LiveDarshanContent() {
       try {
         const res = await axios.get(`${API_URL}/temples`);
         if (res.data.success) {
-          // Filter:
-          // - Temple side ne Live ON kiya ho (isLive)
-          // - YouTube live URL resolve hua ho (liveUrl)
-          // - Admin ne website visibility ke liye approve kiya ho (liveStatus)
+
           const liveTemples = res.data.data.filter(
             (t: any) => t.isLive && t.liveStatus
           );
@@ -348,12 +337,80 @@ function LiveDarshanContent() {
     <div className="min-h-screen bg-background selection:bg-sacred/30">
       <Navbar />
 
-      {/* Divine Overlays */}
-      <BellAnimation trigger={bellTrigger} isLooping={isAartiActive} />
-      <FlowerShower trigger={flowerTrigger} />
-      <AartiAnimation trigger={aartiTrigger} />
+      {/* Hero Header Section */}
+      <section className="relative min-h-[480px] flex items-center justify-center overflow-hidden mb-12">
+        {/* Background Image */}
+        <div className="absolute inset-0">
+          <Image
+            src="/images/sacred_live_darshan_hero_bg.png"
+            alt="Sacred Live Darshan"
+            fill
+            priority
+            className="object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-background/90 via-background/60 to-background/95" />
+        </div>
 
-      <main className="relative pb-20 pt-20 overflow-x-hidden">
+        {/* Decorative elements */}
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute top-1/4 -left-32 w-96 h-96 bg-primary/15 rounded-full blur-3xl" />
+          <div className="absolute bottom-1/4 -right-32 w-80 h-80 bg-sacred/20 rounded-full blur-3xl" />
+        </div>
+
+        <div className="container mx-auto px-4 relative z-10 pt-12">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-center max-w-4xl mx-auto space-y-8"
+          >
+            <div className="space-y-4">
+              <Badge variant="outline" className="border-primary/30 text-primary px-4 py-1 rounded-full bg-white/60 backdrop-blur-sm">
+                <Sparkles className="w-3.5 h-3.5 mr-2 fill-primary" />
+                Divine Essence
+              </Badge>
+              <h1 className="text-4xl md:text-6xl font-serif font-black text-foreground drop-shadow-sm leading-tight">
+                The Sacred Power of <span className="text-primary italic">Live Darshan</span>
+              </h1>
+              <p className="text-base md:text-xl text-foreground/80 max-w-2xl mx-auto leading-relaxed font-medium">
+                Live Darshan is a portal to the divine. Witnessing sacred rituals in real-time invites the energy into your home, connecting you with chosen deities for eternal peace.
+              </p>
+            </div>
+
+            {/* Premium Search & Explore */}
+            <div className="relative max-w-2xl mx-auto group">
+              <div className="absolute -inset-1 bg-gradient-to-r from-primary to-orange-400 rounded-2xl blur opacity-25 group-hover:opacity-40 transition duration-1000" />
+              <div className="relative flex items-center bg-white/90 backdrop-blur-md rounded-2xl shadow-xl overflow-hidden border border-orange-100/50 p-1.5">
+                <div className="flex-1 flex items-center px-4">
+                  <Search className="h-5 w-5 text-primary mr-3" />
+                  <input
+                    type="text"
+                    placeholder="Search for live temple..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full bg-transparent outline-none py-4 text-lg font-medium"
+                  />
+                </div>
+                <Button
+                  className="px-8 h-[54px] rounded-xl bg-primary hover:bg-primary/95 text-white font-bold text-sm uppercase tracking-widest hidden sm:flex shrink-0"
+                  onClick={() => {
+                    const selector = document.getElementById('other-temples');
+                    if (selector) selector.scrollIntoView({ behavior: 'smooth' });
+                  }}
+                >
+                  Explore
+                </Button>
+              </div>
+              <p className="mt-4 text-sacred font-serif italic text-sm md:text-md opacity-90 text-center">
+                "Darshan transcends physical boundaries, connecting the devotee directly to the divine."
+              </p>
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
+
+
+      <main className="relative pb-1 pt-1 overflow-x-hidden">
         {/* FULL WIDTH HERO VIDEO SECTION */}
         <section className="relative w-full h-[60vh] md:h-[85vh] bg-black overflow-hidden group">
 
@@ -382,10 +439,12 @@ function LiveDarshanContent() {
             )}
           </div>
 
-          {/* Overlay Content Container (Always visible, clean layout) */}
-          <div className="absolute inset-0 container px-4 flex flex-col justify-between py-8 z-10 pointer-events-none">
+          <AartiAnimation trigger={aartiTrigger} />
+          <FlowerShower trigger={flowerTrigger} />
+          <BellAnimation trigger={bellTrigger} isLooping={isAartiActive} />
 
-            {/* Top Header Info */}
+          {/* Top Info (Always on Video) */}
+          <div className="absolute top-0 inset-x-0 p-8 z-10 pointer-events-none">
             <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 pointer-events-auto">
               <motion.div
                 initial={{ opacity: 0, y: -20 }}
@@ -403,142 +462,130 @@ function LiveDarshanContent() {
                   )}
                 </div>
               </motion.div>
-
-              {/* Upcoming Event Badge */}
-              <div className="hidden md:block pointer-events-none">
-                {/* Can add dynamic next aarti if available in backend */}
-              </div>
             </div>
+          </div>
 
-            {/* Center Play Button (Only if NOT playing) */}
-            {!isPlaying && (
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                <motion.div
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => setIsPlaying(true)}
-                  className="w-24 h-24 md:w-32 md:h-32 rounded-full bg-sacred/90 flex items-center justify-center cursor-pointer shadow-[0_0_50px_rgba(255,107,0,0.6)] backdrop-blur-md border-2 border-white/20 z-20 pointer-events-auto"
-                >
-                  <Play className="fill-white text-white ml-2" size={48} />
-                </motion.div>
-              </div>
-            )}
+          {/* Center Play Button (Only if NOT playing) */}
+          {!isPlaying && (
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <motion.div
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => setIsPlaying(true)}
+                className="w-24 h-24 md:w-32 md:h-32 rounded-full bg-sacred/90 flex items-center justify-center cursor-pointer shadow-[0_0_50px_rgba(255,107,0,0.6)] backdrop-blur-md border-2 border-white/20 z-20 pointer-events-auto"
+              >
+                <Play className="fill-white text-white ml-2" size={48} />
+              </motion.div>
+            </div>
+          )}
+        </section>
 
-            {/* Bottom Info (Generic Focus - Permanently Visible) */}
-            <div className={`pointer-events-auto bg-gradient-to-t from-black via-black/60 to-transparent p-8 rounded-2xl transition-opacity duration-300 ${isPlaying ? 'opacity-0 hover:opacity-100' : 'opacity-100'}`}>
-              <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-                <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-3 text-white/90">
-                    <Play className="text-sacred fill-sacred" size={24} />
-                    <span className="text-sm md:text-md font-bold tracking-[0.3em] uppercase drop-shadow-lg">Universal Divine Presence</span>
-                  </div>
-                  <h2 className="text-4xl md:text-6xl font-black text-white drop-shadow-2xl font-serif mb-2 italic">Live Darshan</h2>
-                  <p className="text-white/80 text-sm md:text-lg max-w-2xl font-medium tracking-wide leading-relaxed">
-                    Experience the sacred aartis and divine rituals from India's most revered shrines. Choose your preferred sanctuary below to begin your spiritual journey.
-                  </p>
-
-                  {/* Selective Temple Highlight */}
-                  <div className="mt-4 flex items-center gap-2 bg-white/10 backdrop-blur-sm w-fit px-4 py-2 rounded-full border border-white/10">
-                    <MapPin className="text-sacred" size={14} />
-                    <span className="text-xs font-bold text-white uppercase tracking-widest">{selectedTemple.name}, {selectedTemple.location}</span>
-                  </div>
+        {/* Info Area Below Video */}
+        <section className="bg-white border-b border-border/50 py-4">
+          <div className="max-w-[1400px] mx-auto px-4">
+            <div className="flex flex-col lg:flex-row md:items-center justify-between gap-6">
+              <div className="flex-1">
+                <div className="flex items-center gap-3 text-primary mb-1">
+                  {/* <Play className="fill-primary" size={16} /> */}
+                  {/* <span className="text-[10px] md:text-xs font-black tracking-[0.3em] uppercase">Sacred Live Presence</span> */}
                 </div>
 
-                {/* Primary Actions for Live Viewer */}
-                <div className="flex flex-wrap gap-3 shrink-0">
-                  {/* Manual Devotion Buttons */}
-                  <div className="flex gap-2 mr-4">
-                    <motion.button
-                      whileHover={{ scale: 1.1 }}
-                      whileTap={{ scale: 0.9 }}
-                      onClick={() => setBellTrigger(prev => prev + 1)}
-                      className="w-12 h-12 rounded-full bg-amber-500/20 backdrop-blur-md border border-amber-500/40 flex items-center justify-center text-2xl shadow-lg hover:bg-amber-500/40 transition-all pointer-events-auto"
-                      title="Ring Bell"
-                    >
-                      🔔
-                    </motion.button>
-                    <motion.button
-                      whileHover={{ scale: 1.1 }}
-                      whileTap={{ scale: 0.9 }}
-                      onClick={() => setFlowerTrigger(prev => prev + 1)}
-                      className="w-12 h-12 rounded-full bg-pink-500/20 backdrop-blur-md border border-pink-500/40 flex items-center justify-center text-2xl shadow-lg hover:bg-pink-500/40 transition-all pointer-events-auto"
-                      title="Offer Flowers"
-                    >
-                      🌸
-                    </motion.button>
-                    <motion.button
-                      whileHover={{ scale: 1.1 }}
-                      whileTap={{ scale: 0.9 }}
-                      onClick={() => {
-                        setAartiTrigger(prev => prev + 1);
-                        setBellTrigger(prev => prev + 1);
-                      }}
-                      className="w-12 h-12 rounded-full bg-orange-500/20 backdrop-blur-md border border-orange-500/40 flex items-center justify-center shadow-lg hover:bg-orange-500/40 transition-all pointer-events-auto"
-                      title="Perform Aarti"
-                    >
-                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M12 2C12 2 15 6 15 9C15 10.6569 13.6569 12 12 12C10.3431 12 9 10.6569 9 9C9 6 12 2 12 2Z" fill="#F97316" />
-                        <circle cx="12" cy="18" r="4" stroke="#F97316" strokeWidth="2" />
-                        <path d="M8 18H16" stroke="#F97316" strokeWidth="2" strokeLinecap="round" />
-                      </svg>
-                    </motion.button>
-                  </div>
+                <div className="flex flex-col md:flex-row md:items-center gap-4">
+                  <Link href={`/temples/${selectedTemple.id}`} className="block group">
+                    <h2 className="text-2xl md:text-3xl font-black text-[#2a1b01] font-serif group-hover:text-primary transition-colors leading-tight">
+                      {selectedTemple.name}, {selectedTemple.location}
+                    </h2>
+                  </Link>
+                  {/* <Link href={`/temples/${selectedTemple.id}`} className="flex items-center gap-2 bg-orange-50 px-4 py-1.5 rounded-full border border-orange-100 hover:bg-orange-100 transition-colors">
+                    <MapPin className="text-primary" size={12} />
+                    <span className="text-[10px] font-bold text-primary/80 uppercase tracking-widest whitespace-nowrap">
+                      {selectedTemple.name}, {selectedTemple.location}
+                    </span>
+                  </Link> */}
+                </div>
+              </div>
 
+
+             <div className="flex items-center gap-1 bg-slate-50 rounded-full border border-slate-200">
+                  <motion.button
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                    onClick={() => setBellTrigger(prev => prev + 1)}
+                    className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-xl shadow-sm border border-border hover:bg-orange-50 transition-all hover:border-orange-200"
+                    title="Ring Bell"
+                  >
+                    🔔
+                  </motion.button>
+                  <motion.button
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                    onClick={() => setFlowerTrigger(prev => prev + 1)}
+                    className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-xl shadow-sm border border-border hover:bg-pink-50 transition-all hover:border-pink-200"
+                    title="Offer Flowers"
+                  >
+                    🌸
+                  </motion.button>
+                  <motion.button
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                    onClick={() => setAartiTrigger(prev => prev + 1)}
+                    className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm border border-border hover:bg-yellow-50 transition-all hover:border-yellow-200 overflow-hidden"
+                    title="Perform Aarti"
+                  >
+                    <img src="/images/rotate_thali.gif" alt="Aarti" className="w-10 h-10 object-contain" />
+                  </motion.button>
+                </div>
+
+
+
+              {/* Primary Actions */}
+              <div className="flex flex-wrap items-center gap-4 shrink-0 bg-white shadow-soft p-3 md:p-4 rounded-[1.5rem] border border-orange-50/50">
+                {/* Manual Devotion Buttons */}
+             
+                <div className="flex gap-2">
                   <Button
-                    className="h-12 px-8 rounded-full bg-sacred hover:bg-[#ff8c33] text-white font-black text-sm uppercase tracking-widest gap-2 shadow-[0_0_20px_rgba(255,107,0,0.4)] transition-all"
+                    variant="outline"
+                    className="h-10 px-6 rounded-full border-2 border-primary/20 bg-white text-primary hover:bg-primary/5 font-black text-[10px] uppercase tracking-widest gap-2 transition-all shadow-none"
                     asChild
                   >
                     <Link href={`/donation?temple=${selectedTemple.id}`}>
-                      <Heart className="w-4 h-4 fill-white" />
-                      Donate Now
+                      <Heart className="w-3.5 h-3.5" />
+                      Donate
                     </Link>
                   </Button>
                   <Button
                     variant="outline"
-                    className="h-12 px-8 rounded-full border-white/20 bg-white/10 backdrop-blur-md text-white hover:bg-white/20 font-black text-sm uppercase tracking-widest gap-2 transition-all"
+                    className="h-10 px-6 rounded-full border-2 border-primary/20 bg-white text-primary hover:bg-primary/5 font-black text-[10px] uppercase tracking-widest gap-2 transition-all shadow-none"
                     asChild
                   >
                     <Link href={`/booking?temple=${selectedTemple.id}`}>
-                      <Calendar className="w-4 h-4" />
+                      <Calendar className="w-3.5 h-3.5" />
                       Book Pooja
                     </Link>
                   </Button>
                 </div>
               </div>
             </div>
-
           </div>
         </section>
 
         <div className="container mx-auto px-4 md:px-6 mt-12">
-          {/* Generic Information Section */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center mb-16 bg-white shadow-xl shadow-primary/5 p-8 rounded-[2.5rem] border border-primary/5">
-            <div className="lg:col-span-12 space-y-4 text-center max-w-4xl mx-auto">
-              <div className="inline-block px-4 py-1.5 bg-primary/5 text-primary text-[10px] font-black uppercase tracking-[0.3em] rounded-full mb-2">
-                Divine Essence
-              </div>
-              <h3 className="text-3xl md:text-4xl font-black text-[#2a1b01] font-serif leading-tight">The Sacred Power of Live Darshan</h3>
-              <p className="text-slate-600 text-base md:text-lg leading-relaxed font-medium">
-                Live Darshan is a portal to the divine. Witnessing sacred rituals in real-time invites the energy of the shrine into your home. This digital sanctuary connects you with your chosen deities whenever you seek peace.
-              </p>
-              <div className="pt-4">
-                <p className="text-sacred font-bold italic text-sm md:text-md opacity-80">
-                  "Darshan transcends physical boundaries, connecting the devotee directly to the divine."
-                </p>
-              </div>
-            </div>
-          </div>
+
+
+
+
+
+
+
+
 
           {/* HORIZONTAL TEMPLE SELECTOR */}
-          {temples.length > 1 && (
-            <section>
+          {temples.length > 0 && (
+            <section id="other-temples">
               <div className="flex flex-col md:flex-row items-center justify-between mb-10 px-2 gap-4">
                 <div className="space-y-1">
-                  {/* <h3 className="text-3xl font-black uppercase tracking-tighter flex items-lef gap-3 text-foreground">
-                    <span className="w-12 h-1.5 bg-sacred rounded-full" /> Other Live Temples
-                  </h3> */}
-
                   <h3 className="text-3xl md:text-4xl font-black text-[#2a1b01] font-serif leading-tight">Other Live Temples</h3>
+
                   {/* <p className="text-slate-500 text-sm font-bold uppercase tracking-[0.2em] ml-15">Choose your gateway to the divine</p> */}
                 </div>
                 <div className="flex gap-2">
@@ -549,39 +596,41 @@ function LiveDarshanContent() {
               </div>
 
               <div className="flex gap-6 overflow-x-auto pb-8 snap-x no-scrollbar py-4">
-                {temples.map((temple, idx) => (
-                  <motion.div
-                    key={temple.id}
-                    whileHover={{ y: -10 }}
-                    onClick={() => handleTempleClick(temple)}
-                    className={`min-w-[300px] md:min-w-[360px] snap-start cursor-pointer transition-all duration-500 group ${selectedTemple.id === temple.id ? "opacity-100 ring-4 ring-sacred ring-offset-4 rounded-[1.5rem]" : "opacity-80 hover:opacity-100"
-                      }`}
-                  >
-                    <div className="relative aspect-video rounded-[1.5rem] overflow-hidden shadow-lg border border-border">
-                      <Image
-                        src={getImageUrl(temple.image)}
-                        alt={temple.name}
-                        fill
-                        className="object-cover group-hover:scale-110 transition-transform duration-700"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent" />
+                {temples
+                  .filter(temple => temple.name.toLowerCase().includes(searchQuery.toLowerCase()) || temple.location.toLowerCase().includes(searchQuery.toLowerCase()))
+                  .map((temple, idx) => (
+                    <motion.div
+                      key={temple.id}
+                      whileHover={{ y: -10 }}
+                      onClick={() => handleTempleClick(temple)}
+                      className={`min-w-[300px] md:min-w-[360px] snap-start cursor-pointer transition-all duration-500 group ${selectedTemple.id === temple.id ? "opacity-100 ring-4 ring-sacred ring-offset-4 rounded-[1.5rem]" : "opacity-80 hover:opacity-100"
+                        }`}
+                    >
+                      <div className="relative aspect-video rounded-[1.5rem] overflow-hidden shadow-lg border border-border">
+                        <Image
+                          src={getImageUrl(temple.image)}
+                          alt={temple.name}
+                          fill
+                          className="object-cover group-hover:scale-110 transition-transform duration-700"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent" />
 
-                      <div className="absolute bottom-4 left-4 right-4">
-                        <p className="text-white font-bold text-lg mb-1 line-clamp-1">{temple.name}</p>
-                        <div className="flex items-center justify-between">
-                          <span className="text-white/80 text-xs font-medium">{temple.location}</span>
-                          {temple.id === selectedTemple.id && (
-                            <Badge className="bg-red-600 text-[10px] font-bold h-5 uppercase animate-pulse">Now Playing</Badge>
-                          )}
+                        <div className="absolute bottom-4 left-4 right-4">
+                          <p className="text-white font-bold text-lg mb-1 line-clamp-1">{temple.name}</p>
+                          <div className="flex items-center justify-between">
+                            <span className="text-white/80 text-xs font-medium">{temple.location}</span>
+                            {temple.id === selectedTemple.id && (
+                              <Badge className="bg-red-600 text-[10px] font-bold h-5 uppercase animate-pulse">Now Playing</Badge>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="absolute top-3 right-3 bg-black/50 backdrop-blur-md rounded-full p-2 text-white/90 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Play size={14} fill="white" />
                         </div>
                       </div>
-
-                      <div className="absolute top-3 right-3 bg-black/50 backdrop-blur-md rounded-full p-2 text-white/90 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Play size={14} fill="white" />
-                      </div>
-                    </div>
-                  </motion.div>
-                ))}
+                    </motion.div>
+                  ))}
               </div>
             </section>
           )}

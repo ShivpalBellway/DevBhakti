@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { prisma } from "../../lib/prisma";
 import { createShiprocketPickupLocation } from "../../services/shiprocketService";
+import { notifyAdmins } from "../../services/firebaseService";
 
 const getFilePath = (files: any, fieldName: string) => {
     if (files && files[fieldName] && files[fieldName][0]) {
@@ -127,6 +128,16 @@ export const updateSellerProfile = async (req: Request, res: Response) => {
                     requestedData: sensitiveChanges,
                     oldData: oldSensitiveData,
                     status: 'PENDING'
+                }
+            });
+
+            // Notify Admins
+            await notifyAdmins({
+                title: "Seller Bank/Profile Update",
+                body: `${store.name || 'A Seller'} has updated sensitive details (Bank/Profile) requiring verification.`,
+                data: {
+                    link: '/admin/sellers',
+                    type: 'SELLER_UPDATE'
                 }
             });
 

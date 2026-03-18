@@ -63,6 +63,15 @@ const Navbar: React.FC<NavbarProps> = ({ variant = "default" }) => {
     window.location.reload();
   };
 
+  const isLinkActive = (href: string) => {
+    // Standardize href by removing query params for comparison
+    const path = href.split('?')[0];
+
+    if (path === '/') return pathname === '/';
+    // Match current path or if it's a sub-path (e.g., /poojas/details matches /poojas)
+    return pathname.startsWith(path);
+  };
+
 
   const navLinks = [
     { label: "Poojas & Sevas", href: "/poojas" },
@@ -86,27 +95,27 @@ const Navbar: React.FC<NavbarProps> = ({ variant = "default" }) => {
         <div className="container mx-auto px-4">
           <nav className="flex items-center justify-between h-16 md:h-20 gap-4">
             {/* Logo Section */}
-            <div className="flex items-center flex-shrink-0 relative z-10">
+            <div className="flex items-center shrink-0 relative z-10">
               <Link href="/" className="block">
                 <Logo
-                  className={`h-24 w-auto md:h-28 transition-all duration-300 ${isScrolled ? "scale-90" : "scale-100"
+                  className={`h-20 md:h-24 xl:h-28 w-auto transition-all duration-300 ${isScrolled ? "scale-90" : "scale-100"
                     }`}
                 />
               </Link>
             </div>
 
             {/* Desktop Navigation & Search (Wide Screens Only) */}
-            <div className="hidden xl:flex flex-1 items-center justify-between gap-8 mx-4">
+            <div className="hidden xl:flex flex-1 items-center justify-between gap-4 2xl:gap-8 mx-2 2xl:mx-4">
               {/* Desktop Search Bar */}
               {!isTempleRegistrationPage ? (
                 <div
                   onClick={() => setIsSearchOpen(true)}
                   className="flex items-center gap-2 px-4 py-2
-                             w-[300px] 2xl:w-[400px]
+                             flex-1 max-w-[400px] min-w-[200px]
                              bg-white/40 dark:bg-zinc-900/80 backdrop-blur-md rounded-xl
                              cursor-pointer transition-all border border-black/10
                              dark:border-zinc-800/50 hover:border-primary/60
-                             shadow-sm hover:shadow-md shrink-0"
+                             shadow-sm hover:shadow-md"
                 >
                   <Search className="w-4 h-4 text-primary shrink-0" />
                   <span className="text-black/70 dark:text-white/70 text-sm font-medium truncate">
@@ -117,22 +126,35 @@ const Navbar: React.FC<NavbarProps> = ({ variant = "default" }) => {
                 <div className="flex-1" />
               )}
 
-              {/* Navigation Links */}
-              <div className="flex items-center gap-6 2xl:gap-8">
-                {!isTempleRegistrationPage && navLinks.map((link) => (
-                  <Link
-                    key={link.label}
-                    href={link.href}
-                    className="text-sm font-bold text-foreground hover:text-primary transition-colors whitespace-nowrap uppercase tracking-wider"
-                  >
-                    {link.label}
-                  </Link>
-                ))}
+              <div className="flex items-center gap-4 2xl:gap-8 shrink-0">
+                {!isTempleRegistrationPage && navLinks.map((link) => {
+                  const active = isLinkActive(link.href);
+                  return (
+                    <Link
+                      key={link.label}
+                      href={link.href}
+                      className={`text-sm font-bold transition-all whitespace-nowrap uppercase tracking-wider relative group ${active ? "text-primary" : "text-foreground hover:text-primary"
+                        }`}
+                    >
+                      {link.label}
+                      {/* Active indicator underline */}
+                      {active && (
+                        <motion.div
+                          layoutId="activeNav"
+                          className="absolute -bottom-1 left-0 right-0 h-0.5 bg-primary rounded-full"
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          transition={{ duration: 0.3 }}
+                        />
+                      )}
+                    </Link>
+                  );
+                })}
               </div>
             </div>
 
             {/* Action Group */}
-            <div className="flex items-center gap-2 md:gap-3">
+            <div className="flex items-center gap-2 md:gap-3 shrink-0">
 
 
               {/* Search Icon - Visible when desktop search bar is hidden */}
@@ -367,16 +389,21 @@ const Navbar: React.FC<NavbarProps> = ({ variant = "default" }) => {
               <div className="container px-4 py-8">
                 <div className="flex flex-col gap-4">
                   {/* Navigation links - Hidden on temple registration page */}
-                  {!isTempleRegistrationPage && navLinks.map((link) => (
-                    <Link
-                      key={link.label}
-                      href={link.href}
-                      onClick={() => setIsMobileMenuOpen(false)}
-                      className="text-lg font-medium text-foreground py-2 border-b border-border"
-                    >
-                      {link.label}
-                    </Link>
-                  ))}
+                  {!isTempleRegistrationPage && navLinks.map((link) => {
+                    const active = isLinkActive(link.href);
+                    return (
+                      <Link
+                        key={link.label}
+                        href={link.href}
+                        onClick={() => setIsMobileMenuOpen(false)}
+                        className={`text-lg font-bold py-3 border-b border-border flex items-center justify-between transition-colors ${active ? "text-primary bg-primary/5 px-2 rounded-lg border-b-0" : "text-foreground"
+                          }`}
+                      >
+                        {link.label}
+                        {active && <ChevronRight className="w-5 h-5" />}
+                      </Link>
+                    );
+                  })}
 
                   {/* Go to Devotee Home Page - Only on temple registration page */}
                   {isTempleRegistrationPage && (

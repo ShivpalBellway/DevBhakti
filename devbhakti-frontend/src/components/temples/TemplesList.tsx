@@ -185,7 +185,7 @@ export function TemplesList() {
         <Navbar />
 
         {/* Hero Section */}
-        <section className="relative min-h-[600px] flex items-center justify-center overflow-hidden">
+        <section className="relative min-h-[480px] flex items-center justify-center overflow-hidden">
           {/* Background image */}
           <div className="absolute inset-0">
             <Image
@@ -195,16 +195,17 @@ export function TemplesList() {
               priority
               className="object-cover"
             />
-            <div className="absolute inset-0 bg-gradient-to-b from-background/40 via-background/20 to-background/70" />
+            <div className="absolute inset-0 bg-gradient-to-b from-background/80 via-background/60 to-background/90" />
           </div>
 
           {/* Background decorative elements */}
           <div className="absolute inset-0 overflow-hidden pointer-events-none">
-            <div className="absolute top-1/4 -left-32 w-96 h-96 bg-primary/20 rounded-full blur-3xl animate-pulse-slow" />
-            <div className="absolute bottom-1/4 -right-32 w-80 h-80 bg-secondary/30 rounded-full blur-3xl animate-pulse-slow" />
+            <div className="absolute top-1/4 -left-32 w-96 h-96 bg-primary/10 rounded-full blur-3xl animate-pulse-slow" />
+            <div className="absolute bottom-1/4 -right-32 w-80 h-80 bg-secondary/20 rounded-full blur-3xl animate-pulse-slow" />
+            <div className="absolute inset-0 bg-[url('/images/sacred_marketplace_hero_pattern.png')] opacity-10" />
           </div>
 
-          <div className="container mx-auto px-4 relative z-10">
+          <div className="container mx-auto px-4 pt-24 pb-12 relative z-10">
             <div className="text-center max-w-4xl mx-auto">
               <motion.h1
                 initial={{ opacity: 0, y: 20 }}
@@ -217,30 +218,30 @@ export function TemplesList() {
               <motion.p
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.2 }}
-                className="text-lg md:text-xl text-foreground max-w-2xl mx-auto mb-10"
+                transition={{ delay: 0.1 }}
+                className="text-lg text-slate-800 mb-10"
               >
                 Explore thousands of temples across India and connect with divine experiences
               </motion.p>
 
               {/* Premium Search Bar */}
               <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.3 }}
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.2 }}
                 className="relative max-w-2xl mx-auto group"
               >
                 <div className="absolute -inset-1 bg-gradient-to-r from-primary to-orange-400 rounded-2xl blur opacity-25 group-hover:opacity-40 transition duration-1000 group-hover:duration-200" />
-                <div className="relative flex items-center bg-white rounded-2xl shadow-xl overflow-hidden border border-orange-100">
-                  <Search className="absolute left-5 h-5 w-5 text-muted-foreground" />
+                <div className="relative flex items-center bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl overflow-hidden border border-primary/10">
+                  <Search className="absolute left-5 h-5 w-5 text-primary/50" />
                   <input
                     type="text"
                     placeholder="Search for temples, deities or location..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-14 pr-32 py-5 text-lg outline-none text-zinc-800 bg-transparent placeholder:text-zinc-400"
+                    className="w-full pl-14 pr-32 py-5 text-lg outline-none bg-transparent text-zinc-800 placeholder:text-zinc-400"
                   />
-                  <Button className="absolute right-2 h-12 px-8 rounded-xl bg-primary hover:bg-primary/90 hidden sm:flex">
+                  <Button className="absolute right-2 h-12 px-8 rounded-xl bg-primary hover:bg-primary/90 text-white hidden sm:flex font-bold">
                     Explore
                   </Button>
                 </div>

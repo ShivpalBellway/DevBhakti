@@ -4,6 +4,7 @@ import React, { useState, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
+import NextImage from "next/image";
 import {
     Heart,
     IndianRupee,
@@ -18,7 +19,8 @@ import {
     FileText,
     ChevronRight,
     ShieldCheck,
-    MapPin
+    MapPin,
+    Search
 
 } from "lucide-react";
 
@@ -84,6 +86,7 @@ function DonationForm() {
     const [loading, setLoading] = useState(false);
     const [transactionId, setTransactionId] = useState("");
     const [donationId, setDonationId] = useState("");
+    const [searchQuery, setSearchQuery] = useState("");
 
     const RAZORPAY_KEY = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "";
 
@@ -295,28 +298,75 @@ function DonationForm() {
             <Navbar />
 
             {/* Hero Section */}
-            <section className="relative pt-32 pb-16 bg-gradient-to-b from-[#fdf6f0]/80 via-white to-white dark:from-zinc-900 dark:via-background dark:to-background border-b border-[#e6d5c8] dark:border-zinc-800">
-                <div className="container mx-auto px-4 text-center relative z-10">
+            <section className="relative min-h-[480px] flex items-center justify-center overflow-hidden mb-12">
+                {/* Background Image */}
+                <div className="absolute inset-0">
+                    <NextImage
+                        src="/images/sacred_donation_hero_bg.png"
+                        alt="Sacred Donation"
+                        fill
+                        priority
+                        className="object-cover"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-b from-background/90 via-background/60 to-background/95" />
+                </div>
+
+                {/* Decorative Elements */}
+                <div className="absolute inset-0 pointer-events-none">
+                    <div className="absolute top-1/4 -left-32 w-96 h-96 bg-[#7c4624]/15 rounded-full blur-3xl opacity-50" />
+                    <div className="absolute bottom-1/4 -right-32 w-80 h-80 bg-orange-200/20 rounded-full blur-3xl" />
+                </div>
+
+                <div className="container mx-auto px-4 relative z-10 pt-16 text-center">
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.6 }}
+                        className="max-w-4xl mx-auto space-y-8"
                     >
-                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#f5ebe0] dark:bg-[#7c4624]/30 text-[#7c4624] dark:text-[#cfa98e] text-sm font-medium mb-4 border border-[#e6d5c8] dark:border-[#7c4624]/50">
-                            <Sparkles className="w-4 h-4" />
-                            <span>Sacred Offering</span>
+                        <div className="space-y-4">
+                            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/60 backdrop-blur-md text-[#7c4624] text-xs font-bold uppercase tracking-[0.2em] border border-[#e6d5c8] shadow-sm">
+                                <Sparkles className="w-3.5 h-3.5 fill-[#7c4624]" />
+                                <span>Sacred Offering</span>
+                            </div>
+                            <h1 className="text-4xl md:text-6xl font-serif font-black text-foreground drop-shadow-sm leading-tight">
+                                The Divine Act of <span className="text-primary italic">Giving</span>
+                            </h1>
+                            <p className="text-base md:text-xl text-foreground/80 max-w-2xl mx-auto leading-relaxed font-medium">
+                                "The act of giving is the path to spiritual abundance." Support ancient holy shrines, annadaan, and gau seva to preserve our sacred heritage.
+                            </p>
                         </div>
-                        <h1 className="text-4xl md:text-5xl lg:text-6xl font-display font-bold text-foreground mb-4">
-                            Make a Divine <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#7c4624] to-[#5a3820]">Contribution</span>
-                        </h1>
-                        <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-                            "The act of giving is the path to spiritual abundance." Support ancient temples, annadaan, and gau seva.
-                        </p>
+
+                        {/* Premium Search & Explore */}
+                        <div className="relative max-w-2xl mx-auto group">
+                            <div className="absolute -inset-1 bg-gradient-to-r from-primary/40 to-orange-400/40 rounded-2xl blur opacity-25 group-hover:opacity-40 transition duration-1000" />
+                            <div className="relative flex items-center bg-white/90 backdrop-blur-md rounded-2xl shadow-xl overflow-hidden border border-orange-100/50 p-1.5">
+                                <div className="flex-1 flex items-center px-4">
+                                    <Search className="h-5 w-5 text-primary mr-3" />
+                                    <input
+                                        type="text"
+                                        placeholder="Search for holy shrine..."
+                                        value={searchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                        className="w-full bg-transparent outline-none py-4 text-lg font-medium"
+                                    />
+                                </div>
+                                <Button
+                                    className="px-8 h-[54px] rounded-xl bg-[#7c4624] hover:bg-[#63361c] text-white font-bold text-sm uppercase tracking-widest hidden sm:flex shrink-0 shadow-lg shadow-[#7c4624]/10"
+                                    onClick={() => {
+                                        const selector = document.getElementById('donation-steps');
+                                        if (selector) selector.scrollIntoView({ behavior: 'smooth' });
+                                    }}
+                                >
+                                    Explore
+                                </Button>
+                            </div>
+                        </div>
                     </motion.div>
                 </div>
             </section>
 
-            <div className="container mx-auto px-4 py-8 relative z-10">
+            <div id="donation-steps" className="container mx-auto px-4 py-8 relative z-10">
                 {/* Progress Steps */}
                 <div className="max-w-4xl mx-auto mb-10">
                     <div className="flex justify-between items-center relative">
@@ -377,37 +427,39 @@ function DonationForm() {
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     {temples.length > 0 ? (
-                                        temples.map((temple) => (
-                                            <motion.div
-                                                key={temple.id}
-                                                whileHover={{ scale: 1.02 }}
-                                                whileTap={{ scale: 0.98 }}
-                                                className={`relative p-5 rounded-2xl border-2 cursor-pointer transition-all ${selectedTemple === temple.id
-                                                    ? "border-[#7c4624] bg-[#f5ebe0]/50 dark:bg-[#7c4624]/20 shadow-md ring-1 ring-[#e6d5c8]"
-                                                    : "border-border hover:border-[#b08d7a] bg-card hover:shadow-sm"
-                                                    }`}
-                                                onClick={() => setSelectedTemple(temple.id)}
-                                            >
-                                                <div className="flex items-start gap-4">
-                                                    <div className={`p-3 rounded-full ${selectedTemple === temple.id ? "bg-[#f5ebe0] text-[#7c4624]" : "bg-muted text-muted-foreground"}`}>
-                                                        <Building2 className="w-6 h-6" />
-                                                    </div>
-                                                    <div className="flex-1">
-                                                        <h3 className="font-bold text-lg">{temple.name}</h3>
-                                                        <p className="text-sm text-primary font-medium">{temple.deity || "Sacred Temple"}</p>
-                                                        <div className="flex items-center gap-1 mt-1 text-muted-foreground text-sm">
-                                                            <MapPin className="w-3 h-3" />
-                                                            {temple.location}
+                                        temples
+                                            .filter(t => t.name.toLowerCase().includes(searchQuery.toLowerCase()) || t.location.toLowerCase().includes(searchQuery.toLowerCase()))
+                                            .map((temple) => (
+                                                <motion.div
+                                                    key={temple.id}
+                                                    whileHover={{ scale: 1.02 }}
+                                                    whileTap={{ scale: 0.98 }}
+                                                    className={`relative p-5 rounded-2xl border-2 cursor-pointer transition-all ${selectedTemple === temple.id
+                                                        ? "border-[#7c4624] bg-[#f5ebe0]/50 dark:bg-[#7c4624]/20 shadow-md ring-1 ring-[#e6d5c8]"
+                                                        : "border-border hover:border-[#b08d7a] bg-card hover:shadow-sm"
+                                                        }`}
+                                                    onClick={() => setSelectedTemple(temple.id)}
+                                                >
+                                                    <div className="flex items-start gap-4">
+                                                        <div className={`p-3 rounded-full ${selectedTemple === temple.id ? "bg-[#f5ebe0] text-[#7c4624]" : "bg-muted text-muted-foreground"}`}>
+                                                            <Building2 className="w-6 h-6" />
                                                         </div>
-                                                    </div>
-                                                    {selectedTemple === temple.id && (
-                                                        <div className="absolute top-4 right-4 text-[#7c4624]">
-                                                            <CheckCircle2 className="w-6 h-6 fill-current" />
+                                                        <div className="flex-1">
+                                                            <h3 className="font-bold text-lg">{temple.name}</h3>
+                                                            <p className="text-sm text-primary font-medium">{temple.deity || "Sacred Temple"}</p>
+                                                            <div className="flex items-center gap-1 mt-1 text-muted-foreground text-sm">
+                                                                <MapPin className="w-3 h-3" />
+                                                                {temple.location}
+                                                            </div>
                                                         </div>
-                                                    )}
-                                                </div>
-                                            </motion.div>
-                                        ))
+                                                        {selectedTemple === temple.id && (
+                                                            <div className="absolute top-4 right-4 text-[#7c4624]">
+                                                                <CheckCircle2 className="w-6 h-6 fill-current" />
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </motion.div>
+                                            ))
                                     ) : (
                                         <div className="col-span-full py-12 text-center text-muted-foreground italic">
                                             Loading sacred temples...

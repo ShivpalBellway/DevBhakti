@@ -32,7 +32,7 @@ const LiveDarshanSection: React.FC = () => {
     if (url.includes("watch?v=")) {
       return url.replace("watch?v=", "embed/");
     }
-    // Already an embed or some other YouTube URL
+    
     if (url.includes("youtube.com")) {
       return url;
     }
@@ -43,7 +43,6 @@ const LiveDarshanSection: React.FC = () => {
     const loadLiveTemples = async () => {
       const data = await fetchPublicTemples();
       // Temple side: isLive / liveUrl / isLiveNow
-      // Admin side: liveStatus (website par dikhana hai ya nahi)
       const live = data.filter((t: any) => t.isLive && t.liveStatus);
 
       // Sort so isPrimaryLive: true comes first

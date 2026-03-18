@@ -121,7 +121,7 @@ export default function TempleLoginModal({ onClose }: TempleLoginModalProps) {
                 {!showOtpInput ? (
                     <form onSubmit={handleSendOTP} className="space-y-6">
                         <div className="space-y-2">
-                            <Label htmlFor="phone" className="text-slate-700 ml-1">Temple Owner Authority’s Mobile Number</Label>
+                            <Label htmlFor="phone" className="text-slate-700 ml-1">Temple Owner/Authority’s Mobile Number</Label>
                             <div className="relative group">
                                 <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
                                     <Phone className="w-5 h-5 text-slate-400 group-focus-within:text-[#7b4623] transition-colors" />

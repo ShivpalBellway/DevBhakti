@@ -164,6 +164,44 @@ function MarketplaceContent() {
     return matchesPrice;
   });
 
+  // Levenshtein Distance Helper for Fuzzy Search
+  const getLevenshteinDistance = (a: string, b: string): number => {
+    const matrix = Array.from({ length: b.length + 1 }, (_, i) => [i]);
+    for (let j = 0; j <= a.length; j++) matrix[0][j] = j;
+
+    for (let i = 1; i <= b.length; i++) {
+      for (let j = 1; j <= a.length; j++) {
+        if (b.charAt(i - 1) === a.charAt(j - 1)) {
+          matrix[i][j] = matrix[i - 1][j - 1];
+        } else {
+          matrix[i][j] = Math.min(
+            matrix[i - 1][j - 1] + 1, // substitution
+            matrix[i][j - 1] + 1,     // insertion
+            matrix[i - 1][j] + 1      // deletion
+          );
+        }
+      }
+    }
+    return matrix[b.length][a.length];
+  };
+
+  const suggestion = React.useMemo(() => {
+    if (searchQuery.length < 2 || filteredProducts.length > 0) return null;
+
+    let minDistance = Infinity;
+    let bestMatch = "";
+
+    products.forEach(product => {
+      const distance = getLevenshteinDistance(searchQuery.toLowerCase(), product.name.toLowerCase());
+      if (distance < minDistance && distance < 4) { // Threshold of 4 for product names
+        minDistance = distance;
+        bestMatch = product.name;
+      }
+    });
+
+    return bestMatch;
+  }, [searchQuery, filteredProducts, products]);
+
   const toggleFavorite = async (id: string) => {
     const isFav = favorites.includes(id);
 
@@ -230,7 +268,7 @@ function MarketplaceContent() {
       <Navbar />
 
       {/* Hero Section */}
-      <section className="relative min-h-[600px] flex items-center justify-center overflow-hidden">
+      <section className="relative min-h-[480px] flex items-center justify-center overflow-hidden">
         {/* Background image */}
         <div className="absolute inset-0">
           <Image
@@ -417,7 +455,27 @@ function MarketplaceContent() {
               <div className="text-center py-12">
                 <Package className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
                 <h3 className="text-lg font-semibold text-foreground mb-2">No products found</h3>
-                <p className="text-muted-foreground">Try adjusting your filters or search terms</p>
+                <p className="text-muted-foreground">
+                  {suggestion ? (
+                    <>
+                      No results for "{searchQuery}". Did you mean <button 
+                        onClick={() => setSearchQuery(suggestion)}
+                        className="text-[#794A05] font-bold hover:underline"
+                      >
+                        {suggestion}
+                      </button>?
+                    </>
+                  ) : (
+                    "Try search terms like 'Rudraksha', 'Incense' or 'Idols' to find what you're looking for."
+                  )}
+                </p>
+                <Button 
+                   variant="outline"
+                   className="mt-6 rounded-xl border-[#794A05]/20 text-[#794A05]"
+                   onClick={() => { setSearchQuery(""); setSelectedCategory("All"); }}
+                >
+                  Reset Search
+                </Button>
               </div>
             )}
 

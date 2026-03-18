@@ -67,6 +67,51 @@ export const GlobalSearch = ({ isOpen, onClose }: { isOpen: boolean; onClose: ()
         return () => clearTimeout(timer);
     }, [query, isOpen]);
 
+    // Levenshtein Distance Helper for Fuzzy Search
+    const getLevenshteinDistance = (a: string, b: string): number => {
+        const matrix = Array.from({ length: b.length + 1 }, (_, i) => [i]);
+        for (let j = 0; j <= a.length; j++) matrix[0][j] = j;
+
+        for (let i = 1; i <= b.length; i++) {
+            for (let j = 1; j <= a.length; j++) {
+                if (b.charAt(i - 1) === a.charAt(j - 1)) {
+                    matrix[i][j] = matrix[i - 1][j - 1];
+                } else {
+                    matrix[i][j] = Math.min(
+                        matrix[i - 1][j - 1] + 1, // substitution
+                        matrix[i][j - 1] + 1,     // insertion
+                        matrix[i - 1][j] + 1      // deletion
+                    );
+                }
+            }
+        }
+        return matrix[b.length][a.length];
+    };
+
+    const suggestion = React.useMemo(() => {
+        if (query.trim().length < 2 || results.length > 0) return null;
+
+        let minDistance = Infinity;
+        let bestMatch = "";
+
+        // Common terms across all categories
+        const commonTerms = [
+            "Jyotirlinga", "Rudra Abhishek", "Maha Shivratri", "Ganesh Seva", 
+            "Rudraksha", "Shakti Peeth", "Varanasi", "Kedarnath", "Idols", "Incense",
+            "Bhagavad Gita", "Panchamrut", "Ayodhya", "Rishikesh"
+        ];
+
+        commonTerms.forEach(term => {
+            const distance = getLevenshteinDistance(query.toLowerCase(), term.toLowerCase());
+            if (distance < minDistance && distance < 3) {
+                minDistance = distance;
+                bestMatch = term;
+            }
+        });
+
+        return bestMatch;
+    }, [query, results]);
+
     const handleItemClick = (item: SearchResult) => {
         onClose();
         if (item.category === "Temple") {
@@ -206,7 +251,20 @@ export const GlobalSearch = ({ isOpen, onClose }: { isOpen: boolean; onClose: ()
                                         <Search className="w-10 h-10 text-muted-foreground/30" />
                                     </div>
                                     <h3 className="text-xl font-serif text-foreground mb-2">No Sacred Match Found</h3>
-                                    <p className="text-muted-foreground font-sans">We couldn't find any results for "{query}". Try another search term.</p>
+                                    <p className="text-muted-foreground font-sans">
+                                        {suggestion ? (
+                                            <>
+                                                No results for "{query}". Did you mean <button 
+                                                    onClick={() => setQuery(suggestion)}
+                                                    className="text-primary font-bold hover:underline"
+                                                >
+                                                    {suggestion}
+                                                </button>?
+                                            </>
+                                        ) : (
+                                            `We couldn't find any results for "${query}". Try another search term.`
+                                        )}
+                                    </p>
                                 </div>
                             ) : (
                                 <div className="p-16 text-center">

@@ -125,7 +125,7 @@ const Footer: React.FC = () => {
               </a> */}
             </div>
             <p className="text-sm text-sidebar-foreground/50">
-              © {new Date().getFullYear()}DevBhakti™
+              © {new Date().getFullYear()} DevBhakti™
               DevBhakti is owned and operated by Divinity Labs Private Limited. All rights reserved.
 
             </p>

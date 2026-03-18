@@ -23,11 +23,10 @@ import { format } from "date-fns";
 import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
-    Tooltip,
-    TooltipContent,
-    TooltipProvider,
-    TooltipTrigger,
-} from "@/components/ui/tooltip";
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from "@/components/ui/popover";
 
 
 
@@ -124,62 +123,112 @@ export default function TempleDashboardPage() {
         }
     };
 
-    // Calculate dynamic stats
+    // Dynamic calculation for stats (Lifetime and Today)
+    const today = new Date().setHours(0, 0, 0, 0);
+
+    const poojaRevenue = bookings.reduce((acc, b) => acc + (b.packagePrice || 0), 0);
+    const productRevenue = orders.reduce((acc: number, o: any) => acc + (o.totalAmount || 0), 0);
+    
+    // Today's data filtering
+    const todayBookings = bookings.filter(b => new Date(b.createdAt).setHours(0, 0, 0, 0) === today);
+    const todayOrders = orders.filter(o => new Date(o.createdAt).setHours(0, 0, 0, 0) === today);
+    
+    const todayPoojaRevenue = todayBookings.reduce((acc, b) => acc + (b.packagePrice || 0), 0);
+    const todayProductRevenue = todayOrders.reduce((acc, o) => acc + (o.totalAmount || 0), 0);
+
     const uniqueDevotees = new Set([
         ...bookings.map(b => b.devoteePhone || b.devoteeEmail || b.devoteeName).filter(Boolean),
         ...orders.map(o => o.order?.user?.phone || o.order?.user?.email || o.order?.user?.name).filter(Boolean)
     ]).size;
 
-    const poojaRevenue = bookings.reduce((acc, b) => acc + (b.packagePrice || 0), 0);
-    const productRevenue = orders.reduce((acc: number, o: any) => acc + (o.totalAmount || 0), 0);
+    const todayNewDevotees = new Set([
+        ...todayBookings.map(b => b.devoteePhone || b.devoteeEmail || b.devoteeName).filter(Boolean),
+        ...todayOrders.map(o => o.order?.user?.phone || o.order?.user?.email || o.order?.user?.name).filter(Boolean)
+    ]).size;
 
-    // Calculate total items sold if needed, but user asked for "Total Product" (Count of active/listed products?)
-    // Given "Total Product bhi show karo" and context of dashboard inventory/sales, listed products seems appropriate.
-    // However, if they meant "Total Products Sold" (count), that would be different.
-    // I'll show "Total Products" as inventory count for now as per common dashboard patterns, 
-    // or better, I'll label it "Total Inventory" or "Active Products" if that's what it is.
-    // But "Total Product" label is what was asked.
+    const lifetimeStats = [
+        { 
+            title: "Gross Revenue", 
+            value: `₹${(poojaRevenue + productRevenue).toLocaleString()}`, 
+            icon: TrendingUp, 
+            color: "text-amber-600", 
+            bg: "bg-amber-100/50",
+            tooltip: "Total cumulative revenue generated from all sources including poojas and marketplace sales."
+        },
+        { 
+            title: "Total Service Sales", 
+            value: `₹${poojaRevenue.toLocaleString()}`, 
+            icon: Calendar, 
+            color: "text-orange-600", 
+            bg: "bg-orange-100/50",
+            tooltip: "Lifetime revenue specifically from Pooja and Seva bookings."
+        },
+        { 
+            title: "Total Product Sales", 
+            value: `₹${productRevenue.toLocaleString()}`, 
+            icon: ShoppingBag, 
+            color: "text-emerald-600", 
+            bg: "bg-emerald-100/50",
+            tooltip: "Lifetime revenue generated from physical product sales in the marketplace."
+        },
+        { 
+            title: "Total Donation", 
+            value: "₹0", 
+            icon: Heart, 
+            color: "text-rose-600", 
+            bg: "bg-rose-100/50",
+            tooltip: "Total direct donations received by the temple through the platform."
+        },
+        { 
+            title: "Total Devotees", 
+            value: uniqueDevotees.toString(), 
+            icon: Users, 
+            color: "text-blue-600", 
+            bg: "bg-blue-100/50",
+            tooltip: "Unique count of all devotees who have interacted with your temple."
+        },
+    ];
 
-    const dynamicStats = [
-        {
-            title: "Total Service Sales",
-            value: `₹${poojaRevenue.toLocaleString()}`,
-            change: "+8.2%",
-            trend: "up",
-            icon: Calendar,
-            color: "bg-orange-500",
-            href: "/temples/dashboard/bookings",
-            tooltip: "Total revenue generated from all Pooja and Seva bookings made by devotees."
+    const todayStats = [
+        { 
+            title: "Todays Total Revenue", 
+            value: `₹${(todayPoojaRevenue + todayProductRevenue).toLocaleString()}`, 
+            icon: TrendingUp, 
+            color: "text-amber-600", 
+            bg: "bg-amber-50",
+            tooltip: "Total income generated solely within the current 24-hour period."
         },
-        {
-            title: "Total Products",
-            value: totalProducts.toString(),
-            change: "+4",
-            trend: "up",
-            icon: Package,
-            color: "bg-purple-500",
-            href: "/temples/dashboard/products",
-            tooltip: "Total number of products currently listed in the temple marketplace."
+        { 
+            title: "Service Sales", 
+            value: `₹${todayPoojaRevenue.toLocaleString()}`, 
+            icon: Calendar, 
+            color: "text-orange-600", 
+            bg: "bg-orange-50",
+            tooltip: "Today's revenue from Pooja and Seva bookings."
         },
-        {
-            title: "Product Sales",
-            value: `₹${productRevenue.toLocaleString()}`,
-            change: "+15.3%",
-            trend: "up",
-            icon: ShoppingBag,
-            color: "bg-emerald-500",
-            href: "/temples/dashboard/orders",
-            tooltip: "Total revenue generated from marketplace product orders."
+        { 
+            title: "Product Sales", 
+            value: `₹${todayProductRevenue.toLocaleString()}`, 
+            icon: ShoppingBag, 
+            color: "text-emerald-600", 
+            bg: "bg-emerald-50",
+            tooltip: "Today's revenue from marketplace product sales."
         },
-        {
-            title: "Total Devotees",
-            value: uniqueDevotees.toString(),
-            change: "+12.5%",
-            trend: "up",
-            icon: Users,
-            color: "bg-blue-500",
-            href: "/temples/dashboard/users",
-            tooltip: "Total unique devotees who have booked poojas or placed orders."
+        { 
+            title: "Donations", 
+            value: "₹0", 
+            icon: Heart, 
+            color: "text-rose-600", 
+            bg: "bg-rose-50",
+            tooltip: "Direct donations received today."
+        },
+        { 
+            title: "New Devotees", 
+            value: todayNewDevotees.toString(), 
+            icon: Users, 
+            color: "text-blue-600", 
+            bg: "bg-blue-50",
+            tooltip: "Count of unique devotees who visited or transacted for the first time today."
         },
     ];
 
@@ -202,137 +251,159 @@ export default function TempleDashboardPage() {
     }
 
     return (
-        <div className="space-y-6">
-            {/* Page header */}
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 bg-white p-8 rounded-[2rem] shadow-sm border border-sidebar-border/20 relative overflow-hidden group">
-                <div className="absolute top-0 right-0 w-32 h-32 bg-sidebar-primary/5 rounded-full -mr-16 -mt-16 blur-3xl" />
-                <div className="relative z-10">
-                    <h1 className="text-3xl md:text-4xl font-serif font-black text-sidebar-primary tracking-tight uppercase">
+        <div className="space-y-8 bg-orange-50/20 p-4 md:p-8 rounded-[2rem] min-h-screen">
+            {/* Page header - Premium Style */}
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 bg-white p-10 rounded-[2.5rem] shadow-sm border border-orange-100/20 relative overflow-hidden group">
+                <div className="absolute top-0 right-0 w-64 h-64 bg-amber-50 rounded-full -mr-32 -mt-32 blur-3xl opacity-50" />
+                <div className="relative z-10 space-y-2">
+                    <h1 className="text-4xl md:text-5xl font-serif font-black text-amber-600 tracking-tight uppercase">
                         Temple Dashboard
                     </h1>
-                    <div className="flex items-center gap-3 mt-3">
-                        <div className="h-6 w-1.5 bg-sidebar-primary rounded-full shadow-[0_0_10px_rgba(var(--sidebar-primary),0.5)]" />
-                        <p className="text-xl md:text-2xl font-bold text-slate-800">
+                    <div className="flex items-center gap-3">
+                        <div className="h-8 w-2 bg-amber-600 rounded-full" />
+                        <p className="text-2xl md:text-3xl font-black text-slate-800 font-serif">
                             {templeProfile?.name || "Sacred Temple"}
                         </p>
                     </div>
-                    <p className="text-slate-500 mt-2 text-sm font-medium flex items-center gap-2">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    <p className="text-slate-400 text-sm font-black uppercase tracking-[0.2em] flex items-center gap-2 pl-1">
+                        <span className="w-2 h-2 rounded-full bg-emerald-500" />
                         Administrator Control Center
                     </p>
                 </div>
             </div>
 
-            {/* Stats Grid */}
-            <TooltipProvider delayDuration={100}>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                    {dynamicStats.map((stat, index) => (
+            {/* Total Lifetime Numbers */}
+            <div className="space-y-4">
+                <h2 className="text-2xl font-serif font-black text-slate-700/80 ml-4">Total Lifetime Numbers:</h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                    {lifetimeStats.map((stat, index) => (
                         <motion.div
                             key={stat.title}
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ duration: 0.4, delay: index * 0.1 }}
                         >
-                            <Card
-                                className="hover:shadow-warm transition-all duration-300 border-none shadow-sm cursor-pointer hover:bg-slate-50"
-                                onClick={() => router.push(stat.href)}
-                            >
+                            <Card className="hover:shadow-lg transition-all border-none bg-white/80 backdrop-blur-sm rounded-2xl overflow-hidden group">
                                 <CardContent className="p-6">
-                                    <div className="flex items-center justify-between">
-                                        <div
-                                            className={`w-12 h-12 rounded-xl ${stat.color} flex items-center justify-center bg-opacity-10`}
-                                        >
-                                            <stat.icon className={`w-6 h-6 ${stat.color.replace('bg-', 'text-')}`} />
-                                        </div>
-                                        <div className="flex items-center gap-2">
-                                            {/* <div
-                                                className={`flex items-center gap-1 text-xs font-bold px-2 py-1 rounded-full ${stat.trend === "up" ? "bg-emerald-50 text-emerald-600" : "bg-rose-50 text-rose-600"
-                                                    }`}
-                                            >
-                                                {stat.trend === "up" ? (
-                                                    <TrendingUp className="w-3 h-3" />
-                                                ) : (
-                                                    <TrendingDown className="w-3 h-3" />
-                                                )}
-                                                {stat.change}
-                                            </div> */}
-                                            <Tooltip>
-                                                <TooltipTrigger asChild>
-                                                    <div
-                                                        className="p-1 rounded-full hover:bg-slate-200 transition-colors cursor-help"
-                                                        onClick={(e) => e.stopPropagation()}
-                                                    >
-                                                        <Info className="w-3.5 h-3.5 text-slate-400 hover:text-slate-600" />
+                                    <div className="flex justify-between items-start mb-1">
+                                        <p className="text-xs font-black text-slate-400 uppercase tracking-widest">{stat.title}</p>
+                                        <Popover>
+                                            <PopoverTrigger asChild>
+                                                <div className="w-5 h-5 rounded-full flex items-center justify-center hover:bg-slate-100 transition-colors cursor-pointer">
+                                                    <Info className="w-3 h-3 text-slate-400 hover:text-amber-500" />
+                                                </div>
+                                            </PopoverTrigger>
+                                            <PopoverContent className="w-64 bg-slate-900 text-white border-none p-4 rounded-xl shadow-2xl z-[100]">
+                                                <div className="flex gap-3">
+                                                    <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center shrink-0">
+                                                        <Info className="w-4 h-4 text-amber-500" />
                                                     </div>
-                                                </TooltipTrigger>
-                                                <TooltipContent side="bottom" className="max-w-[240px] bg-[#1e293b] text-white border-none shadow-2xl p-3 rounded-xl animate-in fade-in zoom-in duration-200">
-                                                    <div className="flex gap-2">
-                                                        <Info className="w-4 h-4 text-sky-400 shrink-0 mt-0.5" />
-                                                        <p className="text-[11px] leading-relaxed font-medium">{stat.tooltip}</p>
+                                                    <div>
+                                                        <p className="text-[11px] font-black uppercase tracking-widest text-amber-500 mb-1">{stat.title}</p>
+                                                        <p className="text-xs font-medium leading-relaxed opacity-90">{stat.tooltip}</p>
                                                     </div>
-                                                </TooltipContent>
-                                            </Tooltip>
-                                        </div>
+                                                </div>
+                                            </PopoverContent>
+                                        </Popover>
                                     </div>
-                                    <div className="mt-4">
-                                        <p className="text-2xl font-bold text-slate-900">{stat.value}</p>
-                                        <p className="text-sm font-medium text-slate-500 uppercase tracking-wider">{stat.title}</p>
+                                    <p className="text-2xl font-black text-slate-900">{stat.value}</p>
+                                    <div className={cn("mt-4 w-10 h-10 rounded-xl flex items-center justify-center", stat.bg)}>
+                                        <stat.icon className={cn("w-5 h-5", stat.color)} />
                                     </div>
                                 </CardContent>
                             </Card>
                         </motion.div>
                     ))}
                 </div>
-            </TooltipProvider>
+            </div>
+
+            {/* Today's Numbers */}
+            <div className="space-y-4">
+                <h2 className="text-2xl font-serif font-black text-slate-700/80 ml-4">Today's Numbers:</h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                    {todayStats.map((stat, index) => (
+                        <motion.div
+                            key={stat.title}
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.4, delay: (index + 5) * 0.1 }}
+                        >
+                            <Card className="hover:shadow-lg transition-all border-none bg-white/60 backdrop-blur-sm rounded-2xl group">
+                                <CardContent className="p-6">
+                                    <div className="flex justify-between items-start mb-1">
+                                        <p className="text-xs font-black text-slate-400 uppercase tracking-widest">{stat.title}</p>
+                                        <Popover>
+                                            <PopoverTrigger asChild>
+                                                <div className="w-5 h-5 rounded-full flex items-center justify-center hover:bg-slate-100 transition-colors cursor-pointer">
+                                                    <Info className="w-3 h-3 text-slate-400 hover:text-amber-500" />
+                                                </div>
+                                            </PopoverTrigger>
+                                            <PopoverContent className="w-64 bg-slate-900 text-white border-none p-4 rounded-xl shadow-2xl z-[100]">
+                                                <div className="flex gap-3">
+                                                    <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center shrink-0">
+                                                        <Info className="w-4 h-4 text-amber-500" />
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-[11px] font-black uppercase tracking-widest text-amber-500 mb-1">{stat.title}</p>
+                                                        <p className="text-xs font-medium leading-relaxed opacity-90">{stat.tooltip}</p>
+                                                    </div>
+                                                </div>
+                                            </PopoverContent>
+                                        </Popover>
+                                    </div>
+                                    <p className="text-2xl font-black text-slate-900">{stat.value}</p>
+                                </CardContent>
+                            </Card>
+                        </motion.div>
+                    ))}
+                </div>
+            </div>
 
             {/* Main content grid */}
-            <div className="grid lg:grid-cols-2 gap-6">
-                {/* Recent Orders */}
+            <div className="grid lg:grid-cols-2 gap-8">
+                {/* Todays Product Orders */}
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.4, delay: 0.4 }}
                 >
-                    <Card className="border-none shadow-sm h-full">
-                        <CardHeader className="flex flex-row items-center justify-between pb-2">
-                            <CardTitle className="text-lg font-bold text-slate-800">Recent Shop Orders</CardTitle>
+                    <Card className="border-none shadow-sm h-full rounded-[2rem] bg-white overflow-hidden">
+                        <CardHeader className="flex flex-row items-center justify-between p-6 pb-2">
+                            <CardTitle className="text-xl font-black text-slate-800 font-serif">Todays Product Orders</CardTitle>
                             <button
                                 onClick={() => router.push('/temples/dashboard/orders')}
-                                className="text-xs font-bold text-sidebar-primary hover:text-sidebar-primary/80 flex items-center gap-1 uppercase tracking-wider"
+                                className="text-xs font-black text-amber-600 hover:text-amber-700 flex items-center gap-1 uppercase tracking-widest"
                             >
                                 View all
-                                <ArrowUpRight className="w-3 h-3" />
+                                <ArrowUpRight className="w-4 h-4" />
                             </button>
                         </CardHeader>
-                        <CardContent>
-                            <div className="space-y-3">
+                        <CardContent className="p-6">
+                            <div className="space-y-4">
                                 {recentOrdersData.length > 0 ? recentOrdersData.map((subOrder, index) => (
                                     <div
                                         key={index}
-                                        className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-100/50 hover:bg-white hover:border-sidebar-primary/20 hover:shadow-md transition-all cursor-pointer group"
+                                        className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 border border-slate-100/50 hover:bg-white hover:border-amber-200 hover:shadow-md transition-all cursor-pointer group"
                                         onClick={() => router.push('/temples/dashboard/orders')}
                                     >
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 rounded-lg bg-emerald-500/10 flex items-center justify-center group-hover:bg-emerald-500 transition-colors">
-                                                <ShoppingBag className="w-5 h-5 text-emerald-600 group-hover:text-white" />
+                                        <div className="flex items-center gap-4">
+                                            <div className="w-12 h-12 rounded-xl bg-emerald-100 flex items-center justify-center group-hover:bg-emerald-500 transition-colors">
+                                                <ShoppingBag className="w-6 h-6 text-emerald-600 group-hover:text-white" />
                                             </div>
                                             <div>
-                                                <p className="text-sm font-bold text-slate-900">Order #{subOrder.id?.slice(-4).toUpperCase()}</p>
-                                                <p className="text-xs text-slate-500">By {subOrder.order?.user?.name || 'Customer'}</p>
+                                                <p className="text-sm font-black text-slate-900">Order #{subOrder.id?.slice(-4).toUpperCase()}</p>
+                                                <p className="text-xs font-bold text-slate-400">By {subOrder.order?.user?.name || 'Customer'}</p>
                                             </div>
                                         </div>
                                         <div className="text-right">
                                             <p className="text-sm font-black text-slate-900">₹{subOrder.totalAmount?.toLocaleString()}</p>
-                                            <p className={cn(
-                                                "text-[10px] font-bold px-1.5 py-0.5 rounded-full inline-block mt-1",
-                                                subOrder.status === 'DELIVERED' ? 'bg-emerald-100 text-emerald-700' :
-                                                    subOrder.status === 'PENDING' ? 'bg-amber-100 text-amber-700' :
-                                                        'bg-blue-100 text-blue-700'
-                                            )}>{subOrder.status}</p>
+                                            <Badge variant="outline" className="mt-1 font-black text-[9px] uppercase tracking-tighter">
+                                                {subOrder.status}
+                                            </Badge>
                                         </div>
                                     </div>
                                 )) : (
-                                    <div className="py-8 text-center text-slate-400 text-sm italic">No recent orders found.</div>
+                                    <div className="py-12 text-center text-slate-400 text-sm italic font-medium">No recent orders found.</div>
                                 )}
                             </div>
                         </CardContent>
@@ -345,43 +416,43 @@ export default function TempleDashboardPage() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.4, delay: 0.5 }}
                 >
-                    <Card className="border-none shadow-sm h-full">
-                        <CardHeader className="flex flex-row items-center justify-between pb-2">
-                            <CardTitle className="text-lg font-bold text-slate-800">Upcoming Poojas</CardTitle>
+                    <Card className="border-none shadow-sm h-full rounded-[2rem] bg-white overflow-hidden">
+                        <CardHeader className="flex flex-row items-center justify-between p-6 pb-2">
+                            <CardTitle className="text-xl font-black text-slate-800 font-serif">Upcoming Poojas</CardTitle>
                             <button
                                 onClick={() => router.push('/temples/dashboard/bookings')}
-                                className="text-xs font-bold text-sidebar-primary hover:text-sidebar-primary/80 flex items-center gap-1 uppercase tracking-wider"
+                                className="text-xs font-black text-amber-600 hover:text-amber-700 flex items-center gap-1 uppercase tracking-widest"
                             >
                                 View all
-                                <ArrowUpRight className="w-3 h-3" />
+                                <ArrowUpRight className="w-4 h-4" />
                             </button>
                         </CardHeader>
-                        <CardContent>
-                            <div className="space-y-3">
+                        <CardContent className="p-6">
+                            <div className="space-y-4">
                                 {upcomingBookingsData.length > 0 ? upcomingBookingsData.map((booking, index) => (
                                     <div
                                         key={index}
-                                        className="flex items-center justify-between p-3 rounded-xl bg-orange-50/50 border border-orange-100/50 hover:bg-white hover:border-sidebar-primary/20 hover:shadow-md transition-all cursor-pointer group"
+                                        className="flex items-center justify-between p-4 rounded-2xl bg-orange-50/50 border border-orange-100/50 hover:bg-white hover:border-amber-200 hover:shadow-md transition-all cursor-pointer group"
                                         onClick={() => router.push('/temples/dashboard/bookings')}
                                     >
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 rounded-lg bg-orange-600/10 flex items-center justify-center group-hover:bg-orange-600 transition-colors">
-                                                <Calendar className="w-5 h-5 text-orange-600 group-hover:text-white" />
+                                        <div className="flex items-center gap-4">
+                                            <div className="w-12 h-12 rounded-xl bg-orange-100 flex items-center justify-center group-hover:bg-orange-600 transition-colors">
+                                                <Calendar className="w-6 h-6 text-orange-600 group-hover:text-white" />
                                             </div>
                                             <div>
-                                                <p className="text-sm font-bold text-slate-900">{booking.pooja?.name || 'Sacred Pooja'}</p>
-                                                <p className="text-xs text-slate-500">For {booking.devoteeName || 'Devotee'}</p>
+                                                <p className="text-sm font-black text-slate-900">{booking.pooja?.name || 'Sacred Pooja'}</p>
+                                                <p className="text-xs font-bold text-slate-400">For {booking.devoteeName || 'Devotee'}</p>
                                             </div>
                                         </div>
                                         <div className="text-right">
-                                            <p className="text-sm font-bold text-slate-900">
+                                            <p className="text-sm font-black text-slate-900">
                                                 {booking.createdAt ? format(new Date(booking.createdAt), "MMM d, yyyy") : 'TBD'}
                                             </p>
-                                            <p className="text-xs font-bold text-orange-600 mt-1 uppercase tracking-tighter">Scheduled</p>
+                                            <p className="text-[10px] font-black text-orange-600 mt-1 uppercase tracking-widest">Scheduled</p>
                                         </div>
                                     </div>
                                 )) : (
-                                    <div className="py-8 text-center text-slate-400 text-sm italic">No upcoming bookings found.</div>
+                                    <div className="py-12 text-center text-slate-400 text-sm italic font-medium">No upcoming bookings found.</div>
                                 )}
                             </div>
                         </CardContent>
@@ -395,50 +466,61 @@ export default function TempleDashboardPage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.4, delay: 0.6 }}
             >
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="text-lg font-semibold">Quick Actions</CardTitle>
+                <Card className="border-none shadow-sm rounded-[2.5rem] bg-white overflow-hidden">
+                    <CardHeader className="p-8 pb-4">
+                        <CardTitle className="text-xl font-black text-slate-800 font-serif">Quick Actions</CardTitle>
                     </CardHeader>
-                    <CardContent>
-                        <TooltipProvider delayDuration={100}>
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                {[
-                                    { label: "Add Product", icon: Package, color: "bg-green-500", href: "/temples/dashboard/products", tooltip: "Add new products to your temple marketplace for devotees to purchase." },
-                                    { label: "Offer Pooja", icon: Calendar, color: "bg-orange-500", href: "/temples/dashboard/poojas/create", tooltip: "Create a new Pooja or Seva offering for devotees to book online." },
-                                    { label: "New Event", icon: Calendar, color: "bg-red-500", href: "/temples/dashboard/events", tooltip: "Create and manage upcoming temple events, festivals, and celebrations." },
-                                    { label: "Donation", icon: TrendingUp, color: "bg-blue-500", href: "/temples/dashboard/donation", tooltip: "View detailed Donation reports of your temple." },
-                                ].map((action) => (
-                                    <button
-                                        key={action.label}
-                                        onClick={() => router.push(action.href)}
-                                        className="relative flex flex-col items-center gap-3 p-4 rounded-xl border border-border hover:border-sidebar-primary/30 hover:bg-muted/50 transition-all group"
+                    <CardContent className="p-8 pt-0">
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                            {[
+                                { label: "Add Product", icon: Package, color: "bg-emerald-500", href: "/temples/dashboard/products" },
+                                { label: "Offer Pooja", icon: Calendar, color: "bg-orange-500", href: "/temples/dashboard/poojas/create" },
+                                { label: "New Event", icon: Calendar, color: "bg-rose-500", href: "/temples/dashboard/events" },
+                                { 
+                                    label: "Download Excel Report", 
+                                    subtext: "Donation",
+                                    icon: TrendingUp, 
+                                    color: "bg-sky-500", 
+                                    isExcel: true,
+                                    href: "#" 
+                                },
+                            ].map((action) => (
+                                <button
+                                    key={action.label}
+                                    onClick={() => !action.isExcel && router.push(action.href)}
+                                    className="relative flex flex-col items-center gap-4 p-6 rounded-[2rem] border border-slate-100 hover:border-amber-200 hover:bg-orange-50/30 transition-all group overflow-hidden"
+                                >
+                                    <div
+                                        className={cn(
+                                            "w-16 h-16 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform shadow-lg",
+                                            action.color
+                                        )}
                                     >
-                                        <Tooltip>
-                                            <TooltipTrigger asChild>
-                                                <div
-                                                    className="absolute top-2 right-2 p-0.5 rounded-full hover:bg-slate-200 transition-colors cursor-help"
-                                                    onClick={(e) => e.stopPropagation()}
-                                                >
-                                                    <Info className="w-3.5 h-3.5 text-slate-400 hover:text-slate-600" />
-                                                </div>
-                                            </TooltipTrigger>
-                                            <TooltipContent side="top" className="max-w-[240px] bg-[#1e293b] text-white border-none shadow-2xl p-3 rounded-xl animate-in fade-in zoom-in duration-200">
-                                                <div className="flex gap-2">
-                                                    <Info className="w-4 h-4 text-sky-400 shrink-0 mt-0.5" />
-                                                    <p className="text-[11px] leading-relaxed font-medium">{action.tooltip}</p>
-                                                </div>
-                                            </TooltipContent>
-                                        </Tooltip>
-                                        <div
-                                            className={`w-12 h-12 rounded-xl ${action.color} flex items-center justify-center group-hover:scale-110 transition-transform`}
-                                        >
-                                            <action.icon className="w-6 h-6 text-white" />
+                                        <action.icon className="w-8 h-8 text-white" />
+                                    </div>
+                                    <div className="text-center">
+                                        <span className="text-sm font-black text-slate-800 block leading-tight">{action.label}</span>
+                                        {action.subtext && <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{action.subtext}</span>}
+                                    </div>
+                                    {action.isExcel && (
+                                        <div className="absolute top-2 right-2 flex gap-1">
+                                            <Popover>
+                                                <PopoverTrigger asChild>
+                                                    <div className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center hover:bg-emerald-100 transition-colors cursor-pointer"
+                                                        onClick={(e) => e.stopPropagation()}
+                                                    >
+                                                        <Info className="w-3 h-3 text-slate-400" />
+                                                    </div>
+                                                </PopoverTrigger>
+                                                <PopoverContent className="bg-slate-900 text-white border-none p-4 rounded-xl max-w-[200px] z-[100]">
+                                                    <p className="text-[10px] font-medium leading-relaxed">Download detailed donation and devotee reports in Excel format.</p>
+                                                </PopoverContent>
+                                            </Popover>
                                         </div>
-                                        <span className="text-sm font-medium text-foreground">{action.label}</span>
-                                    </button>
-                                ))}
-                            </div>
-                        </TooltipProvider>
+                                    )}
+                                </button>
+                            ))}
+                        </div>
                     </CardContent>
                 </Card>
             </motion.div>
