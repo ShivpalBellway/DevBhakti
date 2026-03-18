@@ -93,12 +93,12 @@ const Navbar: React.FC<NavbarProps> = ({ variant = "default" }) => {
           }`}
       >
         <div className="container mx-auto px-4">
-          <nav className="flex items-center justify-between h-16 md:h-20 gap-4">
+          <nav className={`flex items-center justify-between transition-all duration-300 ${isScrolled ? "h-12 md:h-14" : "h-18 md:h-20"} gap-4`}>
             {/* Logo Section */}
-            <div className="flex items-center shrink-0 relative z-10">
+            <div className="flex items-center shrink-0 relative z-10 pt-8">
               <Link href="/" className="block">
                 <Logo
-                  className={`h-20 md:h-24 xl:h-28 w-auto transition-all duration-300 ${isScrolled ? "scale-90" : "scale-100"
+                  className={`h-12 md:h-16 xl:h-18 w-auto transition-all duration-300 ${isScrolled ? "scale-90" : "scale-100"
                     }`}
                 />
               </Link>
