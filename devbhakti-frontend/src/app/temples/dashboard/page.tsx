@@ -18,6 +18,7 @@ import {
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { fetchMyTempleBookings, fetchTempleOrders, fetchMyTempleProfile, fetchMyProducts } from "@/api/templeAdminController";
 import { format } from "date-fns";
 import { Loader2 } from "lucide-react";
