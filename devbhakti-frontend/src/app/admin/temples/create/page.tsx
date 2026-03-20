@@ -370,7 +370,7 @@ export default function CreateTemplePage() {
                 if (key === 'operatingHours') {
                     fd.append(key, JSON.stringify(value));
                 } else {
-                    fd.append(key, value);
+                    fd.append(key, JSON.stringify(value));
                 }
             });
 
