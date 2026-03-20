@@ -36,8 +36,15 @@ export const registerTemple = async (req: Request, res: Response) => {
     const data = req.body;
 
     // Parse JSON fields safely
-    const poojaIds = data.poojaIds ? JSON.parse(data.poojaIds) : [];
-    const inlineEvents = data.inlineEvents ? JSON.parse(data.inlineEvents) : [];
+    const parseJson = (val: any) => {
+      if (!val) return null;
+      if (typeof val !== 'string') return val;
+      try { return JSON.parse(val); } catch (e) { return null; }
+    };
+
+    const poojaIds = parseJson(data.poojaIds) || [];
+    const inlineEvents = parseJson(data.inlineEvents) || [];
+    const operatingHours = parseJson(data.operatingHours);
 
     // Normalize Phone
     if (data.phone) {
@@ -99,6 +106,7 @@ export const registerTemple = async (req: Request, res: Response) => {
           name: data.templeName || 'New Temple',
           category: data.category || 'Sacred',
           openTime: data.openTime || '',
+          operatingHours: operatingHours,
           description: data.description || '',
           history: data.history || '',
           location: data.location || '',
@@ -270,6 +278,7 @@ export const updateMyTempleProfile = async (req: Request, res: Response) => {
       location: data.location,
       fullAddress: data.fullAddress,
       openTime: data.openTime,
+      operatingHours: data.operatingHours ? (typeof data.operatingHours === 'string' ? JSON.parse(data.operatingHours) : data.operatingHours) : undefined,
       description: data.description,
       history: data.history,
       phone: data.phone,

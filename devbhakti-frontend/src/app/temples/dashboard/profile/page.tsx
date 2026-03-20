@@ -87,6 +87,10 @@ export default function TempleProfilePage() {
         slug: "",
         subdomain: "",
         urlType: "slug",
+        operatingHours: [
+            { label: "Morning", start: "07:00 AM", end: "01:00 PM", active: true },
+            { label: "Evening", start: "05:00 PM", end: "10:00 PM", active: true }
+        ],
     });
 
     const [mainImagePreview, setMainImagePreview] = useState<string | null>(null);
@@ -130,6 +134,10 @@ export default function TempleProfilePage() {
                     slug: data.slug || "",
                     subdomain: data.subdomain || "",
                     urlType: data.urlType || "slug",
+                    operatingHours: data.operatingHours || [
+                        { label: "Morning", start: "07:00 AM", end: "01:00 PM", active: true },
+                        { label: "Evening", start: "05:00 PM", end: "10:00 PM", active: true }
+                    ],
                 });
                 if (data.image) setMainImagePreview(getImageUrl(data.image));
                 if (data.heroImages && Array.isArray(data.heroImages)) {
@@ -329,7 +337,11 @@ export default function TempleProfilePage() {
         try {
             const fd = new FormData();
             Object.keys(formData).forEach(key => {
-                fd.append(key, formData[key]);
+                if (key === 'operatingHours') {
+                    fd.append(key, JSON.stringify(formData[key]));
+                } else {
+                    fd.append(key, formData[key]);
+                }
             });
 
             if (selectedMainFile) {
@@ -723,13 +735,91 @@ export default function TempleProfilePage() {
                                             className="h-14 px-5 border-white/40 bg-white/40 focus:bg-white rounded-2xl focus:ring-[#7b4623]/10 text-lg font-bold text-slate-800"
                                         />
                                     </div>
-                                    <div className="space-y-2">
-                                        <Label className="text-xs uppercase font-bold tracking-widest text-[#7b4623]/60 ml-1">Darshan Hours</Label>
-                                        <Input
-                                            value={formData.openTime}
-                                            onChange={e => setFormData({ ...formData, openTime: e.target.value })}
-                                            className="h-14 px-5 border-white/40 bg-white/40 focus:bg-white rounded-2xl"
-                                        />
+                                    <div className="md:col-span-2 space-y-4 pt-4 border-t border-slate-100">
+                                        <div className="flex items-center justify-between mb-2">
+                                            <Label className="text-sm font-bold text-[#7b4623] flex items-center gap-2">
+                                                <Clock className="w-4 h-4" />
+                                                Operating Hours
+                                            </Label>
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => {
+                                                    const newHours = [...formData.operatingHours, { label: "New Slot", start: "09:00 AM", end: "05:00 PM", active: true }];
+                                                    setFormData({ ...formData, operatingHours: newHours });
+                                                }}
+                                                className="h-8 text-[10px] font-black uppercase tracking-widest"
+                                            >
+                                                <Plus className="w-3 h-3 mr-1" /> Add Slot
+                                            </Button>
+                                        </div>
+
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            {formData.operatingHours.map((slot: any, index: number) => (
+                                                <div key={index} className={`p-4 rounded-2xl border-2 transition-all ${slot.active ? 'bg-white border-[#7b4623]/20 shadow-sm' : 'bg-slate-50/50 border-slate-100 opacity-60'}`}>
+                                                    <div className="flex items-center justify-between mb-3">
+                                                        <Input
+                                                            value={slot.label}
+                                                            onChange={e => {
+                                                                const newHours = [...formData.operatingHours];
+                                                                newHours[index].label = e.target.value;
+                                                                setFormData({ ...formData, operatingHours: newHours });
+                                                            }}
+                                                            className="h-8 w-32 font-bold text-xs uppercase tracking-wider bg-transparent border-none focus-visible:ring-0 p-0"
+                                                        />
+                                                        <div className="flex items-center gap-2">
+                                                            <Switch
+                                                                checked={slot.active}
+                                                                onCheckedChange={checked => {
+                                                                    const newHours = [...formData.operatingHours];
+                                                                    newHours[index].active = checked;
+                                                                    setFormData({ ...formData, operatingHours: newHours });
+                                                                }}
+                                                            />
+                                                            <Button
+                                                                type="button"
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                onClick={() => {
+                                                                    const newHours = formData.operatingHours.filter((_: any, i: number) => i !== index);
+                                                                    setFormData({ ...formData, operatingHours: newHours });
+                                                                }}
+                                                                className="h-6 w-6 text-slate-400 hover:text-red-500"
+                                                            >
+                                                                <X className="w-3 h-3" />
+                                                            </Button>
+                                                        </div>
+                                                    </div>
+                                                    <div className="grid grid-cols-2 gap-3">
+                                                        <div className="space-y-1">
+                                                            <Label className="text-[9px] font-black uppercase tracking-widest text-slate-400">Open</Label>
+                                                            <Input
+                                                                value={slot.start}
+                                                                onChange={e => {
+                                                                    const newHours = [...formData.operatingHours];
+                                                                    newHours[index].start = e.target.value;
+                                                                    setFormData({ ...formData, operatingHours: newHours });
+                                                                }}
+                                                                className="h-10 text-sm font-bold rounded-xl border-slate-100"
+                                                            />
+                                                        </div>
+                                                        <div className="space-y-1">
+                                                            <Label className="text-[9px] font-black uppercase tracking-widest text-slate-400">Close</Label>
+                                                            <Input
+                                                                value={slot.end}
+                                                                onChange={e => {
+                                                                    const newHours = [...formData.operatingHours];
+                                                                    newHours[index].end = e.target.value;
+                                                                    setFormData({ ...formData, operatingHours: newHours });
+                                                                }}
+                                                                className="h-10 text-sm font-bold rounded-xl border-slate-100"
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
                                     </div>
                                     <div className="space-y-2">
                                         <Label className="text-xs uppercase font-bold tracking-widest text-[#7b4623]/60 ml-1">Official Phone</Label>

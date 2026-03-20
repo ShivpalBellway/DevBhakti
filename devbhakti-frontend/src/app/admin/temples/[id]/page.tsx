@@ -393,8 +393,19 @@ export default function ViewTemplePage() {
                                 <div className="flex items-start gap-3">
                                     <Clock className="w-4 h-4 text-primary mt-1" />
                                     <div>
-                                        <p className="text-[10px] uppercase font-bold text-slate-400">Opening Hours</p>
-                                        <p className="text-sm font-semibold">{temple?.openTime || "N/A"}</p>
+                                        <p className="text-[10px] uppercase font-bold text-slate-400">Operating Hours</p>
+                                        <div className="space-y-1 mt-1">
+                                            {temple?.operatingHours && Array.isArray(temple.operatingHours) && temple.operatingHours.filter((s: any) => s.active).length > 0 ? (
+                                                temple.operatingHours.filter((s: any) => s.active).map((slot: any, idx: number) => (
+                                                    <div key={idx} className="flex flex-col">
+                                                        <span className="text-[10px] font-bold text-slate-500 uppercase">{slot.label}</span>
+                                                        <span className="text-sm font-semibold text-slate-900">{slot.start} - {slot.end}</span>
+                                                    </div>
+                                                ))
+                                            ) : (
+                                                <p className="text-sm font-semibold">{temple?.openTime || "N/A"}</p>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
                                 <div className="flex items-start gap-3">

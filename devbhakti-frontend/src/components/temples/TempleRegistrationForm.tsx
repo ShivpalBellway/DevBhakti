@@ -65,6 +65,10 @@ export default function TempleRegistrationForm({ onClose }: { onClose?: () => vo
         templePhone: "",
         website: "",
         mapUrl: "",
+        operatingHours: [
+            { label: "Morning", start: "07:00 AM", end: "01:00 PM", active: true },
+            { label: "Evening", start: "05:00 PM", end: "10:00 PM", active: true }
+        ],
         // Fixed stats for reg
         rating: "0",
         reviewsCount: "0"
@@ -303,7 +307,11 @@ export default function TempleRegistrationForm({ onClose }: { onClose?: () => vo
 
             // Append basic fields
             Object.entries(formData).forEach(([key, value]) => {
-                fd.append(key, value);
+                if (key === 'operatingHours') {
+                    fd.append(key, JSON.stringify(value));
+                } else if (value !== undefined && value !== null) {
+                    fd.append(key, value as string);
+                }
             });
 
             // Append relationships
@@ -494,45 +502,75 @@ export default function TempleRegistrationForm({ onClose }: { onClose?: () => vo
                                 />
                             </div> */}
 
-                            <div className="space-y-2">
-                                <label className="text-sm font-semibold text-slate-700">Operating Hours</label>
-                                <div className="flex items-center gap-3">
-                                    <div className="flex items-center gap-2 max-w-[140px]">
-                                        <Input
-                                            type="number"
-                                            min="1"
-                                            max="12"
-                                            value={formData.openTime.split(' - ')[0]?.replace(' AM', '') || ''}
-                                            onChange={e => {
-                                                const amTime = e.target.value;
-                                                const pmTime = formData.openTime.split(' - ')[1] || '11 PM';
-                                                setFormData({ ...formData, openTime: `${amTime} AM - ${pmTime}` });
-                                            }}
-                                            placeholder="6"
-                                            className="text-center w-16"
-                                        />
-                                        <span className="text-sm font-bold text-slate-600 whitespace-nowrap">AM</span>
-                                    </div>
-                                    <span className="text-slate-400 font-bold">to</span>
-                                    <div className="flex items-center gap-2 max-w-[150px]">
-                                        <Input
-                                            type="number"
-                                            min="1"
-                                            max="12"
-                                            value={formData.openTime.split(' - ')[1]?.replace(' PM', '') || ''}
-                                            onChange={e => {
-                                                const pmTime = e.target.value;
-                                                const amTime = formData.openTime.split(' - ')[0] || '6 AM';
-                                                setFormData({ ...formData, openTime: `${amTime} - ${pmTime} PM` });
-                                            }}
-                                            placeholder="10"
-                                            className="text-center w-22"
-                                        />
-                                        <span className="text-sm font-bold text-slate-600 whitespace-nowrap">PM</span>
-                                    </div>
+                            <div className="col-span-full space-y-6">
+                                <div className="flex items-center justify-between">
+                                    <label className="text-sm font-bold text-slate-600 ml-1">Daily Operating Hours</label>
                                 </div>
-                                <p className="text-[10px] text-muted-foreground italic">Example: 6 AM to 10 PM</p>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    {formData.operatingHours.map((slot, index) => {
+                                        const updateTime = (type: 'start' | 'end', val: string) => {
+                                            const newHours = [...formData.operatingHours];
+                                            newHours[index][type] = val;
+                                            setFormData({ ...formData, operatingHours: newHours });
+                                        };
+
+                                        return (
+                                            <div key={index} className="p-4 bg-slate-50 rounded-2xl border border-slate-100 space-y-4">
+                                                <div className="flex items-center justify-between">
+                                                    <span className="text-sm font-bold text-[#88542b]">{slot.label} Operating Hours</span>
+                                                    <div className="flex items-center gap-2">
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={slot.active}
+                                                            onChange={(e) => {
+                                                                const newHours = [...formData.operatingHours];
+                                                                newHours[index].active = e.target.checked;
+                                                                setFormData({ ...formData, operatingHours: newHours });
+                                                            }}
+                                                            className="w-4 h-4 rounded border-slate-300 text-[#88542b] focus:ring-[#88542b]"
+                                                        />
+                                                        <span className="text-xs font-medium text-slate-500">Active</span>
+                                                    </div>
+                                                </div>
+
+                                                <div className="flex items-center gap-3">
+                                                    <div className="flex-1 space-y-1">
+                                                        <p className="text-[10px] font-bold text-slate-400 uppercase ml-1">Opening</p>
+                                                        <Input
+                                                            value={slot.start}
+                                                            onChange={(e) => updateTime('start', e.target.value)}
+                                                            placeholder="07:00 AM"
+                                                            className="h-9 border-slate-200 focus:border-[#88542b] rounded-xl text-xs"
+                                                            disabled={!slot.active}
+                                                        />
+                                                    </div>
+                                                    <div className="pt-5 text-slate-300">
+                                                        <ArrowRight className="w-4 h-4" />
+                                                    </div>
+                                                    <div className="flex-1 space-y-1">
+                                                        <p className="text-[10px] font-bold text-slate-400 uppercase ml-1">Closing</p>
+                                                        <Input
+                                                            value={slot.end}
+                                                            onChange={(e) => updateTime('end', e.target.value)}
+                                                            placeholder="01:00 PM"
+                                                            className="h-9 border-slate-200 focus:border-[#88542b] rounded-xl text-xs"
+                                                            disabled={!slot.active}
+                                                        />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                                <p className="text-[10px] text-slate-400 italic bg-orange-50/50 p-2 rounded-lg border border-orange-100/50">
+                                    Tip: You can set separate timings for Morning and Evening shifts. Devotees will see both.
+                                </p>
                             </div>
+
+
+
+
 
 
 

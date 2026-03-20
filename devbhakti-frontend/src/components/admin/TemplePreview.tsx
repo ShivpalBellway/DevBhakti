@@ -91,9 +91,20 @@ export default function TemplePreview({ temple }: TemplePreviewProps) {
                                         <MapPin className="h-4 w-4 text-primary" />
                                         <span className="text-sm">{temple.fullAddress || temple.templeLocation}</span>
                                     </div>
-                                    <div className="flex items-center gap-2">
-                                        <Clock className="h-4 w-4 text-primary" />
-                                        <span className="text-sm">{temple.openTime || "6:00 AM - 9:00 PM"}</span>
+                                    <div className="flex items-start gap-2">
+                                        <Clock className="h-4 w-4 text-primary mt-1" />
+                                        <div className="flex flex-col gap-1">
+                                            {temple.operatingHours && Array.isArray(temple.operatingHours) && temple.operatingHours.filter((s: any) => s.active).length > 0 ? (
+                                                temple.operatingHours.filter((s: any) => s.active).map((slot: any, idx: number) => (
+                                                    <span key={idx} className="text-sm font-medium">
+                                                        <span className="text-[10px] uppercase text-slate-400 mr-2">{slot.label}:</span>
+                                                        {slot.start} - {slot.end}
+                                                    </span>
+                                                ))
+                                            ) : (
+                                                <span className="text-sm">{temple.openTime || "6:00 AM - 9:00 PM"}</span>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
 

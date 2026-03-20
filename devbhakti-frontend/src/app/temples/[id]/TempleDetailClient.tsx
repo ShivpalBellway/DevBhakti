@@ -598,14 +598,25 @@ export default function TempleDetail() {
 
                                     {/* Prominent Donation Button */}
                                     <div className="space-y-4">
-                                        {temple.openTime && (
-                                            <div className="flex items-center gap-3 p-3 bg-primary/5 rounded-xl border border-primary/10">
-                                                <div className="h-8 w-8 shrink-0 bg-primary/20 rounded-lg flex items-center justify-center">
+                                        {((temple.operatingHours && Array.isArray(temple.operatingHours) && temple.operatingHours.filter((s: any) => s.active).length > 0) || temple.openTime) && (
+                                            <div className="flex items-start gap-3 p-3 bg-primary/5 rounded-xl border border-primary/10">
+                                                <div className="h-8 w-8 shrink-0 bg-primary/20 rounded-lg flex items-center justify-center mt-1">
                                                     <Clock className="h-4 w-4 text-primary" />
                                                 </div>
                                                 <div className="flex-1">
-                                                    <p className="text-[10px] uppercase tracking-wider font-bold text-primary/60 leading-tight">Operating Hours</p>
-                                                    <p className="font-bold text-foreground text-sm uppercase">{temple.openTime}</p>
+                                                    <p className="text-[10px] uppercase tracking-wider font-bold text-primary/60 leading-tight mb-1">Operating Hours</p>
+                                                    {temple.operatingHours && Array.isArray(temple.operatingHours) && temple.operatingHours.filter((s: any) => s.active).length > 0 ? (
+                                                        <div className="space-y-1">
+                                                            {temple.operatingHours.filter((s: any) => s.active).map((slot: any, idx: number) => (
+                                                                <div key={idx} className="flex justify-between items-center text-sm">
+                                                                    <span className="text-muted-foreground font-medium">{slot.label}:</span>
+                                                                    <span className="font-bold text-foreground">{slot.start} - {slot.end}</span>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    ) : (
+                                                        <p className="font-bold text-foreground text-sm uppercase">{temple.openTime}</p>
+                                                    )}
                                                 </div>
                                             </div>
                                         )}

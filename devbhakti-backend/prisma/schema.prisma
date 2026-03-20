@@ -29,10 +29,10 @@ model User {
   address       String?
   nativePlace   String?
   cart          Cart?
+  donations     Donation[]
   favorites     Favorite[]
   orders        Order[]
   bookings      PoojaBooking[]
-  donations     Donation[]
   sellerProfile SellerProfile?
   temple        Temple?
 }
@@ -98,12 +98,13 @@ model Temple {
   urlType               String                @default("slug")
   pickupLocation        String?
   isPrimaryLive         Boolean               @default(false)
+  operatingHours        Json?
   availability          BookingAvailability[]
+  donations             Donation[]
   events                Event[]
   favorites             Favorite[]
   poojas                Pooja[]
   bookings              PoojaBooking[]
-  donations             Donation[]
   products              Product[]
   subOrders             SubOrder[]
   user                  User                  @relation(fields: [userId], references: [id])
@@ -211,13 +212,13 @@ model Pooja {
   templeCopies  Pooja[]               @relation("MasterPoojaRelation")
   temple        Temple?               @relation(fields: [templeId], references: [id])
   bookings      PoojaBooking[]
-  Event         Event[]
+  Event         Event[]               @relation("EventToPooja")
 }
 
 model PoojaCategory {
   id        String   @id @default(cuid())
   name      String   @unique
-  status    String   @default("APPROVED") // PENDING, APPROVED, REJECTED
+  status    String   @default("APPROVED")
   createdAt DateTime @default(now())
 }
 
@@ -232,7 +233,7 @@ model Event {
   status      Boolean  @default(true)
   time        String?
   temple      Temple?  @relation(fields: [templeId], references: [id], onDelete: Cascade)
-  Pooja       Pooja[]
+  Pooja       Pooja[]  @relation("EventToPooja")
 }
 
 model Banner {
@@ -357,37 +358,36 @@ model CTACard {
 }
 
 model PoojaBooking {
-  id               String        @id @default(cuid())
-  userId           String
-  poojaId          String
-  templeId         String?
-  packageName      String
-  packagePrice     Float
-  devoteeName      String
-  devoteePhone     String
-  devoteeEmail     String?
-  bookingDate      String?
-  address          String?
-  specialRequests  String?
-  gothra           String?
-  kuldevi          String?
-  kuldevta         String?
-  status           BookingStatus @default(BOOKED)
-  commissionAmount Float         @default(0)
-  netEarning       Float         @default(0)
-  platformFee      Float         @default(0)
-  createdAt        DateTime      @default(now())
-  updatedAt        DateTime      @updatedAt
-  anniversary      String?
-  dob              String?
-  nativePlace      String?
+  id                 String        @id @default(cuid())
+  userId             String
+  poojaId            String
+  templeId           String?
+  packageName        String
+  packagePrice       Float
+  devoteeName        String
+  devoteePhone       String
+  devoteeEmail       String?
+  bookingDate        String?
+  address            String?
+  specialRequests    String?
+  gothra             String?
+  kuldevi            String?
+  kuldevta           String?
+  status             BookingStatus @default(BOOKED)
+  commissionAmount   Float         @default(0)
+  netEarning         Float         @default(0)
+  platformFee        Float         @default(0)
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+  anniversary        String?
+  dob                String?
+  nativePlace        String?
   additionalDevotees Json?
-  proofPhotos      String[]      @default([])
-  pooja            Pooja         @relation(fields: [poojaId], references: [id])
-  temple           Temple?       @relation(fields: [templeId], references: [id])
-  user             User          @relation(fields: [userId], references: [id])
+  proofPhotos        String[]      @default([])
+  pooja              Pooja         @relation(fields: [poojaId], references: [id])
+  temple             Temple?       @relation(fields: [templeId], references: [id])
+  user               User          @relation(fields: [userId], references: [id])
 }
-
 
 model Order {
   id              String     @id @default(cuid())
@@ -490,6 +490,111 @@ model CommissionSlab {
   @@index([slabType, targetId, category])
 }
 
+model StaffMember {
+  id         String      @id @default(cuid())
+  name       String
+  email      String      @unique
+  password   String
+  ownerType  OwnerType
+  ownerId    String
+  isActive   Boolean     @default(true)
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+  staffRoles StaffRole[]
+}
+
+model Role {
+  id              String           @id @default(cuid())
+  name            String
+  description     String?
+  ownerType       OwnerType
+  ownerId         String
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  rolePermissions RolePermission[]
+  staffRoles      StaffRole[]
+
+  @@unique([name, ownerType, ownerId])
+}
+
+model Permission {
+  id              String           @id @default(cuid())
+  key             String           @unique
+  module          String
+  label           String
+  description     String?
+  applicableTo    OwnerType[]
+  createdAt       DateTime         @default(now())
+  rolePermissions RolePermission[]
+}
+
+model RolePermission {
+  id           String     @id @default(cuid())
+  roleId       String
+  permissionId String
+  createdAt    DateTime   @default(now())
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, permissionId])
+}
+
+model StaffRole {
+  id        String      @id @default(cuid())
+  staffId   String
+  roleId    String
+  createdAt DateTime    @default(now())
+  role      Role        @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  staff     StaffMember @relation(fields: [staffId], references: [id], onDelete: Cascade)
+
+  @@unique([staffId, roleId])
+}
+
+model FCMToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  userType  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  userType  String
+  title     String
+  body      String
+  data      Json?
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId, userType])
+}
+
+model Donation {
+  id              String   @id @default(cuid())
+  userId          String?
+  templeId        String
+  donorName       String
+  donorPhone      String
+  donorEmail      String
+  amount          Float
+  status          String   @default("PENDING")
+  paymentMethod   String?
+  razorpayOrderId String?  @unique
+  isAnonymous     Boolean  @default(false)
+  is80GRequired   Boolean  @default(false)
+  panNumber       String?
+  address         String?
+  message         String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  temple          Temple   @relation(fields: [templeId], references: [id])
+  user            User?    @relation(fields: [userId], references: [id])
+}
+
 enum SlabType {
   GLOBAL
   TEMPLE
@@ -512,73 +617,6 @@ enum OwnerType {
   ADMIN
   TEMPLE
   SELLER
-}
-
-// ─── RBAC Models ───────────────────────────────────────────
-
-// Staff members created by Admin / Temple Owner / Seller Owner
-model StaffMember {
-  id          String     @id @default(cuid())
-  name        String
-  email       String     @unique
-  password    String
-  ownerType   OwnerType  // Who created this staff: ADMIN | TEMPLE | SELLER
-  ownerId     String     // Super Admin fixed "SUPER_ADMIN" | templeId | sellerId
-  isActive    Boolean    @default(true)
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
-  staffRoles  StaffRole[]
-}
-
-// Roles created by owners (e.g., "Finance Manager", "Booking Staff")
-model Role {
-  id              String          @id @default(cuid())
-  name            String
-  description     String?
-  ownerType       OwnerType       // Which panel this role belongs to
-  ownerId         String          // Same as StaffMember: "SUPER_ADMIN" | templeId | sellerId
-  createdAt       DateTime        @default(now())
-  updatedAt       DateTime        @updatedAt
-  rolePermissions RolePermission[]
-  staffRoles      StaffRole[]
-
-  @@unique([name, ownerType, ownerId])  // Same role name can exist across different owners
-}
-
-// Fixed permission keys seeded into DB (e.g., "bookings.view", "finance.manage")
-model Permission {
-  id              String          @id @default(cuid())
-  key             String          @unique  // e.g., "bookings.view"
-  module          String          // e.g., "bookings"
-  label           String          // Human readable: "View Bookings"
-  description     String?
-  applicableTo    OwnerType[]     // Which panels can use this permission
-  createdAt       DateTime        @default(now())
-  rolePermissions RolePermission[]
-}
-
-// Role ↔ Permission (many-to-many)
-model RolePermission {
-  id           String     @id @default(cuid())
-  roleId       String
-  permissionId String
-  createdAt    DateTime   @default(now())
-  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
-  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
-
-  @@unique([roleId, permissionId])
-}
-
-// StaffMember ↔ Role (many-to-many, staff can have multiple roles)
-model StaffRole {
-  id          String      @id @default(cuid())
-  staffId     String
-  roleId      String
-  createdAt   DateTime    @default(now())
-  staff       StaffMember @relation(fields: [staffId], references: [id], onDelete: Cascade)
-  role        Role        @relation(fields: [roleId], references: [id], onDelete: Cascade)
-
-  @@unique([staffId, roleId])
 }
 
 enum BookingStatus {
@@ -607,50 +645,4 @@ enum WithdrawalStatus {
   APPROVED
   REJECTED
   PAID
-}
-// FCM Push Notification Tokens
-model FCMToken {
-  id        String   @id @default(cuid())
-  token     String   @unique
-  userId    String   // ID of devotee/admin/staff
-  userType  String   // 'devotee' | 'admin' | 'temple_admin' | 'seller'
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-// Persistent Notification History for UI (Bell Icon)
-model Notification {
-  id        String   @id @default(cuid())
-  userId    String   // ID of devotee/admin/staff
-  userType  String   // 'devotee' | 'admin' | 'temple_admin' | 'seller'
-  title     String
-  body      String
-  data      Json?    // Extra data like link, orderId, etc.
-  isRead    Boolean  @default(false)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([userId, userType])
-}
-
-model Donation {
-  id              String         @id @default(cuid())
-  userId          String?
-  templeId        String
-  donorName       String
-  donorPhone      String
-  donorEmail      String
-  amount          Float
-  status          String         @default("PENDING")
-  paymentMethod   String?
-  razorpayOrderId String?        @unique
-  isAnonymous     Boolean        @default(false)
-  is80GRequired   Boolean        @default(false)
-  panNumber       String?
-  address         String?
-  message         String?
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
-  temple          Temple         @relation(fields: [templeId], references: [id])
-  user            User?          @relation(fields: [userId], references: [id])
 }

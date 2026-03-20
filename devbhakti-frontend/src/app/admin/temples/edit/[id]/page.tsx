@@ -16,7 +16,8 @@ import {
     CheckCircle,
     ZoomIn,
     ZoomOut,
-    Crop
+    Crop,
+    Clock
 } from "lucide-react";
 import { ImageCropper } from "@/components/admin/ImageCropper";
 import { Button } from "@/components/ui/button";
@@ -70,7 +71,11 @@ export default function EditTemplePage() {
         urlType: "slug",
         liveStatus: "false",
         productCommissionRate: "10.0",
-        poojaCommissionRate: "5.0"
+        poojaCommissionRate: "5.0",
+        operatingHours: [
+            { label: "Morning", start: "07:00 AM", end: "01:00 PM", active: true },
+            { label: "Evening", start: "05:00 PM", end: "10:00 PM", active: true }
+        ],
     });
 
     // relationships and slabs
@@ -144,7 +149,11 @@ export default function EditTemplePage() {
                     urlType: inst.temple?.urlType || "slug",
                     liveStatus: String(inst.temple?.liveStatus || "false"),
                     productCommissionRate: String(inst.temple?.productCommissionRate || "10.0"),
-                    poojaCommissionRate: String(inst.temple?.poojaCommissionRate || "5.0")
+                    poojaCommissionRate: String(inst.temple?.poojaCommissionRate || "5.0"),
+                    operatingHours: inst.temple?.operatingHours || [
+                        { label: "Morning", start: "07:00 AM", end: "01:00 PM", active: true },
+                        { label: "Evening", start: "05:00 PM", end: "10:00 PM", active: true }
+                    ],
                 });
 
                 setExistingMainImage(inst.temple?.image || "");
@@ -433,7 +442,11 @@ export default function EditTemplePage() {
         try {
             const fd = new FormData();
             Object.entries(formData).forEach(([key, value]) => {
-                fd.append(key, value);
+                if (key === 'operatingHours') {
+                    fd.append(key, JSON.stringify(value));
+                } else {
+                    fd.append(key, value);
+                }
             });
 
             fd.append("poojaIds", JSON.stringify(selectedPoojaIds));
@@ -559,44 +572,76 @@ export default function EditTemplePage() {
                                 <label className="text-sm font-semibold text-slate-700">Primary Deity/God *</label>
                                 <Input value={formData.category} onChange={e => setFormData({ ...formData, category: e.target.value })} required />
                             </div>
-                            <div className="space-y-2">
-                                <label className="text-sm font-semibold text-slate-700">Operating Hours</label>
-                                <div className="flex items-center gap-3">
-                                    <div className="flex items-center gap-2 max-w-[140px]">
-                                        <Input
-                                            type="number"
-                                            min="1"
-                                            max="12"
-                                            value={formData.openTime.split(' - ')[0]?.replace(' AM', '') || ''}
-                                            onChange={e => {
-                                                const amTime = e.target.value;
-                                                const pmTime = formData.openTime.split(' - ')[1] || '11 PM';
-                                                setFormData({ ...formData, openTime: `${amTime} AM - ${pmTime}` });
-                                            }}
-                                            placeholder="6"
-                                            className="text-center w-16"
-                                        />
-                                        <span className="text-sm font-bold text-slate-600 whitespace-nowrap">AM</span>
-                                    </div>
-                                    <span className="text-slate-400 font-bold">to</span>
-                                    <div className="flex items-center gap-2 max-w-[140px]">
-                                        <Input
-                                            type="number"
-                                            min="1"
-                                            max="12"
-                                            value={formData.openTime.split(' - ')[1]?.replace(' PM', '') || ''}
-                                            onChange={e => {
-                                                const pmTime = e.target.value;
-                                                const amTime = formData.openTime.split(' - ')[0] || '6 AM';
-                                                setFormData({ ...formData, openTime: `${amTime} - ${pmTime} PM` });
-                                            }}
-                                            placeholder="10"
-                                            className="text-center w-16"
-                                        />
-                                        <span className="text-sm font-bold text-slate-600 whitespace-nowrap">PM</span>
-                                    </div>
+                            <div className="col-span-full space-y-4">
+                                <label className="text-sm font-bold text-slate-800 uppercase tracking-widest text-[11px] flex items-center gap-2">
+                                    <Clock className="w-4 h-4 text-primary" />
+                                    Daily Operating Hours
+                                </label>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {formData.operatingHours.map((slot, index) => {
+                                        const updateTime = (type: 'start' | 'end', val: string) => {
+                                            const newHours = [...formData.operatingHours];
+                                            newHours[index][type] = val;
+                                            setFormData({ ...formData, operatingHours: newHours });
+                                        };
+
+                                        return (
+                                            <div key={index} className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-4">
+                                                <div className="flex items-center justify-between">
+                                                    <div className="flex-1 mr-4">
+                                                        <Input
+                                                            value={slot.label}
+                                                            onChange={(e) => {
+                                                                const newHours = [...formData.operatingHours];
+                                                                newHours[index].label = e.target.value;
+                                                                setFormData({ ...formData, operatingHours: newHours });
+                                                            }}
+                                                            className="h-7 py-0 px-2 text-xs font-bold text-primary border-none shadow-none focus-visible:ring-1 focus-visible:ring-primary bg-transparent hover:bg-white transition-colors"
+                                                            placeholder="Slot Name (e.g. Morning Aarti)"
+                                                        />
+                                                    </div>
+                                                    <div className="flex items-center gap-2">
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={slot.active}
+                                                            onChange={(e) => {
+                                                                const newHours = [...formData.operatingHours];
+                                                                newHours[index].active = e.target.checked;
+                                                                setFormData({ ...formData, operatingHours: newHours });
+                                                            }}
+                                                            className="w-4 h-4 rounded border-slate-300 text-primary focus:ring-primary"
+                                                        />
+                                                        <span className="text-xs font-medium text-slate-500">Active</span>
+                                                    </div>
+                                                </div>
+
+                                                <div className="flex items-center gap-4">
+                                                    <div className="flex-1 space-y-1">
+                                                        <p className="text-[10px] font-bold text-slate-400 uppercase">Opening</p>
+                                                        <Input
+                                                            value={slot.start}
+                                                            onChange={(e) => updateTime('start', e.target.value)}
+                                                            placeholder="07:00 AM"
+                                                            className="h-9 border-slate-200 focus:border-primary rounded-lg text-xs"
+                                                            disabled={!slot.active}
+                                                        />
+                                                    </div>
+                                                    <div className="flex-1 space-y-1">
+                                                        <p className="text-[10px] font-bold text-slate-400 uppercase">Closing</p>
+                                                        <Input
+                                                            value={slot.end}
+                                                            onChange={(e) => updateTime('end', e.target.value)}
+                                                            placeholder="01:00 PM"
+                                                            className="h-9 border-slate-200 focus:border-primary rounded-lg text-xs"
+                                                            disabled={!slot.active}
+                                                        />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
                                 </div>
-                                <p className="text-[10px] text-muted-foreground italic">Example: 6 AM to 10 PM</p>
                             </div>
                             <div className="space-y-2">
                                 <label className="text-sm font-semibold text-slate-700">Approx monthly visitor count</label>
