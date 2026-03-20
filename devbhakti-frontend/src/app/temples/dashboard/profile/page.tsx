@@ -25,7 +25,8 @@ import {
     AlertCircle,
     CheckCircle2,
     Settings2,
-    Link2
+    Link2,
+    Clock
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
