@@ -70,16 +70,16 @@ export const registerTemple = async (req: Request, res: Response) => {
       }
     }
 
-    // Check if user already exists
+    // Check if phone number is already registered with ANY role
     const existingUser = await prisma.user.findFirst({
-      where: {
-        phone: data.phone,
-        role: 'INSTITUTION'
-      }
+        where: { phone: data.phone }
     });
 
     if (existingUser) {
-      return res.status(400).json({ success: false, message: 'User with this phone number already exists' });
+        return res.status(400).json({ 
+            success: false, 
+            message: `This mobile number is already registered as a ${existingUser.role}. Please use a different number or login with your existing account.` 
+        });
     }
 
     const hashedPassword = await bcrypt.hash(data.password || '123456', 10);
@@ -223,7 +223,8 @@ export const updateMyTempleProfile = async (req: Request, res: Response) => {
     const data = req.body;
 
     const temple = await prisma.temple.findUnique({
-      where: { id: templeId }
+      where: { id: templeId },
+      include: { user: true }
     });
 
     if (!temple) {
@@ -238,7 +239,34 @@ export const updateMyTempleProfile = async (req: Request, res: Response) => {
         return res.status(400).json({ success: false, message: 'Invalid phone number. Use 10 digits or include 91 prefix.' });
       }
       data.phone = normalizePhone(data.phone);
+
+      // Check if phone number is already taken by another user
+      const conflictingUser = await prisma.user.findFirst({
+        where: {
+          phone: data.phone,
+          id: { not: temple.userId }
+        }
+      });
+
+      if (conflictingUser) {
+        return res.status(400).json({ 
+          success: false, 
+          message: `The user with number ${data.phone} is already with us (Registered as ${conflictingUser.role}). Please use a different number.` 
+        });
+      }
+
+      // If phone is different from current, we'll need to update the User record as well
+      if (data.phone !== temple.user?.phone && data.phone !== temple.phone) {
+        await prisma.user.update({
+          where: { id: temple.userId },
+          data: { phone: data.phone }
+        });
+      }
     }
+    
+    // Note: temple.user might not be included in the initial fetch, let's check.
+    // Line 225: const temple = await prisma.temple.findUnique({ where: { id: templeId } }); -> No include.
+    // I should probably fetch with user include to be safe, or just use temple.userId.
 
     // Image size validations (2MB for NEW files)
     const MAX_SIZE = 2 * 1024 * 1024;

@@ -359,6 +359,24 @@ export default function MyOrdersPage() {
                                                             ))}
                                                         </div>
 
+                                                        {/* Financial Summary */}
+                                                        <div className="bg-orange-50/30 p-6 rounded-[2rem] border border-orange-100/50 space-y-3 mb-4">
+                                                            <div className="flex justify-between items-center text-sm">
+                                                                <span className="font-bold text-slate-500 uppercase tracking-widest text-[10px]">Items Subtotal</span>
+                                                                <span className="font-black text-slate-700">₹{(order.totalAmount - (order.platformFee || 0) - (order.shippingCost || 0)).toLocaleString()}</span>
+                                                            </div>
+                                                            <div className="flex justify-between items-center text-sm pt-2 border-t border-orange-200/30">
+                                                                <span className="font-bold text-slate-500 uppercase tracking-widest text-[10px]">Platform Service Fee</span>
+                                                                <span className="font-black text-slate-700">₹{(order.platformFee || 0).toLocaleString()}</span>
+                                                            </div>
+                                                            {(order.shippingCost || 0) > 0 && (
+                                                               <div className="flex justify-between items-center text-sm pt-2 border-t border-orange-200/30">
+                                                                   <span className="font-bold text-slate-500 uppercase tracking-widest text-[10px]">Shipping</span>
+                                                                   <span className="font-black text-slate-700">₹{(order.shippingCost).toLocaleString()}</span>
+                                                               </div>
+                                                            )}
+                                                        </div>
+
                                                         <div className="flex items-center justify-between p-6 bg-slate-900 rounded-[2.5rem] text-white shadow-xl shadow-slate-900/10">
                                                             <div className="flex items-center gap-4">
                                                                 <div className="w-14 h-14 rounded-2xl bg-white/10 flex items-center justify-center border border-white/5 backdrop-blur-sm">

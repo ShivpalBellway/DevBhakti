@@ -3,15 +3,22 @@
 import React from "react";
 import { motion } from "framer-motion";
 import Image from "next/image";
-import { Star, Play, Quote } from "lucide-react";
+import { Star, Play, Quote, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-// Placeholder images - using simple colored divs or existing assets if available
-// In a real scenario, we'd import specific user avatars
-import user1 from "@/assets/temple-kashi.jpg"; // Fallback for now
+// Asset imports
+import user1 from "@/assets/temple-kashi.jpg";
 import user2 from "@/assets/temple-tirupati.jpg";
 import user3 from "@/assets/temple-siddhivinayak.jpg";
 import user4 from "@/assets/temple-meenakshi.jpg";
+
+import {
+    Carousel,
+    CarouselContent,
+    CarouselItem,
+    CarouselNext,
+    CarouselPrevious,
+} from "@/components/ui/carousel";
 
 const reviews = [
     {
@@ -53,24 +60,24 @@ const reviews = [
 
 const ReviewsSection: React.FC = () => {
     return (
-        <section className="py-8 md:py-8 bg-zinc-50 dark:bg-zinc-900/50 overflow-hidden">
+        <section className="py-8 md:py-12 bg-[#FFF9F5] dark:bg-zinc-900/50 overflow-hidden">
             <div className="container mx-auto px-4">
                 {/* Header */}
-                <div className="text-center mb-16">
+                <div className="text-center mb-6">
                     <motion.h2
                         initial={{ opacity: 0, y: 20 }}
                         whileInView={{ opacity: 1, y: 0 }}
                         viewport={{ once: true }}
-                        className="text-3xl md:text-4xl font-serif font-bold text-foreground mb-4"
+                        className="text-3xl md:text-5xl font-serif font-bold text-foreground mb-2"
                     >
-                       What Devotees Share
+                        What Devotees Share
                     </motion.h2>
 
-                     <motion.div
+                    <motion.div
                         initial={{ opacity: 0, scale: 0.9 }}
                         whileInView={{ opacity: 1, scale: 1 }}
                         viewport={{ once: true }}
-                        className="w-16 h-1 bg-gradient-to-r from-orange-400 to-red-500 mx-auto mb-6 rounded-full"
+                        className="w-16 h-1 bg-gradient-to-r from-orange-400 to-red-500 mx-auto mb-4 rounded-full"
                     />
 
                     <motion.p
@@ -78,87 +85,103 @@ const ReviewsSection: React.FC = () => {
                         whileInView={{ opacity: 1, y: 0 }}
                         viewport={{ once: true }}
                         transition={{ delay: 0.1 }}
-                        className="text-foreground text-lg"
+                        className="text-muted-foreground text-lg max-w-2xl mx-auto"
                     >
-                        Experiences shared by devotees from across india. 
+                        Experiences shared by devotees from across India.
                     </motion.p>
                 </div>
 
-                {/* Scrollable Container */}
-                <div className="flex gap-6 overflow-x-auto overflow-hidden pb-8 snap-x snap-mandatory scrollbar-hide">
-                    {reviews.map((review, index) => (
-                        <motion.div
-                            key={review.id}
-                            initial={{ opacity: 0, x: 20 }}
-                            whileInView={{ opacity: 1, x: 0 }}
-                            viewport={{ once: true }}
-                            transition={{ delay: index * 0.1 }}
-                            className="flex-shrink-0 w-80 md:w-[320px] snap-center"
-                        >
-                            <div className="h-full flex flex-col bg-white dark:bg-zinc-950 rounded-2xl p-6 shadow-sm border border-orange-100 dark:border-zinc-800 hover:shadow-md transition-shadow">
+                {/* Carousel Container */}
+                <div className="relative max-w-6xl mx-auto px-4 sm:px-0">
+                    <Carousel
+                        opts={{
+                            align: "start",
+                            loop: true,
+                        }}
+                        className="w-full relative"
+                    >
+                        <CarouselContent className="-ml-4">
+                            {reviews.map((review, index) => (
+                                <CarouselItem key={review.id} className="pl-4 basis-full sm:basis-1/2 lg:basis-1/3">
+                                    <div className="h-full pt-1">
+                                        <div className="h-[310px] flex flex-col bg-white dark:bg-zinc-950 rounded-[2rem] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-[#FDEEE7] dark:border-zinc-800 transition-all duration-300">
 
-                                {/* Content Area */}
-                                <div className="flex-1 mb-6">
-                                    {review.type === "video" ? (
-                                        <div className="relative aspect-video rounded-xl overflow-hidden group cursor-pointer">
-                                            <Image
-                                                src={review.thumbnail}
-                                                alt={review.name}
-                                                fill
-                                                className="object-cover transition-transform duration-500 group-hover:scale-105"
-                                            />
-                                            <div className="absolute inset-0 bg-black/30 group-hover:bg-black/40 transition-colors flex items-center justify-center">
-                                                <div className="w-12 h-12 rounded-full bg-white/90 flex items-center justify-center pl-1 group-hover:scale-110 transition-transform">
-                                                    <Play className="w-5 h-5 text-orange-600 fill-orange-600" />
+                                            {/* Content Area */}
+                                            <div className="flex-1 overflow-hidden">
+                                                {review.type === "video" ? (
+                                                    <div className="relative h-32 rounded-[1.5rem] overflow-hidden group cursor-pointer shadow-inner mb-4">
+                                                        <Image
+                                                            src={review.thumbnail}
+                                                            alt={review.name}
+                                                            fill
+                                                            className="object-cover transition-transform duration-500 group-hover:scale-110"
+                                                        />
+                                                        <div className="absolute inset-0 bg-black/30 group-hover:bg-black/40 transition-colors flex items-center justify-center">
+                                                            <div className="w-14 h-14 rounded-full bg-white/95 shadow-lg flex items-center justify-center pl-1 group-hover:scale-110 transition-transform">
+                                                                <Play className="w-6 h-6 text-orange-600 fill-orange-600" />
+                                                            </div>
+                                                        </div>
+                                                        <div className="absolute bottom-3 left-3 px-2 py-1 bg-black/60 rounded text-xs text-white font-medium backdrop-blur-sm">
+                                                            0:00 / 1:00
+                                                        </div>
+                                                    </div>
+                                                ) : (
+                                                    <div className="relative mb-4 pt-1">
+                                                        <p className="text-zinc-700 dark:text-zinc-300 italic text-base leading-relaxed line-clamp-5">
+                                                            "{review.content}"
+                                                        </p>
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            {/* User Info */}
+                                            <div className="flex items-center gap-4 mt-auto pt-4 border-t border-orange-50 dark:border-zinc-800">
+                                                <div className="w-12 h-12 rounded-full overflow-hidden relative border-2 border-[#FFE8D9] p-0.5">
+                                                    <div className="w-full h-full rounded-full overflow-hidden relative">
+                                                        <Image
+                                                            src={review.avatar || review.thumbnail}
+                                                            alt={review.name}
+                                                            fill
+                                                            className="object-cover"
+                                                        />
+                                                    </div>
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <h4 className="font-bold text-foreground text-base tracking-tight truncate">{review.name}</h4>
+                                                    <p className="text-xs font-semibold text-orange-600 dark:text-orange-400 uppercase tracking-widest truncate">{review.location}</p>
+                                                </div>
+                                                <div className="flex gap-0.5 shrink-0">
+                                                    {[...Array(5)].map((_, i) => (
+                                                        <Star key={i} className="w-3.5 h-3.5 text-yellow-500 fill-yellow-500" />
+                                                    ))}
                                                 </div>
                                             </div>
-                                            <div className="absolute bottom-2 left-2 px-2 py-1 bg-black/60 rounded text-xs text-white font-medium">
-                                                0:00 / 1:00
-                                            </div>
                                         </div>
-                                    ) : (
-                                        <div className="relative">
-                                            <Quote className="w-8 h-8 text-orange-100 dark:text-orange-900/30 absolute -top-2 -left-2" />
-                                            <p className="relative z-10 text-foreground italic text-sm md:text-base leading-relaxed">
-                                                "{review.content}"
-                                            </p>
-                                        </div>
-                                    )}
-                                </div>
+                                    </div>
+                                </CarouselItem>
+                            ))}
+                        </CarouselContent>
 
-                                {/* User Info */}
-                                <div className="flex items-center gap-4 mt-auto pt-4 border-t border-orange-50 dark:border-zinc-800">
-                                    <div className="w-10 h-10 rounded-full overflow-hidden relative border border-orange-100">
-                                        <Image
-                                            src={review.avatar || review.thumbnail}
-                                            alt={review.name}
-                                            fill
-                                            className="object-cover"
-                                        />
-                                    </div>
-                                    <div>
-                                        <h4 className="font-bold text-foreground text-sm">{review.name}</h4>
-                                        <p className="text-xs text-foreground">{review.location}</p>
-                                    </div>
-                                    {/* Rating Stars - Optional visual feedback */}
-                                    {/* <div className="ml-auto flex gap-0.5">
-                    {[...Array(review.rating)].map((_, i) => (
-                      <Star key={i} className="w-3 h-3 text-yellow-400 fill-yellow-400" />
-                    ))}
-                  </div> */}
-                                </div>
-                            </div>
-                        </motion.div>
-                    ))}
+                        {/* Arrows style from Reference Image 1 */}
+                        <CarouselPrevious className="hidden md:flex -left-6 lg:-left-12 h-12 w-12 rounded-full bg-white border border-[#FFE8D9] shadow-sm text-zinc-600 hover:text-orange-600 hover:bg-white transition-all scale-110">
+                            <ChevronLeft className="h-5 w-5" />
+                        </CarouselPrevious>
+                        <CarouselNext className="hidden md:flex -right-6 lg:-right-12 h-12 w-12 rounded-full bg-white border border-[#FFE8D9] shadow-sm text-zinc-600 hover:text-orange-600 hover:bg-white transition-all scale-110">
+                            <ChevronRight className="h-5 w-5" />
+                        </CarouselNext>
+                    </Carousel>
                 </div>
 
-                {/* Pagination Dots (Visual only for now) */}
-                <div className="flex justify-center gap-2 mt-4">
-                    {reviews.map((_, idx) => (
-                        <div key={idx} className={`w-2 h-2 rounded-full ${idx === 0 ? 'bg-orange-500' : 'bg-orange-200 dark:bg-zinc-700'}`} />
-                    ))}
-                </div>
-
+                {/* <div className="mt-10 text-center">
+                    <div className="inline-flex items-center gap-2 px-6 py-2.5 bg-white dark:bg-zinc-900 shadow-sm rounded-full border border-[#FFE8D9] dark:border-orange-900/20">
+                        <span className="flex gap-0.5">
+                            {[...Array(5)].map((_, i) => (
+                                <Star key={i} className="w-4 h-4 text-yellow-500 fill-yellow-500" />
+                            ))}
+                        </span>
+                        <span className="text-sm font-semibold text-foreground">Trusted by 10,000+ happy devotees</span>
+                    </div>
+                </div> */}
             </div>
         </section>
     );

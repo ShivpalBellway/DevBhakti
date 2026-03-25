@@ -90,7 +90,8 @@ const CartDrawer: React.FC<CartDrawerProps> = ({
               <Button
                 variant="outline"
                 onClick={() => onOpenChange(false)}
-                className="rounded-full border-[#794A05]/20 text-[#794A05] hover:bg-[#794A05] hover:text-white"
+                
+                className="rounded-full border-[#794A05]/20 bg-[#794A05] text-white hover:bg-[#794A05] hover:text-white hover:shadow-none hover:opacity-100"
               >
                 Start Exploring
               </Button>

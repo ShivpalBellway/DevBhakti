@@ -72,3 +72,21 @@ export const checkPhoneOnly = async (phone: string) => {
     const response = await axios.post(`${API_URL}/auth/check-phone`, { phone });
     return response.data;
 };
+
+// ✅ Seller portal - check if phone is registered with SELLER role
+export const checkSellerPhone = async (phone: string) => {
+    const response = await axios.post(`${API_URL}/auth/check-seller`, { phone });
+    return response.data;
+};
+
+// ✅ Check if email is already registered (for admin create forms)
+export const checkEmailExists = async (email: string) => {
+    const response = await axios.post(`${API_URL}/auth/check-email`, { email });
+    return response.data;
+};
+
+// ✅ Temple registration - check if phone is already registered as INSTITUTION role
+export const checkInstitutionPhone = async (phone: string) => {
+    const response = await axios.post(`${API_URL}/auth/check-institution`, { phone });
+    return response.data;
+};

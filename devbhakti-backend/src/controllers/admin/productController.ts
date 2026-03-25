@@ -171,7 +171,8 @@ export const getAllProducts = async (req: Request, res: Response) => {
   try {
     const { page = 1, limit = 10, search, category, status, templeId, date, productId } = req.query;
 
-    const skip = (Number(page) - 1) * Number(limit);
+    const skip = search ? 0 : (Number(page) - 1) * Number(limit);
+    const take = search ? 100 : Number(limit);
 
     // Build where clause
     const where: any = { AND: [] };
@@ -266,7 +267,7 @@ export const getAllProducts = async (req: Request, res: Response) => {
         },
         orderBy: { createdAt: "desc" },
         skip,
-        take: Number(limit) as number
+        take
       }),
       prisma.product.count({ where }),
       prisma.product.count({ where: { status: 'pending' } }),
@@ -274,11 +275,36 @@ export const getAllProducts = async (req: Request, res: Response) => {
       prisma.product.count()
     ]);
 
+    let finalProducts = products;
+
+    // Rank results if searching
+    if (search) {
+      const lowQuery = String(search).toLowerCase();
+      finalProducts.sort((a, b) => {
+        const nameA = a.name.toLowerCase();
+        const nameB = b.name.toLowerCase();
+
+        // Exact match priority
+        if (nameA === lowQuery && nameB !== lowQuery) return -1;
+        if (nameB === lowQuery && nameA !== lowQuery) return 1;
+
+        // Starts with match priority
+        if (nameA.startsWith(lowQuery) && !nameB.startsWith(lowQuery)) return -1;
+        if (nameB.startsWith(lowQuery) && !nameA.startsWith(lowQuery)) return 1;
+
+        return 0;
+      });
+
+      // After ranking, apply pagination manually if searching
+      const start = (Number(page) - 1) * Number(limit);
+      finalProducts = finalProducts.slice(start, start + Number(limit));
+    }
+
     res.status(200).json({
       success: true,
       message: "Products retrieved successfully",
       data: {
-        products,
+        products: finalProducts,
         stats: {
           total: totalCount,
           pending: pendingCount,
@@ -762,13 +788,19 @@ export const toggleProductStatus = async (req: Request, res: Response) => {
 export const getProductsByTemple = async (req: Request, res: Response) => {
   try {
     const { templeId } = req.params;
-    const { page = 1, limit = 10, status } = req.query;
+    const { page = 1, limit = 10, status, search } = req.query;
 
     const skip = (Number(page) - 1) * Number(limit);
 
     const where: any = { templeId };
     if (status) {
       where.status = status;
+    }
+    if (search) {
+      where.OR = [
+        { name: { contains: String(search), mode: 'insensitive' } },
+        { description: { contains: String(search), mode: 'insensitive' } }
+      ];
     }
 
     const [products, total] = await Promise.all([
@@ -792,16 +824,41 @@ export const getProductsByTemple = async (req: Request, res: Response) => {
           }
         },
         orderBy: { createdAt: "desc" },
-        skip,
-        take: Number(limit)
+        take: search ? 100 : Number(limit),
+        skip: search ? 0 : (Number(page) - 1) * Number(limit)
       }),
       prisma.product.count({ where })
     ]);
 
+    let finalProducts = products;
+
+    // Rank results if searching
+    if (search) {
+      const lowQuery = String(search).toLowerCase();
+      finalProducts.sort((a, b) => {
+        const nameA = a.name.toLowerCase();
+        const nameB = b.name.toLowerCase();
+
+        // Exact match priority
+        if (nameA === lowQuery && nameB !== lowQuery) return -1;
+        if (nameB === lowQuery && nameA !== lowQuery) return 1;
+
+        // Starts with match priority
+        if (nameA.startsWith(lowQuery) && !nameB.startsWith(lowQuery)) return -1;
+        if (nameB.startsWith(lowQuery) && !nameA.startsWith(lowQuery)) return 1;
+
+        return 0;
+      });
+
+      // After ranking, apply pagination manually if searching
+      const start = (Number(page) - 1) * Number(limit);
+      finalProducts = finalProducts.slice(start, start + Number(limit));
+    }
+
     res.status(200).json({
       success: true,
       data: {
-        products,
+        products: finalProducts,
         pagination: {
           page: Number(page),
           limit: Number(limit),
@@ -901,16 +958,41 @@ export const getPublicProducts = async (req: Request, res: Response) => {
           }
         },
         orderBy: { createdAt: "desc" },
-        skip,
-        take: Number(limit)
+        take: search ? 100 : Number(limit),
+        skip: search ? 0 : (Number(page) - 1) * Number(limit)
       }),
       prisma.product.count({ where })
     ]);
 
+    let finalProducts = products;
+
+    // Rank results if searching
+    if (search) {
+      const lowQuery = String(search).toLowerCase();
+      finalProducts.sort((a, b) => {
+        const nameA = a.name.toLowerCase();
+        const nameB = b.name.toLowerCase();
+
+        // Exact match priority
+        if (nameA === lowQuery && nameB !== lowQuery) return -1;
+        if (nameB === lowQuery && nameA !== lowQuery) return 1;
+
+        // Starts with match priority
+        if (nameA.startsWith(lowQuery) && !nameB.startsWith(lowQuery)) return -1;
+        if (nameB.startsWith(lowQuery) && !nameA.startsWith(lowQuery)) return 1;
+
+        return 0;
+      });
+
+      // After ranking, apply pagination manually if searching
+      const start = (Number(page) - 1) * Number(limit);
+      finalProducts = finalProducts.slice(start, start + Number(limit));
+    }
+
     res.status(200).json({
       success: true,
       data: {
-        products,
+        products: finalProducts,
         pagination: {
           page: Number(page),
           limit: Number(limit),

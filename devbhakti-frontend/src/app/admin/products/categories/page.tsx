@@ -215,10 +215,10 @@ export default function CategoriesManagementPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Category</TableHead>
-                  <TableHead>Description</TableHead>
+                  {/* <TableHead>Description</TableHead> */}
                   <TableHead>Products</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead>Sort Order</TableHead>
+                  {/* <TableHead>Sort Order</TableHead> */}
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -246,11 +246,11 @@ export default function CategoriesManagementPage() {
                         </div>
                       </div>
                     </TableCell>
-                    <TableCell>
+                    {/* <TableCell>
                       <p className="text-slate-900 max-w-xs truncate">
                         {category.description || "No description"}
                       </p>
-                    </TableCell>
+                    </TableCell> */}
                     <TableCell>
                       <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
                         {category._count.products} products
@@ -259,9 +259,9 @@ export default function CategoriesManagementPage() {
                     <TableCell>
                       {getStatusBadge(category.isActive)}
                     </TableCell>
-                    <TableCell>
+                    {/* <TableCell>
                       <span className="text-slate-800">{category.sortOrder}</span>
-                    </TableCell>
+                    </TableCell> */}
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-1">
                         {hasPermission("categories.edit") && (
@@ -363,12 +363,12 @@ export default function CategoriesManagementPage() {
                   <div className="mt-1">{getStatusBadge(selectedCategory.isActive)}</div>
                 </div>
               </div>
-              <div>
+              {/* <div>
                 <label className="text-sm font-medium text-slate-700 mb-2 block">Description</label>
                 <p className="text-slate-900 mt-1">
                   {selectedCategory.description || "No description provided"}
                 </p>
-              </div>
+              </div> */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-sm font-medium text-slate-700">Created At</label>

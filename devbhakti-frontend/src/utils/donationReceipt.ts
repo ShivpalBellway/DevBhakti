@@ -14,7 +14,9 @@ interface ReceiptProps {
         address?: string;
         message?: string;
         templeName?: string;
+        displayId?: string;
     };
+
 }
 
 export const generateReceiptHTML = (donation: ReceiptProps["donation"]) => {
@@ -70,8 +72,9 @@ export const generateReceiptHTML = (donation: ReceiptProps["donation"]) => {
                     <div class="grid">
                         <div class="item">
                             <div class="label">Receipt Number</div>
-                            <div class="value">${donation.id}</div>
+                            <div class="value">${donation.displayId || donation.id}</div>
                         </div>
+
                         <div class="item">
                             <div class="label">Date</div>
                             <div class="value">${date}</div>

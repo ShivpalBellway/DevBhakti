@@ -119,7 +119,7 @@ export default function SellerPaymentsPage() {
             {/* Premium Stats Cards */}
             <TooltipProvider>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-                    <Card className="border-none shadow-xl bg-slate-900 text-white rounded-[1.5rem] overflow-hidden relative group">
+                    <Card className="border-none shadow-xl bg-primary text-dark rounded-[1.5rem] overflow-hidden relative group">
                         <CardContent className="p-6">
                             <div className="flex items-center gap-1.5 mb-2">
                                 <p className="text-slate-400 font-bold uppercase tracking-widest text-[10px]">Total Sales</p>
@@ -189,8 +189,8 @@ export default function SellerPaymentsPage() {
             {/* Payout Schedule Alert */}
             <div className={cn(
                 "p-5 rounded-[2rem] border flex items-start gap-4 transition-all duration-500",
-                isPayoutAllowed() 
-                    ? "bg-emerald-50 border-emerald-100 shadow-lg shadow-emerald-600/5 mt-4" 
+                isPayoutAllowed()
+                    ? "bg-emerald-50 border-emerald-100 shadow-lg shadow-emerald-600/5 mt-4"
                     : "bg-amber-50 border-amber-100 shadow-lg shadow-amber-600/5 mt-4"
             )}>
                 <div className={cn(
@@ -214,7 +214,7 @@ export default function SellerPaymentsPage() {
                         "text-xs font-semibold leading-relaxed",
                         isPayoutAllowed() ? "text-emerald-700/80" : "text-amber-700/80"
                     )}>
-                        {isPayoutAllowed() 
+                        {isPayoutAllowed()
                             ? "Marketplace payouts are currently being processed (15th / 28th). Your settled funds are ready for withdrawal."
                             : `Payouts are processed on the 15th and 28th of every month. The next window opens on ${format(nextPayoutDate(), "do MMMM yyyy")}.`
                         }

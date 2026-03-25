@@ -33,7 +33,7 @@ import {
 
 // Local temple images for hero banner & gallery
 
-import { fetchPublicTempleById } from "@/api/publicController";
+import { fetchPublicTempleById, fetchRatingsSettings } from "@/api/publicController";
 import { fetchUserFavorites, addFavorite, removeFavorite } from "@/api/userController";
 import { API_URL } from "@/config/apiConfig";
 import { useRouter } from "next/navigation";
@@ -50,20 +50,37 @@ export default function TempleDetail() {
     const [isFullViewOpen, setIsFullViewOpen] = useState(false);
     const router = useRouter();
     const { toast } = useToast();
-    const [selectedPurpose, setSelectedPurpose] = useState<string | null>(null);
+    const [selectedPurposes, setSelectedPurposes] = useState<string[]>([]);
+    const [showRatings, setShowRatings] = useState(false);
+    const [selectedEvent, setSelectedEvent] = useState<any>(null);
 
     const purposes = React.useMemo(() => {
         if (!temple?.poojas) return [];
-        const allCategories = temple.poojas.map((p: any) => p.category);
+        const allCategories = temple.poojas.flatMap((p: any) => 
+            p.category ? p.category.split(',').map((s: string) => s.trim()) : []
+        );
         const unique = Array.from(new Set(allCategories.filter(Boolean))) as string[];
         return unique.sort();
     }, [temple]);
 
     useEffect(() => {
-        if (purposes.length > 0 && !selectedPurpose) {
-            setSelectedPurpose(purposes[0]);
+        if (purposes.length > 0 && selectedPurposes.length === 0) {
+            setSelectedPurposes([purposes[0]]);
         }
     }, [purposes]);
+
+    const recommendedPoojas = React.useMemo(() => {
+        if (!selectedEvent || !temple?.poojas) return [];
+        // Recommendation logic:    
+        // Try to match pooja benefits or category with event name
+        const eventNameLower = selectedEvent.name?.toLowerCase() || "";
+        const filtered = temple.poojas.filter((p: any) =>
+            p.category?.toLowerCase().includes(eventNameLower) ||
+            p.name?.toLowerCase().includes(eventNameLower) ||
+            p.benefits?.some((b: string) => eventNameLower.includes(b.toLowerCase()))
+        );
+        return filtered.length > 0 ? filtered.slice(0, 3) : temple.poojas.slice(0, 3);
+    }, [selectedEvent, temple]);
 
     useEffect(() => {
         const savedUser = localStorage.getItem("user");
@@ -87,16 +104,22 @@ export default function TempleDetail() {
     };
 
     useEffect(() => {
-        const loadTemple = async () => {
+        const loadTempleAndSettings = async () => {
             const templeId = params?.id || params?.subdomain;
             if (templeId) {
                 setLoading(true);
-                const data = await fetchPublicTempleById(templeId as string);
-                setTemple(data);
+                const [templeData, settingsData] = await Promise.all([
+                    fetchPublicTempleById(templeId as string),
+                    fetchRatingsSettings()
+                ]);
+                setTemple(templeData);
+                if (settingsData && settingsData.settings) {
+                    setShowRatings(settingsData.settings.temple.details);
+                }
                 setLoading(false);
             }
         };
-        loadTemple();
+        loadTempleAndSettings();
     }, [params?.id, params?.subdomain]);
 
     const getFullImageUrl = (path: string) => {
@@ -321,7 +344,7 @@ export default function TempleDetail() {
                     <div className="lg:col-span-2 space-y-6">
                         <Card className="border-border/50">
                             <CardContent className="p-6">
-                                <div className="flex flex-wrap items-start justify-between gap-4 mb-4">
+                                <div className="flex flex-wrap items-start justify-between gap-4 mb-5">
                                     <div>
                                         <Badge variant="secondary" className="mb-2">
                                             {temple.category}
@@ -330,13 +353,15 @@ export default function TempleDetail() {
                                             {temple.name}
                                         </h1>
                                     </div>
-                                    <div className="flex items-center gap-1 bg-amber-50 dark:bg-amber-500/10 px-3 py-2 rounded-lg">
-                                        <Star className="h-5 w-5 text-amber-500 fill-amber-500" />
-                                        <span className="font-bold text-foreground">{temple.rating}</span>
-                                        <span className="text-muted-foreground text-sm">
-                                            ({(temple.reviewsCount || 0).toLocaleString()} reviews)
-                                        </span>
-                                    </div>
+                                    {showRatings && (
+                                        <div className="flex items-center gap-1 bg-amber-50 dark:bg-amber-500/10 px-3 py-2 rounded-lg">
+                                            <Star className="h-5 w-5 text-amber-500 fill-amber-500" />
+                                            <span className="font-bold text-foreground">{temple.rating}</span>
+                                            <span className="text-muted-foreground text-sm">
+                                                ({(temple.reviewsCount || 0).toLocaleString()} reviews)
+                                            </span>
+                                        </div>
+                                    )}
                                 </div>
 
                                 <div className="flex flex-wrap gap-4 text-muted-foreground mb-6">
@@ -476,41 +501,57 @@ export default function TempleDetail() {
 
                             <TabsContent value="filter" className="mt-3">
                                 <div className="space-y-6">
-                                    {/* Purpose Grid - Traditional Structured Look */}
-                                    <div className="border-[1.5px] border-primary/10 rounded-lg overflow-hidden bg-white shadow-sm">
-                                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4">
-                                            {purposes.map((purpose) => (
-                                                <button
-                                                    key={purpose}
-                                                    onClick={() => setSelectedPurpose(purpose)}
-                                                    className={`p-4 text-[11px] font-bold uppercase tracking-wider transition-all border-[0.5px] border-primary/10 flex items-center justify-center text-center h-10 leading-tight relative
-                                                        ${selectedPurpose === purpose
-                                                            ? "bg-primary text-white z-10 scale-[1.02] shadow-md px-6"
-                                                            : "bg-white text-muted-foreground hover:bg-primary/5 hover:text-primary"
-                                                        }`}
-                                                >
-                                                    {selectedPurpose === purpose && (
-                                                        <div className="absolute top-2 right-2 h-1.5 w-1.5 rounded-full bg-white animate-pulse" />
-                                                    )}
-                                                    {purpose}
-                                                </button>
-                                            ))}
+                                    {/* Purpose Grid - Multi-select Support */}
+                                    <div className="space-y-4">
+                                        <div className="flex items-center justify-between px-1">
+                                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+                                                Select a purpose:
+                                            </p>
+                                        </div>
+                                        <div className="border-[1.5px] border-primary/10 rounded-xl overflow-hidden bg-white shadow-sm">
+                                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4">
+                                                {purposes.map((purpose) => {
+                                                    const isSelected = selectedPurposes.includes(purpose);
+                                                    return (
+                                                        <button
+                                                            key={purpose}
+                                                            onClick={() => {
+                                                                setSelectedPurposes([purpose]);
+                                                            }}
+                                                            className={`p-4 text-[11px] font-bold uppercase tracking-wider transition-all border-[0.5px] border-primary/10 flex items-center justify-center text-center h-12 leading-tight relative
+                                                                ${isSelected
+                                                                    ? "bg-primary text-white z-10 scale-[1.01] shadow-inner"
+                                                                    : "bg-white text-muted-foreground hover:bg-primary/5 hover:text-primary"
+                                                                }`}
+                                                        >
+                                                            {isSelected && (
+                                                                <div className="absolute top-2 right-2 h-1.5 w-1.5 rounded-full bg-white animate-pulse" />
+                                                            )}
+                                                            {purpose}
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
                                         </div>
                                     </div>
 
                                     {/* Filtered Poojas - Premium Glassmorphism List */}
-                                    {selectedPurpose && (
+                                    {selectedPurposes.length > 0 && (
                                         <div className="space-y-4 animate-in fade-in slide-in-from-top-4 duration-500">
-                                            <div className="flex items-center gap-3 px-2">
-                                                <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
-                                                <h3 className="font-serif text-lg font-bold text-foreground">
-                                                    Showing <span className="text-primary italic">{selectedPurpose}</span> Rituals
+                                            <div className="flex items-start gap-3 px-2">
+                                                <div className="h-2 w-2 rounded-full bg-primary animate-pulse mt-2" />
+                                                <h3 className="font-serif text-lg font-bold text-foreground leading-tight">
+                                                    Showing rituals for <span className="text-primary italic">{selectedPurposes.join(", ")}</span>
                                                 </h3>
                                             </div>
 
                                             <div className="grid gap-3">
                                                 {temple.poojas
-                                                    ?.filter((p: any) => p.category === selectedPurpose)
+                                                    ?.filter((p: any) => 
+                                                        selectedPurposes.some(purpose => 
+                                                            p.category?.split(',').map((s: string) => s.trim()).includes(purpose)
+                                                        )
+                                                    )
                                                     .map((pooja: any, index: number) => (
                                                         <Card key={index} className="group border-none shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden bg-white/80 backdrop-blur-sm border border-primary/5">
                                                             <div className="flex items-center justify-between p-4 gap-4">
@@ -672,10 +713,11 @@ export default function TempleDetail() {
                                             {temple.events.slice(0, 3).map((event: any, index: number) => (
                                                 <div
                                                     key={index}
-                                                    className="relative pl-4 border-l-2 border-primary/10 hover:border-primary/40 transition-colors py-1 group"
+                                                    onClick={() => setSelectedEvent(event)}
+                                                    className="relative pl-4 border-l-2 border-primary/10 hover:border-primary/40 transition-all py-1 group cursor-pointer hover:bg-primary/5 rounded-r-lg"
                                                 >
                                                     <div className="absolute -left-[5px] top-2 h-2 w-2 rounded-full bg-primary/20 group-hover:bg-primary transition-colors" />
-                                                    <h4 className="font-bold text-sm text-foreground leading-tight">{event.name}</h4>
+                                                    <h4 className="font-bold text-sm text-foreground leading-tight group-hover:text-primary transition-colors">{event.name}</h4>
                                                     <p className="text-[11px] font-medium text-muted-foreground mt-1 flex items-center gap-1.5">
                                                         <Clock className="w-3 h-3" />
                                                         {event.date}
@@ -752,6 +794,106 @@ export default function TempleDetail() {
                             ))}
                         </div>
                     </div>
+                </DialogContent>
+            </Dialog>
+
+            {/* Event Detail Modal with Recommended Poojas */}
+            <Dialog open={!!selectedEvent} onOpenChange={(open) => !open && setSelectedEvent(null)}>
+                <DialogContent className="max-w-lg overflow-hidden p-0 border-none bg-white rounded-2xl shadow-2xl">
+                    <DialogTitle className="sr-only">Event Details</DialogTitle>
+                    {selectedEvent && (
+                        <div className="relative">
+                            {/* Header Gradient */}
+                            <div className="h-32 bg-gradient-to-br from-primary via-[#a05a2c] to-[#7c4624] p-6 flex flex-col justify-end">
+                                <h2 className="text-2xl font-black text-white leading-tight">{selectedEvent.name}</h2>
+                                <div className="flex items-center gap-2 text-white/80 text-sm mt-1">
+                                    <Calendar className="h-4 w-4" />
+                                    <span className="font-medium">{selectedEvent.date}</span>
+                                </div>
+                            </div>
+
+                            {/* Close Button Overlay */}
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="absolute top-4 right-4 text-white/80 hover:text-white hover:bg-white/10 rounded-full"
+                                onClick={() => setSelectedEvent(null)}
+                            >
+                                <X className="h-5 w-5" />
+                            </Button>
+
+                            <div className="p-6 space-y-6">
+                                {/* Event Description (if any) */}
+                                {selectedEvent.description && (
+                                    <div className="space-y-2">
+                                        <h3 className="text-xs font-black uppercase tracking-widest text-muted-foreground">About the Event</h3>
+                                        <p className="text-sm text-muted-foreground leading-relaxed">
+                                            {selectedEvent.description}
+                                        </p>
+                                    </div>
+                                )}
+
+                                {/* Recommended Poojas Section */}
+                                <div className="space-y-4">
+                                    <div className="flex items-center gap-2">
+                                        <div className="h-1 w-6 bg-primary rounded-full" />
+                                        <h3 className="text-sm font-black uppercase tracking-widest text-foreground">Recommended Poojas</h3>
+                                    </div>
+
+                                    <div className="grid gap-3">
+                                        {recommendedPoojas.map((pooja: any, idx: number) => (
+                                            <div
+                                                key={idx}
+                                                className="group p-4 rounded-xl bg-primary/[0.03] border border-primary/5 hover:border-primary/20 hover:bg-primary/[0.06] transition-all duration-300 flex items-center justify-between gap-4"
+                                            >
+                                                <div className="flex-1 min-w-0">
+                                                    <h4 className="font-bold text-sm text-foreground group-hover:text-primary transition-colors truncate">
+                                                        {pooja.name}
+                                                    </h4>
+                                                    <div className="flex items-center text-primary font-black text-xs mt-1">
+                                                        <IndianRupee className="h-3 w-3" />
+                                                        {pooja.price}
+                                                    </div>
+                                                </div>
+                                                <Button
+                                                    size="sm"
+                                                    className="rounded-full bg-primary hover:bg-[#a05a2c] text-[10px] font-black uppercase tracking-wider px-4 h-8 shadow-sm"
+                                                    onClick={() => {
+                                                        const bookingUrl = `/booking?temple=${temple.id}&pooja=${encodeURIComponent(pooja.name)}`;
+                                                        const token = localStorage.getItem("token");
+                                                        const savedUser = localStorage.getItem("user");
+                                                        const parsedUser = savedUser ? JSON.parse(savedUser) : null;
+                                                        if (!token || !parsedUser || parsedUser.role !== "DEVOTEE") {
+                                                            router.push(`/auth?redirect=${encodeURIComponent(bookingUrl)}`);
+                                                            return;
+                                                        }
+                                                        router.push(bookingUrl);
+                                                    }}
+                                                >
+                                                    Book Now
+                                                </Button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div className="pt-2">
+                                    <Button
+                                        variant="outline"
+                                        className="w-full text-xs font-bold py-6 border-dashed border-primary/20 hover:border-primary/40 hover:bg-primary/5 rounded-xl text-primary"
+                                        onClick={() => {
+                                            setSelectedEvent(null);
+                                            // Scroll to poojas tab
+                                            const element = document.getElementById("poojas-tab");
+                                            if (element) element.scrollIntoView({ behavior: 'smooth' });
+                                        }}
+                                    >
+                                        View All Poojas
+                                    </Button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </DialogContent>
             </Dialog>
         </div>

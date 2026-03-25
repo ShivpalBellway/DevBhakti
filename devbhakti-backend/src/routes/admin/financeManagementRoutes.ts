@@ -5,7 +5,8 @@ import {
   getAllWithdrawalRequests,
   updateWithdrawalStatus,
   getPlatformFinanceSummary,
-  getAllPlatformTransactions
+  getAllPlatformTransactions,
+  downloadTransactionsExcel
 } from "../../controllers/admin/financeManagementController";
 
 import { authenticate, checkPermission } from "../../middleware/authMiddleware";
@@ -37,6 +38,7 @@ router.use(authenticate);
 
 router.get("/platform-summary", checkPermission('finance.ledger.view'), getPlatformFinanceSummary);
 router.get("/transactions", checkPermission('finance.ledger.view'), getAllPlatformTransactions);
+router.get("/export-excel", checkPermission('finance.ledger.view'), downloadTransactionsExcel);
 
 // ... (Multer setup remains same)
 

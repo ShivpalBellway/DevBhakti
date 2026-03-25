@@ -366,16 +366,16 @@ function BookingsContent() {
                     </div>
 
                     <div className="flex items-center gap-2 bg-slate-50 p-1.5 rounded-xl border border-slate-200/60 shadow-sm transition-all hover:border-slate-300 w-full md:w-auto justify-end">
-                        <Clock className="w-4 h-4 text-slate-400 ml-2" />
+                        {/* <Clock className="w-4 h-4 text-slate-400 ml-2" /> */}
                         <span className="text-sm text-slate-500 font-medium">Sort by:</span>
-                        <select
+                        {/* <select
                             className="h-8 bg-transparent text-sm font-semibold focus:outline-none text-slate-800 cursor-pointer pr-1"
                             value={sortBy}
                             onChange={(e) => setSortBy(e.target.value as any)}
                         >
                             <option value="bookingDate">Booking Date</option>
                             <option value="ritualDate">Ritual Date</option>
-                        </select>
+                        </select> */}
                         <span className="text-slate-300">|</span>
                         <Button
                             variant="ghost"

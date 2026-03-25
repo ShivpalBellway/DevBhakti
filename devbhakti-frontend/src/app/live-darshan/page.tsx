@@ -3,7 +3,7 @@
 import React, { useState, useEffect, Suspense, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Play, MapPin, Users, Heart, Share2, Calendar, Search, Sparkles } from "lucide-react";
+import { Play, MapPin, Users, Heart, Share2, Calendar, Search, Sparkles, ChevronLeft, ChevronRight } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -119,18 +119,18 @@ const FlowerShower = ({ trigger }: { trigger: number }) => {
           <motion.div
             key={f.id}
             initial={{ top: "-10%", opacity: 0, left: `${f.left}%` }}
-            animate={{ 
+            animate={{
               top: "110%",
               opacity: [0, 1, 1, 0.8, 0],
               rotate: f.rotation + 720,
               x: [0, (Math.random() * 50 - 25)]
             }}
-            transition={{ 
-              duration: f.duration, 
-              delay: f.delay, 
-              ease: "linear" 
+            transition={{
+              duration: f.duration,
+              delay: f.delay,
+              ease: "linear"
             }}
-            style={{ 
+            style={{
               fontSize: f.size,
               position: 'absolute'
             }}
@@ -209,6 +209,15 @@ function LiveDarshanContent() {
   const [isAartiActive, setIsAartiActive] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const searchParams = useSearchParams();
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  const scroll = (direction: "left" | "right") => {
+    if (scrollRef.current) {
+      const { scrollLeft, clientWidth } = scrollRef.current;
+      const scrollTo = direction === "left" ? scrollLeft - clientWidth / 1.5 : scrollLeft + clientWidth / 1.5;
+      scrollRef.current.scrollTo({ left: scrollTo, behavior: "smooth" });
+    }
+  };
 
   useEffect(() => {
     if (aartiTrigger > 0) {
@@ -338,7 +347,7 @@ function LiveDarshanContent() {
       <Navbar />
 
       {/* Hero Header Section */}
-      <section className="relative min-h-[480px] flex items-center justify-center overflow-hidden mb-12">
+      <section className="relative min-h-[480px] flex items-center justify-center overflow-hidden mb-0">
         {/* Background Image */}
         <div className="absolute inset-0">
           <Image
@@ -352,69 +361,39 @@ function LiveDarshanContent() {
         </div>
 
         {/* Decorative elements */}
+        {/* Decorative elements */}
         <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-1/4 -left-32 w-96 h-96 bg-primary/15 rounded-full blur-3xl" />
-          <div className="absolute bottom-1/4 -right-32 w-80 h-80 bg-sacred/20 rounded-full blur-3xl" />
+          <div className="absolute top-0 -left-32 w-[500px] h-[500px] bg-primary/20 rounded-full blur-[120px] opacity-60" />
+          <div className="absolute bottom-0 -right-32 w-[500px] h-[500px] bg-sacred/30 rounded-full blur-[120px] opacity-60" />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-gradient-to-b from-transparent via-primary/5 to-transparent opacity-20" />
         </div>
 
         <div className="container mx-auto px-4 relative z-10 pt-12">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-center max-w-4xl mx-auto space-y-8"
+            className="text-center max-w-5xl mx-auto space-y-6"
           >
-            <div className="space-y-4">
-              <Badge variant="outline" className="border-primary/30 text-primary px-4 py-1 rounded-full bg-white/60 backdrop-blur-sm">
+            <div className="space-y-6">
+              <Badge variant="outline" className="border-primary/30 text-primary px-6 py-1.5 rounded-full bg-white/70 backdrop-blur-md shadow-sm">
                 <Sparkles className="w-3.5 h-3.5 mr-2 fill-primary" />
-                Divine Essence
+                <span className="font-bold tracking-wider">DIVINE ESSENCE</span>
               </Badge>
-              <h1 className="text-4xl md:text-6xl font-serif font-black text-foreground drop-shadow-sm leading-tight">
+              <h1 className="text-4xl md:text-6xl lg:text-7xl font-serif font-black text-foreground drop-shadow-md leading-tight md:whitespace-nowrap">
                 The Sacred Power of <span className="text-primary italic">Live Darshan</span>
               </h1>
-              <p className="text-base md:text-xl text-foreground/80 max-w-2xl mx-auto leading-relaxed font-medium">
-                Live Darshan is a portal to the divine. Witnessing sacred rituals in real-time invites the energy into your home, connecting you with chosen deities for eternal peace.
-              </p>
-            </div>
-
-            {/* Premium Search & Explore */}
-            <div className="relative max-w-2xl mx-auto group">
-              <div className="absolute -inset-1 bg-gradient-to-r from-primary to-orange-400 rounded-2xl blur opacity-25 group-hover:opacity-40 transition duration-1000" />
-              <div className="relative flex items-center bg-white/90 backdrop-blur-md rounded-2xl shadow-xl overflow-hidden border border-orange-100/50 p-1.5">
-                <div className="flex-1 flex items-center px-4">
-                  <Search className="h-5 w-5 text-primary mr-3" />
-                  <input
-                    type="text"
-                    placeholder="Search for live temple..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full bg-transparent outline-none py-4 text-lg font-medium"
-                  />
-                </div>
-                <Button
-                  className="px-8 h-[54px] rounded-xl bg-primary hover:bg-primary/95 text-white font-bold text-sm uppercase tracking-widest hidden sm:flex shrink-0"
-                  onClick={() => {
-                    const selector = document.getElementById('other-temples');
-                    if (selector) selector.scrollIntoView({ behavior: 'smooth' });
-                  }}
-                >
-                  Explore
-                </Button>
-              </div>
-              <p className="mt-4 text-sacred font-serif italic text-sm md:text-md opacity-90 text-center">
-                "Darshan transcends physical boundaries, connecting the devotee directly to the divine."
+              <p className="text-lg md:text-xl text-foreground/80 max-w-3xl mx-auto leading-relaxed font-medium">
+                Experience the divine through Live Darshan. Witness sacred rituals in real-time <br className="hidden md:block" /> to welcome peace, energy, and spiritual growth into your home.
               </p>
             </div>
           </motion.div>
         </div>
       </section>
 
-
-
-      <main className="relative pb-1 pt-1 overflow-x-hidden">
+      <main className="relative p-0 overflow-x-hidden">
         {/* FULL WIDTH HERO VIDEO SECTION */}
         <section className="relative w-full h-[60vh] md:h-[85vh] bg-black overflow-hidden group">
-
-          {/* Video Player or Thumbnail */}
+          {/* Content unchanged... */}
           <div className="absolute inset-0 z-0">
             {isPlaying && selectedTemple.liveUrl ? (
               <iframe
@@ -480,79 +459,82 @@ function LiveDarshanContent() {
           )}
         </section>
 
-        {/* Info Area Below Video */}
-        <section className="bg-white border-b border-border/50 py-4">
+        {/* Info Area Below Video - DISTINCT BAND */}
+        <section className="bg-[#7b4623] border-y border-[#7b4623]/30 py-4 sticky top-0 z-20 shadow-lg">
           <div className="max-w-[1400px] mx-auto px-4">
-            <div className="grid grid-cols-1 lg:grid-cols-3 items-center gap-6">
+            <div className="flex flex-col lg:flex-row items-center justify-between gap-4 md:gap-6">
               {/* Temple Info */}
-              <div className="text-center lg:text-left">
-                <div className="flex flex-col md:flex-row md:items-center gap-4 justify-center lg:justify-start">
-                  <Link href={`/temples/${selectedTemple.id}`} className="block group">
-                    <h2 className="text-2xl md:text-3xl font-black text-[#2a1b01] font-serif group-hover:text-primary transition-colors leading-tight">
-                      {selectedTemple.name}, {selectedTemple.location}
+              <div className="text-center lg:text-left space-y-1 flex-1">
+                <Link href={`/temples/${selectedTemple.id}`} className="inline-block group">
+                  <div className="flex flex-col gap-1 justify-center lg:justify-start">
+                    <h2 className="text-2xl md:text-3xl font-serif font-black text-white transition-all duration-300 leading-tight">
+                      {selectedTemple.name}
                     </h2>
-                  </Link>
-                </div>
+                    <div className="flex items-center justify-center lg:justify-start gap-1.5 text-white/60 font-medium uppercase tracking-widest text-[11px] group-hover:text-white/90 transition-colors">
+                      <MapPin size={12} className="text-primary/80 group-hover:text-primary transition-colors" />
+                      <span>{selectedTemple.location}</span>
+                    </div>
+                  </div>
+                </Link>
               </div>
 
               {/* Devotion Buttons (Centered) */}
-              <div className="flex justify-center order-first lg:order-none">
-                <div className="flex items-center gap-1 bg-slate-50 rounded-full border border-slate-200 p-1 shadow-sm">
+              <div className="flex justify-center flex-1">
+                <div className="flex items-center gap-3 md:gap-4 bg-white/10 backdrop-blur-md rounded-full border border-white/20 p-2 shadow-inner group/devotion">
                   <motion.button
-                    whileHover={{ scale: 1.1 }}
+                    whileHover={{ scale: 1.15, y: -2 }}
                     whileTap={{ scale: 0.9 }}
                     onClick={() => setBellTrigger(prev => prev + 1)}
-                    className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-xl shadow-sm border border-border hover:bg-orange-50 transition-all hover:border-orange-200"
+                    className="w-11 h-11 md:w-12 md:h-12 rounded-full bg-white flex items-center justify-center text-xl shadow-lg border border-primary/10 hover:shadow-primary/20 transition-all"
                     title="Ring Bell"
                   >
                     🔔
                   </motion.button>
                   <motion.button
-                    whileHover={{ scale: 1.1 }}
+                    whileHover={{ scale: 1.15, y: -2 }}
                     whileTap={{ scale: 0.9 }}
                     onClick={() => setFlowerTrigger(prev => prev + 1)}
-                    className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-xl shadow-sm border border-border hover:bg-pink-50 transition-all hover:border-pink-200"
+                    className="w-11 h-11 md:w-12 md:h-12 rounded-full bg-white flex items-center justify-center text-xl shadow-lg border border-primary/10 hover:shadow-pink-200 transition-all"
                     title="Offer Flowers"
                   >
                     🌸
                   </motion.button>
                   <motion.button
-                    whileHover={{ scale: 1.1 }}
+                    whileHover={{ scale: 1.15, y: -2 }}
                     whileTap={{ scale: 0.9 }}
                     onClick={() => setAartiTrigger(prev => prev + 1)}
-                    className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm border border-border hover:bg-yellow-50 transition-all hover:border-yellow-200 overflow-hidden"
+                    className="w-11 h-11 md:w-12 md:h-12 rounded-full bg-white flex items-center justify-center shadow-lg border border-primary/10 hover:shadow-yellow-200 transition-all overflow-hidden"
                     title="Perform Aarti"
                   >
-                    <img src="/images/rotate_thali.gif" alt="Aarti" className="w-10 h-10 object-contain" />
+                    <img src="/images/aarti_thali.png" alt="Aarti" className="w-9 h-9 md:w-10 md:h-10 object-contain" />
                   </motion.button>
                 </div>
               </div>
 
               {/* Primary Actions */}
-              <div className="flex justify-center lg:justify-end">
-                <div className="flex flex-wrap items-center gap-4 shrink-0 bg-white shadow-soft p-3 md:p-4 rounded-[1.5rem] border border-orange-50/50">
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      className="h-10 px-6 rounded-full border-2 border-primary/20 bg-white text-primary hover:bg-primary/5 font-black text-[10px] uppercase tracking-widest gap-2 transition-all shadow-none"
-                      asChild
-                    >
-                      <Link href={`/donation?temple=${selectedTemple.id}`}>
-                        <Heart className="w-3.5 h-3.5" />
-                        Donate
-                      </Link>
-                    </Button>
-                    <Button
-                      variant="outline"
-                      className="h-10 px-6 rounded-full border-2 border-primary/20 bg-white text-primary hover:bg-primary/5 font-black text-[10px] uppercase tracking-widest gap-2 transition-all shadow-none"
-                      asChild
-                    >
-                      <Link href={`/booking?temple=${selectedTemple.id}`}>
-                        <Calendar className="w-3.5 h-3.5" />
-                        Book Pooja
-                      </Link>
-                    </Button>
-                  </div>
+              <div className="flex justify-center lg:justify-end flex-1">
+                <div className="flex items-center gap-2 shrink-0">
+                  <Button
+                    variant="outline"
+                    className="h-9 px-4 rounded-full border border-primary/20 bg-white text-dark font-bold text-[10px] uppercase tracking-wider gap-2 shadow-sm transition-none hover:bg-white hover:text-dark hover:border-primary/20"
+                    asChild
+                  >
+                    <Link href={`/donation?temple=${selectedTemple.id}`}>
+                      <Heart className="w-3.5 h-3.5 fill-white" />
+                      Donate Now
+                    </Link>
+                  </Button>
+
+                  <Button
+                    variant="outline"
+                    className="h-9 px-4 rounded-full border border-primary/20 bg-white text-primary font-bold text-[10px] uppercase tracking-wider gap-2 shadow-sm transition-none hover:bg-white hover:text-primary hover:border-primary/20"
+                    asChild
+                  >
+                    <Link href={`/booking?temple=${selectedTemple.id}`}>
+                      <Calendar className="w-3.5 h-3.5" />
+                      Book Pooja
+                    </Link>
+                  </Button>
                 </div>
               </div>
             </div>
@@ -560,67 +542,96 @@ function LiveDarshanContent() {
         </section>
 
         <div className="container mx-auto px-4 md:px-6 mt-12">
-
-
-
-
-
-
-
-
-
           {/* HORIZONTAL TEMPLE SELECTOR */}
           {temples.length > 0 && (
             <section id="other-temples">
-              <div className="flex flex-col md:flex-row items-center justify-between mb-10 px-2 gap-4">
-                <div className="space-y-1">
-                  <h3 className="text-3xl md:text-4xl font-black text-[#2a1b01] font-serif leading-tight">Other Live Temples</h3>
-
-                  {/* <p className="text-slate-500 text-sm font-bold uppercase tracking-[0.2em] ml-15">Choose your gateway to the divine</p> */}
+              <div className="flex flex-col lg:flex-row items-center justify-between mb-8 px-2 gap-6">
+                <div className="space-y-1 shrink-0">
+                  <h3 className="text-3xl md:text-4xl font-black text-primary font-serif leading-tight text-center lg:text-left">Other Live Temples</h3>
                 </div>
-                <div className="flex gap-2">
-                  <Badge variant="outline" className="border-sacred/20 text-sacred/60 uppercase font-black text-[9px] px-3 tracking-widest">
+
+                {/* Smaller Search Bar in the middle */}
+                <div className="relative max-w-sm w-full group">
+                  <div className="relative flex items-center bg-white/40 backdrop-blur-sm rounded-full shadow-inner overflow-hidden border border-primary/10 focus-within:border-primary/50 focus-within:bg-white transition-all p-0.5">
+                    <div className="flex-1 flex items-center px-4">
+                      <Search className="h-3.5 w-3.5 text-primary/70 mr-2" />
+                      <input
+                        type="text"
+                        placeholder="Search for live temple..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="w-full bg-transparent outline-none py-2 text-sm font-medium placeholder:text-slate-400"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex gap-2 shrink-0">
+                  <Badge variant="outline" className="border-sacred/20 text-sacred/60 uppercase font-black text-[9px] px-3 tracking-widest whitespace-nowrap bg-white/50 backdrop-blur-sm">
                     {temples.length} Live Channels Available
                   </Badge>
                 </div>
               </div>
 
-              <div className="flex gap-6 overflow-x-auto pb-8 snap-x no-scrollbar py-4">
-                {temples
-                  .filter(temple => temple.name.toLowerCase().includes(searchQuery.toLowerCase()) || temple.location.toLowerCase().includes(searchQuery.toLowerCase()))
-                  .map((temple, idx) => (
-                    <motion.div
-                      key={temple.id}
-                      whileHover={{ y: -10 }}
-                      onClick={() => handleTempleClick(temple)}
-                      className={`min-w-[300px] md:min-w-[360px] snap-start cursor-pointer transition-all duration-500 group ${selectedTemple.id === temple.id ? "opacity-100 ring-4 ring-sacred ring-offset-4 rounded-[1.5rem]" : "opacity-80 hover:opacity-100"
-                        }`}
-                    >
-                      <div className="relative aspect-video rounded-[1.5rem] overflow-hidden shadow-lg border border-border">
-                        <Image
-                          src={getImageUrl(temple.image)}
-                          alt={temple.name}
-                          fill
-                          className="object-cover group-hover:scale-110 transition-transform duration-700"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent" />
+              <div className="relative group/scroll">
+                <div
+                  ref={scrollRef}
+                  className="flex gap-8 overflow-x-auto snap-x no-scrollbar py-12 px-8 scroll-smooth -mx-8"
+                >
+                  {temples
+                    .filter(temple => temple.name.toLowerCase().includes(searchQuery.toLowerCase()) || temple.location.toLowerCase().includes(searchQuery.toLowerCase()))
+                    .map((temple, idx) => (
+                      <motion.div
+                        key={temple.id}
+                        onClick={() => handleTempleClick(temple)}
+                        className={`min-w-[300px] md:min-w-[360px] snap-start cursor-pointer transition-all duration-500 group relative ${selectedTemple.id === temple.id
+                            ? "z-10 opacity-100 ring-[5px] ring-primary ring-offset-4 rounded-[1.5rem] scale-[1.02]"
+                            : "opacity-100 hover:opacity-100"
+                          }`}
+                      >
+                        <div className="relative aspect-video rounded-[1.5rem] overflow-hidden shadow-2xl border border-border/50">
+                          <Image
+                            src={getImageUrl(temple.image)}
+                            alt={temple.name}
+                            fill
+                            className="object-cover transition-transform duration-700 group-hover:scale-110"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/20 to-transparent opacity-80" />
 
-                        <div className="absolute bottom-4 left-4 right-4">
-                          <p className="text-white font-bold text-lg mb-1 line-clamp-1">{temple.name}</p>
-                          <div className="flex items-center justify-between">
-                            <span className="text-white/80 text-xs font-medium">{temple.location}</span>
-                            {temple.id === selectedTemple.id && (
-                              <Badge className="bg-red-600 text-[10px] font-bold h-5 uppercase animate-pulse">Now Playing</Badge>
-                            )}
+                          <div className="absolute bottom-5 left-5 right-5">
+                            <p className="text-white font-bold text-xl mb-1.5 line-clamp-1 drop-shadow-md">{temple.name}</p>
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center text-white/90 text-sm font-medium">
+                                <MapPin size={12} className="mr-1 text-primary" />
+                                {temple.location}
+                              </div>
+                              {temple.id === selectedTemple.id && (
+                                <Badge className="bg-red-600 text-[10px] font-bold h-5 uppercase animate-pulse border-none shadow-lg">Now Playing</Badge>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="absolute top-4 right-4 bg-black/60 backdrop-blur-md rounded-full p-2.5 text-white shadow-xl opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0">
+                            <Play size={16} fill="white" />
                           </div>
                         </div>
+                      </motion.div>
+                    ))}
+                </div>
 
-                        <div className="absolute top-3 right-3 bg-black/50 backdrop-blur-md rounded-full p-2 text-white/90 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <Play size={14} fill="white" />
-                        </div>
-                      </div>
-                    </motion.div>
-                  ))}
+                {/* Navigation Buttons */}
+                <button
+                  onClick={() => scroll("left")}
+                  className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-2 md:-translate-x-6 w-10 h-10 md:w-12 md:h-12 rounded-full bg-white shadow-xl border border-primary/20 flex items-center justify-center text-primary transition-all hover:bg-primary hover:text-white z-10"
+                >
+                  <ChevronLeft size={24} />
+                </button>
+                <button
+                  onClick={() => scroll("right")}
+                  className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-2 md:translate-x-6 w-10 h-10 md:w-12 md:h-12 rounded-full bg-white shadow-xl border border-primary/20 flex items-center justify-center text-primary transition-all hover:bg-primary hover:text-white z-10"
+                >
+                  <ChevronRight size={24} />
+                </button>
               </div>
             </section>
           )}

@@ -93,12 +93,19 @@ const Navbar: React.FC<NavbarProps> = ({ variant = "default" }) => {
           }`}
       >
         <div className="container mx-auto px-4">
-          <nav className={`flex items-center justify-between transition-all duration-300 ${isScrolled ? "h-12 md:h-14" : "h-18 md:h-20"} gap-4`}>
+          <nav className={`flex items-center justify-between transition-all duration-300 ${isScrolled ? "h-13 md:h-14" : "h-18 md:h-20"} gap-2`}>
             {/* Logo Section */}
             <div className="flex items-center shrink-0 relative z-10">
               <Link href="/" className="block">
+                {/* <Logo
+                  className={`h-13 md:h-16 xl:h-18 w-auto transition-all duration-300 ${isScrolled ? "scale-90" : "scale-100"
+                    }`}
+                /> */}
+
+
+
                 <Logo
-                  className={`h-12 md:h-16 xl:h-18 w-auto transition-all duration-300 ${isScrolled ? "scale-90" : "scale-100"
+                  className={`h-14 md:h-18 xl:h-22 w-auto transition-all duration-300 ${isScrolled ? "scale-95" : "scale-100"
                     }`}
                 />
               </Link>
@@ -123,7 +130,11 @@ const Navbar: React.FC<NavbarProps> = ({ variant = "default" }) => {
                   </span>
                 </div>
               ) : (
-                <div className="flex-1" />
+                <div className="flex-1 flex justify-center">
+                  <Link href="/" className="text-md font-medium text-slate-800 hover:text-primary transition-colors">
+                    Go to Devotee Home Page
+                  </Link>
+                </div>
               )}
 
               <div className="flex items-center gap-4 2xl:gap-8 shrink-0">

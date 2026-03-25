@@ -589,7 +589,10 @@ model Donation {
   panNumber       String?
   address         String?
   message         String?
+  displayId       String?  @unique
+
   createdAt       DateTime @default(now())
+
   updatedAt       DateTime @updatedAt
   temple          Temple   @relation(fields: [templeId], references: [id])
   user            User?    @relation(fields: [userId], references: [id])
@@ -645,4 +648,12 @@ enum WithdrawalStatus {
   APPROVED
   REJECTED
   PAID
+}
+
+model GlobalSetting {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

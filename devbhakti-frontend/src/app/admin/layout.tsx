@@ -52,7 +52,7 @@ const sidebarItems = [
     permission: "temples.menu",
     subItems: [
       { label: "All Temples", href: "/admin/temples", permission: "temples.view" },
-      { label: "Verification Requests", href: "/admin/temples/update-requests", permission: "temples.requests_view" },
+      // { label: "Verification Requests", href: "/admin/temples/update-requests", permission: "temples.requests_view" },
     ]
   },
   {
@@ -67,6 +67,16 @@ const sidebarItems = [
     href: "/admin/pooja-bookings",
     permission: "bookings.menu",
   },
+
+
+  {
+    label: "Product Order",
+    icon: ShoppingBag,
+    href: "/admin/products/orders",
+    permission: "products.orders.view",
+  },
+
+
   {
     label: "Donation",
     icon: Heart,
@@ -91,9 +101,11 @@ const sidebarItems = [
     subItems: [
       { label: "All Products", href: "/admin/products", permission: "products.view" },
       { label: "Product Categories", href: "/admin/products/categories", permission: "categories.view" },
-      { label: "Product Orders", href: "/admin/products/orders", permission: "products.orders.view" }
+      // { label: "Product Orders", href: "/admin/products/orders", permission: "products.orders.view" }
     ]
   },
+
+
   {
     label: "Events",
     icon: Calendar,
@@ -108,6 +120,7 @@ const sidebarItems = [
     subItems: [
       { label: "Manage Banners", href: "/admin/cms/banners", permission: "cms.banners" },
       { label: "Manage Features", href: "/admin/cms/features", permission: "cms.features" },
+      { label: "Manage Rating", href: "/admin/cms/manage-rating", permission: "cms.features" },
       { label: "Manage Testimonials", href: "/admin/cms/testimonials", permission: "cms.testimonials" },
       { label: "Manage CTA Cards", href: "/admin/cms/cta-cards", permission: "cms.features" },
     ]
@@ -118,7 +131,7 @@ const sidebarItems = [
     href: "#",
     permission: "finance.menu",
     subItems: [
-      { label: "Transaction Ledger", href: "/admin/finance/ledger", permission: "finance.ledger.view" },
+      { label: "Transaction Overview", href: "/admin/finance/ledger", permission: "finance.ledger.view" },
       { label: "Withdrawal Requests", href: "/admin/finance/withdrawals", permission: "finance.withdrawals.view" },
       { label: "Approvals", href: "/admin/finance/approvals", permission: "finance.withdrawals.action" }
     ]

@@ -14,7 +14,8 @@ export const searchGlobal = async (req: Request, res: Response) => {
                     OR: [
                         { name: { contains: searchQuery, mode: "insensitive" } },
                         { location: { contains: searchQuery, mode: "insensitive" } },
-                        { category: { contains: searchQuery, mode: "insensitive" } }
+                        { category: { contains: searchQuery, mode: "insensitive" } },
+                        { description: { contains: searchQuery, mode: "insensitive" } }
                     ],
                     isActive: true,
                     user: { isVerified: true }
@@ -29,7 +30,7 @@ export const searchGlobal = async (req: Request, res: Response) => {
                     image: true,
                     category: true
                 },
-                take: searchQuery ? 5 : 6, // Show 6 temples by default
+                take: searchQuery ? 20 : 6, // Fetch more for ranking
                 orderBy: { createdAt: "desc" }
             }),
 
@@ -38,7 +39,8 @@ export const searchGlobal = async (req: Request, res: Response) => {
                 where: {
                     OR: [
                         { name: { contains: searchQuery, mode: "insensitive" } },
-                        { category: { contains: searchQuery, mode: "insensitive" } }
+                        { category: { contains: searchQuery, mode: "insensitive" } },
+                        { about: { contains: searchQuery, mode: "insensitive" } }
                     ],
                     status: true
                 },
@@ -53,7 +55,7 @@ export const searchGlobal = async (req: Request, res: Response) => {
                         }
                     }
                 },
-                take: 5
+                take: 20
             }) : Promise.resolve([]),
 
             // Search Products (only if searching)
@@ -72,12 +74,12 @@ export const searchGlobal = async (req: Request, res: Response) => {
                     image: true,
                     category: true
                 },
-                take: 5
+                take: 20
             }) : Promise.resolve([])
         ]);
 
         // Unify results
-        const unifiedResults = [
+        let unifiedResults = [
             ...temples.map(t => ({
                 id: t.id,
                 title: t.name,
@@ -102,6 +104,34 @@ export const searchGlobal = async (req: Request, res: Response) => {
                 type: p.category
             }))
         ];
+
+        // Rank results if searching
+        if (searchQuery) {
+            const lowQuery = searchQuery.toLowerCase();
+            unifiedResults.sort((a, b) => {
+                const titleA = a.title.toLowerCase();
+                const titleB = b.title.toLowerCase();
+
+                // Exact match priority (case-insensitive)
+                if (titleA === lowQuery && titleB !== lowQuery) return -1;
+                if (titleB === lowQuery && titleA !== lowQuery) return 1;
+
+                // Starts with match priority
+                if (titleA.startsWith(lowQuery) && !titleB.startsWith(lowQuery)) return -1;
+                if (titleB.startsWith(lowQuery) && !titleA.startsWith(lowQuery)) return 1;
+
+                // Title containment priority
+                const aInTitle = titleA.includes(lowQuery);
+                const bInTitle = titleB.includes(lowQuery);
+                if (aInTitle && !bInTitle) return -1;
+                if (bInTitle && !aInTitle) return 1;
+
+                return 0; // Keep original order (usually createdAt) for other matches
+            });
+
+            // After ranking, take the top 12 or 15
+            unifiedResults = unifiedResults.slice(0, 15);
+        }
 
         res.status(200).json({
             success: true,

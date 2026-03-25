@@ -250,10 +250,10 @@ const FeaturesSection: React.FC = () => {
                     <img
                       src={feature.icon.startsWith('http') ? feature.icon : `${BASE_URL}${feature.icon}`}
                       alt={feature.title}
-                      className="w-6 h-6 object-contain invert brightness-0"
+                      className="w-6 h-6 object-contain"
                     />
                   ) : feature.isImage ? (
-                    <Image src={feature.icon as any} alt={feature.title} width={24} height={24} className="w-6 h-6 object-contain invert brightness-0" />
+                    <Image src={feature.icon as any} alt={feature.title} width={24} height={24} className="w-6 h-6 object-contain" />
                   ) : (
                     (() => {
                       const IconComponent = feature.icon as any;

@@ -28,7 +28,7 @@ import {
 import CartDrawer from "@/components/marketplace/CartDrawer";
 import { useCart, CartItem } from "@/context/CartContext";
 import { useToast } from "@/hooks/use-toast";
-import { fetchPublicProducts } from "@/api/publicController";
+import { fetchPublicProducts, fetchRatingsSettings } from "@/api/publicController";
 import { fetchActiveCategoriesAdmin } from "@/api/adminController";
 import { fetchUserFavorites, addFavorite, removeFavorite } from "@/api/userController";
 import { BASE_URL } from "@/config/apiConfig";
@@ -89,6 +89,7 @@ function MarketplaceContent() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showRatings, setShowRatings] = useState(false);
 
   // Sync with query parameters
   useEffect(() => {
@@ -103,7 +104,19 @@ function MarketplaceContent() {
     loadCategories();
     loadProducts();
     loadFavorites();
+    loadRatingsSettings();
   }, [searchQuery, selectedCategory]);
+
+  const loadRatingsSettings = async () => {
+    try {
+      const data = await fetchRatingsSettings();
+      if (data && data.settings) {
+        setShowRatings(data.settings.product.home);
+      }
+    } catch (error) {
+      console.error("Error loading ratings settings:", error);
+    }
+  };
 
   const loadCategories = async () => {
     try {
@@ -458,7 +471,7 @@ function MarketplaceContent() {
                 <p className="text-muted-foreground">
                   {suggestion ? (
                     <>
-                      No results for "{searchQuery}". Did you mean <button 
+                      No results for "{searchQuery}". Did you mean <button
                         onClick={() => setSearchQuery(suggestion)}
                         className="text-[#794A05] font-bold hover:underline"
                       >
@@ -469,10 +482,10 @@ function MarketplaceContent() {
                     "Try search terms like 'Rudraksha', 'Incense' or 'Idols' to find what you're looking for."
                   )}
                 </p>
-                <Button 
-                   variant="outline"
-                   className="mt-6 rounded-xl border-[#794A05]/20 text-[#794A05]"
-                   onClick={() => { setSearchQuery(""); setSelectedCategory("All"); }}
+                <Button
+                  variant="outline"
+                  className="mt-6 rounded-xl border-[#794A05]/20 text-[#794A05]"
+                  onClick={() => { setSearchQuery(""); setSelectedCategory("All"); }}
                 >
                   Reset Search
                 </Button>
@@ -525,10 +538,12 @@ function MarketplaceContent() {
                         <p className="text-[10px] font-bold uppercase tracking-wider text-[#794A05]/60">
                           {product.temple?.name || product.seller?.name || "DevBhakti Exclusive"}
                         </p>
-                        <div className="flex items-center gap-0.5">
-                          <Star className="h-3 w-3 text-amber-500 fill-amber-500" />
-                          <span className="text-[10px] font-bold">4.5</span>
-                        </div>
+                        {showRatings && (
+                          <div className="flex items-center gap-0.5">
+                            <Star className="h-3 w-3 text-amber-500 fill-amber-500" />
+                            <span className="text-[10px] font-bold">4.5</span>
+                          </div>
+                        )}
                       </div>
 
                       <h3 className="font-display font-semibold text-[#2a1b01] mb-1 line-clamp-1 group-hover:text-[#794A05] transition-colors">

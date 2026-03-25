@@ -186,7 +186,7 @@ export default function TempleCreatePoojaPage() {
                         setShowCropper(false);
                         setTempImage(null);
                     }}
-                    initialAspect={3 / 2}
+                    initialAspect={16 / 9}
                     lockAspect={true}
                     title="Crop Pooja Image"
                 />
@@ -357,7 +357,7 @@ export default function TempleCreatePoojaPage() {
                             <p className="text-sm font-semibold">Cover Image</p>
                             <p className="text-xs text-muted-foreground leading-relaxed">
                                 Upload a high-quality image.<br />
-                                <span className="text-primary font-semibold">Recommended: 1024x1024 px (Square).</span> Max 5MB.
+                                <span className="text-primary font-semibold">Recommended: 1200x675 px (16:9).</span> Max 5MB.
                             </p>
                             <Button type="button" variant="outline" size="sm" className="mt-2 rounded-full" onClick={() => (document.getElementById('image-upload') as any).click()}>
                                 Select Image

@@ -1,7 +1,9 @@
 import { Request, Response } from "express";
 import { prisma } from "../../lib/prisma";
 import razorpay from "../../lib/razorpay";
+import { generateDonationDisplayId } from "../../utils/idGenerator";
 import PDFDocument from 'pdfkit';
+
 import path from 'path';
 import fs from 'fs';
 
@@ -37,10 +39,15 @@ export const initiateDonation = async (req: Request, res: Response) => {
 
         const razorpayOrder = await razorpay.orders.create(options);
 
+        // Generate Custom Display ID
+        const displayId = generateDonationDisplayId();
+
         // Save Pending Donation Record
         const donation = await prisma.donation.create({
             data: {
+                displayId,
                 templeId,
+
                 amount,
                 donorName,
                 donorPhone,
@@ -106,7 +113,8 @@ export const generateDonationReceiptBuffer = async (donationId: string): Promise
 
             // Receipt Info (Top Right)
             doc.fillColor(textColor).fontSize(10).font('Helvetica-Bold').text('DONATION RECEIPT', 400, 55, { align: 'right' });
-            doc.font('Helvetica').fontSize(9).text(`No: #${donation.id.slice(0, 8).toUpperCase()}`, 400, 70, { align: 'right' });
+            doc.font('Helvetica').fontSize(9).text(`No: #${donation.displayId || donation.id.slice(0, 8).toUpperCase()}`, 400, 70, { align: 'right' });
+
             doc.text(`Date: ${new Date(donation.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}`, 400, 82, { align: 'right' });
 
             doc.moveDown(4);
@@ -201,7 +209,7 @@ export const getMyDonations = async (req: Request, res: Response) => {
         const donations = await prisma.donation.findMany({
             where: {
                 userId,
-                status: 'SUCCESS'
+                status: { in: ['SUCCESS', 'FAILED'] }
             },
             include: {
                 temple: true

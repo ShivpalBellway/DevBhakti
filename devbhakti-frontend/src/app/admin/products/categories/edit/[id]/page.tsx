@@ -261,7 +261,7 @@ export default function EditCategoryPage() {
                 {errors.name && <p className="text-sm text-red-500">{errors.name}</p>}
               </div>
 
-              <div className="space-y-2">
+              {/* <div className="space-y-2">
                 <Label htmlFor="sortOrder">Sort Order</Label>
                 <Input
                   id="sortOrder"
@@ -273,10 +273,10 @@ export default function EditCategoryPage() {
                   className={errors.sortOrder ? "border-red-500" : ""}
                 />
                 {errors.sortOrder && <p className="text-sm text-red-500">{errors.sortOrder}</p>}
-              </div>
+              </div> */}
             </div>
 
-            <div className="space-y-2">
+            {/* <div className="space-y-2">
               <Label htmlFor="description">Description</Label>
               <Textarea
                 id="description"
@@ -285,7 +285,7 @@ export default function EditCategoryPage() {
                 placeholder="Enter category description"
                 rows={4}
               />
-            </div>
+            </div> */}
 
             <div className="space-y-2">
               <Label>Category Image</Label>

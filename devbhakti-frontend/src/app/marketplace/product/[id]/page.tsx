@@ -30,7 +30,7 @@ import {
 import { useCart, CartItem } from "@/context/CartContext";
 import CartDrawer from "@/components/marketplace/CartDrawer";
 import { useToast } from "@/hooks/use-toast";
-import { fetchProductByIdPublic } from "@/api/publicController";
+import { fetchProductByIdPublic, fetchRatingsSettings } from "@/api/publicController";
 import { fetchUserFavorites, addFavorite, removeFavorite } from "@/api/userController";
 import { BASE_URL, API_URL } from "@/config/apiConfig";
 import axios from "axios";
@@ -94,13 +94,26 @@ export default function ProductDetailsPage() {
   const [pincode, setPincode] = useState("");
   const [checkingServiceability, setCheckingServiceability] = useState(false);
   const [serviceabilityData, setServiceabilityData] = useState<any>(null);
+  const [showRatings, setShowRatings] = useState(false);
 
   useEffect(() => {
     if (params.id) {
       loadProduct(params.id as string);
       checkFavoriteStatus(params.id as string);
+      loadRatingsSettings();
     }
   }, [params.id]);
+
+  const loadRatingsSettings = async () => {
+    try {
+      const data = await fetchRatingsSettings();
+      if (data && data.settings) {
+        setShowRatings(data.settings.product.details);
+      }
+    } catch (error) {
+      console.error("Error loading ratings settings:", error);
+    }
+  };
 
   const checkFavoriteStatus = async (productId: string) => {
     try {
@@ -408,10 +421,12 @@ export default function ProductDetailsPage() {
                 {/* Product Title & Rating */}
                 <div>
                   <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-1.5 bg-amber-50 px-3 py-1.5 rounded-full border border-amber-200 shadow-sm">
-                      <Star className="w-6 h-6 text-amber-500 fill-amber-500" />
-                      <span className="text-sm font-bold text-amber-700">{product.rating || "4.2"}</span>
-                    </div>
+                    {showRatings && (
+                      <div className="flex items-center gap-1.5 bg-amber-50 px-3 py-1.5 rounded-full border border-amber-200 shadow-sm">
+                        <Star className="w-6 h-6 text-amber-500 fill-amber-500" />
+                        <span className="text-sm font-bold text-amber-700">{product.rating || "4.2"}</span>
+                      </div>
+                    )}
                   </div>
 
                   <h1 className="text-4xl lg:text-5xl font-display font-bold text-[#2a1b01] leading-tight mb-4">

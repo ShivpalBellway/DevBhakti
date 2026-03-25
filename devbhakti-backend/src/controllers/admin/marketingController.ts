@@ -12,19 +12,19 @@ export const getTargetDevotees = async (req: Request, res: Response) => {
         let users: any[] = [];
 
         const today = new Date();
-        const todayStr = `${String(today.getDate()).padStart(2, '0')}/${String(today.getMonth() + 1).padStart(2, '0')}`; // DD/MM
+        const todayStr = `-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`; // -MM-DD
 
         if (type === 'birthday') {
             users = await prisma.user.findMany({
                 where: {
-                    dob: { startsWith: todayStr }
+                    dob: { contains: todayStr }
                 },
                 select: { id: true, name: true, phone: true, dob: true }
             });
         } else if (type === 'anniversary') {
             users = await prisma.user.findMany({
                 where: {
-                    anniversary: { startsWith: todayStr }
+                    anniversary: { contains: todayStr }
                 },
                 select: { id: true, name: true, phone: true, anniversary: true }
             });

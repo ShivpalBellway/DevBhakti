@@ -147,6 +147,7 @@ export const updateEvent = async (req: Request, res: Response) => {
                 date,
                 time: time !== undefined ? time : undefined,
                 description,
+                status: req.body.status !== undefined ? req.body.status : undefined,
                 templeId: templeId || null,
                 // Sync recommended poojas if provided
                 ...(recommendedPoojaIds !== undefined
@@ -197,5 +198,23 @@ export const deleteEvent = async (req: Request, res: Response) => {
     } catch (error) {
         console.error('Error deleting event:', error);
         res.status(500).json({ error: 'Failed to delete event' });
+    }
+};
+
+// Toggle event status
+export const toggleEventStatus = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+        const { status } = req.body;
+
+        const event = await prisma.event.update({
+            where: { id: String(id) },
+            data: { status }
+        });
+
+        res.json({ success: true, message: `Event ${status ? 'activated' : 'deactivated'} successfully`, data: event });
+    } catch (error) {
+        console.error('Error toggling event status:', error);
+        res.status(500).json({ success: false, error: 'Failed to toggle event status' });
     }
 };

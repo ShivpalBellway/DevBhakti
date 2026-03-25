@@ -12,7 +12,7 @@ import { Separator } from "@/components/ui/separator";
 import { IndianRupee, MapPin, Truck, ShieldCheck, ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import axios from "axios";
-import { API_URL } from "@/config/apiConfig";
+import { API_URL, BASE_URL } from "@/config/apiConfig";
 import { notifyFailedPayment } from "@/api/adminController";
 
 export default function CheckoutPage() {
@@ -80,6 +80,13 @@ export default function CheckoutPage() {
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
+        if (name === "pincode") {
+            const numericValue = value.replace(/[^0-9]/g, "");
+            if (numericValue.length <= 6) {
+                setAddress((prev) => ({ ...prev, [name]: numericValue }));
+            }
+            return;
+        }
         setAddress((prev) => ({ ...prev, [name]: value }));
     };
 
@@ -89,6 +96,15 @@ export default function CheckoutPage() {
             toast({
                 title: "Missing Information",
                 description: "Please fill in all required shipping details.",
+                variant: "destructive",
+            });
+            return;
+        }
+
+        if (address.pincode.length !== 6) {
+            toast({
+                title: "Invalid Pincode",
+                description: "Please enter a valid 6-digit pincode.",
                 variant: "destructive",
             });
             return;
@@ -208,18 +224,23 @@ export default function CheckoutPage() {
                     rzp.on('payment.failed', function (response: any) {
                         console.error("Payment failed event:", response.error);
                         notifyFailedPayment({
+                            orderType: "MARKETPLACE",
+                            orderData: orderData,
+                            userId: user.id,
                             phone: address.phone,
                             userName: address.fullName,
-                            referenceId: response.data.orderId || response.error.metadata.order_id
+                            error: response.error
                         }).catch(console.error);
                     });
 
                     rzp.on('modal.dismiss', function () {
                         console.log("Payment modal dismissed");
                         notifyFailedPayment({
+                            orderType: "MARKETPLACE",
+                            orderData: orderData,
+                            userId: user.id,
                             phone: address.phone,
                             userName: address.fullName,
-                            referenceId: "MARKETPLACE_CANCEL"
                         }).catch(console.error);
                     });
 
@@ -366,7 +387,7 @@ export default function CheckoutPage() {
                                     {cartItems.map((item) => (
                                         <div key={item.variantId} className="flex gap-4">
                                             <div className="w-16 h-16 rounded-lg overflow-hidden flex-shrink-0 bg-slate-100">
-                                                <img src={item.image.startsWith('http') ? item.image : `${API_URL}${item.image}`} alt={item.name} className="w-full h-full object-cover" />
+                                                <img src={item.image.startsWith('http') ? item.image : `${BASE_URL}${item.image}`} alt={item.name} className="w-full h-full object-cover" />
                                             </div>
                                             <div className="flex-1">
                                                 <p className="font-bold text-sm text-[#2a1b01] line-clamp-1">{item.name}</p>

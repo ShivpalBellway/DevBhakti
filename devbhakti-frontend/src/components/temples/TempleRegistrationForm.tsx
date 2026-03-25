@@ -33,7 +33,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { registerTemple, fetchAllPoojasPublic } from "@/api/templeAdminController";
-import { checkPhone } from "@/api/authController";
+import { checkInstitutionPhone } from "@/api/authController";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 
@@ -85,9 +85,9 @@ export default function TempleRegistrationForm({ onClose }: { onClose?: () => vo
 
     const validatePhone = async (phone: string) => {
         try {
-            const response = await checkPhone(phone);
-            if (response.success && response.exists) {
-                setPhoneError("This number is already registered with us. Use another number to register as temple");
+            const response = await checkInstitutionPhone(phone);
+            if (response.isInstitutionRegistered) {
+                setPhoneError("This number is already registered as a Temple/Institution. Please login instead.");
             } else {
                 setPhoneError(null);
             }
@@ -150,7 +150,7 @@ export default function TempleRegistrationForm({ onClose }: { onClose?: () => vo
                 setTempImage(reader.result as string);
                 setCropType("main");
                 setCropTitle("Adjust Temple Profile Image");
-                setInitialAspect(3 / 2);
+                setInitialAspect(16 / 9);
                 setShowCropper(true);
             };
             reader.readAsDataURL(file);
@@ -172,7 +172,7 @@ export default function TempleRegistrationForm({ onClose }: { onClose?: () => vo
 
     const handleHeroImagesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = Array.from(e.target.files || []);
-        const MAX_SIZE = 2 * 1024 * 1024; // 2MB
+        const MAX_SIZE = 5 * 1024 * 1024; // 5MB matching client requirement
 
         if (files.length > 0) {
             const currentCount = heroImages.length;
@@ -205,7 +205,7 @@ export default function TempleRegistrationForm({ onClose }: { onClose?: () => vo
                     setTempImage(reader.result as string);
                     setCropType("hero");
                     setCropTitle("Adjust Temple Banner Image");
-                    setInitialAspect(16 / 9);
+                    setInitialAspect(1920 / 800);
                     setShowCropper(true);
                 };
                 reader.readAsDataURL(validFiles[0]);
@@ -282,18 +282,24 @@ export default function TempleRegistrationForm({ onClose }: { onClose?: () => vo
             return;
         }
 
-        // 3. Image Size Validation (Max 2MB)
-        const MAX_SIZE = 2 * 1024 * 1024;
-        const allFiles = [
-            ...(mainImage ? [mainImage] : []),
-            ...heroImages
-        ];
+        // 3. Image Size Validation (Main: 2MB, Hero: 5MB)
+        const MAIN_MAX_SIZE = 2 * 1024 * 1024;
+        const HERO_MAX_SIZE = 5 * 1024 * 1024;
 
-        for (const file of allFiles) {
-            if (file.size > MAX_SIZE) {
+        if (mainImage && mainImage.size > MAIN_MAX_SIZE) {
+            toast({
+                title: "Main Image Too Large",
+                description: `Main profile image exceeds 2MB limit.`,
+                variant: "destructive"
+            });
+            return;
+        }
+
+        for (const file of heroImages) {
+            if (file.size > HERO_MAX_SIZE) {
                 toast({
-                    title: "File Too Large",
-                    description: `Image "${file.name}" exceeds 2MB limit. Please reduce the size.`,
+                    title: "Banner Image Too Large",
+                    description: `Banner "${file.name}" exceeds 5MB limit.`,
                     variant: "destructive"
                 });
                 return;
@@ -627,85 +633,73 @@ export default function TempleRegistrationForm({ onClose }: { onClose?: () => vo
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                         <div className="space-y-3">
                             <label className="text-sm font-bold text-slate-600 ml-1">Main Profile Image</label>
-                            <div className="border-2 border-dashed border-slate-200 rounded-2xl p-4 hover:bg-slate-50 transition-all group relative cursor-pointer">
+                            <div className="border-2 border-dashed border-slate-200 rounded-3xl p-1 hover:border-[#88542b]/50 hover:bg-orange-50/30 transition-all group relative cursor-pointer overflow-hidden aspect-[16/9] flex items-center justify-center bg-slate-50/50">
                                 <input
                                     type="file"
                                     accept="image/*"
-                                    className="absolute inset-0 opacity-0 cursor-pointer"
+                                    className="absolute inset-0 opacity-0 cursor-pointer z-20"
                                     onChange={handleMainImageChange}
                                 />
                                 {mainImagePreview ? (
-                                    <div className="aspect-video rounded-xl overflow-hidden relative shadow-sm">
-                                        <img src={mainImagePreview} className="w-full h-full object-cover" />
-                                        <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <Upload className="text-white w-8 h-8" />
+                                    <div className="w-full h-full relative group">
+                                        <img src={mainImagePreview} className="w-full h-full object-cover rounded-[1.25rem]" />
+                                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 rounded-[1.25rem] backdrop-blur-[2px]">
+                                            <div className="bg-white/20 p-4 rounded-full border border-white/30">
+                                                <Upload className="text-white w-6 h-6" />
+                                            </div>
                                         </div>
                                     </div>
                                 ) : (
-                                    <div className="py-10 text-center space-y-2">
-                                        <Upload className="w-10 h-10 text-slate-300 mx-auto group-hover:text-[#88542b] transition-colors" />
-                                        <p className="text-xs text-slate-400 font-medium uppercase tracking-wider">Select Main Photo</p>
-                                        <p className="font-semibold">Main Profile Image</p>
-                                        <p className="text-slate-300">Max 2MB • 1200x800px</p>
-                                        <p className="text-slate-400">JPG, PNG, WebP</p>
+                                    <div className="text-center space-y-3 p-6 flex flex-col items-center justify-center w-full h-full">
+                                        <div className="p-4 bg-white rounded-2xl shadow-sm border border-slate-100 group-hover:scale-110 transition-transform duration-300">
+                                            <Upload className="w-8 h-8 text-[#88542b]/60 group-hover:text-[#88542b]" />
+                                        </div>
+                                        <div className="space-y-1">
+                                            <p className="text-[10px] text-[#88542b] font-bold uppercase tracking-[0.2em]">Select Main Photo</p>
+                                            <p className="text-lg font-serif font-bold text-slate-800">Main Profile Image</p>
+                                            <div className="flex flex-col items-center gap-1">
+                                                <p className="text-[11px] text-slate-500 font-medium bg-white px-3 py-1 rounded-full shadow-sm border border-slate-100">Aspect Ratio: 16:9 (1200x675 px)</p>
+                                                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">JPG, PNG, WebP • Max 2MB</p>
+                                            </div>
+                                        </div>
                                     </div>
                                 )}
-                                {/* Hover Info */}
-                                <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-slate-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10">
-                                    <div className="text-center">
-                                        <p className="font-semibold">Main Profile Image</p>
-                                        <p className="text-slate-300">Max 2MB • 1200x800px</p>
-                                        <p className="text-slate-400">JPG, PNG, WebP</p>
-                                    </div>
-                                    <div className="absolute top-full left-1/2 transform -translate-x-1/2 -mt-1">
-                                        <div className="w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-slate-800"></div>
-                                    </div>
-                                </div>
                             </div>
                         </div>
                         <div className="space-y-3">
                             <label className="text-sm font-bold text-slate-600 ml-1">Banners (Max 5)</label>
 
-
-
-                            <div className="grid grid-cols-3 gap-2">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 {heroPreviews.slice(0, 5).map((url, i) => (
-                                    <div key={url} className="aspect-square rounded-xl overflow-hidden relative border border-slate-100 group">
+                                    <div key={url} className="aspect-[2.4/1] rounded-2xl overflow-hidden relative border border-slate-100 group shadow-sm bg-slate-50">
                                         <img src={url} className="w-full h-full object-cover" />
-                                        <button
-                                            type="button"
-                                            onClick={() => removeHeroImage(i)}
-                                            className="absolute top-1 right-1 bg-white/90 text-red-500 p-1 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"
-                                        >
-                                            <Trash2 className="w-3 h-3" />
-                                        </button>
+                                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                            <button
+                                                type="button"
+                                                onClick={() => removeHeroImage(i)}
+                                                className="bg-red-500 text-white p-2.5 rounded-full hover:scale-110 transition-transform shadow-lg"
+                                            >
+                                                <Trash2 className="w-4 h-4" />
+                                            </button>
+                                        </div>
                                     </div>
                                 ))}
                                 {heroPreviews.length < 5 && (
-                                    <div className="aspect-square border-2 border-dashed border-slate-200 rounded-xl flex items-center justify-center hover:bg-slate-50 transition-all cursor-pointer relative group">
+                                    <div className="aspect-[2.4/1] border-2 border-dashed border-slate-200 rounded-2xl flex items-center justify-center hover:border-[#88542b]/50 hover:bg-orange-50/30 transition-all cursor-pointer relative group bg-slate-50/50 p-4">
                                         <input
                                             type="file"
                                             multiple
                                             accept="image/*"
-                                            className="absolute inset-0 opacity-0 cursor-pointer"
+                                            className="absolute inset-0 opacity-0 cursor-pointer z-10"
                                             onChange={handleHeroImagesChange}
                                         />
-                                        <Plus className="w-6 h-6 text-slate-300 group-hover:text-[#88542b]" />
-                                        <div className="text-center">
-
-                                            <p className="text-dark-100">Max 1MB each • 800x800px</p>
-                                            <p className="text-dark-200">JPG, PNG, WebP</p>
-                                        </div>
-
-                                        {/* Hover Info */}
-                                        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-slate-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10">
-                                            <div className="text-center">
-                                                <p className="font-semibold">Banner Images</p>
-                                                <p className="text-slate-300">Max 1MB each • 800x800px</p>
-                                                <p className="text-slate-400">JPG, PNG, WebP</p>
+                                        <div className="text-center space-y-2">
+                                            <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center mx-auto shadow-sm border border-slate-100 group-hover:scale-110 transition-transform">
+                                                <Plus className="w-5 h-5 text-[#88542b]" />
                                             </div>
-                                            <div className="absolute top-full left-1/2 transform -translate-x-1/2 -mt-1">
-                                                <div className="w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-slate-800"></div>
+                                            <div className="space-y-0.5">
+                                                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Aspect Ratio: 2.4:1 (1920x800 px)</p>
+                                                <p className="text-[10px] text-slate-400 font-medium">JPG, PNG, WebP • Max 5MB each</p>
                                             </div>
                                         </div>
                                     </div>
@@ -902,6 +896,7 @@ export default function TempleRegistrationForm({ onClose }: { onClose?: () => vo
                         setShowCropper(false);
                         setTempImage(null);
                     }}
+                    lockAspect={true}
                 />
             )}
         </div>

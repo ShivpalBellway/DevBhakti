@@ -265,12 +265,12 @@ const PoojasSection: React.FC = () => {
                   {/* Favorite Button - Outside Link */}
                   <button
                     onClick={(e) => toggleFavorite(e, pooja.id)}
-                    className="absolute top-4 right-4 z-30 p-2 rounded-full bg-white/20 backdrop-blur-md border border-white/30 hover:bg-white/40 transition-all group/fav"
+                    className="absolute top-4 right-4 z-30 p-2.5 rounded-full bg-white shadow-md border border-primary/10 hover:bg-primary group/fav transition-all duration-300"
                   >
                     <Heart
-                      className={`w-5 h-5 transition-all ${favorites.some((f) => f.poojaId === pooja.id)
+                      className={`w-4 h-4 transition-all duration-300 ${favorites.some((f) => f.poojaId === pooja.id)
                         ? "fill-red-500 text-red-500"
-                        : "text-white group-hover/fav:text-red-200"
+                        : "text-primary/60 group-hover/fav:text-white"
                         }`}
                     />
                   </button>

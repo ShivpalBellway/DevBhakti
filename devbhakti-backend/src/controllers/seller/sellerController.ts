@@ -17,6 +17,25 @@ const getFilePaths = (files: any, fieldName: string) => {
     return [];
 };
 
+// Helper to normalize phone number to +91XXXXXXXXXX format
+const normalizePhone = (phone: string): string => {
+    // Remove all non-numeric characters
+    let cleaned = phone.replace(/\D/g, '');
+
+    // If it starts with 0 (11 digits), remove the 0
+    if (cleaned.length === 11 && cleaned.startsWith('0')) {
+        cleaned = cleaned.substring(1);
+    }
+
+    // If it has 10 digits, add 91
+    if (cleaned.length === 10) {
+        cleaned = '91' + cleaned;
+    }
+
+    // Ensure it starts with +
+    return '+' + cleaned;
+};
+
 export const getSellerProfile = async (req: Request, res: Response) => {
     try {
         const sellerId = (req as any).owner.ownerId;
@@ -68,6 +87,38 @@ export const updateSellerProfile = async (req: Request, res: Response) => {
 
         if (!store) {
             return res.status(404).json({ success: false, message: "Store not found" });
+        }
+
+        // Validate Phone if provided and handle uniqueness
+        if (data.phone) {
+            const cleaned = data.phone.replace(/\D/g, '');
+            if (!(cleaned.length === 10 || (cleaned.length === 12 && cleaned.startsWith('91')))) {
+                return res.status(400).json({ success: false, message: 'Invalid phone number. Use 10 digits or include 91 prefix.' });
+            }
+            data.phone = normalizePhone(data.phone);
+
+            // Check if phone number is already taken by another user
+            const conflictingUser = await prisma.user.findFirst({
+                where: {
+                    phone: data.phone,
+                    id: { not: store.userId }
+                }
+            });
+
+            if (conflictingUser) {
+                return res.status(400).json({ 
+                    success: false, 
+                    message: `The user with number ${data.phone} is already with us (Registered as ${conflictingUser.role}). Please use a different number.` 
+                });
+            }
+
+            // Sync with User record if phone changed
+            if (data.phone !== (store as any).phone) {
+                await prisma.user.update({
+                    where: { id: store.userId },
+                    data: { phone: data.phone }
+                });
+            }
         }
 
         // Define sensitive fields that require admin approval

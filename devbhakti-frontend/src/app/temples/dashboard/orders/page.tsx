@@ -522,9 +522,42 @@ function TempleOrdersClient() {
                                                 ))}
                                             </TableBody>
                                         </Table>
-                                        <div className="bg-[#794A05]/5 p-6 flex justify-between items-center px-8 border-t border-slate-100">
-                                            <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">Consignment Total Earnings</span>
-                                            <span className="text-2xl font-extrabold text-[#794A05]">₹{selectedOrder.totalAmount.toLocaleString()}</span>
+                                        <div className="bg-[#794A05]/5 p-6 space-y-3 px-8 border-t border-slate-100">
+                                            <div className="flex justify-between items-center text-sm">
+                                                <span className="text-slate-500 font-bold font-serif">Items Subtotal</span>
+                                                <span className="text-slate-900 font-extrabold tracking-tight">₹{selectedOrder.totalAmount.toLocaleString()}</span>
+                                            </div>
+                                            
+                                            <div className="flex justify-between items-center text-sm">
+                                                <div className="flex flex-col">
+                                                    <span className="text-slate-500 font-bold font-serif">Platform Service Fee</span>
+                                                    <span className="text-[10px] text-slate-400 font-medium leading-none">(Charged to devotee)</span>
+                                                </div>
+                                                <span className="text-slate-900 font-extrabold tracking-tight">₹{selectedOrder.commissionAmount.toLocaleString()}</span>
+                                            </div>
+
+                                            {selectedOrder.order?.shippingCost > 0 && (
+                                                <div className="flex justify-between items-center text-sm">
+                                                    <span className="text-slate-500 font-bold font-serif">Shipping & Handling</span>
+                                                    <span className="text-slate-900 font-extrabold tracking-tight">₹{selectedOrder.order.shippingCost.toLocaleString()}</span>
+                                                </div>
+                                            )}
+
+                                            <div className="pt-3 border-t border-orange-200/50 flex justify-between items-center">
+                                                <div className="flex flex-col">
+                                                    <span className="text-xs font-black text-slate-900 uppercase tracking-widest">Customer Total Paid</span>
+                                                    <span className="text-[10px] text-slate-400 font-bold uppercase tracking-tight">Amount paid by devotee during checkout</span>
+                                                </div>
+                                                <span className="text-2xl font-black text-[#794A05] tracking-tighter">₹{(selectedOrder.totalAmount + selectedOrder.commissionAmount + (selectedOrder.order?.shippingCost || 0)).toLocaleString()}</span>
+                                            </div>
+
+                                            <div className="flex justify-between items-center pt-2 bg-emerald-50/50 -mx-8 px-8 py-2 border-y border-emerald-100/50 mt-4">
+                                                <div className="flex flex-col">
+                                                    <span className="text-xs font-black text-emerald-700 uppercase tracking-widest">Your Earnings</span>
+                                                    <span className="text-[10px] text-emerald-600 font-bold uppercase tracking-tight">Net amount credited to your ledger</span>
+                                                </div>
+                                                <span className="text-xl font-black text-emerald-700 tracking-tighter">₹{selectedOrder.totalAmount.toLocaleString()}</span>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>

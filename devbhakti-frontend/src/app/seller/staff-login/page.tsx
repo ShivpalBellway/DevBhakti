@@ -63,16 +63,16 @@ export default function SellerStaffLoginPage() {
             >
                 <div className="bg-white/80 backdrop-blur-xl rounded-[2.5rem] shadow-2xl shadow-slate-200 border border-slate-100 overflow-hidden">
                     {/* Top bar */}
-                    <div className="h-3 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-600" />
+                    <div className="h-3 bg-gradient-to-r from-primary-600 via-primary-600 to-primary-600" />
 
                     <div className="p-8 md:p-12">
                         {/* Logo & Intro */}
                         <div className="flex flex-col items-center text-center mb-10">
                             <motion.div
                                 whileHover={{ rotate: 5, scale: 1.05 }}
-                                className="mb-6 p-4 bg-blue-50 rounded-2xl border border-blue-100"
+                                className="mb-6 p-4 bg-primary-50 rounded-2xl border border-primary-100"
                             >
-                                <ShieldCheck className="w-12 h-12 text-blue-600" />
+                                <ShieldCheck className="w-12 h-12 text-primary-600" />
                             </motion.div>
                             <h1 className="text-3xl font-bold text-slate-900 mb-2 tracking-tight">
                                 Seller Staff Login
@@ -145,7 +145,7 @@ export default function SellerStaffLoginPage() {
                             <Button
                                 type="submit"
                                 disabled={loading}
-                                className="w-full h-14 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-2xl text-lg font-bold shadow-xl shadow-blue-500/20 transition-all hover:scale-[1.02] active:scale-[0.98] mt-4"
+                                className="w-full h-14 bg-gradient-to-r from-primary-600 to-primary-600 hover:from-primary-700 hover:to-primary-700 text-white rounded-2xl text-lg font-bold shadow-xl shadow-primary-500/20 transition-all hover:scale-[1.02] active:scale-[0.98] mt-4"
                             >
                                 {loading ? (
                                     <div className="flex items-center gap-2">
@@ -164,7 +164,7 @@ export default function SellerStaffLoginPage() {
                         <div className="mt-8 text-center border-t border-slate-100 pt-8">
                             <button
                                 onClick={() => router.push("/seller")}
-                                className="text-sm font-bold text-blue-600 hover:text-blue-700 transition-colors flex items-center justify-center gap-2 mx-auto"
+                                className="text-sm font-bold text-primary-600 hover:text-primary-700 transition-colors flex items-center justify-center gap-2 mx-auto"
                             >
                                 <Store className="w-4 h-4" />
                                 Not Staff? Login as Shop Owner

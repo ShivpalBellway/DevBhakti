@@ -52,7 +52,7 @@ import { Check, ChevronsUpDown } from "lucide-react";
 import Navbar from "@/components/landing/Navbar";
 import Footer from "@/components/landing/Footer";
 
-import { fetchPublicTemples, fetchPublicFilters } from "@/api/publicController";
+import { fetchPublicTemples, fetchPublicFilters, fetchRatingsSettings } from "@/api/publicController";
 import { fetchUserFavorites, addFavorite, removeFavorite } from "@/api/userController";
 import { API_URL } from "@/config/apiConfig";
 import { getTempleUrl } from "@/lib/utils/templeUtils";
@@ -71,6 +71,7 @@ export function TemplesList() {
   const { toast } = useToast();
   const router = useRouter();
   const [user, setUser] = useState<any>(null);
+  const [showRatings, setShowRatings] = useState(false);
 
   React.useEffect(() => {
     const savedUser = localStorage.getItem("user");
@@ -79,6 +80,7 @@ export function TemplesList() {
       loadFavorites();
     }
     fetchInitialOptions();
+    loadRatingsSettings();
   }, []);
 
   const [allOptions, setAllOptions] = useState({ categories: ["All"], locations: ["All"], poojas: ["All"] });
@@ -101,6 +103,17 @@ export function TemplesList() {
   const categories = allOptions.categories;
   const locations = allOptions.locations;
   const poojaOptions = allOptions.poojas;
+
+  const loadRatingsSettings = async () => {
+    try {
+      const data = await fetchRatingsSettings();
+      if (data && data.settings) {
+        setShowRatings(data.settings.temple.home);
+      }
+    } catch (error) {
+      console.error("Error loading ratings settings:", error);
+    }
+  };
 
   React.useEffect(() => {
     loadTemples();
@@ -534,13 +547,15 @@ export function TemplesList() {
                           <span className="text-sm">{temple.location}</span>
                         </div>
                         <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-1">
-                            <Star className="h-4 w-4 text-amber-500 fill-amber-500" />
-                            <span className="font-medium text-foreground">{temple.rating}</span>
-                            <span className="text-muted-foreground text-sm">
-                              ({(temple.reviewsCount || 0).toLocaleString()})
-                            </span>
-                          </div>
+                          {showRatings && (
+                            <div className="flex items-center gap-1">
+                              <Star className="h-4 w-4 text-amber-500 fill-amber-500" />
+                              <span className="font-medium text-foreground">{temple.rating}</span>
+                              <span className="text-muted-foreground text-sm">
+                                ({(temple.reviewsCount || 0).toLocaleString()})
+                              </span>
+                            </div>
+                          )}
                         </div>
                       </CardContent>
                     </Card>

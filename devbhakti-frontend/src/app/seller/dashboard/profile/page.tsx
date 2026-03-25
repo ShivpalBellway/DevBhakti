@@ -20,6 +20,7 @@ import {
     TrendingUp,
     Truck
 } from "lucide-react";
+import { ImageCropper } from "@/components/admin/ImageCropper";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -57,6 +58,13 @@ export default function SellerProfilePage() {
     const [heroPreviews, setHeroPreviews] = useState<string[]>([]);
     const [selectedMainFile, setSelectedMainFile] = useState<File | null>(null);
     const [selectedHeroFiles, setSelectedHeroFiles] = useState<File[]>([]);
+
+    // Crop states
+    const [showCropper, setShowCropper] = useState(false);
+    const [tempImage, setTempImage] = useState<string | null>(null);
+    const [cropType, setCropType] = useState<"main" | "hero">("main");
+    const [cropTitle, setCropTitle] = useState("Adjust Image");
+    const [initialAspect, setInitialAspect] = useState(16 / 9);
 
     useEffect(() => {
         loadProfile();
@@ -100,23 +108,45 @@ export default function SellerProfilePage() {
     const handleMainImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
-            setSelectedMainFile(file);
             const reader = new FileReader();
-            reader.onloadend = () => setMainImagePreview(reader.result as string);
+            reader.onload = () => {
+                setTempImage(reader.result as string);
+                setCropType("main");
+                setCropTitle("Adjust Store Logo");
+                setInitialAspect(16 / 9);
+                setShowCropper(true);
+            };
             reader.readAsDataURL(file);
+            e.target.value = '';
         }
     };
 
     const handleHeroImagesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = Array.from(e.target.files || []);
         if (files.length > 0) {
-            setSelectedHeroFiles(prev => [...prev, ...files]);
-            files.forEach(file => {
-                const reader = new FileReader();
-                reader.onloadend = () => setHeroPreviews(prev => [...prev, reader.result as string]);
-                reader.readAsDataURL(file);
-            });
+            const reader = new FileReader();
+            reader.onload = () => {
+                setTempImage(reader.result as string);
+                setCropType("hero");
+                setCropTitle("Adjust Showcase Image");
+                setInitialAspect(1920 / 800);
+                setShowCropper(true);
+            };
+            reader.readAsDataURL(files[0]);
+            e.target.value = '';
         }
+    };
+
+    const handleCropComplete = (croppedFile: File) => {
+        if (cropType === "main") {
+            setSelectedMainFile(croppedFile);
+            setMainImagePreview(URL.createObjectURL(croppedFile));
+        } else {
+            setSelectedHeroFiles(prev => [...prev, croppedFile]);
+            setHeroPreviews(prev => [...prev, URL.createObjectURL(croppedFile)]);
+        }
+        setShowCropper(false);
+        setTempImage(null);
     };
 
     const removeHeroImage = (index: number) => {
@@ -171,6 +201,21 @@ export default function SellerProfilePage() {
 
     return (
         <div className="max-w-6xl mx-auto space-y-8 pb-12 overflow-x-hidden">
+            {/* Crop Modal */}
+            {showCropper && tempImage && (
+                <ImageCropper
+                    image={tempImage}
+                    title={cropTitle}
+                    initialAspect={initialAspect}
+                    lockAspect={true}
+                    onCropComplete={handleCropComplete}
+                    onCancel={() => {
+                        setShowCropper(false);
+                        setTempImage(null);
+                    }}
+                />
+            )}
+
             {/* Elegant Header */}
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
                 <div>
@@ -216,7 +261,7 @@ export default function SellerProfilePage() {
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="p-8">
-                            <div className="relative aspect-square rounded-[1.5rem] overflow-hidden border-2 border-dashed border-slate-200 bg-slate-50/50 group flex items-center justify-center">
+                            <div className="relative aspect-[16/9] rounded-[1.5rem] overflow-hidden border-2 border-dashed border-slate-200 bg-slate-50/50 group flex items-center justify-center">
                                 {mainImagePreview ? (
                                     <>
                                         <img src={mainImagePreview} alt="Storefront" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
@@ -239,7 +284,7 @@ export default function SellerProfilePage() {
                                         </div>
                                         <div>
                                             <p className="text-sm font-extrabold text-slate-900">Upload Store Logo</p>
-                                            <p className="text-[10px] uppercase font-bold tracking-widest mt-1">Recommended: 800x800 px (Square)</p>
+                                            <p className="text-[10px] uppercase font-bold tracking-widest mt-1">Aspect Ratio: 16:9 (1200x675 px)</p>
                                             <p className="text-[10px] text-slate-500 font-medium lowercase italic">Supported: JPG, PNG, WEBP</p>
                                         </div>
                                     </div>
@@ -296,7 +341,7 @@ export default function SellerProfilePage() {
                         <CardContent className="p-8">
                             <div className="grid grid-cols-2 gap-4">
                                 {heroPreviews.map((preview, idx) => (
-                                    <div key={idx} className="relative aspect-[4/3] rounded-2xl overflow-hidden border border-slate-200 bg-slate-50 group">
+                                    <div key={idx} className="relative aspect-[2.4/1] rounded-2xl overflow-hidden border border-slate-200 bg-slate-50 group">
                                         <img src={preview} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
                                         <button
                                             type="button"
@@ -310,13 +355,13 @@ export default function SellerProfilePage() {
                                 <button
                                     type="button"
                                     onClick={() => heroImagesRef.current?.click()}
-                                    className="aspect-[4/3] rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50/50 flex flex-col items-center justify-center text-slate-400 hover:bg-white hover:border-[#7b4623] hover:text-[#7b4623] transition-all cursor-pointer group"
+                                    className="aspect-[2.4/1] rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50/50 flex flex-col items-center justify-center text-slate-400 hover:bg-white hover:border-[#7b4623] hover:text-[#7b4623] transition-all cursor-pointer group"
                                 >
                                     <div className="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
                                         <Plus className="w-5 h-5" />
                                     </div>
                                     <span className="text-[10px] font-bold uppercase tracking-widest">Add Photo</span>
-                                    <span className="text-[9px] text-slate-400 mt-1 uppercase font-bold tracking-tighter">Recommended: 1200x900 px</span>
+                                    <span className="text-[9px] text-slate-400 mt-1 uppercase font-bold tracking-tighter">Aspect Ratio: 2.4:1 (1920x800 px)</span>
                                 </button>
                             </div>
                             <input

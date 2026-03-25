@@ -34,18 +34,23 @@ export const createSeller = async (req: Request, res: Response) => {
 
         const normalizedPhone = normalizePhone(phone as string);
 
-        // Check if user exists
-        const existingUser = await prisma.user.findFirst({
-            where: {
-                OR: [
-                    { email: email as string },
-                    { phone: normalizedPhone }
-                ]
-            }
+        // Check if a SELLER already exists with this phone or email
+        const existingSellerByPhone = await prisma.user.findFirst({
+            where: { phone: normalizedPhone, role: 'SELLER' }
         });
+        if (existingSellerByPhone) {
+            return res.status(400).json({
+                message: `A Seller is already registered with this phone number. Please use a different number.`
+            });
+        }
 
-        if (existingUser) {
-            return res.status(400).json({ message: 'User with this email or phone already exists' });
+        const existingSellerByEmail = await prisma.user.findFirst({
+            where: { email: email as string, role: 'SELLER' }
+        });
+        if (existingSellerByEmail) {
+            return res.status(400).json({
+                message: `A Seller is already registered with this email address. Please use a different email.`
+            });
         }
 
         // Transaction to create User and associated SellerProfile (Store)

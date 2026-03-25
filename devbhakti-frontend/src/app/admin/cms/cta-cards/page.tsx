@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import { fetchAllCTACardsAdmin, createCTACardAdmin, updateCTACardAdmin } from "@/api/adminController";
 import { BASE_URL } from "@/config/apiConfig";
 
@@ -67,7 +68,9 @@ export default function CTACardsPage() {
     const [formData, setFormData] = useState({
         title: "",
         points: ["", "", "", "", ""],
+        active: true,
     });
+
 
     const [iconFile, setIconFile] = useState<File | null>(null);
     const [iconPreview, setIconPreview] = useState<string>("");
@@ -132,7 +135,9 @@ export default function CTACardsPage() {
                         card.points?.[3] || "",
                         card.points?.[4] || ""
                     ],
+                active: card.active ?? true,
             });
+
             setIconPreview(card.icon ? (card.icon.startsWith('http') ? card.icon : `${BASE_URL}${card.icon}`) : "");
             setIconFile(null);
             setIsDialogOpen(true);
@@ -142,7 +147,9 @@ export default function CTACardsPage() {
             setFormData({
                 title: card.title,
                 points: card.points,
+                active: card.active ?? true,
             });
+
             setIconPreview("");
             setIconFile(null);
             setIsDialogOpen(true);
@@ -163,7 +170,27 @@ export default function CTACardsPage() {
         setFormData({ ...formData, points: newPoints });
     };
 
+    const handleToggleStatus = async (card: any) => {
+        try {
+            const data = new FormData();
+            data.append('title', card.title);
+            data.append('points', JSON.stringify(card.points));
+            data.append('buttonText', card.buttonText);
+            data.append('buttonLink', card.buttonLink);
+            data.append('cardType', card.cardType);
+            data.append('active', (!card.active).toString());
+            data.append('order', card.order.toString());
+
+            await updateCTACardAdmin(card.id, data);
+            loadCTACards();
+        } catch (error) {
+            console.error("Error toggling status:", error);
+            alert("Error toggling status");
+        }
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
+
         e.preventDefault();
         try {
             const data = new FormData();
@@ -180,8 +207,9 @@ export default function CTACardsPage() {
             data.append('buttonText', fixedData.buttonText);
             data.append('buttonLink', fixedData.buttonLink);
             data.append('cardType', fixedData.cardType);
-            data.append('active', 'true');
+            data.append('active', formData.active.toString());
             data.append('order', fixedData.order.toString());
+
 
             if (editingCard.id) {
                 await updateCTACardAdmin(editingCard.id, data);
@@ -242,11 +270,15 @@ export default function CTACardsPage() {
                             `}
                         >
                             {/* Card Header Label */}
-                            <div className="absolute top-4 right-4">
+                            <div className="absolute top-4 right-4 flex items-center gap-2">
+                                <Badge variant={card.active ? (card.cardType === 'primary' ? 'default' : 'secondary') : 'outline'}>
+                                    {card.active ? 'Active' : 'Inactive'}
+                                </Badge>
                                 <Badge variant={card.cardType === 'primary' ? 'default' : 'secondary'}>
                                     {card.cardType === 'primary' ? 'Devotee Card' : 'Temple Card'}
                                 </Badge>
                             </div>
+
 
                             <div className="p-6 space-y-6">
                                 {/* Icon Preview */}
@@ -286,15 +318,26 @@ export default function CTACardsPage() {
                                 </div>
 
                                 {/* Edit Action */}
-                                <Button
-                                    onClick={() => handleEdit(card, index)}
-                                    className="w-full gap-2"
-                                >
-                                    <Edit2 className="w-4 h-4" />
-                                    Edit Content
-                                </Button>
+                                <div className="flex gap-2">
+                                    <Button
+                                        onClick={() => handleEdit(card, index)}
+                                        className="flex-1 gap-2"
+                                    >
+                                        <Edit2 className="w-4 h-4" />
+                                        Edit
+                                    </Button>
+                                    <Button
+                                        variant={card.active ? "destructive" : "default"}
+                                        onClick={() => handleToggleStatus(card)}
+                                        className="flex-1"
+                                        disabled={!card.id}
+                                    >
+                                        {card.active ? "Deactivate" : "Activate"}
+                                    </Button>
+                                </div>
                             </div>
                         </div>
+
                     ))
                 )}
             </div>
@@ -322,6 +365,21 @@ export default function CTACardsPage() {
                                 className="h-11"
                             />
                         </div>
+
+                        {/* Status Toggle Section */}
+                        <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-200">
+                            <div className="space-y-0.5">
+                                <Label className="text-base font-semibold">Active Status</Label>
+                                <div className="text-sm text-muted-foreground">
+                                    Show or hide this card on the homepage
+                                </div>
+                            </div>
+                            <Switch
+                                checked={formData.active}
+                                onCheckedChange={(checked) => setFormData({ ...formData, active: checked })}
+                            />
+                        </div>
+
 
                         {/* Icon Section */}
                         <div className="space-y-3">

@@ -179,7 +179,7 @@ export default function EditPoojaPage() {
             const newPackages = [...prev.packages];
             if (newPackages[index]) {
                 newPackages[index] = { ...newPackages[index], [field]: value };
-                
+
                 const update: any = { packages: newPackages };
                 // If it's a Single package and price changed, sync top price
                 if (newPackages[index].name === "Single" && field === 'price') {
@@ -412,7 +412,7 @@ export default function EditPoojaPage() {
                         </div>
                         <div className="flex-1 space-y-1">
                             <p className="text-sm font-medium">Upload a high-quality image</p>
-                            <p className="text-xs text-muted-foreground">JPG, PNG or WEBP. Max 5MB.</p>
+                            <p className="text-xs text-muted-foreground">JPG, PNG or WEBP. Max 5MB. Aspect Ratio: 16:9 (1200x675 px)</p>
                         </div>
                     </div>
                 </div>
@@ -653,7 +653,7 @@ export default function EditPoojaPage() {
                     image={tempImage}
                     onCropComplete={handleCropComplete}
                     onCancel={handleCropCancel}
-                    initialAspect={3 / 2}
+                    initialAspect={16 / 9}
                     lockAspect={true}
                     title="Edit Pooja Image"
                 />

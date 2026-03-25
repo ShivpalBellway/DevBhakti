@@ -97,7 +97,7 @@ export default function CreateTemplePage() {
     const [tempImage, setTempImage] = useState<string | null>(null);
     const [cropType, setCropType] = useState<"main" | "hero">("main");
     const [cropTitle, setCropTitle] = useState("Crop Temple Image");
-    const [initialAspect, setInitialAspect] = useState(3 / 2);
+    const [initialAspect, setInitialAspect] = useState(16 / 9);
 
     useEffect(() => {
         loadPoojas();
@@ -165,7 +165,7 @@ export default function CreateTemplePage() {
                 setTempImage(reader.result as string);
                 setCropType("main");
                 setCropTitle("Adjust Temple Profile Image");
-                setInitialAspect(3 / 2);
+                setInitialAspect(16 / 9);
                 setShowCropper(true);
             };
             reader.readAsDataURL(file);
@@ -195,7 +195,7 @@ export default function CreateTemplePage() {
                     setTempImage(reader.result as string);
                     setCropType("hero");
                     setCropTitle("Adjust Temple Banner Image");
-                    setInitialAspect(1920 / 600);
+                    setInitialAspect(1920 / 800);
                     setShowCropper(true);
                 };
                 reader.readAsDataURL(validFiles[0]);
@@ -748,7 +748,7 @@ export default function CreateTemplePage() {
 
 
                                             <p className="font-semibold">Main Profile Image</p>
-                                            <p className="text-slate-300">Max 2MB • 1200x800px</p>
+                                            <p className="text-slate-300">Max 2MB • Aspect Ratio: 16:9 (1200x675 px)</p>
                                             <p className="text-slate-400">JPG, PNG, WebP</p>
 
                                         </div>
@@ -784,9 +784,8 @@ export default function CreateTemplePage() {
                                             onChange={handleHeroImagesChange}
                                         />
                                         <div className="text-center">
-
-                                            <p className="text-dark-100">Max 1MB each • 800x800px</p>
-                                            <p className="text-dark-200">JPG, PNG, WebP</p>
+                                            <p className="text-dark-100 italic">Aspect Ratio: 2.4:1 (1920x800 px)</p>
+                                            <p className="text-dark-200">Max 2MB each • JPG, PNG, WebP</p>
                                         </div>
                                         <Plus className="w-6 h-6 text-muted-foreground" />
                                     </div>

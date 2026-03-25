@@ -388,3 +388,21 @@ export const fetchPermissions = async () => {
     return response.data;
 };
 
+
+export const downloadDonationsExcel = async (templeId: string) => {
+    const token = localStorage.getItem("token");
+    const response = await axios.get(`${API_URL}/temple-admin/donations/${templeId}/export/excel`, {
+        headers: { Authorization: `Bearer ${token}` },
+        responseType: 'blob'
+    });
+    return response.data;
+};
+
+export const downloadDonationsPdf = async (templeId: string) => {
+    const token = localStorage.getItem("token");
+    const response = await axios.get(`${API_URL}/temple-admin/donations/${templeId}/export/pdf`, {
+        headers: { Authorization: `Bearer ${token}` },
+        responseType: 'blob'
+    });
+    return response.data;
+};

@@ -4,9 +4,37 @@ import ExcelJS from 'exceljs';
 
 const prisma = new PrismaClient();
 
+const getRecurringDateConditions = (start: string, end: string, field: string) => {
+    const startDate = new Date(start);
+    const endDate = new Date(end);
+
+    // If the range is in the past (before current year), use standard full-date filtering
+    if (startDate.getFullYear() < new Date().getFullYear() && endDate.getFullYear() < new Date().getFullYear()) {
+        return { [field]: { gte: start, lte: end } };
+    }
+
+    // Otherwise, treat as a recurring month-day range
+    const days: string[] = [];
+    const tempDate = new Date(startDate);
+    // Cap at 366 days to prevent massive queries
+    let count = 0;
+    while (tempDate <= endDate && count < 366) {
+        const mm = String(tempDate.getMonth() + 1).padStart(2, '0');
+        const dd = String(tempDate.getDate()).padStart(2, '0');
+        days.push(`-${mm}-${dd}`);
+        tempDate.setDate(tempDate.getDate() + 1);
+        count++;
+    }
+
+    if (days.length === 0) return null;
+    return {
+        OR: days.map(day => ({ [field]: { contains: day } }))
+    };
+};
+
 export const getAllUsers = async (req: Request, res: Response) => {
     try {
-        const { page = 1, limit = 10, search = '', role, startDate, endDate, dob, anniversary } = req.query;
+        const { page = 1, limit = 10, search = '', role, startDate, endDate, dob, anniversary, dobStart, dobEnd, anniversaryStart, anniversaryEnd } = req.query;
         const skip = (Number(page) - 1) * Number(limit);
         const take = Number(limit);
 
@@ -32,34 +60,42 @@ export const getAllUsers = async (req: Request, res: Response) => {
             });
         }
 
-        if (dob) {
+
+
+        if (dobStart || dobEnd) {
+            const cond = getRecurringDateConditions(String(dobStart || '1900-01-01'), String(dobEnd || '2100-12-31'), 'dob');
+            if (cond) andConditions.push(cond);
+        } else if (dob) {
             if (dob === 'upcoming') {
                 const today = new Date();
                 const upcomingDays = [];
                 for (let i = 0; i < 7; i++) {
                     const d = new Date();
                     d.setDate(today.getDate() + i);
-                    upcomingDays.push(`${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`);
+                    upcomingDays.push(`-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`);
                 }
                 andConditions.push({
-                    OR: upcomingDays.map(day => ({ dob: { startsWith: day } }))
+                    OR: upcomingDays.map(day => ({ dob: { contains: day } }))
                 });
             } else {
                 andConditions.push({ dob: { contains: String(dob) } });
             }
         }
 
-        if (anniversary) {
+        if (anniversaryStart || anniversaryEnd) {
+            const cond = getRecurringDateConditions(String(anniversaryStart || '1900-01-01'), String(anniversaryEnd || '2100-12-31'), 'anniversary');
+            if (cond) andConditions.push(cond);
+        } else if (anniversary) {
             if (anniversary === 'upcoming') {
                 const today = new Date();
                 const upcomingDays = [];
                 for (let i = 0; i < 7; i++) {
                     const d = new Date();
                     d.setDate(today.getDate() + i);
-                    upcomingDays.push(`${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`);
+                    upcomingDays.push(`-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`);
                 }
                 andConditions.push({
-                    OR: upcomingDays.map(day => ({ anniversary: { startsWith: day } }))
+                    OR: upcomingDays.map(day => ({ anniversary: { contains: day } }))
                 });
             } else {
                 andConditions.push({ anniversary: { contains: String(anniversary) } });
@@ -147,10 +183,11 @@ export const getAllUsers = async (req: Request, res: Response) => {
         const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
         // Static stats (total counts)
-        const [totalUsersCount, totalDevotees, totalInstitutions, newThisMonth] = await Promise.all([
+        const [totalUsersCount, totalDevotees, totalInstitutions, totalSellers, newThisMonth] = await Promise.all([
             prisma.user.count({ where: { role: { not: 'ADMIN' } } }),
             prisma.user.count({ where: { role: 'DEVOTEE' } }),
             prisma.user.count({ where: { role: 'INSTITUTION' } }),
+            prisma.user.count({ where: { role: 'SELLER' } }),
             prisma.user.count({
                 where: {
                     role: { not: 'ADMIN' },
@@ -171,6 +208,8 @@ export const getAllUsers = async (req: Request, res: Response) => {
                     bookings: user._count.bookings,
                     orders: user._count.orders,
                     joinedDate: user.createdAt,
+                    dob: user.dob,
+                    anniversary: user.anniversary,
                     profileImage: user.profileImage,
                     isActive: user.isActive,
                 })),
@@ -184,6 +223,7 @@ export const getAllUsers = async (req: Request, res: Response) => {
                     totalUsers: totalUsersCount, // Global total
                     totalDevotees,
                     totalInstitutions,
+                    totalSellers,
                     newThisMonth,
                     filteredCount: total, // Count for current search/filter
                     filteredBookings,
@@ -290,7 +330,7 @@ export const getUserDetail = async (req: Request, res: Response) => {
 
 export const downloadUsersExcel = async (req: Request, res: Response) => {
     try {
-        const { search = '', role, startDate, endDate, dob, anniversary } = req.query;
+        const { search = '', role, startDate, endDate, dob, anniversary, dobStart, dobEnd, anniversaryStart, anniversaryEnd } = req.query;
 
         const where: any = { role: { not: 'ADMIN' } };
         if (role && role !== 'all') {
@@ -306,8 +346,19 @@ export const downloadUsersExcel = async (req: Request, res: Response) => {
                 { phone: { contains: String(search), mode: 'insensitive' } },
             ];
         }
-        if (dob) where.dob = { contains: String(dob) };
-        if (anniversary) where.anniversary = { contains: String(anniversary) };
+        if (dobStart || dobEnd) {
+            const cond = getRecurringDateConditions(String(dobStart || '1900-01-01'), String(dobEnd || '2100-12-31'), 'dob');
+            if (cond) where.AND = [...(where.AND || []), cond];
+        } else if (dob) {
+            where.dob = { contains: String(dob) };
+        }
+
+        if (anniversaryStart || anniversaryEnd) {
+            const cond = getRecurringDateConditions(String(anniversaryStart || '1900-01-01'), String(anniversaryEnd || '2100-12-31'), 'anniversary');
+            if (cond) where.AND = [...(where.AND || []), cond];
+        } else if (anniversary) {
+            where.anniversary = { contains: String(anniversary) };
+        }
 
         if (startDate || endDate) {
             where.createdAt = {};
@@ -412,7 +463,7 @@ export const bulkToggleUserStatus = async (req: Request, res: Response) => {
 
 export const downloadUsersAiSensyCSV = async (req: Request, res: Response) => {
     try {
-        const { ids, search, role, dob, anniversary, filterType } = req.query;
+        const { ids, search, role, dob, anniversary, dobStart, dobEnd, anniversaryStart, anniversaryEnd, filterType } = req.query;
         const andConditions: any[] = [{ role: { not: 'ADMIN' } }];
 
         if (ids) {
@@ -433,18 +484,27 @@ export const downloadUsersAiSensyCSV = async (req: Request, res: Response) => {
                     ]
                 });
             }
-            if (dob) {
+            if (dobStart || dobEnd) {
+                const cond = getRecurringDateConditions(String(dobStart || '1900-01-01'), String(dobEnd || '2100-12-31'), 'dob');
+                if (cond) andConditions.push(cond);
+            } else if (dob) {
                 if (dob === 'upcoming') {
                     const today = new Date();
                     const upcomingDays = [];
                     for (let i = 0; i < 7; i++) {
                         const d = new Date(); d.setDate(today.getDate() + i);
-                        upcomingDays.push(`${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`);
+                        upcomingDays.push(`-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`);
                     }
-                    andConditions.push({ OR: upcomingDays.map(day => ({ dob: { startsWith: day } })) });
+                    andConditions.push({ OR: upcomingDays.map(day => ({ dob: { contains: day } })) });
                 } else {
                     andConditions.push({ dob: { contains: String(dob) } });
                 }
+            }
+            if (anniversaryStart || anniversaryEnd) {
+                const cond = getRecurringDateConditions(String(anniversaryStart || '1900-01-01'), String(anniversaryEnd || '2100-12-31'), 'anniversary');
+                if (cond) andConditions.push(cond);
+            } else if (anniversary) {
+                andConditions.push({ anniversary: { contains: String(anniversary) } });
             }
             if (filterType === 'pooja_last_year') {
                 const lastYear = new Date().getFullYear() - 1;

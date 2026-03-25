@@ -6,30 +6,47 @@ const prisma = new PrismaClient();
 
 export const getAllDonations = async (req: Request, res: Response) => {
     try {
-        const { search, status, page = 1, limit = 10 } = req.query;
+        const { search, status, startDate, endDate, sortBy = 'createdAt', sortOrder = 'desc', page = 1, limit = 10 } = req.query;
         const skip = (Number(page) - 1) * Number(limit);
 
         const where: any = {};
+
+        // Status Filtering
         if (status && status !== "all") {
             where.status = status;
-        } else if (!status || status === "all") {
-            // Default to showing only successful donations to avoid cluttering with pending/failed ones
+        } else if (!status) {
+            // Default behavior if no status provided
             where.status = "SUCCESS";
         }
 
+        // Search across multiple fields
         if (search) {
             where.OR = [
                 { id: { contains: String(search), mode: 'insensitive' } },
+                { displayId: { contains: String(search), mode: 'insensitive' } },
                 { donorName: { contains: String(search), mode: 'insensitive' } },
+                { userId: { contains: String(search), mode: 'insensitive' } },
                 { temple: { name: { contains: String(search), mode: 'insensitive' } } }
             ];
+
+        }
+
+        // Period Filtering
+        if (startDate || endDate) {
+            where.createdAt = {};
+            if (startDate) where.createdAt.gte = new Date(String(startDate));
+            if (endDate) {
+                const end = new Date(String(endDate));
+                end.setHours(23, 59, 59, 999);
+                where.createdAt.lte = end;
+            }
         }
 
         const [donations, total] = await Promise.all([
             prisma.donation.findMany({
                 where,
                 include: { temple: { select: { name: true } } },
-                orderBy: { createdAt: 'desc' },
+                orderBy: { [String(sortBy)]: sortOrder as any },
                 skip,
                 take: Number(limit)
             }),
@@ -50,7 +67,9 @@ export const getAllDonations = async (req: Request, res: Response) => {
             panNumber: d.panNumber,
             address: d.address,
             message: d.message,
+            displayId: d.displayId,
             paymentMethod: d.paymentMethod
+
         }));
 
         res.status(200).json({

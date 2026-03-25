@@ -81,98 +81,92 @@ const BannerSection: React.FC = () => {
 
     return (
         <section
-            className="w-full relative py-8 bg-background overflow-hidden"
+            className="w-full relative bg-background overflow-hidden"
             onMouseEnter={() => setIsPaused(true)}
-            onMouseLeave={() => setIsPaused(false)} >
-            <div className="container mx-auto px-4">
-                <div className="relative h-[250px] sm:h-[400px] md:h-[500px] w-full rounded-[2rem] overflow-hidden shadow-2xl group bg-black/5">
-                    <AnimatePresence initial={false} mode="wait">
-                        <motion.div
-                            key={currentIndex}
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            transition={{ duration: 0.8, ease: "easeInOut" }}
-                            className="absolute inset-0 w-full h-full"
-                        >
-                            {banners.length > 0 ? (
-                                <>
-                                    {/* Blurred Background for no-cut experience */}
-                                    <Image
-                                        src={banners[currentIndex].image.startsWith('http') ? banners[currentIndex].image : `${BASE_URL}${banners[currentIndex].image}`}
-                                        alt="Background blur"
-                                        fill
-                                        className="object-cover blur-3xl opacity-40 scale-110"
-                                    />
-                                    <Image
-                                        src={banners[currentIndex].image.startsWith('http') ? banners[currentIndex].image : `${BASE_URL}${banners[currentIndex].image}`}
-                                        alt={`DevBhakti Sacred Banner ${currentIndex + 1}`}
-                                        fill
-                                        className="object-contain z-10"
-                                        priority
-                                    />
-                                </>
-                            ) : (
-                                <>
-                                    <Image
-                                        src={staticBanners[currentIndex]}
-                                        alt="Background blur"
-                                        fill
-                                        className="object-cover blur-3xl opacity-40 scale-110"
-                                    />
-                                    <Image
-                                        src={staticBanners[currentIndex]}
-                                        alt={`DevBhakti Sacred Banner ${currentIndex + 1}`}
-                                        fill
-                                        className="object-contain z-10"
-                                        priority
-                                    />
-                                </>
-                            )}
-                            {/* Subtle Overlay */}
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent" />
-                        </motion.div>
-                    </AnimatePresence>
-
-                    {/* Navigation Arrows */}
-                    <button
-                        onClick={prevSlide}
-                        className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-all hover:bg-white/20 z-30"
+            onMouseLeave={() => setIsPaused(false)}
+        >
+            <div className="relative h-[250px] sm:h-[400px] md:h-[500px] lg:h-[600px] w-full overflow-hidden group bg-black/5">
+                <AnimatePresence initial={false} mode="wait">
+                    <motion.div
+                        key={currentIndex}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.8, ease: "easeInOut" }}
+                        className="absolute inset-0 w-full h-full"
                     >
-                        <ChevronLeft className="w-6 h-6" />
-                    </button>
-                    <button
-                        onClick={nextSlide}
-                        className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-all hover:bg-white/20 z-30"
-                    >
-                        <ChevronRight className="w-6 h-6" />
-                    </button>
+                        {banners.length > 0 ? (
+                            <motion.div
+                                className="absolute inset-0 w-full h-full"
+                                animate={{ scale: [1, 1.05, 1] }}
+                                transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+                            >
+                                <Image
+                                    src={banners[currentIndex].image.startsWith('http') ? banners[currentIndex].image : `${BASE_URL}${banners[currentIndex].image}`}
+                                    alt={`DevBhakti Sacred Banner ${currentIndex + 1}`}
+                                    fill
+                                    className="object-cover object-center z-10"
+                                    priority
+                                />
+                            </motion.div>
+                        ) : (
+                            <motion.div
+                                className="absolute inset-0 w-full h-full"
+                                animate={{ scale: [1, 1.05, 1] }}
+                                transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+                            >
+                                <Image
+                                    src={staticBanners[currentIndex]}
+                                    alt={`DevBhakti Sacred Banner ${currentIndex + 1}`}
+                                    fill
+                                    className="object-cover object-center z-10"
+                                    priority
+                                />
+                            </motion.div>
+                        )}
+                        {/* Subtle Overlay */}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent z-20" />
+                    </motion.div>
+                </AnimatePresence>
 
-                    {/* Navigation Dots */}
-                    <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-3 z-30">
-                        {displayBanners.map((_, index) => (
-                            <button
-                                key={index}
-                                onClick={() => setCurrentIndex(index)}
-                                className={`transition-all duration-500 rounded-full ${index === currentIndex
-                                    ? "w-10 h-2 bg-white shadow-glow"
-                                    : "w-2 h-2 bg-white/40 hover:bg-white/60 hover:scale-125"
-                                    }`}
-                                aria-label={`Go to slide ${index + 1}`}
-                            />
-                        ))}
-                    </div>
+                {/* Navigation Arrows */}
+                <button
+                    onClick={prevSlide}
+                    className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-all hover:bg-white/20 z-30"
+                >
+                    <ChevronLeft className="w-6 h-6" />
+                </button>
+                <button
+                    onClick={nextSlide}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-all hover:bg-white/20 z-30"
+                >
+                    <ChevronRight className="w-6 h-6" />
+                </button>
 
-                    {/* Animated Progress Bar */}
-                    <div className="absolute bottom-0 left-0 h-1.5 w-full bg-white/10 z-30">
-                        <motion.div
-                            key={`progress-${currentIndex}-${isPaused}`}
-                            initial={{ width: "0%" }}
-                            animate={{ width: isPaused ? "0%" : "100%" }}
-                            transition={{ duration: isPaused ? 0 : 5, ease: "linear" }}
-                            className="h-full bg-gradient-to-r from-orange-400 to-yellow-400"
+                {/* Navigation Dots */}
+                <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-3 z-30">
+                    {displayBanners.map((_, index) => (
+                        <button
+                            key={index}
+                            onClick={() => setCurrentIndex(index)}
+                            className={`transition-all duration-500 rounded-full ${index === currentIndex
+                                ? "w-10 h-2 bg-white shadow-glow"
+                                : "w-2 h-2 bg-white/40 hover:bg-white/60 hover:scale-125"
+                                }`}
+                            aria-label={`Go to slide ${index + 1}`}
                         />
-                    </div>
+                    ))}
+                </div>
+
+                {/* Animated Progress Bar */}
+                <div className="absolute bottom-0 left-0 h-1.5 w-full bg-white/10 z-30">
+                    <motion.div
+                        key={`progress-${currentIndex}-${isPaused}`}
+                        initial={{ width: "0%" }}
+                        animate={{ width: isPaused ? "0%" : "100%" }}
+                        transition={{ duration: isPaused ? 0 : 5, ease: "linear" }}
+                        className="h-full bg-gradient-to-r from-orange-400 to-yellow-400"
+                    />
                 </div>
             </div>
         </section>

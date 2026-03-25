@@ -25,6 +25,7 @@ import {
     Sparkles,
     FileText,
     MapPin,
+    Calendar,
     ShieldCheck
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -71,7 +72,11 @@ const statusConfig = {
 export default function DonationClient() {
     const [searchQuery, setSearchQuery] = useState("");
     const debouncedSearch = useDebounce(searchQuery, 500);
-    const [statusFilter, setStatusFilter] = useState("all");
+    const [statusFilter, setStatusFilter] = useState("SUCCESS");
+    const [startDate, setStartDate] = useState("");
+    const [endDate, setEndDate] = useState("");
+    const [sortBy, setSortBy] = useState("createdAt");
+    const [sortOrder, setSortOrder] = useState("desc");
     const [donations, setDonations] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectedDonation, setSelectedDonation] = useState<any | null>(null);
@@ -99,7 +104,11 @@ export default function DonationClient() {
                 page: currentPage.toString(),
                 limit: itemsPerPage.toString(),
                 search: debouncedSearch,
-                status: statusFilter
+                status: statusFilter,
+                startDate: startDate,
+                endDate: endDate,
+                sortBy: sortBy,
+                sortOrder: sortOrder
             });
 
             const response = await axios.get(`${API_URL}/admin/donations?${query}`, { validateStatus: () => true });
@@ -132,7 +141,7 @@ export default function DonationClient() {
 
     useEffect(() => {
         fetchDonations();
-    }, [debouncedSearch, statusFilter, currentPage]);
+    }, [debouncedSearch, statusFilter, currentPage, startDate, endDate, sortBy, sortOrder]);
 
     useEffect(() => {
         fetchStats();
@@ -238,30 +247,161 @@ export default function DonationClient() {
 
 
 
+            {/* Donations Table */}            {/* Stats Overview */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                <Card className="bg-white border-primary/10 shadow-sm hover:shadow-md transition-shadow">
+                    <CardContent className="p-6">
+                        <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center">
+                                <IndianRupee className="w-6 h-6 text-primary" />
+                            </div>
+                            <div>
+                                <p className="text-sm font-medium text-muted-foreground">Total Success</p>
+                                <h3 className="text-2xl font-bold text-foreground">₹{stats.totalAmount.toLocaleString()}</h3>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <Card className="bg-white border-emerald-100 shadow-sm hover:shadow-md transition-shadow">
+                    <CardContent className="p-6">
+                        <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 bg-emerald-100 rounded-2xl flex items-center justify-center">
+                                <CheckCircle2 className="w-6 h-6 text-emerald-600" />
+                            </div>
+                            <div>
+                                <p className="text-sm font-medium text-muted-foreground">Success Count</p>
+                                <h3 className="text-2xl font-bold text-foreground">{stats.successCount}</h3>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <Card className="bg-white border-amber-100 shadow-sm hover:shadow-md transition-shadow">
+                    <CardContent className="p-6">
+                        <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 bg-amber-100 rounded-2xl flex items-center justify-center">
+                                <Clock className="w-6 h-6 text-amber-600" />
+                            </div>
+                            <div>
+                                <p className="text-sm font-medium text-muted-foreground">Pending</p>
+                                <h3 className="text-2xl font-bold text-foreground">{stats.pendingCount}</h3>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <Card className="bg-white border-rose-100 shadow-sm hover:shadow-md transition-shadow">
+                    <CardContent className="p-6">
+                        <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 bg-rose-100 rounded-2xl flex items-center justify-center">
+                                <XCircle className="w-6 h-6 text-rose-600" />
+                            </div>
+                            <div>
+                                <p className="text-sm font-medium text-muted-foreground">Failed</p>
+                                <h3 className="text-2xl font-bold text-foreground">{stats.failedCount}</h3>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
+
+            {/* Filter Bar */}
+            <div className="flex flex-col gap-4 bg-white p-4 rounded-2xl border border-border shadow-sm">
+                <div className="flex flex-wrap items-center justify-between gap-4">
+                    <div className="relative w-full md:w-96">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                        <Input
+                            placeholder="Donation ID, Name, Temple, Donor ID..."
+                            className="pl-10 h-11 bg-muted/20 border-none rounded-xl"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                        />
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-3">
+                        <div className="flex items-center gap-2 bg-muted/20 p-1.5 rounded-xl border border-transparent hover:border-border transition-all">
+                            <Filter className="w-4 h-4 text-muted-foreground ml-2" />
+                            <select
+                                className="bg-transparent text-sm font-medium focus:outline-none cursor-pointer pr-2"
+                                value={statusFilter}
+                                onChange={(e) => setStatusFilter(e.target.value)}
+                            >
+                                <option value="all">All Status</option>
+                                <option value="SUCCESS">Success</option>
+                                <option value="PENDING">Pending</option>
+                                <option value="FAILED">Failed</option>
+                            </select>
+                        </div>
+
+                        <div className="flex items-center gap-2 bg-muted/20 p-1.5 rounded-xl border border-transparent hover:border-border transition-all">
+                            <Calendar className="w-4 h-4 text-muted-foreground ml-2" />
+                            <div className="flex items-center gap-1">
+                                <Input
+                                    type="date"
+                                    className="h-8 bg-transparent border-none text-xs focus-visible:ring-0 p-0 w-24"
+                                    value={startDate}
+                                    onChange={(e) => setStartDate(e.target.value)}
+                                />
+                                <span className="text-muted-foreground font-bold">-</span>
+                                <Input
+                                    type="date"
+                                    className="h-8 bg-transparent border-none text-xs focus-visible:ring-0 p-0 w-24"
+                                    value={endDate}
+                                    onChange={(e) => setEndDate(e.target.value)}
+                                />
+                            </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 bg-muted/20 p-1.5 rounded-xl border border-transparent hover:border-border transition-all">
+                            <Clock className="w-4 h-4 text-muted-foreground ml-2" />
+                            <select
+                                className="bg-transparent text-sm font-medium focus:outline-none cursor-pointer pr-2"
+                                value={`${sortBy}-${sortOrder}`}
+                                onChange={(e) => {
+                                    const [field, order] = e.target.value.split("-");
+                                    setSortBy(field);
+                                    setSortOrder(order);
+                                }}
+                            >
+                                <option value="createdAt-desc">Newest First</option>
+                                <option value="createdAt-asc">Oldest First</option>
+                                <option value="amount-desc">Amount: High to Low</option>
+                                <option value="amount-asc">Amount: Low to High</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
             {/* Donations Table */}
-            <Card>
+            <Card className="border-none shadow-sacred overflow-hidden bg-white/50 backdrop-blur-sm">
                 <CardContent className="p-0">
                     <div className="overflow-x-auto">
                         <table className="w-full">
-                            <thead className="border-b border-border bg-muted/30">
+                            <thead className="border-b border-primary/10 bg-primary/5">
                                 <tr>
-                                    <th className="text-left p-4 text-sm font-medium text-muted-foreground text-nowrap">Donation ID</th>
-                                    <th className="text-left p-4 text-sm font-medium text-muted-foreground text-nowrap">Donor</th>
-                                    <th className="text-left p-4 text-sm font-medium text-muted-foreground text-nowrap">Temple</th>
-                                    <th className="text-left p-4 text-sm font-medium text-muted-foreground text-nowrap">Amount</th>
-                                    <th className="text-left p-4 text-sm font-medium text-muted-foreground text-nowrap">Date</th>
-                                    <th className="text-left p-4 text-sm font-medium text-muted-foreground text-nowrap">Status</th>
-                                    <th className="text-right p-4 text-sm font-medium text-muted-foreground text-nowrap">Actions</th>
+                                    <th className="text-left p-4 text-sm font-bold text-primary/80 uppercase tracking-wider">Donation ID</th>
+                                    <th className="text-left p-4 text-sm font-bold text-primary/80 uppercase tracking-wider">Donor</th>
+                                    <th className="text-left p-4 text-sm font-bold text-primary/80 uppercase tracking-wider">Temple</th>
+                                    <th className="text-left p-4 text-sm font-bold text-primary/80 uppercase tracking-wider">Amount</th>
+                                    <th className="text-left p-4 text-sm font-bold text-primary/80 uppercase tracking-wider">Date</th>
+                                    <th className="text-left p-4 text-sm font-bold text-primary/80 uppercase tracking-wider">Status</th>
+                                    <th className="text-right p-4 text-sm font-bold text-primary/80 uppercase tracking-wider">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {loading ? (
                                     <tr>
-                                        <td colSpan={8} className="p-8 text-center text-muted-foreground">Loading donations...</td>
+                                        <td colSpan={8} className="p-12 text-center">
+                                            <div className="flex flex-col items-center gap-2">
+                                                <Sparkles className="w-8 h-8 text-primary animate-pulse" />
+                                                <p className="text-muted-foreground font-medium italic">Loading sacred records...</p>
+                                            </div>
+                                        </td>
                                     </tr>
                                 ) : donations.length === 0 ? (
                                     <tr>
-                                        <td colSpan={8} className="p-8 text-center text-muted-foreground">No donations found</td>
+                                        <td colSpan={8} className="p-12 text-center text-muted-foreground italic">No donations found in this realm</td>
                                     </tr>
                                 ) : donations.map((donation, index) => {
                                     const status = statusConfig[donation.status as keyof typeof statusConfig] || statusConfig.SUCCESS;
@@ -271,54 +411,72 @@ export default function DonationClient() {
                                             initial={{ opacity: 0, y: 10 }}
                                             animate={{ opacity: 1, y: 0 }}
                                             transition={{ duration: 0.3, delay: index * 0.05 }}
-                                            className="border-b border-border hover:bg-muted/30 transition-colors"
+                                            className="border-b border-primary/5 hover:bg-primary/5 transition-colors group"
                                         >
                                             <td className="p-4">
-                                                <p className="font-mono text-xs font-medium text-primary">
-                                                    {donation.id}
+                                                <p className="font-mono text-xs font-bold text-primary/60 group-hover:text-primary transition-colors">
+                                                    {donation.displayId ? donation.displayId : `#${donation.id.slice(-8).toUpperCase()}`}
                                                 </p>
                                             </td>
+
                                             <td className="p-4">
-                                                <div className="flex items-center gap-2">
-                                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${donation.isAnonymous ? "bg-slate-200 text-slate-500" : "bg-[#f5ebe0] text-[#7c4624]"}`}>
+                                                <div className="flex items-center gap-3">
+                                                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold shadow-sm ${donation.isAnonymous ? "bg-slate-100 text-slate-400" : "bg-primary/10 text-primary border border-primary/20"}`}>
                                                         {donation.isAnonymous ? "?" : donation.donorName.split(' ')[0][0]}
                                                     </div>
                                                     <div>
-                                                        <p className="font-medium text-foreground">{donation.donorName}</p>
-                                                        {donation.isAnonymous && <span className="text-[10px] bg-slate-100 px-1.5 py-0.5 rounded uppercase font-bold text-slate-500">Anonymous</span>}
+                                                        <p className="font-bold text-foreground group-hover:text-primary transition-colors">{donation.donorName}</p>
+                                                        {donation.isAnonymous && <span className="text-[10px] bg-slate-100 px-1.5 py-0.5 rounded uppercase font-black text-slate-400 tracking-tighter">Anonymous</span>}
                                                     </div>
                                                 </div>
                                             </td>
                                             <td className="p-4">
                                                 <div className="flex items-center gap-2">
-                                                    <Building2 className="w-4 h-4 text-muted-foreground" />
-                                                    <span className="text-sm text-foreground">
+                                                    <div className="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center border border-slate-100">
+                                                        <Building2 className="w-4 h-4 text-muted-foreground" />
+                                                    </div>
+                                                    <span className="text-sm font-medium text-foreground italic">
                                                         {donation.templeName}
                                                     </span>
                                                 </div>
                                             </td>
 
                                             <td className="p-4">
-                                                <p className="font-semibold text-foreground">₹{donation.amount.toLocaleString()}</p>
+                                                <p className="font-bold text-lg text-primary">₹{donation.amount.toLocaleString()}</p>
                                             </td>
                                             <td className="p-4">
-                                                <p className="text-sm text-foreground">
-                                                    {new Date(donation.createdAt).toLocaleDateString()}
-                                                </p>
+                                                <div className="flex flex-col">
+                                                    <p className="text-sm font-bold text-foreground">
+                                                        {new Date(donation.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                                    </p>
+                                                    <p className="text-[10px] text-muted-foreground font-medium">
+                                                        {new Date(donation.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                    </p>
+                                                </div>
                                             </td>
                                             <td className="p-4">
-                                                <Badge variant="outline" className={`text-[11px] uppercase font-bold flex items-center gap-1 w-fit ${status.color}`}>
-                                                    <status.icon className="w-3 h-3" />
+                                                <Badge variant="outline" className={`text-[10px] uppercase font-black tracking-widest px-2 py-1 rounded-lg border-2 ${status.color}`}>
+                                                    <status.icon className="w-3 h-3 mr-1" />
                                                     {status.label}
                                                 </Badge>
                                             </td>
                                             <td className="p-4 text-right">
                                                 <div className="flex items-center justify-end gap-2">
-                                                    <Button variant="ghost" size="icon" onClick={() => setSelectedDonation(donation)}>
-                                                        <Eye className="w-4 h-4" />
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="w-9 h-9 rounded-xl hover:bg-primary/10 hover:text-primary transition-all"
+                                                        onClick={() => setSelectedDonation(donation)}
+                                                    >
+                                                        <Eye className="w-4.5 h-4.5" />
                                                     </Button>
-                                                    <Button variant="ghost" size="icon" className="text-rose-500 hover:text-rose-600 hover:bg-rose-50" onClick={() => handleDelete(donation.id)}>
-                                                        <Trash2 className="w-4 h-4" />
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="w-9 h-9 rounded-xl text-rose-500 hover:text-rose-600 hover:bg-rose-50 transition-all"
+                                                        onClick={() => handleDelete(donation.id)}
+                                                    >
+                                                        <Trash2 className="w-4.5 h-4.5" />
                                                     </Button>
                                                 </div>
                                             </td>
@@ -329,6 +487,67 @@ export default function DonationClient() {
                         </table>
                     </div>
                 </CardContent>
+
+                {/* Pagination Controls */}
+                {totalPages > 1 && (
+                    <div className="p-6 border-t border-primary/5 bg-primary/2">
+                        <Pagination>
+                            <PaginationContent>
+                                <PaginationItem>
+                                    <PaginationPrevious
+                                        href="#"
+                                        onClick={(e) => { e.preventDefault(); handlePageChange(currentPage - 1); }}
+                                        className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer hover:bg-primary/10 hover:text-primary rounded-xl transition-all"}
+                                    />
+                                </PaginationItem>
+
+                                {[...Array(totalPages)].map((_, i) => {
+                                    const pageNum = i + 1;
+                                    // Logic to show only a few page numbers if totalPages is large
+                                    if (
+                                        pageNum === 1 ||
+                                        pageNum === totalPages ||
+                                        (pageNum >= currentPage - 1 && pageNum <= currentPage + 1)
+                                    ) {
+                                        return (
+                                            <PaginationItem key={pageNum}>
+                                                <PaginationLink
+                                                    href="#"
+                                                    onClick={(e) => { e.preventDefault(); handlePageChange(pageNum); }}
+                                                    isActive={currentPage === pageNum}
+                                                    className={currentPage === pageNum ? "bg-primary text-white hover:bg-primary/90 border-none rounded-xl" : "cursor-pointer hover:bg-primary/10 hover:text-primary border-none rounded-xl transition-all"}
+                                                >
+                                                    {pageNum}
+                                                </PaginationLink>
+                                            </PaginationItem>
+                                        );
+                                    } else if (
+                                        pageNum === currentPage - 2 ||
+                                        pageNum === currentPage + 2
+                                    ) {
+                                        return (
+                                            <PaginationItem key={pageNum}>
+                                                <PaginationEllipsis />
+                                            </PaginationItem>
+                                        );
+                                    }
+                                    return null;
+                                })}
+
+                                <PaginationItem>
+                                    <PaginationNext
+                                        href="#"
+                                        onClick={(e) => { e.preventDefault(); handlePageChange(currentPage + 1); }}
+                                        className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer hover:bg-primary/10 hover:text-primary rounded-xl transition-all"}
+                                    />
+                                </PaginationItem>
+                            </PaginationContent>
+                        </Pagination>
+                        <p className="text-center mt-4 text-xs font-bold text-muted-foreground uppercase tracking-widest">
+                            Showing page <span className="text-primary">{currentPage}</span> of <span className="text-primary">{totalPages}</span> — <span className="text-primary">{totalItems}</span> sacred entries found
+                        </p>
+                    </div>
+                )}
             </Card>
 
             {/* Donation Detail Modal */}
@@ -488,6 +707,6 @@ export default function DonationClient() {
                     </div>
                 )}
             </AnimatePresence>
-        </div>
+        </div >
     );
 }

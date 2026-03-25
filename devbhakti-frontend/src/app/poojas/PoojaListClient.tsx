@@ -18,7 +18,7 @@ import {
     Heart,
     IndianRupee
 } from "lucide-react";
-import { fetchPublicPoojas } from "@/api/publicController";
+import { fetchPublicPoojas, fetchRatingsSettings } from "@/api/publicController";
 import { fetchUserFavorites, addFavorite, removeFavorite } from "@/api/userController";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
@@ -40,6 +40,7 @@ const PoojaListClient: React.FC = () => {
     const router = useRouter();
     const { toast } = useToast();
     const [user, setUser] = useState<any>(null);
+    const [showRatings, setShowRatings] = useState(false);
 
     const categories = React.useMemo(() => {
         const uniqueCategories = Array.from(new Set(poojas.map(p => p.category?.trim()).filter(Boolean)));
@@ -53,7 +54,19 @@ const PoojaListClient: React.FC = () => {
             loadFavorites();
         }
         loadPoojas();
+        loadRatingsSettings();
     }, []);
+
+    const loadRatingsSettings = async () => {
+        try {
+            const data = await fetchRatingsSettings();
+            if (data && data.settings) {
+                setShowRatings(data.settings.pooja.home);
+            }
+        } catch (error) {
+            console.error("Error loading ratings settings:", error);
+        }
+    };
 
     const loadFavorites = async () => {
         try {
@@ -278,7 +291,7 @@ const PoojaListClient: React.FC = () => {
             </section>
 
             {/* Filter Chips */}
-            <section className="sticky top-20 z-30 py-2 bg-white border-y border-zinc-200 shadow-sm">
+            <section className="relative py-4 bg-white border-y border-zinc-200">
                 <div className="container mx-auto px-4">
                     <div className="flex items-center gap-3 overflow-x-auto pb-1 scrollbar-none">
 
@@ -360,14 +373,16 @@ const PoojaListClient: React.FC = () => {
                                             </div>
 
                                             <div className="px-3 flex-grow">
-                                                <div className="flex items-center gap-2 mb-3">
-                                                    <div className="flex gap-0.5">
-                                                        {[1, 2, 3, 4, 5].map((star) => (
-                                                            <Star key={star} className={`w-3.5 h-3.5 ${star <= 4 ? "fill-amber-400 text-amber-400" : "fill-zinc-200 text-zinc-200"}`} />
-                                                        ))}
+                                                {showRatings && (
+                                                    <div className="flex items-center gap-2 mb-3">
+                                                        <div className="flex gap-0.5">
+                                                            {[1, 2, 3, 4, 5].map((star) => (
+                                                                <Star key={star} className={`w-3.5 h-3.5 ${star <= 4 ? "fill-amber-400 text-amber-400" : "fill-zinc-200 text-zinc-200"}`} />
+                                                            ))}
+                                                        </div>
+                                                        <span className="text-xs text-zinc-400 font-medium">(4.8/5)</span>
                                                     </div>
-                                                    <span className="text-xs text-zinc-400 font-medium">(4.8/5)</span>
-                                                </div>
+                                                )}
 
                                                 <h3 className="text-xl font-bold text-zinc-900 mb-1 group-hover:text-primary transition-colors">
                                                     {pooja.name}
@@ -480,7 +495,7 @@ const PoojaListClient: React.FC = () => {
                     )}
 
                     {/* Related Search Footer - Always show for better discovery */}
-                    <div className="mt-20 pt-10 border-t border-zinc-100/60 max-w-4xl mx-auto">
+                    {/* <div className="mt-20 pt-10 border-t border-zinc-100/60 max-w-4xl mx-auto">
                         <div className="flex flex-col items-center text-center">
                             <h4 className="text-[10px] font-bold text-zinc-400 uppercase tracking-[0.3em] mb-6">Explore Devotional Rituals</h4>
                             <div className="flex flex-wrap justify-center gap-2">
@@ -495,7 +510,7 @@ const PoojaListClient: React.FC = () => {
                                 ))}
                             </div>
                         </div>
-                    </div>
+                    </div> */}
                 </div>
             </section>
 

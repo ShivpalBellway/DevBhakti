@@ -156,8 +156,9 @@ function BookingForm() {
   useEffect(() => {
     const loadData = async () => {
       try {
+        const poojaIdInUrl = searchParams.get("pooja");
         const [templesData, poojasData] = await Promise.all([
-          fetchPublicTemples(),
+          fetchPublicTemples(poojaIdInUrl ? { poojaId: poojaIdInUrl } : undefined),
           fetchPublicPoojas()
         ]);
         setAllTemples(templesData);
@@ -462,18 +463,21 @@ function BookingForm() {
         rzp.on('payment.failed', function (response: any) {
           console.error("Payment failed event:", response.error);
           notifyFailedPayment({
+            orderType: "POOJA",
+            referenceId: res.data.id,
             phone: formData.phone,
             userName: formData.name,
-            referenceId: res.data.id || response.error.metadata.order_id
+            error: response.error
           }).catch(console.error);
         });
 
         rzp.on('modal.dismiss', function () {
           console.log("Payment modal dismissed");
           notifyFailedPayment({
+            orderType: "POOJA",
+            referenceId: res.data.id,
             phone: formData.phone,
             userName: formData.name,
-            referenceId: res.data.id || "CANCELLED"
           }).catch(console.error);
         });
 
@@ -573,48 +577,83 @@ function BookingForm() {
                 </CardContent>
               </Card>
 
-              <Card className="border-border/50">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Calendar className="h-5 w-5 text-primary" />
-                    Select Pooja Service
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <RadioGroup value={selectedPooja} onValueChange={setSelectedPooja} className="space-y-3">
-                    {availablePoojas.map((pooja) => (
-                      <div
-                        key={pooja.id}
-                        className={`flex items-center justify-between p-4 rounded-lg border transition-colors cursor-pointer ${selectedPooja === pooja.id
-                          ? "border-primary bg-primary/5"
-                          : "border-border hover:border-primary/50"
-                          }`}
-                        onClick={() => setSelectedPooja(pooja.id)}
-                      >
-                        <div className="flex items-center gap-3">
-                          <RadioGroupItem value={pooja.id} id={pooja.id} />
-                          <div>
-                            <Label htmlFor={pooja.id} className="font-semibold cursor-pointer">
-                              {pooja.name}
-                            </Label>
-                            <p className="text-sm text-muted-foreground line-clamp-1">{pooja.description?.[0] || pooja.about}</p>
-                            {/* <Badge variant="secondary" className="mt-1">{pooja.duration}</Badge> */}
+              {searchParams.get("pooja") && selectedPoojaData && (
+                <Card className="border-border/50">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Calendar className="h-5 w-5 text-primary" />
+                      Select Pooja Service
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div
+                      className="flex items-center justify-between p-4 rounded-lg border transition-colors border-primary bg-primary/5"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="h-4 w-4 rounded-full border border-primary flex items-center justify-center">
+                          <div className="h-2 w-2 rounded-full bg-primary" />
+                        </div>
+                        <div>
+                          <Label className="font-semibold">
+                            {selectedPoojaData.name}
+                          </Label>
+                          <p className="text-sm text-muted-foreground line-clamp-1">
+                            {selectedPoojaData.description?.[0] || selectedPoojaData.about}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center text-primary font-bold text-lg">
+                        <IndianRupee className="h-4 w-4" />
+                        {selectedPoojaData.price}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {!searchParams.get("pooja") && (
+                <Card className="border-border/50">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Calendar className="h-5 w-5 text-primary" />
+                      Select Pooja Service
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <RadioGroup value={selectedPooja} onValueChange={setSelectedPooja} className="space-y-3">
+                      {availablePoojas.map((pooja) => (
+                        <div
+                          key={pooja.id}
+                          className={`flex items-center justify-between p-4 rounded-lg border transition-colors cursor-pointer ${selectedPooja === pooja.id
+                            ? "border-primary bg-primary/5"
+                            : "border-border hover:border-primary/50"
+                            }`}
+                          onClick={() => setSelectedPooja(pooja.id)}
+                        >
+                          <div className="flex items-center gap-3">
+                            <RadioGroupItem value={pooja.id} id={pooja.id} />
+                            <div>
+                              <Label htmlFor={pooja.id} className="font-semibold cursor-pointer">
+                                {pooja.name}
+                              </Label>
+                              <p className="text-sm text-muted-foreground line-clamp-1">{pooja.description?.[0] || pooja.about}</p>
+                            </div>
+                          </div>
+                          <div className="flex items-center text-primary font-bold text-lg">
+                            <IndianRupee className="h-4 w-4" />
+                            {pooja.price}
                           </div>
                         </div>
-                        <div className="flex items-center text-primary font-bold text-lg">
-                          <IndianRupee className="h-4 w-4" />
-                          {pooja.price}
+                      ))}
+                      {availablePoojas.length === 0 && (
+                        <div className="text-center py-8 text-muted-foreground italic">
+                          No pooja services available for the selected temple.
                         </div>
-                      </div>
-                    ))}
-                    {availablePoojas.length === 0 && (
-                      <div className="text-center py-8 text-muted-foreground italic">
-                        No pooja services available for the selected temple.
-                      </div>
-                    )}
-                  </RadioGroup>
-                </CardContent>
-              </Card>
+                      )}
+                    </RadioGroup>
+                  </CardContent>
+                </Card>
+              )}
             </div>
           )}
 

@@ -9,6 +9,7 @@ import { notifyUser, notifyAdmins } from "../../services/firebaseService";
 import PDFDocument from 'pdfkit';
 import path from 'path';
 import fs from 'fs';
+import { sendOrderInvoiceEmail } from "../../services/orderMailService";
 
 export const calculateFees = async (req: Request, res: Response) => {
   try {
@@ -124,7 +125,7 @@ export const createOrder = async (req: Request, res: Response) => {
 export const createVerifiedOrder = async (orderData: any, userId: string) => {
   const { items, totalAmount, shippingAddress, paymentMethod } = orderData;
 
-  return await prisma.$transaction(async (tx) => {
+  const { order, groups, productMap } = await prisma.$transaction(async (tx) => {
     const productIds = items.map((item: any) => item.productId);
     const products = await tx.product.findMany({
       where: { id: { in: productIds } },
@@ -311,46 +312,74 @@ export const createVerifiedOrder = async (orderData: any, userId: string) => {
         }
       }
     }
-
-    // Notify Devotee
-    try {
-      await notifyUser(userId, 'devotee', {
-        title: 'Order Placed Successfully! 🎉',
-        body: `Your order #${order.id.slice(-6).toUpperCase()} has been placed. We'll update you when it's shipped!`,
-        data: { link: `/profile/orders/${order.id}`, orderId: order.id }
-      });
-    } catch (notifyErr) {
-      console.error(`❌ Devotee Notification Failed for ${userId}:`, notifyErr);
-    }
-
-    // Prepare details for Admin notification
-    const userDisplayName = order.user?.name || "A Devotee";
-    const productNames = items.map((item: any) => {
-      const p = productMap.get(item.productId);
-      return `${p?.name} (x${item.quantity})`;
-    }).join(', ');
-
-    const vendorSummary = Object.keys(groups).map(key => {
-      if (key === 'admin') return 'DevBhakti Admin';
-      const firstItem = groups[key][0];
-      const info = productMap.get(firstItem.productId);
-      return info?.temple?.name || info?.seller?.name || 'Vendor';
-    }).join(', ');
-
-    // Notify Admin (Comprehensive Order Alert)
-    try {
-      await notifyAdmins({
-        title: 'New Master Order! 📢',
-        body: `Customer: ${userDisplayName}\\nProducts: ${productNames}\\nVendors: ${vendorSummary}\\nTotal Amount: ₹${totalAmount}`,
-        // Admin notification link format: /admin/products/orders?id=ORDER_ID
-        data: { link: `/admin/products/orders?id=${order.id}`, orderId: order.id }
-      });
-    } catch (notifyErr) {
-      console.error(`❌ Admin Notification Failed:`, notifyErr);
-    }
-
-    return order;
+    return { order, groups, productMap };
   });
+
+  // --- POST-COMMIT SIDE EFFECTS (Notifications & Email) ---
+  
+  // Notify Devotee via Push Notification
+  try {
+    await notifyUser(userId, 'devotee', {
+      title: 'Order Placed Successfully! 🎉',
+      body: `Your order #${order.id.slice(-6).toUpperCase()} has been placed. We'll update you when it's shipped!`,
+      data: { link: `/profile/orders/${order.id}`, orderId: order.id }
+    });
+  } catch (notifyErr) {
+    console.error(`❌ Devotee Notification Failed for ${userId}:`, notifyErr);
+  }
+
+  // SEND EMAIL RECEIPT
+  if (order.user && order.user.email) {
+    try {
+      const receipt = await generateOrderReceiptBuffer(order.id);
+      if (receipt) {
+        await sendOrderInvoiceEmail({
+          orderId: order.id,
+          customerName: order.user.name || "Customer",
+          customerEmail: order.user.email as string,
+          totalAmount: order.totalAmount,
+          paymentMethod: order.paymentMethod,
+          shippingAddress: order.shippingAddress,
+          items: items.map((item: any) => ({
+            productName: productMap.get(item.productId)?.name || "Sacred Item",
+            price: item.price,
+            quantity: item.quantity
+          })),
+          receiptBuffer: receipt.buffer,
+          receiptFilename: receipt.filename
+        } as any);
+      }
+    } catch (emailErr) {
+      console.error("❌ Failed to send order invoice email:", emailErr);
+    }
+  }
+
+  // Prepare details for Admin notification
+  const userDisplayName = order.user?.name || "A Devotee";
+  const productNames = items.map((item: any) => {
+    const p = productMap.get(item.productId);
+    return `${p?.name} (x${item.quantity})`;
+  }).join(', ');
+
+  const vendorSummary = Object.keys(groups).map(key => {
+    if (key === 'admin') return 'DevBhakti Admin';
+    const firstItem = groups[key][0];
+    const info = productMap.get(firstItem.productId);
+    return info?.temple?.name || info?.seller?.name || 'Vendor';
+  }).join(', ');
+
+  // Notify Admin (Comprehensive Order Alert)
+  try {
+    await notifyAdmins({
+      title: 'New Master Order! 📢',
+      body: `Customer: ${userDisplayName}\nProducts: ${productNames}\nVendors: ${vendorSummary}\nTotal Amount: ₹${totalAmount}`,
+      data: { link: `/admin/products/orders?id=${order.id}`, orderId: order.id }
+    });
+  } catch (notifyErr) {
+    console.error(`❌ Admin Notification Failed:`, notifyErr);
+  }
+
+  return order;
 };
 
 export const getMyOrders = async (req: any, res: Response) => {
@@ -366,7 +395,8 @@ export const getMyOrders = async (req: any, res: Response) => {
         userId,
         OR: [
           { paymentMethod: "COD" },
-          { paymentStatus: "PAID" }
+          { paymentStatus: "PAID" },
+          { paymentStatus: "FAILED" }
         ]
       },
       include: {

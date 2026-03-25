@@ -189,7 +189,7 @@ export default function TempleEditPoojaPage() {
             const newPackages = [...prev.packages];
             if (newPackages[index]) {
                 newPackages[index] = { ...newPackages[index], [field]: value };
-                
+
                 const update: any = { packages: newPackages };
                 // If it's a Single package and price changed, sync top price
                 if (newPackages[index].name === "Single" && field === 'price') {
@@ -257,7 +257,7 @@ export default function TempleEditPoojaPage() {
                         setShowCropper(false);
                         setTempImage(null);
                     }}
-                    initialAspect={3 / 2}
+                    initialAspect={16 / 9}
                     lockAspect={true}
                     title="Crop Pooja Image"
                 />
@@ -299,7 +299,7 @@ export default function TempleEditPoojaPage() {
                                     Add New
                                 </Button>
                             </div>
-                            
+
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                     <Button variant="outline" className="w-full justify-between h-11 rounded-xl border-slate-200 text-slate-600 hover:bg-transparent">
@@ -324,8 +324,8 @@ export default function TempleEditPoojaPage() {
                                 {selectedCats.map(catName => (
                                     <div key={catName} className="flex items-center gap-1.5 bg-[#7b4623] text-white px-3 py-1.5 rounded-full text-sm">
                                         <span>{catName}</span>
-                                        <X 
-                                            className="w-3.5 h-3.5 cursor-pointer hover:text-red-300" 
+                                        <X
+                                            className="w-3.5 h-3.5 cursor-pointer hover:text-red-300"
                                             onClick={() => toggleCategory(catName)}
                                         />
                                     </div>
@@ -394,6 +394,7 @@ export default function TempleEditPoojaPage() {
                             <p className="text-sm font-semibold">Change Cover Image</p>
                             <p className="text-xs text-muted-foreground whitespace-pre-wrap">Click on the image preview to pick a new file.
                                 Leave as is if you don't want to change the image.</p>
+                            <p className="text-[10px] font-bold text-primary uppercase tracking-widest mt-1">Recommended: 1200x675 (16:9)</p>
                         </div>
                     </div>
                 </div>

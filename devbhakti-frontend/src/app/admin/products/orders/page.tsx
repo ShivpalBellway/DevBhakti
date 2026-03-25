@@ -32,6 +32,16 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -49,8 +59,17 @@ import {
     IndianRupee,
     Phone,
     Printer,
-    Download
+    Download,
+    Calendar as CalendarIcon,
+    X
 } from "lucide-react";
+import { Calendar } from "@/components/ui/calendar";
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from "@/components/ui/popover";
+
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -66,11 +85,17 @@ function AdminOrdersContent() {
     const [isLoading, setIsLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState("");
     const debouncedSearch = useDebounce(searchQuery, 500);
+    const [statusFilter, setStatusFilter] = useState("ALL");
+    const [paymentStatusFilter, setPaymentStatusFilter] = useState("ALL");
+    const [dateFilter, setDateFilter] = useState<Date | undefined>(undefined);
+
     const [selectedOrder, setSelectedOrder] = useState<any>(null);
     const [selectedOrders, setSelectedOrders] = useState<Set<string>>(new Set());
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [totalItems, setTotalItems] = useState(0);
+    const [pendingStatusUpdate, setPendingStatusUpdate] = useState<{ subOrderId: string; status: string } | null>(null);
+    const [showUpdateWarning, setShowUpdateWarning] = useState(false);
     const { toast } = useToast();
 
     useEffect(() => {
@@ -81,7 +106,8 @@ function AdminOrdersContent() {
 
     useEffect(() => {
         loadOrders(currentPage);
-    }, [debouncedSearch, currentPage]);
+    }, [debouncedSearch, statusFilter, paymentStatusFilter, dateFilter, currentPage]);
+
 
     useEffect(() => {
         if (idParam && orders.length > 0) {
@@ -95,7 +121,16 @@ function AdminOrdersContent() {
     const loadOrders = async (page: number) => {
         setIsLoading(true);
         try {
-            const response = await fetchAllOrdersAdmin({ page, limit: 10, search: debouncedSearch });
+            const response = await fetchAllOrdersAdmin({
+                page,
+                limit: 10,
+                search: debouncedSearch,
+                status: statusFilter,
+                paymentStatus: paymentStatusFilter,
+                date: dateFilter ? format(dateFilter, "yyyy-MM-dd") : undefined
+            });
+
+
             if (response.success) {
                 setOrders(response.data);
                 if (response.pagination) {
@@ -115,7 +150,10 @@ function AdminOrdersContent() {
         }
     };
 
-    const handleStatusUpdate = async (subOrderId: string, status: string) => {
+    const handleStatusUpdate = async () => {
+        if (!pendingStatusUpdate) return;
+        const { subOrderId, status } = pendingStatusUpdate;
+
         try {
             const response = await updateSubOrderStatusAdmin(subOrderId, { status });
             if (response.success) {
@@ -126,7 +164,16 @@ function AdminOrdersContent() {
 
                 // Refresh local state for selected order if it's open
                 if (selectedOrder) {
-                    const updatedOrders = await fetchAllOrdersAdmin({ page: currentPage, limit: 10, search: debouncedSearch });
+                    const updatedOrders = await fetchAllOrdersAdmin({
+                        page: currentPage,
+                        limit: 10,
+                        search: debouncedSearch,
+                        status: statusFilter,
+                        paymentStatus: paymentStatusFilter,
+                        date: dateFilter ? format(dateFilter, "yyyy-MM-dd") : undefined
+                    });
+
+
                     if (updatedOrders.success) {
                         setOrders(updatedOrders.data);
                         const refreshed = updatedOrders.data.find((o: any) => o.id === selectedOrder.id);
@@ -142,6 +189,9 @@ function AdminOrdersContent() {
                 description: "Could not update order status",
                 variant: "destructive",
             });
+        } finally {
+            setPendingStatusUpdate(null);
+            setShowUpdateWarning(false);
         }
     };
 
@@ -185,9 +235,20 @@ function AdminOrdersContent() {
             case "DELIVERED": return "bg-green-100 text-green-700 border-green-200";
             case "COMPLETED": return "bg-emerald-100 text-emerald-700 border-emerald-200";
             case "CANCELLED": return "bg-red-100 text-red-700 border-red-200";
+            case "FAILED": return "bg-red-100 text-red-700 border-red-200";
             case "RTO_INITIATED": return "bg-rose-100 text-rose-700 border-rose-200";
             case "RTO_DELIVERED": return "bg-red-100 text-red-700 border-red-200";
             default: return "bg-slate-100 text-slate-700 border-slate-200";
+        }
+    };
+
+    const getPaymentStatusColor = (status: string) => {
+        switch (status) {
+            case "PAID": return "bg-emerald-50 text-emerald-700 border border-emerald-100";
+            case "FAILED": return "bg-red-50 text-red-700 border border-red-200";
+            case "PENDING": return "bg-amber-50 text-amber-700 border border-amber-100";
+            case "REFUNDED": return "bg-sky-50 text-sky-700 border border-sky-100";
+            default: return "bg-slate-50 text-slate-700 border border-slate-100";
         }
     };
 
@@ -228,7 +289,7 @@ function AdminOrdersContent() {
         <div className="space-y-6">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold text-slate-900">Marketplace Orders</h1>
+                    <h1 className="text-3xl font-bold text-slate-900">Product Orders</h1>
                     <p className="text-slate-600 font-medium">Manage and track all product orders across temples</p>
                 </div>
 
@@ -241,9 +302,73 @@ function AdminOrdersContent() {
                             placeholder="Search by ID or Devotee..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="pl-10 w-full md:w-80 border-slate-300 focus:ring-[#794A05]"
+                            className="pl-10 w-full md:w-80 h-10 border-slate-300 focus:ring-[#794A05] rounded-xl font-bold"
                         />
                     </div>
+
+                    <div className="flex items-center gap-2">
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <Button
+                                    variant="outline"
+                                    className={cn(
+                                        "w-[200px] h-10 justify-start text-left font-bold rounded-xl border-slate-300",
+                                        !dateFilter && "text-muted-foreground"
+                                    )}
+                                >
+                                    <CalendarIcon className="mr-2 h-4 w-4" />
+                                    {dateFilter ? format(dateFilter, "PPP") : <span>Pick a date</span>}
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0 rounded-xl" align="start">
+                                <Calendar
+                                    mode="single"
+                                    selected={dateFilter}
+                                    onSelect={(date) => { setDateFilter(date); setCurrentPage(1); }}
+                                    initialFocus
+                                />
+                            </PopoverContent>
+                        </Popover>
+                        {dateFilter && (
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => { setDateFilter(undefined); setCurrentPage(1); }}
+                                className="h-10 w-10 text-slate-400 hover:text-slate-600"
+                            >
+                                <X className="w-4 h-4" />
+                            </Button>
+                        )}
+                    </div>
+
+                    <Select value={statusFilter} onValueChange={(val) => { setStatusFilter(val); setCurrentPage(1); }}>
+
+                        <SelectTrigger className="w-[150px] h-10 rounded-xl border-slate-300 bg-white font-bold">
+                            <SelectValue placeholder="Order Status" />
+                        </SelectTrigger>
+                        <SelectContent className="rounded-xl">
+                            <SelectItem value="ALL">All Status</SelectItem>
+                            <SelectItem value="PENDING">Pending</SelectItem>
+                            <SelectItem value="ACCEPTED">Accepted</SelectItem>
+                            <SelectItem value="PROCESSING">Processing</SelectItem>
+                            <SelectItem value="SHIPPED">Shipped</SelectItem>
+                            <SelectItem value="DELIVERED">Delivered</SelectItem>
+                            <SelectItem value="COMPLETED">Completed</SelectItem>
+                            <SelectItem value="CANCELLED">Cancelled</SelectItem>
+                        </SelectContent>
+                    </Select>
+                    <Select value={paymentStatusFilter} onValueChange={(val) => { setPaymentStatusFilter(val); setCurrentPage(1); }}>
+                        <SelectTrigger className="w-[150px] h-10 rounded-xl border-slate-300 bg-white font-bold">
+                            <SelectValue placeholder="Payment" />
+                        </SelectTrigger>
+                        <SelectContent className="rounded-xl">
+                            <SelectItem value="ALL">All Payment</SelectItem>
+                            <SelectItem value="PENDING">Pending</SelectItem>
+                            <SelectItem value="PAID">Paid</SelectItem>
+                            <SelectItem value="FAILED">Failed</SelectItem>
+                            <SelectItem value="REFUNDED">Refunded</SelectItem>
+                        </SelectContent>
+                    </Select>
                     {selectedOrders.size > 0 && (
                         <>
                             <span className="text-sm font-bold text-[#794A05] bg-orange-50 px-3 py-2 rounded-lg">
@@ -268,9 +393,9 @@ function AdminOrdersContent() {
                         <Download className="w-4 h-4" />
                         Export Excel
                     </Button>
-                    <Button onClick={() => loadOrders(currentPage)} variant="outline" className="border-slate-300 hover:bg-slate-50 h-10">
+                    {/* <Button onClick={() => loadOrders(currentPage)} variant="outline" className="border-slate-300 hover:bg-slate-50 h-10">
                         <Clock className="w-4 h-4 mr-2" /> Refresh
-                    </Button>
+                    </Button> */}
                 </div>
             </div>
 
@@ -339,7 +464,7 @@ function AdminOrdersContent() {
                                     </Badge>
                                 </TableCell>
                                 <TableCell>
-                                    <Badge variant="secondary" className="rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100 text-[10px] font-bold uppercase">
+                                    <Badge variant="secondary" className={cn("rounded-full text-[10px] font-bold uppercase", getPaymentStatusColor(order.paymentStatus))}>
                                         {order.paymentStatus}
                                     </Badge>
                                 </TableCell>
@@ -455,7 +580,10 @@ function AdminOrdersContent() {
                                                 <div className="flex items-center gap-3">
                                                     <Select
                                                         defaultValue={sub.status}
-                                                        onValueChange={(val) => handleStatusUpdate(sub.id, val)}
+                                                        onValueChange={(val) => {
+                                                            setPendingStatusUpdate({ subOrderId: sub.id, status: val });
+                                                            setShowUpdateWarning(true);
+                                                        }}
                                                     >
                                                         <SelectTrigger className="w-[160px] h-10 font-extrabold border-slate-300 rounded-xl bg-white">
                                                             <SelectValue />
@@ -551,6 +679,23 @@ function AdminOrdersContent() {
                     <Button variant="outline" size="sm" onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages}>Next</Button>
                 </div>
             )}
+            <AlertDialog open={showUpdateWarning} onOpenChange={setShowUpdateWarning}>
+                <AlertDialogContent className="rounded-[2rem] border-none shadow-2xl">
+                    <AlertDialogHeader>
+                        <AlertDialogTitle className="text-xl font-bold flex items-center gap-2">
+                            Confirm Status Update
+                        </AlertDialogTitle>
+                        <AlertDialogDescription className="font-medium text-slate-600">
+                            Are you sure you want to change the order status to <span className="text-[#794A05] font-extrabold">{pendingStatusUpdate?.status}</span>?
+                            This will notify the customer and potentially trigger shipping processes.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter className="gap-2">
+                        <AlertDialogCancel className="rounded-xl border-slate-200">No, Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleStatusUpdate} className="rounded-xl bg-[#794A05] hover:bg-[#5d3904]">Yes, Update</AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }

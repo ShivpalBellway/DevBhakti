@@ -19,7 +19,7 @@ import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { fetchMyTempleBookings, fetchTempleOrders, fetchMyTempleProfile, fetchMyProducts } from "@/api/templeAdminController";
+import { fetchMyTempleBookings, fetchTempleOrders, fetchMyTempleProfile, fetchMyProducts, fetchMyEvents } from "@/api/templeAdminController";
 import { format } from "date-fns";
 import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -28,6 +28,17 @@ import {
     PopoverContent,
     PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { downloadDonationsExcel, downloadDonationsPdf } from "@/api/templeAdminController";
+import { toast } from "@/hooks/use-toast";
+import { FileText, FileSpreadsheet } from "lucide-react";
 
 
 
@@ -76,6 +87,7 @@ export default function TempleDashboardPage() {
     const router = useRouter();
     const [bookings, setBookings] = useState<any[]>([]);
     const [orders, setOrders] = useState<any[]>([]);
+    const [events, setEvents] = useState<any[]>([]);
     const [totalProducts, setTotalProducts] = useState(0);
     const [isLoading, setIsLoading] = useState(true);
     const [templeProfile, setTempleProfile] = useState<any>(null);
@@ -87,10 +99,11 @@ export default function TempleDashboardPage() {
     const loadDashboardData = async () => {
         setIsLoading(true);
         try {
-            const [profileRes, bookingsRes, productsRes] = await Promise.all([
+            const [profileRes, bookingsRes, productsRes, eventsRes] = await Promise.all([
                 fetchMyTempleProfile(),
                 fetchMyTempleBookings(),
-                fetchMyProducts() // Fetch products for count
+                fetchMyProducts(),
+                fetchMyEvents()
             ]);
 
             if (profileRes.success) {
@@ -98,7 +111,11 @@ export default function TempleDashboardPage() {
             }
 
             if (bookingsRes.success) {
-                setBookings(bookingsRes.data || []); // Ensure array
+                setBookings(bookingsRes.data || []);
+            }
+
+            if (eventsRes.success) {
+                setEvents(eventsRes.data || []);
             }
 
             if (productsRes.success) {
@@ -121,6 +138,53 @@ export default function TempleDashboardPage() {
             console.error("Dashboard data load error:", error);
         } finally {
             setIsLoading(false);
+        }
+    };
+
+    const handleDownload = async (type: 'excel' | 'pdf') => {
+        if (!templeProfile?.id) {
+            toast({
+                title: "Error",
+                description: "Temple profile not loaded. Please refresh.",
+                variant: "destructive",
+            });
+            return;
+        }
+
+        try {
+            toast({
+                title: "Processing",
+                description: `Preparing your ${type.toUpperCase()} report...`,
+            });
+            
+            const data = type === 'excel' 
+                ? await downloadDonationsExcel(templeProfile.id)
+                : await downloadDonationsPdf(templeProfile.id);
+            
+            const blob = new Blob([data], { 
+                type: type === 'excel' 
+                    ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+                    : 'application/pdf' 
+            });
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', `donations_report_${new Date().toISOString().slice(0, 10)}.${type === 'excel' ? 'xlsx' : 'pdf'}`);
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            
+            toast({
+                title: "Success",
+                description: "Report downloaded successfully.",
+            });
+        } catch (error) {
+            console.error("Download Error:", error);
+            toast({
+                title: "Download Failed",
+                description: "There was an error generating your report.",
+                variant: "destructive",
+            });
         }
     };
 
@@ -242,6 +306,28 @@ export default function TempleDashboardPage() {
         .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
         .slice(0, 5);
 
+    const todayStr = new Date().toISOString().slice(0, 10); // "YYYY-MM-DD"
+    const upcomingEventsData = [...events]
+        .filter(e => {
+            if (!e.date) return false;
+            try {
+                const date = new Date(e.date);
+                if (isNaN(date.getTime())) return false; // Invalid date
+                const eventDateStr = date.toISOString().slice(0, 10);
+                return eventDateStr >= todayStr;
+            } catch (err) {
+                return false;
+            }
+        })
+        .sort((a, b) => {
+            const dateA = new Date(a.date).getTime();
+            const dateB = new Date(b.date).getTime();
+            if (isNaN(dateA)) return 1;
+            if (isNaN(dateB)) return -1;
+            return dateA - dateB;
+        })
+        .slice(0, 5);
+
     if (isLoading) {
         return (
             <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
@@ -360,8 +446,8 @@ export default function TempleDashboardPage() {
                 </div>
             </div>
 
-            {/* Main content grid */}
-            <div className="grid lg:grid-cols-2 gap-8">
+            {/* Main content grid - 3 columns */}
+            <div className="grid lg:grid-cols-3 gap-8">
                 {/* Todays Product Orders */}
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
@@ -405,6 +491,55 @@ export default function TempleDashboardPage() {
                                     </div>
                                 )) : (
                                     <div className="py-12 text-center text-slate-400 text-sm italic font-medium">No recent orders found.</div>
+                                )}
+                            </div>
+                        </CardContent>
+                    </Card>
+                </motion.div>
+
+                {/* Upcoming Events */}
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.4, delay: 0.45 }}
+                >
+                    <Card className="border-none shadow-sm h-full rounded-[2rem] bg-white overflow-hidden">
+                        <CardHeader className="flex flex-row items-center justify-between p-6 pb-2">
+                            <CardTitle className="text-xl font-black text-slate-800 font-serif">Upcoming Events</CardTitle>
+                            <button
+                                onClick={() => router.push('/temples/dashboard/events')}
+                                className="text-xs font-black text-amber-600 hover:text-amber-700 flex items-center gap-1 uppercase tracking-widest"
+                            >
+                                View all
+                                <ArrowUpRight className="w-4 h-4" />
+                            </button>
+                        </CardHeader>
+                        <CardContent className="p-6">
+                            <div className="space-y-4">
+                                {upcomingEventsData.length > 0 ? upcomingEventsData.map((event, index) => (
+                                    <div
+                                        key={index}
+                                        className="flex items-center justify-between p-4 rounded-2xl bg-rose-50/50 border border-rose-100/50 hover:bg-white hover:border-rose-300 hover:shadow-md transition-all cursor-pointer group"
+                                        onClick={() => router.push('/temples/dashboard/events')}
+                                    >
+                                        <div className="flex items-center gap-4">
+                                            <div className="w-12 h-12 rounded-xl bg-rose-100 flex items-center justify-center group-hover:bg-rose-500 transition-colors">
+                                                <Video className="w-6 h-6 text-rose-600 group-hover:text-white" />
+                                            </div>
+                                            <div>
+                                                <p className="text-sm font-black text-slate-900">{event.name || 'Event'}</p>
+                                                <p className="text-xs font-bold text-slate-400">
+                                                    {event.date ? format(new Date(event.date), "MMM d, yyyy") : 'Date TBD'}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <div className="text-right">
+                                            <span className="text-[10px] font-black text-rose-600 uppercase tracking-widest">Upcoming</span>
+                                            {event.location && <p className="text-[10px] text-slate-400 font-bold mt-0.5">{event.location}</p>}
+                                        </div>
+                                    </div>
+                                )) : (
+                                    <div className="py-12 text-center text-slate-400 text-sm italic font-medium">No upcoming events.</div>
                                 )}
                             </div>
                         </CardContent>
@@ -488,7 +623,13 @@ export default function TempleDashboardPage() {
                             ].map((action) => (
                                 <button
                                     key={action.label}
-                                    onClick={() => !action.isExcel && router.push(action.href)}
+                                    onClick={() => {
+                                        if (action.isExcel) {
+                                            handleDownload('excel');
+                                        } else {
+                                            router.push(action.href);
+                                        }
+                                    }}
                                     className="relative flex flex-col items-center gap-4 p-6 rounded-[2rem] border border-slate-100 hover:border-amber-200 hover:bg-orange-50/30 transition-all group overflow-hidden"
                                 >
                                     <div
@@ -505,18 +646,37 @@ export default function TempleDashboardPage() {
                                     </div>
                                     {action.isExcel && (
                                         <div className="absolute top-2 right-2 flex gap-1">
-                                            <Popover>
-                                                <PopoverTrigger asChild>
+                                            <DropdownMenu>
+                                                <DropdownMenuTrigger asChild>
                                                     <div className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center hover:bg-emerald-100 transition-colors cursor-pointer"
                                                         onClick={(e) => e.stopPropagation()}
                                                     >
-                                                        <Info className="w-3 h-3 text-slate-400" />
+                                                        <ArrowUpRight className="w-3 h-3 text-slate-400" />
                                                     </div>
-                                                </PopoverTrigger>
-                                                <PopoverContent className="bg-slate-900 text-white border-none p-4 rounded-xl max-w-[200px] z-[100]">
-                                                    <p className="text-[10px] font-medium leading-relaxed">Download detailed donation and devotee reports in Excel format.</p>
-                                                </PopoverContent>
-                                            </Popover>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent align="end" className="w-48 p-2 rounded-2xl border-none shadow-2xl bg-white/95 backdrop-blur-md">
+                                                    <DropdownMenuLabel className="text-xs font-black text-slate-400 uppercase tracking-widest px-3 py-2">Select Format</DropdownMenuLabel>
+                                                    <DropdownMenuSeparator className="bg-slate-100 mb-1" />
+                                                    <DropdownMenuItem 
+                                                        onClick={() => handleDownload('excel')}
+                                                        className="flex items-center gap-3 p-3 rounded-xl cursor-pointer hover:bg-emerald-50 focus:bg-emerald-50 group/item transition-colors"
+                                                    >
+                                                        <div className="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center group-hover/item:scale-110 transition-transform">
+                                                            <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
+                                                        </div>
+                                                        <span className="text-sm font-bold text-slate-700">Excel Report</span>
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuItem 
+                                                        onClick={() => handleDownload('pdf')}
+                                                        className="flex items-center gap-3 p-3 rounded-xl cursor-pointer hover:bg-rose-50 focus:bg-rose-50 group/item transition-colors"
+                                                    >
+                                                        <div className="w-8 h-8 rounded-lg bg-rose-100 flex items-center justify-center group-hover/item:scale-110 transition-transform">
+                                                            <FileText className="w-4 h-4 text-rose-600" />
+                                                        </div>
+                                                        <span className="text-sm font-bold text-slate-700">PDF Report</span>
+                                                    </DropdownMenuItem>
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
                                         </div>
                                     )}
                                 </button>

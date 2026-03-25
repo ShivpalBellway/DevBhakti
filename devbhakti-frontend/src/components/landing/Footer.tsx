@@ -9,12 +9,13 @@ const Footer: React.FC = () => {
       { label: "Marketplace", href: "/marketplace" },
       { label: "Live Darshan", href: "/live-darshan" },
       { label: "Sacred Temples", href: "/temples" },
-      { label: "Register as Temple", href: "/temples/register" },
       { label: "Trust & Transparency", href: "/#trust" },
     ],
     platform: [
       { label: "About Us", href: "/about" },
       { label: "Contact Us", href: "/contact" },
+      { label: "Register Temple/Login", href: "/temples/register" },
+      { label: "Seller Login", href: "/seller" },
     ],
     legal: [
       { label: "Terms of Service", href: "/terms-of-service" },
@@ -35,7 +36,7 @@ const Footer: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-6 gap-x-4">
           {/* Brand */}
           <div className="lg:col-span-2">
-            <Logo size="lg" variant="full" className="text-white bg-[#DCB35D] rounded-2xl" />
+            <Logo size="lg" variant="full" className="text-white bg-white rounded-2xl" />
             <p className="text-sidebar-foreground/70 mt-4 max-w-sm">
               Connecting devotees with sacred temples through technology.
               Experience divine darshan, book poojas, and shop authentic
@@ -52,7 +53,7 @@ const Footer: React.FC = () => {
                 <li key={link.label}>
                   <Link
                     href={link.href}
-                    className="text-sidebar-foreground/70 hover:text-[#b6d600] transition-colors"
+                    className="text-sidebar-foreground/70 hover:text-[#DCB35D] transition-colors"
                   >
                     {link.label}
                   </Link>
@@ -69,7 +70,7 @@ const Footer: React.FC = () => {
                 <li key={link.label}>
                   <Link
                     href={link.href}
-                    className="text-sidebar-foreground/70 hover:text-[#46daffc7] transition-colors"
+                    className="text-sidebar-foreground/70 hover:text-[#DCB35D] transition-colors"
                   >
                     {link.label}
                   </Link>
@@ -86,7 +87,7 @@ const Footer: React.FC = () => {
                 <li key={link.label}>
                   <Link
                     href={link.href}
-                    className="text-sidebar-foreground/70 hover:text-[#46daffc7] transition-colors"
+                    className="text-sidebar-foreground/70 hover:text-[#DCB35D] transition-colors"
                   >
                     {link.label}
                   </Link>
@@ -101,7 +102,7 @@ const Footer: React.FC = () => {
             <ul className="space-y-3">
               {footerLinks.support.map((link) => (
                 <li key={link.label}>
-                  <a href={link.href} className="flex items-center gap-2 hover:text-white transition-colors text-sm">
+                  <a href={link.href} className="flex items-center gap-2 hover:text-[#DCB35D] transition-colors text-sm">
                     <Mail className="w-4 h-4 flex-shrink-0" />
                     {link.label}
                   </a>
@@ -115,7 +116,7 @@ const Footer: React.FC = () => {
         <div className="border-t border-[#DCB35D] mt-12 pt-8">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="flex flex-wrap items-center justify-center gap-6 text-sm text-sidebar-foreground/70">
-              <a href="mailto:support@devbhakti.in" className="flex items-center gap-2 hover:text-white transition-colors">
+              <a href="mailto:support@devbhakti.in" className="flex items-center gap-2 hover:text-[#DCB35D] transition-colors">
                 <Mail className="w-4 h-4" />
                 support@devbhakti.in
               </a>

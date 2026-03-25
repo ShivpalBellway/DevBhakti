@@ -13,7 +13,9 @@ import {
     Sparkles,
     Check,
     ChevronsUpDown,
-    X
+    X,
+    Power,
+    PowerOff
 } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -58,8 +60,10 @@ import {
     updateMyEvent,
     deleteMyEvent,
     fetchMyPoojas,
+    toggleEventStatus,
 } from "@/api/templeAdminController";
 import { useToast } from "@/hooks/use-toast";
+import { Switch } from "@/components/ui/switch";
 
 export default function TempleEventsPage() {
     const [events, setEvents] = useState<any[]>([]);
@@ -80,6 +84,7 @@ export default function TempleEventsPage() {
         date: "",
         time: "",
         description: "",
+        status: true,
     });
 
     const [timeData, setTimeData] = useState({
@@ -141,6 +146,7 @@ export default function TempleEventsPage() {
                 date: event.date,
                 time: event.time || "",
                 description: event.description || "",
+                status: event.status,
             });
             setTimeData(parseStoredTime(event.time));
             // Pre-populate selected poojas in edit mode
@@ -156,6 +162,7 @@ export default function TempleEventsPage() {
                 date: "",
                 time: "",
                 description: "",
+                status: true,
             });
             setTimeData({ hours: "10", minutes: "00", period: "AM" });
             setSelectedPoojaIds([]);
@@ -173,6 +180,14 @@ export default function TempleEventsPage() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (!formData.date) {
+            toast({
+                title: "Select Date",
+                description: "Please select a date for the event",
+                variant: "destructive",
+            });
+            return;
+        }
         setIsSubmitting(true);
         try {
             const payload = {
@@ -215,6 +230,23 @@ export default function TempleEventsPage() {
                     variant: "destructive",
                 });
             }
+        }
+    };
+
+    const handleToggleStatus = async (id: string, currentStatus: boolean) => {
+        try {
+            await toggleEventStatus(id);
+            setEvents(prev => prev.map(ev => ev.id === id ? { ...ev, status: !currentStatus } : ev));
+            toast({
+                title: "Status Updated",
+                description: `Event ${!currentStatus ? 'activated' : 'deactivated'} successfully`,
+            });
+        } catch (error) {
+            toast({
+                title: "Error",
+                description: "Failed to update event status",
+                variant: "destructive",
+            });
         }
     };
 
@@ -263,6 +295,7 @@ export default function TempleEventsPage() {
                             <TableHead>Date & Time</TableHead>
                             <TableHead>Description</TableHead>
                             <TableHead>Recommended Sevas</TableHead>
+                            <TableHead>Status</TableHead>
                             <TableHead className="text-right">Actions</TableHead>
                         </TableRow>
                     </TableHeader>
@@ -330,6 +363,17 @@ export default function TempleEventsPage() {
                                             <span className="text-xs text-muted-foreground italic">None</span>
                                         )}
                                     </TableCell>
+                                    <TableCell>
+                                        <div className="flex items-center gap-2">
+                                            <Switch
+                                                checked={event.status}
+                                                onCheckedChange={() => handleToggleStatus(event.id, event.status)}
+                                            />
+                                            <Badge variant={event.status ? "default" : "secondary"} className={event.status ? "bg-emerald-100 text-emerald-800" : ""}>
+                                                {event.status ? "Active" : "Inactive"}
+                                            </Badge>
+                                        </div>
+                                    </TableCell>
                                     <TableCell className="text-right">
                                         <div className="flex justify-end gap-2">
                                             <Button
@@ -382,6 +426,7 @@ export default function TempleEventsPage() {
                                 }
                                 className="h-11 rounded-xl border-slate-200 focus:border-[#7b4623] focus:ring-[#7b4623]/10"
                                 required
+                                maxLength={100}
                             />
                         </div>
 
@@ -414,6 +459,9 @@ export default function TempleEventsPage() {
                                                     ...formData,
                                                     date: date ? format(date, "PPP") : "",
                                                 })
+                                            }
+                                            disabled={(date) =>
+                                                date < new Date(new Date().setHours(0, 0, 0, 0))
                                             }
                                             initialFocus
                                         />
@@ -464,6 +512,20 @@ export default function TempleEventsPage() {
                                     setFormData({ ...formData, description: e.target.value })
                                 }
                                 className="h-32 rounded-xl resize-none border-slate-200 focus:border-[#7b4623] focus:ring-[#7b4623]/10"
+                                maxLength={1000}
+                            />
+                        </div>
+
+                        <div className="flex items-center justify-between p-4 border rounded-xl bg-slate-50">
+                            <div className="space-y-0.5">
+                                <Label className="text-base font-semibold text-slate-700">Event Status</Label>
+                                <p className="text-sm text-muted-foreground">
+                                    Show or hide this event on the platform
+                                </p>
+                            </div>
+                            <Switch
+                                checked={formData.status}
+                                onCheckedChange={(checked) => setFormData({ ...formData, status: checked })}
                             />
                         </div>
 

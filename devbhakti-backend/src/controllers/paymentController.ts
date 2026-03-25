@@ -292,3 +292,110 @@ export const verifyPayment = async (req: Request, res: Response) => {
 
 };
 
+
+export const paymentFailed = async (req: Request, res: Response) => {
+    try {
+        const {
+            orderType, // 'MARKETPLACE', 'POOJA', 'DONATION'
+            referenceId, // For POOJA and DONATION (DB ID)
+            orderData, // For MARKETPLACE (contains all items/address)
+            userId,
+            phone,
+            userName,
+            error
+        } = req.body;
+
+        console.log(`Payment Failed: Type=${orderType}, User=${userId}, Phone=${phone}`);
+
+        if (orderType === "POOJA" && referenceId) {
+            await prisma.poojaBooking.update({
+                where: { id: referenceId },
+                data: { status: "CANCELLED" }
+            });
+        } else if (orderType === "DONATION" && referenceId) {
+            await prisma.donation.update({
+                where: { id: referenceId },
+                data: { status: "FAILED" }
+            });
+        } else if (orderType === "MARKETPLACE" && orderData && userId) {
+            // For Marketplace, we create the order record only on success usually.
+            // But for tracking failures, we create a FAILED record now.
+            const { items, totalAmount, shippingAddress, paymentMethod, platformFee } = orderData;
+            
+            await prisma.$transaction(async (tx) => {
+                const order = await tx.order.create({
+                    data: {
+                        userId,
+                        totalAmount,
+                        paymentMethod,
+                        shippingAddress,
+                        status: "CANCELLED",
+                        paymentStatus: "FAILED",
+                        platformFee: platformFee || 0,
+                    }
+                });
+
+                // Create SubOrders marked as FAILED
+                const productIds = items.map((item: any) => item.productId);
+                const products = await tx.product.findMany({
+                    where: { id: { in: productIds } },
+                    select: { id: true, templeId: true, sellerId: true }
+                });
+                const productMap = new Map(products.map(p => [p.id, p]));
+
+                const groups: Record<string, any[]> = {};
+                items.forEach((item: any) => {
+                    const info = productMap.get(item.productId);
+                    const key = info?.templeId ? `temple_${info.templeId}` : (info?.sellerId ? `seller_${info.sellerId}` : "admin");
+                    if (!groups[key]) groups[key] = [];
+                    groups[key].push(item);
+                });
+
+                for (const [key, groupItems] of Object.entries(groups)) {
+                    const subOrderTotal = groupItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+                    const templeId = key.startsWith("temple_") ? key.replace("temple_", "") : null;
+                    const sellerId = key.startsWith("seller_") ? key.replace("seller_", "") : null;
+
+                    await tx.subOrder.create({
+                        data: {
+                            orderId: order.id,
+                            templeId,
+                            sellerId,
+                            totalAmount: subOrderTotal,
+                            status: "FAILED",
+                            items: {
+                                create: groupItems.map((item) => ({
+                                    productId: item.productId,
+                                    variantId: item.variantId,
+                                    variantName: item.variantName,
+                                    price: item.price,
+                                    quantity: item.quantity,
+                                })),
+                            },
+                        },
+                    });
+                }
+            });
+        }
+
+        // Trigger WhatsApp notification for failure
+        if (phone) {
+            try {
+                const { sendWhatsAppMessage } = require('../services/whatsappService');
+                await sendWhatsAppMessage(
+                    phone.startsWith('+') ? phone : `+91${phone}`,
+                    userName || 'Bhakt',
+                    "payment_failed",
+                    []
+                );
+            } catch (waErr) {
+                console.error("WhatsApp Failure Error:", waErr);
+            }
+        }
+
+        return res.status(200).json({ success: true, message: "Failure recorded" });
+    } catch (error: any) {
+        console.error("Payment Failure Recording Error:", error);
+        return res.status(500).json({ success: false, message: error.message });
+    }
+};

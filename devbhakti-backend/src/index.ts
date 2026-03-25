@@ -52,6 +52,8 @@ import sellerStaffManagementRoutes from './routes/seller/staffManagementRoutes';
 import notificationRoutes from './routes/notificationRoutes';
 import './services/firebaseService'; // Initialize Firebase Admin on startup
 
+import adminSettingsRoutes from './routes/admin/globalSettingsRoutes';
+
 
 dotenv.config();
 
@@ -87,6 +89,7 @@ app.use('/api/admin/commission-slabs', adminCommissionSlabRoutes);
 app.use('/api/admin/team', adminStaffManagementRoutes);
 app.use("/api/admin/donations", adminDonationRoutes);
 app.use('/api/admin/marketing', adminMarketingRoutes);
+app.use('/api/admin/settings', adminSettingsRoutes);
 
 
 

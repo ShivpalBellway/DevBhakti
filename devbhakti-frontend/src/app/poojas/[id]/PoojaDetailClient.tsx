@@ -23,7 +23,7 @@ import Footer from "@/components/landing/Footer";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { fetchPublicPoojaById } from "@/api/publicController";
+import { fetchPublicPoojaById, fetchRatingsSettings } from "@/api/publicController";
 import { API_URL } from "@/config/apiConfig";
 import { toast } from "@/hooks/use-toast";
 import { getTempleUrl } from "@/lib/utils/templeUtils";
@@ -39,6 +39,7 @@ const PoojaDetailClient = ({ id }: PoojaDetailClientProps) => {
     const [activeTab, setActiveTab] = useState("about");
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [user, setUser] = useState<any>(null);
+    const [showRatings, setShowRatings] = useState(false);
     const router = useRouter();
 
     useEffect(() => {
@@ -87,17 +88,23 @@ const PoojaDetailClient = ({ id }: PoojaDetailClientProps) => {
     };
 
     useEffect(() => {
-        const loadPooja = async () => {
+        const loadPoojaAndSettings = async () => {
             try {
-                const data = await fetchPublicPoojaById(id);
-                setPooja(data);
+                const [poojaData, settingsData] = await Promise.all([
+                    fetchPublicPoojaById(id),
+                    fetchRatingsSettings()
+                ]);
+                setPooja(poojaData);
+                if (settingsData && settingsData.settings) {
+                    setShowRatings(settingsData.settings.pooja.details);
+                }
             } catch (error) {
-                console.error("Failed to fetch pooja:", error);
+                console.error("Failed to fetch pooja or settings:", error);
             } finally {
                 setIsLoading(false);
             }
         };
-        loadPooja();
+        loadPoojaAndSettings();
     }, [id]);
 
 
@@ -250,7 +257,7 @@ const PoojaDetailClient = ({ id }: PoojaDetailClientProps) => {
                                         { id: "benefits", label: "Benefits", icon: CheckCircle2 },
                                         // { id: "process", label: "Process", icon: PlayCircle },
                                         { id: "temple", label: "Temple", icon: MapPin },
-                                        { id: "reviews", label: "Reviews", icon: Star },
+                                        ...(showRatings ? [{ id: "reviews", label: "Reviews", icon: Star }] : []),
                                         ...(pooja.faqs && Array.isArray(pooja.faqs) && pooja.faqs.length > 0
                                             ? [{ id: "faqs", label: "FAQs", icon: HelpCircle }]
                                             : []),

@@ -19,7 +19,7 @@ import {
     ShoppingCart
 } from "lucide-react";
 import { fetchUserFavorites, removeFavorite } from "@/api/userController";
-import { API_URL } from "@/config/apiConfig";
+import { API_URL, BASE_URL } from "@/config/apiConfig";
 import { getTempleUrl } from "@/lib/utils/templeUtils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -57,16 +57,20 @@ const FavoritesPage: React.FC = () => {
         }
     };
 
-    const handleRemove = async (e: React.MouseEvent, type: 'temple' | 'pooja', id: string) => {
+    const handleRemove = async (e: React.MouseEvent, type: 'temple' | 'pooja' | 'product', id: string) => {
         e.preventDefault();
         e.stopPropagation();
 
         try {
-            const data = type === 'temple' ? { templeId: id } : { poojaId: id };
+            const data = type === 'temple' ? { templeId: id } : 
+                         type === 'pooja' ? { poojaId: id } : 
+                         { productId: id };
             const res = await removeFavorite(data);
             if (res.success) {
                 setFavorites(favorites.filter(f =>
-                    type === 'temple' ? f.templeId !== id : f.poojaId !== id
+                    type === 'temple' ? f.templeId !== id : 
+                    type === 'pooja' ? f.poojaId !== id : 
+                    f.productId !== id
                 ));
                 toast({ title: "Removed from favorites" });
             }
@@ -82,7 +86,25 @@ const FavoritesPage: React.FC = () => {
     const getFullImageUrl = (path: string) => {
         if (!path) return "/placeholder.jpg";
         if (path.startsWith('http')) return path;
-        return `${API_URL.replace('/api', '')}${path}`;
+        return `${BASE_URL}${path}`;
+    };
+
+    const getProductPrice = (product: any) => {
+        const variants = product.variants || [];
+        if (variants.length === 0) return "₹0";
+        
+        const prices = variants.map((v: any) => v.price);
+        const min = Math.min(...prices);
+        const max = Math.max(...prices);
+        
+        if (min === max) return `₹${min}`;
+        return `₹${min} - ₹${max}`;
+    };
+
+    const getProductStartingPrice = (product: any) => {
+        const variants = product.variants || [];
+        if (variants.length === 0) return 0;
+        return Math.min(...variants.map((v: any) => v.price));
     };
 
     const favoriteTemples = favorites.filter(f => f.temple).map(f => f.temple);
@@ -199,8 +221,8 @@ const FavoritesPage: React.FC = () => {
                                                         </div>
                                                         <div className="flex items-center justify-between pt-3 border-t border-zinc-50">
                                                             <div className="flex items-center gap-1">
-                                                                 <Star className="h-3.5 w-3.5 text-amber-500 fill-amber-500" />
-                                                                 <span className="font-bold text-zinc-900 text-sm">{temple.rating}</span>
+                                                                <Star className="h-3.5 w-3.5 text-amber-500 fill-amber-500" />
+                                                                <span className="font-bold text-zinc-900 text-sm">{temple.rating}</span>
                                                             </div>
                                                             <div className="text-primary font-bold text-[11px] flex items-center gap-1 uppercase tracking-wider">
                                                                 Details
@@ -222,8 +244,8 @@ const FavoritesPage: React.FC = () => {
                                     ))
                                 ) : (
                                     <div className="col-span-full py-20 bg-white/50 rounded-[3rem] border-2 border-dashed border-zinc-200 text-center">
-                                        <div className="w-20 h-20 bg-zinc-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                                            <Search className="w-10 h-10 text-zinc-300" />
+                                        <div className="w-20 h-20 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                                            <Search className="w-10 h-10 text-primary-300" />
                                         </div>
                                         <h3 className="text-2xl font-bold text-zinc-900 mb-2">No favorite temples yet</h3>
                                         <p className="text-zinc-500 mb-8">Start exploring and save temples you'd like to visit.</p>
@@ -327,53 +349,81 @@ const FavoritesPage: React.FC = () => {
                                             exit={{ opacity: 0, scale: 0.8 }}
                                             transition={{ duration: 0.3 }}
                                         >
-                                            <div className="group relative bg-white rounded-[1.5rem] p-2.5 shadow-sm hover:shadow-xl transition-all duration-500 border border-blue-50/50 h-full flex flex-col">
+                                            <div className="group relative bg-white rounded-[2rem] p-3 shadow-sm hover:shadow-xl transition-all duration-500 border border-orange-50/50 h-full flex flex-col">
                                                 <Link href={`/marketplace/product/${product.id}`}>
-                                                    <div className="relative aspect-square overflow-hidden rounded-[1.2rem] mb-3">
+                                                    <div className="relative aspect-[4/5] overflow-hidden rounded-[1.5rem] mb-4 bg-zinc-50">
                                                         <NextImage
                                                             src={getFullImageUrl(product.image)}
                                                             alt={product.name}
                                                             fill
                                                             className="object-cover group-hover:scale-110 transition-transform duration-700"
+                                                            onError={(e: any) => { e.currentTarget.src = '/placeholder.jpg' }}
                                                         />
-                                                        <div className="absolute top-2 left-2">
-                                                            <Badge className="bg-blue-600 text-white border-none text-[9px] px-2 py-0">
-                                                                Product
+                                                        <div className="absolute top-3 left-3 flex gap-2">
+                                                            <Badge className="bg-white/90 backdrop-blur-md text-zinc-900 border-none text-[10px]">
+                                                                {product.category || "Sacred Item"}
                                                             </Badge>
                                                         </div>
+                                                        <div className="absolute bottom-3 right-3">
+                                                            <div className="bg-orange-500 text-white px-3 py-1.5 rounded-xl text-xs font-bold shadow-lg">
+                                                                {getProductPrice(product)}
+                                                            </div>
+                                                        </div>
                                                     </div>
-                                                    <div className="px-2 pb-2">
-                                                        <h3 className="text-sm font-bold text-zinc-900 mb-1 group-hover:text-primary transition-colors line-clamp-1">
+                                                    <div className="px-2 pb-2 flex-grow">
+                                                        <h3 className="text-lg font-bold text-zinc-900 mb-1 group-hover:text-primary transition-colors line-clamp-2">
                                                             {product.name}
                                                         </h3>
-                                                        <div className="flex items-center justify-between mt-3">
-                                                            <span className="text-lg font-black text-blue-600">₹{product.variants?.[0]?.price || 0}</span>
-                                                            <Button size="icon" className="h-8 w-8 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white transition-all">
-                                                                <ShoppingCart className="w-4 h-4" />
-                                                            </Button>
+                                                        <p className="text-zinc-500 text-[11px] line-clamp-2 mb-4">
+                                                            {product.description}
+                                                        </p>
+                                                    </div>
+                                                    <div className="mt-auto px-2 border-t border-zinc-50 pt-3 flex items-center justify-between">
+                                                        <div className="text-xl font-extrabold text-zinc-900">
+                                                            {getProductPrice(product)}
                                                         </div>
+                                                        <Button size="icon" className="h-10 w-10 rounded-xl bg-primary/10 text-primary hover:bg-primary hover:text-white transition-all shadow-sm">
+                                                            <ShoppingCart className="w-5 h-5" />
+                                                        </Button>
                                                     </div>
                                                 </Link>
                                                 <button
-                                                    onClick={(e) => handleRemove(e, 'pooja', product.id)} // Shared remove logic works with ID
-                                                    className="absolute top-4 right-4 z-20 p-1.5 rounded-full bg-white/90 text-red-500 hover:bg-red-500 hover:text-white transition-all duration-300 shadow-sm border border-zinc-100"
+                                                    onClick={(e) => handleRemove(e, 'product', product.id)}
+                                                    className="absolute top-5 right-5 z-20 p-2 rounded-full bg-red-50 text-red-500 hover:bg-red-500 hover:text-white transition-all duration-300 shadow-md transform hover:scale-110"
+                                                    title="Remove from favorites"
                                                 >
-                                                    <Trash2 className="w-3.5 h-3.5" />
+                                                    <Trash2 className="w-4 h-4" />
                                                 </button>
                                             </div>
                                         </motion.div>
                                     ))
                                 ) : (
                                     <div className="col-span-full py-20 bg-white/50 rounded-[3rem] border-2 border-dashed border-zinc-200 text-center">
-                                        <div className="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-6">
-                                            <ShoppingBag className="w-10 h-10 text-blue-400" />
+                                        <div className="w-20 h-20 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                                            <ShoppingBag className="w-10 h-10 text-primary-400" />
                                         </div>
                                         <h3 className="text-2xl font-bold text-zinc-900 mb-2">No saved products</h3>
-                                        <p className="text-zinc-500 mb-8">Your favorite items from the sacred marketplace will appear here.</p>
-                                        <Button asChild className="rounded-2xl px-8 h-12 bg-blue-600">
-                                            <Link href="/marketplace">Shop Marketplace</Link>
+                                        <p className="text-primary-500 mb-8">Your favorite items from the sacred marketplace will appear here.</p>
+                                        <Button asChild className="rounded-2xl px-8 h-12 ">
+                                            <Link href="/marketplace">Shop Products</Link>
                                         </Button>
                                     </div>
+                                    // <div className="col-span-full py-20 bg-white/50 rounded-[3rem] border-2 border-dashed border-zinc-200 text-center">
+                                    //     <div className="w-20 h-20 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                                    //         <Flame className="w-10 h-10 text-primary" />
+                                    //     </div>
+                                    //     <h3 className="text-2xl font-bold text-zinc-900 mb-2">No saved rituals</h3>
+                                    //     <p className="text-zinc-500 mb-8">Save sacred poojas and sevas that you wish to perform.</p>
+                                    //     <Button asChild className="rounded-2xl px-8 h-12 bg-primary">
+                                    //         <Link href="/poojas">Explore Poojas</Link>
+                                    //     </Button>
+                                    // </div>
+
+
+
+
+
+
                                 )}
                             </AnimatePresence>
                         </div>

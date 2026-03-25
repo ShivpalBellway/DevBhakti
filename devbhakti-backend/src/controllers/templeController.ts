@@ -64,7 +64,7 @@ export const getTempleFilters = async (req: Request, res: Response) => {
 export const getAllTemples = async (req: Request, res: Response) => {
   try {
     const userId = getUserIdFromRequest(req);
-    const { search, category, location, pooja } = req.query;
+    const { search, category, location, pooja, poojaId } = req.query;
 
     const whereClause: any = {
       isActive: true,
@@ -74,6 +74,8 @@ export const getAllTemples = async (req: Request, res: Response) => {
       whereClause.OR = [
         { name: { contains: String(search), mode: 'insensitive' } },
         { location: { contains: String(search), mode: 'insensitive' } },
+        { description: { contains: String(search), mode: 'insensitive' } },
+        { category: { contains: String(search), mode: 'insensitive' } }
       ];
     }
 
@@ -85,7 +87,7 @@ export const getAllTemples = async (req: Request, res: Response) => {
       whereClause.location = String(location);
     }
 
-    // Pooja filtering needs to join on the poojas relation
+    // Pooja filtering by name
     if (pooja && pooja !== 'All') {
       whereClause.poojas = {
         some: {
@@ -95,15 +97,57 @@ export const getAllTemples = async (req: Request, res: Response) => {
       };
     }
 
+    // Pooja filtering by ID (Master or Copy)
+    if (poojaId) {
+      whereClause.poojas = {
+        some: {
+          OR: [
+            { id: String(poojaId) },
+            { masterPoojaId: String(poojaId) }
+          ],
+          status: true
+        }
+      };
+    }
+
     // Fetch only temples that are active (removed strict isVerified check to show all as requested)
-    const temples = await prisma.temple.findMany({
+    let temples = await prisma.temple.findMany({
       where: whereClause,
       include: {
         poojas: {
           where: { status: true }
         }
-      }
+      },
+      take: search ? 50 : undefined // Fetch more when searching for ranking
     });
+
+    // Rank results if searching
+    if (search) {
+      const lowQuery = String(search).toLowerCase();
+      temples.sort((a, b) => {
+        const nameA = a.name.toLowerCase();
+        const nameB = b.name.toLowerCase();
+
+        // Exact match priority
+        if (nameA === lowQuery && nameB !== lowQuery) return -1;
+        if (nameB === lowQuery && nameA !== lowQuery) return 1;
+
+        // Starts with match priority
+        if (nameA.startsWith(lowQuery) && !nameB.startsWith(lowQuery)) return -1;
+        if (nameB.startsWith(lowQuery) && !nameA.startsWith(lowQuery)) return 1;
+
+        // Name containment priority
+        const aInName = nameA.includes(lowQuery);
+        const bInName = nameB.includes(lowQuery);
+        if (aInName && !bInName) return -1;
+        if (bInName && !aInName) return 1;
+
+        return 0;
+      });
+      
+      // Optionally slice if we want to limit public results
+      // temples = temples.slice(0, 15);
+    }
 
     let favoritedTempleIds = new Set<string>();
 

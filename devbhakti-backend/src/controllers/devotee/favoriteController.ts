@@ -108,7 +108,11 @@ export const getFavorites = async (req: Request, res: Response) => {
                         }
                     }
                 },
-                product: true
+                product: {
+                    include: {
+                        variants: true
+                    }
+                }
             },
             orderBy: {
                 createdAt: 'desc'

@@ -168,6 +168,14 @@ export const deleteEventAdmin = async (id: string) => {
     return response.data;
 };
 
+export const toggleEventStatusAdmin = async (id: string, status: boolean) => {
+    const token = getAdminToken();
+    const response = await axios.patch(`${API_URL}/admin/events/${id}/status`, { status }, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+
 // Admin Temple Management
 export const fetchAllTemplesAdmin = async (params?: { page?: number; limit?: number; search?: string; isVerified?: boolean; templeId?: string; date?: string; deity?: string; state?: string; district?: string; transactionRange?: string }) => {
     const token = getAdminToken();
@@ -663,7 +671,7 @@ export const fetchProductsByTempleAdmin = async (templeId: string) => {
 // };
 
 // Admin Order Management
-export const fetchAllOrdersAdmin = async (params?: { page?: number; limit?: number; search?: string }) => {
+export const fetchAllOrdersAdmin = async (params?: { page?: number; limit?: number; search?: string; status?: string; paymentStatus?: string; date?: string }) => {
     const token = getAdminToken();
     let url = `${API_URL}/admin/orders`;
     if (params) {
@@ -671,6 +679,9 @@ export const fetchAllOrdersAdmin = async (params?: { page?: number; limit?: numb
         if (params.page !== undefined) query.append('page', params.page.toString());
         if (params.limit !== undefined) query.append('limit', params.limit.toString());
         if (params.search) query.append('search', params.search);
+        if (params.status) query.append('status', params.status);
+        if (params.paymentStatus) query.append('paymentStatus', params.paymentStatus);
+        if (params.date) query.append('date', params.date);
         url += `?${query.toString()}`;
     }
     const response = await axios.get(url, {
@@ -768,12 +779,31 @@ export const toggleSellerStatusAdmin = async (id: string, status: string) => {
     return response.data;
 };
 
-export const fetchAllTransactionsAdmin = async () => {
+export const fetchAllTransactionsAdmin = async (params?: { page?: number, limit?: number, templeId?: string, sellerId?: string }) => {
     const token = getAdminToken();
-    const url = `${API_URL}/admin/finance/transactions`;
+    const query = new URLSearchParams();
+    if (params?.page) query.append('page', params.page.toString());
+    if (params?.limit) query.append('limit', params.limit.toString());
+    if (params?.templeId) query.append('templeId', params.templeId);
+    if (params?.sellerId) query.append('sellerId', params.sellerId);
+
+    const url = `${API_URL}/admin/finance/transactions?${query.toString()}`;
     console.log(`GET: ${url}`);
     const response = await axios.get(url, {
         headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+
+export const exportTransactionsExcelAdmin = async (params?: { templeId?: string, sellerId?: string }) => {
+    const token = getAdminToken();
+    const query = new URLSearchParams();
+    if (params?.templeId) query.append('templeId', params.templeId);
+    if (params?.sellerId) query.append('sellerId', params.sellerId);
+
+    const response = await axios.get(`${API_URL}/admin/finance/export-excel?${query.toString()}`, {
+        headers: { Authorization: `Bearer ${token}` },
+        responseType: 'blob'
     });
     return response.data;
 };
@@ -795,12 +825,29 @@ export const fetchCommissionSlabsAdmin = async (type?: string, targetId?: string
     if (targetId) params.append("targetId", targetId);
     if (category) params.append("category", category);
     if (params.toString()) url += `?${params.toString()}`;
-
     const response = await axios.get(url, {
         headers: { Authorization: `Bearer ${token}` }
     });
     return response.data;
 };
+
+// Global Ratings Management
+export const fetchRatingsSettingsAdmin = async () => {
+    const token = getAdminToken();
+    const response = await axios.get(`${API_URL}/admin/settings/ratings`, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+
+export const updateRatingsSettingsAdmin = async (settings: any) => {
+    const token = getAdminToken();
+    const response = await axios.patch(`${API_URL}/admin/settings/ratings`, { settings }, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+
 
 export const createCommissionSlabAdmin = async (slabData: any) => {
     const token = getAdminToken();
@@ -853,7 +900,21 @@ export const rejectRequestAdmin = async (id: string, type: string) => {
 };
 
 // Admin User Management
-export const fetchAllUsersAdmin = async (params?: { page?: number; limit?: number; search?: string; role?: string; startDate?: string; endDate?: string; dob?: string; anniversary?: string; filterType?: string }) => {
+export const fetchAllUsersAdmin = async (params?: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    role?: string;
+    startDate?: string;
+    endDate?: string;
+    dob?: string;
+    anniversary?: string;
+    dobStart?: string;
+    dobEnd?: string;
+    anniversaryStart?: string;
+    anniversaryEnd?: string;
+    filterType?: string
+}) => {
     const token = getAdminToken();
     let url = `${API_URL}/admin/users`;
     if (params) {
@@ -866,6 +927,10 @@ export const fetchAllUsersAdmin = async (params?: { page?: number; limit?: numbe
         if (params.endDate) query.append('endDate', params.endDate);
         if (params.dob) query.append('dob', params.dob);
         if (params.anniversary) query.append('anniversary', params.anniversary);
+        if (params.dobStart) query.append('dobStart', params.dobStart);
+        if (params.dobEnd) query.append('dobEnd', params.dobEnd);
+        if (params.anniversaryStart) query.append('anniversaryStart', params.anniversaryStart);
+        if (params.anniversaryEnd) query.append('anniversaryEnd', params.anniversaryEnd);
         if (params.filterType) query.append('filterType', params.filterType);
         url += `?${query.toString()}`;
     }
@@ -993,7 +1058,15 @@ export const sendBulkWhatsAppAdmin = async (data: { userIds: string[], campaignN
     return response.data;
 };
 
-export const notifyFailedPayment = async (data: { phone: string, userName?: string, referenceId?: string }) => {
+export const notifyFailedPayment = async (data: { 
+    orderType: 'MARKETPLACE' | 'POOJA' | 'DONATION',
+    referenceId?: string,
+    orderData?: any,
+    userId?: string,
+    phone: string, 
+    userName?: string,
+    error?: any
+}) => {
     // This can be called by anyone (devotee) when payment fails
     const response = await axios.post(`${API_URL}/payments/failed`, data);
     return response.data;

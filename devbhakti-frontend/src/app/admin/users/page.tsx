@@ -43,6 +43,17 @@ import {
 } from "@/components/ui/pagination";
 import { useAdminAuth } from "@/hooks/use-admin-auth";
 
+const formatImpDate = (dateStr: string | null) => {
+    if (!dateStr) return "";
+    try {
+        const date = new Date(dateStr);
+        if (isNaN(date.getTime())) return dateStr;
+        return date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
+    } catch (e) {
+        return dateStr;
+    }
+};
+
 export default function AdminUsersPage() {
     const [users, setUsers] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
@@ -50,13 +61,18 @@ export default function AdminUsersPage() {
     const [debouncedSearch, setDebouncedSearch] = useState("");
     const [typeFilter, setTypeFilter] = useState<string>("all");
     const [dobFilter, setDobFilter] = useState("");
+    const [dobStart, setDobStart] = useState("");
+    const [dobEnd, setDobEnd] = useState("");
     const [anniversaryFilter, setAnniversaryFilter] = useState("");
+    const [anniversaryStart, setAnniversaryStart] = useState("");
+    const [anniversaryEnd, setAnniversaryEnd] = useState("");
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [stats, setStats] = useState({
         totalUsers: 0,
         totalDevotees: 0,
         totalInstitutions: 0,
+        totalSellers: 0,
         newThisMonth: 0,
         filteredCount: 0,
         filteredBookings: 0,
@@ -108,7 +124,11 @@ export default function AdminUsersPage() {
                 startDate,
                 endDate,
                 dob: dobFilter,
+                dobStart,
+                dobEnd,
                 anniversary: anniversaryFilter,
+                anniversaryStart,
+                anniversaryEnd,
                 filterType: filterType
             });
             if (response.success) {
@@ -122,7 +142,7 @@ export default function AdminUsersPage() {
         } finally {
             setLoading(false);
         }
-    }, [page, debouncedSearch, typeFilter, dateRange, dobFilter, anniversaryFilter, filterType]);
+    }, [page, debouncedSearch, typeFilter, dateRange, dobFilter, dobStart, dobEnd, anniversaryFilter, anniversaryStart, anniversaryEnd, filterType]);
 
     const handleExportExcel = async () => {
         // ... (existing handleExportExcel logic remains)
@@ -151,7 +171,11 @@ export default function AdminUsersPage() {
                 startDate,
                 endDate,
                 dob: dobFilter === 'upcoming' ? 'upcoming' : dobFilter,
+                dobStart,
+                dobEnd,
                 anniversary: anniversaryFilter === 'upcoming' ? 'upcoming' : anniversaryFilter,
+                anniversaryStart,
+                anniversaryEnd,
                 filterType: filterType
             });
 
@@ -174,7 +198,11 @@ export default function AdminUsersPage() {
                 search: selectedUserIds.length > 0 ? undefined : debouncedSearch,
                 role: selectedUserIds.length > 0 ? undefined : typeFilter,
                 dob: dobFilter,
+                dobStart,
+                dobEnd,
                 anniversary: anniversaryFilter,
+                anniversaryStart,
+                anniversaryEnd,
                 filterType: filterType
             });
 
@@ -342,8 +370,8 @@ export default function AdminUsersPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 {[
                     { label: `Total Users`, value: stats.filteredCount?.toLocaleString() || "0", color: "text-primary" },
-                    { label: "Bookings", value: stats.filteredBookings.toLocaleString(), color: "text-blue-600" },
-                    { label: "Orders", value: stats.filteredOrders.toLocaleString(), color: "text-amber-600" },
+                    { label: "Total Temple", value: stats.totalInstitutions.toLocaleString(), color: "text-blue-600" },
+                    { label: "Total Seller", value: stats.totalSellers.toLocaleString(), color: "text-amber-600" },
                     { label: "New This Month", value: stats.newThisMonth.toLocaleString(), color: "text-emerald-600" },
                 ].map((stat) => (
                     <Card key={stat.label} className="border-none shadow-sm bg-white/50 backdrop-blur-md">
@@ -427,14 +455,25 @@ export default function AdminUsersPage() {
                             </Button>
                         ))}
                     </div>
-                    <div className="flex flex-col gap-1 min-w-[140px] flex-1 sm:flex-initial">
-                        <p className="text-[10px] font-bold uppercase text-muted-foreground ml-1">Birthday</p>
-                        <div className="flex gap-1">
+                    <div className="flex flex-col gap-1 min-w-[280px] flex-1 sm:flex-initial">
+                        <p className="text-[10px] font-bold uppercase text-muted-foreground ml-1">Birthday Range</p>
+                        <div className="flex gap-1 items-center">
                             <Input
                                 type="date"
-                                value={dobFilter === 'upcoming' ? '' : dobFilter}
+                                value={dobStart}
                                 onChange={(e) => {
-                                    setDobFilter(e.target.value);
+                                    setDobStart(e.target.value);
+                                    setPage(1);
+                                }}
+                                className="h-9 text-xs rounded-lg"
+                                disabled={dobFilter === 'upcoming'}
+                            />
+                            <span className="text-muted-foreground text-xs">-</span>
+                            <Input
+                                type="date"
+                                value={dobEnd}
+                                onChange={(e) => {
+                                    setDobEnd(e.target.value);
                                     setPage(1);
                                 }}
                                 className="h-9 text-xs rounded-lg"
@@ -445,7 +484,13 @@ export default function AdminUsersPage() {
                                 variant={dobFilter === 'upcoming' ? 'sacred' : 'outline'}
                                 className="h-9 text-[10px]"
                                 onClick={() => {
-                                    setDobFilter(dobFilter === 'upcoming' ? '' : 'upcoming');
+                                    if (dobFilter === 'upcoming') {
+                                        setDobFilter('');
+                                    } else {
+                                        setDobFilter('upcoming');
+                                        setDobStart('');
+                                        setDobEnd('');
+                                    }
                                     setPage(1);
                                 }}
                             >
@@ -453,14 +498,25 @@ export default function AdminUsersPage() {
                             </Button>
                         </div>
                     </div>
-                    <div className="flex flex-col gap-1 min-w-[140px] flex-1 sm:flex-initial">
-                        <p className="text-[10px] font-bold uppercase text-muted-foreground ml-1">Anniversary</p>
-                        <div className="flex gap-1">
+                    <div className="flex flex-col gap-1 min-w-[280px] flex-1 sm:flex-initial">
+                        <p className="text-[10px] font-bold uppercase text-muted-foreground ml-1">Anniversary Range</p>
+                        <div className="flex gap-1 items-center">
                             <Input
                                 type="date"
-                                value={anniversaryFilter === 'upcoming' ? '' : anniversaryFilter}
+                                value={anniversaryStart}
                                 onChange={(e) => {
-                                    setAnniversaryFilter(e.target.value);
+                                    setAnniversaryStart(e.target.value);
+                                    setPage(1);
+                                }}
+                                className="h-9 text-xs rounded-lg"
+                                disabled={anniversaryFilter === 'upcoming'}
+                            />
+                            <span className="text-muted-foreground text-xs">-</span>
+                            <Input
+                                type="date"
+                                value={anniversaryEnd}
+                                onChange={(e) => {
+                                    setAnniversaryEnd(e.target.value);
                                     setPage(1);
                                 }}
                                 className="h-9 text-xs rounded-lg"
@@ -471,7 +527,13 @@ export default function AdminUsersPage() {
                                 variant={anniversaryFilter === 'upcoming' ? 'sacred' : 'outline'}
                                 className="h-9 text-[10px]"
                                 onClick={() => {
-                                    setAnniversaryFilter(anniversaryFilter === 'upcoming' ? '' : 'upcoming');
+                                    if (anniversaryFilter === 'upcoming') {
+                                        setAnniversaryFilter('');
+                                    } else {
+                                        setAnniversaryFilter('upcoming');
+                                        setAnniversaryStart('');
+                                        setAnniversaryEnd('');
+                                    }
                                     setPage(1);
                                 }}
                             >
@@ -487,7 +549,11 @@ export default function AdminUsersPage() {
                             setSearchQuery("");
                             setTypeFilter("all");
                             setDobFilter("");
+                            setDobStart("");
+                            setDobEnd("");
                             setAnniversaryFilter("");
+                            setAnniversaryStart("");
+                            setAnniversaryEnd("");
                             setDateRange("all");
                             setPage(1);
                         }}
@@ -524,6 +590,9 @@ export default function AdminUsersPage() {
                                         Activity
 
                                     </th> */}
+                                    <th className="text-left p-4 text-sm font-medium text-muted-foreground">
+                                        IMP Dates
+                                    </th>
                                     <th className="text-left p-4 text-sm font-medium text-muted-foreground">
                                         Joined
                                     </th>
@@ -606,16 +675,25 @@ export default function AdminUsersPage() {
                                                     </p>
                                                 </div>
                                             </td>
-                                            {/* <td className="p-4">
-                                                <div>
-                                                    <p className="text-sm text-foreground">
-                                                        {(user.bookings || 0).toLocaleString()} bookings
-                                                    </p>
-                                                    <p className="text-sm text-muted-foreground">
-                                                        {(user.orders || 0).toLocaleString()} orders
-                                                    </p>
+                                            <td className="p-4">
+                                                <div className="space-y-1">
+                                                    {user.dob && (
+                                                        <div className="flex items-center gap-1 text-emerald-600 text-[11px] font-bold">
+                                                            <Calendar className="w-3 h-3" />
+                                                            <span>Bdy: {formatImpDate(user.dob)}</span>
+                                                        </div>
+                                                    )}
+                                                    {user.anniversary && (
+                                                        <div className="flex items-center gap-1 text-rose-600 text-[11px] font-bold">
+                                                            <Calendar className="w-3 h-3" />
+                                                            <span>Ann: {formatImpDate(user.anniversary)}</span>
+                                                        </div>
+                                                    )}
+                                                    {!user.dob && !user.anniversary && (
+                                                        <span className="text-muted-foreground text-[10px] italic">Not set</span>
+                                                    )}
                                                 </div>
-                                            </td> */}
+                                            </td>
                                             <td className="p-4">
                                                 <div className="flex items-center gap-1 text-muted-foreground text-sm">
                                                     <Calendar className="w-3 h-3" />

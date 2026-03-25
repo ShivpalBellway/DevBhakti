@@ -245,18 +245,21 @@ function DonationForm() {
             rzp.on('payment.failed', function (response: any) {
                 console.error("Payment failed event:", response.error);
                 notifyFailedPayment({
+                    orderType: "DONATION",
+                    referenceId: initiateData.donationId,
                     phone: formData.phone,
                     userName: formData.name,
-                    referenceId: initiateData.donationId || response.error.metadata.order_id
+                    error: response.error
                 }).catch(console.error);
             });
 
             rzp.on('modal.dismiss', function () {
                 console.log("Payment modal dismissed");
                 notifyFailedPayment({
+                    orderType: "DONATION",
+                    referenceId: initiateData.donationId,
                     phone: formData.phone,
                     userName: formData.name,
-                    referenceId: initiateData.donationId || "CANCELLED"
                 }).catch(console.error);
             });
 
@@ -336,40 +339,14 @@ function DonationForm() {
                                 "The act of giving is the path to spiritual abundance." Support ancient holy shrines, annadaan, and gau seva to preserve our sacred heritage.
                             </p>
                         </div>
-
-                        {/* Premium Search & Explore */}
-                        <div className="relative max-w-2xl mx-auto group">
-                            <div className="absolute -inset-1 bg-gradient-to-r from-primary/40 to-orange-400/40 rounded-2xl blur opacity-25 group-hover:opacity-40 transition duration-1000" />
-                            <div className="relative flex items-center bg-white/90 backdrop-blur-md rounded-2xl shadow-xl overflow-hidden border border-orange-100/50 p-1.5">
-                                <div className="flex-1 flex items-center px-4">
-                                    <Search className="h-5 w-5 text-primary mr-3" />
-                                    <input
-                                        type="text"
-                                        placeholder="Search for holy shrine..."
-                                        value={searchQuery}
-                                        onChange={(e) => setSearchQuery(e.target.value)}
-                                        className="w-full bg-transparent outline-none py-4 text-lg font-medium"
-                                    />
-                                </div>
-                                <Button
-                                    className="px-8 h-[54px] rounded-xl bg-[#7c4624] hover:bg-[#63361c] text-white font-bold text-sm uppercase tracking-widest hidden sm:flex shrink-0 shadow-lg shadow-[#7c4624]/10"
-                                    onClick={() => {
-                                        const selector = document.getElementById('donation-steps');
-                                        if (selector) selector.scrollIntoView({ behavior: 'smooth' });
-                                    }}
-                                >
-                                    Explore
-                                </Button>
-                            </div>
-                        </div>
                     </motion.div>
                 </div>
             </section>
 
             <div id="donation-steps" className="container mx-auto px-4 py-8 relative z-10">
                 {/* Progress Steps */}
-                <div className="max-w-4xl mx-auto mb-10">
-                    <div className="flex justify-between items-center relative">
+                <div className="max-w-6xl mx-auto mb-10">
+                    <div className="flex justify-between items-center relative gap-2 sm:gap-4 overflow-x-auto pb-4 sm:pb-0 hide-scrollbar">
                         {/* Connecting Line */}
                         <div className="absolute left-0 top-1/2 -translate-y-1/2 w-full h-1 bg-muted rounded-full -z-10">
                             <motion.div
@@ -387,7 +364,7 @@ function DonationForm() {
                             { num: 4, label: "Payment" },
                             { num: 5, label: "Receipt" },
                         ].map((s) => (
-                            <div key={s.num} className="flex flex-col items-center gap-2 bg-background p-2 rounded-xl">
+                            <div key={s.num} className="flex flex-col items-center gap-2 bg-background p-2 rounded-xl shrink-0">
                                 <motion.div
                                     className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm border-2 transition-colors ${step >= s.num
                                         ? "bg-[#7c4624] border-[#7c4624] text-white shadow-lg shadow-[#7c4624]/20"
@@ -406,7 +383,7 @@ function DonationForm() {
                 </div>
 
                 {/* Main Content Area */}
-                <div className="max-w-4xl mx-auto">
+                <div className="max-w-6xl mx-auto">
                     <AnimatePresence mode="wait" custom={direction}>
 
                         {/* Step 1: Select Temple */}
@@ -420,49 +397,68 @@ function DonationForm() {
                                 exit="exit"
                                 transition={{ duration: 0.3 }}
                             >
-                                <div className="text-center mb-8">
-                                    <h2 className="text-2xl font-bold font-display mb-2">Select a Sacred Temple</h2>
-                                    <p className="text-muted-foreground">Choose the temple where you wish to offer your donation</p>
+                                <div className="flex flex-col md:flex-row items-end justify-between mb-8 gap-6">
+                                    <div className="text-left">
+                                        <h2 className="text-3xl font-bold font-display text-[#2a1b01]">Select a Sacred Temple</h2>
+                                        <p className="text-muted-foreground mt-1">Choose the temple where you wish to offer your donation</p>
+                                    </div>
+
+                                    {/* Slick Theme-Matching Search Bar */}
+                                    <div className="w-full md:w-96 relative group">
+                                        <div className="absolute -inset-0.5 bg-gradient-to-r from-[#7c4624]/20 to-orange-200/20 rounded-2xl blur opacity-20 group-hover:opacity-40 transition duration-500" />
+                                        <div className="relative flex items-center bg-white border border-[#e6d5c8] rounded-2xl shadow-sm overflow-hidden p-1.5 focus-within:border-[#7c4624] focus-within:shadow-md transition-all duration-300">
+                                            <div className="flex-1 flex items-center px-3">
+                                                <Search className="h-4 w-4 text-[#7c4624] mr-2" />
+                                                <input
+                                                    type="text"
+                                                    placeholder="Search a Temple To Donate To"
+                                                    value={searchQuery}
+                                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                                    className="w-full bg-transparent outline-none py-2 text-sm font-medium placeholder:text-muted-foreground/60"
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
 
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                                     {temples.length > 0 ? (
                                         temples
                                             .filter(t => t.name.toLowerCase().includes(searchQuery.toLowerCase()) || t.location.toLowerCase().includes(searchQuery.toLowerCase()))
                                             .map((temple) => (
                                                 <motion.div
                                                     key={temple.id}
-                                                    whileHover={{ scale: 1.02 }}
+                                                    whileHover={{ scale: 1.02, y: -2 }}
                                                     whileTap={{ scale: 0.98 }}
-                                                    className={`relative p-5 rounded-2xl border-2 cursor-pointer transition-all ${selectedTemple === temple.id
-                                                        ? "border-[#7c4624] bg-[#f5ebe0]/50 dark:bg-[#7c4624]/20 shadow-md ring-1 ring-[#e6d5c8]"
-                                                        : "border-border hover:border-[#b08d7a] bg-card hover:shadow-sm"
+                                                    className={`relative p-4 rounded-[1.25rem] border-2 cursor-pointer transition-all duration-300 ${selectedTemple === temple.id
+                                                        ? "border-[#7c4624] bg-[#fdf6e9] shadow-lg ring-1 ring-[#e6d5c8]"
+                                                        : "border-slate-100 hover:border-[#b08d7a] bg-white shadow-sm"
                                                         }`}
                                                     onClick={() => setSelectedTemple(temple.id)}
                                                 >
-                                                    <div className="flex items-start gap-4">
-                                                        <div className={`p-3 rounded-full ${selectedTemple === temple.id ? "bg-[#f5ebe0] text-[#7c4624]" : "bg-muted text-muted-foreground"}`}>
-                                                            <Building2 className="w-6 h-6" />
+                                                    <div className="flex items-center gap-4">
+                                                        <div className={`p-2.5 rounded-xl shrink-0 ${selectedTemple === temple.id ? "bg-[#7c4624] text-white" : "bg-slate-50 text-slate-400"}`}>
+                                                            <Building2 className="w-5 h-5" />
                                                         </div>
-                                                        <div className="flex-1">
-                                                            <h3 className="font-bold text-lg">{temple.name}</h3>
-                                                            <p className="text-sm text-primary font-medium">{temple.deity || "Sacred Temple"}</p>
-                                                            <div className="flex items-center gap-1 mt-1 text-muted-foreground text-sm">
-                                                                <MapPin className="w-3 h-3" />
-                                                                {temple.location}
+                                                        <div className="flex-1 min-w-0 pr-4">
+                                                            <h3 className="font-bold text-base text-[#2a1b01] leading-tight truncate">{temple.name}</h3>
+                                                            <div className="flex items-center gap-1.5 mt-0.5 text-slate-500 text-[13px]">
+                                                                <MapPin className="w-3 h-3 flex-shrink-0" />
+                                                                <span className="truncate">{temple.location}</span>
                                                             </div>
                                                         </div>
                                                         {selectedTemple === temple.id && (
-                                                            <div className="absolute top-4 right-4 text-[#7c4624]">
-                                                                <CheckCircle2 className="w-6 h-6 fill-current" />
+                                                            <div className="shrink-0">
+                                                                <CheckCircle2 className="w-5 h-5 text-[#7c4624] fill-current" />
                                                             </div>
                                                         )}
                                                     </div>
                                                 </motion.div>
                                             ))
                                     ) : (
-                                        <div className="col-span-full py-12 text-center text-muted-foreground italic">
-                                            Loading sacred temples...
+                                        <div className="col-span-full py-20 text-center">
+                                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#7c4624] mx-auto mb-4"></div>
+                                            <p className="text-muted-foreground font-medium italic">Search a Temple To Donate To</p>
                                         </div>
                                     )}
                                 </div>

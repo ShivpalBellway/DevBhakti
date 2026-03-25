@@ -96,6 +96,75 @@ export const getTempleDonationStats = async (req: Request, res: Response) => {
 };
 
 import ExcelJS from 'exceljs';
+import PDFDocument from 'pdfkit';
+
+export const downloadDonationsPdf = async (req: Request, res: Response) => {
+    try {
+        const { templeId } = req.params;
+        const { status } = req.query;
+
+        const where: any = { templeId };
+
+        if (status && status !== "all") {
+            where.status = status;
+        } else if (!status || status === "all") {
+            where.status = "SUCCESS";
+        }
+
+        const donations = await prisma.donation.findMany({
+            where,
+            orderBy: { createdAt: 'desc' },
+            include: { temple: true }
+        });
+
+        const doc = new PDFDocument({ margin: 50 });
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename=temple_donations_${new Date().toISOString().slice(0, 10)}.pdf`);
+
+        doc.pipe(res);
+
+        // Header
+        doc.fontSize(20).text('Temple Donations Report', { align: 'center' });
+        doc.moveDown();
+        doc.fontSize(12).text(`Temple: ${donations[0]?.temple?.name || 'N/A'}`, { align: 'left' });
+        doc.text(`Date: ${new Date().toLocaleString()}`, { align: 'left' });
+        doc.moveDown();
+
+        // Table Header
+        const tableTop = 150;
+        const colPositions = [50, 170, 250, 350, 450];
+
+        doc.fontSize(10).font('Helvetica-Bold');
+        doc.text('Donor Name', colPositions[0], tableTop);
+        doc.text('Amount', colPositions[1], tableTop);
+        doc.text('Method', colPositions[2], tableTop);
+        doc.text('Date', colPositions[3], tableTop);
+        doc.text('Ref ID', colPositions[4], tableTop);
+
+        doc.moveTo(50, tableTop + 15).lineTo(550, tableTop + 15).stroke();
+
+        // Table Content
+        let y = tableTop + 25;
+        doc.font('Helvetica');
+        donations.forEach((d) => {
+            if (y > 700) {
+                doc.addPage();
+                y = 50;
+            }
+            doc.text(d.isAnonymous ? 'Anonymous' : d.donorName, colPositions[0], y, { width: 110 });
+            doc.text(`Rs. ${d.amount}`, colPositions[1], y);
+            doc.text(d.paymentMethod || 'N/A', colPositions[2], y);
+            doc.text(new Date(d.createdAt).toLocaleDateString(), colPositions[3], y);
+            doc.text(d.id.slice(-6).toUpperCase(), colPositions[4], y);
+            y += 20;
+        });
+
+        doc.end();
+    } catch (error: any) {
+        console.error("Donations PDF Export Error:", error);
+        return res.status(500).json({ success: false, message: error.message });
+    }
+};
 
 export const downloadDonationsExcel = async (req: Request, res: Response) => {
     try {

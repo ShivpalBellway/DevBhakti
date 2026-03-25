@@ -12,7 +12,9 @@ import {
     Sparkles,
     Check,
     ChevronsUpDown,
-    X
+    X,
+    Power,
+    PowerOff
 } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -51,7 +53,8 @@ import {
     CommandInput,
     CommandItem,
 } from "@/components/ui/command";
-import { fetchAllEventsAdmin, fetchAllTemplesAdmin, createEventAdmin, updateEventAdmin, deleteEventAdmin, fetchAllPoojasAdmin } from "@/api/adminController";
+import { Switch } from "@/components/ui/switch";
+import { fetchAllEventsAdmin, fetchAllTemplesAdmin, createEventAdmin, updateEventAdmin, deleteEventAdmin, fetchAllPoojasAdmin, toggleEventStatusAdmin } from "@/api/adminController";
 import { useToast } from "@/hooks/use-toast";
 import {
     Pagination,
@@ -95,6 +98,7 @@ export default function AdminEventsPage() {
         time: "",
         description: "",
         templeId: "",
+        status: true,
     });
 
     const [timeData, setTimeData] = useState({
@@ -208,6 +212,7 @@ export default function AdminEventsPage() {
                 time: event.time || "",
                 description: event.description || "",
                 templeId: event.templeId,
+                status: event.status,
             });
             setTimeData(parseStoredTime(event.time));
             // Pre-populate selected poojas in edit mode
@@ -224,6 +229,7 @@ export default function AdminEventsPage() {
                 time: "",
                 description: "",
                 templeId: "",
+                status: true,
             });
             setTimeData({ hours: "10", minutes: "00", period: "AM" });
             setSelectedPoojaIds([]);
@@ -284,6 +290,24 @@ export default function AdminEventsPage() {
         }
     };
 
+    const handleToggleStatus = async (id: string, currentStatus: boolean) => {
+        try {
+            const nextStatus = !currentStatus;
+            await toggleEventStatusAdmin(id, nextStatus);
+            setEvents(prev => prev.map(ev => ev.id === id ? { ...ev, status: nextStatus } : ev));
+            toast({
+                title: "Status Updated",
+                description: `Event ${nextStatus ? 'activated' : 'deactivated'} successfully`,
+            });
+        } catch (error) {
+            toast({
+                title: "Error",
+                description: "Failed to update event status",
+                variant: "destructive",
+            });
+        }
+    };
+
     const handlePageChange = (page: number) => {
         if (page >= 1 && page <= totalPages) {
             setCurrentPage(page);
@@ -334,6 +358,7 @@ export default function AdminEventsPage() {
                             <TableHead>Date & Time</TableHead>
                             <TableHead>Description</TableHead>
                             <TableHead>Recommended Poojas</TableHead>
+                            <TableHead>Status</TableHead>
                             <TableHead className="text-right">Actions</TableHead>
                         </TableRow>
                     </TableHeader>
@@ -407,6 +432,17 @@ export default function AdminEventsPage() {
                                         ) : (
                                             <span className="text-xs text-muted-foreground">None</span>
                                         )}
+                                    </TableCell>
+                                    <TableCell>
+                                        <div className="flex items-center gap-2">
+                                            <Switch
+                                                checked={event.status}
+                                                onCheckedChange={() => handleToggleStatus(event.id, event.status)}
+                                            />
+                                            <Badge variant={event.status ? "default" : "secondary"}>
+                                                {event.status ? "Active" : "Inactive"}
+                                            </Badge>
+                                        </div>
                                     </TableCell>
                                     <TableCell className="text-right">
                                         <div className="flex justify-end gap-1">
@@ -626,6 +662,19 @@ export default function AdminEventsPage() {
                                     setFormData({ ...formData, description: e.target.value })
                                 }
                                 className="h-24"
+                            />
+                        </div>
+
+                        <div className="flex items-center justify-between p-4 border rounded-xl bg-slate-50">
+                            <div className="space-y-0.5">
+                                <Label className="text-base font-semibold">Event Status</Label>
+                                <p className="text-sm text-muted-foreground">
+                                    Show or hide this event on the platform
+                                </p>
+                            </div>
+                            <Switch
+                                checked={formData.status}
+                                onCheckedChange={(checked) => setFormData({ ...formData, status: checked })}
                             />
                         </div>
 

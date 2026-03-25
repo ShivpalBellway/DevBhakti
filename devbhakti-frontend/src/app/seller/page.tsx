@@ -2,11 +2,11 @@
 
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Phone, ArrowRight, Store, Key, CheckCircle2, ShieldCheck, ShoppingBag } from "lucide-react";
+import { Phone, ArrowRight, Store, Key, CheckCircle2, ShieldCheck, ShoppingBag, X, Mail, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { sendOTP, verifyOTP } from "@/api/authController";
+import { sendOTP, verifyOTP, checkSellerPhone } from "@/api/authController";
 import { useRouter } from "next/navigation";
 import { clearAllTokens } from "@/lib/auth-utils";
 
@@ -18,22 +18,31 @@ export default function SellerLoginPage() {
     const [otp, setOtp] = useState("");
     const [phone, setPhone] = useState("");
     const [error, setError] = useState("");
+    const [showNotRegisteredModal, setShowNotRegisteredModal] = useState(false);
 
     const handleSendOTP = async (e: React.FormEvent) => {
         e.preventDefault();
         setError("");
         setLoading(true);
         const normalizedPhone = phone.replace(/\D/g, '');
+
         try {
-            // "SELLER" role for OTP
+            // Step 1: Pre-check — does this number exist as a SELLER in DB?
+            const checkResult = await checkSellerPhone(normalizedPhone);
+
+            if (!checkResult.isSellerRegistered) {
+                // Number not registered as a Seller — show popup
+                setShowNotRegisteredModal(true);
+                setLoading(false);
+                return;
+            }
+
+            // Step 2: Number is valid SELLER — send OTP
             const response = await sendOTP({ phone: normalizedPhone, role: "SELLER" });
             setShowOtpInput(true);
             if (response.data?.otp) {
                 setDevOtp(response.data.otp);
             }
-            // Original code:
-            // const response = await sendOTP({ phone: normalizedPhone, role: "SELLER" });
-            // setShowOtpInput(true);
         } catch (error: any) {
             console.error("OTP Error:", error);
             setError(error.response?.data?.message || "Failed to send OTP. Please check the number and try again.");
@@ -148,13 +157,13 @@ export default function SellerLoginPage() {
 
                                 <Button
                                     type="submit"
-                                    disabled={loading}
+                                    disabled={loading || phone.length < 10}
                                     className="w-full h-14 bg-gradient-to-r from-[#7b4623] to-[#a65d2e] hover:from-[#5d351a] hover:to-[#7b4623] text-white rounded-2xl text-lg font-bold shadow-lg shadow-[#7b4623]/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
                                 >
                                     {loading ? (
                                         <div className="flex items-center gap-2">
                                             <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
-                                            Sending...
+                                            Checking...
                                         </div>
                                     ) : (
                                         <div className="flex items-center gap-2">
@@ -264,6 +273,85 @@ export default function SellerLoginPage() {
                     </div>
                 </div>
             </motion.div>
+
+            {/* ===== NOT REGISTERED POPUP MODAL ===== */}
+            <AnimatePresence>
+                {showNotRegisteredModal && (
+                    <>
+                        {/* Backdrop */}
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50"
+                            onClick={() => setShowNotRegisteredModal(false)}
+                        />
+
+                        {/* Modal */}
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.85, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.85, y: 20 }}
+                            transition={{ type: "spring", stiffness: 300, damping: 25 }}
+                            className="fixed inset-0 flex items-center justify-center z-50 px-4"
+                        >
+                            <div className="bg-white rounded-[2rem] shadow-2xl max-w-md w-full overflow-hidden pointer-events-auto">
+                                {/* Modal top accent */}
+                                <div className="h-2 bg-gradient-to-r from-amber-500 via-orange-500 to-red-500" />
+
+                                <div className="p-8">
+                                    {/* Close button */}
+                                    <div className="flex justify-end mb-2">
+                                        <button
+                                            onClick={() => setShowNotRegisteredModal(false)}
+                                            className="p-2 rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors"
+                                        >
+                                            <X className="w-5 h-5" />
+                                        </button>
+                                    </div>
+
+                                    {/* Icon */}
+                                    <div className="flex flex-col items-center text-center">
+                                        <div className="w-20 h-20 rounded-full bg-orange-50 border-2 border-orange-100 flex items-center justify-center mb-5">
+                                            <AlertTriangle className="w-10 h-10 text-orange-500" />
+                                        </div>
+
+                                        <h2 className="text-2xl font-serif font-bold text-slate-900 mb-3">
+                                            Account Not Registered
+                                        </h2>
+
+                                        <p className="text-slate-500 text-sm leading-relaxed mb-2">
+                                            Your account is not registered with us as a Seller.
+                                        </p>
+
+                                        <p className="text-slate-600 text-sm font-medium mb-6">
+                                            To become a seller on DevBhakti, submit your request at:
+                                        </p>
+
+                                        {/* Email highlight box */}
+                                        <a
+                                            href="mailto:sales@devbhakti.in"
+                                            className="flex items-center gap-3 bg-[#7b4623]/5 border border-[#7b4623]/20 rounded-2xl px-6 py-4 hover:bg-[#7b4623]/10 transition-colors group mb-6 w-full justify-center"
+                                        >
+                                            <Mail className="w-5 h-5 text-[#7b4623]" />
+                                            <span className="text-[#7b4623] font-bold text-base group-hover:underline">
+                                                sales@devbhakti.in
+                                            </span>
+                                        </a>
+
+                                        <button
+                                            onClick={() => setShowNotRegisteredModal(false)}
+                                            className="w-full h-12 bg-gradient-to-r from-[#7b4623] to-[#a65d2e] hover:from-[#5d351a] hover:to-[#7b4623] text-white rounded-2xl font-bold shadow-md shadow-[#7b4623]/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                                        >
+                                            Try Another Number
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </motion.div>
+                    </>
+                )}
+            </AnimatePresence>
         </div>
     );
 }

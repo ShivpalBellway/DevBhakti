@@ -10,6 +10,9 @@ export const getAllOrdersAdmin = async (req: Request, res: Response) => {
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 10;
     const search = req.query.search as string;
+    const status = req.query.status as string;
+    const paymentStatus = req.query.paymentStatus as string;
+    const date = req.query.date as string;
     const skip = (page - 1) * limit;
 
     let where: any = {};
@@ -18,6 +21,25 @@ export const getAllOrdersAdmin = async (req: Request, res: Response) => {
         { id: { contains: search, mode: "insensitive" } },
         { user: { name: { contains: search, mode: "insensitive" } } },
       ];
+    }
+
+    if (status && status !== "ALL") {
+      where.status = status;
+    }
+
+    if (paymentStatus && paymentStatus !== "ALL") {
+      where.paymentStatus = paymentStatus;
+    }
+
+    if (date) {
+      const startOfDay = new Date(date);
+      startOfDay.setHours(0, 0, 0, 0);
+      const endOfDay = new Date(date);
+      endOfDay.setHours(23, 59, 59, 999);
+      where.createdAt = {
+        gte: startOfDay,
+        lte: endOfDay
+      };
     }
 
     const [orders, totalRecords] = await Promise.all([

@@ -10,6 +10,7 @@ import TempleRegistrationForm from "@/components/temples/TempleRegistrationForm"
 import FloatingRegisterButton from "@/components/landing/FloatingRegisterButton";
 import Image from "next/image"
 import heroTempleImage from "@/assets/hero-temple.jpg"
+import Logo from "@/components/icons/Logo";
 
 
 
@@ -147,6 +148,9 @@ export default function RegisterTemplePage() {
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ duration: 1, delay: 0.2 }}
                         >
+                            <div className="flex justify-center mb-6">
+                                <Logo size="xl" className="h-24 md:h-32 w-auto pointer-events-none" />
+                            </div>
                             <h1 className="text-2xl md:text-4xl lg:text-6xl font-serif font-extrabold tracking-tight mb-8 leading-tight text-foreground">
                                 <span className="text-primary">Helping Temples Stay Connected</span>
                                 <br />

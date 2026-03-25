@@ -100,6 +100,116 @@ export const checkPhoneOnly = async (req: Request, res: Response) => {
     }
 };
 
+export const checkSellerPhone = async (req: Request, res: Response) => {
+    try {
+        const { phone } = req.body;
+
+        if (!phone) {
+            return res.status(400).json({ success: false, message: 'Phone number is required' });
+        }
+
+        const normalizedPhone = normalizePhone(phone);
+        const user = await prisma.user.findFirst({
+            where: { phone: normalizedPhone }
+        });
+
+        if (!user) {
+            // Phone does not exist in DB at all
+            return res.json({
+                success: true,
+                isSellerRegistered: false,
+                reason: 'not_found'
+            });
+        }
+
+        if (user.role !== 'SELLER') {
+            // Phone exists but is not a SELLER
+            return res.json({
+                success: true,
+                isSellerRegistered: false,
+                reason: 'wrong_role'
+            });
+        }
+
+        // Phone exists and IS a SELLER
+        return res.json({
+            success: true,
+            isSellerRegistered: true
+        });
+    } catch (error: any) {
+        console.error('Error in checkSellerPhone:', error);
+        res.status(500).json({ success: false, message: 'Internal server error' });
+    }
+};
+
+export const checkEmailExists = async (req: Request, res: Response) => {
+    try {
+        const { email } = req.body;
+
+        if (!email) {
+            return res.status(400).json({ success: false, message: 'Email is required' });
+        }
+
+        const normalizedEmail = (email as string).toLowerCase().trim();
+        const user = await prisma.user.findUnique({
+            where: { email: normalizedEmail }
+        });
+
+        if (!user) {
+            return res.json({ success: true, exists: false });
+        }
+
+        return res.json({
+            success: true,
+            exists: true,
+            role: user.role,
+            message: `This email is already registered as a ${user.role}. Please use a different email.`
+        });
+    } catch (error: any) {
+        console.error('Error in checkEmailExists:', error);
+        res.status(500).json({ success: false, message: 'Internal server error' });
+    }
+};
+
+export const checkInstitutionPhone = async (req: Request, res: Response) => {
+    try {
+        const { phone } = req.body;
+
+        if (!phone) {
+            return res.status(400).json({ success: false, message: 'Phone number is required' });
+        }
+
+        const normalizedPhone = normalizePhone(phone);
+        logToFile(`[checkInstitutionPhone] Checking phone: ${phone}, Normalized: ${normalizedPhone}`);
+        
+        // Find ALL roles for this phone
+        const users = await prisma.user.findMany({
+            where: { phone: normalizedPhone }
+        });
+        
+        logToFile(`[checkInstitutionPhone] Found ${users.length} users with this phone`);
+        users.forEach(u => logToFile(` - User ID: ${u.id}, Role: ${u.role}, Email: ${u.email}, Verified: ${u.isVerified}`));
+
+        const hasInstitutionRole = users.some(u => u.role === 'INSTITUTION');
+
+        if (hasInstitutionRole) {
+            return res.json({
+                success: true,
+                isInstitutionRegistered: true,
+                message: 'This number is already registered as a Temple/Institution. Please login instead.'
+            });
+        }
+        
+        return res.json({
+            success: true,
+            isInstitutionRegistered: false
+        });
+    } catch (error: any) {
+        console.error('Error in checkInstitutionPhone:', error);
+        res.status(500).json({ success: false, message: 'Internal server error' });
+    }
+};
+
 export const sendOTP = async (req: Request, res: Response) => {
     logToFile(`[sendOTP] Request body: ${JSON.stringify(req.body)}`);
     console.log('[sendOTP] Request body:', req.body);
@@ -125,49 +235,40 @@ export const sendOTP = async (req: Request, res: Response) => {
             if (name) {
                 effectiveMode = 'register';
             } else {
-                // If no mode and no name, we'll check if user exists first
+                // Check only for same role
                 const tempUser = await prisma.user.findFirst({
-                    where: { phone: normalizedPhone }
+                    where: { phone: normalizedPhone, role: checkRole as any }
                 });
                 effectiveMode = tempUser ? 'login' : 'register';
             }
-            // Silent mode - no logging for missing mode
         }
 
         const isRegisterFlow = effectiveMode === 'register';
 
-        // 1. Check if ANY user exists with this phone number
+        // 1. Check if user exists WITH THE SAME ROLE only (not across all roles)
         let existingUser = await prisma.user.findFirst({
-            where: { phone: normalizedPhone }
+            where: { phone: normalizedPhone, role: checkRole as any }
         });
 
         let user;
 
         if (existingUser) {
-            // If phone exists, check if role matches
-            if (existingUser.role !== (checkRole as any)) {
-                return res.status(400).json({
-                    success: false,
-                    message: `This mobile number is already registered as a ${existingUser.role}. Please use a different number or login as ${existingUser.role}.`
-                });
-            }
-
-            // If role matches but it's registration flow and user is already verified
+            // Same role found — if registering and already verified → tell them to login
             if (isRegisterFlow && existingUser.isVerified) {
                 return res.status(400).json({
                     success: false,
-                    message: 'This mobile number is already registered and verified. Please login instead.'
+                    message: 'This mobile number is already registered with us. Please login instead.'
                 });
             }
 
-            // If login flow and user doesn't exist/not verified (handled below)
+            // Proceed — update OTP
             user = existingUser;
             await prisma.user.update({
                 where: { id: user.id },
                 data: { otp, otpExpires }
             });
         } else {
-            // New user case
+            // No user with this phone + role found
             if (!isRegisterFlow) {
                 return res.status(404).json({
                     success: false,
@@ -381,7 +482,7 @@ export const verifyOTP = async (req: Request, res: Response) => {
 export const updateProfile = async (req: Request, res: Response) => {
     try {
         const { userId } = (req as any).user; // From auth middleware
-        const { name, email, gothra, kuldevi, kuldevta, dob, anniversary, address, nativePlace } = req.body;
+        const { name, email, gothra, kuldevi, kuldevta, dob, anniversary, address, nativePlace, phone } = req.body;
         const profileImage = req.file ? `/uploads/users/${req.file.filename}` : undefined;
 
         // If email is being updated, check if it's already taken by another user
@@ -395,6 +496,21 @@ export const updateProfile = async (req: Request, res: Response) => {
                 return res.status(400).json({
                     success: false,
                     message: `The email address ${email} is already registered. Please use a unique email address.`
+                });
+            }
+        }
+
+        // If phone is being updated, check if it's already taken by another user
+        if (phone) {
+            const normalizedPhone = normalizePhone(phone);
+            const existingPhone = await prisma.user.findFirst({
+                where: { phone: normalizedPhone }
+            });
+
+            if (existingPhone && existingPhone.id !== userId) {
+                return res.status(400).json({
+                    success: false,
+                    message: `The user with number ${phone} is already with us. Please use a different number.`
                 });
             }
         }
@@ -413,6 +529,11 @@ export const updateProfile = async (req: Request, res: Response) => {
         // Only update email if provided
         if (email) {
             updateData.email = email.toLowerCase().trim();
+        }
+
+        // Only update phone if provided
+        if (phone) {
+            updateData.phone = normalizePhone(phone);
         }
 
         // Add profile image if uploaded

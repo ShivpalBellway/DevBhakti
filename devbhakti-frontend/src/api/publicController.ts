@@ -2,10 +2,11 @@ import axios from "axios";
 import { API_URL } from "@/config/apiConfig";
 
 export const fetchPublicTemples = async (params?: {
-  search?: string;
-  category?: string;
-  location?: string;
-  pooja?: string;
+    search?: string;
+    category?: string;
+    location?: string;
+    pooja?: string;
+    poojaId?: string;
 }) => {
     try {
         const response = await axios.get(`${API_URL}/temples`, { params });
@@ -63,11 +64,11 @@ export const fetchPublicPoojaById = async (id: string) => {
 
 // Get Public Products (for landing page)
 export const fetchPublicProducts = async (params?: {
-  page?: number;
-  limit?: number;
-  search?: string;
-  category?: string;
-  templeId?: string;
+    page?: number;
+    limit?: number;
+    search?: string;
+    category?: string;
+    templeId?: string;
 }) => {
     try {
         const response = await axios.get(`${API_URL}/admin/products/public`, {
@@ -88,5 +89,20 @@ export const fetchProductByIdPublic = async (id: string) => {
     } catch (error) {
         console.error("Error fetching product by id:", error);
         return null;
+    }
+};
+export const fetchRatingsSettings = async () => {
+    try {
+        const response = await axios.get(`${API_URL}/admin/settings/ratings`);
+        return response.data;
+    } catch (error) {
+        console.error("Error fetching ratings settings:", error);
+        return {
+            success: false, settings: {
+                temple: { home: false, details: false },
+                product: { home: false, details: false },
+                pooja: { home: false, details: false }
+            }
+        };
     }
 };

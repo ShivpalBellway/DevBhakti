@@ -59,8 +59,8 @@ export default function EditTemplePage() {
         category: "",
         openTime: "",
         description: "",
-        // history: "",
         viewers: "",
+
         templePhone: "",
         website: "",
         mapUrl: "",
@@ -102,7 +102,7 @@ export default function EditTemplePage() {
     const [tempImage, setTempImage] = useState<string | null>(null);
     const [cropType, setCropType] = useState<"main" | "hero">("main");
     const [cropTitle, setCropTitle] = useState("Edit Temple Image");
-    const [initialAspect, setInitialAspect] = useState(3 / 2);
+    const [initialAspect, setInitialAspect] = useState(16 / 9);
 
     useEffect(() => {
         loadData();
@@ -137,8 +137,8 @@ export default function EditTemplePage() {
                     category: inst.temple?.category || "",
                     openTime: inst.temple?.openTime || "",
                     description: inst.temple?.description || "",
-                    // history: inst.temple?.history || "",
                     viewers: inst.temple?.viewers || "",
+
                     templePhone: stripPrefix(inst.temple?.phone || ""),
                     website: inst.temple?.website || "",
                     mapUrl: inst.temple?.mapUrl || "",
@@ -254,7 +254,7 @@ export default function EditTemplePage() {
                 setTempImage(reader.result as string);
                 setCropType("main");
                 setCropTitle("Adjust Temple Profile Image");
-                setInitialAspect(3 / 2);
+                setInitialAspect(16 / 9);
                 setShowCropper(true);
             };
             reader.readAsDataURL(file);
@@ -284,7 +284,7 @@ export default function EditTemplePage() {
                     setTempImage(reader.result as string);
                     setCropType("hero");
                     setCropTitle("Adjust Temple Banner Image");
-                    setInitialAspect(1920 / 600);
+                    setInitialAspect(1920 / 800);
                     setShowCropper(true);
                 };
                 reader.readAsDataURL(validFiles[0]);
@@ -442,10 +442,10 @@ export default function EditTemplePage() {
         try {
             const fd = new FormData();
             Object.entries(formData).forEach(([key, value]) => {
-                if (key === 'operatingHours') {
+                if (typeof value === 'object' && value !== null) {
                     fd.append(key, JSON.stringify(value));
                 } else {
-                    fd.append(key, JSON.stringify(value));
+                    fd.append(key, value as string);
                 }
             });
 
@@ -760,11 +760,15 @@ export default function EditTemplePage() {
                                 <div className="border-2 border-dashed rounded-xl p-4 text-center cursor-pointer relative group">
                                     <input type="file" accept="image/*" className="absolute inset-0 opacity-0 cursor-pointer" onChange={handleMainImageChange} />
                                     {(mainImagePreview || existingMainImage) ? (
-                                        <div className="aspect-video rounded-lg overflow-hidden">
+                                        <div className="aspect-[16/9] rounded-lg overflow-hidden">
                                             <img src={mainImagePreview || getFullImageUrl(existingMainImage)} className="w-full h-full object-cover" />
                                         </div>
                                     ) : (
-                                        <div className="py-8 text-muted-foreground"><Upload className="w-10 h-10 mx-auto mb-2" /> Upload</div>
+                                        <div className="py-8 text-muted-foreground">
+                                            <Upload className="w-10 h-10 mx-auto mb-2" />
+                                            <p className="font-bold">Upload Profile Image</p>
+                                            <p className="text-[10px] uppercase font-bold tracking-widest mt-1">Aspect Ratio: 16:9 (1200x675 px)</p>
+                                        </div>
                                     )}
                                 </div>
                             </div>
@@ -783,9 +787,10 @@ export default function EditTemplePage() {
                                             <button type="button" onClick={() => removeHeroImage(i, false)} className="absolute top-1 right-1 bg-white/80 rounded-full p-1"><X className="w-3 h-3 text-destructive" /></button>
                                         </div>
                                     ))}
-                                    <div className="border-2 border-dashed rounded-lg flex items-center justify-center aspect-square relative cursor-pointer">
+                                    <div className="border-2 border-dashed rounded-lg flex flex-col items-center justify-center aspect-square relative cursor-pointer hover:bg-slate-50 transition-colors">
                                         <input type="file" multiple accept="image/*" className="absolute inset-0 opacity-0 cursor-pointer" onChange={handleHeroImagesChange} />
                                         <Plus className="w-6 h-6 text-muted-foreground" />
+                                        <p className="text-[8px] font-bold uppercase mt-1">Add Banner</p>
                                     </div>
                                 </div>
                             </div>

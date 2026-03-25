@@ -382,20 +382,20 @@ function PrintLabelsContent() {
 
                                 <div className="totals-right">
                                     <div className="total-line">
-                                        <span>Subtotal (In Value)</span>
-                                        <span>Rs. {(order.totalAmount - (order.platformFee || 0) - (order.shippingCost || 0)).toFixed(2)}</span>
+                                        <span>Items Subtotal</span>
+                                        <span>Rs. {order.totalAmount.toFixed(2)}</span>
                                     </div>
                                     <div className="total-line">
-                                        <span>Platform fee</span>
-                                        <span>Rs. {(order.platformFee || 0).toFixed(2)}</span>
+                                        <span>Platform Service fee</span>
+                                        <span>Rs. {(order.commissionAmount || 0).toFixed(2)}</span>
                                     </div>
                                     <div className="total-line">
                                         <span>Shipping Costs</span>
-                                        <span>{(order.shippingCost || 0) > 0 ? "Rs. " + (order.shippingCost || 0).toFixed(2) : "0.00"}</span>
+                                        <span>{(parentOrder.shippingCost || 0) > 0 ? "Rs. " + (parentOrder.shippingCost || 0).toFixed(2) : "0.00"}</span>
                                     </div>
                                     <div className="total-line grand">
-                                        <span>NET TOTAL (In Value)</span>
-                                        <span>Rs. {order.totalAmount.toFixed(2)}</span>
+                                        <span>AMOUNT PAYABLE</span>
+                                        <span>Rs. {(order.totalAmount + (order.commissionAmount || 0) + (parentOrder.shippingCost || 0)).toFixed(2)}</span>
                                     </div>
                                     <br />
                                     <div className="total-line text" style={{ justifyContent: "flex-end", fontSize: "12px", fontWeight: 500 }}>

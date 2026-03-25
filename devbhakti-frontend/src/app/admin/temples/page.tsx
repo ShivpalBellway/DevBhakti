@@ -603,15 +603,45 @@ function TemplesContent() {
             {/* Tabs for Verified vs Pending */}
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                 <div className="flex items-center justify-between mb-4">
-                    <TabsList>
+                    {/* <TabsList>
                         <TabsTrigger value="verified" className="flex items-center gap-2">
-                            <CheckCircle className="w-4 h-4" />
+                            <CheckCircle className="w-4 h-4 text-emerald-600" />
                             Verified Temples
                         </TabsTrigger>
                         <TabsTrigger value="unverified" className="flex items-center gap-2">
-                            <Clock className="w-4 h-4" />
+                            <Clock className="w-4 h-4 text-amber-600" />
                             Pending Verification
                         </TabsTrigger>
+                    </TabsList> */}
+
+
+
+
+
+                    <TabsList className="grid grid-cols-2 bg-gray-100 p-1 rounded-xl">
+
+                        {/* VERIFIED TAB */}
+                        <TabsTrigger
+                            value="verified"
+                            className="flex items-center gap-2 rounded-lg 
+    data-[state=active]:bg-emerald-600 
+    data-[state=active]:text-white"
+                        >
+                            <CheckCircle className="w-4 h-4 text-emerald-900 data-[state=active]:text-white" />
+                            Verified Temples
+                        </TabsTrigger>
+
+                        {/* PENDING TAB */}
+                        <TabsTrigger
+                            value="unverified"
+                            className="flex items-center gap-2 rounded-lg 
+    data-[state=active]:bg-amber-500 
+    data-[state=active]:text-white"
+                        >
+                            <Clock className="w-4 h-4 text-amber-600 data-[state=active]:text-white" />
+                            Pending Verification
+                        </TabsTrigger>
+
                     </TabsList>
                 </div>
 

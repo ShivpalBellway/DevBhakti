@@ -511,7 +511,7 @@ export default function CreateProductPage() {
                       onChange={handleProductImageChange}
                       className="cursor-pointer"
                     />
-                    <p className="text-[10px] font-semibold text-primary mt-1">Recommended: 800x800 px (Square)</p>
+                    <p className="text-[10px] font-semibold text-primary mt-1">Aspect Ratio: 1:1 (800x800 px)</p>
                     <p className="text-xs text-slate-500 mt-0.5">
                       JPG, PNG, GIF up to 5MB
                     </p>

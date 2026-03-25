@@ -1,10 +1,10 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Star, ArrowRight, Package, Heart } from "lucide-react";
+import { Star, ArrowRight, Package, Heart, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { fetchPublicProducts } from "@/api/publicController";
+import { fetchPublicProducts, fetchRatingsSettings } from "@/api/publicController";
 import { fetchUserFavorites, addFavorite, removeFavorite } from "@/api/userController";
 import { useToast } from "@/hooks/use-toast";
 import { BASE_URL } from "@/config/apiConfig";
@@ -28,17 +28,34 @@ const MarketplaceSection: React.FC = () => {
   const [favorites, setFavorites] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
+  const [showRatings, setShowRatings] = useState(false);
+  const scrollContainerRef = React.useRef<HTMLDivElement>(null);
+
+  const scroll = (direction: "left" | "right") => {
+    if (scrollContainerRef.current) {
+      const scrollAmount = 400;
+      scrollContainerRef.current.scrollBy({
+        left: direction === "left" ? -scrollAmount : scrollAmount,
+        behavior: "smooth",
+      });
+    }
+  };
 
   useEffect(() => {
     const loadData = async () => {
       setIsLoading(true);
       try {
-        const [productsData, favoritesRes] = await Promise.all([
+        const [productsData, favoritesRes, settingsData] = await Promise.all([
           fetchPublicProducts({ limit: 8 }),
-          fetchUserFavorites()
+          fetchUserFavorites(),
+          fetchRatingsSettings()
         ]);
 
         setProducts(productsData);
+
+        if (settingsData && settingsData.settings) {
+          setShowRatings(settingsData.settings.product.home);
+        }
 
         if (favoritesRes.success && favoritesRes.data) {
           const productIds = favoritesRes.data
@@ -105,16 +122,32 @@ const MarketplaceSection: React.FC = () => {
             </h2>
             <p className="text-slate-600 mt-2 max-w-md">Authentic spiritual products blessed and sourced from holy temples across India.</p>
           </div>
-          <Button variant="ghost" className="text-[#794A05] hover:bg-[#794A05]/5 font-bold mb-1" asChild>
-            <Link href="/marketplace">
-              View All Items
-              <ArrowRight className="w-4 h-4 ml-2" />
-            </Link>
-          </Button>
         </div>
 
         {/* Horizontal Product Scroll */}
-        <div className="relative">
+        <div className="relative group/scroll">
+          {/* Side Navigation Buttons */}
+          {!isLoading && products.length > 0 && (
+            <div className="hidden md:block">
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => scroll("left")}
+                className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 z-20 rounded-full w-12 h-12 bg-white shadow-xl border-2 border-[#794A05]/10 text-[#794A05] hover:bg-[#794A05] hover:text-white transition-all duration-300 flex items-center justify-center font-bold"
+              >
+                <ChevronLeft className="w-7 h-7" />
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => scroll("right")}
+                className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 z-20 rounded-full w-12 h-12 bg-white shadow-xl border-2 border-[#794A05]/10 text-[#794A05] hover:bg-[#794A05] hover:text-white transition-all duration-300 flex items-center justify-center font-bold"
+              >
+                <ChevronRight className="w-7 h-7" />
+              </Button>
+            </div>
+          )}
+
           {isLoading ? (
             <div className="flex gap-6 overflow-x-hidden">
               {[1, 2, 4, 5].map((i) => (
@@ -127,7 +160,10 @@ const MarketplaceSection: React.FC = () => {
               ))}
             </div>
           ) : products.length > 0 ? (
-            <div className="flex gap-6 overflow-x-auto pb-8 premium-scrollbar scrollbar-hide snap-x">
+            <div 
+              ref={scrollContainerRef}
+              className="flex gap-6 overflow-x-auto pb-8 premium-scrollbar scrollbar-hide snap-x scroll-smooth"
+            >
               {products.map((product, index) => (
                 <motion.div
                   key={product.id}
@@ -160,10 +196,10 @@ const MarketplaceSection: React.FC = () => {
                       {/* Favorite Button */}
                       <button
                         onClick={(e) => toggleFavorite(e, product.id)}
-                        className="absolute top-3 right-3 p-2 bg-white/90 backdrop-blur-sm rounded-full shadow-sm hover:bg-white transition-all transform hover:scale-110 active:scale-95 z-10"
+                        className="absolute top-3 right-3 p-2.5 bg-white shadow-md border border-primary/10 rounded-full hover:bg-primary group/fav transition-all duration-300 transform hover:scale-105 active:scale-95 z-10"
                       >
                         <Heart
-                          className={`w-4 h-4 transition-colors ${favorites.includes(product.id) ? "fill-red-500 text-red-500" : "text-[#794A05]"}`}
+                          className={`w-4 h-4 transition-all duration-300 ${favorites.includes(product.id) ? "fill-red-500 text-red-500" : "text-primary/60 group-hover/fav:text-white"}`}
                         />
                       </button>
                     </div>
@@ -181,10 +217,12 @@ const MarketplaceSection: React.FC = () => {
                         <span className="font-display font-bold text-[#794A05] text-xl">
                           {product.variants?.[0]?.price ? formatPrice(product.variants[0].price) : "N/A"}
                         </span>
-                        <div className="flex items-center gap-1 bg-[#794A05]/5 px-2 py-1 rounded-full">
-                          <Star className="w-3 h-3 fill-amber-500 text-amber-500" />
-                          <span className="text-[10px] font-bold text-[#794A05]">{product.rating || "4.5"}</span>
-                        </div>
+                        {showRatings && (
+                          <div className="flex items-center gap-1 bg-[#794A05]/5 px-2 py-1 rounded-full">
+                            <Star className="w-3 h-3 fill-amber-500 text-amber-500" />
+                            <span className="text-[10px] font-bold text-[#794A05]">{product.rating || "4.5"}</span>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </Link>
@@ -198,6 +236,17 @@ const MarketplaceSection: React.FC = () => {
             </div>
           )}
         </div>
+
+        {/* View All Button at bottom */}
+        {!isLoading && products.length > 0 && (
+          <div className="text-center mt-4">
+            <Button variant="outline" className="rounded-full border-[#794A05] text-[#794A05] hover:bg-[#794A05] hover:text-white px-8 h-12 text-base font-bold transition-all duration-300 shadow-sm hover:shadow-lg" asChild>
+              <Link href="/marketplace">
+                View All Items <ArrowRight className="w-5 h-5 ml-2" />
+              </Link>
+            </Button>
+          </div>
+        )}
       </div>
     </section>
   );

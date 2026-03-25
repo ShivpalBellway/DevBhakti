@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 
-import { fetchPublicTemples } from "@/api/publicController";
+import { fetchPublicTemples, fetchRatingsSettings } from "@/api/publicController";
 import { fetchUserFavorites, addFavorite, removeFavorite } from "@/api/userController";
 import { API_URL } from "@/config/apiConfig";
 import { getTempleUrl } from "@/lib/utils/templeUtils";
@@ -23,6 +23,7 @@ const TemplesSection: React.FC = () => {
   const router = useRouter();
   const { toast } = useToast();
   const [user, setUser] = React.useState<any>(null);
+  const [showRatings, setShowRatings] = React.useState(false);
 
   React.useEffect(() => {
     const savedUser = localStorage.getItem("user");
@@ -31,7 +32,19 @@ const TemplesSection: React.FC = () => {
       loadFavorites();
     }
     loadTemples();
+    loadRatingsSettings();
   }, []);
+
+  const loadRatingsSettings = async () => {
+    try {
+      const data = await fetchRatingsSettings();
+      if (data && data.settings) {
+        setShowRatings(data.settings.temple.home);
+      }
+    } catch (error) {
+      console.error("Error loading ratings settings:", error);
+    }
+  };
 
   const loadFavorites = async () => {
     try {
@@ -217,15 +230,17 @@ const TemplesSection: React.FC = () => {
                               <MapPin className="w-3 h-3" />
                               <span className="text-[10px] line-clamp-1">{temple.location}</span>
                             </div>
-                            <div className="flex items-center gap-1">
-                              <div className="flex items-center gap-0.5">
-                                <Star className="w-3 h-3 fill-secondary text-secondary" />
-                                <span className="font-bold text-[11px]">4.5</span>
+                            {showRatings && (
+                              <div className="flex items-center gap-1">
+                                <div className="flex items-center gap-0.5">
+                                  <Star className="w-3 h-3 fill-secondary text-secondary" />
+                                  <span className="font-bold text-[11px]">4.5</span>
+                                </div>
+                                <span className="text-[10px] text-muted-foreground">
+                                  ({[432, 252, 125, 75][index % 4]})
+                                </span>
                               </div>
-                              <span className="text-[10px] text-muted-foreground">
-                                ({[432, 252, 125, 75][index % 4]})
-                              </span>
-                            </div>
+                            )}
                           </div>
 
                           <div className="flex flex-col items-end gap-1">
@@ -251,12 +266,12 @@ const TemplesSection: React.FC = () => {
                   {/* Favorite Button - Outside Link */}
                   <button
                     onClick={(e) => toggleFavorite(e, temple.id)}
-                    className="absolute top-4 right-4 z-30 p-2 rounded-full bg-white/20 backdrop-blur-md border border-white/30 hover:bg-white/40 transition-all group/fav"
+                    className="absolute top-4 right-4 z-30 p-2.5 rounded-full bg-white shadow-md border border-primary/10 hover:bg-primary group/fav transition-all duration-300"
                   >
                     <Heart
-                      className={`w-5 h-5 transition-all ${favorites.some((f) => f.templeId === temple.id)
+                      className={`w-4 h-4 transition-all duration-300 ${favorites.some((f) => f.templeId === temple.id)
                         ? "fill-red-500 text-red-500"
-                        : "text-white group-hover/fav:text-red-200"
+                        : "text-primary/60 group-hover/fav:text-white"
                         }`}
                     />
                   </button>

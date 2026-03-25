@@ -57,7 +57,7 @@ export default function TempleProfilePage() {
     const [tempImage, setTempImage] = useState<string | null>(null);
     const [croppingTarget, setCroppingTarget] = useState<{ type: 'main' | 'hero' } | null>(null);
     const [cropTitle, setCropTitle] = useState("");
-    const [initialAspect, setInitialAspect] = useState(3 / 2);
+    const [initialAspect, setInitialAspect] = useState(16 / 9);
 
     // File refs
     const mainImageRef = useRef<HTMLInputElement>(null);
@@ -214,7 +214,7 @@ export default function TempleProfilePage() {
                 setTempImage(reader.result as string);
                 setCroppingTarget({ type: 'main' });
                 setCropTitle("Crop Profile Image");
-                setInitialAspect(3 / 2);
+                setInitialAspect(16 / 9);
                 setShowCropper(true);
             };
             reader.readAsDataURL(file);
@@ -233,7 +233,7 @@ export default function TempleProfilePage() {
                     setTempImage(reader.result as string);
                     setCroppingTarget({ type: 'hero' });
                     setCropTitle("Crop Banner Image");
-                    setInitialAspect(1920 / 600);
+                    setInitialAspect(1920 / 800);
                     setShowCropper(true);
                 };
                 reader.readAsDataURL(validFiles[0]);
@@ -517,9 +517,12 @@ export default function TempleProfilePage() {
                                             </div>
                                         </>
                                     ) : (
-                                        <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-400 gap-3">
+                                        <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-400 gap-3 text-center px-4">
                                             <Plus className="w-8 h-8" />
-                                            <span className="text-xs font-bold uppercase tracking-widest">Upload Photo</span>
+                                            <div className="space-y-1">
+                                                <span className="text-xs font-bold uppercase tracking-widest block">Upload Photo</span>
+                                                <span className="text-[10px] opacity-60">Aspect Ratio: 16:9 (1200x675)</span>
+                                            </div>
                                         </div>
                                     )}
                                     <input type="file" ref={mainImageRef} className="hidden" accept="image/*" onChange={handleMainImageChange} />
@@ -575,7 +578,7 @@ export default function TempleProfilePage() {
                                             className="aspect-video rounded-xl border-2 border-dashed border-slate-200 bg-white/40 flex flex-col items-center justify-center text-slate-400 hover:bg-white/80 hover:border-[#7b4623]/30 transition-all cursor-pointer group/add"
                                         >
                                             <Plus className="w-6 h-6 group-hover/add:text-[#7b4623]" />
-                                            <span className="text-[8px] font-black uppercase tracking-widest">Add Banner</span>
+                                            <span className="text-[8px] font-black uppercase tracking-widest mt-1 text-center px-2">Add Banner<br /><span className="text-[7px] italic">Aspect Ratio: 2.4:1</span></span>
                                         </div>
                                     )}
                                 </div>
