@@ -149,7 +149,7 @@ export default function RegisterTemplePage() {
                             transition={{ duration: 1, delay: 0.2 }}
                         >
                             <div className="flex justify-center mb-6">
-                                <Logo size="xl" className="h-24 md:h-32 w-auto pointer-events-none" />
+                                <Logo size="xl" className="h-32 md:h-40 w-auto pointer-events-none" />
                             </div>
                             <h1 className="text-2xl md:text-4xl lg:text-6xl font-serif font-extrabold tracking-tight mb-8 leading-tight text-foreground">
                                 <span className="text-primary">Helping Temples Stay Connected</span>

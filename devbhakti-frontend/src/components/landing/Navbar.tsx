@@ -87,9 +87,9 @@ const Navbar: React.FC<NavbarProps> = ({ variant = "default" }) => {
       <motion.header
         initial={{ y: -100 }}
         animate={{ y: 0 }}
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled
+        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled || isMobileMenuOpen
           ? "bg-background/95 backdrop-blur-md shadow-soft border-b border-border"
-          : "bg-transparent"
+          : "bg-white xl:bg-transparent"
           }`}
       >
         <div className="container mx-auto px-4">
@@ -98,46 +98,46 @@ const Navbar: React.FC<NavbarProps> = ({ variant = "default" }) => {
             <div className="flex items-center shrink-0 relative z-10">
               <Link href="/" className="block">
                 <Logo
-                  className={`h-16 md:h-20 lg:h-24 w-auto transition-all duration-300 ${isScrolled ? "scale-75" : "scale-100"
+                  className={`h-12 md:h-16 xl:h-20 2xl:h-24 w-auto transition-all duration-300 ${isScrolled ? "scale-90" : "scale-100"
                     }`}
                 />
               </Link>
             </div>
 
             {/* Desktop Navigation & Search (Wide Screens Only) */}
-            <div className="hidden xl:flex flex-1 items-center justify-between gap-6 2xl:gap-10 mx-4 2xl:mx-8">
+            <div className="hidden xl:flex flex-1 items-center justify-between gap-4 2xl:gap-10 mx-2 xl:mx-4 2xl:mx-8">
               {/* Desktop Search Bar */}
               {!isTempleRegistrationPage ? (
                 <div
                   onClick={() => setIsSearchOpen(true)}
-                  className="flex items-center gap-4 px-8 py-3
-                             flex-1 max-w-[500px] min-w-[250px]
+                  className="flex items-center gap-3 px-6 py-2.5
+                             flex-1 max-w-[350px] 2xl:max-w-[550px] min-w-[200px]
                              bg-orange-50/70 dark:bg-zinc-900/90 backdrop-blur-md rounded-full
                              cursor-pointer transition-all border border-orange-200/50
                              dark:border-zinc-800/50 hover:border-primary/60
                              shadow-md hover:shadow-xl hover:bg-orange-100/60 group"
                 >
-                  <Search className="w-5 h-5 text-primary shrink-0 transition-transform group-hover:scale-110" />
-                  <span className="text-black/80 dark:text-white/80 text-sm font-semibold truncate">
+                  <Search className="w-4 h-4 text-primary shrink-0 transition-transform group-hover:scale-110" />
+                  <span className="text-black/80 dark:text-white/80 text-[13px] font-semibold truncate">
                     Search temples, poojas, products...
                   </span>
                 </div>
               ) : (
                 <div className="flex-1 flex justify-center">
-                  <Link href="/" className="text-md font-medium text-slate-800 hover:text-primary transition-colors">
+                  <Link href="/" className="text-sm font-medium text-slate-800 hover:text-primary transition-colors">
                     Go to Devotee Home Page
                   </Link>
                 </div>
               )}
 
-              <div className="flex items-center gap-4 2xl:gap-8 shrink-0">
+              <div className="flex items-center gap-3 2xl:gap-8 shrink-0">
                 {!isTempleRegistrationPage && navLinks.map((link) => {
                   const active = isLinkActive(link.href);
                   return (
                     <Link
                       key={link.label}
                       href={link.href}
-                      className={`text-sm font-bold transition-all whitespace-nowrap uppercase tracking-wider relative group ${active ? "text-primary" : "text-foreground hover:text-primary"
+                      className={`text-[12px] 2xl:text-sm font-bold transition-all whitespace-nowrap uppercase tracking-wider relative group ${active ? "text-primary" : "text-foreground hover:text-primary"
                         }`}
                     >
                       {link.label}
@@ -173,19 +173,7 @@ const Navbar: React.FC<NavbarProps> = ({ variant = "default" }) => {
                 </Button>
               )}
 
-              {variant === "default" ? (
-                !user && (
-                  <Button
-                    variant="outline"
-                    className="hidden sm:flex bg-[#88542B] border-[#c2a087] text-white hover:bg-[#CA9E52] hover:text-white rounded-full px-4 xl:px-6 h-10 text-xs xl:text-sm font-bold shadow-md transition-all whitespace-nowrap"
-                    asChild
-                  >
-                    <Link href="/temples/register">
-                      Register as Temple
-                    </Link>
-                  </Button>
-                )
-              ) : (
+              {variant === "default" ? null : (
                 <Button
                   variant="outline"
                   onClick={() => setShowTempleLoginModal(true)}
@@ -263,6 +251,9 @@ const Navbar: React.FC<NavbarProps> = ({ variant = "default" }) => {
                           : !user &&
                           (
                             <>
+                              <div className="px-4 pt-2 pb-1 text-[10px] uppercase tracking-widest font-bold text-[#88542b]/60">
+                                For Devotees
+                              </div>
                               <DropdownMenuItem asChild className="focus:bg-primary focus:text-white rounded-[1.2rem] cursor-pointer transition-all duration-300 group">
                                 <Link href="/auth" className="flex items-center justify-between w-full px-4 py-3">
                                   <div className="flex items-center gap-3">
@@ -282,11 +273,22 @@ const Navbar: React.FC<NavbarProps> = ({ variant = "default" }) => {
                                   <ChevronRight className="w-3 h-3 opacity-0 group-focus:opacity-100 -translate-x-2 group-focus:translate-x-0 transition-all" />
                                 </Link>
                               </DropdownMenuItem>
+
+                              <div className="py-2 mx-4 border-t border-orange-50 dark:border-zinc-800/50" />
+                              <DropdownMenuItem asChild className="focus:bg-primary focus:text-white rounded-[1.2rem] cursor-pointer transition-all duration-300 group">
+                                <Link href="/temples/register" className="flex items-center justify-between w-full px-4 py-3">
+                                  <div className="flex items-center gap-3">
+                                    <Church className="w-4 h-4 text-primary group-focus:text-white transition-colors" />
+                                    <span className="font-medium">Temple Registration</span>
+                                  </div>
+                                  <ChevronRight className="w-3 h-3 opacity-0 group-focus:opacity-100 -translate-x-2 group-focus:translate-x-0 transition-all" />
+                                </Link>
+                              </DropdownMenuItem>
                             </>
                           )}
 
 
-                      {(!user || user.role === "DEVOTEE") && (
+                      {(user && user.role === "DEVOTEE") && (
                         <>
                           <div className="py-2 mx-4 border-t border-orange-50 dark:border-zinc-800/50" />
 

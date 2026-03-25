@@ -264,17 +264,17 @@ export function TemplesList() {
         </section>
 
         {/* Streamlined Quick Filters Bar */}
-        <section className="py-6 bg-white/40 backdrop-blur-md border-y border-primary/5 relative overflow-hidden pattern-sacred">
+        <section className="py-3 sticky top-0 md:top-[74px] z-40 bg-primary  shadow-lg border-b border-black/20 transition-all">
           <div className="container mx-auto px-4 relative z-10">
-            <div className="flex flex-col space-y-4">
+            <div className="flex flex-col space-y-3">
               <div className="flex items-center justify-between px-1">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-primary/10 rounded-lg">
-                    <Filter className="h-5 w-5 text-primary" />
+                  <div className="p-1.5 bg-white/10 rounded-md">
+                    <Filter className="h-4 w-4 text-amber-200" />
                   </div>
                   <div className="flex flex-col">
-                    <span className="text-[8px] uppercase tracking-[0.2em] font-bold text-primary/80 leading-none">Filter Experience</span>
-                    <span className="text-xl font-serif font-bold text-foreground">Refine Discovery</span>
+                    <span className="text-[9px] uppercase tracking-[0.1em] font-medium text-amber-200/80 leading-snug">Filter Experience</span>
+                    <span className="text-lg font-serif font-bold text-white leading-none">Refine Discovery</span>
                   </div>
                 </div>
                 {(selectedCategory !== "All" || selectedLocation !== "All" || selectedPooja !== "All" || searchQuery !== "") && (
@@ -287,43 +287,43 @@ export function TemplesList() {
                       setSelectedPooja("All");
                       setSearchQuery("");
                     }}
-                    className="flex items-center gap-2 text-xs font-bold text-primary hover:text-primary/80 transition-all bg-primary/5 px-4 py-2 rounded-full border border-primary/10"
+                    className="flex items-center gap-1.5 text-[10px] font-bold text-amber-200 hover:text-white transition-all bg-black/20 px-3 py-1.5 rounded-full border border-amber-500/30"
                   >
-                    Reset All Filters
+                    Reset All
                   </motion.button>
                 )}
               </div>
 
               {/* Enhanced Filter Bar with Searchable Dropdowns */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 {/* Category Dropdown */}
-                <div className="relative group bg-white/80 backdrop-blur-md border border-primary/10 rounded-2xl shadow-sm hover:shadow-md hover:border-primary/40 transition-all duration-300 p-1.5 px-2">
+                <div className="relative group bg-black/20 border border-white/10 rounded-xl shadow-inner hover:bg-black/30 transition-all duration-300 p-0.5">
                   <Popover>
                     <PopoverTrigger asChild>
                       <Button
                         variant="ghost"
                         role="combobox"
-                        className="w-full justify-start h-14 hover:bg-primary/5 rounded-xl border-none shadow-none text-left font-normal px-4"
+                        className="w-full justify-start h-11 hover:bg-transparent rounded-lg border-none shadow-none text-left font-normal px-3"
                       >
-                        <div className="flex items-center gap-3 w-full">
-                          <div className="text-primary/50 group-hover:text-primary transition-colors shrink-0">
-                            <Star className="h-5 w-5" />
+                        <div className="flex items-center gap-2.5 w-full">
+                          <div className="text-amber-200/70 group-hover:text-amber-200 transition-colors shrink-0">
+                            <Star className="h-4 w-4" />
                           </div>
                           <div className="flex flex-col items-start leading-tight min-w-0">
-                            <span className="text-[10px] uppercase font-bold text-primary/40 tracking-wider">Divine Category</span>
-                            <span className="truncate text-foreground font-semibold">
+                            <span className="text-[9px] uppercase font-semibold text-white/50 tracking-wider">Divine Category</span>
+                            <span className="truncate text-white text-xs font-semibold mt-0.5">
                               {selectedCategory === "All" ? "All Categories" : selectedCategory}
                             </span>
                           </div>
                         </div>
-                        <ChevronsUpDown className="ml-auto h-4 w-4 shrink-0 opacity-50" />
+                        <ChevronsUpDown className="ml-auto h-3 w-3 shrink-0 text-white/40" />
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-[300px] p-0 rounded-xl" align="start">
                       <Command>
-                        <CommandInput placeholder="Search category..." className="h-10" />
+                        <CommandInput placeholder="Search category..." className="h-9 text-xs" />
                         <CommandList>
-                          <CommandEmpty>No category found.</CommandEmpty>
+                          <CommandEmpty className="py-2 text-xs text-center text-muted-foreground">No category found.</CommandEmpty>
                           <CommandGroup>
                             {categories.map((category) => (
                               <CommandItem
@@ -332,11 +332,11 @@ export function TemplesList() {
                                 onSelect={() => {
                                   setSelectedCategory(category);
                                 }}
-                                className="py-3 cursor-pointer data-[selected='true']:bg-primary data-[selected='true']:text-primary-foreground"
+                                className="py-2 text-xs cursor-pointer data-[selected='true']:bg-primary data-[selected='true']:text-primary-foreground"
                               >
                                 <Check
                                   className={cn(
-                                    "mr-2 h-4 w-4 text-primary",
+                                    "mr-2 h-3.5 w-3.5 text-primary",
                                     selectedCategory === category ? "opacity-100" : "opacity-0"
                                   )}
                                 />
@@ -351,33 +351,33 @@ export function TemplesList() {
                 </div>
 
                 {/* Location Dropdown */}
-                <div className="relative group bg-white/80 backdrop-blur-md border border-primary/10 rounded-2xl shadow-sm hover:shadow-md hover:border-primary/40 transition-all duration-300 p-1.5 px-2">
+                <div className="relative group bg-black/20 border border-white/10 rounded-xl shadow-inner hover:bg-black/30 transition-all duration-300 p-0.5">
                   <Popover>
                     <PopoverTrigger asChild>
                       <Button
                         variant="ghost"
                         role="combobox"
-                        className="w-full justify-start h-14 hover:bg-primary/5 rounded-xl border-none shadow-none text-left font-normal px-4"
+                        className="w-full justify-start h-11 hover:bg-transparent rounded-lg border-none shadow-none text-left font-normal px-3"
                       >
-                        <div className="flex items-center gap-3 w-full">
-                          <div className="text-primary/50 group-hover:text-primary transition-colors shrink-0">
-                            <MapPin className="h-5 w-5" />
+                        <div className="flex items-center gap-2.5 w-full">
+                          <div className="text-amber-200/70 group-hover:text-amber-200 transition-colors shrink-0">
+                            <MapPin className="h-4 w-4" />
                           </div>
                           <div className="flex flex-col items-start leading-tight min-w-0">
-                            <span className="text-[10px] uppercase font-bold text-primary/40 tracking-wider">Sanctum Location</span>
-                            <span className="truncate text-foreground font-semibold">
+                            <span className="text-[9px] uppercase font-semibold text-white/50 tracking-wider">Sanctum Location</span>
+                            <span className="truncate text-white text-xs font-semibold mt-0.5">
                               {selectedLocation === "All" ? "All Locations" : selectedLocation}
                             </span>
                           </div>
                         </div>
-                        <ChevronsUpDown className="ml-auto h-4 w-4 shrink-0 opacity-50" />
+                        <ChevronsUpDown className="ml-auto h-3 w-3 shrink-0 text-white/40" />
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-[300px] p-0 rounded-xl" align="start">
                       <Command>
-                        <CommandInput placeholder="Search location..." className="h-10" />
+                        <CommandInput placeholder="Search location..." className="h-9 text-xs" />
                         <CommandList>
-                          <CommandEmpty>No location found.</CommandEmpty>
+                          <CommandEmpty className="py-2 text-xs text-center text-muted-foreground">No location found.</CommandEmpty>
                           <CommandGroup>
                             {locations.map((location) => (
                               <CommandItem
@@ -386,11 +386,11 @@ export function TemplesList() {
                                 onSelect={() => {
                                   setSelectedLocation(location);
                                 }}
-                                className="py-3 cursor-pointer data-[selected='true']:bg-primary data-[selected='true']:text-primary-foreground"
+                                className="py-2 text-xs cursor-pointer data-[selected='true']:bg-primary data-[selected='true']:text-primary-foreground"
                               >
                                 <Check
                                   className={cn(
-                                    "mr-2 h-4 w-4 text-primary",
+                                    "mr-2 h-3.5 w-3.5 text-primary",
                                     selectedLocation === location ? "opacity-100" : "opacity-0"
                                   )}
                                 />
@@ -405,33 +405,33 @@ export function TemplesList() {
                 </div>
 
                 {/* Ritual Type Dropdown */}
-                <div className="relative group bg-white/80 backdrop-blur-md border border-primary/10 rounded-2xl shadow-sm hover:shadow-md hover:border-primary/40 transition-all duration-300 p-1.5 px-2">
+                <div className="relative group bg-black/20 border border-white/10 rounded-xl shadow-inner hover:bg-black/30 transition-all duration-300 p-0.5">
                   <Popover>
                     <PopoverTrigger asChild>
                       <Button
                         variant="ghost"
                         role="combobox"
-                        className="w-full justify-start h-14 hover:bg-primary/5 rounded-xl border-none shadow-none text-left font-normal px-4"
+                        className="w-full justify-start h-11 hover:bg-transparent rounded-lg border-none shadow-none text-left font-normal px-3"
                       >
-                        <div className="flex items-center gap-3 w-full">
-                          <div className="text-primary/50 group-hover:text-primary transition-colors shrink-0">
-                            <Calendar className="h-5 w-5" />
+                        <div className="flex items-center gap-2.5 w-full">
+                          <div className="text-amber-200/70 group-hover:text-amber-200 transition-colors shrink-0">
+                            <Calendar className="h-4 w-4" />
                           </div>
                           <div className="flex flex-col items-start leading-tight min-w-0">
-                            <span className="text-[10px] uppercase font-bold text-primary/40 tracking-wider">Ritual Type</span>
-                            <span className="truncate text-foreground font-semibold">
+                            <span className="text-[9px] uppercase font-semibold text-white/50 tracking-wider">Ritual Type</span>
+                            <span className="truncate text-white text-xs font-semibold mt-0.5">
                               {selectedPooja === "All" ? "All Poojas" : selectedPooja}
                             </span>
                           </div>
                         </div>
-                        <ChevronsUpDown className="ml-auto h-4 w-4 shrink-0 opacity-50" />
+                        <ChevronsUpDown className="ml-auto h-3 w-3 shrink-0 text-white/40" />
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-[300px] p-0 rounded-xl" align="start">
                       <Command>
-                        <CommandInput placeholder="Search ritual..." className="h-10" />
+                        <CommandInput placeholder="Search ritual..." className="h-9 text-xs" />
                         <CommandList>
-                          <CommandEmpty>No ritual found.</CommandEmpty>
+                          <CommandEmpty className="py-2 text-xs text-center text-muted-foreground">No ritual found.</CommandEmpty>
                           <CommandGroup>
                             {poojaOptions.map((pooja) => (
                               <CommandItem
@@ -440,11 +440,11 @@ export function TemplesList() {
                                 onSelect={() => {
                                   setSelectedPooja(pooja);
                                 }}
-                                className="py-3 cursor-pointer data-[selected='true']:bg-primary data-[selected='true']:text-primary-foreground"
+                                className="py-2 text-xs cursor-pointer data-[selected='true']:bg-primary data-[selected='true']:text-primary-foreground"
                               >
                                 <Check
                                   className={cn(
-                                    "mr-2 h-4 w-4 text-primary",
+                                    "mr-2 h-3.5 w-3.5 text-primary",
                                     selectedPooja === pooja ? "opacity-100" : "opacity-0"
                                   )}
                                 />

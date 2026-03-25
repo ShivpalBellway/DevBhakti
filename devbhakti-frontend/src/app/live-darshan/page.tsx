@@ -42,22 +42,38 @@ const getEmbedUrl = (url: string) => {
   }
 };
 
+// Extract YouTube video ID from any URL format
+const getYouTubeVideoId = (url: string): string | null => {
+  if (!url) return null;
+  try {
+    // watch?v=ID
+    const watchMatch = url.match(/[?&]v=([^&]+)/);
+    if (watchMatch) return watchMatch[1];
+    // youtu.be/ID
+    const shortMatch = url.match(/youtu\.be\/([^?&/]+)/);
+    if (shortMatch) return shortMatch[1];
+    // embed/ID
+    const embedMatch = url.match(/embed\/([^?&/]+)/);
+    if (embedMatch) return embedMatch[1];
+  } catch (e) {}
+  return null;
+};
+
 // --- Divine Animation Components ---
 
 const BellAnimation = ({ trigger, isLooping = false }: { trigger: number; isLooping?: boolean }) => {
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const stopTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    // Preload audio from a more reliable source
-    // Using a clear bell sound from Mixkit
-    const bellUrl = "https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3";
+    const bellUrl = "/videos/kalsstockmedia-log-soft-low-frequency-bell-sound-temple-asmr-309725.mp3";
     audioRef.current = new Audio(bellUrl);
     audioRef.current.volume = 1.0;
-
-    // Attempt to load
+    audioRef.current.loop = true; // loop so it continuously plays for 5s
     audioRef.current.load();
 
     return () => {
+      if (stopTimerRef.current) clearTimeout(stopTimerRef.current);
       if (audioRef.current) {
         audioRef.current.pause();
         audioRef.current = null;
@@ -66,27 +82,35 @@ const BellAnimation = ({ trigger, isLooping = false }: { trigger: number; isLoop
   }, []);
 
   useEffect(() => {
-    if (audioRef.current) {
-      if (isLooping) {
-        audioRef.current.loop = true;
-        audioRef.current.play().catch(e => {
-          console.warn("Bell loop blocked or failed:", e);
-        });
-      } else if (trigger > 0) {
-        audioRef.current.loop = false;
-        audioRef.current.currentTime = 0;
-        audioRef.current.play().catch(e => {
-          console.warn("Bell play blocked or failed:", e.message);
-          // If blocked by browser, we can't do much without user interaction,
-          // but logging helps debug why it's silent.
-        });
-      } else if (!isLooping) {
-        audioRef.current.pause();
-      }
+    if (!audioRef.current) return;
+
+    if (isLooping) {
+      audioRef.current.loop = true;
+      audioRef.current.currentTime = 0;
+      audioRef.current.play().catch(e => console.warn("Bell loop blocked:", e));
+    } else if (trigger > 0) {
+      // Clear any previous stop timer
+      if (stopTimerRef.current) clearTimeout(stopTimerRef.current);
+
+      audioRef.current.loop = true;
+      audioRef.current.currentTime = 0;
+      audioRef.current.play().catch(e => console.warn("Bell play blocked:", e));
+
+      // Stop after exactly 5 seconds
+      stopTimerRef.current = setTimeout(() => {
+        if (audioRef.current) {
+          audioRef.current.pause();
+          audioRef.current.currentTime = 0;
+        }
+      }, 5000);
+    } else {
+      if (stopTimerRef.current) clearTimeout(stopTimerRef.current);
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
     }
   }, [trigger, isLooping]);
 
-  return null; // Visual bell removed as requested
+  return null;
 };
 
 const FlowerShower = ({ trigger }: { trigger: number }) => {
@@ -210,6 +234,7 @@ function LiveDarshanContent() {
   const [searchQuery, setSearchQuery] = useState("");
   const searchParams = useSearchParams();
   const scrollRef = useRef<HTMLDivElement>(null);
+  const hasGreeted = useRef(false);
 
   const scroll = (direction: "left" | "right") => {
     if (scrollRef.current) {
@@ -229,7 +254,8 @@ function LiveDarshanContent() {
 
   // Automatic Trigger on Temple Change
   useEffect(() => {
-    if (selectedTemple && isPlaying) {
+    if (selectedTemple && isPlaying && !hasGreeted.current) {
+      hasGreeted.current = true;
       // Delay slightly for video to load
       const timer = setTimeout(() => {
         setBellTrigger(prev => prev + 1);
@@ -396,30 +422,62 @@ function LiveDarshanContent() {
           {/* Content unchanged... */}
           <div className="absolute inset-0 z-0">
             {isPlaying && selectedTemple.liveUrl ? (
-              <iframe
-                src={`${getEmbedUrl(selectedTemple.liveUrl)}?autoplay=1&mute=0&controls=1&rel=0`}
-                title="Live Darshan"
-                className="w-full h-full object-cover"
-                frameBorder="0"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                allowFullScreen
-              ></iframe>
+              <>
+                <iframe
+                  id="yt-player"
+                  src={`${getEmbedUrl(selectedTemple.liveUrl)}?autoplay=1&mute=0&controls=0&rel=0&disablekb=1&modestbranding=1&playsinline=1&iv_load_policy=3`}
+                  title="Live Darshan"
+                  className="w-full h-full object-cover pointer-events-none select-none"
+                  frameBorder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowFullScreen
+                ></iframe>
+                {/* 
+                  Custom Overlay:
+                  When the user clicks the video to pause, we literally unmount the YouTube iframe 
+                  (by setting isPlaying = false).
+                  This is the ONLY 100% foolproof way to prevent YouTube from showing the "More Videos" popup on pause 
+                  due to their API limitations.
+                */}
+                <div
+                  className="absolute inset-0 z-10 cursor-pointer bg-transparent"
+                  onClick={() => setIsPlaying(false)}
+                ></div>
+              </>
             ) : (
               <>
-                <Image
-                  src={getImageUrl(selectedTemple.image)}
-                  alt={selectedTemple.name}
-                  fill
-                  className="object-cover opacity-90"
-                  priority
-                />
-                <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black/80" />
+                {/* Pause Screen: Show YouTube video thumbnail — looks like a frozen video frame */}
+                {(() => {
+                  const videoId = getYouTubeVideoId(selectedTemple.liveUrl || "");
+                  const thumbSrc = videoId
+                    ? `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`
+                    : "/images/sacred_live_darshan_hero_bg.png";
+                  return (
+                    <img
+                      src={thumbSrc}
+                      alt={selectedTemple.name}
+                      className="w-full h-full absolute inset-0 object-cover transition-opacity duration-700"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        // fallback: hq → sacred default
+                        if (videoId && target.src.includes("maxresdefault")) {
+                          target.src = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
+                        } else if (!target.src.includes('sacred_live_darshan_hero_bg')) {
+                          target.src = "/images/sacred_live_darshan_hero_bg.png";
+                        }
+                      }}
+                    />
+                  );
+                })()}
+                <div className="absolute inset-0 bg-black/20" />
               </>
             )}
           </div>
 
-          <AartiAnimation trigger={aartiTrigger} />
-          <FlowerShower trigger={flowerTrigger} />
+          <div className="absolute inset-0 z-20 pointer-events-none overflow-hidden">
+            <AartiAnimation trigger={aartiTrigger} />
+            <FlowerShower trigger={flowerTrigger} />
+          </div>
           <BellAnimation trigger={bellTrigger} isLooping={isAartiActive} />
 
           {/* Top Info (Always on Video) */}
@@ -541,42 +599,42 @@ function LiveDarshanContent() {
           </div>
         </section>
 
-        <div className="container mx-auto px-4 md:px-6 mt-12">
+        <div className="container mx-auto px-4 md:px-6 mt-12 relative">
           {/* HORIZONTAL TEMPLE SELECTOR */}
           {temples.length > 0 && (
             <section id="other-temples">
-              <div className="flex flex-col lg:flex-row items-center justify-between mb-8 px-2 gap-6">
+              <div className="flex flex-col lg:flex-row items-center justify-between mb-4 px-2 gap-4 lg:gap-6 relative z-10 mt-2">
                 <div className="space-y-1 shrink-0">
                   <h3 className="text-3xl md:text-4xl font-black text-primary font-serif leading-tight text-center lg:text-left">Other Live Temples</h3>
                 </div>
 
-                {/* Smaller Search Bar in the middle */}
-                <div className="relative max-w-sm w-full group">
-                  <div className="relative flex items-center bg-white/40 backdrop-blur-sm rounded-full shadow-inner overflow-hidden border border-primary/10 focus-within:border-primary/50 focus-within:bg-white transition-all p-0.5">
+                {/* Prominent, Centered Search Bar */}
+                <div className="relative max-w-sm w-full mx-auto lg:absolute lg:left-1/2 lg:-translate-x-1/2 group z-20">
+                  <div className="relative flex items-center bg-white border-2 border-[#7c4624]/30 hover:border-[#7c4624]/50 focus-within:border-[#7c4624]/60 rounded-full shadow-md overflow-hidden transition-all duration-300 py-1">
                     <div className="flex-1 flex items-center px-4">
-                      <Search className="h-3.5 w-3.5 text-primary/70 mr-2" />
+                      <Search className="h-4 w-4 text-[#7c4624]/70 mr-2 shrink-0" />
                       <input
                         type="text"
                         placeholder="Search for live temple..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full bg-transparent outline-none py-2 text-sm font-medium placeholder:text-slate-400"
+                        className="w-full bg-transparent outline-none py-1.5 text-sm font-semibold text-[#2a1b01] placeholder:text-muted-foreground/70"
                       />
                     </div>
                   </div>
                 </div>
 
-                <div className="flex gap-2 shrink-0">
+                <div className="flex gap-2 shrink-0 hidden lg:flex">
                   <Badge variant="outline" className="border-sacred/20 text-sacred/60 uppercase font-black text-[9px] px-3 tracking-widest whitespace-nowrap bg-white/50 backdrop-blur-sm">
                     {temples.length} Live Channels Available
                   </Badge>
                 </div>
               </div>
 
-              <div className="relative group/scroll">
+              <div className="relative group/scroll mt-2">
                 <div
                   ref={scrollRef}
-                  className="flex gap-8 overflow-x-auto snap-x no-scrollbar py-12 px-8 scroll-smooth -mx-8"
+                  className="flex gap-8 overflow-x-auto snap-x no-scrollbar pt-4 pb-12 px-8 scroll-smooth -mx-8 relative z-0"
                 >
                   {temples
                     .filter(temple => temple.name.toLowerCase().includes(searchQuery.toLowerCase()) || temple.location.toLowerCase().includes(searchQuery.toLowerCase()))
@@ -585,16 +643,18 @@ function LiveDarshanContent() {
                         key={temple.id}
                         onClick={() => handleTempleClick(temple)}
                         className={`min-w-[300px] md:min-w-[360px] snap-start cursor-pointer transition-all duration-500 group relative ${selectedTemple.id === temple.id
-                            ? "z-10 opacity-100 ring-[5px] ring-primary ring-offset-4 rounded-[1.5rem] scale-[1.02]"
-                            : "opacity-100 hover:opacity-100"
+                          ? "z-10 opacity-100 ring-[5px] ring-primary ring-offset-4 rounded-[1.5rem] scale-[1.02]"
+                          : "opacity-100 hover:opacity-100"
                           }`}
                       >
                         <div className="relative aspect-video rounded-[1.5rem] overflow-hidden shadow-2xl border border-border/50">
-                          <Image
+                          <img
                             src={getImageUrl(temple.image)}
                             alt={temple.name}
-                            fill
-                            className="object-cover transition-transform duration-700 group-hover:scale-110"
+                            className="w-full h-full absolute inset-0 object-cover transition-transform duration-700 group-hover:scale-110"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).src = "/images/sacred_live_darshan_hero_bg.png";
+                            }}
                           />
                           <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/20 to-transparent opacity-80" />
 

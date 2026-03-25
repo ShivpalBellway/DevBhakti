@@ -123,14 +123,14 @@ const TemplesSection: React.FC = () => {
       {/* Background pattern */}
       <div className="absolute inset-0 pattern-lotus opacity-30" />
 
-      <div className="container mx-auto px-4 relative z-10">
+      <div className="container mx-auto px-4 relative z-10 mt-3">
         {/* Section header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.5 }}
-          className="flex items-center justify-between mb-8"
+          className="flex items-center justify-between mb-8 "
         >
           <div>
             <span className="text-primary font-medium text-sm uppercase tracking-wider">

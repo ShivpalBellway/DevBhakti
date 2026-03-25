@@ -70,7 +70,7 @@ const BannerSection: React.FC = () => {
 
         const timer = setInterval(() => {
             nextSlide();
-        }, 5000); // Change every 5 seconds
+        }, 3000); // Change every 3 seconds
 
         return () => clearInterval(timer);
     }, [isPaused, nextSlide]);
@@ -92,7 +92,7 @@ const BannerSection: React.FC = () => {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        transition={{ duration: 0.8, ease: "easeInOut" }}
+                        transition={{ duration: 0.4, ease: "easeInOut" }}
                         className="absolute inset-0 w-full h-full"
                     >
                         {banners.length > 0 ? (
@@ -164,7 +164,7 @@ const BannerSection: React.FC = () => {
                         key={`progress-${currentIndex}-${isPaused}`}
                         initial={{ width: "0%" }}
                         animate={{ width: isPaused ? "0%" : "100%" }}
-                        transition={{ duration: isPaused ? 0 : 5, ease: "linear" }}
+                        transition={{ duration: isPaused ? 0 : 3, ease: "linear" }}
                         className="h-full bg-gradient-to-r from-orange-400 to-yellow-400"
                     />
                 </div>

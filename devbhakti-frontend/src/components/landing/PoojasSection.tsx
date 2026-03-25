@@ -249,7 +249,7 @@ const PoojasSection: React.FC = () => {
                         <div className="flex items-center justify-between pt-4 border-t border-white/10 mt-4">
                           <div className="flex flex-col">
                             <span className="text-white/60 text-[10px] uppercase tracking-wider font-bold">Starts from</span>
-                            <div className="flex items-center text-xl font-bold text-primary">
+                            <div className="flex items-center text-xl font-bold text-white">
                               <IndianRupee className="w-4 h-4" />
                               <span>{getLowestPrice(pooja)}</span>
                             </div>

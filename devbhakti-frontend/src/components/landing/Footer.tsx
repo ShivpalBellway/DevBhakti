@@ -32,10 +32,10 @@ const Footer: React.FC = () => {
 
   return (
     <footer className="bg-warm-brown text-sidebar-foreground">
-      <div className="container mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-6 gap-x-4">
+      <div className="container mx-auto px-4 py-12">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-8 gap-y-12">
           {/* Brand */}
-          <div className="lg:col-span-2">
+          <div className="sm:col-span-2 xl:col-span-2">
             <Logo size="lg" variant="full" className="text-white bg-white rounded-2xl" />
             <p className="text-sidebar-foreground/70 mt-4 max-w-sm">
               Connecting devotees with sacred temples through technology.
@@ -102,7 +102,7 @@ const Footer: React.FC = () => {
             <ul className="space-y-3">
               {footerLinks.support.map((link) => (
                 <li key={link.label}>
-                  <a href={link.href} className="flex items-center gap-2 hover:text-[#DCB35D] transition-colors text-sm">
+                  <a href={link.href} className="flex items-center gap-2 hover:text-[#DCB35D] transition-colors text-sm break-all">
                     <Mail className="w-4 h-4 flex-shrink-0" />
                     {link.label}
                   </a>
@@ -127,7 +127,7 @@ const Footer: React.FC = () => {
             </div>
             <p className="text-sm text-sidebar-foreground/50">
               © {new Date().getFullYear()} DevBhakti™
-              DevBhakti is owned and operated by Divinity Labs Private Limited. All rights reserved.
+              is owned and operated by Divinity Labs Private Limited. All rights reserved.
 
             </p>
           </div>

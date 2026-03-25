@@ -693,15 +693,20 @@ function DonationForm() {
                                     </CardContent>
                                 </Card>
 
-                                <div className="bg-card border border-border rounded-xl p-6">
-                                    <h4 className="font-semibold mb-4">Select Payment Method</h4>
-                                    <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod} className="space-y-3">
-                                        <div className={`flex items-center space-x-3 p-4 rounded-lg border cursor-pointer transition-all ${paymentMethod === 'upi' ? 'border-[#7c4624] bg-[#f5ebe0]/50' : 'border-border'}`} onClick={() => setPaymentMethod('upi')}>
-                                            <RadioGroupItem value="upi" id="upi" />
-                                            <Label htmlFor="upi" className="cursor-pointer flex-1 font-medium">UPI (Google Pay, PhonePe, Paytm)</Label>
-                                        </div>
-
-                                    </RadioGroup>
+                                <div className="bg-gradient-to-br from-[#fdf6e9] to-white dark:from-zinc-900 dark:to-zinc-950 border border-[#e6d5c8] dark:border-zinc-800 rounded-xl p-6 md:p-8 flex flex-col items-center justify-center space-y-4 shadow-sm">
+                                    <h4 className="font-semibold text-xl font-display text-[#2a1b01] text-center">Complete Your Divine Offering</h4>
+                                    <p className="text-sm text-muted-foreground text-center max-w-sm mb-2">Proceed securely to finalize your contribution.</p>
+                                    <Button 
+                                        size="lg" 
+                                        className="w-full md:w-auto min-w-[280px] h-14 text-lg font-bold bg-[#7c4624] hover:bg-[#63361c] text-white shadow-xl shadow-[#7c4624]/20 transition-all hover:scale-105" 
+                                        onClick={handleConfirmDonation} 
+                                        disabled={loading}
+                                    >
+                                        {loading ? "Processing..." : `Pay ₹${parseInt(finalAmount).toLocaleString()}`}
+                                    </Button>
+                                    <p className="text-xs text-muted-foreground mt-4 text-center font-medium">
+                                        100% Secure & Encrypted Payments
+                                    </p>
                                 </div>
                             </motion.div>
                         )}
@@ -795,13 +800,9 @@ function DonationForm() {
                                 <ArrowLeft className="w-4 h-4 mr-2" /> Back
                             </Button>
 
-                            {step < 4 ? (
+                            {step < 4 && (
                                 <Button size="lg" className="w-32 bg-[#7c4624] hover:bg-[#63361c]" onClick={nextStep}>
                                     Next <ChevronRight className="w-4 h-4 ml-1" />
-                                </Button>
-                            ) : (
-                                <Button size="lg" className="w-48 bg-green-600 hover:bg-green-700" onClick={handleConfirmDonation} disabled={loading}>
-                                    {loading ? "Processing..." : `Pay ₹${parseInt(finalAmount).toLocaleString()}`}
                                 </Button>
                             )}
                         </div>
