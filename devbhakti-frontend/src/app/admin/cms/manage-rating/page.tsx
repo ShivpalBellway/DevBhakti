@@ -98,9 +98,9 @@ export default function ManageRatingPage() {
                         <Star className="w-8 h-8 text-yellow-500 fill-yellow-500" />
                         Manage Ratings
                     </h1>
-                    <p className="text-muted-foreground text-base">
+                    <h6 className="text-muted-foreground text-base">
                         Centrally control the visibility of ratings and reviews across the platform.
-                    </p>
+                    </h6>
                 </div>
                 <Button
                     onClick={handleSave}
