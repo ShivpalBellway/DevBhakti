@@ -17,18 +17,18 @@ const Logo: React.FC<LogoProps> = ({ className = "", size = "md", variant = "ima
   };
 
   const imgSrc = (logoImg as any).src || logoImg;
+  const hasHeight = className.includes('h-');
 
   return (
-    <div className={`relative ${sizeClasses[size]} flex-shrink-0 flex items-center justify-center ${className}`}>
+    <div className={`relative ${!hasHeight ? sizeClasses[size] : ""} flex-shrink-0 flex items-center justify-center ${className}`}>
       <img
         src={imgSrc}
         alt="DevBhakti Logo"
-        className="max-h-full max-w-full object-contain"
+        className="max-h-full w-auto object-contain"
       />
     </div>
   );
 };
 
 export default Logo;
-
 

@@ -219,7 +219,7 @@ const PoojaListClient: React.FC = () => {
             <Navbar />
 
             {/* Hero Section */}
-            <section className="relative min-h-[480px] flex items-center justify-center overflow-hidden">
+            <section className="relative min-h-[520px] flex items-center justify-center overflow-hidden">
                 {/* Background image */}
                 <div className="absolute inset-0">
                     <Image
@@ -238,7 +238,7 @@ const PoojaListClient: React.FC = () => {
                     <div className="absolute bottom-1/4 -right-32 w-80 h-80 bg-secondary/20 rounded-full blur-3xl animate-pulse-slow" />
                 </div>
 
-                <div className="container mx-auto px-4 relative z-10">
+                <div className="container mx-auto px-4 pt-30 pb-12 relative z-10">
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}

@@ -42,7 +42,7 @@ const HeroSection: React.FC = () => {
         <div className="absolute bottom-1/4 -right-32 w-80 h-80 bg-secondary/20 rounded-full blur-3xl animate-pulse-slow" />
       </div>
 
-      <div className="container mx-auto px-4 pt-20 pb-10 relative z-10">
+      <div className="container mx-auto px-4 pt-28 pb-12 relative z-10">
         <div className="max-w-5xl mx-auto text-center">
 
           {/* Main heading */}

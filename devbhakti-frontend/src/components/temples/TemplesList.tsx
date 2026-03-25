@@ -218,7 +218,7 @@ export function TemplesList() {
             <div className="absolute inset-0 bg-[url('/images/sacred_marketplace_hero_pattern.png')] opacity-10" />
           </div>
 
-          <div className="container mx-auto px-4 pt-24 pb-12 relative z-10">
+          <div className="container mx-auto px-4 pt-28 pb-12 relative z-10">
             <div className="text-center max-w-4xl mx-auto">
               <motion.h1
                 initial={{ opacity: 0, y: 20 }}

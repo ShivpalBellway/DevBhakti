@@ -93,39 +93,32 @@ const Navbar: React.FC<NavbarProps> = ({ variant = "default" }) => {
           }`}
       >
         <div className="container mx-auto px-4">
-          <nav className={`flex items-center justify-between transition-all duration-300 ${isScrolled ? "h-13 md:h-14" : "h-18 md:h-20"} gap-2`}>
+          <nav className={`flex items-center justify-between transition-all duration-300 ${isScrolled ? "h-18 md:h-20" : "h-22 md:h-26"} gap-4 md:gap-6`}>
             {/* Logo Section */}
             <div className="flex items-center shrink-0 relative z-10">
               <Link href="/" className="block">
-                {/* <Logo
-                  className={`h-13 md:h-16 xl:h-18 w-auto transition-all duration-300 ${isScrolled ? "scale-90" : "scale-100"
-                    }`}
-                /> */}
-
-
-
                 <Logo
-                  className={`h-14 md:h-18 xl:h-22 w-auto transition-all duration-300 ${isScrolled ? "scale-95" : "scale-100"
+                  className={`h-16 md:h-20 lg:h-24 w-auto transition-all duration-300 ${isScrolled ? "scale-75" : "scale-100"
                     }`}
                 />
               </Link>
             </div>
 
             {/* Desktop Navigation & Search (Wide Screens Only) */}
-            <div className="hidden xl:flex flex-1 items-center justify-between gap-4 2xl:gap-8 mx-2 2xl:mx-4">
+            <div className="hidden xl:flex flex-1 items-center justify-between gap-6 2xl:gap-10 mx-4 2xl:mx-8">
               {/* Desktop Search Bar */}
               {!isTempleRegistrationPage ? (
                 <div
                   onClick={() => setIsSearchOpen(true)}
-                  className="flex items-center gap-3 px-6 py-2.5
-                             flex-1 max-w-[450px] min-w-[200px]
-                             bg-orange-50/60 dark:bg-zinc-900/80 backdrop-blur-md rounded-full
+                  className="flex items-center gap-4 px-8 py-3
+                             flex-1 max-w-[500px] min-w-[250px]
+                             bg-orange-50/70 dark:bg-zinc-900/90 backdrop-blur-md rounded-full
                              cursor-pointer transition-all border border-orange-200/50
                              dark:border-zinc-800/50 hover:border-primary/60
-                             shadow-sm hover:shadow-md hover:bg-orange-50/80"
+                             shadow-md hover:shadow-xl hover:bg-orange-100/60 group"
                 >
-                  <Search className="w-5 h-5 text-primary shrink-0" />
-                  <span className="text-black/70 dark:text-white/70 text-sm font-medium truncate">
+                  <Search className="w-5 h-5 text-primary shrink-0 transition-transform group-hover:scale-110" />
+                  <span className="text-black/80 dark:text-white/80 text-sm font-semibold truncate">
                     Search temples, poojas, products...
                   </span>
                 </div>
