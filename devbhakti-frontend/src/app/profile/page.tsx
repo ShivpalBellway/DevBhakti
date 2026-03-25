@@ -543,7 +543,7 @@ const ProfilePage = () => {
                                             </div>
 
                                             {/* Donations Section */}
-                                            <div className="pt-6">
+                                            {/* <div className="pt-6">
                                                 <div className="flex items-center gap-3 mb-6">
                                                     <Heart className="w-5 h-5 text-orange-600" />
                                                     <h4 className="font-bold text-lg text-slate-800">Your Sacred Donations</h4>
@@ -618,7 +618,7 @@ const ProfilePage = () => {
                                                         </div>
                                                     )}
                                                 </div>
-                                            </div>
+                                            </div> */}
 
 
                                             <div className="pt-6">

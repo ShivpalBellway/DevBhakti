@@ -29,6 +29,7 @@ const staticBanners = [banner1, banner2, banner3, banner6, banner7, banner8, ban
 const BannerSection: React.FC = () => {
     const [banners, setBanners] = useState<any[]>([]);
     const [currentIndex, setCurrentIndex] = useState(0);
+    const [direction, setDirection] = useState(0); // -1 for left, 1 for right
     const [isPaused, setIsPaused] = useState(false);
     const [loading, setLoading] = useState(true);
     const [isSectionActive, setIsSectionActive] = useState(true);
@@ -57,11 +58,13 @@ const BannerSection: React.FC = () => {
 
     const nextSlide = useCallback(() => {
         const length = banners.length > 0 ? banners.length : staticBanners.length;
+        setDirection(1);
         setCurrentIndex((prevIndex) => (prevIndex + 1) % length);
     }, [banners.length]);
 
     const prevSlide = useCallback(() => {
         const length = banners.length > 0 ? banners.length : staticBanners.length;
+        setDirection(-1);
         setCurrentIndex((prevIndex) => (prevIndex - 1 + length) % length);
     }, [banners.length]);
 
@@ -70,7 +73,7 @@ const BannerSection: React.FC = () => {
 
         const timer = setInterval(() => {
             nextSlide();
-        }, 3000); // Change every 3 seconds
+        }, 2500); // Slightly faster - 2.5 seconds
 
         return () => clearInterval(timer);
     }, [isPaused, nextSlide]);
@@ -79,6 +82,23 @@ const BannerSection: React.FC = () => {
 
     if (!loading && !isSectionActive) return null;
 
+    const variants = {
+        enter: (direction: number) => ({
+            x: direction > 0 ? '100%' : '-100%',
+            opacity: 1 // Keep opacity 1 to avoid fading
+        }),
+        center: {
+            x: 0,
+            opacity: 1,
+            zIndex: 1
+        },
+        exit: (direction: number) => ({
+            x: direction < 0 ? '100%' : '-100%',
+            opacity: 1,
+            zIndex: 0
+        })
+    };
+
     return (
         <section
             className="w-full relative bg-background overflow-hidden"
@@ -86,13 +106,18 @@ const BannerSection: React.FC = () => {
             onMouseLeave={() => setIsPaused(false)}
         >
             <div className="relative h-[250px] sm:h-[400px] md:h-[500px] lg:h-[600px] w-full overflow-hidden group bg-black/5">
-                <AnimatePresence initial={false} mode="wait">
+                <AnimatePresence initial={false} custom={direction}>
                     <motion.div
                         key={currentIndex}
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        transition={{ duration: 0.4, ease: "easeInOut" }}
+                        custom={direction}
+                        variants={variants}
+                        initial="enter"
+                        animate="center"
+                        exit="exit"
+                        transition={{
+                            x: { type: "spring", stiffness: 300, damping: 30 },
+                            opacity: { duration: 0.2 }
+                        }}
                         className="absolute inset-0 w-full h-full"
                     >
                         {banners.length > 0 ? (
@@ -148,7 +173,10 @@ const BannerSection: React.FC = () => {
                     {displayBanners.map((_, index) => (
                         <button
                             key={index}
-                            onClick={() => setCurrentIndex(index)}
+                            onClick={() => {
+                                setDirection(index > currentIndex ? 1 : -1);
+                                setCurrentIndex(index);
+                            }}
                             className={`transition-all duration-500 rounded-full ${index === currentIndex
                                 ? "w-10 h-2 bg-white shadow-glow"
                                 : "w-2 h-2 bg-white/40 hover:bg-white/60 hover:scale-125"
@@ -164,7 +192,7 @@ const BannerSection: React.FC = () => {
                         key={`progress-${currentIndex}-${isPaused}`}
                         initial={{ width: "0%" }}
                         animate={{ width: isPaused ? "0%" : "100%" }}
-                        transition={{ duration: isPaused ? 0 : 3, ease: "linear" }}
+                        transition={{ duration: isPaused ? 0 : 2.5, ease: "linear" }}
                         className="h-full bg-gradient-to-r from-orange-400 to-yellow-400"
                     />
                 </div>

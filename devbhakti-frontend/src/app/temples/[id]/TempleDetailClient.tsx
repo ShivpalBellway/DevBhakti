@@ -56,7 +56,7 @@ export default function TempleDetail() {
 
     const purposes = React.useMemo(() => {
         if (!temple?.poojas) return [];
-        const allCategories = temple.poojas.flatMap((p: any) => 
+        const allCategories = temple.poojas.flatMap((p: any) =>
             p.category ? p.category.split(',').map((s: string) => s.trim()) : []
         );
         const unique = Array.from(new Set(allCategories.filter(Boolean))) as string[];
@@ -547,8 +547,8 @@ export default function TempleDetail() {
 
                                             <div className="grid gap-3">
                                                 {temple.poojas
-                                                    ?.filter((p: any) => 
-                                                        selectedPurposes.some(purpose => 
+                                                    ?.filter((p: any) =>
+                                                        selectedPurposes.some(purpose =>
                                                             p.category?.split(',').map((s: string) => s.trim()).includes(purpose)
                                                         )
                                                     )
@@ -661,13 +661,13 @@ export default function TempleDetail() {
                                                 </div>
                                             </div>
                                         )}
-                                        <Button
+                                        {/* <Button
                                             className="w-full gap-3 h-14 text-lg font-black shadow-lg group bg-gradient-to-r from-[#7c4624] to-[#a05a2c] hover:from-[#a05a2c] hover:to-[#7c4624] text-white border-none transition-all duration-500 rounded-xl"
                                             onClick={handleDonation}
                                         >
                                             <Heart className="h-6 w-6 fill-white animate-pulse group-hover:scale-125 transition-transform" />
                                             <span>Donate to Temple</span>
-                                        </Button>
+                                        </Button> */}
 
                                     </div>
                                 </div>
