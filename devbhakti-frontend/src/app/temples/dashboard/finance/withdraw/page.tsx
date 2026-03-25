@@ -195,8 +195,7 @@ export default function TempleWithdrawPage() {
                                 </p>
                             </div>
                             <Button
-                                variant="primary"
-                                size="md"
+                                variant="ghost"
                                 onClick={() => router.push("/temples/dashboard/bank")}
                                 className="text-[10px] uppercase font-bold text-[#794A05] hover:bg-[#794A05]/5 shrink-0"
                             >

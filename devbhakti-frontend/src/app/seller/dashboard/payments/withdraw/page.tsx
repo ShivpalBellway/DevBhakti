@@ -184,8 +184,7 @@ export default function SellerWithdrawPage() {
                                 </p>
                             </div>
                             <Button
-                                variant="primary"
-                                size="md"
+                                variant="ghost"
                                 onClick={() => router.push("/seller/dashboard/payments/bank-details")}
                                 className="text-[10px] uppercase font-bold text-[#794A05] hover:bg-[#794A05]/5 shrink-0"
                             >
