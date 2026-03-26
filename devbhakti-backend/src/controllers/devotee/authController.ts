@@ -223,8 +223,14 @@ export const sendOTP = async (req: Request, res: Response) => {
         const normalizedPhone = normalizePhone(phone);
         console.log(`[sendOTP] Original: ${phone}, Normalized: ${normalizedPhone}`);
 
-        // Generate random 6-digit OTP
-        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        // Generate random 6-digit OTP 
+        let otp = Math.floor(100000 + Math.random() * 900000).toString();
+        
+        // Static OTP for special test number pratham
+        if (normalizedPhone === '+919399805327') {
+            otp = '123456'; // Use 6 digits to match standard OTP length
+        }
+
         const otpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
         const checkRole = role || 'DEVOTEE';
@@ -303,26 +309,31 @@ export const sendOTP = async (req: Request, res: Response) => {
             });
         }
 
-        // Send OTP via Mobicomm SMS
-        const message = `Your OTP for DevBhakti login is ${otp}. Valid for 5 minutes. Do not share this code with anyone. `;
-        const smsSent = await sendSMS(normalizedPhone, message);
+        // Skip actual SMS/WA sending for the static test number
+        if (normalizedPhone !== '+919399805327') {
+            // Send OTP via Mobicomm SMS
+            const message = `Your OTP for DevBhakti login is ${otp}. Valid for 5 minutes. Do not share this code with anyone. `;
+            const smsSent = await sendSMS(normalizedPhone, message);
 
-        if (smsSent) {
-            console.log(`[Auth] OTP sent successfully to ${normalizedPhone}`);
+            if (smsSent) {
+                console.log(`[Auth] OTP sent successfully to ${normalizedPhone}`);
+            } else {
+                console.log(`[Auth] Failed to send OTP to ${normalizedPhone}. Check Mobicomm logs.`);
+            }
+
+            // Send OTP via WhatsApp (AiSensy)
+            try {
+                await sendWhatsAppMessage(
+                    normalizedPhone,
+                    name || 'Bhakt',
+                    "otp_login", // Assuming this template name
+                    [otp]
+                );
+            } catch (waError) {
+                console.error("Failed to send WhatsApp OTP:", waError);
+            }
         } else {
-            console.log(`[Auth] Failed to send OTP to ${normalizedPhone}. Check Mobicomm logs.`);
-        }
-
-        // Send OTP via WhatsApp (AiSensy)
-        try {
-            await sendWhatsAppMessage(
-                normalizedPhone,
-                name || 'Bhakt',
-                "otp_login", // Assuming this template name
-                [otp]
-            );
-        } catch (waError) {
-            console.error("Failed to send WhatsApp OTP:", waError);
+            console.log(`[Auth] Skipped sending real SMS/WA for test number ${normalizedPhone}`);
         }
 
         // console.log(`\n-----------------------------------------`);
