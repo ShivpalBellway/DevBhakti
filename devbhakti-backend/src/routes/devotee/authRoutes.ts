@@ -20,5 +20,6 @@ router.post('/check-institution', authController.checkInstitutionPhone); // ✅ 
 // Profile Management (Protected)
 router.get('/profile', authenticate, authController.getProfile);
 router.put('/profile', authenticate, uploadUserImage.single('profileImage'), authController.updateProfile);
+router.delete('/account', authenticate, authController.deleteAccount); // ✅ User account deletion
 
 export default router;

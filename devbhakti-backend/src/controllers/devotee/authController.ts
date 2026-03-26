@@ -631,3 +631,73 @@ export const getProfile = async (req: Request, res: Response) => {
         res.status(500).json({ success: false, message: 'Internal server error' });
     }
 };
+
+export const deleteAccount = async (req: Request, res: Response) => {
+    try {
+        const { userId } = (req as any).user;
+
+        const user = await prisma.user.findUnique({
+            where: { id: userId },
+            include: {
+                bookings: true,
+                orders: true,
+                donations: true
+            }
+        });
+
+        if (!user) {
+            return res.status(404).json({ success: false, message: 'User not found' });
+        }
+
+        // Check if user has financial records to decide on hard or soft delete
+        const hasFinancialRecords = 
+            (user.bookings && user.bookings.length > 0) || 
+            (user.orders && user.orders.length > 0) || 
+            (user.donations && user.donations.length > 0);
+
+        if (hasFinancialRecords) {
+            // Soft delete + Anonymize to preserve temple's financial records without foreign key errors
+            const timestamp = Date.now();
+            await prisma.user.update({
+                where: { id: userId },
+                data: {
+                    isActive: false,
+                    phone: user.phone ? `${user.phone}_deleted_${timestamp}` : null,
+                    email: user.email ? `${user.email}_deleted_${timestamp}` : null,
+                    name: 'Deleted User',
+                    // Clear personal info
+                    address: null,
+                    nativePlace: null,
+                    dob: null,
+                    anniversary: null,
+                    gothra: null,
+                    kuldevi: null,
+                    kuldevta: null,
+                    profileImage: null,
+                    otp: null,
+                    otpExpires: null
+                }
+            });
+            console.log(`[deleteAccount] Soft deleted and anonymized user ${userId} due to financial records.`);
+        } else {
+            // Delete related rows first to avoid Prisma relation errors
+            await prisma.cart.deleteMany({ where: { userId } });
+            await prisma.favorite.deleteMany({ where: { userId } });
+
+            // Hard delete user
+            await prisma.user.delete({
+                where: { id: userId }
+            });
+            console.log(`[deleteAccount] Hard deleted user ${userId}.`);
+        }
+
+        res.json({
+            success: true,
+            message: 'Account deleted successfully'
+        });
+
+    } catch (error) {
+        console.error('Error deleting account:', error);
+        res.status(500).json({ success: false, message: 'Internal server error while deleting account' });
+    }
+};
