@@ -11,6 +11,7 @@ import user1 from "@/assets/temple-kashi.jpg";
 import user2 from "@/assets/temple-tirupati.jpg";
 import user3 from "@/assets/temple-siddhivinayak.jpg";
 import user4 from "@/assets/temple-meenakshi.jpg";
+import user5 from "@/assets/temple-somnath.jpg";
 
 import {
     Carousel,
@@ -23,17 +24,18 @@ import {
 const reviews = [
     {
         id: 1,
-        type: "video",
-        thumbnail: user1,
-        name: "Rajeshwari Devi",
+        type: "text",
+        content: "DevBhakti has made spiritual practices so accessible. Booking a specialty Puja was effortless, and the entire experience was deeply enriching and peaceful.",
+        name: "Rajeshwari Pradhan",
         location: "Varanasi",
         rating: 5,
+        avatar: user1,
     },
     {
         id: 2,
         type: "text",
-        content: "The live darshan feature is a blessing for my elderly parents who cannot travel. They feel connected to God every day. Thank you DevBhakti!",
-        name: "Vikram Malhotra",
+        content: "The live darshan feature is a blessing for my elderly parents. They can now witness their favorite deities from home, feeling a profound sense of connection every day.",
+        name: "Vikram Karekar",
         location: "Mumbai",
         rating: 5,
         avatar: user2,
@@ -41,20 +43,29 @@ const reviews = [
     {
         id: 3,
         type: "text",
-        content: "I booked a special Rudrabhishek puja for my daughter's birthday. The pundits were very knowledgeable and the entire process was seamless.",
-        name: "Sneha Reddy",
-        location: "Hyderabad",
+        content: "I am amazed by the professionalism of the pundits here. The Rudrabhishek puja conducted for my family was performed with great devotion and traditional accuracy.",
+        name: "Sneha Pathare",
+        location: "Pune",
         rating: 5,
         avatar: user3,
     },
     {
         id: 4,
         type: "text",
-        content: "Very authentic experience. The prasad delivery was on time and packed beautifully. Felt the divine presence in my home.",
-        name: "Amit Kumar",
-        location: "Delhi",
+        content: "The platform is incredibly user-friendly. From temple information to donation services, everything is streamlined. It's a must-have for every devotee.",
+        name: "Amit Deshmukh",
+        location: "Nagpur",
         rating: 5,
         avatar: user4,
+    },
+    {
+        id: 5,
+        type: "text",
+        content: "I've used DevBhakti for multiple services now, and the consistency in quality is remarkable. It truly feels like a digital bridge to the divine.",
+        name: "Priya Kulkarni",
+        location: "Nashik",
+        rating: 5,
+        avatar: user5,
     },
 ];
 
@@ -107,31 +118,13 @@ const ReviewsSection: React.FC = () => {
                                         <div className="h-[310px] flex flex-col bg-white dark:bg-zinc-950 rounded-[2rem] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-[#FDEEE7] dark:border-zinc-800 transition-all duration-300">
 
                                             {/* Content Area */}
-                                            <div className="flex-1 overflow-hidden">
-                                                {review.type === "video" ? (
-                                                    <div className="relative h-32 rounded-[1.5rem] overflow-hidden group cursor-pointer shadow-inner mb-4">
-                                                        <Image
-                                                            src={review.thumbnail}
-                                                            alt={review.name}
-                                                            fill
-                                                            className="object-cover transition-transform duration-500 group-hover:scale-110"
-                                                        />
-                                                        <div className="absolute inset-0 bg-black/30 group-hover:bg-black/40 transition-colors flex items-center justify-center">
-                                                            <div className="w-14 h-14 rounded-full bg-white/95 shadow-lg flex items-center justify-center pl-1 group-hover:scale-110 transition-transform">
-                                                                <Play className="w-6 h-6 text-orange-600 fill-orange-600" />
-                                                            </div>
-                                                        </div>
-                                                        <div className="absolute bottom-3 left-3 px-2 py-1 bg-black/60 rounded text-xs text-white font-medium backdrop-blur-sm">
-                                                            0:00 / 1:00
-                                                        </div>
-                                                    </div>
-                                                ) : (
-                                                    <div className="relative mb-4 pt-1">
-                                                        <p className="text-zinc-700 dark:text-zinc-300 italic text-base leading-relaxed line-clamp-5">
-                                                            "{review.content}"
-                                                        </p>
-                                                    </div>
-                                                )}
+                                            <div className="flex-1 overflow-hidden relative">
+                                                <Quote className="absolute -top-2 -left-2 w-8 h-8 text-orange-100 dark:text-zinc-800 -z-10" />
+                                                <div className="relative mb-4 pt-1">
+                                                    <p className="text-zinc-700 dark:text-zinc-300 italic text-base leading-relaxed line-clamp-6">
+                                                        "{review.content}"
+                                                    </p>
+                                                </div>
                                             </div>
 
                                             {/* User Info */}
@@ -139,7 +132,7 @@ const ReviewsSection: React.FC = () => {
                                                 <div className="w-12 h-12 rounded-full overflow-hidden relative border-2 border-[#FFE8D9] p-0.5">
                                                     <div className="w-full h-full rounded-full overflow-hidden relative">
                                                         <Image
-                                                            src={review.avatar || review.thumbnail}
+                                                            src={review.avatar}
                                                             alt={review.name}
                                                             fill
                                                             className="object-cover"

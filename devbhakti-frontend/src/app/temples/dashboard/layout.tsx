@@ -383,8 +383,8 @@ export default function TempleAdminLayout({ children }: { children: React.ReactN
                 <div className="flex items-center gap-3 h-20 px-4 border-b border-sidebar-border bg-sidebar/50 backdrop-blur-sm">
                     {sidebarOpen ? (
                         <div className="flex items-center gap-3 w-full">
-                            <div className="bg-white p-1.5 rounded-xl shadow-inner border border-sidebar-border/50 shrink-0">
-                                <div className="relative h-9 w-9">
+                            <div className="bg-white h-16 w-16 rounded-xl shadow-md border border-sidebar-border/50 shrink-0 overflow-hidden flex items-center justify-center translate-y-[-2px]">
+                                <div className="relative h-16 w-16">
                                     <Image
                                         src={logo}
                                         alt="Temple Logo"
@@ -404,8 +404,8 @@ export default function TempleAdminLayout({ children }: { children: React.ReactN
                             </div>
                         </div>
                     ) : (
-                        <div className="bg-white p-1.5 rounded-xl shadow-sm border border-sidebar-border/50 mx-auto">
-                            <div className="relative h-8 w-8">
+                        <div className="bg-white h-12 w-12 rounded-xl shadow-md border border-sidebar-border/50 mx-auto overflow-hidden flex items-center justify-center mt-1">
+                            <div className="relative h-12 w-12">
                                 <Image
                                     src={logo}
                                     alt="Temple Logo"
