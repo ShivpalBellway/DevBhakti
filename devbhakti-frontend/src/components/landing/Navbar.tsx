@@ -88,8 +88,8 @@ const Navbar: React.FC<NavbarProps> = ({ variant = "default" }) => {
         initial={{ y: -100 }}
         animate={{ y: 0 }}
         className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled || isMobileMenuOpen
-          ? "bg-background/95 backdrop-blur-md shadow-soft border-b border-border"
-          : "bg-white xl:bg-transparent"
+          ? "bg-background shadow-soft border-b border-border"
+          : "bg-background xl:bg-transparent"
           }`}
       >
         <div className="container mx-auto px-4">
@@ -102,6 +102,7 @@ const Navbar: React.FC<NavbarProps> = ({ variant = "default" }) => {
                     }`}
                 />
               </Link>
+            
             </div>
 
             {/* Desktop Navigation & Search (Wide Screens Only) */}
@@ -390,7 +391,7 @@ const Navbar: React.FC<NavbarProps> = ({ variant = "default" }) => {
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: "100%" }}
               transition={{ type: "spring", damping: 25, stiffness: 200 }}
-              className="fixed inset-0 z-40 bg-background/98 backdrop-blur-xl pt-24 xl:hidden"
+              className="fixed inset-0 z-40 bg-background pt-24 xl:hidden"
             >
               <div className="container px-4 py-8">
                 <div className="flex flex-col gap-4">
@@ -477,24 +478,37 @@ const Navbar: React.FC<NavbarProps> = ({ variant = "default" }) => {
                       </Button>
                     )}
 
-                    <Button variant="ghost" size="lg" asChild className="justify-start gap-4 h-14 rounded-2xl border border-border/50">
-                      <Link href={user ? "/profile/orders" : "/auth"} onClick={() => setIsMobileMenuOpen(false)}>
-                        <ShoppingBag className="w-5 h-5 text-orange-600" />
-                        <span>My Orders</span>
-                      </Link>
-                    </Button>
-                    <Button variant="ghost" size="lg" asChild className="justify-start gap-4 h-14 rounded-2xl border border-border/50">
-                      <Link href={user ? "/profile/bookings" : "/auth"} onClick={() => setIsMobileMenuOpen(false)}>
-                        <Church className="w-5 h-5 text-orange-600" />
-                        <span>My Pooja Bookings</span>
-                      </Link>
-                    </Button>
-                    <Button variant="ghost" size="lg" asChild className="justify-start gap-4 h-14 rounded-2xl border border-border/50">
-                      <Link href={user ? "/favorites" : "/auth"} onClick={() => setIsMobileMenuOpen(false)}>
-                        <Heart className="w-5 h-5 text-orange-600" />
-                        <span>My Favorites</span>
-                      </Link>
-                    </Button>
+                    {(!user || user.role === "DEVOTEE") && (
+                      <Button variant="ghost" size="lg" asChild className="justify-start gap-4 h-14 rounded-2xl border border-border/50">
+                        <Link href="/temples/register" onClick={() => setIsMobileMenuOpen(false)}>
+                          <Church className="w-5 h-5 text-orange-600" />
+                          <span>Temple Registration</span>
+                        </Link>
+                      </Button>
+                    )}
+
+                    {user && user.role === "DEVOTEE" && (
+                      <>
+                        <Button variant="ghost" size="lg" asChild className="justify-start gap-4 h-14 rounded-2xl border border-border/50">
+                          <Link href="/profile/orders" onClick={() => setIsMobileMenuOpen(false)}>
+                            <ShoppingBag className="w-5 h-5 text-orange-600" />
+                            <span>My Orders</span>
+                          </Link>
+                        </Button>
+                        <Button variant="ghost" size="lg" asChild className="justify-start gap-4 h-14 rounded-2xl border border-border/50">
+                          <Link href="/profile/bookings" onClick={() => setIsMobileMenuOpen(false)}>
+                            <Church className="w-5 h-5 text-orange-600" />
+                            <span>My Pooja Bookings</span>
+                          </Link>
+                        </Button>
+                        <Button variant="ghost" size="lg" asChild className="justify-start gap-4 h-14 rounded-2xl border border-border/50">
+                          <Link href="/favorites" onClick={() => setIsMobileMenuOpen(false)}>
+                            <Heart className="w-5 h-5 text-orange-600" />
+                            <span>My Favorites</span>
+                          </Link>
+                        </Button>
+                      </>
+                    )}
 
                     {user && (
                       <Button

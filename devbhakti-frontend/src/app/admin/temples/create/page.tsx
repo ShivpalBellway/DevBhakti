@@ -597,6 +597,28 @@ export default function CreateTemplePage() {
                                 // placeholder="e.g. 10K+"
                                 />
                             </div>
+                            <div className="space-y-2">
+                                <label className="text-sm font-semibold text-slate-700">Initial Rating (0-5)</label>
+                                <Input
+                                    type="number"
+                                    step="0.1"
+                                    min="0"
+                                    max="5"
+                                    value={formData.rating}
+                                    onChange={e => setFormData({ ...formData, rating: e.target.value })}
+                                    placeholder="4.5"
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-sm font-semibold text-slate-700">Total Reviews</label>
+                                <Input
+                                    type="number"
+                                    min="0"
+                                    value={formData.reviewsCount}
+                                    onChange={e => setFormData({ ...formData, reviewsCount: e.target.value })}
+                                    placeholder="100"
+                                />
+                            </div>
                             {/* URL Configuration Section */}
                             <div className="space-y-4 md:col-span-2 p-6 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl border-2 border-blue-200">
                                 <label className="text-sm font-bold text-slate-800 uppercase tracking-widest text-[11px]">🌐 Public URL Configuration</label>

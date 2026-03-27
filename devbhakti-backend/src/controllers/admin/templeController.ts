@@ -253,16 +253,16 @@ export const createTemple = async (req: Request, res: Response) => {
               website: data.website,
               mapUrl: data.mapUrl,
               viewers: data.viewers,
-              rating: parseFloat(data.rating || '0'),
-              reviewsCount: parseInt(data.reviewsCount || '0'),
+              rating: (data.rating && data.rating !== '0' && !isNaN(parseFloat(data.rating))) ? parseFloat(data.rating) : 4.5,
+              reviewsCount: data.reviewsCount && !isNaN(parseInt(data.reviewsCount)) ? parseInt(data.reviewsCount) : 0,
               slug: data.slug || undefined,
               subdomain: data.subdomain || undefined, // Added
               urlType: data.urlType || 'slug', // Added
               pickupLocation: `TEMPLE_${Math.random().toString(36).substring(2, 7).toUpperCase()}`,
               isActive: data.isActive === 'true',
               liveStatus: data.liveStatus === 'true',
-              productCommissionRate: data.productCommissionRate ? parseFloat(data.productCommissionRate) : 10.0,
-              poojaCommissionRate: data.poojaCommissionRate ? parseFloat(data.poojaCommissionRate) : 5.0,
+              productCommissionRate: data.productCommissionRate && !isNaN(parseFloat(data.productCommissionRate)) ? parseFloat(data.productCommissionRate) : 10.0,
+              poojaCommissionRate: data.poojaCommissionRate && !isNaN(parseFloat(data.poojaCommissionRate)) ? parseFloat(data.poojaCommissionRate) : 5.0,
               image: getFilePath(files, 'image'),
               heroImages: getFilePath(files, 'heroImages') || [],
             }
