@@ -367,10 +367,10 @@ export default function CreateTemplePage() {
 
             // Append basic fields
             Object.entries(formData).forEach(([key, value]) => {
-                if (key === 'operatingHours') {
+                if (Array.isArray(value) || typeof value === 'object') {
                     fd.append(key, JSON.stringify(value));
                 } else {
-                    fd.append(key, JSON.stringify(value));
+                    fd.append(key, String(value));
                 }
             });
 

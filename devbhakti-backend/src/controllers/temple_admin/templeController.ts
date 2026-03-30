@@ -75,6 +75,9 @@ export const registerTemple = async (req: Request, res: Response) => {
         where: { phone: data.phone }
     });
 
+
+
+
     if (existingUser) {
         return res.status(400).json({ 
             success: false, 

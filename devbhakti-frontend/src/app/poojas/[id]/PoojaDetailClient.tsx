@@ -33,6 +33,29 @@ interface PoojaDetailClientProps {
     id: string;
 }
 
+const STANDARD_FAQS = [
+    {
+        q: "What does this pooja include?",
+        a: "This pooja includes basic samagri and is performed as per temple rituals. Specific inclusions may vary depending on the temple."
+    },
+    {
+        q: "Will a priest (pandit) perform the pooja?",
+        a: "Yes, the pooja is performed by a qualified priest. Please refer to the pooja description for details."
+    },
+    {
+        q: "Do I need to be physically present for the pooja?",
+        a: "No, your physical presence is not required. The temple will perform the pooja on your behalf."
+    },
+    {
+        q: "Will I receive prasad or confirmation?",
+        a: "Prasad may be provided depending on the temple and pooja selected. Please refer to the pooja description for details. You will receive confirmation once the pooja is completed."
+    },
+    {
+        q: "Can I choose a specific date or time?",
+        a: "Yes, you can select your preferred date while booking, subject to temple availability."
+    },
+];
+
 const PoojaDetailClient = ({ id }: PoojaDetailClientProps) => {
     const [pooja, setPooja] = useState<any>(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -173,7 +196,7 @@ const PoojaDetailClient = ({ id }: PoojaDetailClientProps) => {
 
                                 {/* Benefits Brief Cards */}
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-10">
-                                    <div className="bg-white/60 backdrop-blur-sm p-6 rounded-[1.5rem] border border-primary/10 hover:border-primary/20 transition-colors">
+                                    {/* <div className="bg-white/60 backdrop-blur-sm p-6 rounded-[1.5rem] border border-primary/10 hover:border-primary/20 transition-colors">
                                         <ul className="space-y-3">
                                             {(pooja.bullets || ["Peaceful spiritual atmosphere", "Performed by experienced priests", "Includes mantras and rituals"]).slice(0, 4).map((bullet: string, i: number) => (
                                                 <li key={i} className="flex items-start gap-3 text-sm text-[#444]">
@@ -184,7 +207,7 @@ const PoojaDetailClient = ({ id }: PoojaDetailClientProps) => {
                                                 </li>
                                             ))}
                                         </ul>
-                                    </div>
+                                    </div> */}
                                     <div className="bg-white/60 backdrop-blur-sm p-6 rounded-[1.5rem] border border-primary/10 hover:border-primary/20 transition-colors">
                                         <ul className="space-y-3">
                                             {(pooja.benefits || ["Brings peace and mental clarity", "Spiritual alignment", "Attracts positive energy"]).slice(0, 4).map((benefit: string, i: number) => (
@@ -258,9 +281,7 @@ const PoojaDetailClient = ({ id }: PoojaDetailClientProps) => {
                                         // { id: "process", label: "Process", icon: PlayCircle },
                                         { id: "temple", label: "Temple", icon: MapPin },
                                         ...(showRatings ? [{ id: "reviews", label: "Reviews", icon: Star }] : []),
-                                        ...(pooja.faqs && Array.isArray(pooja.faqs) && pooja.faqs.length > 0
-                                            ? [{ id: "faqs", label: "FAQs", icon: HelpCircle }]
-                                            : []),
+                                        { id: "faqs", label: "FAQs", icon: HelpCircle },
                                     ].map((tab) => (
                                         <TabsTrigger
                                             key={tab.id}
@@ -497,27 +518,25 @@ const PoojaDetailClient = ({ id }: PoojaDetailClientProps) => {
                                         </div>
                                     </TabsContent>
 
-                                    {/* FAQs tab */}
-                                    {pooja.faqs && Array.isArray(pooja.faqs) && pooja.faqs.length > 0 && (
-                                        <TabsContent value="faqs" className="mt-0 outline-none">
-                                            <div className="max-w-6xl mx-auto">
-                                                <h2 className="text-4xl font-serif font-bold mb-12 text-center text-primary text-gradient-sacred">Questions? We have answers.</h2>
-                                                <div className="space-y-6">
-                                                    {pooja.faqs.map((faq: any, idx: number) => (
-                                                        <div key={idx} className="p-8 rounded-[2rem] border border-primary/5 bg-[#FFF8F0]/30 hover:bg-white transition-all duration-500 hover:shadow-lg">
-                                                            <h4 className="text-xl font-serif font-bold text-[#1a1a1a] mb-4 flex items-start gap-4">
-                                                                <HelpCircle className="w-6 h-6 text-primary mt-0.5 shrink-0 opacity-50" />
-                                                                {faq.q}
-                                                            </h4>
-                                                            <p className="text-[#666] leading-relaxed pl-10 italic">
-                                                                {faq.a}
-                                                            </p>
-                                                        </div>
-                                                    ))}
-                                                </div>
+                                    {/* FAQs tab - Standard FAQs + pooja-specific FAQs */}
+                                    <TabsContent value="faqs" className="mt-0 outline-none">
+                                        <div className="max-w-6xl mx-auto">
+                                            <h2 className="text-4xl font-serif font-bold mb-12 text-center text-primary text-gradient-sacred">Questions? We have answers.</h2>
+                                            <div className="space-y-6">
+                                                {[...STANDARD_FAQS, ...(pooja.faqs && Array.isArray(pooja.faqs) ? pooja.faqs : [])].map((faq: any, idx: number) => (
+                                                    <div key={idx} className="p-8 rounded-[2rem] border border-primary/5 bg-[#FFF8F0]/30 hover:bg-white transition-all duration-500 hover:shadow-lg">
+                                                        <h4 className="text-xl font-serif font-bold text-[#1a1a1a] mb-4 flex items-start gap-4">
+                                                            <HelpCircle className="w-6 h-6 text-primary mt-0.5 shrink-0 opacity-50" />
+                                                            {faq.q}
+                                                        </h4>
+                                                        <p className="text-[#666] leading-relaxed pl-10 italic">
+                                                            {faq.a}
+                                                        </p>
+                                                    </div>
+                                                ))}
                                             </div>
-                                        </TabsContent>
-                                    )}
+                                        </div>
+                                    </TabsContent>
                                 </motion.div>
                             </AnimatePresence>
                         </Tabs>

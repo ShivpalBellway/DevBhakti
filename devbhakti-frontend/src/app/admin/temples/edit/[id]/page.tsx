@@ -177,25 +177,21 @@ export default function EditTemplePage() {
                         // Load Marketplace Slabs
                         const mSlabsResponse = await fetchCommissionSlabsAdmin('TEMPLE', inst.temple.id, 'MARKETPLACE');
                         if (mSlabsResponse.success && mSlabsResponse.data?.length > 0) {
-                            // Helper to deduplicate based on minAmount
                             const dedupe = (list: any[]) => list.filter((s, i, self) => i === self.findIndex(t => t.minAmount === s.minAmount));
-
                             setMarketplaceSlabs(dedupe(mSlabsResponse.data));
-                            setMarketplaceRateType("CUSTOM");
+                            // Do NOT auto-set CUSTOM — admin can toggle manually
                         } else {
                             // Fallback to Global Marketplace structure
                             const globalMSlabs = await fetchCommissionSlabsAdmin('GLOBAL', undefined, 'MARKETPLACE');
-                            if (globalMSlabs.success) setMarketplaceSlabs(globalMSlabs.data); // Global are usually unique
+                            if (globalMSlabs.success) setMarketplaceSlabs(globalMSlabs.data);
                         }
 
                         // Load Pooja Slabs
                         const pSlabsResponse = await fetchCommissionSlabsAdmin('TEMPLE', inst.temple.id, 'POOJA');
                         if (pSlabsResponse.success && pSlabsResponse.data?.length > 0) {
-                            // Helper to deduplicate based on minAmount
                             const dedupe = (list: any[]) => list.filter((s, i, self) => i === self.findIndex(t => t.minAmount === s.minAmount));
-
                             setPoojaSlabs(dedupe(pSlabsResponse.data));
-                            setPoojaRateType("CUSTOM");
+                            // Do NOT auto-set CUSTOM — admin can toggle manually
                         } else {
                             // Fallback to Global Pooja structure
                             const globalPSlabs = await fetchCommissionSlabsAdmin('GLOBAL', undefined, 'POOJA');

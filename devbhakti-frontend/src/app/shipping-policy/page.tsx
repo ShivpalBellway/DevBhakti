@@ -97,26 +97,27 @@ export default function ShippingPolicyPage() {
     ];
 
     return (
-        <main className="min-h-screen bg-background">
+        <main className="min-h-screen bg-background overflow-x-hidden">
             <Navbar />
 
             {/* Hero Header */}
-            <section className="relative pt-32 pb-16 bg-gradient-sacred text-white overflow-hidden">
-                <div className="absolute inset-0 opacity-10 pattern-lotus" />
+            <section className="relative pt-32 pb-16 overflow-hidden">
+                <div className="absolute inset-0 z-0 bg-gradient-to-b from-primary/5 via-transparent to-background" />
                 <div className="container mx-auto px-4 relative z-10 text-center">
                     <motion.div
                         initial={{ opacity: 0, y: -20 }}
                         animate={{ opacity: 1, y: 0 }}
                         className="flex justify-center mb-6"
                     >
-                        <div className="p-4 bg-white/20 backdrop-blur-md rounded-2xl shadow-glow">
-                            <Truck className="w-12 h-12" />
+                        <div className="p-4 bg-primary/10 backdrop-blur-md rounded-2xl">
+                            <Truck className="w-12 h-12 text-primary" />
                         </div>
                     </motion.div>
                     <motion.h1
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        className="text-4xl md:text-6xl font-serif font-bold mb-4"
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ duration: 0.8 }}
+                        className="text-5xl md:text-7xl font-serif font-bold mb-6 text-gradient-sacred"
                     >
                         Shipping Policy
                     </motion.h1>
@@ -124,7 +125,7 @@ export default function ShippingPolicyPage() {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         transition={{ delay: 0.2 }}
-                        className="text-sm font-bold opacity-90 mb-6 uppercase tracking-widest"
+                        className="text-sm font-bold text-primary mb-6 uppercase tracking-widest"
                     >
                         Effective Date: 7 February 2026
                     </motion.p>
@@ -132,9 +133,9 @@ export default function ShippingPolicyPage() {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         transition={{ delay: 0.3 }}
-                        className="text-xl opacity-90 max-w-3xl mx-auto font-light"
+                        className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed"
                     >
-                        This Shipping Policy is issued in accordance with the Consumer Protection (E-Commerce) Rules, 2020 and applies to orders for physical goods on DevBhakti (operated by <span className="font-bold">Divinity Labs Private Limited</span>).
+                        This Shipping Policy is issued in accordance with the Consumer Protection (E-Commerce) Rules, 2020 and applies to orders for physical goods on DevBhakti (operated by <span className="font-bold text-foreground">Divinity Labs Private Limited</span>).
                     </motion.p>
                 </div>
             </section>

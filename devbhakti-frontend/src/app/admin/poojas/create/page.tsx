@@ -520,7 +520,7 @@ export default function CreatePoojaPage() {
                         ))}
                     </div>
                 </div>
-
+{/* 
                 <div className="space-y-4 p-4 border rounded-xl bg-slate-50/50">
                     <div className="flex items-center justify-between">
                         <h3 className="font-semibold">Highlights (Bullets)</h3>
@@ -543,7 +543,7 @@ export default function CreatePoojaPage() {
                             </div>
                         ))}
                     </div>
-                </div>
+                </div> */}
 
                 {/* Packages Section - Matches Temple Panel */}
                 <div className="space-y-4 p-4 border rounded-xl bg-slate-50/50">

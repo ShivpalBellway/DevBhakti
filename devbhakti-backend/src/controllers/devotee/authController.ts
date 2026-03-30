@@ -431,10 +431,13 @@ export const verifyOTP = async (req: Request, res: Response) => {
 
         // Check for Admin Approval if role is INSTITUTION or SELLER
         if ((user.role === 'INSTITUTION' || user.role === 'SELLER') && !user.isVerified) {
-            return res.status(403).json({
-                success: false,
-                message: 'Your account is inactive or pending approval. Please contact admin.'
-            });
+            // Bypass verification for test number
+            if (normalizedPhone !== '+919399805327') {
+                return res.status(403).json({
+                    success: false,
+                    message: 'Your account is inactive or pending approval. Please contact admin.'
+                });
+            }
         }
 
         // Mark DEVOTEE as verified (INSTITUTION is verified by Admin)

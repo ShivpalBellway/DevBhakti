@@ -444,11 +444,14 @@ export const deleteRole = async (req: Request, res: Response) => {
 export const getPermissions = async (req: Request, res: Response) => {
   try {
     const { ownerType } = (req as any).owner;
+    console.log(`[DEBUG] Fetching permissions for ownerType: ${ownerType}`);
 
     const permissions = await prisma.permission.findMany({
       where: { applicableTo: { has: ownerType } },
       orderBy: [{ module: 'asc' }, { key: 'asc' }],
     });
+
+    console.log(`[DEBUG] Found ${permissions.length} permissions for ${ownerType}`);
 
     // Group by module for easier frontend rendering
     const grouped = permissions.reduce((acc: any, perm) => {

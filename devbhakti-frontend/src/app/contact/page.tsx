@@ -43,22 +43,23 @@ export default function ContactPage() {
             <Navbar />
 
             {/* Hero Header */}
-            <section className="relative pt-32 pb-20 bg-gradient-sacred text-white overflow-hidden">
-                <div className="absolute inset-0 opacity-10 pattern-lotus" />
+            <section className="relative pt-32 pb-20 overflow-hidden">
+                <div className="absolute inset-0 z-0 bg-gradient-to-b from-primary/5 via-transparent to-background" />
                 <div className="container mx-auto px-4 relative z-10 text-center">
                     <motion.div
                         initial={{ opacity: 0, y: -20 }}
                         animate={{ opacity: 1, y: 0 }}
                         className="flex justify-center mb-6"
                     >
-                        <div className="p-4 bg-white/20 backdrop-blur-md rounded-2xl shadow-glow">
-                            <MessageSquare className="w-12 h-12" />
+                        <div className="p-4 bg-primary/10 backdrop-blur-md rounded-2xl">
+                            <MessageSquare className="w-12 h-12 text-primary" />
                         </div>
                     </motion.div>
                     <motion.h1
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        className="text-4xl md:text-6xl font-serif font-bold mb-4"
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ duration: 0.8 }}
+                        className="text-5xl md:text-7xl font-serif font-bold mb-6 text-gradient-sacred"
                     >
                         Contact Us
                     </motion.h1>
@@ -66,7 +67,7 @@ export default function ContactPage() {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         transition={{ delay: 0.2 }}
-                        className="text-lg opacity-90 max-w-2xl mx-auto font-light space-y-4"
+                        className="text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed space-y-4"
                     >
                         <p>
                             DevBhakti is owned and operated by:<br />
@@ -125,10 +126,10 @@ export default function ContactPage() {
                             <Send className="w-8 h-8 text-primary" />
                         </div>
                         <h3 className="text-2xl font-serif font-bold mb-2 text-foreground">Partnerships</h3>
-                        <p className="text-lg font-bold text-primary mb-4">support@devbhakti.in</p>
+                        <p className="text-lg font-bold text-primary mb-4">sales@devbhakti.in</p>
                         <p className="text-muted-foreground">For partnership or temple onboarding queries.</p>
                     </motion.div>
-                </div>
+                </div>  
 
                 {/* Inquiry Form Placeholder */}
                 <motion.div

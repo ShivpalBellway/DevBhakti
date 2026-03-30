@@ -26,7 +26,18 @@ export const getTempleOrders = async (req: Request, res: Response) => {
       orderBy: { createdAt: "desc" }
     });
 
-    return res.status(200).json({ success: true, data: subOrders });
+    const formattedSubOrders = subOrders.map(sub => {
+      return {
+        ...sub,
+        totalAmount: sub.totalAmount ? Number(sub.totalAmount).toFixed(2) : "0.00",
+        order: sub.order ? {
+          ...sub.order,
+          totalAmount: sub.order.totalAmount ? Number(sub.order.totalAmount).toFixed(2) : "0.00"
+        } : sub.order
+      };
+    });
+
+    return res.status(200).json({ success: true, data: formattedSubOrders });
   } catch (error: any) {
     return res.status(500).json({ success: false, message: error.message });
   }
