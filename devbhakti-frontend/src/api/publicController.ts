@@ -91,7 +91,9 @@ export const fetchProductByIdPublic = async (id: string) => {
         return null;
     }
 };
+
 export const fetchRatingsSettings = async () => {
+
     try {
         const response = await axios.get(`${API_URL}/admin/settings/ratings`);
         return response.data;
@@ -106,3 +108,20 @@ export const fetchRatingsSettings = async () => {
         };
     }
 };
+
+export const fetchSeoSettings = async () => {
+    try {
+        const response = await axios.get(`${API_URL}/admin/settings/seo-public`);
+        return response.data;
+    } catch (error) {
+        console.error("Error fetching SEO settings:", error);
+        return {
+            success: false, 
+            settings: {
+                home: { title: "DevBhakti - Sacred Temple Service", description: "Connecting devotees with sacred temples", keywords: "temple, pooja, darshan" }
+            }
+        };
+    }
+};
+
+

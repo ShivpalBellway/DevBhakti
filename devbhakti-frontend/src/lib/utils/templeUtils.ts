@@ -33,6 +33,15 @@ export const getTempleUrl = (temple: any): string => {
 };
 
 /**
+ * Generates the clean URL for a temple's live darshan.
+ */
+export const getLiveDarshanUrl = (temple?: any): string => {
+    if (!temple) return '/live-darshan';
+    return `/live-darshan/${temple.slug || temple.id || temple._id}`;
+};
+
+
+/**
  * Returns the main domain URL with the given path.
  * Useful for linking back to global pages from a subdomain.
  */

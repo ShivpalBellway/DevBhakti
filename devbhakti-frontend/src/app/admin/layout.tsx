@@ -123,7 +123,9 @@ const sidebarItems = [
       { label: "Manage Rating", href: "/admin/cms/manage-rating", permission: "cms.features" },
       { label: "Manage Testimonials", href: "/admin/cms/testimonials", permission: "cms.testimonials" },
       { label: "Manage CTA Cards", href: "/admin/cms/cta-cards", permission: "cms.features" },
+      // { label: "SEO Meta Tags", href: "/admin/cms/seo", permission: "cms.features" },
     ]
+
   },
   {
     label: "Finance & Payouts",

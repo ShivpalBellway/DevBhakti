@@ -74,7 +74,7 @@ const HeroSection: React.FC = () => {
             className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-13"
           >
             <Button variant="hero" size="xl" asChild>
-              <Link href={user ? "/poojas" : "/auth?mode=register"}>
+              <Link href="/poojas">
                 Book Pooja
                 <ArrowRight className="w-5 h-5" />
               </Link>

@@ -198,7 +198,6 @@ const TemplesSection: React.FC = () => {
                             (e.target as any).src = "https://via.placeholder.com/400x300?text=Temple"
                           }}
                         />
-                        <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/20 to-transparent" />
 
                         {/* Category badge */}
                         <div className="absolute top-4 left-4">

@@ -255,7 +255,7 @@ const PoojasSection: React.FC = () => {
                             </div>
                           </div>
                           <Button variant="outline" size="sm" className="rounded-full bg-white/10 border-white/20 text-white hover:bg-primary hover:border-primary transition-all text-xs h-8 px-4">
-                            Book Now
+                          know more
                           </Button>
                         </div>
                       </div>

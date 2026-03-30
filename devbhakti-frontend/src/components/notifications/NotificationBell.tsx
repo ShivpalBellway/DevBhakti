@@ -97,9 +97,9 @@ export function NotificationBell({ userId, userType }: NotificationBellProps) {
 
     const getIcon = (title: string) => {
         const t = title.toLowerCase();
-        if (t.includes("order")) return <Package className="w-4 h-4 text-blue-500" />;
-        if (t.includes("booking")) return <Calendar className="w-4 h-4 text-orange-500" />;
-        if (t.includes("donation")) return <Heart className="w-4 h-4 text-red-500" />;
+        if (t.includes("order")) return <Package className="w-4 h-4 text-primary" />;
+        if (t.includes("booking")) return <Calendar className="w-4 h-4 text-secondary" />;
+        if (t.includes("donation")) return <Heart className="w-4 h-4 text-red-600" />;
         return <Bell className="w-4 h-4 text-primary" />;
     };
 
@@ -115,15 +115,15 @@ export function NotificationBell({ userId, userType }: NotificationBellProps) {
                     )}
                 </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-80 p-0 shadow-2xl border-sidebar-border/50 animate-in fade-in zoom-in duration-200">
-                <div className="flex items-center justify-between p-4 border-b border-sidebar-border bg-sidebar-accent/5">
-                    <h3 className="font-bold text-sm tracking-tight">Notifications</h3>
+            <DropdownMenuContent align="end" className="w-80 p-0 shadow-2xl border-primary/10 animate-in fade-in zoom-in duration-200 bg-white">
+                <div className="flex items-center justify-between p-4 border-b border-primary/5 bg-primary/5">
+                    <h3 className="font-bold text-sm tracking-tight text-primary">Notifications</h3>
                     {unreadCount > 0 && (
                         <Button
                             variant="ghost"
                             size="sm"
                             onClick={handleMarkAllRead}
-                            className="text-[11px] h-7 px-2 hover:text-primary transition-colors gap-1"
+                            className="text-[11px] h-7 px-2 hover:bg-primary/10 hover:text-primary transition-colors gap-1 text-primary/60"
                         >
                             <CheckCheck className="w-3 h-3" />
                             Mark all as read
@@ -154,13 +154,13 @@ export function NotificationBell({ userId, userType }: NotificationBellProps) {
                                     key={n.id}
                                     href={n.data?.link || "#"}
                                     className={cn(
-                                        "flex gap-3 p-3 rounded-lg transition-all hover:bg-sidebar-accent group relative mb-1",
-                                        !n.isRead && "bg-primary/5 border-l-2 border-primary rounded-l-none"
+                                        "flex gap-3 p-3 rounded-lg transition-all hover:bg-primary/5 group relative mb-1 mx-1",
+                                        !n.isRead && "bg-secondary/10 border-l-2 border-secondary rounded-l-none"
                                     )}
                                 >
                                     <div className={cn(
                                         "w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 transition-transform group-hover:scale-110",
-                                        !n.isRead ? "bg-primary/10" : "bg-sidebar-accent"
+                                        !n.isRead ? "bg-secondary/20" : "bg-primary/5"
                                     )}>
                                         {getIcon(n.title)}
                                     </div>
@@ -194,9 +194,9 @@ export function NotificationBell({ userId, userType }: NotificationBellProps) {
                     )}
                 </ScrollArea>
                 {notifications.length > 0 && (
-                    <div className="p-2 border-t border-sidebar-border bg-sidebar-accent/5">
+                    <div className="p-3 border-t border-primary/5 bg-primary/5">
                         <Link href={userType === 'admin' ? '/admin/notifications' : userType === 'temple_admin' ? '/temples/dashboard/notifications' : '/seller/dashboard/notifications'}>
-                            <Button variant="ghost" className="w-full text-[11px] h-8 font-bold hover:bg-primary/5 hover:text-primary transition-all">
+                            <Button className="w-full text-xs h-10 font-bold bg-white hover:bg-primary/5 text-primary border border-primary/10 rounded-xl shadow-sm hover:shadow transition-all">
                                 View All Notifications
                             </Button>
                         </Link>

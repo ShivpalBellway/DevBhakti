@@ -77,10 +77,10 @@ export default function TempleNotificationsPage() {
 
     const getIcon = (title: string) => {
         const t = title.toLowerCase();
-        if (t.includes("order")) return <Package className="w-5 h-5 text-blue-500" />;
-        if (t.includes("booking")) return <Calendar className="w-5 h-5 text-orange-500" />;
-        if (t.includes("donation")) return <Heart className="w-5 h-5 text-red-500" />;
-        if (t.includes("alert") || t.includes("warning")) return <ShieldAlert className="w-5 h-5 text-yellow-500" />;
+        if (t.includes("order")) return <Package className="w-5 h-5 text-primary" />;
+        if (t.includes("booking")) return <Calendar className="w-5 h-5 text-secondary" />;
+        if (t.includes("donation")) return <Heart className="w-5 h-5 text-red-600" />;
+        if (t.includes("alert") || t.includes("warning")) return <ShieldAlert className="w-5 h-5 text-amber-600" />;
         return <Bell className="w-5 h-5 text-primary" />;
     };
 
@@ -146,13 +146,13 @@ export default function TempleNotificationsPage() {
                             <div
                                 key={n.id}
                                 className={cn(
-                                    "flex flex-col sm:flex-row sm:items-start gap-4 p-5 transition-all hover:bg-muted/30 group relative",
-                                    !n.isRead && "bg-primary/5 border-l-4 border-primary pl-4"
+                                    "flex flex-col sm:flex-row sm:items-start gap-4 p-5 transition-all hover:bg-primary/5 group relative",
+                                    !n.isRead && "bg-secondary/10 border-l-4 border-secondary pl-4"
                                 )}
                             >
                                 <div className={cn(
                                     "w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0",
-                                    !n.isRead ? "bg-white shadow-sm ring-1 ring-black/5" : "bg-muted"
+                                    !n.isRead ? "bg-secondary/20 shadow-sm" : "bg-primary/5"
                                 )}>
                                     {getIcon(n.title)}
                                 </div>

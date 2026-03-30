@@ -38,6 +38,7 @@ import { fetchUserFavorites, addFavorite, removeFavorite } from "@/api/userContr
 import { API_URL } from "@/config/apiConfig";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
+import { getLiveDarshanUrl } from "@/lib/utils/templeUtils";
 
 export default function TempleDetail() {
     const params = useParams();
@@ -623,7 +624,7 @@ export default function TempleDetail() {
                                                 className="w-full gap-2 h-12 text-sm font-bold border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 hover:border-red-300 transition-all shadow-sm group px-2"
                                                 asChild
                                             >
-                                                <Link href={`/live-darshan?templeId=${temple.id}`}>
+                                                <Link href={getLiveDarshanUrl(temple)}>
                                                     <div className="relative shrink-0">
                                                         <Video className="h-5 w-5 group-hover:scale-110 transition-transform" />
                                                         <span className="absolute -top-0.5 -right-0.5 flex h-1.5 w-1.5">
