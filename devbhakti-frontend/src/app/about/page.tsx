@@ -31,7 +31,7 @@ export default function AboutPage() {
                         transition={{ duration: 0.8 }}
                         className="text-center max-w-4xl mx-auto"
                     >
-                        <h1 className="text-5xl md:text-7xl font-serif font-bold mb-6 text-gradient-sacred">
+                        <h1 className="text-5xl md:text-7xl font-serif font-bold mb-6 text-gradient-sacred pb-2">
                             About DevBhakti
                         </h1>
                         <p className="text-xl text-muted-foreground leading-relaxed">

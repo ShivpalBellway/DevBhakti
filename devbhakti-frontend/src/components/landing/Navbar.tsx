@@ -96,7 +96,7 @@ const Navbar: React.FC<NavbarProps> = ({ variant = "default" }) => {
           <nav className={`flex items-center justify-between transition-all duration-300 ${isScrolled ? "h-18 md:h-20" : "h-22 md:h-26"} gap-4 md:gap-6`}>
             {/* Logo Section */}
             <div className="flex items-center shrink-0 relative z-10">
-              <Link href="/" className="block -translate-y-2 md:-translate-y-2">
+              <Link href="/" className="block">
                 <Logo
                   className={`h-12 md:h-16 xl:h-20 2xl:h-24 w-auto transition-all duration-300 ${isScrolled ? "scale-90" : "scale-100"
                     }`}

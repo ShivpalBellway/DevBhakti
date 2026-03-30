@@ -521,7 +521,7 @@ const PoojaDetailClient = ({ id }: PoojaDetailClientProps) => {
                                     {/* FAQs tab - Standard FAQs + pooja-specific FAQs */}
                                     <TabsContent value="faqs" className="mt-0 outline-none">
                                         <div className="max-w-6xl mx-auto">
-                                            <h2 className="text-4xl font-serif font-bold mb-12 text-center text-primary text-gradient-sacred">Questions? We have answers.</h2>
+                                            <h2 className="text-4xl font-serif font-bold mb-12 text-center text-primary text-gradient-sacred pb-2">Questions? We have answers.</h2>
                                             <div className="space-y-6">
                                                 {[...STANDARD_FAQS, ...(pooja.faqs && Array.isArray(pooja.faqs) ? pooja.faqs : [])].map((faq: any, idx: number) => (
                                                     <div key={idx} className="p-8 rounded-[2rem] border border-primary/5 bg-[#FFF8F0]/30 hover:bg-white transition-all duration-500 hover:shadow-lg">

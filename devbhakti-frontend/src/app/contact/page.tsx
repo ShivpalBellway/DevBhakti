@@ -59,7 +59,7 @@ export default function ContactPage() {
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
                         transition={{ duration: 0.8 }}
-                        className="text-5xl md:text-7xl font-serif font-bold mb-6 text-gradient-sacred"
+                        className="text-5xl md:text-7xl font-serif font-bold mb-6 text-gradient-sacred pb-2"
                     >
                         Contact Us
                     </motion.h1>

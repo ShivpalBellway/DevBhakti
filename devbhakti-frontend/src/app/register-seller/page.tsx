@@ -50,7 +50,7 @@ export default function RegisterSellerPage() {
                             <Badge className="mb-6 bg-primary/20 text-primary hover:bg-primary/30 border-none px-4 py-1.5 text-sm font-bold uppercase tracking-wider">
                                 Seller Partnerships
                             </Badge>
-                            <h1 className="text-5xl md:text-7xl font-serif font-bold text-foreground mb-6 leading-tight">
+                            <h1 className="text-5xl md:text-7xl font-serif font-bold text-foreground mb-6 leading-tight pb-2">
                                 Reach Millions of <br />
                                 <span className="text-primary italic text-gradient-sacred">Devout Customers</span>
                             </h1>
