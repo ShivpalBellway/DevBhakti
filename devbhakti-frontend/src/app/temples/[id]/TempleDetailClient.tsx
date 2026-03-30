@@ -239,10 +239,10 @@ export default function TempleDetail() {
 
     return (
         <div className="min-h-screen bg-background">
-            <Navbar />
+            <Navbar isSolid={true} />
 
             {/* Hero Image Carousel */}
-            <section className="relative h-[65vh] md:h-[75vh] overflow-hidden mt-20">
+            <section className="relative h-[70vh] md:h-[80vh] overflow-hidden mt-26">
                 <AnimatePresence mode="wait">
                     <motion.div
                         key={activeImageIndex}
@@ -261,9 +261,9 @@ export default function TempleDetail() {
                 </AnimatePresence>
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent pointer-events-none" />
 
-                {/* Carousel Dots - Top Position */}
+                {/* Carousel Dots - Top center Position */}
                 {heroImages.length > 1 && (
-                    <div className="absolute top-6 left-1/2 -translate-x-1/2 flex gap-2 z-30 bg-black/20 backdrop-blur-sm px-3 py-2 rounded-full border border-white/10">
+                    <div className="absolute top-28 left-1/2 -translate-x-1/2 flex gap-2 z-[110] bg-black/40 backdrop-blur-md px-4 py-2 rounded-full border border-white/20 shadow-lg">
                         {heroImages.map((_, index) => (
                             <button
                                 key={index}

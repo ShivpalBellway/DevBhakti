@@ -25,9 +25,10 @@ import {
 
 interface NavbarProps {
   variant?: "default" | "temple";
+  isSolid?: boolean;
 }
 
-const Navbar: React.FC<NavbarProps> = ({ variant = "default" }) => {
+const Navbar: React.FC<NavbarProps> = ({ variant = "default", isSolid = false }) => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -87,7 +88,7 @@ const Navbar: React.FC<NavbarProps> = ({ variant = "default" }) => {
       <motion.header
         initial={{ y: -100 }}
         animate={{ y: 0 }}
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled || isMobileMenuOpen
+        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled || isMobileMenuOpen || isSolid
           ? "bg-background shadow-soft border-b border-border"
           : "bg-background xl:bg-transparent"
           }`}
