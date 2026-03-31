@@ -104,9 +104,9 @@ export function ImageCropper({
                         <div className="hidden md:flex items-center gap-2 px-4 py-2 bg-emerald-50 rounded-full border border-emerald-100 text-emerald-700 text-[10px] font-black uppercase tracking-widest">
                             <MousePointer2 className="w-3.5 h-3.5" /> Corner Handles Active
                         </div>
-                        <Button variant="ghost" size="icon" onClick={onCancel} className="h-10 w-10 rounded-full border border-slate-100 bg-[#FDFCFB] text-slate-400 hover:text-red-500 hover:bg-red-50">
+                        {/* <Button variant="ghost" size="icon" onClick={onCancel} className="h-10 w-10 rounded-full border border-slate-100 bg-[#FDFCFB] text-slate-400 hover:text-red-500 hover:bg-red-50">
                             <X className="w-5 h-5" />
-                        </Button>
+                        </Button> */}
                     </div>
                 </DialogHeader>
 
@@ -172,10 +172,10 @@ export function ImageCropper({
                                 <div className="flex flex-col gap-2">
                                     <p className="text-[10px] font-black uppercase tracking-widest text-[#5C4D3F]/60 ml-1">Selection Mode</p>
                                     <div className="flex gap-2">
-                                        <Button 
-                                            variant={dragMode === 'crop' ? 'default' : 'outline'} 
-                                            size="sm" 
-                                            className={`rounded-xl h-11 px-4 border-slate-200 shadow-sm transition-all ${dragMode === 'crop' ? 'bg-[#8B4513] text-white' : 'bg-white text-slate-600 hover:border-primary/50'}`} 
+                                        <Button
+                                            variant={dragMode === 'crop' ? 'default' : 'outline'}
+                                            size="sm"
+                                            className={`rounded-xl h-11 px-4 border-slate-200 shadow-sm transition-all ${dragMode === 'crop' ? 'bg-[#8B4513] text-white' : 'bg-white text-slate-600 hover:border-primary/50'}`}
                                             onClick={() => setDragMode('crop')}
                                             title="Move/Resize Crop Box"
                                         >
@@ -184,10 +184,10 @@ export function ImageCropper({
                                                 <span className="text-[10px] font-bold">Adjust Box</span>
                                             </div>
                                         </Button>
-                                        <Button 
-                                            variant={dragMode === 'move' ? 'default' : 'outline'} 
-                                            size="sm" 
-                                            className={`rounded-xl h-11 px-4 border-slate-200 shadow-sm transition-all ${dragMode === 'move' ? 'bg-[#8B4513] text-white' : 'bg-white text-slate-600 hover:border-primary/50'}`} 
+                                        <Button
+                                            variant={dragMode === 'move' ? 'default' : 'outline'}
+                                            size="sm"
+                                            className={`rounded-xl h-11 px-4 border-slate-200 shadow-sm transition-all ${dragMode === 'move' ? 'bg-[#8B4513] text-white' : 'bg-white text-slate-600 hover:border-primary/50'}`}
                                             onClick={() => setDragMode('move')}
                                             title="Drag Image"
                                         >

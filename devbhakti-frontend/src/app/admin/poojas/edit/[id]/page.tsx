@@ -604,7 +604,7 @@ export default function EditPoojaPage() {
                     </div>
                 </div> */}
 
-                <div className="space-y-4 p-4 border rounded-xl bg-slate-50/50">
+                {/* <div className="space-y-4 p-4 border rounded-xl bg-slate-50/50">
                     <div className="flex items-center justify-between">
                         <h3 className="font-semibold">Frequently Asked Questions</h3>
                         <Button type="button" variant="outline" size="sm" onClick={addFAQ}>
@@ -636,7 +636,7 @@ export default function EditPoojaPage() {
                             </div>
                         ))}
                     </div>
-                </div>
+                </div> */}
 
                 <div className="flex justify-end gap-4 pt-6 border-t">
                     <Button type="button" variant="outline" onClick={() => router.back()}>

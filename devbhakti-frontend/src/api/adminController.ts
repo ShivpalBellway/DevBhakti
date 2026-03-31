@@ -1071,3 +1071,38 @@ export const notifyFailedPayment = async (data: {
     const response = await axios.post(`${API_URL}/payments/failed`, data);
     return response.data;
 };
+
+// ─── Standard FAQ Management (Admin) ─────────────────────────────────────────
+
+export const fetchAllFAQsAdmin = async () => {
+    const token = getAdminToken();
+    const response = await axios.get(`${API_URL}/admin/faqs`, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data.data;
+};
+
+export const createFAQAdmin = async (data: { question: string; answer: string; order?: number; isActive?: boolean }) => {
+    const token = getAdminToken();
+    const response = await axios.post(`${API_URL}/admin/faqs`, data, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+
+export const updateFAQAdmin = async (id: string, data: { question?: string; answer?: string; order?: number; isActive?: boolean }) => {
+    const token = getAdminToken();
+    const response = await axios.put(`${API_URL}/admin/faqs/${id}`, data, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+
+export const deleteFAQAdmin = async (id: string) => {
+    const token = getAdminToken();
+    const response = await axios.delete(`${API_URL}/admin/faqs/${id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+

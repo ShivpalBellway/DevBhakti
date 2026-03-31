@@ -38,6 +38,19 @@ export const getAllPoojas = async (req: Request, res: Response) => {
             },
             orderBy: { createdAt: 'desc' }
         });
+
+        // Unique by name logic if no specific filter is applied
+        if (isMaster === undefined && !templeId && !poojaId) {
+            const uniquePoojasMap = new Map();
+            poojas.forEach(p => {
+                const existing = uniquePoojasMap.get(p.name);
+                if (!existing || (!existing.isMaster && p.isMaster)) {
+                    uniquePoojasMap.set(p.name, p);
+                }
+            });
+            return res.json(Array.from(uniquePoojasMap.values()));
+        }
+
         res.json(poojas);
     } catch (error) {
         console.error('Fetch poojas error:', error);

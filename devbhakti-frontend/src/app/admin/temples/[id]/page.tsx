@@ -49,6 +49,10 @@ export default function ViewTemplePage() {
             const found = allInst.find((i: any) => i.id === instId);
             setInst(found);
 
+            if (found?.temple?.name) {
+                window.dispatchEvent(new CustomEvent('updateBreadcrumb', { detail: found.temple.name }));
+            }
+
             if (found?.temple?.id) {
                 // Load Marketplace Slabs
                 const mSlabsResponse = await fetchCommissionSlabsAdmin('TEMPLE', found.temple.id, 'MARKETPLACE');

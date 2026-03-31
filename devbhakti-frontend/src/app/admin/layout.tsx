@@ -28,6 +28,7 @@ import {
   ShieldCheck,
   ShieldAlert,
   Megaphone,
+  HelpCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 // import Logo from "@/components/icons/Logo";
@@ -91,6 +92,7 @@ const sidebarItems = [
     subItems: [
       { label: "All Poojas", href: "/admin/poojas", permission: "poojas.view" },
       { label: "Pooja Purposes", href: "/admin/poojas/categories", permission: "poojas.view" },
+      { label: "Standard FAQs", href: "/admin/faqs", permission: "poojas.view" },
     ]
   },
   {

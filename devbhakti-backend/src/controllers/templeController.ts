@@ -64,11 +64,16 @@ export const getTempleFilters = async (req: Request, res: Response) => {
 export const getAllTemples = async (req: Request, res: Response) => {
   try {
     const userId = getUserIdFromRequest(req);
-    const { search, category, location, pooja, poojaId } = req.query;
+    const { search, category, location, pooja, poojaId, isLive } = req.query;
 
     const whereClause: any = {
       isActive: true,
     };
+
+    if (isLive === 'true') {
+      whereClause.isLive = true;
+      whereClause.liveStatus = true;
+    }
 
     if (search) {
       whereClause.OR = [
@@ -373,8 +378,6 @@ export const getAllPoojas = async (req: Request, res: Response) => {
 
     if (templeId) {
       where.templeId = String(templeId);
-    } else {
-      where.isMaster = true; // Global list only shows Master templates
     }
 
     if (category && category !== 'All') {
@@ -433,7 +436,21 @@ export const getAllPoojas = async (req: Request, res: Response) => {
       });
     }
 
-    const poojasWithFav = poojas.map(pooja => ({
+    // If no templeId, filter for unique poojas by name, prioritizing Masters
+    let finalPoojas = poojas;
+    if (!templeId) {
+      const uniquePoojasMap = new Map();
+      poojas.forEach(p => {
+        const existing = uniquePoojasMap.get(p.name);
+        // Prioritize: isMaster=true, then most recent or existing
+        if (!existing || (!existing.isMaster && p.isMaster)) {
+          uniquePoojasMap.set(p.name, p);
+        }
+      });
+      finalPoojas = Array.from(uniquePoojasMap.values());
+    }
+
+    const poojasWithFav = finalPoojas.map(pooja => ({
       ...pooja,
       isFavorite: favoritedPoojaIds.has(pooja.id)
     }));

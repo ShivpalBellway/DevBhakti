@@ -7,6 +7,7 @@ export const fetchPublicTemples = async (params?: {
     location?: string;
     pooja?: string;
     poojaId?: string;
+    isLive?: boolean | string;
 }) => {
     try {
         const response = await axios.get(`${API_URL}/temples`, { params });
@@ -116,12 +117,26 @@ export const fetchSeoSettings = async () => {
     } catch (error) {
         console.error("Error fetching SEO settings:", error);
         return {
-            success: false, 
+            success: false,
             settings: {
                 home: { title: "DevBhakti - Sacred Temple Service", description: "Connecting devotees with sacred temples", keywords: "temple, pooja, darshan" }
             }
         };
     }
 };
+
+// Fetch active Standard FAQs (for pooja detail pages)
+export const fetchStandardFAQs = async () => {
+    try {
+        const response = await axios.get(`${API_URL}/faqs`);
+        return response.data.data as { id: string; question: string; answer: string; order: number }[];
+    } catch (error) {
+        console.error("Error fetching standard FAQs:", error);
+        return [];
+    }
+};
+
+
+
 
 

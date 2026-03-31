@@ -121,8 +121,8 @@ export default function TempleRegistrationForm({ onClose }: { onClose?: () => vo
         try {
             const data = await fetchAllPoojasPublic();
             const poojas = Array.isArray(data) ? data : data.data || [];
-            // Filter to show only Master Poojas
-            setAllPoojas(poojas.filter((p: any) => p.isMaster === true));
+            // Show all unique rituals provided by backend (Masters + unique Standalones)
+            setAllPoojas(poojas);
         } catch (error) {
             console.error("Failed to load poojas");
         }
@@ -744,9 +744,16 @@ export default function TempleRegistrationForm({ onClose }: { onClose?: () => vo
                                     </div>
                                     <div className="flex-1">
                                         <h4 className="font-semibold text-slate-800 text-sm">{pooja.name}</h4>
-                                        {pooja.category && (
-                                            <p className="text-xs text-slate-500 mt-1">{pooja.category}</p>
-                                        )}
+                                        <div className="flex flex-wrap gap-1 mt-1">
+                                            {pooja.category && (
+                                                <p className="text-[10px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded">{pooja.category}</p>
+                                            )}
+                                            {pooja.temple?.name && (
+                                                <p className="text-[10px] bg-orange-100 text-orange-600 px-1.5 py-0.5 rounded font-medium">
+                                                    {pooja.temple.name}
+                                                </p>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
                             </div>

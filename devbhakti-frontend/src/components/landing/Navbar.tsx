@@ -127,7 +127,7 @@ const Navbar: React.FC<NavbarProps> = ({ variant = "default", isSolid = false })
               ) : (
                 <div className="flex-1 flex justify-center">
                   <Link href="/" className="text-sm font-medium text-slate-800 hover:text-primary transition-colors">
-                    Go to Devotee Home Page
+                    {/* Go to Devotee Home Page */}
                   </Link>
                 </div>
               )}
@@ -414,7 +414,7 @@ const Navbar: React.FC<NavbarProps> = ({ variant = "default", isSolid = false })
                   })}
 
                   {/* Go to Devotee Home Page - Only on temple registration page */}
-                  {isTempleRegistrationPage && (
+                  {/* {isTempleRegistrationPage && (
                     <Link
                       href="/"
                       onClick={() => setIsMobileMenuOpen(false)}
@@ -422,7 +422,7 @@ const Navbar: React.FC<NavbarProps> = ({ variant = "default", isSolid = false })
                     >
                       Go to Devotee Home Page
                     </Link>
-                  )}
+                  )} */}
                   <div className="flex flex-col gap-3 mt-6">
                     {!user ? (
                       <div className="grid grid-cols-2 gap-3">

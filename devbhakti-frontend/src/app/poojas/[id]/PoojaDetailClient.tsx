@@ -23,7 +23,7 @@ import Footer from "@/components/landing/Footer";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { fetchPublicPoojaById, fetchRatingsSettings } from "@/api/publicController";
+import { fetchPublicPoojaById, fetchRatingsSettings, fetchStandardFAQs } from "@/api/publicController";
 import { API_URL } from "@/config/apiConfig";
 import { toast } from "@/hooks/use-toast";
 import { getTempleUrl } from "@/lib/utils/templeUtils";
@@ -33,28 +33,6 @@ interface PoojaDetailClientProps {
     id: string;
 }
 
-const STANDARD_FAQS = [
-    {
-        q: "What does this pooja include?",
-        a: "This pooja includes basic samagri and is performed as per temple rituals. Specific inclusions may vary depending on the temple."
-    },
-    {
-        q: "Will a priest (pandit) perform the pooja?",
-        a: "Yes, the pooja is performed by a qualified priest. Please refer to the pooja description for details."
-    },
-    {
-        q: "Do I need to be physically present for the pooja?",
-        a: "No, your physical presence is not required. The temple will perform the pooja on your behalf."
-    },
-    {
-        q: "Will I receive prasad or confirmation?",
-        a: "Prasad may be provided depending on the temple and pooja selected. Please refer to the pooja description for details. You will receive confirmation once the pooja is completed."
-    },
-    {
-        q: "Can I choose a specific date or time?",
-        a: "Yes, you can select your preferred date while booking, subject to temple availability."
-    },
-];
 
 const PoojaDetailClient = ({ id }: PoojaDetailClientProps) => {
     const [pooja, setPooja] = useState<any>(null);
@@ -63,6 +41,7 @@ const PoojaDetailClient = ({ id }: PoojaDetailClientProps) => {
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [user, setUser] = useState<any>(null);
     const [showRatings, setShowRatings] = useState(false);
+    const [standardFaqs, setStandardFaqs] = useState<{ id: string; question: string; answer: string; order: number }[]>([]);
     const router = useRouter();
 
     useEffect(() => {
@@ -113,14 +92,16 @@ const PoojaDetailClient = ({ id }: PoojaDetailClientProps) => {
     useEffect(() => {
         const loadPoojaAndSettings = async () => {
             try {
-                const [poojaData, settingsData] = await Promise.all([
+                const [poojaData, settingsData, faqsData] = await Promise.all([
                     fetchPublicPoojaById(id),
-                    fetchRatingsSettings()
+                    fetchRatingsSettings(),
+                    fetchStandardFAQs()
                 ]);
                 setPooja(poojaData);
                 if (settingsData && settingsData.settings) {
                     setShowRatings(settingsData.settings.pooja.details);
                 }
+                setStandardFaqs(faqsData || []);
             } catch (error) {
                 console.error("Failed to fetch pooja or settings:", error);
             } finally {
@@ -518,12 +499,17 @@ const PoojaDetailClient = ({ id }: PoojaDetailClientProps) => {
                                         </div>
                                     </TabsContent>
 
-                                    {/* FAQs tab - Standard FAQs + pooja-specific FAQs */}
+                                    {/* FAQs tab - Standard FAQs (from DB) + pooja-specific FAQs */}
                                     <TabsContent value="faqs" className="mt-0 outline-none">
                                         <div className="max-w-6xl mx-auto">
                                             <h2 className="text-4xl font-serif font-bold mb-12 text-center text-primary text-gradient-sacred pb-2">Questions? We have answers.</h2>
                                             <div className="space-y-6">
-                                                {[...STANDARD_FAQS, ...(pooja.faqs && Array.isArray(pooja.faqs) ? pooja.faqs : [])].map((faq: any, idx: number) => (
+                                                {[
+                                                    // Global standard FAQs first (from DB, admin-managed)
+                                                    ...standardFaqs.map(f => ({ q: f.question, a: f.answer })),
+                                                    // Pooja-specific FAQs below (from temple/pooja record)
+                                                    ...(pooja.faqs && Array.isArray(pooja.faqs) ? pooja.faqs : [])
+                                                ].map((faq: any, idx: number) => (
                                                     <div key={idx} className="p-8 rounded-[2rem] border border-primary/5 bg-[#FFF8F0]/30 hover:bg-white transition-all duration-500 hover:shadow-lg">
                                                         <h4 className="text-xl font-serif font-bold text-[#1a1a1a] mb-4 flex items-start gap-4">
                                                             <HelpCircle className="w-6 h-6 text-primary mt-0.5 shrink-0 opacity-50" />
@@ -534,6 +520,9 @@ const PoojaDetailClient = ({ id }: PoojaDetailClientProps) => {
                                                         </p>
                                                     </div>
                                                 ))}
+                                                {standardFaqs.length === 0 && (!pooja.faqs || pooja.faqs.length === 0) && (
+                                                    <p className="text-center text-[#999] italic">No FAQs available yet.</p>
+                                                )}
                                             </div>
                                         </div>
                                     </TabsContent>

@@ -26,6 +26,13 @@ import { API_URL } from "@/config/apiConfig";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
 import Navbar from "@/components/landing/Navbar";
 import Footer from "@/components/landing/Footer";
 
@@ -290,30 +297,38 @@ const PoojaListClient: React.FC = () => {
                 </div>
             </section>
 
-            {/* Filter Chips */}
-            <section className="relative py-4 bg-white border-y border-zinc-200">
+            {/* Filter Section */}
+            <section className="relative py-6 bg-white border-y border-zinc-200">
                 <div className="container mx-auto px-4">
-                    <div className="flex items-center gap-3 overflow-x-auto pb-1 scrollbar-none">
-
-                        <div className="flex items-center gap-2 mr-4 border-r border-zinc-200 pr-4">
-                            {/* <span className="text-sm font-semibold text-zinc-700 whitespace-nowrap">
-                                Categories
-                            </span> */}
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div className="flex items-center gap-3">
+                            <div className="p-2 bg-orange-50 rounded-lg border border-orange-100">
+                                <Filter className="w-5 h-5 text-[#794A05]" />
+                            </div>
+                            <div>
+                                <h3 className="text-lg font-extrabold text-[#794A05] italic leading-none">Filter by Category</h3>
+                                <p className="text-[10px] text-[#794A05]/70 uppercase font-bold tracking-[0.2em] mt-1">Discover Sacred Rituals</p>
+                            </div>
                         </div>
 
-                        {categories.map((category) => (
-                            <button
-                                key={category}
-                                onClick={() => setSelectedCategory(category)}
-                                className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all duration-300 whitespace-nowrap ${selectedCategory === category
-                                    ? "bg-primary text-white shadow-md"
-                                    : "bg-zinc-100 text-zinc-700 hover:bg-zinc-200"
-                                    }`}
-                            >
-                                {category}
-                            </button>
-                        ))}
-
+                        <div className="w-full md:w-72">
+                            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                                <SelectTrigger className="w-full rounded-xl border-orange-100 bg-white hover:bg-orange-50/30 transition-all duration-300 h-10 shadow-sm font-semibold text-slate-700">
+                                    <SelectValue placeholder="Select Category" />
+                                </SelectTrigger>
+                                <SelectContent className="rounded-xl border-orange-50 shadow-xl max-h-72">
+                                    {categories.map((category) => (
+                                        <SelectItem 
+                                            key={category} 
+                                            value={category}
+                                            className="focus:bg-orange-50 focus:text-primary cursor-pointer py-2.5 rounded-lg mx-1"
+                                        >
+                                            {category === 'All' ? 'All Rituals' : category}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
                     </div>
                 </div>
             </section>
@@ -352,10 +367,16 @@ const PoojaListClient: React.FC = () => {
                                                     alt={pooja.name}
                                                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                                                 />
-                                                <div className="absolute top-4 left-4 flex gap-2">
+                                                <div className="absolute top-4 left-4 flex flex-wrap gap-2">
                                                     <Badge className="bg-white/90 backdrop-blur-md text-zinc-900 border-none shadow-lg">
                                                         {pooja.category}
                                                     </Badge>
+                                                    {pooja.temple?.name && (
+                                                        <Badge className="bg-white/40 backdrop-blur-md text-slate-800 border-none shadow-lg">
+                                                            <MapPin className="w-3 h-3 mr-1" />
+                                                            {pooja.temple.name}
+                                                        </Badge>
+                                                    )}
                                                     {pooja.price > 1000 && (
                                                         <Badge className="bg-primary/95 text-white border-none shadow-lg animate-pulse">
                                                             <Zap className="w-3 h-3 mr-1 fill-white" />

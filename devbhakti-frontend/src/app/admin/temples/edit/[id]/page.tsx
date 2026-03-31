@@ -111,13 +111,17 @@ export default function EditTemplePage() {
     const loadData = async () => {
         setIsFetching(true);
         try {
-            // Load master poojas for selection
-            const poojasResponse = await fetchAllPoojasAdmin({ isMaster: true });
+            // Load unique rituals (Masters + Standalones)
+            const poojasResponse = await fetchAllPoojasAdmin();
             setAllPoojas(poojasResponse);
 
             // Load temple account data
             const allInst = await fetchAllTemplesAdmin();
             const inst = allInst.find((i: any) => i.id === instId);
+
+            if (inst?.temple?.name) {
+                window.dispatchEvent(new CustomEvent('updateBreadcrumb', { detail: `Edit ${inst.temple.name}` }));
+            }
 
             if (inst) {
                 const stripPrefix = (ph: string) => {
@@ -179,7 +183,7 @@ export default function EditTemplePage() {
                         if (mSlabsResponse.success && mSlabsResponse.data?.length > 0) {
                             const dedupe = (list: any[]) => list.filter((s, i, self) => i === self.findIndex(t => t.minAmount === s.minAmount));
                             setMarketplaceSlabs(dedupe(mSlabsResponse.data));
-                            // Do NOT auto-set CUSTOM — admin can toggle manually
+                            setMarketplaceRateType("CUSTOM");
                         } else {
                             // Fallback to Global Marketplace structure
                             const globalMSlabs = await fetchCommissionSlabsAdmin('GLOBAL', undefined, 'MARKETPLACE');
@@ -191,7 +195,7 @@ export default function EditTemplePage() {
                         if (pSlabsResponse.success && pSlabsResponse.data?.length > 0) {
                             const dedupe = (list: any[]) => list.filter((s, i, self) => i === self.findIndex(t => t.minAmount === s.minAmount));
                             setPoojaSlabs(dedupe(pSlabsResponse.data));
-                            // Do NOT auto-set CUSTOM — admin can toggle manually
+                            setPoojaRateType("CUSTOM");
                         } else {
                             // Fallback to Global Pooja structure
                             const globalPSlabs = await fetchCommissionSlabsAdmin('GLOBAL', undefined, 'POOJA');
@@ -900,10 +904,16 @@ export default function EditTemplePage() {
                                                 <div className="w-1.5 h-1.5 rounded-full bg-slate-100 group-hover:bg-primary/20 transition-colors" />
                                             )}
                                         </div>
-                                        <span className={`text-[13px] font-semibold truncate transition-colors ${isSelected ? "text-primary" : "text-slate-600"
-                                            }`}>
-                                            {pooja.name}
-                                        </span>
+                                        <div className="flex-1 min-w-0">
+                                            <p className={`text-[13px] font-semibold truncate transition-colors ${isSelected ? "text-primary" : "text-slate-600"}`}>
+                                                {pooja.name}
+                                            </p>
+                                            {pooja.temple?.name && (
+                                                <p className="text-[10px] text-orange-600 font-medium truncate">
+                                                    {pooja.temple.name}
+                                                </p>
+                                            )}
+                                        </div>
                                     </div>
                                 );
                             })}
@@ -1088,12 +1098,12 @@ export default function EditTemplePage() {
                     </div>
 
                     {/* Status */}
-                    <div className="flex items-center gap-3 p-6 bg-emerald-50 rounded-xl border border-emerald-100">
+                    {/* <div className="flex items-center gap-3 p-6 bg-emerald-50 rounded-xl border border-emerald-100">
                         <input type="checkbox" checked={formData.liveStatus === "true"} onChange={e => setFormData({ ...formData, liveStatus: e.target.checked ? "true" : "false" })} className="w-5 h-5 rounded accent-emerald-600" />
                         <div>
                             <p className="text-sm font-bold text-emerald-900">Mark as Live & Verified</p>
                         </div>
-                    </div>
+                    </div> */}
 
                     <div className="flex justify-end gap-3 pt-6 border-t pb-10">
                         <Button type="button" variant="outline" onClick={() => router.back()}>Cancel</Button>

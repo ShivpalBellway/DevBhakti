@@ -279,7 +279,7 @@ export default function TempleDetail() {
                 )}
 
                 {/* Actions */}
-                <div className="absolute top-6 right-4 md:right-8 flex gap-2 z-20">
+                <div className="absolute top-28 right-4 md:right-8 flex gap-2 z-20">
                     <Button
                         variant="secondary"
                         size="icon"
@@ -469,23 +469,9 @@ export default function TempleDetail() {
                                                             </div>
                                                             <Button
                                                                 className="rounded-full px-6 shadow-soft hover:shadow-warm transition-all"
-                                                                onClick={() => {
-                                                                    const bookingUrl = `/booking?temple=${temple.id}`;
-                                                                    const token = localStorage.getItem("token");
-                                                                    const savedUser = localStorage.getItem("user");
-                                                                    const parsedUser = savedUser ? JSON.parse(savedUser) : null;
-                                                                    if (!token || !parsedUser) {
-                                                                        router.push(`/auth?redirect=${encodeURIComponent(bookingUrl)}`);
-                                                                        return;
-                                                                    }
-                                                                    if (parsedUser.role !== "DEVOTEE") {
-                                                                        router.push(`/auth?redirect=${encodeURIComponent(bookingUrl)}`);
-                                                                        return;
-                                                                    }
-                                                                    router.push(bookingUrl);
-                                                                }}
+                                                                onClick={() => router.push(`/poojas/${pooja.id}`)}
                                                             >
-                                                                Book Now
+                                                                Know More
                                                             </Button>
                                                         </div>
                                                     </div>
@@ -567,12 +553,9 @@ export default function TempleDetail() {
                                                                     </div>
                                                                     <Button
                                                                         className="rounded-lg px-8 h-10 shadow-sm hover:shadow-md group-hover:scale-105 transition-all bg-primary font-bold text-xs"
-                                                                        onClick={() => {
-                                                                            const bookingUrl = `/booking?temple=${temple.id}`;
-                                                                            router.push(bookingUrl);
-                                                                        }}
+                                                                        onClick={() => router.push(`/poojas/${pooja.id}`)}
                                                                     >
-                                                                        Book Now
+                                                                        Know More
                                                                     </Button>
                                                                 </div>
                                                             </div>

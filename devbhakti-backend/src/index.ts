@@ -53,6 +53,8 @@ import notificationRoutes from './routes/notificationRoutes';
 import './services/firebaseService'; // Initialize Firebase Admin on startup
 
 import adminSettingsRoutes from './routes/admin/globalSettingsRoutes';
+import adminFaqRoutes from './routes/admin/faqRoutes';
+import publicFaqRoutes from './routes/faqRoutes';
 
 
 dotenv.config();
@@ -90,6 +92,7 @@ app.use('/api/admin/team', adminStaffManagementRoutes);
 app.use("/api/admin/donations", adminDonationRoutes);
 app.use('/api/admin/marketing', adminMarketingRoutes);
 app.use('/api/admin/settings', adminSettingsRoutes);
+app.use('/api/admin/faqs', adminFaqRoutes);
 
 
 
@@ -127,6 +130,7 @@ app.use('/api/donations', donationRoutes);
 // General Routes (Temporary)
 app.use('/api/temples', templeRoutes);
 app.use('/api/search', publicSearchRoutes);
+app.use('/api/faqs', publicFaqRoutes);
 
 // Notification Routes (FCM Token Register/Remove)
 app.use('/api/notifications', notificationRoutes);

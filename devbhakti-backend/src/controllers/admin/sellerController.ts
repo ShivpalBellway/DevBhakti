@@ -139,7 +139,8 @@ export const getAllSellers = async (req: Request, res: Response) => {
     try {
         const sellers = await prisma.user.findMany({
             where: {
-                role: 'SELLER'
+                role: 'SELLER',
+                isActive: true
             },
             include: {
                 sellerProfile: {
@@ -199,7 +200,7 @@ export const getSellerById = async (req: Request, res: Response) => {
         const { id } = req.params;
 
         const user = await prisma.user.findUnique({
-            where: { id: id as string },
+            where: { id: id as string, isActive: true },
             include: {
                 sellerProfile: {
                     include: {
@@ -371,72 +372,17 @@ export const deleteSeller = async (req: Request, res: Response) => {
             withdrawals: sellerProfile?.withdrawals?.length || 0
         };
 
-        // Delete all related data in a transaction (in correct order to avoid FK constraints)
-        await prisma.$transaction(async (tx) => {
-            const sellerId = sellerProfile.id;
-
-            // 1. Delete product variants first (they depend on products)
-            const productIds = sellerProfile.products.map((p: any) => p.id);
-            if (productIds.length > 0) {
-                await tx.productVariant.deleteMany({
-                    where: { productId: { in: productIds } }
-                });
-
-                // Delete cart items
-                await tx.cartItem.deleteMany({
-                    where: { productId: { in: productIds } }
-                });
-
-                // Delete order items
-                await tx.orderItem.deleteMany({
-                    where: { productId: { in: productIds } }
-                });
-
-                // Delete favorites
-                await tx.favorite.deleteMany({
-                    where: { productId: { in: productIds } }
-                });
-            }
-
-            // 2. Delete products
-            await tx.product.deleteMany({
-                where: { sellerId }
-            });
-
-            // 3. Delete sub-orders
-            await tx.subOrder.deleteMany({
-                where: { sellerId }
-            });
-
-            // 4. Delete ledger entries
-            await tx.templeLedger.deleteMany({
-                where: { sellerId }
-            });
-
-            // 5. Delete withdrawal requests
-            await tx.withdrawalRequest.deleteMany({
-                where: { sellerId }
-            });
-
-            // 6. Delete seller profile
-            await tx.sellerProfile.delete({
-                where: { id: sellerId }
-            });
-
-            // 7. Finally, delete user
-            await tx.user.delete({
-                where: { id: id as string }
-            });
+        // Soft delete: Just set isActive to false for the user
+        await prisma.user.update({
+            where: { id: id as string },
+            data: { isActive: false }
         });
 
         res.json({
-            message: 'Seller and all related data deleted successfully',
+            message: 'Seller account deactivated successfully (Soft Deleted)',
             deletedData: {
                 seller: user.name,
-                productsDeleted: stats.products,
-                ordersDeleted: stats.orders,
-                ledgerEntriesDeleted: stats.ledgerEntries,
-                withdrawalsDeleted: stats.withdrawals
+                stats: stats
             }
         });
 

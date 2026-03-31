@@ -215,11 +215,9 @@ export default function LiveDarshanClient() {
   useEffect(() => {
     const fetchLiveTemples = async () => {
       try {
-        const res = await axios.get(`${API_URL}/temples`);
+        const res = await axios.get(`${API_URL}/temples`, { params: { isLive: true } });
         if (res.data.success) {
-          const liveTemples = res.data.data.filter(
-            (t: any) => t.isLive && t.liveStatus
-          );
+          const liveTemples = res.data.data;
 
           if (liveTemples.length > 0) {
             setTemples(liveTemples);

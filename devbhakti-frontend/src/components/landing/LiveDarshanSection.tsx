@@ -32,7 +32,7 @@ const LiveDarshanSection: React.FC = () => {
     if (url.includes("watch?v=")) {
       return url.replace("watch?v=", "embed/");
     }
-    
+
     if (url.includes("youtube.com")) {
       return url;
     }
@@ -41,9 +41,9 @@ const LiveDarshanSection: React.FC = () => {
 
   React.useEffect(() => {
     const loadLiveTemples = async () => {
-      const data = await fetchPublicTemples();
-      // Temple side: isLive / liveUrl / isLiveNow
-      const live = data.filter((t: any) => t.isLive && t.liveStatus);
+      const data = await fetchPublicTemples({ isLive: true });
+      // The API now returns only live temples where isLive=true AND liveStatus=true
+      const live = data;
 
       // Sort so isPrimaryLive: true comes first
       live.sort((a: any, b: any) => {
