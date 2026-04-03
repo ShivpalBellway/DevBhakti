@@ -169,11 +169,11 @@ const PoojaListClient: React.FC = () => {
             if (isFav) {
                 await removeFavorite({ poojaId });
                 setFavorites(favorites.filter((f) => f.poojaId !== poojaId));
-                toast({ title: "Removed from favorites" });
+                toast({ title: "Removed from favorites", variant: "success" });
             } else {
                 await addFavorite({ poojaId });
                 setFavorites([...favorites, { poojaId }]);
-                toast({ title: "Added to favorites" });
+                toast({ title: "Added to favorites", variant: "success" });
             }
         } catch (error: any) {
             toast({
@@ -186,8 +186,8 @@ const PoojaListClient: React.FC = () => {
 
     const filteredPoojas = poojas.filter((pooja) => {
         const matchesSearch =
-            pooja.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            pooja.category.toLowerCase().includes(searchQuery.toLowerCase());
+            (pooja.name?.toLowerCase().includes(searchQuery.toLowerCase()) || false) ||
+            (pooja.category?.toLowerCase().includes(searchQuery.toLowerCase()) || false);
         const matchesCategory =
             selectedCategory === "All" || pooja.category === selectedCategory;
         return matchesSearch && matchesCategory;
@@ -200,10 +200,12 @@ const PoojaListClient: React.FC = () => {
         let bestMatch = "";
 
         poojas.forEach(pooja => {
-            const distance = getLevenshteinDistance(searchQuery.toLowerCase(), pooja.name.toLowerCase());
-            if (distance < minDistance && distance < 3) { // Threshold of 3 characters
-                minDistance = distance;
-                bestMatch = pooja.name;
+            if (pooja.name) {
+                const distance = getLevenshteinDistance(searchQuery.toLowerCase(), pooja.name.toLowerCase());
+                if (distance < minDistance && distance < 3) { // Threshold of 3 characters
+                    minDistance = distance;
+                    bestMatch = pooja.name;
+                }
             }
         });
 

@@ -96,8 +96,8 @@ export default function TempleProductsPage() {
     };
 
     const filteredProducts = products.filter((p) =>
-        p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (p.categoryObj?.name || "").toLowerCase().includes(searchQuery.toLowerCase())
+        (p.name?.toLowerCase().includes(searchQuery.toLowerCase()) || false) ||
+        (p.categoryObj?.name?.toLowerCase().includes(searchQuery.toLowerCase()) || false)
     );
 
     const getStatusBadge = (status: string) => {

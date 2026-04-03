@@ -531,7 +531,7 @@ export default function LiveDarshanClient() {
                   className="flex gap-8 overflow-x-auto snap-x no-scrollbar pt-4 pb-12 px-8 scroll-smooth -mx-8 relative z-0"
                 >
                   {temples
-                    .filter(temple => temple.name.toLowerCase().includes(searchQuery.toLowerCase()) || temple.location.toLowerCase().includes(searchQuery.toLowerCase()))
+                    .filter(temple => (temple.name?.toLowerCase().includes(searchQuery.toLowerCase()) || false) || (temple.location?.toLowerCase().includes(searchQuery.toLowerCase()) || false))
                     .map((temple) => (
                       <motion.div
                         key={temple.id}

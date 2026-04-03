@@ -189,7 +189,7 @@ export default function FeaturesPage() {
     };
 
     const filteredFeatures = features.filter(feature =>
-        feature.title.toLowerCase().includes(searchTerm.toLowerCase())
+        (feature.title?.toLowerCase().includes(searchTerm.toLowerCase()) || false)
     );
 
     return (

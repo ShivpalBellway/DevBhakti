@@ -11,6 +11,7 @@ async function main() {
   await prisma.withdrawalRequest.deleteMany();
   await prisma.templeLedger.deleteMany();
   await prisma.templeUpdateRequest.deleteMany();
+  await prisma.donation.deleteMany();
   await prisma.favorite.deleteMany();
   await prisma.poojaBooking.deleteMany();
   await prisma.orderItem.deleteMany();

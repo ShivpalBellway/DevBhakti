@@ -207,7 +207,7 @@ const FeaturesSection: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {displayFeatures.map((feature, index) => (
             <motion.div
-              key={feature.title}
+              key={feature.id || feature.title || index}
               initial={{
                 opacity: 0,
                 y: 30,
@@ -233,8 +233,7 @@ const FeaturesSection: React.FC = () => {
                       ? (feature.image.startsWith('http') ? feature.image : `${BASE_URL}${feature.image}`)
                       : (typeof feature.image === 'string' ? getImageUrl(feature.image) : feature.image)
                   }
-
-                  alt={feature.title}
+                  alt={feature.title || "Feature"}
                   fill
                   className="object-cover transition-transform duration-700 group-hover:scale-110"
                 />{" "}

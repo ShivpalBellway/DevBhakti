@@ -14,7 +14,6 @@ model User {
   password      String?
   phone         String?
   role          UserRole       @default(DEVOTEE)
-  isActive      Boolean        @default(true)
   isVerified    Boolean        @default(false)
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
@@ -27,6 +26,7 @@ model User {
   anniversary   String?
   dob           String?
   address       String?
+  isActive      Boolean        @default(true)
   nativePlace   String?
   cart          Cart?
   donations     Donation[]
@@ -61,11 +61,6 @@ model CartItem {
 
 model Temple {
   id                    String                @id @default(cuid())
-  name                  String
-  location              String
-  fullAddress           String?
-  description           String
-  history               String?
   image                 String?
   liveUrl               String?
   channelId             String?
@@ -73,9 +68,8 @@ model Temple {
   gallery               String[]
   rating                Float                 @default(0)
   reviewsCount          Int                   @default(0)
-  category              String
   liveStatus            Boolean               @default(false)
-  openTime              String
+  openTime              String?
   phone                 String?
   website               String?
   mapUrl                String?
@@ -96,9 +90,15 @@ model Temple {
   upiId                 String?
   subdomain             String?               @unique
   urlType               String                @default("slug")
-  pickupLocation        String?
   isPrimaryLive         Boolean               @default(false)
   operatingHours        Json?
+  category              String?
+  description           String?
+  fullAddress           String?
+  history               String?
+  location              String?
+  name                  String?
+  pickupLocation        String?
   availability          BookingAvailability[]
   donations             Donation[]
   events                Event[]
@@ -184,28 +184,28 @@ model SellerUpdateRequest {
 
 model Pooja {
   id            String                @id @default(cuid())
-  name          String
-  category      String
   price         Float
-  duration      String
-  description   String[]
   time          String
   image         String?
-  about         String?
-  benefits      String[]
-  bullets       String[]
-  process       String?
   processSteps  Json?
   isMaster      Boolean               @default(false)
   masterPoojaId String?
   templeId      String?
-  templeDetails String?
   packages      Json?
   faqs          Json?
   reviews       Json?
   createdAt     DateTime              @default(now())
   updatedAt     DateTime              @updatedAt
   status        Boolean               @default(true)
+  about         String?
+  benefits      String[]
+  bullets       String[]
+  category      String?
+  description   String[]
+  duration      String?
+  name          String?
+  process       String?
+  templeDetails String?
   availability  BookingAvailability[]
   favorites     Favorite[]
   masterPooja   Pooja?                @relation("MasterPoojaRelation", fields: [masterPoojaId], references: [id])
@@ -248,62 +248,62 @@ model Banner {
 
 model Feature {
   id          String   @id @default(cuid())
-  title       String
-  description String
   image       String
   icon        String
   active      Boolean  @default(true)
   order       Int      @default(0)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  description String?
+  title       String?
 }
 
 model Testimonial {
   id        String   @id @default(cuid())
-  title     String
-  subtitle  String
   videoSrc  String
   thumbnail String
-  category  String
   active    Boolean  @default(true)
   order     Int      @default(0)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  category  String
+  subtitle  String
+  title     String
 }
 
 model ProductCategory {
   id          String    @id @default(cuid())
-  name        String    @unique
-  description String?
   image       String?
   isActive    Boolean   @default(true)
   sortOrder   Int       @default(0)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
+  description String?
+  name        String?   @unique
   products    Product[]
 }
 
 model Product {
   id              String           @id @default(cuid())
-  name            String
-  description     String
-  category        String
   status          String           @default("pending")
   image           String?
   templeId        String?
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
   categoryId      String?
-  highlights      String?
-  longDescription String?
-  shippingInfo    String?          @default("Ships in 24-48 Hours")
-  origin          String?          @default("India")
   rating          Float?           @default(4.5)
   weight          Float?           @default(0.5)
   length          Float?           @default(10)
   width           Float?           @default(10)
   height          Float?           @default(10)
   sellerId        String?
+  category        String?
+  description     String?
+  highlights      String?
+  longDescription String?
+  name            String?
+  origin          String?          @default("India")
+  shippingInfo    String?          @default("Ships in 24-48 Hours")
   cartItems       CartItem[]
   favorites       Favorite[]
   orderItems      OrderItem[]
@@ -315,13 +315,13 @@ model Product {
 
 model ProductVariant {
   id        String     @id @default(cuid())
-  name      String
   price     Float
   stock     Int        @default(0)
   image     String?
   productId String
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
+  name      String?
   cartItems CartItem[]
   product   Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
 }
@@ -381,9 +381,9 @@ model PoojaBooking {
   updatedAt          DateTime      @updatedAt
   anniversary        String?
   dob                String?
-  nativePlace        String?
-  additionalDevotees Json?
   proofPhotos        String[]      @default([])
+  additionalDevotees Json?
+  nativePlace        String?
   pooja              Pooja         @relation(fields: [poojaId], references: [id])
   temple             Temple?       @relation(fields: [templeId], references: [id])
   user               User          @relation(fields: [userId], references: [id])
@@ -589,13 +589,29 @@ model Donation {
   panNumber       String?
   address         String?
   message         String?
-  displayId       String?  @unique
-
   createdAt       DateTime @default(now())
-
   updatedAt       DateTime @updatedAt
+  displayId       String?  @unique
   temple          Temple   @relation(fields: [templeId], references: [id])
   user            User?    @relation(fields: [userId], references: [id])
+}
+
+model StandardFAQ {
+  id        String   @id @default(cuid())
+  question  String
+  answer    String
+  order     Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model GlobalSetting {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 enum SlabType {
@@ -633,8 +649,8 @@ enum BookingStatus {
 enum LedgerType {
   MARKETPLACE_EARNING
   POOJA_EARNING
-  DONATION_EARNING
   WITHDRAWAL
+  DONATION_EARNING
 }
 
 enum LedgerStatus {
@@ -648,22 +664,4 @@ enum WithdrawalStatus {
   APPROVED
   REJECTED
   PAID
-}
-
-model StandardFAQ {
-  id        String   @id @default(cuid())
-  question  String
-  answer    String
-  order     Int      @default(0)
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model GlobalSetting {
-  id        String   @id @default(cuid())
-  key       String   @unique
-  value     Json
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
 }

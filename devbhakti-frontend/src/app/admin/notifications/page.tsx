@@ -85,8 +85,8 @@ export default function AdminNotificationsPage() {
     };
 
     const filteredNotifications = notifications.filter(n =>
-        n.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        n.body.toLowerCase().includes(searchTerm.toLowerCase())
+        (n.title?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
+        (n.body?.toLowerCase().includes(searchTerm.toLowerCase()) || false)
     );
 
     const unreadCount = notifications.filter(n => !n.isRead).length;

@@ -90,8 +90,8 @@ export default function TemplePoojasListPage() {
     };
 
     const filteredPoojas = poojas.filter(pooja =>
-        pooja.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        pooja.category.toLowerCase().includes(searchTerm.toLowerCase())
+        (pooja.name?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
+        (pooja.category?.toLowerCase().includes(searchTerm.toLowerCase()) || false)
     );
 
     const getImageUrl = (path: string) => {

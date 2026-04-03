@@ -193,10 +193,10 @@ export default function ProductDetailsPage() {
     try {
       if (isFavorite) {
         await removeFavorite({ productId: product.id });
-        toast({ title: "Removed from favorites", description: product.name });
+        toast({ title: "Removed from favorites", description: product.name, variant: "success" });
       } else {
-        await addFavorite({ productId: product.id });
-        toast({ title: "Added to favorites", description: product.name });
+        await addFavorite({ productId: id });
+        toast({ title: "Added to favorites", description: product.name, variant: "success" });
       }
     } catch (error) {
       // Revert
@@ -225,6 +225,7 @@ export default function ProductDetailsPage() {
     toast({
       title: "Added to cart",
       description: `${product.name} (${variant.name}) x ${quantity} added to cart`,
+      variant: "success",
     });
     setCartOpen(true);
   };

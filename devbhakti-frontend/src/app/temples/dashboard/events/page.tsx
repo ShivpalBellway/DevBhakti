@@ -251,7 +251,7 @@ export default function TempleEventsPage() {
     };
 
     const filteredEvents = events.filter((event) =>
-        event.name.toLowerCase().includes(searchTerm.toLowerCase())
+        (event.name?.toLowerCase().includes(searchTerm.toLowerCase()) || false)
     );
 
     return (

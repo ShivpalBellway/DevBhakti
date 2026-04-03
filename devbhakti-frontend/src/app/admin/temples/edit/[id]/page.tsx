@@ -321,7 +321,7 @@ export default function EditTemplePage() {
 
             const res = await createPoojaAdmin(fd);
             if (res.success || res.id) {
-                toast({ title: "Success", description: "New pooja added to master list" });
+                toast({ title: "Success", description: "New pooja added to master list", variant: "success" });
                 setNewPoojaName("");
                 // Refresh poojas list
                 const poojasResponse = await fetchAllPoojasAdmin({ isMaster: true });
@@ -466,7 +466,7 @@ export default function EditTemplePage() {
             fd.append("existingHeroImages", JSON.stringify(existingHeroImages));
 
             await updateTempleAdmin(instId, fd);
-            toast({ title: "Success", description: "Temple updated successfully" });
+            toast({ title: "Success", description: "Temple updated successfully", variant: "success" });
             router.push('/admin/temples');
         } catch (error: any) {
             console.error("Update error detail:", error.response?.data);

@@ -54,6 +54,8 @@ const CTASection: React.FC = () => {
     return null; // Don't show section if no cards
   }
 
+  const baseUrl = (BASE_URL || '').replace(/\/$/, ''); // Remove trailing slash from BASE_URL
+
   return (
     <section className="py-8 md:py-10 bg-gradient-hero relative overflow-hidden">
       {/* Background pattern */}
@@ -107,7 +109,7 @@ const CTASection: React.FC = () => {
                       : "bg-primary/10"
                     } flex items-center justify-center mb-6`}>
                     <Image
-                      src={card.icon.startsWith('http') ? card.icon : `${BASE_URL}${card.icon}`}
+                      src={card.icon.startsWith('http') ? card.icon : `${baseUrl}${card.icon.startsWith('/') ? card.icon : '/' + card.icon}`}
                       alt={card.title}
                       width={32}
                       height={32}

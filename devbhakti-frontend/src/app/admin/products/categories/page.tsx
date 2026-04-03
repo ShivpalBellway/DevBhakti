@@ -96,7 +96,7 @@ export default function CategoriesManagementPage() {
     if (window.confirm("Are you sure you want to delete this category?")) {
       try {
         await deleteCategoryAdmin(id);
-        toast({ title: "Success", description: "Category deleted successfully" });
+        toast({ title: "Success", description: "Category deleted successfully", variant: "success" });
         loadCategories();
       } catch (error: any) {
         console.error("Delete Category Error:", error);

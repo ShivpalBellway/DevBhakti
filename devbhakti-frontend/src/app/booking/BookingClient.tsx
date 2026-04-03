@@ -1119,7 +1119,7 @@ function BookingForm() {
                         <span className="font-bold text-primary">Online Payment</span>
                         <img src="https://razorpay.com/favicon.png" alt="Razorpay" className="w-5 h-5 grayscale opacity-70" />
                       </div>
-                      <p className="text-sm text-muted-foreground">Pay via UPI, Cards, or Net Banking</p>
+                      {/* <p className="text-sm text-muted-foreground">Pay via UPI, Cards, or Net Banking</p> */}
                     </div>
                   </div>
                 </CardContent>

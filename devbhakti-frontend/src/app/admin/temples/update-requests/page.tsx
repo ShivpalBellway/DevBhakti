@@ -62,7 +62,7 @@ export default function TempleUpdateRequestsPage() {
         setActionLoading(id);
         try {
             await approveTempleUpdate(id);
-            toast({ title: "Success", description: "Request approved and profile updated" });
+            toast({ title: "Success", description: "Request approved and profile updated", variant: "success" });
             loadRequests();
         } catch (error: any) {
             toast({
@@ -79,7 +79,7 @@ export default function TempleUpdateRequestsPage() {
         setActionLoading(id);
         try {
             await rejectTempleUpdate(id);
-            toast({ title: "Success", description: "Request rejected" });
+            toast({ title: "Success", description: "Request rejected", variant: "success" });
             loadRequests();
         } catch (error: any) {
             toast({

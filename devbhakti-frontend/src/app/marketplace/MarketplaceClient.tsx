@@ -189,10 +189,12 @@ export default function MarketplaceClient() {
     let minDistance = Infinity;
     let bestMatch = "";
     products.forEach(product => {
-      const distance = getLevenshteinDistance(searchQuery.toLowerCase(), product.name.toLowerCase());
-      if (distance < minDistance && distance < 4) {
-        minDistance = distance;
-        bestMatch = product.name;
+      if (product.name) {
+        const distance = getLevenshteinDistance(searchQuery.toLowerCase(), product.name.toLowerCase());
+        if (distance < minDistance && distance < 4) {
+          minDistance = distance;
+          bestMatch = product.name;
+        }
       }
     });
     return bestMatch;
@@ -204,10 +206,10 @@ export default function MarketplaceClient() {
     try {
       if (isFav) {
         await removeFavorite({ productId: id });
-        toast({ title: "Removed from favorites" });
+        toast({ title: "Removed from favorites", variant: "success" });
       } else {
         await addFavorite({ productId: id });
-        toast({ title: "Added to favorites" });
+        toast({ title: "Added to favorites", variant: "success" });
       }
     } catch (error) {
       setFavorites((prev) => isFav ? [...prev, id] : prev.filter((f) => f !== id));

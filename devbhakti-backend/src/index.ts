@@ -132,6 +132,8 @@ app.use('/api/temples', templeRoutes);
 app.use('/api/search', publicSearchRoutes);
 app.use('/api/faqs', publicFaqRoutes);
 
+app.get('/api/testfaq', (req, res) => res.json({ msg: 'working' }));
+
 // Notification Routes (FCM Token Register/Remove)
 app.use('/api/notifications', notificationRoutes);
 

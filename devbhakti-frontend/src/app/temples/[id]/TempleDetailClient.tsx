@@ -197,11 +197,11 @@ export default function TempleDetail() {
             if (isFavorite) {
                 await removeFavorite({ templeId: templeId as string });
                 setIsFavorite(false);
-                toast({ title: "Removed from favorites" });
+                toast({ title: "Removed from favorites", variant: "success" });
             } else {
                 await addFavorite({ templeId: templeId as string });
                 setIsFavorite(true);
-                toast({ title: "Added to favorites" });
+                toast({ title: "Added to favorites", variant: "success" });
             }
         } catch (error: any) {
             toast({

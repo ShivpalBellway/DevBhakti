@@ -278,7 +278,7 @@ export default function AdminEventsPage() {
         if (window.confirm("Are you sure you want to delete this event?")) {
             try {
                 await deleteEventAdmin(id);
-                toast({ title: "Success", description: "Event deleted successfully" });
+                toast({ title: "Success", description: "Event deleted successfully", variant: "success" });
                 loadEvents(currentPage);
             } catch (error) {
                 toast({

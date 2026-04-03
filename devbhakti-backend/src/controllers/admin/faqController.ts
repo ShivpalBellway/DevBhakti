@@ -56,7 +56,7 @@ export const createFAQ = async (req: Request, res: Response) => {
 // Admin: Update an existing FAQ
 export const updateFAQ = async (req: Request, res: Response) => {
     try {
-        const { id } = req.params;
+        const id = req.params.id as string;
         const { question, answer, order, isActive } = req.body;
 
         const existing = await prisma.standardFAQ.findUnique({ where: { id } });
@@ -86,7 +86,7 @@ export const updateFAQ = async (req: Request, res: Response) => {
 // Admin: Delete a FAQ
 export const deleteFAQ = async (req: Request, res: Response) => {
     try {
-        const { id } = req.params;
+        const id = req.params.id as string;
         const existing = await prisma.standardFAQ.findUnique({ where: { id } });
         if (!existing) {
             return res.status(404).json({ success: false, message: 'FAQ not found' });

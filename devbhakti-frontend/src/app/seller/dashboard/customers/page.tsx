@@ -45,9 +45,9 @@ export default function SellerCustomersPage() {
     };
 
     const filteredCustomers = customers.filter(c =>
-        c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (c.name?.toLowerCase().includes(searchQuery.toLowerCase()) || false) ||
         c.phone?.includes(searchQuery) ||
-        c.email?.toLowerCase().includes(searchQuery.toLowerCase())
+        (c.email?.toLowerCase().includes(searchQuery.toLowerCase()) || false)
     );
 
     if (isLoading) {

@@ -256,7 +256,8 @@ function TemplesContent() {
                 await deleteTempleAdmin(id);
                 toast({
                     title: "Success",
-                    description: "Temple account deleted successfully"
+                    description: "Temple account deleted successfully",
+                    variant: "success"
                 });
                 loadTemples(currentPage);
             } catch (error: any) {
@@ -363,7 +364,7 @@ function TemplesContent() {
             if (window.confirm("Are you sure you want to revoke verification for this temple?")) {
                 try {
                     await toggleTempleStatusAdmin(id, false, currentActive);
-                    toast({ title: "Success", description: "Temple verification revoked" });
+                    toast({ title: "Success", description: "Temple verification revoked", variant: "success" });
                     await loadTemples(currentPage);
                 } catch (error) {
                     toast({ title: "Error", description: "Failed to update status", variant: "destructive" });
@@ -400,7 +401,7 @@ function TemplesContent() {
                     ]
                 }
             );
-            toast({ title: "Success", description: "Temple Approved Successfully" });
+            toast({ title: "Success", description: "Temple Approved Successfully", variant: "success" });
             setApprovalModalOpen(false);
             loadTemples(currentPage);
         } catch (error: any) {
@@ -812,18 +813,6 @@ function TemplesContent() {
                                                     >
                                                         <Eye className="w-4 h-4" />
                                                     </Button>
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        className="h-8 w-8 text-indigo-600"
-                                                        onClick={() => {
-                                                            setSelectedTemple(inst);
-                                                            setIsPreviewOpen(true);
-                                                        }}
-                                                        title="Preview on Website"
-                                                    >
-                                                        <Globe className="w-4 h-4" />
-                                                    </Button>
                                                     {hasPermission("temples.edit") && (
                                                         <Button
                                                             variant="ghost"
@@ -1022,18 +1011,6 @@ function TemplesContent() {
                                                         title="View Details"
                                                     >
                                                         <Eye className="w-4 h-4" />
-                                                    </Button>
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        className="h-8 w-8 text-indigo-600"
-                                                        onClick={() => {
-                                                            setSelectedTemple(inst);
-                                                            setIsPreviewOpen(true);
-                                                        }}
-                                                        title="Preview on Website"
-                                                    >
-                                                        <Globe className="w-4 h-4" />
                                                     </Button>
                                                     {hasPermission("temples.edit") && (
                                                         <Button

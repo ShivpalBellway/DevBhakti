@@ -356,7 +356,7 @@ export default function AdminLiveDarshanPage() {
                           >
                             {entry.temple?.liveStatus ? (
                               <>
-                                <Power className="w-3 h-3" /> On Homepage
+                                <Power className="w-3 h-3" /> On Website
                               </>
                             ) : (
                               <>

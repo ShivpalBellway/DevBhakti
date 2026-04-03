@@ -124,7 +124,7 @@ function DonationForm() {
                 toast({
                     title: "Har Har Mahadev!",
                     description: "Please login to proceed with your divine offering. Taking you to the login page...",
-                    variant: "default",
+                    variant: "success",
                     className: "bg-[#794A05] text-white border-none font-bold"
                 });
 
@@ -424,7 +424,7 @@ function DonationForm() {
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                                     {temples.length > 0 ? (
                                         temples
-                                            .filter(t => t.name.toLowerCase().includes(searchQuery.toLowerCase()) || t.location.toLowerCase().includes(searchQuery.toLowerCase()))
+                                            .filter(t => (t.name?.toLowerCase().includes(searchQuery.toLowerCase()) || false) || (t.location?.toLowerCase().includes(searchQuery.toLowerCase()) || false))
                                             .map((temple) => (
                                                 <motion.div
                                                     key={temple.id}

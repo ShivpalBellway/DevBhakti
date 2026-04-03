@@ -98,7 +98,7 @@ function PoojasContent() {
         if (window.confirm("Are you sure you want to delete this pooja?")) {
             try {
                 await deletePoojaAdmin(id);
-                toast({ title: "Success", description: "Pooja deleted successfully" });
+                toast({ title: "Success", description: "Pooja deleted successfully", variant: "success" });
                 loadPoojas();
             } catch (error) {
                 toast({
@@ -128,8 +128,8 @@ function PoojasContent() {
     };
 
     const filteredPoojas = poojas.filter(pooja =>
-        pooja.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        pooja.category.toLowerCase().includes(searchTerm.toLowerCase())
+        (pooja.name?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
+        (pooja.category?.toLowerCase().includes(searchTerm.toLowerCase()) || false)
     );
 
     const getImageUrl = (path: string) => {

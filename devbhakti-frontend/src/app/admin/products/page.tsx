@@ -159,7 +159,7 @@ function ProductsContent() {
     if (window.confirm("Are you sure you want to delete this product?")) {
       try {
         await deleteProductAdmin(id);
-        toast({ title: "Success", description: "Product deleted successfully" });
+        toast({ title: "Success", description: "Product deleted successfully", variant: "success" });
         loadProducts();
       } catch (error: any) {
         console.error("Delete Product Error:", error);
