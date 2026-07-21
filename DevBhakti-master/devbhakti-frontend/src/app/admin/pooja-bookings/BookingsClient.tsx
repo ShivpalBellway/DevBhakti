@@ -20,7 +20,9 @@ import {
     Trash2,
     Plus,
     ChevronDown,
-    Download
+    Download, MapPin, AlertCircle, RefreshCw, Archive, IndianRupee,
+    Edit, Printer, ChevronRight,
+    ArrowLeft, ListFilter
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -273,15 +275,28 @@ function BookingsContent() {
                     <h1 className="text-xl sm:text-2xl md:text-3xl font-serif font-bold text-[#794A05]">Pooja & Seva Bookings</h1>
                     <p className="text-muted-foreground mt-1 text-xs sm:text-sm font-medium">Manage all sacred service reservations</p>
                 </div>
-                <Button
-                    onClick={handleExportBookings}
-                    variant="sacred"
-                    className="w-full sm:w-auto"
-                >
-                    <Download className="w-4 h-4" />
-                    <span className="hidden sm:inline ml-2">Export Excel</span>
-                    <span className="sm:hidden ml-2">Export</span>
-                </Button>
+                <div className="flex gap-2 w-full sm:w-auto">
+                    {hasPermission('bookings.manage') && (
+                        <Button
+                            onClick={() => window.location.href = '/admin/pooja-bookings/add-offline'}
+                            variant="sacred"
+                            className="flex-1 sm:flex-none"
+                        >
+                            <Plus className="w-4 h-4" />
+                            <span className="hidden sm:inline ml-2">Add Offline Booking</span>
+                            <span className="sm:hidden ml-2">Add</span>
+                        </Button>
+                    )}
+                    <Button
+                        onClick={handleExportBookings}
+                        variant="outline"
+                        className="flex-1 sm:flex-none"
+                    >
+                        <Download className="w-4 h-4" />
+                        <span className="hidden sm:inline ml-2">Export Excel</span>
+                        <span className="sm:hidden ml-2">Export</span>
+                    </Button>
+                </div>
             </div>
 
 

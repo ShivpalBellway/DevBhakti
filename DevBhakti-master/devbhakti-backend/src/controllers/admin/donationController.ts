@@ -11,7 +11,7 @@ import { validateDonationAmount, validatePhoneNumber } from "../../utils/donatio
 
 export const getAllDonations = async (req: Request, res: Response) => {
     try {
-        const { search, status, startDate, endDate, sortBy = 'createdAt', sortOrder = 'desc', page = 1, limit = 10, donationType, templeId } = req.query;
+        const { search, status, startDate, endDate, sortBy = 'createdAt', sortOrder = 'desc', page = 1, limit = 10, donationType, templeId, donationSource } = req.query;
         const skip = (Number(page) - 1) * Number(limit);
         const lang = (req.headers['x-lang'] as string) || (req.query.lang as string) || 'en';
 
@@ -41,6 +41,15 @@ export const getAllDonations = async (req: Request, res: Response) => {
             where.templeId = String(templeId);
         }
 
+        // Donation Source Filtering (TEMPLE vs MANDAL vs ALL)
+        if (donationSource === 'TEMPLE') {
+            where.templeId = { not: null };
+            where.mandalId = null;
+        } else if (donationSource === 'MANDAL') {
+            where.mandalId = { not: null };
+            where.templeId = null;
+        }
+
         // Search across multiple fields
         if (search) {
             where.OR = [
@@ -67,7 +76,10 @@ export const getAllDonations = async (req: Request, res: Response) => {
         const [donations, total] = await Promise.all([
             prisma.donation.findMany({
                 where,
-                include: { temple: { select: { name: true } } as any },
+                include: {
+                    temple: { select: { name: true } } as any,
+                    mandal: { select: { name: true } } as any
+                },
                 orderBy: { [String(sortBy)]: sortOrder as any },
                 skip,
                 take: Number(limit)
@@ -77,12 +89,17 @@ export const getAllDonations = async (req: Request, res: Response) => {
 
         const formattedDonations = donations.map(d => {
             const lt = (d as any).temple ? localize((d as any).temple, lang) : null;
+            const lm = (d as any).mandal ? localize((d as any).mandal, lang) : null;
             return {
                 id: d.id,
                 donorName: d.donorName,
                 donorPhone: d.donorPhone,
                 donorEmail: d.donorEmail,
-                templeName: lt?.name || "N/A",
+                templeName: lt?.name || null,
+                templeId: d.templeId || null,
+                mandalName: lm?.name || null,
+                mandalId: d.mandalId || null,
+                donationSource: d.mandalId ? 'MANDAL' : 'TEMPLE',
                 amount: d.amount,
                 commissionAmount: d.commissionAmount || 0,
                 netEarning: d.netEarning || d.amount,

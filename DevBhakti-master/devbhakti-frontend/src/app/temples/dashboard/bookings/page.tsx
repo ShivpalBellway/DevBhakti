@@ -1,5 +1,5 @@
 "use client";
-
+import Link from "next/link";
 import React, { useState, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
 import {
@@ -304,6 +304,7 @@ export default function TempleBookingsPage() {
     };
 
     const statusFilter = searchParams.get("status");
+    const typeFilter = searchParams.get("type");
 
     const updateStatusFilter = (status: string | null) => {
         const params = new URLSearchParams(searchParams.toString());
@@ -323,6 +324,7 @@ export default function TempleBookingsPage() {
                 b.id?.toLowerCase().includes(searchQuery.toLowerCase());
 
             const matchesStatus = statusFilter ? b.status === statusFilter : true;
+            const matchesType = typeFilter === "offline" ? b.paymentMethod !== null && b.paymentMethod !== undefined : true;
 
             // Date range filter (Manual priority, then statsPeriod)
             let matchesDate = true;
@@ -353,7 +355,7 @@ export default function TempleBookingsPage() {
                 matchesDate = isAfter(createdAtDate, periodStart);
             }
 
-            return matchesSearch && matchesStatus && matchesDate;
+            return matchesSearch && matchesStatus && matchesType && matchesDate;
         });
 
         // Sort based on viewMode
@@ -368,7 +370,7 @@ export default function TempleBookingsPage() {
                 return dateB - dateA; // descending — newest bookings first
             }
         });
-    }, [bookings, searchQuery, statusFilter, startDate, endDate, filterType, viewMode, statsPeriod]);
+    }, [bookings, searchQuery, statusFilter, typeFilter, startDate, endDate, filterType, viewMode, statsPeriod]);
 
     const isToday = (dateString: string) => {
         return new Date(dateString).toDateString() === new Date().toDateString();
@@ -436,6 +438,15 @@ export default function TempleBookingsPage() {
                             <AvailabilityManager />
                         </DialogContent>
                     </Dialog>
+
+                    {typeFilter === 'offline' && (
+                        <Link href="/temples/dashboard/bookings/add-offline">
+                            <Button className="bg-[#794A05] hover:bg-[#794A05]/90 text-white gap-2">
+                                <Plus className="w-4 h-4" />
+                                Add Booking
+                            </Button>
+                        </Link>
+                    )}
 
                     {hasPermission('bookings.manage') && (
                         <Button

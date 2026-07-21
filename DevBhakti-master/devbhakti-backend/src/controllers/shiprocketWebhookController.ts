@@ -111,8 +111,9 @@ export const shiprocketWebhook = async (req: Request, res: Response) => {
                             body = `Your Prasad for ${getEnglish(booking.pooja.name)} has been successfully delivered. Jai Mata Di!`;
                         }
 
-                        if (title) {
-                            await notifyUser(booking.userId, 'devotee', {
+                        const userId = booking.userId ?? undefined;
+                        if (title && userId) {
+                            await notifyUser(userId, 'devotee', {
                                 title,
                                 body,
                                 data: {

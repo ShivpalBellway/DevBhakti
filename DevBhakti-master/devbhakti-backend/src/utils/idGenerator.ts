@@ -43,3 +43,11 @@ export const generateCustomId = async (prefix: string): Promise<string> => {
 export const generateDonationDisplayId = async (): Promise<string> => {
     return generateCustomId('DNID');
 };
+
+/**
+ * Generates a custom human-readable Booking ID.
+ * Format: BKID + MM + YearCode + Sequence
+ */
+export const generateBookingDisplayId = async (): Promise<string> => {
+    return generateCustomId('BKID');
+};

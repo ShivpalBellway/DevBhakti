@@ -58,6 +58,20 @@ export const registerMandal = async (req: Request, res: Response): Promise<void>
             return;
         }
 
+        let cleanedContact = contactNumber.replace(/\D/g, '');
+        if (cleanedContact.length > 10 && cleanedContact.startsWith('91')) {
+            cleanedContact = cleanedContact.substring(2);
+        }
+
+        const existingMandal = await prisma.mandal.findFirst({
+            where: { contactNumber: cleanedContact }
+        });
+
+        if (existingMandal) {
+            res.status(400).json({ success: false, message: 'This number is already with us in mandal register form' });
+            return;
+        }
+
         const mandal = await prisma.mandal.create({
             data: {
                 name: JSON.stringify(buildLangJson(nameEn, name_hi, name_mr)),
@@ -72,7 +86,7 @@ export const registerMandal = async (req: Request, res: Response): Promise<void>
                 state,
                 pinCode,
                 mapUrl,
-                contactNumber,
+                contactNumber: cleanedContact,
                 email,
                 presidentName,
                 registrationNumber,

@@ -416,3 +416,11 @@ export const downloadDonationsPdf = async (templeId: string) => {
     });
     return response.data;
 };
+
+export const createOfflineBookingTemple = async (data: any) => {
+    const token = localStorage.getItem("token");
+    const response = await axios.post(`${API_URL}/temple-admin/bookings`, data, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};

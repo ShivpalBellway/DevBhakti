@@ -5,6 +5,205 @@ import ExcelJS from 'exceljs';
 import { sendWhatsAppMessage } from '../../services/whatsappService';
 import { getLang, localize, getEnglish } from '../../utils/localization';
 import { triggerPrasadShiprocketOrder } from '../../utils/prasadShiprocket';
+import { generateBookingDisplayId } from '../../utils/idGenerator';
+import { sendBookingReceiptEmail } from '../../services/bookingMailService';
+
+export const createOfflineBooking = async (req: Request, res: Response) => {
+    try {
+        const {
+            poojaId,
+            templeId,
+            packageName,
+            packagePrice,
+            devoteeName,
+            devoteePhone,
+            devoteeEmail,
+            bookingDate,
+            address,
+            prasadStreet,
+            prasadCity,
+            prasadState,
+            prasadPincode,
+            specialRequests,
+            gothra,
+            kuldevi,
+            kuldevta,
+            dob,
+            gender,
+            anniversary,
+            nativePlace,
+            additionalDevotees,
+            paymentMethod,
+            status = 'BOOKED',
+            isPrasadRequested = false,
+        } = req.body;
+
+        if (!poojaId || !packageName || packagePrice === undefined || !devoteeName || !devoteePhone) {
+            return res.status(400).json({ success: false, message: 'Missing required fields' });
+        }
+
+        // Enforce Temple ID if the user is a Temple Admin (Staff)
+        let finalTempleId = templeId;
+        const user = (req as any).user;
+        if (user && user.ownerType === 'TEMPLE' && user.ownerId) {
+            finalTempleId = user.ownerId;
+        }
+
+        const displayId = await generateBookingDisplayId();
+
+        // Find existing user if possible based on phone, but userId is optional
+        let userId = null;
+        if (devoteePhone) {
+            let cleanedPhone = String(devoteePhone).replace(/\D/g, '');
+            if (cleanedPhone.length === 10) cleanedPhone = '91' + cleanedPhone;
+            const normalizedPhone = '+' + cleanedPhone;
+
+            const existingUser = await prisma.user.findFirst({
+                where: { phone: normalizedPhone, role: 'DEVOTEE' }
+            });
+            if (existingUser) {
+                userId = existingUser.id;
+            }
+        }
+
+        const poojaAmount = Number(packagePrice);
+        const grossAmount = poojaAmount;
+        const commissionAmount = 0; // Or calculate if needed
+        const platformFee = 0; // Or calculate based on slabs
+
+        const booking = await prisma.poojaBooking.create({
+            data: {
+                displayId,
+                userId: userId,
+                poojaId,
+                templeId: finalTempleId,
+                packageName,
+                packagePrice: poojaAmount,
+                devoteeName,
+                devoteePhone,
+                devoteeEmail,
+                bookingDate,
+                address,
+                prasadStreet,
+                prasadCity,
+                prasadState,
+                prasadPincode,
+                specialRequests,
+                gothra,
+                kuldevi,
+                kuldevta,
+                dob,
+                gender,
+                anniversary,
+                nativePlace,
+                additionalDevotees,
+                paymentMethod,
+                status,
+                isPrasadRequested,
+                commissionAmount,
+                netEarning: grossAmount - platformFee,
+                platformFee,
+            },
+            include: {
+                pooja: true,
+                temple: true
+            }
+        });
+
+        // Sync Ledger
+        if (status === 'BOOKED' || status === 'COMPLETED') {
+            if (finalTempleId) {
+                // Map BookingStatus to valid LedgerStatus
+                const ledgerStatus = status === 'COMPLETED' ? 'COMPLETED' : 'PENDING';
+                await prisma.templeLedger.create({
+                    data: {
+                        templeId: finalTempleId,
+                        amount: booking.netEarning,
+                        grossAmount: grossAmount,
+                        commission: platformFee,
+                        type: 'POOJA_EARNING',
+                        sourceId: booking.id,
+                        description: `Pooja Booking (${packageName})`,
+                        status: ledgerStatus
+                    }
+                });
+            }
+        }
+
+        // Send Email Confirmation
+        if (devoteeEmail) {
+            try {
+                const devoteeEmailValue = booking.devoteeEmail ?? undefined;
+                await sendBookingReceiptEmail({
+                    bookingId: booking.id,
+                    devoteeName: booking.devoteeName,
+                    devoteePhone: booking.devoteePhone,
+                    devoteeEmail: devoteeEmailValue,
+                    poojaName: getEnglish(booking.pooja.name),
+                    templeName: getEnglish(booking.temple?.name) || "Dev Bhakti",
+                    bookingDate: booking.bookingDate || "N/A",
+                    packageName: booking.packageName,
+                    packagePrice: booking.packagePrice,
+                    platformFee: booking.platformFee,
+                    totalAmount: booking.packagePrice + booking.platformFee,
+                    status: "BOOKED",
+                    createdAt: booking.createdAt.toISOString(),
+                    gothra: booking.gothra || undefined,
+                    kuldevi: booking.kuldevi || undefined,
+                    kuldevta: booking.kuldevta || undefined,
+                    dob: booking.dob || undefined,
+                    anniversary: booking.anniversary || undefined,
+                    additionalDevotees: booking.additionalDevotees as any
+                });
+            } catch (emailError) {
+                console.error("Failed to send offline booking email:", emailError);
+            }
+        }
+
+        // Send WhatsApp Confirmation
+        if (devoteePhone) {
+            try {
+                const phone = devoteePhone.startsWith('+') ? devoteePhone : `+91${devoteePhone}`;
+                await sendWhatsAppMessage(
+                    phone,
+                    devoteeName,
+                    "booking_confirmed",
+                    [
+                        devoteeName,
+                        getEnglish(booking.pooja.name)
+                    ]
+                );
+            } catch (waError) {
+                console.error("Failed to send offline booking WhatsApp:", waError);
+            }
+        }
+
+        // Notify Temple Admin via WhatsApp
+        if (booking.temple?.phone) {
+            try {
+                const templePhone = booking.temple.phone.startsWith('+') ? booking.temple.phone : `+91${booking.temple.phone}`;
+                await sendWhatsAppMessage(
+                    templePhone,
+                    "Temple Admin",
+                    "temple_admin_new_booking_received",
+                    [
+                        getEnglish(booking.temple.name),
+                        booking.displayId,
+                        getEnglish(booking.pooja.name),
+                        new Date().toLocaleDateString('en-IN')
+                    ]
+                );
+            } catch (templeWaError) {
+                console.error("Failed to notify offline booking temple admin WhatsApp:", templeWaError);
+            }
+        }
+
+        res.status(200).json({ success: true, data: booking, message: "Offline Booking created successfully" });
+    } catch (error: any) {
+        console.error("Create Offline Booking Error:", error);
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
 
 export const getAllBookings = async (req: Request, res: Response) => {
     try {
@@ -216,8 +415,9 @@ export const updateBookingStatus = async (req: Request, res: Response) => {
         const poojaName = getEnglish((updatedBooking.pooja as any).name);
 
         // Notify Devotee via Firebase
-        if (status) {
-            await notifyUser(booking.userId, 'devotee', {
+        const userId = booking.userId ?? undefined;
+        if (status && userId) {
+            await notifyUser(userId, 'devotee', {
                 title: `Pooja Booking ${status === 'COMPLETED' ? 'Completed 🎊' : status === 'CANCELLED' ? 'Cancelled ❌' : status === 'REJECTED' ? 'Rejected ❌' : 'Updated'}`,
                 body: `Your booking for ${poojaName} has been marked as ${status.toLowerCase()}.`,
                 data: { link: '/profile/bookings', bookingId: booking.id }
@@ -226,24 +426,26 @@ export const updateBookingStatus = async (req: Request, res: Response) => {
 
         // Notify Devotee via WhatsApp
         try {
-            const user = await prisma.user.findUnique({ where: { id: booking.userId } });
-            if (user && user.phone) {
-                const phone = user.phone.startsWith('+') ? user.phone : `+91${user.phone}`;
+            if (userId) {
+                const user = await prisma.user.findUnique({ where: { id: userId } });
+                if (user && user.phone) {
+                    const phone = user.phone.startsWith('+') ? user.phone : `+91${user.phone}`;
 
-                if (status === 'COMPLETED') {
-                    await sendWhatsAppMessage(
-                        phone,
-                        user.name || 'Bhakt',
-                        "pooja_completed",
-                        [user.name || 'Bhakt', poojaName]
-                    );
-                } else if (status === 'CANCELLED' || status === 'REJECTED') {
-                    await sendWhatsAppMessage(
-                        phone,
-                        user.name || 'Bhakt',
-                        "booking_cancelled",
-                        [user.name || 'Bhakt', poojaName]
-                    );
+                    if (status === 'COMPLETED') {
+                        await sendWhatsAppMessage(
+                            phone,
+                            user.name || 'Bhakt',
+                            "pooja_completed",
+                            [user.name || 'Bhakt', poojaName]
+                        );
+                    } else if (status === 'CANCELLED' || status === 'REJECTED') {
+                        await sendWhatsAppMessage(
+                            phone,
+                            user.name || 'Bhakt',
+                            "booking_cancelled",
+                            [user.name || 'Bhakt', poojaName]
+                        );
+                    }
                 }
             }
         } catch (waError) {

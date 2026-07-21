@@ -117,6 +117,7 @@ export default function TempleCreatePoojaPage() {
         packages: [] as any[], // Start with empty, user will select
         processSteps: [] as any[],
         faqs: [] as any[],
+        hasPrasad: false,
         status: true
     });
 
@@ -205,6 +206,7 @@ export default function TempleCreatePoojaPage() {
         submissionData.append('packages', JSON.stringify(formData.packages));
         submissionData.append('processSteps', JSON.stringify(formData.processSteps));
         submissionData.append('faqs', JSON.stringify(formData.faqs));
+        submissionData.append('hasPrasad', formData.hasPrasad.toString());
         submissionData.append('status', formData.status.toString());
 
         if (imageFile) {
@@ -397,8 +399,34 @@ export default function TempleCreatePoojaPage() {
                             </p>
                         )}
                     </div>
-
-                  
+                    
+                    {/* Free Prasad Toggle */}
+                    <div className="space-y-2.5">
+                        <Label className="text-sm font-bold text-slate-700">Free Prasad Available</Label>
+                        <div className="flex items-center gap-6 h-12 px-4 rounded-xl border border-slate-200 bg-white">
+                            <label className="flex items-center gap-2 cursor-pointer text-sm font-medium">
+                                <input
+                                    type="radio"
+                                    name="hasPrasad"
+                                    checked={formData.hasPrasad === true}
+                                    onChange={() => setFormData({ ...formData, hasPrasad: true })}
+                                    className="w-4 h-4 text-primary focus:ring-primary/20 cursor-pointer"
+                                />
+                                Yes
+                            </label>
+                            <label className="flex items-center gap-2 cursor-pointer text-sm font-medium">
+                                <input
+                                    type="radio"
+                                    name="hasPrasad"
+                                    checked={formData.hasPrasad === false}
+                                    onChange={() => setFormData({ ...formData, hasPrasad: false })}
+                                    className="w-4 h-4 text-primary focus:ring-primary/20 cursor-pointer"
+                                />
+                                No
+                            </label>
+                        </div>
+                        <p className="text-[10px] text-slate-400 font-medium">Enable this if the pooja includes free prasad for devotees.</p>
+                    </div>
                 </div>
 
                 <div className="space-y-4">

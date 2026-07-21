@@ -77,6 +77,7 @@ const statusConfig = {
 
 export default function DonationClient() {
     const [donationType, setDonationType] = useState<"ONLINE" | "OFFLINE">("ONLINE");
+    const [donationSource, setDonationSource] = useState<"ALL" | "TEMPLE" | "MANDAL">("ALL");
     const [searchQuery, setSearchQuery] = useState("");
     const debouncedSearch = useDebounce(searchQuery, 500);
     const [statusFilter, setStatusFilter] = useState("SUCCESS");
@@ -122,7 +123,8 @@ export default function DonationClient() {
                 templeId: selectedTempleId,
                 sortBy: sortBy,
                 sortOrder: sortOrder,
-                donationType: donationType
+                donationType: donationType,
+                donationSource: donationSource,
             });
 
             if (data.success) {
@@ -162,7 +164,7 @@ export default function DonationClient() {
 
     useEffect(() => {
         fetchDonations();
-    }, [debouncedSearch, statusFilter, selectedTempleId, currentPage, startDate, endDate, sortBy, sortOrder, donationType]);
+    }, [debouncedSearch, statusFilter, selectedTempleId, currentPage, startDate, endDate, sortBy, sortOrder, donationType, donationSource]);
 
     useEffect(() => {
         if (dateRange?.from) {
@@ -231,7 +233,8 @@ export default function DonationClient() {
                 templeId: selectedTempleId,
                 startDate, endDate,
                 sortBy, sortOrder,
-                donationType: donationType
+                donationType: donationType,
+                donationSource: donationSource,
             });
 
             const rawData = res.data || [];
@@ -324,7 +327,7 @@ export default function DonationClient() {
             </div>
 
             {/* Donation Type Tabs */}
-            <div className="flex gap-2 bg-white p-1.5 rounded-2xl border border-border shadow-sm w-fit">
+            <div className="flex gap-2 bg-white p-1.5 rounded-2xl border border-border shadow-sm w-fit flex-wrap">
                 <button
                     onClick={() => {
                         setDonationType("ONLINE");
@@ -352,6 +355,43 @@ export default function DonationClient() {
                     )}
                 >
                     📝 Offline Donations
+                </button>
+
+                {/* Separator */}
+                <div className="w-px bg-border mx-1" />
+
+                <button
+                    onClick={() => { setDonationSource("ALL"); setCurrentPage(1); }}
+                    className={cn(
+                        "px-4 py-2.5 rounded-xl font-semibold text-sm transition-all",
+                        donationSource === "ALL"
+                            ? "bg-amber-600 text-white shadow-md"
+                            : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                    )}
+                >
+                    🙏 All Sources
+                </button>
+                <button
+                    onClick={() => { setDonationSource("TEMPLE"); setCurrentPage(1); }}
+                    className={cn(
+                        "px-4 py-2.5 rounded-xl font-semibold text-sm transition-all",
+                        donationSource === "TEMPLE"
+                            ? "bg-amber-600 text-white shadow-md"
+                            : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                    )}
+                >
+                    🛕 Temple Donations
+                </button>
+                <button
+                    onClick={() => { setDonationSource("MANDAL"); setCurrentPage(1); }}
+                    className={cn(
+                        "px-4 py-2.5 rounded-xl font-semibold text-sm transition-all",
+                        donationSource === "MANDAL"
+                            ? "bg-amber-600 text-white shadow-md"
+                            : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                    )}
+                >
+                    🔱 Mandal Donations
                 </button>
             </div>
 
@@ -536,7 +576,7 @@ export default function DonationClient() {
                                 <tr>
                                     <th className="text-left p-3 sm:p-4 text-xs sm:text-sm font-bold text-primary/80 uppercase tracking-wider whitespace-nowrap">Donation ID</th>
                                     <th className="text-left p-3 sm:p-4 text-xs sm:text-sm font-bold text-primary/80 uppercase tracking-wider whitespace-nowrap">Donor</th>
-                                    <th className="text-left p-3 sm:p-4 text-xs sm:text-sm font-bold text-primary/80 uppercase tracking-wider whitespace-nowrap">Temple</th>
+                                    <th className="text-left p-3 sm:p-4 text-xs sm:text-sm font-bold text-primary/80 uppercase tracking-wider whitespace-nowrap">Temple / Mandal</th>
                                     <th className="text-left p-3 sm:p-4 text-xs sm:text-sm font-bold text-primary/80 uppercase tracking-wider whitespace-nowrap">Amount</th>
                                     <th className="text-left p-3 sm:p-4 text-xs sm:text-sm font-bold text-primary/80 uppercase tracking-wider whitespace-nowrap">Date</th>
                                     <th className="text-left p-3 sm:p-4 text-xs sm:text-sm font-bold text-primary/80 uppercase tracking-wider whitespace-nowrap">Status</th>
@@ -585,12 +625,31 @@ export default function DonationClient() {
                                             </td>
                                             <td className="p-3 sm:p-4">
                                                 <div className="flex items-center gap-2 min-w-0">
-                                                    <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-lg bg-slate-50 flex items-center justify-center border border-slate-100 flex-shrink-0">
-                                                        <Building2 className="w-3 h-3 sm:w-4 sm:h-4 text-muted-foreground" />
+                                                    <div className={`w-6 h-6 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center border flex-shrink-0 ${
+                                                        donation.donationSource === 'MANDAL'
+                                                            ? 'bg-orange-50 border-orange-100'
+                                                            : 'bg-slate-50 border-slate-100'
+                                                    }`}>
+                                                        {donation.donationSource === 'MANDAL'
+                                                            ? <span className="text-xs">🔱</span>
+                                                            : <Building2 className="w-3 h-3 sm:w-4 sm:h-4 text-muted-foreground" />
+                                                        }
                                                     </div>
-                                                    <span className="text-xs sm:text-sm font-medium text-foreground italic truncate">
-                                                        {donation.templeName}
-                                                    </span>
+                                                    <div className="min-w-0">
+                                                        <span className="text-xs sm:text-sm font-semibold text-foreground truncate block">
+                                                            {donation.donationSource === 'MANDAL'
+                                                                ? (donation.mandalName || 'Mandal Donation')
+                                                                : (donation.templeName || 'Temple Donation')
+                                                            }
+                                                        </span>
+                                                        <span className={`text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full ${
+                                                            donation.donationSource === 'MANDAL'
+                                                                ? 'bg-orange-100 text-orange-600'
+                                                                : 'bg-blue-50 text-blue-500'
+                                                        }`}>
+                                                            {donation.donationSource === 'MANDAL' ? 'Mandal' : 'Temple'}
+                                                        </span>
+                                                    </div>
                                                 </div>
                                             </td>
                                             <td className="p-3 sm:p-4">

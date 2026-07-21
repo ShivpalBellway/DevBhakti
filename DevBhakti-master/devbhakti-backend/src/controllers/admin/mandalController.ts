@@ -118,6 +118,20 @@ export const createMandal = async (req: Request, res: Response): Promise<void> =
             return;
         }
 
+        let cleanedContact = data.contactNumber.replace(/\D/g, '');
+        if (cleanedContact.length > 10 && cleanedContact.startsWith('91')) {
+            cleanedContact = cleanedContact.substring(2);
+        }
+
+        const existingMandal = await prisma.mandal.findFirst({
+            where: { contactNumber: cleanedContact }
+        });
+
+        if (existingMandal) {
+            res.status(400).json({ success: false, message: 'This number is already with us in mandal register form' });
+            return;
+        }
+
         // Safely parse existing banner images
         const existingBannerImages: string[] = data.existingBannerImages
             ? JSON.parse(data.existingBannerImages)
@@ -135,7 +149,7 @@ export const createMandal = async (req: Request, res: Response): Promise<void> =
                 city: data.city || undefined,
                 state: data.state || undefined,
                 pinCode: data.pinCode || undefined,
-                contactNumber: data.contactNumber,
+                contactNumber: cleanedContact,
                 email: data.email || undefined,
                 presidentName: data.presidentName || undefined,
                 registrationNumber: data.registrationNumber || undefined,

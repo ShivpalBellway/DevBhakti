@@ -88,11 +88,14 @@ export const triggerPrasadShiprocketOrder = async (bookingId: string) => {
             console.log(`[Prasad Shiprocket] Order created successfully: ${srResponse.order_id}`);
 
             // Send notification to user
-            await notifyUser(booking.userId, 'devotee', {
-                title: 'Prasad Preparing 🥣',
-                body: `Your Prasad for ${getEnglish(booking.pooja.name)} is now being prepared!`,
-                data: { link: '/profile/bookings', bookingId: booking.id }
-            });
+            const userId = booking.userId ?? undefined;
+            if (userId) {
+                await notifyUser(userId, 'devotee', {
+                    title: 'Prasad Preparing 🥣',
+                    body: `Your Prasad for ${getEnglish(booking.pooja.name)} is now being prepared!`,
+                    data: { link: '/profile/bookings', bookingId: booking.id }
+                });
+            }
         } else {
             console.error(`[Prasad Shiprocket] Failed to create order:`, srResponse);
         }

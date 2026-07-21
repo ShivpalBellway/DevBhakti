@@ -119,6 +119,7 @@ const sidebarItems = [
             { label: "All Bookings", href: "/temples/dashboard/bookings" },
             { label: "Booked Poojas", href: "/temples/dashboard/bookings?status=BOOKED" },
             { label: "Completed", href: "/temples/dashboard/bookings?status=COMPLETED" },
+            { label: "Offline Pooja Bookings", href: "/temples/dashboard/bookings?type=offline" },
         ]
     },
     {

@@ -1224,6 +1224,14 @@ export const deleteBookingAdmin = async (id: string) => {
     return response.data;
 };
 
+export const createOfflineBookingAdmin = async (data: any) => {
+    const token = getAdminToken();
+    const response = await axios.post(`${API_URL}/admin/bookings`, data, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+
 export const updateBookingStatusAdmin = async (id: string, data: any) => {
     const token = getAdminToken();
     const isFormData = data instanceof FormData;
@@ -1269,6 +1277,7 @@ export const fetchAllDonationsAdmin = async (params?: {
     sortBy?: string;
     sortOrder?: string;
     donationType?: "ONLINE" | "OFFLINE";
+    donationSource?: "ALL" | "TEMPLE" | "MANDAL";
 }) => {
     const token = getAdminToken();
     let url = `${API_URL}/admin/donations`;
@@ -1284,6 +1293,7 @@ export const fetchAllDonationsAdmin = async (params?: {
         if (params.sortBy) query.append('sortBy', params.sortBy);
         if (params.sortOrder) query.append('sortOrder', params.sortOrder);
         if (params.donationType) query.append('donationType', params.donationType);
+        if (params.donationSource && params.donationSource !== 'ALL') query.append('donationSource', params.donationSource);
         const qs = query.toString();
         if (qs) url += `?${qs}`;
     }

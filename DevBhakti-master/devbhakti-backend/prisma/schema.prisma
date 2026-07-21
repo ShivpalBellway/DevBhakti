@@ -394,7 +394,7 @@ model CTACard {
 model PoojaBooking {
   id                    String        @id @default(cuid())
   displayId             String
-  userId                String
+  userId                String?
   poojaId               String
   templeId              String?
   packageName           String
@@ -430,9 +430,10 @@ model PoojaBooking {
   proofPhotos           String[]      @default([])
   additionalDevotees    Json?
   nativePlace           String?
+  paymentMethod         String?       // CASH, UPI, CHEQUE, BANK, CARD (null = online Razorpay)
   pooja                 Pooja         @relation(fields: [poojaId], references: [id])
   temple                Temple?       @relation(fields: [templeId], references: [id])
-  user                  User          @relation(fields: [userId], references: [id])
+  user                  User?         @relation(fields: [userId], references: [id])
 }
 
 model Order {

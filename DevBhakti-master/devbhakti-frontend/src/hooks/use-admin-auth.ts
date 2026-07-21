@@ -26,8 +26,8 @@ export function useAdminAuth() {
         setUser({ ...parsed, isStaff: false, role: parsed.role || 'ADMIN' });
       } else if (generalUserStr) {
         const parsed = JSON.parse(generalUserStr);
-        // If it's a Temple Owner or Seller Owner, they are not "staff" (they are superusers for their domain)
-        if (parsed.role === 'INSTITUTION' || parsed.role === 'SELLER') {
+        // If it's a Temple Owner, Seller Owner, or Mandal Owner, they are not "staff" (they are superusers for their domain)
+        if (parsed.role === 'INSTITUTION' || parsed.role === 'SELLER' || parsed.role === 'MANDAL') {
           setUser({ ...parsed, isStaff: false });
         } else if (parsed.isStaff) {
           setUser({ ...parsed, isStaff: true });
@@ -49,7 +49,7 @@ export function useAdminAuth() {
     if (!user) return false;
     
     // Explicitly allow owners (Super-users for their domain)
-    if (user.role === 'ADMIN' || user.role === 'INSTITUTION' || user.role === 'SELLER') {
+    if (user.role === 'ADMIN' || user.role === 'INSTITUTION' || user.role === 'SELLER' || user.role === 'MANDAL') {
       return true;
     }
     
