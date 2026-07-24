@@ -177,7 +177,7 @@ export function TemplesList() {
       return imagePath;
     }
     const cleanPath = imagePath.startsWith("/") ? imagePath : `/${imagePath}`;
-    return `${API_URL}${cleanPath}`;
+return `${API_URL.replace('/api', '')}${cleanPath}`;
   };
 
   const toggleFavorite = async (e: React.MouseEvent, templeId: string) => {

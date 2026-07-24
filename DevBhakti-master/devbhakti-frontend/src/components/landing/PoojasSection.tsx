@@ -65,9 +65,9 @@ const PoojasSection: React.FC = () => {
     if (imagePath.startsWith("http://") || imagePath.startsWith("https://")) {
       return imagePath;
     }
-    const cleanPath = imagePath.startsWith("/") ? imagePath : `/${imagePath}`;
-    return `${API_URL}${cleanPath}`;
-  };
+   const cleanPath = imagePath.startsWith("/") ? imagePath : `/${imagePath}`;
+return `${API_URL.replace('/api', '')}${cleanPath}`;
+  };  
 
   const getLowestPrice = (pooja: any) => {
     let prices: number[] = [pooja.price];
