@@ -234,8 +234,9 @@ export function MandalDetail({ slug }: { slug: string }) {
             color: "#7b4623",
           },
         };
-        const razorpay = new (window as any).Razorpay(options);
-        razorpay.open();
+       setShowDonateModal(false);
+const razorpay = new (window as any).Razorpay(options);
+razorpay.open();
       } else {
         toast({
           title: t("common.error"),
