@@ -51,3 +51,12 @@ export const generateDonationDisplayId = async (): Promise<string> => {
 export const generateBookingDisplayId = async (): Promise<string> => {
     return generateCustomId('BKID');
 };
+
+/**
+ * Generates a custom human-readable Photography Booking ID.
+ * Format: PKID + MM + YearCode + Sequence
+ */
+export const generatePhotoDisplayId = async (): Promise<string> => {
+    return generateCustomId('PKID');
+};
+

@@ -71,6 +71,7 @@ export default function MandalEventsPage() {
     const [selectedDate, setSelectedDate] = useState("ALL");
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingEvent, setEditingEvent] = useState<any>(null);
+    const [viewingEvent, setViewingEvent] = useState<any>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const { toast } = useToast();
     const { hasPermission } = useAdminAuth();
@@ -377,6 +378,15 @@ export default function MandalEventsPage() {
                                     </TableCell>
                                     <TableCell className="text-right">
                                         <div className="flex justify-end gap-2">
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                onClick={() => setViewingEvent(event)}
+                                                className="hover:bg-amber-50 hover:text-[#7b4623]"
+                                                title="View Details"
+                                            >
+                                                <Eye className="w-4 h-4 text-[#7b4623]" />
+                                            </Button>
                                             {canEdit && (
                                                 <Button
                                                     variant="ghost"
@@ -564,6 +574,100 @@ export default function MandalEventsPage() {
                     </form>
                 </DialogContent>
             </Dialog>
+
+            {/* View Event Details Modal */}
+            <Dialog open={!!viewingEvent} onOpenChange={(open) => !open && setViewingEvent(null)}>
+                <DialogContent className="sm:max-w-[550px] rounded-2xl p-0 overflow-hidden">
+                    <div className="bg-gradient-to-r from-amber-50 to-orange-50 p-6 border-b">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <div className="w-12 h-12 rounded-2xl bg-[#7b4623] text-white flex items-center justify-center shadow-md">
+                                    <CalendarIcon className="w-6 h-6" />
+                                </div>
+                                <div>
+                                    <Badge variant="outline" className="bg-amber-100/70 text-[#7b4623] border-amber-200 text-xs font-semibold mb-1">
+                                        Mandal Event
+                                    </Badge>
+                                    <h3 className="text-xl font-serif font-bold text-slate-900">
+                                        {getL(viewingEvent?.name, "en")}
+                                    </h3>
+                                </div>
+                            </div>
+                            <Badge
+                                variant={viewingEvent?.status ? "default" : "secondary"}
+                                className={viewingEvent?.status ? "bg-emerald-100 text-emerald-800 border-0" : ""}
+                            >
+                                {viewingEvent?.status ? "Active" : "Inactive"}
+                            </Badge>
+                        </div>
+                    </div>
+
+                    <div className="p-6 space-y-5 max-h-[70vh] overflow-y-auto">
+                        {/* Event Date */}
+                        <div className="flex items-center gap-3 p-3.5 bg-slate-50 rounded-xl border border-slate-100">
+                            <CalendarIcon className="w-5 h-5 text-[#7b4623] shrink-0" />
+                            <div>
+                                <p className="text-[10px] uppercase font-bold text-slate-400">Scheduled Date</p>
+                                <p className="text-sm font-semibold text-slate-800">{viewingEvent?.date || "N/A"}</p>
+                            </div>
+                        </div>
+
+                        {/* Localized Names (Hindi & Marathi if available) */}
+                        <div className="grid grid-cols-2 gap-3 text-xs">
+                            {getL(viewingEvent?.name, "hi") && (
+                                <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
+                                    <p className="text-[10px] uppercase font-bold text-slate-400">नाम (हिन्दी)</p>
+                                    <p className="font-medium text-slate-800 mt-0.5">{getL(viewingEvent?.name, "hi")}</p>
+                                </div>
+                            )}
+                            {getL(viewingEvent?.name, "mr") && (
+                                <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
+                                    <p className="text-[10px] uppercase font-bold text-slate-400">नाव (मराठी)</p>
+                                    <p className="font-medium text-slate-800 mt-0.5">{getL(viewingEvent?.name, "mr")}</p>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Description */}
+                        <div>
+                            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">
+                                Event Description
+                            </h4>
+                            <div className="p-4 bg-slate-50 rounded-xl border border-slate-100 text-sm text-slate-700 leading-relaxed max-w-none">
+                                {getL(viewingEvent?.description, "en") ? (
+                                    <div dangerouslySetInnerHTML={{ __html: getL(viewingEvent?.description, "en") }} />
+                                ) : (
+                                    <p className="text-slate-400 italic">No description provided for this event.</p>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+
+                    <DialogFooter className="p-4 bg-slate-50 border-t flex justify-between items-center">
+                        <Button
+                            variant="outline"
+                            onClick={() => setViewingEvent(null)}
+                            className="rounded-xl border-slate-200"
+                        >
+                            Close
+                        </Button>
+                        {canEdit && (
+                            <Button
+                                onClick={() => {
+                                    const evt = viewingEvent;
+                                    setViewingEvent(null);
+                                    handleOpenDialog(evt);
+                                }}
+                                className="bg-[#7b4623] hover:bg-[#5d351a] text-white rounded-xl"
+                            >
+                                <Edit2 className="w-4 h-4 mr-2" />
+                                Edit Event
+                            </Button>
+                        )}
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }
+

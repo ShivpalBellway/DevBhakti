@@ -137,6 +137,28 @@ export const createMandal = async (req: Request, res: Response): Promise<void> =
             ? JSON.parse(data.existingBannerImages)
             : [];
 
+        // Create linked User account for MANDAL role login
+        const normalizedPhone = normalizePhone(cleanedContact);
+        let user = await prisma.user.findFirst({
+            where: { phone: normalizedPhone, role: 'MANDAL' }
+        });
+
+        if (!user) {
+            let nameStr = data.presidentName || data.name_en || data.name || 'Mandal Admin';
+            const displayId = await generateCustomId('MNID');
+            user = await prisma.user.create({
+                data: {
+                    displayId,
+                    phone: normalizedPhone,
+                    name: nameStr,
+                    email: data.email ? data.email.toLowerCase().trim() : null,
+                    role: 'MANDAL',
+                    isVerified: true,
+                    isActive: true
+                }
+            });
+        }
+
         const mandal = await prisma.mandal.create({
             data: {
                 name: JSON.stringify(buildLangJson(data.name_en || data.name, data.name_hi, data.name_mr)),
@@ -150,6 +172,7 @@ export const createMandal = async (req: Request, res: Response): Promise<void> =
                 state: data.state || undefined,
                 pinCode: data.pinCode || undefined,
                 contactNumber: cleanedContact,
+                userId: user.id,
                 email: data.email || undefined,
                 presidentName: data.presidentName || undefined,
                 registrationNumber: data.registrationNumber || undefined,
@@ -165,7 +188,7 @@ export const createMandal = async (req: Request, res: Response): Promise<void> =
                 // Meta
                 slug: data.slug || undefined,
                 isActive: data.isActive === 'true' || data.isActive === true,
-                status: data.status || 'PENDING',
+                status: data.status || 'APPROVED',
                 adminNotes: data.adminNotes || undefined,
             },
         });

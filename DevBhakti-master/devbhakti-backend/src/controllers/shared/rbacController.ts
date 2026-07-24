@@ -287,8 +287,11 @@ export const resetStaffPassword = async (req: Request, res: Response) => {
 
     const emailResult = await sendEmail(staff.email, emailSubject, '', emailHtml);
     if (!emailResult.success) {
-      console.error("Failed to send reset password email:", emailResult.error);
-      return res.status(500).json({ error: 'Password was changed but failed to send email. Please try again.' });
+      console.warn("Notice: Password updated but failed to send email:", emailResult.error);
+      return res.status(200).json({
+        success: true,
+        message: 'Password reset successfully in database. (Note: Email delivery failed or SMTP not configured)'
+      });
     }
 
     return res.json({ success: true, message: 'Password reset successful and email sent to the staff member.' });

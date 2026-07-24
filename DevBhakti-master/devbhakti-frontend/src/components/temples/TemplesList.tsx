@@ -171,10 +171,13 @@ export function TemplesList() {
     setSearchQuery(searchInput);
   };
 
-  const getFullImageUrl = (path: string) => {
-    if (!path) return "/placeholder.jpg";
-    if (path.startsWith('http')) return path;
-    return `${API_URL.replace('/api', '')}${path}`;
+  const getFullImageUrl = (imagePath: string | null, type: string = "Temple") => {
+    if (!imagePath) return `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300"><rect width="400" height="300" fill="%23f3f4f6"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="%239ca3af" font-family="sans-serif" font-size="16">${type}</text></svg>`;
+    if (imagePath.startsWith("http://") || imagePath.startsWith("https://")) {
+      return imagePath;
+    }
+    const cleanPath = imagePath.startsWith("/") ? imagePath : `/${imagePath}`;
+    return `${API_URL}${cleanPath}`;
   };
 
   const toggleFavorite = async (e: React.MouseEvent, templeId: string) => {

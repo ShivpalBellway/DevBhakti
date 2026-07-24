@@ -4,7 +4,7 @@ const prisma = new PrismaClient();
 
 const permissions = [
   // ── DASHBOARD ───────────────────────────────────────────
-  { key: 'dashboard.view', module: 'dashboard', label: 'Show Dashboard Link', applicableTo: [OwnerType.ADMIN, OwnerType.TEMPLE, OwnerType.SELLER] },
+  { key: 'dashboard.view', module: 'dashboard', label: 'Show Dashboard Link', applicableTo: [OwnerType.ADMIN, OwnerType.TEMPLE, OwnerType.SELLER, OwnerType.MANDAL] },
 
   // ── TEMPLES MANAGEMENT (ADMIN SIDE) ─────────────────────
   { key: 'temples.menu',            module: 'temples', label: 'Show Temples Menu',           applicableTo: [OwnerType.ADMIN] },
@@ -15,6 +15,15 @@ const permissions = [
   { key: 'temples.delete',          module: 'temples', label: 'Delete Temple',               applicableTo: [OwnerType.ADMIN] },
   { key: 'temples.requests_view',   module: 'temples', label: 'View Update Requests',        applicableTo: [OwnerType.ADMIN] },
   { key: 'temples.requests_action', module: 'temples', label: 'Action on Update Requests',   applicableTo: [OwnerType.ADMIN] },
+
+  // ── MANDALS MANAGEMENT (ADMIN SIDE) ─────────────────────
+  { key: 'mandals.menu',   module: 'mandals', label: 'Show Mandals Menu',   applicableTo: [OwnerType.ADMIN] },
+  { key: 'mandals.view',   module: 'mandals', label: 'View Mandals List',   applicableTo: [OwnerType.ADMIN] },
+  { key: 'mandals.manage', module: 'mandals', label: 'Manage Mandals Status', applicableTo: [OwnerType.ADMIN] },
+
+  // ── MANDAL SPECIFIC (OWNER SIDE) ────────────────────────
+  { key: 'mandal.profile.manage', module: 'mandals', label: 'Manage Mandal Profile', applicableTo: [OwnerType.MANDAL] },
+  { key: 'mandal.bank.manage',    module: 'mandals', label: 'Manage Bank Details',   applicableTo: [OwnerType.MANDAL] },
 
   // ── TEMPLE SPECIFIC (OWNER SIDE) ────────────────────────
   { key: 'temple.profile.manage', module: 'temples', label: 'Manage Temple Profile', applicableTo: [OwnerType.TEMPLE] },
@@ -30,7 +39,7 @@ const permissions = [
 
   // ── USERS (DEVOTEES) ───────────────────────────────────
   { key: 'users.menu',   module: 'users', label: 'Show Users Menu',    applicableTo: [OwnerType.ADMIN] },
-  { key: 'users.view',   module: 'users', label: 'View Users List',    applicableTo: [OwnerType.ADMIN, OwnerType.TEMPLE] },
+  { key: 'users.view',   module: 'users', label: 'View Users List',    applicableTo: [OwnerType.ADMIN, OwnerType.TEMPLE, OwnerType.MANDAL] },
   { key: 'users.manage', module: 'users', label: 'Manage Users Status', applicableTo: [OwnerType.ADMIN] },
 
   // ── POOJA BOOKINGS ──────────────────────────────────────
@@ -39,8 +48,8 @@ const permissions = [
   { key: 'bookings.manage', module: 'bookings', label: 'Update Booking Status', applicableTo: [OwnerType.ADMIN, OwnerType.TEMPLE] },
 
   // ── DONATIONS ───────────────────────────────────────────
-  { key: 'donations.menu', module: 'donations', label: 'Show Donations Menu',  applicableTo: [OwnerType.ADMIN, OwnerType.TEMPLE] },
-  { key: 'donations.view', module: 'donations', label: 'View Donation History', applicableTo: [OwnerType.ADMIN, OwnerType.TEMPLE] },
+  { key: 'donations.menu', module: 'donations', label: 'Show Donations Menu',  applicableTo: [OwnerType.ADMIN, OwnerType.TEMPLE, OwnerType.MANDAL] },
+  { key: 'donations.view', module: 'donations', label: 'View Donation History', applicableTo: [OwnerType.ADMIN, OwnerType.TEMPLE, OwnerType.MANDAL] },
 
   // ── PRODUCT MANAGEMENT ──────────────────────────────────
   { key: 'products.menu',     module: 'products', label: 'Show Products Menu',   applicableTo: [OwnerType.ADMIN, OwnerType.TEMPLE, OwnerType.SELLER] },
@@ -65,10 +74,10 @@ const permissions = [
   { key: 'poojas.promote',    module: 'poojas', label: 'Promote to Master',   applicableTo: [OwnerType.ADMIN] },
 
   // ── EVENTS ──────────────────────────────────────────────
-  { key: 'events.view',   module: 'events', label: 'View Events List', applicableTo: [OwnerType.ADMIN, OwnerType.TEMPLE] },
-  { key: 'events.create', module: 'events', label: 'Add New Event',   applicableTo: [OwnerType.ADMIN, OwnerType.TEMPLE] },
-  { key: 'events.edit',   module: 'events', label: 'Edit Event',      applicableTo: [OwnerType.ADMIN, OwnerType.TEMPLE] },
-  { key: 'events.delete', module: 'events', label: 'Delete Event',    applicableTo: [OwnerType.ADMIN, OwnerType.TEMPLE] },
+  { key: 'events.view',   module: 'events', label: 'View Events List', applicableTo: [OwnerType.ADMIN, OwnerType.TEMPLE, OwnerType.MANDAL] },
+  { key: 'events.create', module: 'events', label: 'Add New Event',   applicableTo: [OwnerType.ADMIN, OwnerType.TEMPLE, OwnerType.MANDAL] },
+  { key: 'events.edit',   module: 'events', label: 'Edit Event',      applicableTo: [OwnerType.ADMIN, OwnerType.TEMPLE, OwnerType.MANDAL] },
+  { key: 'events.delete', module: 'events', label: 'Delete Event',    applicableTo: [OwnerType.ADMIN, OwnerType.TEMPLE, OwnerType.MANDAL] },
 
   // ── CMS (CONTENT MANAGEMENT) ─────────────────────────────
   { key: 'cms.menu',         module: 'cms', label: 'Show CMS Menu',           applicableTo: [OwnerType.ADMIN] },
@@ -80,16 +89,16 @@ const permissions = [
   { key: 'cms.cta_cards',    module: 'cms', label: 'Manage CTA Cards',        applicableTo: [OwnerType.ADMIN] },
 
   // ── FINANCE & PAYOUTS ───────────────────────────────────
-  { key: 'finance.menu',               module: 'finance', label: 'Show Finance Menu',         applicableTo: [OwnerType.ADMIN, OwnerType.TEMPLE, OwnerType.SELLER] },
-  { key: 'finance.ledger.view',        module: 'finance', label: 'View Transaction Ledger',    applicableTo: [OwnerType.ADMIN, OwnerType.TEMPLE, OwnerType.SELLER] },
-  { key: 'finance.withdrawals.view',   module: 'finance', label: 'View Withdrawal Requests',  applicableTo: [OwnerType.ADMIN, OwnerType.TEMPLE, OwnerType.SELLER] },
+  { key: 'finance.menu',               module: 'finance', label: 'Show Finance Menu',         applicableTo: [OwnerType.ADMIN, OwnerType.TEMPLE, OwnerType.SELLER, OwnerType.MANDAL] },
+  { key: 'finance.ledger.view',        module: 'finance', label: 'View Transaction Ledger',    applicableTo: [OwnerType.ADMIN, OwnerType.TEMPLE, OwnerType.SELLER, OwnerType.MANDAL] },
+  { key: 'finance.withdrawals.view',   module: 'finance', label: 'View Withdrawal Requests',  applicableTo: [OwnerType.ADMIN, OwnerType.TEMPLE, OwnerType.SELLER, OwnerType.MANDAL] },
   { key: 'finance.withdrawals.action', module: 'finance', label: 'Process Financial Payouts', applicableTo: [OwnerType.ADMIN] },
 
   // ── TEAM MANAGEMENT ─────────────────────────────────────
-  { key: 'team.menu',           module: 'team', label: 'Show Team Menu',          applicableTo: [OwnerType.ADMIN, OwnerType.TEMPLE, OwnerType.SELLER] },
-  { key: 'team.staff.view',     module: 'team', label: 'View Staff Members',      applicableTo: [OwnerType.ADMIN, OwnerType.TEMPLE, OwnerType.SELLER] },
-  { key: 'team.staff.manage',   module: 'team', label: 'Manage Staff Members',    applicableTo: [OwnerType.ADMIN, OwnerType.TEMPLE, OwnerType.SELLER] },
-  { key: 'team.roles.manage',   module: 'team', label: 'Manage Roles/Permissions', applicableTo: [OwnerType.ADMIN, OwnerType.TEMPLE, OwnerType.SELLER] },
+  { key: 'team.menu',           module: 'team', label: 'Show Team Menu',          applicableTo: [OwnerType.ADMIN, OwnerType.TEMPLE, OwnerType.SELLER, OwnerType.MANDAL] },
+  { key: 'team.staff.view',     module: 'team', label: 'View Staff Members',      applicableTo: [OwnerType.ADMIN, OwnerType.TEMPLE, OwnerType.SELLER, OwnerType.MANDAL] },
+  { key: 'team.staff.manage',   module: 'team', label: 'Manage Staff Members',    applicableTo: [OwnerType.ADMIN, OwnerType.TEMPLE, OwnerType.SELLER, OwnerType.MANDAL] },
+  { key: 'team.roles.manage',   module: 'team', label: 'Manage Roles/Permissions', applicableTo: [OwnerType.ADMIN, OwnerType.TEMPLE, OwnerType.SELLER, OwnerType.MANDAL] },
 
   // ── LIVE DARSHAN ────────────────────────────────────────
   { key: 'live_darshan.view',   module: 'live_darshan', label: 'View Live List',   applicableTo: [OwnerType.ADMIN] },

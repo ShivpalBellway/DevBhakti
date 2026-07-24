@@ -189,6 +189,50 @@ export const verifyPayment = async (req: Request, res: Response) => {
             } catch (tNotifyErr) {
                 console.error("Failed to send temple admin push notification:", tNotifyErr);
             }
+        } else if (orderType === "PHOTOGRAPHY") {
+            const updatedBooking = await prisma.photographyBooking.update({
+                where: { id: referenceId },
+                include: {
+                    temple: true,
+                    package: true
+                },
+                data: {
+                    status: "BOOKED",
+                },
+            });
+
+            // Create ledger entry for photography earning
+            await prisma.templeLedger.create({
+                data: {
+                    templeId: updatedBooking.templeId,
+                    amount: updatedBooking.packagePrice,
+                    grossAmount: updatedBooking.totalAmount,
+                    commission: updatedBooking.platformFee,
+                    type: "PHOTOGRAPHY_EARNING",
+                    sourceId: updatedBooking.id,
+                    description: `Photography: ${getEnglish(updatedBooking.package.name)}`,
+                    status: "COMPLETED"
+                }
+            });
+
+            // Notify Devotee via Push Notification
+            try {
+                if (updatedBooking.userId) {
+                    const { notifyUser } = require("../services/firebaseService");
+                    const pkgName = getEnglish(updatedBooking.package.name);
+                    await notifyUser(updatedBooking.userId, 'devotee', {
+                        title: 'Photography Pass Approved! 📸',
+                        body: `Your pass for "${pkgName}" has been issued.`,
+                        data: {
+                            link: `/profile/bookings`,
+                            type: 'PHOTO_BOOKING',
+                            bookingId: updatedBooking.id
+                        }
+                    });
+                }
+            } catch (pNotifyErr) {
+                console.error("Failed to send push notification:", pNotifyErr);
+            }
         } else if (orderType === "DONATION") {
             await prisma.donation.update({
                 where: { id: referenceId },
@@ -370,6 +414,11 @@ export const paymentFailed = async (req: Request, res: Response) => {
 
         if (orderType === "POOJA" && referenceId) {
             await prisma.poojaBooking.update({
+                where: { id: referenceId },
+                data: { status: "CANCELLED" }
+            });
+        } else if (orderType === "PHOTOGRAPHY" && referenceId) {
+            await prisma.photographyBooking.update({
                 where: { id: referenceId },
                 data: { status: "CANCELLED" }
             });

@@ -22,7 +22,8 @@ import {
     ChevronDown,
     ChevronUp,
     ShieldCheck,
-    X
+    X,
+    Camera
 } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -120,6 +121,15 @@ const sidebarItems = [
             { label: "Booked Poojas", href: "/temples/dashboard/bookings?status=BOOKED" },
             { label: "Completed", href: "/temples/dashboard/bookings?status=COMPLETED" },
             { label: "Offline Pooja Bookings", href: "/temples/dashboard/bookings?type=offline" },
+        ]
+    },
+    {
+        label: "Photography",
+        icon: Camera,
+        href: "/temples/dashboard/photography",
+        subItems: [
+            { label: "Settings & Packages", href: "/temples/dashboard/photography" },
+            { label: "Photo Bookings", href: "/temples/dashboard/photography/bookings" },
         ]
     },
     {

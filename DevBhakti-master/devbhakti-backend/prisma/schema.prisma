@@ -34,6 +34,7 @@ model User {
   favorites     Favorite[]
   orders        Order[]
   bookings      PoojaBooking[]
+  photographyBookings PhotographyBooking[]
   sellerProfile SellerProfile?
   temple        Temple?
 
@@ -124,6 +125,14 @@ model Temple {
   updateRequests        TempleUpdateRequest[]
   withdrawals           WithdrawalRequest[]
   poojaCategories       PoojaCategory[]
+  
+  // Photography Settings
+  photographyEnabled    Boolean               @default(false)
+  allowedPhotoAreas     Json?                 // e.g. ["GARDEN", "ENTRANCE", "COURTYARD"]
+  photographyRules      Json?                 // {"en": "...", "hi": "...", "mr": "..."}
+  photographyPackages   PhotographyPackage[]
+  photographySlots      PhotographySlot[]
+  photographyBookings   PhotographyBooking[]
 }
 
 model BookingAvailability {
@@ -730,6 +739,7 @@ enum LedgerType {
   POOJA_EARNING
   WITHDRAWAL
   DONATION_EARNING
+  PHOTOGRAPHY_EARNING
 }
 
 enum LedgerStatus {
@@ -868,3 +878,53 @@ enum PrasadType {
   FREE
   PAID
 }
+
+model PhotographyPackage {
+  id          String               @id @default(cuid())
+  templeId    String
+  name        Json                 // e.g. {"en": "Personal Mobile Pass", "hi": "..."}
+  description Json?                // e.g. {"en": "Description..."}
+  price       Float
+  duration    Int                  // in minutes
+  isActive    Boolean              @default(true)
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+  temple      Temple               @relation(fields: [templeId], references: [id], onDelete: Cascade)
+  bookings    PhotographyBooking[]
+}
+
+model PhotographySlot {
+  id                String               @id @default(cuid())
+  templeId          String
+  slotName          String               // e.g. "08:00 AM - 10:00 AM"
+  maxBookingsPerDay Int                  @default(10)
+  isActive          Boolean              @default(true)
+  createdAt         DateTime             @default(now())
+  updatedAt         DateTime             @updatedAt
+  temple            Temple               @relation(fields: [templeId], references: [id], onDelete: Cascade)
+  bookings          PhotographyBooking[]
+}
+
+model PhotographyBooking {
+  id               String             @id @default(cuid())
+  displayId        String             @unique
+  userId           String?
+  templeId         String
+  packageId        String
+  slotId           String
+  selectedArea     String
+  bookingDate      String             // YYYY-MM-DD
+  timeSlot         String             // Display value
+  packagePrice     Float
+  platformFee      Float              @default(0)
+  totalAmount      Float
+  status           BookingStatus      @default(PENDING)
+  paymentId        String?
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  user             User?              @relation(fields: [userId], references: [id])
+  temple           Temple             @relation(fields: [templeId], references: [id], onDelete: Cascade)
+  package          PhotographyPackage @relation(fields: [packageId], references: [id])
+  slot             PhotographySlot    @relation(fields: [slotId], references: [id])
+}
+

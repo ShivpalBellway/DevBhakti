@@ -80,11 +80,81 @@ export default function MobileTempleDetail({
     // Photography Dialog state
     const [isPhotoDialogOpen, setIsPhotoDialogOpen] = useState(false);
     const [photoStep, setPhotoStep] = useState(1);
-    const [selectedPhotoType, setSelectedPhotoType] = useState("Personal Photography");
-    const [photoPrice, setPhotoPrice] = useState(251);
+    
+    // Dynamic lists fetched from API
+    const [photoPackages, setPhotoPackages] = useState<any[]>([]);
+    const [allowedAreas, setAllowedAreas] = useState<string[]>([]);
+    const [availableSlots, setAvailableSlots] = useState<any[]>([]);
+    const [loadingSlots, setLoadingSlots] = useState(false);
+    
+    // Selected fields
+    const [selectedPackage, setSelectedPackage] = useState<any>(null);
+    const [selectedPhotoArea, setSelectedPhotoArea] = useState("");
     const [selectedPhotoDate, setSelectedPhotoDate] = useState("");
-    const [selectedPhotoSlot, setSelectedPhotoSlot] = useState("08:00 AM - 10:00 AM");
+    const [selectedPhotoSlot, setSelectedPhotoSlot] = useState<any>(null);
     const [agreedToRules, setAgreedToRules] = useState(false);
+    const [bookingDetails, setBookingDetails] = useState<any>(null);
+    const [bookingError, setBookingError] = useState("");
+
+    // Fetch dynamic packages and allowed areas when dialog opens
+    useEffect(() => {
+        if (!isPhotoDialogOpen) return;
+        
+        // Allowed areas from temple object
+        if (temple.allowedPhotoAreas) {
+            try {
+                const areas = typeof temple.allowedPhotoAreas === 'string'
+                    ? JSON.parse(temple.allowedPhotoAreas)
+                    : temple.allowedPhotoAreas;
+                setAllowedAreas(Array.isArray(areas) ? areas : []);
+            } catch (e) {
+                setAllowedAreas([]);
+            }
+        }
+
+        // Fetch custom photography packages
+        const fetchPackages = async () => {
+            try {
+                const res = await fetch(`${BASE_URL}/api/temple-admin/photography/packages?lang=${language}`);
+                const json = await res.json();
+                if (json.success && json.data) {
+                    const activePackages = json.data.filter((p: any) => p.isActive);
+                    setPhotoPackages(activePackages);
+                    if (activePackages.length > 0) {
+                        setSelectedPackage(activePackages[0]);
+                    }
+                }
+            } catch (err) {
+                console.error("Failed to load photography packages:", err);
+            }
+        };
+
+        fetchPackages();
+    }, [isPhotoDialogOpen, temple, language]);
+
+    // Fetch slot availability when date changes
+    useEffect(() => {
+        if (!selectedPhotoDate || !isPhotoDialogOpen) return;
+
+        const fetchSlots = async () => {
+            setLoadingSlots(true);
+            try {
+                const res = await fetch(`${BASE_URL}/api/temples/photography/slots/availability?templeId=${temple.id}&date=${selectedPhotoDate}`);
+                const json = await res.json();
+                if (json.success && json.data) {
+                    setAvailableSlots(json.data);
+                    const firstAvail = json.data.find((s: any) => s.available);
+                    setSelectedPhotoSlot(firstAvail || null);
+                }
+            } catch (err) {
+                console.error("Failed to load slots:", err);
+            } finally {
+                setLoadingSlots(false);
+            }
+        };
+
+        fetchSlots();
+    }, [selectedPhotoDate, temple.id, isPhotoDialogOpen]);
 
     // About Temple expand/collapse
     const [showFullDesc, setShowFullDesc] = useState(false);
@@ -118,9 +188,125 @@ export default function MobileTempleDetail({
         setIsPhotoDialogOpen(false);
         setPhotoStep(1);
         setAgreedToRules(false);
+        setSelectedPhotoDate("");
+        setSelectedPhotoArea("");
+        setBookingError("");
+        setBookingDetails(null);
     };
 
-    const handlePhotoSubmit = () => {
+    const handlePhotoSubmit = async () => {
+        if (photoStep === 1 && !selectedPackage) {
+            toast({ title: "Error", description: "Please select a package first.", variant: "destructive" });
+            return;
+        }
+        if (photoStep === 2 && !selectedPhotoDate) {
+            toast({ title: "Error", description: "Please choose a date.", variant: "destructive" });
+            return;
+        }
+        if (photoStep === 3 && !selectedPhotoSlot) {
+            toast({ title: "Error", description: "No time slot selected or available.", variant: "destructive" });
+            return;
+        }
+        if (photoStep === 3 && !selectedPhotoArea) {
+            toast({ title: "Error", description: "Please select an allowed area.", variant: "destructive" });
+            return;
+        }
+
+        if (photoStep === 5) {
+            // Payment Step -> Trigger Backend booking creation & Razorpay Checkout
+            try {
+                setBookingError("");
+                const bookingRes = await fetch(`${BASE_URL}/api/temples/photography/book`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        templeId: temple.id,
+                        packageId: selectedPackage.id,
+                        slotId: selectedPhotoSlot.id,
+                        selectedArea: selectedPhotoArea,
+                        bookingDate: selectedPhotoDate,
+                        devoteeName: "Guest Devotee", // Hardcoded fallback or profile value
+                        devoteePhone: "9999999999",
+                        devoteeEmail: "devotee@devbhakti.in"
+                    })
+                });
+
+                const json = await bookingRes.json();
+                if (!json.success) {
+                    setBookingError(json.message || "Booking failed.");
+                    return;
+                }
+
+                const { razorpayOrderId, bookingId, displayId, amount, platformFee, packagePrice } = json.data;
+
+                // Load Razorpay Checkout
+                const options = {
+                    key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "rzp_test_placeholder",
+                    amount: Math.round(amount * 100),
+                    currency: "INR",
+                    name: "DevBhakti Photography",
+                    description: `Pass for ${getLocalized(selectedPackage, 'name', language)}`,
+                    order_id: razorpayOrderId,
+                    handler: async function (response: any) {
+                        // Confirm payment verification
+                        const verifyRes = await fetch(`${BASE_URL}/api/payments/verify`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                razorpay_order_id: response.razorpay_order_id,
+                                razorpay_payment_id: response.razorpay_payment_id,
+                                razorpay_signature: response.razorpay_signature,
+                                orderType: "PHOTOGRAPHY",
+                                referenceId: bookingId
+                            })
+                        });
+                        const verifyJson = await verifyRes.json();
+                        if (verifyJson.success) {
+                            setBookingDetails({
+                                displayId,
+                                packageName: getLocalized(selectedPackage, 'name', language),
+                                bookingDate: selectedPhotoDate,
+                                timeSlot: selectedPhotoSlot.slotName,
+                                totalAmount: amount,
+                                packagePrice,
+                                platformFee
+                            });
+                            setPhotoStep(6);
+                        } else {
+                            setBookingError("Payment verification failed.");
+                        }
+                    },
+                    prefill: {
+                        name: "Bhakt",
+                        email: "devotee@devbhakti.in",
+                        contact: "9999999999"
+                    },
+                    theme: {
+                        color: "#7c4624"
+                    }
+                };
+
+                const rzp = new (window as any).Razorpay(options);
+                rzp.on('payment.failed', async function (response: any) {
+                    await fetch(`${BASE_URL}/api/payments/failed`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            orderType: "PHOTOGRAPHY",
+                            referenceId: bookingId,
+                            error: response.error
+                        })
+                    });
+                    setBookingError("Payment failed. Please try again.");
+                });
+                rzp.open();
+
+            } catch (err: any) {
+                setBookingError(err.message || "An error occurred during booking.");
+            }
+            return;
+        }
+
         if (photoStep < 6) setPhotoStep(photoStep + 1);
     };
 
@@ -313,12 +499,14 @@ export default function MobileTempleDetail({
                         )}
 
                         {/* Photography */}
-                        <button onClick={() => { setPhotoStep(1); setIsPhotoDialogOpen(true); }} className="flex flex-col items-center p-2 rounded-2xl hover:bg-orange-50/50 active:scale-95 transition-all text-center">
-                            <div className="h-14 w-14 bg-amber-100/60 rounded-2xl flex items-center justify-center mb-2 text-amber-700 shadow-sm">
-                                <Camera className="h-7 w-7" />
-                            </div>
-                            <span className="text-sm font-bold leading-tight">Photography</span>
-                        </button>
+                        {temple.photographyEnabled && (
+                            <button onClick={() => { setPhotoStep(1); setIsPhotoDialogOpen(true); }} className="flex flex-col items-center p-2 rounded-2xl hover:bg-orange-50/50 active:scale-95 transition-all text-center">
+                                <div className="h-14 w-14 bg-amber-100/60 rounded-2xl flex items-center justify-center mb-2 text-amber-700 shadow-sm">
+                                    <Camera className="h-7 w-7" />
+                                </div>
+                                <span className="text-sm font-bold leading-tight">Photography</span>
+                            </button>
+                        )}
 
                         {/* Temple Shop */}
                         <button onClick={() => scrollToSection("mobile-shop-section")} className="flex flex-col items-center p-2 rounded-2xl hover:bg-orange-50/50 active:scale-95 transition-all text-center">
@@ -1016,24 +1204,23 @@ export default function MobileTempleDetail({
                         {photoStep === 1 && (
                             <div className="space-y-3">
                                 <h4 className="text-xs font-black uppercase tracking-wider text-muted-foreground">Select Type</h4>
-                                {[
-                                    { label: "Personal Photography", desc: "For mobile & basic cameras. Non-commercial.", price: 251 },
-                                    { label: "Professional Photography", desc: "DSLRs & high-end gear. Restricted zones apply.", price: 501 },
-                                    { label: "Pre-wedding Shoot", desc: "Full crew (max 5). Restricted timings.", price: 1501 },
-                                    { label: "Commercial Shoot", desc: "Movies, brands etc. Special trust permissions.", price: 2501 },
-                                ].map((opt) => (
-                                    <div
-                                        key={opt.label}
-                                        onClick={() => { setSelectedPhotoType(opt.label); setPhotoPrice(opt.price); }}
-                                        className={`p-4 rounded-2xl border transition-all cursor-pointer flex items-center justify-between gap-3 ${selectedPhotoType === opt.label ? "bg-orange-50/50 border-[#7c4624] shadow-sm" : "bg-white border-gray-200 hover:bg-gray-50"}`}
-                                    >
-                                        <div className="flex-1">
-                                            <p className="text-sm font-bold text-[#3c2a21]">{opt.label}</p>
-                                            <p className="text-xs text-muted-foreground mt-0.5 leading-snug">{opt.desc}</p>
+                                {photoPackages.length === 0 ? (
+                                    <div className="text-center py-6 text-sm text-gray-400">No photography packages configured.</div>
+                                ) : (
+                                    photoPackages.map((opt) => (
+                                        <div
+                                            key={opt.id}
+                                            onClick={() => setSelectedPackage(opt)}
+                                            className={`p-4 rounded-2xl border transition-all cursor-pointer flex items-center justify-between gap-3 ${selectedPackage?.id === opt.id ? "bg-orange-50/50 border-[#7c4624] shadow-sm" : "bg-white border-gray-200 hover:bg-gray-50"}`}
+                                        >
+                                            <div className="flex-1">
+                                                <p className="text-sm font-bold text-[#3c2a21]">{getLocalized(opt, 'name', language)}</p>
+                                                <p className="text-xs text-muted-foreground mt-0.5 leading-snug">{opt.duration} mins duration</p>
+                                            </div>
+                                            <span className="font-serif font-black text-sm text-[#7c4624] shrink-0">₹{opt.price}</span>
                                         </div>
-                                        <span className="font-serif font-black text-sm text-[#7c4624] shrink-0">₹{opt.price}</span>
-                                    </div>
-                                ))}
+                                    ))
+                                )}
                             </div>
                         )}
 
@@ -1052,17 +1239,47 @@ export default function MobileTempleDetail({
                         )}
 
                         {photoStep === 3 && (
-                            <div className="space-y-3">
-                                <h4 className="text-xs font-black uppercase tracking-wider text-muted-foreground">Select Time Slot</h4>
-                                {["08:00 AM – 10:00 AM", "10:00 AM – 12:30 PM", "04:00 PM – 06:00 PM", "06:00 PM – 08:00 PM"].map((slot) => (
-                                    <div
-                                        key={slot}
-                                        onClick={() => setSelectedPhotoSlot(slot)}
-                                        className={`p-4 rounded-2xl border text-center cursor-pointer font-bold text-sm transition-all ${selectedPhotoSlot === slot ? "bg-[#7c4624] text-white border-transparent" : "bg-white border-gray-200 hover:bg-gray-50 text-[#3c2a21]"}`}
-                                    >
-                                        {slot}
-                                    </div>
-                                ))}
+                            <div className="space-y-4">
+                                <div className="space-y-2">
+                                    <h4 className="text-xs font-black uppercase tracking-wider text-muted-foreground">Select Time Slot</h4>
+                                    {loadingSlots ? (
+                                        <div className="text-center py-2 text-xs text-gray-400">Loading availability...</div>
+                                    ) : availableSlots.length === 0 ? (
+                                        <div className="text-center py-2 text-xs text-gray-400">No active slots configured for this temple.</div>
+                                    ) : (
+                                        <div className="grid grid-cols-2 gap-2">
+                                            {availableSlots.map((slot) => (
+                                                <button
+                                                    key={slot.id}
+                                                    disabled={!slot.available}
+                                                    onClick={() => setSelectedPhotoSlot(slot)}
+                                                    className={`p-3 rounded-2xl border text-center font-bold text-xs transition-all disabled:opacity-30 disabled:cursor-not-allowed ${selectedPhotoSlot?.id === slot.id ? "bg-[#7c4624] text-white border-transparent" : "bg-white border-gray-200 hover:bg-gray-50 text-[#3c2a21]"}`}
+                                                >
+                                                    {slot.slotName}
+                                                    <span className="block text-[9px] font-normal opacity-85 mt-0.5">({slot.maxBookings - slot.bookedBookings} left)</span>
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                                <div className="space-y-2">
+                                    <h4 className="text-xs font-black uppercase tracking-wider text-muted-foreground">Select Area</h4>
+                                    {allowedAreas.length === 0 ? (
+                                        <div className="text-xs text-gray-400">All areas inside temple grounds.</div>
+                                    ) : (
+                                        <div className="flex flex-wrap gap-2">
+                                            {allowedAreas.map((area) => (
+                                                <button
+                                                    key={area}
+                                                    onClick={() => setSelectedPhotoArea(area)}
+                                                    className={`px-4 py-2 rounded-full text-xs font-bold border transition-all ${selectedPhotoArea === area ? "bg-[#7c4624] text-white border-transparent" : "bg-white border-gray-200 text-gray-600"}`}
+                                                >
+                                                    {area}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         )}
 
@@ -1070,9 +1287,15 @@ export default function MobileTempleDetail({
                             <div className="space-y-4">
                                 <h4 className="text-xs font-black uppercase tracking-wider text-muted-foreground">Rules & Info</h4>
                                 <div className="bg-orange-50/50 p-5 rounded-2xl space-y-3 text-sm text-[#5c3a21]/90 leading-relaxed border border-orange-100">
-                                    <div className="flex gap-2"><Camera className="h-5 w-5 text-[#7c4624] shrink-0 mt-0.5" /><span>Photography only in allowed areas. Sanctum strictly restricted.</span></div>
-                                    <div className="flex gap-2"><Info className="h-5 w-5 text-[#7c4624] shrink-0 mt-0.5" /><span>No tripod or flash inside the sanctum. Respect prayer hours.</span></div>
-                                    <div className="flex gap-2"><FileText className="h-5 w-5 text-[#7c4624] shrink-0 mt-0.5" /><span>Permission is non-transferable & valid only for the selected slot.</span></div>
+                                    {temple.photographyRules ? (
+                                        <div className="whitespace-pre-line text-xs">{getLocalized(temple, 'photographyRules', language)}</div>
+                                    ) : (
+                                        <>
+                                            <div className="flex gap-2"><Camera className="h-5 w-5 text-[#7c4624] shrink-0 mt-0.5" /><span>Photography only in allowed areas. Sanctum strictly restricted.</span></div>
+                                            <div className="flex gap-2"><Info className="h-5 w-5 text-[#7c4624] shrink-0 mt-0.5" /><span>No tripod or flash inside the sanctum. Respect prayer hours.</span></div>
+                                            <div className="flex gap-2"><FileText className="h-5 w-5 text-[#7c4624] shrink-0 mt-0.5" /><span>Permission is non-transferable & valid only for the selected slot.</span></div>
+                                        </>
+                                    )}
                                 </div>
                                 <label className="flex items-center gap-3 cursor-pointer p-1 mt-2">
                                     <input type="checkbox" checked={agreedToRules} onChange={(e) => setAgreedToRules(e.target.checked)} className="h-5 w-5 rounded accent-[#7c4624]" />
@@ -1086,22 +1309,24 @@ export default function MobileTempleDetail({
                                 <h4 className="text-xs font-black uppercase tracking-wider text-muted-foreground">Secure Payment</h4>
                                 <div className="bg-orange-50/30 p-6 rounded-3xl border border-orange-100/50 text-center">
                                     <span className="text-xs text-muted-foreground uppercase font-black tracking-widest">Amount Payable</span>
-                                    <h2 className="font-serif font-black text-4xl text-[#7c4624] mt-1">₹{photoPrice}</h2>
-                                    <p className="text-xs text-muted-foreground mt-1">{selectedPhotoType}</p>
+                                    <h2 className="font-serif font-black text-4xl text-[#7c4624] mt-1">₹{(selectedPackage?.price || 0) + 25}</h2>
+                                    <p className="text-xs text-muted-foreground mt-1.5 flex items-center justify-center gap-1">
+                                        <span>₹{selectedPackage?.price} Package Price</span>
+                                        <span className="opacity-60">+</span>
+                                        <span>₹25 Platform Fee</span>
+                                    </p>
                                 </div>
+                                {bookingError && (
+                                    <div className="p-3 text-xs bg-red-50 text-red-600 rounded-xl text-center font-semibold">{bookingError}</div>
+                                )}
                                 <div className="space-y-2">
-                                    <p className="text-xs font-black uppercase tracking-wider text-muted-foreground">Pay via UPI / QR</p>
-                                    <div className="grid grid-cols-3 gap-2">
-                                        {["GPay", "PhonePe", "Paytm"].map((p) => (
-                                            <div key={p} className="p-3 bg-gray-50 border border-gray-200 rounded-xl text-center text-sm font-bold text-muted-foreground hover:bg-gray-100 cursor-pointer">{p}</div>
-                                        ))}
-                                    </div>
-                                    <p className="text-center text-xs text-muted-foreground mt-2">Cards / Net Banking / RuPay supported</p>
+                                    <p className="text-xs font-black uppercase tracking-wider text-muted-foreground">Pay via Razorpay Gateway</p>
+                                    <p className="text-center text-xs text-muted-foreground mt-2">Cards / UPI / Net Banking / Wallet supported</p>
                                 </div>
                             </div>
                         )}
 
-                        {photoStep === 6 && (
+                        {photoStep === 6 && bookingDetails && (
                             <div className="text-center py-4 space-y-4">
                                 <div className="h-20 w-20 bg-green-50 text-green-600 rounded-full flex items-center justify-center mx-auto shadow-sm">
                                     <CheckCircle className="h-12 w-12" />
@@ -1111,16 +1336,15 @@ export default function MobileTempleDetail({
                                     <p className="text-sm text-muted-foreground mt-1">Your photography permission has been booked successfully.</p>
                                 </div>
                                 <div className="bg-orange-50/40 p-5 rounded-2xl border border-orange-50 text-left max-w-xs mx-auto text-sm space-y-1.5">
-                                    <p><span className="font-bold">Type:</span> <span className="text-muted-foreground">{selectedPhotoType}</span></p>
-                                    <p><span className="font-bold">Date:</span> <span className="text-muted-foreground">{selectedPhotoDate || "Not selected"}</span></p>
-                                    <p><span className="font-bold">Slot:</span> <span className="text-muted-foreground">{selectedPhotoSlot}</span></p>
-                                    <p><span className="font-bold">Amount:</span> <span className="text-[#7c4624] font-black">₹{photoPrice}</span></p>
+                                    <p><span className="font-bold">Ticket ID:</span> <span className="text-emerald-700 font-mono font-bold">{bookingDetails.displayId}</span></p>
+                                    <p><span className="font-bold">Type:</span> <span className="text-muted-foreground">{bookingDetails.packageName}</span></p>
+                                    <p><span className="font-bold">Date:</span> <span className="text-muted-foreground">{bookingDetails.bookingDate}</span></p>
+                                    <p><span className="font-bold">Slot:</span> <span className="text-muted-foreground">{bookingDetails.timeSlot}</span></p>
+                                    <p><span className="font-bold">Zone Area:</span> <span className="text-muted-foreground font-semibold">{selectedPhotoArea}</span></p>
+                                    <p className="pt-1.5 border-t border-orange-100 flex justify-between"><span className="font-bold">Amount:</span> <span className="text-[#7c4624] font-black">₹{bookingDetails.totalAmount}</span></p>
                                 </div>
                                 <div className="pt-2 space-y-2 max-w-xs mx-auto">
-                                    <Button className="w-full h-12 bg-[#7c4624] hover:bg-[#5c3a21] text-white text-sm font-bold gap-2 rounded-xl">
-                                        <Download className="h-5 w-5" /> Download Receipt
-                                    </Button>
-                                    <Button variant="outline" onClick={resetPhotoFlow} className="w-full h-12 border-gray-200 text-[#7c4624] text-sm font-bold rounded-xl">
+                                    <Button onClick={resetPhotoFlow} className="w-full h-12 bg-[#7c4624] hover:bg-[#5c3a21] text-white text-sm font-bold rounded-xl">
                                         Close
                                     </Button>
                                 </div>

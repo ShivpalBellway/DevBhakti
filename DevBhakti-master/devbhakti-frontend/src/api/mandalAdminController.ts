@@ -104,3 +104,86 @@ export const requestMandalWithdrawal = async (data: { amount: number; bankDetail
     });
     return response.data;
 };
+
+// Mandal Team & Staff Management
+export const fetchMandalStaff = async () => {
+    const token = localStorage.getItem("token");
+    const response = await axios.get(`${API_URL}/mandal-admin/team/staff`, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+
+export const createMandalStaff = async (data: any) => {
+    const token = localStorage.getItem("token");
+    const response = await axios.post(`${API_URL}/mandal-admin/team/staff`, data, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+
+export const updateMandalStaff = async (id: string, data: any) => {
+    const token = localStorage.getItem("token");
+    const response = await axios.patch(`${API_URL}/mandal-admin/team/staff/${id}`, data, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+
+export const deleteMandalStaff = async (id: string) => {
+    const token = localStorage.getItem("token");
+    const response = await axios.delete(`${API_URL}/mandal-admin/team/staff/${id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+
+export const resetMandalStaffPassword = async (id: string, data: { newPassword: string }) => {
+    const token = localStorage.getItem("token");
+    const response = await axios.post(`${API_URL}/mandal-admin/team/staff/${id}/reset-password`, data, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+
+// Mandal Roles & Permissions Management
+export const fetchMandalRoles = async () => {
+    const token = localStorage.getItem("token");
+    const response = await axios.get(`${API_URL}/mandal-admin/team/roles`, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+
+export const createMandalRole = async (data: { name: string; description?: string; permissionKeys: string[] }) => {
+    const token = localStorage.getItem("token");
+    const response = await axios.post(`${API_URL}/mandal-admin/team/roles`, data, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+
+export const updateMandalRole = async (id: string, data: { name?: string; description?: string; permissionKeys?: string[] }) => {
+    const token = localStorage.getItem("token");
+    const response = await axios.patch(`${API_URL}/mandal-admin/team/roles/${id}`, data, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+
+export const deleteMandalRole = async (id: string) => {
+    const token = localStorage.getItem("token");
+    const response = await axios.delete(`${API_URL}/mandal-admin/team/roles/${id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+
+export const fetchMandalPermissions = async () => {
+    const token = localStorage.getItem("token");
+    const response = await axios.get(`${API_URL}/mandal-admin/team/permissions`, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+

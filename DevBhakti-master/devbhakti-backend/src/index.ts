@@ -56,6 +56,8 @@ import notificationRoutes from './routes/notificationRoutes';
 import contactRoutes from './routes/contactRoutes';
 import leadRoutes from './routes/leadRoutes';
 import mandalRoutes from './routes/mandalRoutes';
+import templeAdminPhotoRoutes from './routes/temple_admin/photoRoutes';
+import publicPhotoRoutes from './routes/public/photoRoutes';
 import './services/firebaseService'; // Initialize Firebase Admin on startup
 
 import adminSettingsRoutes from './routes/admin/globalSettingsRoutes';
@@ -65,6 +67,7 @@ import mandalAdminProfileRoutes from './routes/mandal_admin/mandalRoutes';
 import mandalAdminEventRoutes from './routes/mandal_admin/eventRoutes';
 import mandalAdminDonationRoutes from './routes/mandal_admin/donationRoutes';
 import mandalAdminFinanceRoutes from './routes/mandal_admin/financeRoutes';
+import mandalAdminStaffManagementRoutes from './routes/mandal_admin/staffManagementRoutes';
 
 
 const app = express();
@@ -117,6 +120,7 @@ app.use('/api/temple-admin/bank', templeAdminBankRoutes);
 app.use('/api/temple-admin/devotees', templeAdminDevoteeRoutes);
 app.use('/api/temple-admin/team', templeAdminStaffManagementRoutes);
 app.use("/api/temple-admin/donations", templeDonationRoutes);
+app.use('/api/temple-admin/photography', templeAdminPhotoRoutes);
 // (Donations are mostly public/temple managed)
 app.use('/api/pooja-categories', poojaCategoryRoutes);
 app.use('/api/seller/products', sellerProductRoutes);
@@ -130,6 +134,7 @@ app.use('/api/mandal-admin/profile', mandalAdminProfileRoutes);
 app.use('/api/mandal-admin/events', mandalAdminEventRoutes);
 app.use('/api/mandal-admin/donations', mandalAdminDonationRoutes);
 app.use('/api/mandal-admin/finance', mandalAdminFinanceRoutes);
+app.use('/api/mandal-admin/team', mandalAdminStaffManagementRoutes);
 
 // Devotee Auth Routes
 app.use('/api/auth', authRoutes);
@@ -144,6 +149,7 @@ app.use('/api/donations', donationRoutes);
 
 // General Routes (Temporary)
 app.use('/api/temples', templeRoutes);
+app.use('/api/temples/photography', publicPhotoRoutes);
 app.use('/api/search', publicSearchRoutes);
 app.use('/api/leads', leadRoutes);
 

@@ -54,11 +54,10 @@ const sidebarItems = [
     {
         label: "Donation",
         icon: Heart,
-        href: "/mandals/dashboard/donation"   ,
+        href: "/mandals/dashboard/donation",
         permission: "donations.menu",
         subItems: [
           { label: "💳 Online Donations", href: "/mandals/dashboard/donation?type=online", permission: "donations.menu" },
-          { label: "📝 Offline Donations", href: "/mandals/dashboard/donation?type=offline", permission: "donations.menu" },
         ]
     },
     {
@@ -68,16 +67,20 @@ const sidebarItems = [
         permission: "users.view"
     },
     {
+        label: "Team Management",
+        icon: ShieldCheck,
+        href: "/mandals/dashboard/team/staff",
+        permission: "team.menu",
+        subItems: [
+            { label: "👥 Staff Members", href: "/mandals/dashboard/team/staff", permission: "team.staff.view" },
+            { label: "🛡️ Roles & Permissions", href: "/mandals/dashboard/team/roles", permission: "team.roles.manage" },
+        ]
+    },
+    {
         label: "Earnings & Settlement",
         icon: CreditCard,
         href: "/mandals/dashboard/finance",
         permission: "finance.menu"
-    },
-    {
-        label: "Bank Details",
-        icon: Building2,
-        href: "/mandals/dashboard/bank",
-        permission: "mandal.bank.manage"
     },
     {
         label: "Profile",
