@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { prisma } from '../../lib/prisma';
 import razorpay from '../../lib/razorpay';
-import { getEnglish } from '../../utils/localization';
+import { getEnglish, getLang, localize } from '../../utils/localization';
 import { generatePhotoDisplayId } from '../../utils/idGenerator';
 
 const PLATFORM_FEE = 25; // Fixed fee: ₹25 as specified (User Pays: Package Price + Platform Fee)
@@ -128,6 +128,20 @@ export const getSlotAvailability = async (req: Request, res: Response) => {
         });
 
         res.json({ success: true, data: result });
+    } catch (error: any) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+export const getPublicPackages = async (req: Request, res: Response) => {
+    try {
+        const templeId = String(req.params.templeId || '');
+        const packages = await prisma.photographyPackage.findMany({
+            where: { templeId, isActive: true },
+            orderBy: { createdAt: 'desc' }
+        });
+        const lang = getLang(req);
+        res.json({ success: true, data: localize(packages, lang) });
     } catch (error: any) {
         res.status(500).json({ success: false, message: error.message });
     }

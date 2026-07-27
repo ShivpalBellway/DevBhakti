@@ -25,13 +25,16 @@ import {
     AlertCircle,
     Sparkles,
     Users,
-    IndianRupee
+    IndianRupee,
+    Camera,
+    QrCode
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { BASE_URL } from "@/config/apiConfig";
 import { useLanguage } from "@/context/LanguageContext";
+import QRCode from "qrcode";
 
 export default function MyBookingsPage() {
     const [bookings, setBookings] = useState<any[]>([]);
@@ -48,6 +51,9 @@ export default function MyBookingsPage() {
     const [isTrackingLoading, setIsTrackingLoading] = useState(false);
     const [manualAwb, setManualAwb] = useState("");
     const [isManualTracking, setIsManualTracking] = useState(false);
+
+    const [selectedPassBooking, setSelectedPassBooking] = useState<any | null>(null);
+    const [passQrUrl, setPassQrUrl] = useState<string>("");
 
     const handleViewTracking = async (booking: any) => {
         setIsTrackingModalOpen(true);
@@ -285,6 +291,25 @@ export default function MyBookingsPage() {
                                                 </div>
                                             </div>
                                             <div className="flex items-center gap-2">
+                                                {booking.type === 'PHOTOGRAPHY' && (
+                                                    <Button
+                                                        onClick={async (e) => {
+                                                            e.stopPropagation();
+                                                            setSelectedPassBooking(booking);
+                                                            try {
+                                                                const qrUrl = `${window.location.origin}/temples/dashboard/verify-photo-ticket/${booking.id}`;
+                                                                const dataUrl = await QRCode.toDataURL(qrUrl, { margin: 1, width: 220 });
+                                                                setPassQrUrl(dataUrl);
+                                                            } catch (err) {
+                                                                console.error(err);
+                                                            }
+                                                        }}
+                                                        className="bg-[#7c4624] hover:bg-[#5c3a21] text-white rounded-full px-4 h-9 text-xs font-bold transition-all flex items-center gap-1.5"
+                                                    >
+                                                        <Camera className="w-3.5 h-3.5" />
+                                                        View Pass & QR
+                                                    </Button>
+                                                )}
                                                 <Button
                                                     onClick={(e) => {
                                                         e.stopPropagation();
@@ -765,6 +790,53 @@ export default function MyBookingsPage() {
                             <span className="text-3xl">📦</span>
                             <p className="text-sm font-bold text-slate-700">No active shipment updates yet.</p>
                             <p className="text-xs text-slate-400 max-w-[250px]">Once the courier service updates the status, logs will appear here.</p>
+                        </div>
+                    )}
+                </DialogContent>
+            </Dialog>
+
+            {/* QR Pass Dialog Modal */}
+            <Dialog open={!!selectedPassBooking} onOpenChange={(open) => !open && setSelectedPassBooking(null)}>
+                <DialogContent className="max-w-xs w-[90vw] p-6 text-center rounded-3xl bg-white space-y-4">
+                    <DialogHeader>
+                        <DialogTitle className="text-lg font-serif font-bold text-[#5c3a21] text-center">
+                            📸 Photography Pass
+                        </DialogTitle>
+                    </DialogHeader>
+
+                    {selectedPassBooking && (
+                        <div className="space-y-4">
+                            <div className="bg-gradient-to-b from-[#7c4624] to-[#5c3a21] text-white p-3 rounded-2xl">
+                                <p className="text-[10px] uppercase tracking-wider font-semibold opacity-80">Pass ID</p>
+                                <p className="text-lg font-mono font-black">{selectedPassBooking.displayId || `#${selectedPassBooking.id.slice(-6).toUpperCase()}`}</p>
+                            </div>
+
+                            <div className="bg-[#f8f4f1] p-4 rounded-2xl flex justify-center border border-orange-100">
+                                {passQrUrl ? (
+                                    <img src={passQrUrl} alt="QR Code Pass" className="h-44 w-44 object-contain" />
+                                ) : (
+                                    <div className="h-44 w-44 bg-white border border-[#7c4624] rounded-xl flex items-center justify-center">
+                                        <Camera className="h-10 w-10 text-[#7c4624]" />
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="text-left text-xs space-y-1.5 bg-orange-50/60 p-3 rounded-2xl border border-orange-100 text-slate-800">
+                                <p><span className="font-bold text-[#5c3a21]">Temple:</span> {selectedPassBooking.temple?.name || "N/A"}</p>
+                                <p><span className="font-bold text-[#5c3a21]">Package:</span> {selectedPassBooking.packageName || selectedPassBooking.package?.name}</p>
+                                <p><span className="font-bold text-[#5c3a21]">Date:</span> {selectedPassBooking.bookingDate}</p>
+                                <p><span className="font-bold text-[#5c3a21]">Time Slot:</span> {selectedPassBooking.timeSlot || selectedPassBooking.slot?.slotName || "N/A"}</p>
+                                <p><span className="font-bold text-[#5c3a21]">Area:</span> {selectedPassBooking.selectedArea || "Allowed Areas"}</p>
+                            </div>
+
+                            <Button
+                                onClick={() => handleDownloadReceipt(selectedPassBooking)}
+                                disabled={downloadingId === selectedPassBooking.id}
+                                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs h-10 rounded-xl flex items-center justify-center gap-2"
+                            >
+                                <Download className="w-4 h-4" />
+                                Download Pass PDF
+                            </Button>
                         </div>
                     )}
                 </DialogContent>

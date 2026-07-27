@@ -233,6 +233,23 @@ export const verifyPayment = async (req: Request, res: Response) => {
             } catch (pNotifyErr) {
                 console.error("Failed to send push notification:", pNotifyErr);
             }
+
+            // Return booking details for frontend success screen
+            return res.status(200).json({ 
+                success: true, 
+                message: "Payment verified successfully",
+                data: {
+                    bookingId: updatedBooking.id,
+                    displayId: updatedBooking.displayId,
+                    packageName: getEnglish(updatedBooking.package.name),
+                    bookingDate: updatedBooking.bookingDate,
+                    timeSlot: updatedBooking.timeSlot,
+                    totalAmount: updatedBooking.totalAmount,
+                    packagePrice: updatedBooking.packagePrice,
+                    platformFee: updatedBooking.platformFee,
+                    status: "BOOKED"
+                }
+            });
         } else if (orderType === "DONATION") {
             await prisma.donation.update({
                 where: { id: referenceId },

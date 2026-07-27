@@ -362,40 +362,64 @@ export const getMyBookings = async (req: Request, res: Response) => {
 
         const { userId } = (req as any).user;
 
-
-
-        const bookings = await prisma.poojaBooking.findMany({
-
+        // Fetch Pooja Bookings
+        const poojaBookings = await prisma.poojaBooking.findMany({
             where: { 
                 userId,
                 status: { not: 'PENDING' }
             },
-
             include: {
-
                 pooja: true,
-
                 temple: true
-
             },
-
             orderBy: {
-
                 createdAt: 'desc'
-
             }
-
         });
 
+        // Fetch Photography Bookings
+        const photoBookings = await prisma.photographyBooking.findMany({
+            where: {
+                userId,
+                status: { not: 'PENDING' }
+            },
+            include: {
+                temple: true,
+                package: true,
+                slot: true,
+                user: true
+            },
+            orderBy: {
+                createdAt: 'desc'
+            }
+        });
 
+        // Combine and format all bookings
+        const allBookings = [
+            ...poojaBookings.map(b => ({ ...b, type: 'POOJA' })),
+            ...photoBookings.map(b => ({ 
+                ...b, 
+                type: 'PHOTOGRAPHY',
+                devoteeName: b.user?.name || 'Devotee',
+                devoteePhone: b.user?.phone || '',
+                devoteeEmail: b.user?.email || '',
+                pooja: {
+                    name: `Photography (${getEnglish(b.package?.name) || 'Pass'})`,
+                    image: b.temple?.image || ''
+                },
+                packageName: getEnglish(b.package?.name),
+                packagePrice: b.packagePrice,
+                platformFee: b.platformFee,
+                totalAmount: b.totalAmount,
+                bookingDate: b.bookingDate,
+                timeSlot: b.slot?.slotName || b.timeSlot
+            }))
+        ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
         const lang = getLang(req);
         res.json({
-
             success: true,
-
-            data: localize(bookings, lang)
-
+            data: localize(allBookings, lang)
         });
 
     } catch (error) {
@@ -704,34 +728,53 @@ export const getBookingReceipt = async (req: Request, res: Response) => {
 
         const { userId } = (req as any).user;
 
-
-
-        const booking = await prisma.poojaBooking.findFirst({
-
+        // Check if it's a pooja booking first
+        let booking = await prisma.poojaBooking.findFirst({
             where: { id, userId },
-
             include: {
-
                 pooja: true,
-
                 temple: true
-
             }
-
         });
 
+        let isPhotography = false;
 
-
+        // If not a pooja booking, check if it's a photography booking
         if (!booking) {
+            const photoBooking = await prisma.photographyBooking.findFirst({
+                where: { id, userId },
+                include: {
+                    package: true,
+                    temple: true,
+                    user: true
+                }
+            });
+            
+            if (!photoBooking) {
+                return res.status(404).json({ success: false, message: 'Booking not found or access denied' });
+            }
 
-            return res.status(404).json({ success: false, message: 'Booking not found or access denied' });
-
+            // Convert photography booking to compatible format
+            booking = {
+                ...photoBooking,
+                pooja: null,
+                devoteeName: photoBooking.user?.name || '',
+                devoteePhone: photoBooking.user?.phone || '',
+                devoteeEmail: photoBooking.user?.email || '',
+                displayId: photoBooking.displayId,
+                packageName: getEnglish(photoBooking.package.name),
+                packagePrice: photoBooking.packagePrice,
+                platformFee: photoBooking.platformFee,
+                totalAmount: photoBooking.totalAmount,
+                bookingDate: photoBooking.bookingDate
+            } as any;
+            isPhotography = true;
         }
 
 
 
         const doc = new PDFDocument({ margin: 50, size: 'A4' });
-        const filename = `receipt-${booking.displayId || booking.id.slice(-6)}.pdf`;
+        const filename = `receipt-${booking!.displayId || booking!.id.slice(-6)}.pdf`;
 
 
 
@@ -782,7 +825,7 @@ export const getBookingReceipt = async (req: Request, res: Response) => {
         // Receipt Info (Top Right)
 
         doc.fillColor(textColor).fontSize(10).font('Helvetica-Bold').text('BOOKING RECEIPT', 400, 55, { align: 'right' });
-        doc.font('Helvetica').fontSize(9).text(`No: #${booking.displayId || booking.id.slice(0, 8).toUpperCase()}`, 400, 70, { align: 'right' });
+        doc.font('Helvetica').fontSize(9).text(`No: #${booking!.displayId || booking!.id.slice(0, 8).toUpperCase()}`, 400, 70, { align: 'right' });
 
         doc.text(`Date: ${new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}`, 400, 82, { align: 'right' });
 
@@ -808,11 +851,11 @@ export const getBookingReceipt = async (req: Request, res: Response) => {
 
         doc.moveDown(0.5);
 
-        doc.fillColor(textColor).font('Helvetica-Bold').fontSize(12).text(booking.devoteeName);
+        doc.fillColor(textColor).font('Helvetica-Bold').fontSize(12).text(booking!.devoteeName);
 
-        doc.font('Helvetica').fontSize(10).text(`Phone: ${booking.devoteePhone}`);
+        doc.font('Helvetica').fontSize(10).text(`Phone: ${booking!.devoteePhone}`);
 
-        if (booking.devoteeEmail) doc.text(`Email: ${booking.devoteeEmail}`);
+        if (booking!.devoteeEmail) doc.text(`Email: ${booking!.devoteeEmail}`);
 
 
 
@@ -824,15 +867,15 @@ export const getBookingReceipt = async (req: Request, res: Response) => {
 
         doc.fillColor(textColor).font('Helvetica').fontSize(9);
 
-        if (booking.gothra) doc.text(`Gothra: ${booking.gothra}`);
+        if (booking!.gothra) doc.text(`Gothra: ${booking!.gothra}`);
 
-        if (booking.kuldevi) doc.text(`Kuldevi: ${booking.kuldevi}`);
+        if (booking!.kuldevi) doc.text(`Kuldevi: ${booking!.kuldevi}`);
 
-        if (booking.kuldevta) doc.text(`Kuldevta: ${booking.kuldevta}`);
+        if (booking!.kuldevta) doc.text(`Kuldevta: ${booking!.kuldevta}`);
 
-        if (booking.dob) doc.text(`DOB: ${booking.dob}`);
+        if (booking!.dob) doc.text(`DOB: ${booking!.dob}`);
 
-        if (booking.nativePlace) doc.text(`Native Place: ${booking.nativePlace}`);
+        if (booking!.nativePlace) doc.text(`Native Place: ${booking!.nativePlace}`);
 
 
 
@@ -884,13 +927,13 @@ export const getBookingReceipt = async (req: Request, res: Response) => {
 
         doc.font('Helvetica').fontSize(9).text(`Temple: ${getEnglish((booking as any).temple?.name) || 'N/A'}`, 60, doc.y + 2);
 
-        doc.text(`Package: ${booking.packageName}`, 60, doc.y + 2);
+        doc.text(`Package: ${booking!.packageName}`, 60, doc.y + 2);
 
-        doc.text(`Scheduled Date: ${new Date(booking.bookingDate as any).toLocaleDateString()}`, 60, doc.y + 2);
+        doc.text(`Scheduled Date: ${new Date(booking!.bookingDate as any).toLocaleDateString()}`, 60, doc.y + 2);
 
 
 
-        doc.font('Helvetica-Bold').fontSize(11).text(`Rs. ${booking.packagePrice}`, 400, tableY, { align: 'right', width: 140 });
+        doc.font('Helvetica-Bold').fontSize(11).text(`Rs. ${booking!.packagePrice}`, 400, tableY, { align: 'right', width: 140 });
 
 
 
@@ -905,17 +948,17 @@ export const getBookingReceipt = async (req: Request, res: Response) => {
         // --- Summary Section ---
         const summaryY = doc.y;
         doc.fillColor(textColor).font('Helvetica').fontSize(10).text('Subtotal:', 350, summaryY);
-        doc.font('Helvetica-Bold').text(`Rs. ${booking.packagePrice}`, 400, summaryY, { align: 'right', width: 140 });
+        doc.font('Helvetica-Bold').text(`Rs. ${booking!.packagePrice}`, 400, summaryY, { align: 'right', width: 140 });
 
         doc.moveDown(1);
         const feeY = doc.y;
         doc.fillColor(textColor).font('Helvetica').fontSize(10).text('Platform Fee:', 350, feeY);
-        doc.font('Helvetica-Bold').text(`Rs. ${booking.platformFee || 0}`, 400, feeY, { align: 'right', width: 140 });
+        doc.font('Helvetica-Bold').text(`Rs. ${booking!.platformFee || 0}`, 400, feeY, { align: 'right', width: 140 });
 
         doc.moveDown(1.5);
         const totalY = doc.y;
         doc.font('Helvetica-Bold').fontSize(13).text('Total Amount Paid:', 280, totalY);
-        doc.fillColor(primaryColor).text(`Rs. ${booking.packagePrice + (booking.platformFee || 0)}`, 400, totalY, { align: 'right', width: 140 });
+        doc.fillColor(primaryColor).text(`Rs. ${booking!.packagePrice + (booking!.platformFee || 0)}`, 400, totalY, { align: 'right', width: 140 });
 
 
 

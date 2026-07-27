@@ -241,7 +241,7 @@ export default function PhotographySettingsPage() {
     }
 
     return (
-        <div className="p-6 max-w-6xl mx-auto space-y-8">
+        <div className="space-y-8">
             {/* Header */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b pb-4">
                 <div>
@@ -446,67 +446,7 @@ export default function PhotographySettingsPage() {
                 </div>
             </div>
 
-            {/* Bookings Overview */}
-            <div className="bg-card border rounded-2xl p-6 shadow-sm space-y-4">
-                <h3 className="text-lg font-semibold flex items-center gap-2">
-                    <QrCode className="w-5 h-5 text-amber-600" />
-                    Recent Photography Bookings
-                </h3>
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left text-xs border-collapse">
-                        <thead>
-                            <tr className="border-b bg-muted/30 text-muted-foreground">
-                                <th className="p-3 font-semibold">Booking Code</th>
-                                <th className="p-3 font-semibold">Devotee</th>
-                                <th className="p-3 font-semibold">Package</th>
-                                <th className="p-3 font-semibold">Area</th>
-                                <th className="p-3 font-semibold">Date & Slot</th>
-                                <th className="p-3 font-semibold">Amount Paid</th>
-                                <th className="p-3 font-semibold">Status</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y">
-                            {bookings.map((b) => (
-                                <tr key={b.id} className="hover:bg-muted/20">
-                                    <td className="p-3 font-mono font-bold text-amber-600">{b.displayId}</td>
-                                    <td className="p-3">
-                                        <div className="font-semibold">{b.userName}</div>
-                                        <div className="text-[10px] text-muted-foreground">{b.userPhone}</div>
-                                    </td>
-                                    <td className="p-3 font-medium">{b.package?.name}</td>
-                                    <td className="p-3 text-muted-foreground">{b.area}</td>
-                                    <td className="p-3">
-                                        <div>{new Date(b.bookingDate).toLocaleDateString()}</div>
-                                        <div className="text-[10px] text-muted-foreground">{b.slotTime}</div>
-                                    </td>
-                                    <td className="p-3 font-bold text-foreground">
-                                        ₹{b.totalAmount}
-                                        <span className="text-[10px] block text-muted-foreground font-normal">
-                                            (T: ₹{b.templeAmount} + P: ₹{b.platformFee})
-                                        </span>
-                                    </td>
-                                    <td className="p-3">
-                                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                                            b.status === "COMPLETED" ? "bg-green-100 text-green-700" :
-                                            b.status === "CONFIRMED" ? "bg-blue-100 text-blue-700" : "bg-amber-100 text-amber-700"
-                                        }`}>
-                                            {b.status}
-                                        </span>
-                                    </td>
-                                </tr>
-                            ))}
-                            {bookings.length === 0 && (
-                                <tr>
-                                    <td colSpan={7} className="p-6 text-center text-muted-foreground">
-                                        No photography bookings recorded yet.
-                                    </td>
-                                </tr>
-                            )}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
+          
             {/* Modal for Creating / Editing Packages */}
             {pkgModalOpen && (
                 <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">

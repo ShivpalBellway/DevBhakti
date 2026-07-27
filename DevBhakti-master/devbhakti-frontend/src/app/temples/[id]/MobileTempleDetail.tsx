@@ -35,7 +35,8 @@ import { Badge } from "@/components/ui/badge";
 
 import { getLiveDarshanUrl } from "@/lib/utils/templeUtils";
 import { extractYouTubeId } from "@/lib/utils/videoUtils";
-import { getLocalized } from "@/utils/localization";
+import { getLocalized, getLocalizedArray } from "@/utils/localization";
+import QRCode from "qrcode";
 import { BASE_URL } from "@/config/apiConfig";
 import { useCart } from "@/context/CartContext";
 import { useToast } from "@/hooks/use-toast";
@@ -80,6 +81,7 @@ export default function MobileTempleDetail({
     // Photography Dialog state
     const [isPhotoDialogOpen, setIsPhotoDialogOpen] = useState(false);
     const [photoStep, setPhotoStep] = useState(1);
+    const [qrCodeUrl, setQrCodeUrl] = useState<string>("");
     
     // Dynamic lists fetched from API
     const [photoPackages, setPhotoPackages] = useState<any[]>([]);
@@ -115,7 +117,7 @@ export default function MobileTempleDetail({
         // Fetch custom photography packages
         const fetchPackages = async () => {
             try {
-                const res = await fetch(`${BASE_URL}/api/temple-admin/photography/packages?lang=${language}`);
+                const res = await fetch(`${BASE_URL}/api/temples/photography/${temple.id}/packages?lang=${language}`);
                 const json = await res.json();
                 if (json.success && json.data) {
                     const activePackages = json.data.filter((p: any) => p.isActive);
@@ -192,6 +194,7 @@ export default function MobileTempleDetail({
         setSelectedPhotoArea("");
         setBookingError("");
         setBookingDetails(null);
+        setQrCodeUrl("");
     };
 
     const handlePhotoSubmit = async () => {
@@ -216,6 +219,11 @@ export default function MobileTempleDetail({
             // Payment Step -> Trigger Backend booking creation & Razorpay Checkout
             try {
                 setBookingError("");
+                
+                // Get logged in user from localStorage
+                const savedUserStr = localStorage.getItem("user");
+                const savedUser = savedUserStr ? JSON.parse(savedUserStr) : null;
+                
                 const bookingRes = await fetch(`${BASE_URL}/api/temples/photography/book`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -225,9 +233,10 @@ export default function MobileTempleDetail({
                         slotId: selectedPhotoSlot.id,
                         selectedArea: selectedPhotoArea,
                         bookingDate: selectedPhotoDate,
-                        devoteeName: "Guest Devotee", // Hardcoded fallback or profile value
-                        devoteePhone: "9999999999",
-                        devoteeEmail: "devotee@devbhakti.in"
+                        userId: savedUser?.id,
+                        devoteeName: savedUser?.name || "Guest Devotee",
+                        devoteePhone: savedUser?.phone || "9999999999",
+                        devoteeEmail: savedUser?.email || "devotee@devbhakti.in"
                     })
                 });
 
@@ -248,41 +257,84 @@ export default function MobileTempleDetail({
                     description: `Pass for ${getLocalized(selectedPackage, 'name', language)}`,
                     order_id: razorpayOrderId,
                     handler: async function (response: any) {
-                        // Confirm payment verification
-                        const verifyRes = await fetch(`${BASE_URL}/api/payments/verify`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                razorpay_order_id: response.razorpay_order_id,
-                                razorpay_payment_id: response.razorpay_payment_id,
-                                razorpay_signature: response.razorpay_signature,
-                                orderType: "PHOTOGRAPHY",
-                                referenceId: bookingId
-                            })
-                        });
-                        const verifyJson = await verifyRes.json();
-                        if (verifyJson.success) {
-                            setBookingDetails({
-                                displayId,
-                                packageName: getLocalized(selectedPackage, 'name', language),
-                                bookingDate: selectedPhotoDate,
-                                timeSlot: selectedPhotoSlot.slotName,
-                                totalAmount: amount,
-                                packagePrice,
-                                platformFee
+                        try {
+                            // Confirm payment verification
+                            const verifyRes = await fetch(`${BASE_URL}/api/payments/verify`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    razorpay_order_id: response.razorpay_order_id,
+                                    razorpay_payment_id: response.razorpay_payment_id,
+                                    razorpay_signature: response.razorpay_signature,
+                                    orderType: "PHOTOGRAPHY",
+                                    referenceId: bookingId
+                                })
                             });
-                            setPhotoStep(6);
-                        } else {
-                            setBookingError("Payment verification failed.");
+                            const verifyJson = await verifyRes.json();
+                            if (verifyJson.success) {
+                                const vData = verifyJson.data || {};
+                                const finalBookingId = vData.bookingId || bookingId;
+                                setBookingDetails({
+                                    bookingId: finalBookingId,
+                                    displayId: vData.displayId || displayId,
+                                    packageName: vData.packageName || getLocalized(selectedPackage, 'name', language),
+                                    bookingDate: vData.bookingDate || selectedPhotoDate,
+                                    timeSlot: vData.timeSlot || selectedPhotoSlot.slotName,
+                                    totalAmount: vData.totalAmount || amount,
+                                    packagePrice: vData.packagePrice || packagePrice,
+                                    platformFee: vData.platformFee || platformFee
+                                });
+                                
+                                try {
+                                    const qrUrl = `${window.location.origin}/temples/dashboard/verify-photo-ticket/${finalBookingId}`;
+                                    const dataUrl = await QRCode.toDataURL(qrUrl, { margin: 1, width: 200 });
+                                    setQrCodeUrl(dataUrl);
+                                } catch (e) {
+                                    console.error("Error generating QR", e);
+                                }
+
+                                setIsPhotoDialogOpen(true);
+                                setPhotoStep(6);
+                                toast({
+                                    title: "Pass Confirmed! 🎉",
+                                    description: "Your photography pass has been generated successfully.",
+                                    variant: "success"
+                                });
+                            } else {
+                                const errMsg = verifyJson.message || "Payment verification failed.";
+                                setBookingError(errMsg);
+                                toast({
+                                    title: "Verification Failed",
+                                    description: errMsg,
+                                    variant: "destructive"
+                                });
+                            }
+                        } catch (err: any) {
+                            console.error("Verification error:", err);
+                            setBookingError(err.message || "Payment verification error.");
+                            toast({
+                                title: "Verification Error",
+                                description: "Could not verify payment. Please contact support.",
+                                variant: "destructive"
+                            });
                         }
                     },
                     prefill: {
-                        name: "Bhakt",
-                        email: "devotee@devbhakti.in",
-                        contact: "9999999999"
+                        name: savedUser?.name || "Guest",
+                        email: savedUser?.email || "devotee@devbhakti.in",
+                        contact: savedUser?.phone || "9999999999"
                     },
                     theme: {
                         color: "#7c4624"
+                    },
+                    modal: {
+                        ondismiss: function () {
+                            toast({
+                                title: "Payment Cancelled",
+                                description: "You closed the payment popup. You can try again whenever ready.",
+                                variant: "default"
+                            });
+                        }
                     }
                 };
 
@@ -500,7 +552,7 @@ export default function MobileTempleDetail({
 
                         {/* Photography */}
                         {temple.photographyEnabled && (
-                            <button onClick={() => { setPhotoStep(1); setIsPhotoDialogOpen(true); }} className="flex flex-col items-center p-2 rounded-2xl hover:bg-orange-50/50 active:scale-95 transition-all text-center">
+                            <button onClick={() => router.push(`/temples/${temple.id}/photography`)} className="flex flex-col items-center p-2 rounded-2xl hover:bg-orange-50/50 active:scale-95 transition-all text-center">
                                 <div className="h-14 w-14 bg-amber-100/60 rounded-2xl flex items-center justify-center mb-2 text-amber-700 shadow-sm">
                                     <Camera className="h-7 w-7" />
                                 </div>
@@ -1171,8 +1223,17 @@ export default function MobileTempleDetail({
             {/* ═══════════════════════════════════════
                 Photography Permission Booking Dialog
             ═══════════════════════════════════════ */}
-            <Dialog open={isPhotoDialogOpen} onOpenChange={(open) => !open && resetPhotoFlow()}>
-                <DialogContent className="max-w-md w-[92vw] p-0 border-none bg-white overflow-hidden rounded-3xl shadow-2xl">
+            <Dialog open={isPhotoDialogOpen} onOpenChange={(open) => {
+                if (!open) {
+                    if (photoStep === 5) return;
+                    resetPhotoFlow();
+                }
+            }}>
+                <DialogContent 
+                    onPointerDownOutside={(e) => e.preventDefault()}
+                    onInteractOutside={(e) => e.preventDefault()}
+                    className="max-w-md w-[92vw] p-0 border-none bg-white overflow-hidden rounded-3xl shadow-2xl"
+                >
                     <DialogTitle className="sr-only">Photography Permission</DialogTitle>
 
                     {/* Header */}
@@ -1287,8 +1348,12 @@ export default function MobileTempleDetail({
                             <div className="space-y-4">
                                 <h4 className="text-xs font-black uppercase tracking-wider text-muted-foreground">Rules & Info</h4>
                                 <div className="bg-orange-50/50 p-5 rounded-2xl space-y-3 text-sm text-[#5c3a21]/90 leading-relaxed border border-orange-100">
-                                    {temple.photographyRules ? (
-                                        <div className="whitespace-pre-line text-xs">{getLocalized(temple, 'photographyRules', language)}</div>
+                                    {getLocalizedArray(temple, 'photographyRules', language).length > 0 ? (
+                                        <ul className="list-disc pl-4 space-y-2 text-xs">
+                                            {getLocalizedArray(temple, 'photographyRules', language).map((rule, idx) => (
+                                                <li key={idx} className="whitespace-pre-line">{rule}</li>
+                                            ))}
+                                        </ul>
                                     ) : (
                                         <>
                                             <div className="flex gap-2"><Camera className="h-5 w-5 text-[#7c4624] shrink-0 mt-0.5" /><span>Photography only in allowed areas. Sanctum strictly restricted.</span></div>
@@ -1327,25 +1392,104 @@ export default function MobileTempleDetail({
                         )}
 
                         {photoStep === 6 && bookingDetails && (
-                            <div className="text-center py-4 space-y-4">
+                            <div className="text-center py-6 space-y-5">
                                 <div className="h-20 w-20 bg-green-50 text-green-600 rounded-full flex items-center justify-center mx-auto shadow-sm">
                                     <CheckCircle className="h-12 w-12" />
                                 </div>
                                 <div>
-                                    <h3 className="font-serif font-bold text-2xl text-[#5c3a21]">Permission Granted!</h3>
-                                    <p className="text-sm text-muted-foreground mt-1">Your photography permission has been booked successfully.</p>
+                                    <h3 className="font-serif font-bold text-2xl text-[#5c3a21]">🎉 Pass Confirmed!</h3>
+                                    <p className="text-sm text-muted-foreground mt-1">Your photography pass is ready. Show it at temple entry.</p>
                                 </div>
-                                <div className="bg-orange-50/40 p-5 rounded-2xl border border-orange-50 text-left max-w-xs mx-auto text-sm space-y-1.5">
-                                    <p><span className="font-bold">Ticket ID:</span> <span className="text-emerald-700 font-mono font-bold">{bookingDetails.displayId}</span></p>
-                                    <p><span className="font-bold">Type:</span> <span className="text-muted-foreground">{bookingDetails.packageName}</span></p>
-                                    <p><span className="font-bold">Date:</span> <span className="text-muted-foreground">{bookingDetails.bookingDate}</span></p>
-                                    <p><span className="font-bold">Slot:</span> <span className="text-muted-foreground">{bookingDetails.timeSlot}</span></p>
-                                    <p><span className="font-bold">Zone Area:</span> <span className="text-muted-foreground font-semibold">{selectedPhotoArea}</span></p>
-                                    <p className="pt-1.5 border-t border-orange-100 flex justify-between"><span className="font-bold">Amount:</span> <span className="text-[#7c4624] font-black">₹{bookingDetails.totalAmount}</span></p>
+                                
+                                {/* QR Pass Card */}
+                                <div className="bg-white p-4 rounded-2xl border-2 border-[#7c4624] shadow-md max-w-xs mx-auto">
+                                    <div className="bg-gradient-to-b from-[#7c4624] to-[#5c3a21] text-white p-3 rounded-lg mb-3">
+                                        <p className="text-xs font-semibold">Photography Pass</p>
+                                        <p className="text-lg font-mono font-black">{bookingDetails.displayId}</p>
+                                    </div>
+                                    <div className="bg-[#f8f4f1] p-3 rounded-lg mb-3 flex justify-center">
+                                        {qrCodeUrl ? (
+                                            <img src={qrCodeUrl} alt="QR Code" className="h-32 w-32 object-contain" />
+                                        ) : (
+                                            <div className="h-32 w-32 bg-white border-2 border-[#7c4624] rounded flex items-center justify-center">
+                                                <Camera className="h-8 w-8 text-[#7c4624]" />
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div className="text-left text-xs space-y-1 bg-orange-50 p-2 rounded">
+                                        <p><span className="font-bold text-[#5c3a21]">Package:</span> {bookingDetails.packageName}</p>
+                                        <p><span className="font-bold text-[#5c3a21]">Date:</span> {bookingDetails.bookingDate}</p>
+                                        <p><span className="font-bold text-[#5c3a21]">Slot:</span> {bookingDetails.timeSlot}</p>
+                                        <p><span className="font-bold text-[#5c3a21]">Area:</span> {selectedPhotoArea}</p>
+                                    </div>
                                 </div>
+                                
+                                {/* Booking Details */}
+                                <div className="bg-orange-50/40 p-4 rounded-2xl border border-orange-100 text-left max-w-xs mx-auto text-sm space-y-2">
+                                    <div className="flex justify-between py-1 border-b border-orange-100">
+                                        <span className="font-bold">Package Price:</span>
+                                        <span className="text-muted-foreground">₹{bookingDetails.packagePrice}</span>
+                                    </div>
+                                    <div className="flex justify-between py-1 border-b border-orange-100">
+                                        <span className="font-bold">Platform Fee:</span>
+                                        <span className="text-muted-foreground">₹{bookingDetails.platformFee}</span>
+                                    </div>
+                                    <div className="flex justify-between py-2">
+                                        <span className="font-bold">Total Amount:</span>
+                                        <span className="text-[#7c4624] font-black text-lg">₹{bookingDetails.totalAmount}</span>
+                                    </div>
+                                </div>
+                                
+                                {/* Action Buttons */}
                                 <div className="pt-2 space-y-2 max-w-xs mx-auto">
-                                    <Button onClick={resetPhotoFlow} className="w-full h-12 bg-[#7c4624] hover:bg-[#5c3a21] text-white text-sm font-bold rounded-xl">
-                                        Close
+                                    <Button 
+                                        onClick={() => {
+                                            // Download receipt
+                                            const token = localStorage.getItem("token");
+                                            if (token && bookingDetails.bookingId) {
+                                                toast({ title: "Downloading...", description: "Preparing your receipt." });
+                                                fetch(`${BASE_URL}/api/bookings/${bookingDetails.bookingId}/receipt`, {
+                                                    headers: { 'Authorization': `Bearer ${token}` }
+                                                })
+                                                .then(res => res.blob())
+                                                .then(blob => {
+                                                    const url = window.URL.createObjectURL(blob);
+                                                    const link = document.createElement('a');
+                                                    link.href = url;
+                                                    link.download = `Photography-Pass-${bookingDetails.displayId}.pdf`;
+                                                    document.body.appendChild(link);
+                                                    link.click();
+                                                    link.remove();
+                                                    window.URL.revokeObjectURL(url);
+                                                    toast({ title: "Receipt Downloaded", description: "Your pass has been downloaded successfully." });
+                                                })
+                                                .catch(err => {
+                                                    console.error(err);
+                                                    toast({ title: "Download Failed", description: "Failed to download receipt.", variant: "destructive" });
+                                                });
+                                            }
+                                        }}
+                                        className="w-full h-11 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold rounded-xl flex items-center justify-center gap-2"
+                                    >
+                                        <Download className="h-4 w-4" />
+                                        Download Pass
+                                    </Button>
+                                    <Button 
+                                        onClick={() => {
+                                            setPhotoStep(1);
+                                            setIsPhotoDialogOpen(false);
+                                            router.push(`/profile/bookings`);
+                                        }}
+                                        className="w-full h-11 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-xl"
+                                    >
+                                        View in Profile
+                                    </Button>
+                                    <Button 
+                                        onClick={resetPhotoFlow}
+                                        variant="outline"
+                                        className="w-full h-11 text-[#7c4624] border-[#7c4624] text-sm font-bold rounded-xl"
+                                    >
+                                        Done
                                     </Button>
                                 </div>
                             </div>

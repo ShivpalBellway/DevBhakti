@@ -15,6 +15,7 @@ import {
     Search,
     Church,
     Flame,
+    Users,
     ShoppingBag,
     ShoppingCart
 } from "lucide-react";
@@ -60,19 +61,21 @@ const FavoritesPage: React.FC = () => {
         }
     };
 
-    const handleRemove = async (e: React.MouseEvent, type: 'temple' | 'pooja' | 'product', id: string) => {
+    const handleRemove = async (e: React.MouseEvent, type: 'temple' | 'pooja' | 'product' | 'mandal', id: string) => {
         e.preventDefault();
         e.stopPropagation();
 
         try {
             const data = type === 'temple' ? { templeId: id } : 
                          type === 'pooja' ? { poojaId: id } : 
+                         type === 'mandal' ? { mandalId: id } : 
                          { productId: id };
             const res = await removeFavorite(data);
             if (res.success) {
                 setFavorites(favorites.filter(f =>
                     type === 'temple' ? f.templeId !== id : 
                     type === 'pooja' ? f.poojaId !== id : 
+                    type === 'mandal' ? f.mandalId !== id : 
                     f.productId !== id
                 ));
                 toast({ title: t("favorites.removed_title") });
@@ -113,6 +116,7 @@ const FavoritesPage: React.FC = () => {
     const favoriteTemples = favorites.filter(f => f.temple).map(f => f.temple);
     const favoritePoojas = favorites.filter(f => f.pooja).map(f => f.pooja);
     const favoriteProducts = favorites.filter(f => f.product).map(f => f.product);
+    const favoriteMandals = favorites.filter(f => f.mandal).map(f => f.mandal);
 
     if (loading) {
         return (
@@ -161,6 +165,11 @@ const FavoritesPage: React.FC = () => {
                                 <span className="text-2xl font-bold text-blue-500">{favoriteProducts.length}</span>
                                 <span className="text-[10px] uppercase font-bold tracking-widest text-zinc-400">{t("favorites.stat_products")}</span>
                             </div>
+                            <div className="w-px h-8 bg-zinc-100" />
+                            <div className="flex flex-col items-center">
+                                <span className="text-2xl font-bold text-amber-600">{favoriteMandals.length}</span>
+                                <span className="text-[10px] uppercase font-bold tracking-widest text-zinc-400">Mandals</span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -183,6 +192,12 @@ const FavoritesPage: React.FC = () => {
                             <div className="flex items-center gap-2">
                                 <ShoppingBag className="w-4 h-4" />
                                 <span>{t("favorites.tab_products")}</span>
+                            </div>
+                        </TabsTrigger>
+                        <TabsTrigger value="mandals" className="rounded-xl px-10 py-3 data-[state=active]:bg-white data-[state=active]:shadow-md data-[state=active]:text-primary transition-all duration-300">
+                            <div className="flex items-center gap-2">
+                                <Heart className="w-4 h-4" />
+                                <span>Mandals</span>
                             </div>
                         </TabsTrigger>
                     </TabsList>
@@ -431,6 +446,80 @@ const FavoritesPage: React.FC = () => {
 
 
 
+                                )}
+                            </AnimatePresence>
+                        </div>
+                    </TabsContent>
+
+                    <TabsContent value="mandals" className="focus-visible:outline-none">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                            <AnimatePresence mode="popLayout">
+                                {favoriteMandals.length > 0 ? (
+                                    favoriteMandals.map((mandal, index) => (
+                                        <motion.div
+                                            key={mandal.id}
+                                            layout
+                                            initial={{ opacity: 0, scale: 0.9 }}
+                                            animate={{ opacity: 1, scale: 1 }}
+                                            exit={{ opacity: 0, scale: 0.8 }}
+                                            transition={{ duration: 0.3 }}
+                                        >
+                                            <div className="group relative bg-white rounded-[2rem] p-3 shadow-sm hover:shadow-xl transition-all duration-500 border border-orange-50/50 h-full flex flex-col">
+                                                <Link href={`/mandals`}>
+                                                    <div className="relative aspect-[4/3] overflow-hidden rounded-[1.5rem] mb-4">
+                                                        <NextImage
+                                                            src={getFullImageUrl(mandal.image)}
+                                                            alt={parseLocalizedValue(mandal.name)}
+                                                            fill
+                                                            className="object-cover group-hover:scale-110 transition-transform duration-700"
+                                                        />
+                                                        <Badge variant="secondary" className="absolute top-3 left-3 bg-white/90 backdrop-blur-md text-zinc-900 border-none text-[10px]">
+                                                            {mandal.mandalType || "Mandal"}
+                                                        </Badge>
+                                                    </div>
+
+                                                    <div className="px-2 pb-3">
+                                                        <h3 className="text-xl font-bold text-zinc-900 mb-1 group-hover:text-primary transition-colors line-clamp-1">
+                                                            {parseLocalizedValue(mandal.name)}
+                                                        </h3>
+                                                        <div className="flex items-center gap-2 text-zinc-500 mb-3">
+                                                            <MapPin className="w-3.5 h-3.5 text-primary" />
+                                                            <span className="text-[11px] font-medium truncate">{mandal.city || "India"}</span>
+                                                        </div>
+                                                        <div className="flex items-center justify-between pt-3 border-t border-zinc-50">
+                                                            <div className="flex items-center gap-1">
+                                                                <Users className="h-3.5 w-3.5 text-amber-500 fill-amber-500" />
+                                                                <span className="font-bold text-zinc-900 text-sm">{mandal.mandalType || "Devotee"}</span>
+                                                            </div>
+                                                            <div className="text-primary font-bold text-[11px] flex items-center gap-1 uppercase tracking-wider">
+                                                                {t("favorites.details")}
+                                                                <ArrowRight className="w-3 h-3" />
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </Link>
+
+                                                <button
+                                                    onClick={(e) => handleRemove(e, 'mandal', mandal.id)}
+                                                    className="absolute top-5 right-5 z-20 p-2 rounded-full bg-red-50 text-red-500 hover:bg-red-500 hover:text-white transition-all duration-300 shadow-md transform hover:scale-110"
+                                                    title="Remove from favorites"
+                                                >
+                                                    <Trash2 className="w-4 h-4" />
+                                                </button>
+                                            </div>
+                                        </motion.div>
+                                    ))
+                                ) : (
+                                    <div className="col-span-full py-20 bg-white/50 rounded-[3rem] border-2 border-dashed border-zinc-200 text-center">
+                                        <div className="w-20 h-20 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                                            <Heart className="w-10 h-10 text-primary-400" />
+                                        </div>
+                                        <h3 className="text-2xl font-bold text-zinc-900 mb-2">No Saved Mandals</h3>
+                                        <p className="text-zinc-500 mb-8">Save mandals to easily track and support them later.</p>
+                                        <Button asChild className="rounded-2xl px-8 h-12">
+                                            <Link href="/mandals">Explore Mandals</Link>
+                                        </Button>
+                                    </div>
                                 )}
                             </AnimatePresence>
                         </div>

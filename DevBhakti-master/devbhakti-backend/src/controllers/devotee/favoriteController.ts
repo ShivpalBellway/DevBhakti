@@ -15,12 +15,12 @@ export const addFavorite = async (req: Request, res: Response) => {
         }
 
         const { userId } = user;
-        const { templeId, poojaId, productId } = req.body;
+        const { templeId, poojaId, productId, mandalId } = req.body;
 
-        if (!templeId && !poojaId && !productId) {
+        if (!templeId && !poojaId && !productId && !mandalId) {
             return res.status(400).json({
                 success: false,
-                message: 'Temple ID, Pooja ID, or Product ID is required'
+                message: 'Temple ID, Pooja ID, Product ID, or Mandal ID is required'
             });
         }
 
@@ -29,7 +29,8 @@ export const addFavorite = async (req: Request, res: Response) => {
                 userId,
                 templeId: templeId || null,
                 poojaId: poojaId || null,
-                productId: productId || null
+                productId: productId || null,
+                mandalId: mandalId || null
             }
         });
 
@@ -67,12 +68,12 @@ export const removeFavorite = async (req: Request, res: Response) => {
         }
 
         const { userId } = user;
-        const { templeId, poojaId, productId } = req.body;
+        const { templeId, poojaId, productId, mandalId } = req.body;
 
-        if (!templeId && !poojaId && !productId) {
+        if (!templeId && !poojaId && !productId && !mandalId) {
             return res.status(400).json({
                 success: false,
-                message: 'Temple ID, Pooja ID, or Product ID is required'
+                message: 'Temple ID, Pooja ID, Product ID, or Mandal ID is required'
             });
         }
 
@@ -87,6 +88,10 @@ export const removeFavorite = async (req: Request, res: Response) => {
         } else if (productId) {
             await prisma.favorite.delete({
                 where: { userId_productId: { userId, productId } }
+            });
+        } else if (mandalId) {
+            await prisma.favorite.delete({
+                where: { userId_mandalId: { userId, mandalId } }
             });
         }
 
@@ -125,6 +130,7 @@ export const getFavorites = async (req: Request, res: Response) => {
             where: { userId },
             include: {
                 temple: true,
+                mandal: true,
                 pooja: {
                     include: {
                         temple: {

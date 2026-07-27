@@ -42,6 +42,7 @@ import { cn } from "@/lib/utils";
 import { useLanguage } from "@/context/LanguageContext";
 import { getLocalized } from "@/utils/localization";
 import { stripHtml } from "@/utils/textUtils";
+import { fetchUserFavorites, addFavorite, removeFavorite } from "@/api/userController";
 
 export function MandalsList() {
   const [searchInput, setSearchInput] = useState("");
@@ -88,16 +89,9 @@ export function MandalsList() {
 
   const loadFavorites = async () => {
     try {
-      const token = localStorage.getItem("token");
-      if (!token) return;
-      const response = await fetch(`${API_URL}/user/favorites`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      const data = await response.json();
-      if (data.success) {
-        setFavorites(data.data || []);
+      const res = await fetchUserFavorites();
+      if (res.success) {
+        setFavorites(res.data || []);
       }
     } catch (error) {
       console.error("Error loading favorites:", error);
@@ -163,37 +157,25 @@ export function MandalsList() {
 
     const isFav = favorites.some((f) => f.mandalId === mandalId);
     try {
-      const token = localStorage.getItem("token");
-      const url = `${API_URL}/user/favorites`;
-      const method = isFav ? "DELETE" : "POST";
-      const response = await fetch(url, {
-        method,
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ mandalId }),
-      });
-      const data = await response.json();
-      if (data.success) {
-        if (isFav) {
-          setFavorites(favorites.filter((f) => f.mandalId !== mandalId));
-          toast({
-            title: "Removed from Favorites",
-            description: "Mandal removed from your favorites.",
-          });
-        } else {
-          setFavorites([...favorites, { mandalId }]);
-          toast({
-            title: "❤️ Added to Favorites",
-            description: "Mandal added to your favorites!",
-          });
-        }
+      if (isFav) {
+        await removeFavorite({ mandalId });
+        setFavorites(favorites.filter((f) => f.mandalId !== mandalId));
+        toast({
+          title: "Removed from Favorites",
+          description: "Mandal removed from your favorites.",
+        });
+      } else {
+        await addFavorite({ mandalId });
+        setFavorites([...favorites, { mandalId }]);
+        toast({
+          title: "❤️ Added to Favorites",
+          description: "Mandal added to your favorites!",
+        });
       }
     } catch (error: any) {
       toast({
         title: "Error",
-        description: error.message || "Failed to update favorites",
+        description: error.response?.data?.message || error.message || "Failed to update favorites",
         variant: "destructive",
       });
     }

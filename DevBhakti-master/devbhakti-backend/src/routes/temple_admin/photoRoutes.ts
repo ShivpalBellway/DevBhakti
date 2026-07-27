@@ -11,7 +11,8 @@ import {
     updateMySlot,
     deleteMySlot,
     getMyBookings,
-    verifyPhotographyTicket
+    verifyPhotographyTicket,
+    deleteMyBooking
 } from '../../controllers/temple_admin/photoController';
 import { authenticate, injectTempleContext, checkPermission } from '../../middleware/authMiddleware';
 
@@ -40,5 +41,6 @@ router.delete('/slots/:id', deleteMySlot);
 // Bookings
 router.get('/bookings', getMyBookings);
 router.post('/verify-ticket', verifyPhotographyTicket);
+router.delete('/bookings/:id', deleteMyBooking);
 
 export default router;

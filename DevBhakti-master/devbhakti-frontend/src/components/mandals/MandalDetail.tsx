@@ -905,7 +905,7 @@ razorpay.open();
 
       {/* ========== DONATION MODAL ========== */}
       <Dialog open={showDonateModal} onOpenChange={setShowDonateModal}>
-        <DialogContent className="max-w-md rounded-3xl p-6 border border-amber-900/10 shadow-2xl bg-gradient-to-b from-[#FFFDF9] to-[#FFF9F2]">
+        <DialogContent className="w-[95vw] sm:max-w-md max-h-[92vh] overflow-y-auto rounded-3xl p-5 sm:p-6 border border-amber-900/10 shadow-2xl bg-gradient-to-b from-[#FFFDF9] to-[#FFF9F2]">
           <DialogHeader className="text-center pb-2 border-b border-amber-900/10">
             <div className="w-14 h-14 rounded-full bg-gradient-to-br from-[#7b4623] to-amber-700 text-white flex items-center justify-center mx-auto mb-2 shadow-md shadow-[#7b4623]/20">
               <Gift className="w-7 h-7" />

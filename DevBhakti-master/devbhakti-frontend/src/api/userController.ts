@@ -28,7 +28,7 @@ export const fetchUserFavorites = async () => {
     }
 };
 
-export const addFavorite = async (data: { templeId?: string; poojaId?: string; productId?: string }) => {
+export const addFavorite = async (data: { templeId?: string; poojaId?: string; productId?: string; mandalId?: string }) => {
     const token = localStorage.getItem("token");
     if (!token) {
         throw { response: { status: 401, data: { message: "You need to login as a devotee to add favourites." } } };
@@ -39,7 +39,7 @@ export const addFavorite = async (data: { templeId?: string; poojaId?: string; p
     return response.data;
 };
 
-export const removeFavorite = async (data: { templeId?: string; poojaId?: string; productId?: string }) => {
+export const removeFavorite = async (data: { templeId?: string; poojaId?: string; productId?: string; mandalId?: string }) => {
     const token = localStorage.getItem("token");
     if (!token) {
         throw { response: { status: 401, data: { message: "You need to login as a devotee to remove favourites." } } };

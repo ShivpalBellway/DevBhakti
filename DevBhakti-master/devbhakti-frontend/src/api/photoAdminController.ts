@@ -75,3 +75,10 @@ export const verifyPhotoTicket = async (data: { bookingId?: string; displayId?: 
     });
     return response.data;
 };
+
+export const deletePhotoBooking = async (id: string) => {
+    const response = await axios.delete(`${API_URL}/temple-admin/photography/bookings/${id}`, {
+        headers: getAuthHeaders()
+    });
+    return response.data;
+};

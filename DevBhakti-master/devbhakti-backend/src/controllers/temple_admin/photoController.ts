@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { prisma } from '../../lib/prisma';
 import { buildLangJson, getLang, localize } from '../../utils/localization';
+import { resolvePhotoTicketReference } from './photoVerification';
 
 export const getPhotographySettings = async (req: Request, res: Response) => {
     try {
@@ -197,7 +198,10 @@ export const getMyBookings = async (req: Request, res: Response) => {
     try {
         const templeId = (req as any).owner.ownerId;
         const bookings = await prisma.photographyBooking.findMany({
-            where: { templeId },
+            where: { 
+                templeId,
+                status: { not: 'PENDING' }
+            },
             include: {
                 package: true,
                 slot: true,
@@ -215,10 +219,20 @@ export const getMyBookings = async (req: Request, res: Response) => {
 export const verifyPhotographyTicket = async (req: Request, res: Response) => {
     try {
         const templeId = (req as any).owner.ownerId;
-        const { ticketId } = req.body;
+        const ticketRef = resolvePhotoTicketReference(req.body);
+
+        if (!ticketRef) {
+            return res.status(400).json({ success: false, message: 'Ticket reference is required.' });
+        }
 
         const booking = await prisma.photographyBooking.findFirst({
-            where: { displayId: ticketId, templeId }
+            where: {
+                OR: [
+                    { displayId: ticketRef },
+                    { id: ticketRef }
+                ],
+                templeId
+            }
         });
 
         if (!booking) {
@@ -239,6 +253,30 @@ export const verifyPhotographyTicket = async (req: Request, res: Response) => {
         });
 
         res.json({ success: true, message: 'Ticket verified successfully. Entry Allowed.', data: updated });
+    } catch (error: any) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+// Delete Photography Booking
+export const deleteMyBooking = async (req: Request, res: Response) => {
+    try {
+        const templeId = (req as any).owner.ownerId;
+        const id = String(req.params.id || '');
+
+        const booking = await prisma.photographyBooking.findFirst({
+            where: { id, templeId }
+        });
+
+        if (!booking) {
+            return res.status(404).json({ success: false, message: 'Booking not found.' });
+        }
+
+        await prisma.photographyBooking.delete({
+            where: { id }
+        });
+
+        res.json({ success: true, message: 'Booking deleted successfully.' });
     } catch (error: any) {
         res.status(500).json({ success: false, message: error.message });
     }
