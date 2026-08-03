@@ -23,7 +23,8 @@ import {
     ChevronUp,
     ShieldCheck,
     X,
-    Camera
+    Camera,
+    Ticket
 } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -130,6 +131,17 @@ const sidebarItems = [
         subItems: [
             { label: "Settings & Packages", href: "/temples/dashboard/photography" },
             { label: "Photo Bookings", href: "/temples/dashboard/photography/bookings" },
+        ]
+    },
+    {
+        label: "Darshan Passes",
+        icon: Ticket,
+        href: "/temples/dashboard/darshan",
+        subItems: [
+            { label: "Settings & Overview", href: "/temples/dashboard/darshan" },
+            { label: "Manage Slots", href: "/temples/dashboard/darshan/slots" },
+            { label: "Booked Tickets", href: "/temples/dashboard/darshan/tickets" },
+            { label: "Scan QR at Gate", href: "/temples/dashboard/darshan/scan" },
         ]
     },
     {

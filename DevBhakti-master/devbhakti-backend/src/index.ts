@@ -34,6 +34,8 @@ import paymentRoutes from './routes/paymentRoutes';
 import adminDonationRoutes from "./routes/admin/donationRoutes";
 import templeDonationRoutes from "./routes/temple_admin/templeDonationRoutes";
 import donationRoutes from './routes/devotee/donationRoutes';
+import darshanRoutes from './routes/devotee/darshanRoutes';
+import templeAdminDarshanRoutes from './routes/temple_admin/darshanAdminRoutes';
 import adminMarketingRoutes from './routes/admin/marketingRoutes';
 
 import adminFinanceManagementRoutes from './routes/admin/financeManagementRoutes';
@@ -62,6 +64,7 @@ import './services/firebaseService'; // Initialize Firebase Admin on startup
 
 import adminSettingsRoutes from './routes/admin/globalSettingsRoutes';
 import adminMandalRoutes from './routes/admin/mandalRoutes';
+import adminDarshanRoutes from './routes/admin/darshanSuperAdminRoutes';
 
 import mandalAdminProfileRoutes from './routes/mandal_admin/mandalRoutes';
 import mandalAdminEventRoutes from './routes/mandal_admin/eventRoutes';
@@ -105,6 +108,7 @@ app.use("/api/admin/donations", adminDonationRoutes);
 app.use('/api/admin/marketing', adminMarketingRoutes);
 app.use('/api/admin/settings', adminSettingsRoutes);
 app.use('/api/admin/mandals', adminMandalRoutes);
+app.use('/api/admin/darshan', adminDarshanRoutes);
 
 
 
@@ -121,6 +125,7 @@ app.use('/api/temple-admin/devotees', templeAdminDevoteeRoutes);
 app.use('/api/temple-admin/team', templeAdminStaffManagementRoutes);
 app.use("/api/temple-admin/donations", templeDonationRoutes);
 app.use('/api/temple-admin/photography', templeAdminPhotoRoutes);
+app.use('/api/temple-admin/darshan', templeAdminDarshanRoutes);
 // (Donations are mostly public/temple managed)
 app.use('/api/pooja-categories', poojaCategoryRoutes);
 app.use('/api/seller/products', sellerProductRoutes);
@@ -145,7 +150,7 @@ app.use('/api/cart', cartRoutes);
 app.use('/api/shiprocket-webhook', shiprocketWebhookRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/donations', donationRoutes);
-
+app.use('/api/darshan', darshanRoutes);
 
 // General Routes (Temporary)
 app.use('/api/temples', templeRoutes);

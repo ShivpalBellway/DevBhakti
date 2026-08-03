@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
@@ -629,12 +629,12 @@ function TemplesContent() {
     };
 
     const handleDelete = async (id: string) => {
-        if (window.confirm("Are you sure you want to delete this temple account?")) {
+        if (window.confirm("Are you sure you want to delete this temple account? All associated logins (staff and owner) will also be deleted. A new creation of temple will be required on the platform.")) {
             try {
                 await deleteTempleAdmin(id);
                 toast({
                     title: "Success",
-                    description: "Temple account deleted successfully"
+                    description: "Temple account and all associated logins deleted successfully."
                 });
                 loadTemples(currentPage);
             } catch (error: any) {

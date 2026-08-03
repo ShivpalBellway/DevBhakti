@@ -107,6 +107,7 @@ export function TempleForm({
         liveStatus: "false",
         poojaCommissionRate: "5.0",
         productCommissionRate: "10.0",
+        prasadPrice: "0",
         instagramUrl: "",
         facebookUrl: "",
         youtubeUrl: "",
@@ -223,6 +224,7 @@ export function TempleForm({
                 liveStatus: String(tData.liveStatus || false),
                 poojaCommissionRate: String(tData.poojaCommissionRate || "5.0"),
                 productCommissionRate: String(tData.productCommissionRate || "10.0"),
+                prasadPrice: String(tData.prasadPrice || "0"),
                 instagramUrl: tData.instagramUrl || "",
                 facebookUrl: tData.facebookUrl || "",
                 youtubeUrl: tData.youtubeUrl || "",
@@ -1307,6 +1309,31 @@ export function TempleForm({
                                     </div>
                                 </div>
                             ))}
+                        </div>
+                    </div>
+
+                    {/* Pricing Configuration */}
+                    <div className="bg-card border rounded-xl p-8 shadow-sm space-y-6">
+                        <div className="flex items-center gap-2 text-primary font-bold">
+                            <Layout className="w-5 h-5" />
+                            <h2 className="text-xl">Pricing Configuration</h2>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <div className="space-y-4">
+                                <label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+                                    Generic Prasad Price (₹)
+                                </label>
+                                <p className="text-xs text-slate-500">This price will be applied globally to all Poojas in this temple when a user opts for Prasad.</p>
+                                <Input
+                                    type="number"
+                                    min="0"
+                                    step="0.01"
+                                    value={formData.prasadPrice}
+                                    onChange={e => setFormData({ ...formData, prasadPrice: e.target.value })}
+                                    placeholder="e.g. 150"
+                                    className="font-mono"
+                                />
+                            </div>
                         </div>
                     </div>
 

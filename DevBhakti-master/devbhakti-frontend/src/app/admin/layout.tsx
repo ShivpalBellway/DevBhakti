@@ -29,6 +29,7 @@ import {
   ShieldAlert,
   Megaphone,
   Target,
+  Ticket,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 // import Logo from "@/components/icons/Logo";
@@ -134,6 +135,12 @@ const sidebarItems = [
     icon: Calendar,
     href: "/admin/events",
     permission: "events.view",
+  },
+  {
+    label: "Darshan",
+    icon: Ticket,
+    href: "/admin/darshan",
+    permission: "bookings.menu", // Reuse bookings permission or a generic admin one
   },
   {
     label: "CMS",

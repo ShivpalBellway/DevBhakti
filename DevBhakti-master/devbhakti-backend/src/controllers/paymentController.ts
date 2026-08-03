@@ -406,6 +406,118 @@ export const verifyPayment = async (req: Request, res: Response) => {
                     console.error("Failed to send donation push notifications:", notifyErr);
                 }
             }
+        } else if (orderType === "DARSHAN") {
+            const updatedTicket = await prisma.darshanTicket.update({
+                where: { id: referenceId },
+                include: { temple: true, slot: true },
+                data: { status: "CONFIRMED" },
+            });
+
+            // Create ledger entry for darshan earning
+            await prisma.templeLedger.create({
+                data: {
+                    templeId: updatedTicket.templeId,
+                    amount: updatedTicket.netEarning || updatedTicket.totalAmount,
+                    grossAmount: updatedTicket.totalAmount,
+                    commission: updatedTicket.commissionAmount || 0,
+                    type: "DARSHAN_EARNING",
+                    sourceId: updatedTicket.id,
+                    description: `Darshan Pass: ${updatedTicket.visitorName} (Qty: ${updatedTicket.visitorCount})`,
+                    status: "COMPLETED"
+                }
+            });
+
+            // Send WhatsApp Confirmation to devotee
+            try {
+                const phone = updatedTicket.visitorPhone.startsWith('+') ? updatedTicket.visitorPhone : `+91${updatedTicket.visitorPhone}`;
+                const templeName = getEnglish((updatedTicket.temple as any)?.name) || "Temple";
+                await sendWhatsAppMessage(
+                    phone,
+                    updatedTicket.visitorName,
+                    "darshan_ticket_confirmed",
+                    [
+                        updatedTicket.visitorName,
+                        templeName,
+                        updatedTicket.slot.date,
+                        `${updatedTicket.slot.startTime} - ${updatedTicket.slot.endTime}`,
+                        updatedTicket.displayId
+                    ]
+                );
+            } catch (waError) {
+                console.error("Failed to send darshan WhatsApp:", waError);
+            }
+
+            // Notify Devotee via Push Notification
+            try {
+                const { notifyUser } = require("../services/firebaseService");
+                const templeName = getEnglish((updatedTicket.temple as any)?.name) || "Temple";
+                await notifyUser(updatedTicket.userId, 'devotee', {
+                    title: 'Darshan Pass Confirmed! 🙏',
+                    body: `Your darshan pass for ${templeName} on ${updatedTicket.slot.date} (${updatedTicket.slot.startTime} - ${updatedTicket.slot.endTime}) is confirmed.`,
+                    data: {
+                        link: `/darshan/ticket/${updatedTicket.id}`,
+                        type: 'DARSHAN_BOOKING',
+                        ticketId: updatedTicket.id
+                    }
+                });
+            } catch (pNotifyErr) {
+                console.error("Failed to send devotee darshan push notification:", pNotifyErr);
+            }
+
+            // Notify Temple Admin via Push Notification
+            try {
+                if (updatedTicket.temple?.userId) {
+                    const { notifyUser } = require("../services/firebaseService");
+                    await notifyUser(updatedTicket.temple.userId, 'temple_admin', {
+                        title: 'New Darshan Booking! 🎫',
+                        body: `${updatedTicket.visitorName} booked darshan for ${updatedTicket.slot.date} (${updatedTicket.visitorCount} visitors).`,
+                        data: {
+                            link: `/temples/dashboard/darshan/tickets`,
+                            type: 'NEW_DARSHAN_BOOKING',
+                            ticketId: updatedTicket.id
+                        }
+                    });
+                }
+            } catch (tNotifyErr) {
+                console.error("Failed to send temple admin darshan push notification:", tNotifyErr);
+            }
+
+            // Send Email Confirmation
+            try {
+                if (updatedTicket.visitorEmail) {
+                    const { sendDarshanConfirmationEmail } = require("../services/darshanMailService");
+                    const templeName = getEnglish((updatedTicket.temple as any)?.name) || "Temple";
+                    await sendDarshanConfirmationEmail({
+                        ticketId: updatedTicket.id,
+                        displayId: updatedTicket.displayId,
+                        visitorName: updatedTicket.visitorName,
+                        visitorEmail: updatedTicket.visitorEmail,
+                        visitorPhone: updatedTicket.visitorPhone,
+                        visitorCount: updatedTicket.visitorCount,
+                        templeName,
+                        date: updatedTicket.slot.date,
+                        time: `${updatedTicket.slot.startTime} - ${updatedTicket.slot.endTime}`,
+                        totalAmount: updatedTicket.totalAmount,
+                        platformFee: updatedTicket.platformFee,
+                        qrToken: updatedTicket.qrToken,
+                    });
+                }
+            } catch (emailErr) {
+                console.error("Failed to send darshan email:", emailErr);
+            }
+
+            // Return booking details for frontend success screen
+            return res.status(200).json({ 
+                success: true, 
+                message: "Payment verified successfully",
+                data: {
+                    ticketId: updatedTicket.id,
+                    displayId: updatedTicket.displayId,
+                    date: updatedTicket.slot.date,
+                    time: `${updatedTicket.slot.startTime} - ${updatedTicket.slot.endTime}`,
+                    status: "CONFIRMED"
+                }
+            });
         }
 
         return res.status(200).json({ success: true, message: "Payment verified successfully" });
@@ -444,6 +556,26 @@ export const paymentFailed = async (req: Request, res: Response) => {
                 where: { id: referenceId },
                 data: { status: "FAILED" }
             });
+        } else if (orderType === "DARSHAN" && referenceId) {
+            // Cancel ticket and rollback slot booked count
+            const ticket = await prisma.darshanTicket.findUnique({
+                where: { id: referenceId }
+            });
+            if (ticket && ticket.status === "PENDING") {
+                await prisma.$transaction(async (tx) => {
+                    await tx.darshanTicket.delete({
+                        where: { id: referenceId }
+                    });
+                    await tx.darshanSlot.update({
+                        where: { id: ticket.slotId },
+                        data: {
+                            bookedCount: {
+                                decrement: ticket.visitorCount
+                            }
+                        }
+                    });
+                });
+            }
         } else if (orderType === "MARKETPLACE" && orderData && userId) {
             const { items, totalAmount, shippingAddress, paymentMethod, platformFee } = orderData;
             

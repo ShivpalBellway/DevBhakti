@@ -25,7 +25,9 @@ import {
     X,
     Receipt,
     ExternalLink,
-    MapPin
+    MapPin,
+    QrCode,
+    Ticket
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,7 +35,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { updateProfile, fetchProfile } from "@/api/authController";
-import { fetchMyBookings, downloadBookingReceipt, fetchMyDonations, downloadDonationReceipt } from "@/api/userController";
+import { fetchMyBookings, downloadBookingReceipt, fetchMyDonations, downloadDonationReceipt, fetchMyDarshanTickets } from "@/api/userController";
 import { BASE_URL } from "@/config/apiConfig";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -76,12 +78,29 @@ const ProfilePage = () => {
     const [myOrders, setMyOrders] = useState<any[]>([]);
     const [donations, setDonations] = useState<any[]>([]);
     const [isDonationsLoading, setIsDonationsLoading] = useState(false);
+    const [darshanTickets, setDarshanTickets] = useState<any[]>([]);
+    const [isDarshanLoading, setIsDarshanLoading] = useState(false);
 
     useEffect(() => {
         loadProfile();
         loadOrders();
         loadDonations();
+        loadDarshanTickets();
     }, []);
+
+    const loadDarshanTickets = async () => {
+        setIsDarshanLoading(true);
+        try {
+            const res = await fetchMyDarshanTickets();
+            if (res.success) {
+                setDarshanTickets(res.data);
+            }
+        } catch (error) {
+            console.error("Failed to load darshan tickets", error);
+        } finally {
+            setIsDarshanLoading(false);
+        }
+    };
 
     const loadOrders = async () => {
         try {
@@ -541,6 +560,77 @@ const ProfilePage = () => {
                                                     <Button variant="ghost" className="w-full mt-4 text-primary font-bold group rounded-2xl hover:bg-orange-50" asChild>
                                                         <Link href="/profile/bookings">
                                                             {t('profile.sections.view_all_bookings')} <ChevronRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
+                                                        </Link>
+                                                    </Button>
+                                                )}
+                                            </div>
+
+                                            {/* Darshan Tickets Section */}
+                                            <div className="pt-6">
+                                                <div className="flex items-center gap-3 mb-6">
+                                                    <Ticket className="w-5 h-5 text-orange-600" />
+                                                    <h4 className="font-bold text-lg text-slate-800">Your Darshan Tickets</h4>
+                                                </div>
+                                                <div className="space-y-4">
+                                                    {isDarshanLoading ? (
+                                                        <div className="flex justify-center py-8">
+                                                            <Loader2 className="w-8 h-8 text-primary animate-spin" />
+                                                        </div>
+                                                    ) : darshanTickets.length > 0 ? (
+                                                        darshanTickets.slice(0, 5).map((ticket: any) => (
+                                                            <div
+                                                                key={ticket.id}
+                                                                onClick={() => router.push("/profile/darshan-tickets")}
+                                                                className="flex flex-col md:flex-row md:items-center justify-between p-5 border border-slate-100 rounded-[1.5rem] hover:bg-orange-50/30 transition-all group cursor-pointer shadow-sm hover:shadow-md"
+                                                            >
+                                                                <div className="flex items-center gap-4 mb-3 md:mb-0">
+                                                                    <div className="w-14 h-14 bg-orange-50 rounded-2xl flex items-center justify-center border border-orange-100/50 group-hover:bg-white transition-colors">
+                                                                        <Ticket className="w-7 h-7 text-primary" />
+                                                                    </div>
+                                                                    <div>
+                                                                        <div className="flex items-center gap-2">
+                                                                            <p className="font-bold text-slate-800">Darshan Ticket</p>
+                                                                            <span className="text-[10px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full uppercase tracking-tighter">#{ticket.displayId || ticket.id.slice(-6).toUpperCase()}</span>
+                                                                        </div>
+                                                                        <p className="text-xs text-slate-500 flex items-center gap-1 mt-0.5">
+                                                                            <span className="font-medium">{parseLocalizedValue(ticket.temple?.name, language)}</span>
+                                                                        </p>
+                                                                        <p className="text-[10px] text-slate-400 mt-1 flex items-center gap-1">
+                                                                            <Calendar className="w-3 h-3" />
+                                                                            {ticket.slot?.date ? new Date(ticket.slot.date).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) : "Date TBD"}
+                                                                        </p>
+                                                                    </div>
+                                                                </div>
+                                                                <div className="flex items-center justify-between md:justify-end gap-6 border-t md:border-t-0 pt-3 md:pt-0 border-slate-50">
+                                                                    <div className="text-right">
+                                                                        <p className="text-xs text-slate-400 font-medium">{ticket.visitorCount} {ticket.visitorCount === 1 ? 'Visitor' : 'Visitors'}</p>
+                                                                        <p className="font-bold text-primary flex items-center justify-end text-sm">
+                                                                            ₹{ticket.totalAmount}
+                                                                        </p>
+                                                                    </div>
+                                                                    <div className={`flex items-center gap-1.5 font-bold text-[10px] uppercase tracking-wider px-3 py-1.5 rounded-full ${ticket.status === 'BOOKED' ? 'bg-emerald-50 text-emerald-600' : 'bg-orange-50 text-orange-600'}`}>
+                                                                        <CheckCircle2 className="w-3 h-3" />
+                                                                        {ticket.status}
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        ))
+                                                    ) : (
+                                                        <div className="text-center py-12 bg-slate-50/50 rounded-3xl border border-dashed border-slate-200">
+                                                            <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm">
+                                                                <Ticket className="w-8 h-8 text-slate-300" />
+                                                            </div>
+                                                            <p className="text-slate-500 font-medium">No Darshan tickets found</p>
+                                                            <Button variant="link" className="text-primary mt-2" asChild>
+                                                                <Link href="/temples">Explore Temples</Link>
+                                                            </Button>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                {darshanTickets.length > 0 && (
+                                                    <Button variant="ghost" className="w-full mt-4 text-primary font-bold group rounded-2xl hover:bg-orange-50" asChild>
+                                                        <Link href="/profile/darshan-tickets">
+                                                            View All Tickets <ChevronRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
                                                         </Link>
                                                     </Button>
                                                 )}

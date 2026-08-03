@@ -46,7 +46,8 @@ export const createBooking = async (req: Request, res: Response) => {
             anniversary,
             nativePlace,
             additionalDevotees,
-            isPrasadRequested
+            isPrasadRequested,
+            prasadQuantity
         } = req.body;
 
         if (!poojaId || !packageName || !packagePrice || !devoteeName || !devoteePhone) {
@@ -153,29 +154,35 @@ export const createBooking = async (req: Request, res: Response) => {
 
 
 
+        // --- PRASAD PRICE & VALIDATION ---
+        let finalPrasadQuantity = 0;
+        let finalPrasadAmount = 0;
+        let validPrasadRequested = pooja.hasPrasad && (isPrasadRequested === true || isPrasadRequested === 'true');
+
+        if (validPrasadRequested && pooja.prasadType === 'PAID') {
+            finalPrasadQuantity = prasadQuantity ? parseInt(prasadQuantity, 10) : 1;
+            
+            // Backend Validation: Min 1, Max 10
+            if (finalPrasadQuantity < 1) finalPrasadQuantity = 1;
+            if (finalPrasadQuantity > 10) finalPrasadQuantity = 10;
+            
+            const prasadPrice = (pooja.temple as any)?.prasadPrice || 0;
+            finalPrasadAmount = finalPrasadQuantity * prasadPrice;
+        }
+
         // Calculate commission via Slab System using verified price
-
         const commissionData = await getCommissionForAmount(
-
             finalPrice,
-
             SlabType.TEMPLE,
-
             effectiveTempleId || undefined,
-
             CommissionCategory.POOJA
-
         );
-
-
 
         const commissionAmount = commissionData.totalCommission;
 
         // Since platform fee is added on top and charged to user, temple gets full price
-
-        const netEarning = finalPrice;
-
-
+        // Temple also gets the full prasad amount
+        const netEarning = finalPrice + finalPrasadAmount;
 
         // --- AVAILABILITY CHECK ---
 
@@ -288,8 +295,10 @@ export const createBooking = async (req: Request, res: Response) => {
                     additionalDevotees: additionalDevotees || null,
 
                     // Prasad tracking
-                    isPrasadRequested: pooja.hasPrasad && (isPrasadRequested === true || isPrasadRequested === 'true'),
-                    prasadStatus: (pooja.hasPrasad && (isPrasadRequested === true || isPrasadRequested === 'true')) ? 'PREPARING' : 'NOT_APPLICABLE',
+                    isPrasadRequested: validPrasadRequested,
+                    prasadStatus: validPrasadRequested ? 'PREPARING' : 'NOT_APPLICABLE',
+                    prasadQuantity: finalPrasadQuantity,
+                    prasadAmount: finalPrasadAmount,
 
                     status: 'PENDING', // Mark as pending until Razorpay payment is verified
 
@@ -309,11 +318,11 @@ export const createBooking = async (req: Request, res: Response) => {
                 data: {
                     templeId: effectiveTempleId,
                     amount: netEarning,
-                    grossAmount: finalPrice, // Use verified price
+                    grossAmount: finalPrice + finalPrasadAmount, // Include prasad amount
                     commission: commissionAmount,
                     type: "POOJA_EARNING",
                     sourceId: newBooking.id,
-                    description: `Pooja Booking: ${getEnglish((pooja as any).name)} (${packageName}) [${displayId}]`,
+                    description: `Pooja Booking: ${getEnglish((pooja as any).name)} (${packageName}) [${displayId}]${finalPrasadAmount > 0 ? ' + Prasad' : ''}`,
                     status: "PENDING"
                 }
             });
@@ -337,7 +346,7 @@ export const createBooking = async (req: Request, res: Response) => {
 
             razorpayOrder: await razorpay.orders.create({
 
-                amount: Math.round((finalPrice + commissionAmount) * 100),
+                amount: Math.round((finalPrice + commissionAmount + finalPrasadAmount) * 100),
                 currency: "INR",
                 receipt: `pooja_rcpt_${(booking.displayId || booking.id).slice(-10)}`,
             })

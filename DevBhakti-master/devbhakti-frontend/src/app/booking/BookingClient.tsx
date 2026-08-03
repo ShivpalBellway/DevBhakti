@@ -42,6 +42,8 @@ import {
   CalendarDays,
   X,
   Loader2,
+  Minus,
+  Plus,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/context/LanguageContext";
@@ -101,6 +103,7 @@ function BookingForm() {
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [bookingId, setBookingId] = useState("");
   const [isPrasadRequested, setIsPrasadRequested] = useState(false);
+  const [prasadQuantity, setPrasadQuantity] = useState(1);
   const requestedPoojaParam = searchParams.get("pooja");
 
 
@@ -424,7 +427,11 @@ function BookingForm() {
 
   // Calculate Base Price and Total Amount (inclusive of platform fee)
   const basePrice = selectedPackageData?.price || selectedPoojaData?.price || 0;
-  const totalAmount = basePrice + (platformFee || 0);
+  const selectedTempleData = allTemples.find(t => String(t.id) === String(selectedTemple));
+  const prasadPrice = selectedTempleData?.prasadPrice || 0;
+  const isPaidPrasad = selectedPoojaData?.hasPrasad && selectedPoojaData?.prasadType === 'PAID';
+  const prasadTotal = (isPrasadRequested && isPaidPrasad && prasadPrice > 0) ? (prasadPrice * prasadQuantity) : 0;
+  const totalAmount = basePrice + (platformFee || 0) + prasadTotal;
 
   // Helper to determine max persons allowed in the package
   const getMaxPersons = () => {
@@ -586,6 +593,7 @@ function BookingForm() {
         additionalDevotees: formData.additionalDevotees,
         platformFee: platformFee, // Send platform fee to backend
         isPrasadRequested: isPrasadRequested,
+        prasadQuantity: isPrasadRequested ? prasadQuantity : 0,
       };
 
       const response = await fetch(`${API_URL}/bookings`, {
@@ -901,9 +909,10 @@ function BookingForm() {
                           <Label className="font-semibold">
                             {selectedPoojaData.name}
                           </Label>
-                          <p className="text-sm text-muted-foreground line-clamp-1">
-                            {selectedPoojaData.description?.[0] || selectedPoojaData.about}
-                          </p>
+                          <div 
+                            className="text-sm text-muted-foreground line-clamp-1"
+                            dangerouslySetInnerHTML={{ __html: parseLocalizedValue(selectedPoojaData.description?.[0] || selectedPoojaData.about) || "" }}
+                          />
                         </div>
                       </div>
                       <div className="flex items-center text-primary font-bold text-lg">
@@ -940,7 +949,10 @@ function BookingForm() {
                               <Label htmlFor={pooja.id} className="font-semibold cursor-pointer">
                                 {parseLocalizedValue(pooja.name)}
                               </Label>
-                              <p className="text-sm text-muted-foreground line-clamp-1">{pooja.description?.[0] || pooja.about}</p>
+                              <div 
+                                className="text-sm text-muted-foreground line-clamp-1" 
+                                dangerouslySetInnerHTML={{ __html: parseLocalizedValue(pooja.description?.[0] || pooja.about) || "" }} 
+                              />
                             </div>
                           </div>
                           <div className="flex items-center text-primary font-bold text-lg">
@@ -1371,26 +1383,74 @@ function BookingForm() {
                   />
                 </div>
 
-                {/* Free Prasad Option */}
+                {/* Prasad Option (Free/Paid) */}
                 {selectedPoojaData?.hasPrasad && (
                   <div className="mt-6 p-4 border rounded-xl bg-orange-50/50 border-orange-100">
                     <Label className="text-sm font-bold text-slate-800 flex items-center gap-2">
-                      🙏 {t("booking_client.prasad_question")}
+                      🙏 {t("booking_client.prasad_question") || "Would you like Prasad delivered to your home?"}
                     </Label>
-                    <RadioGroup
-                      value={isPrasadRequested ? "yes" : "no"}
-                      onValueChange={(val) => setIsPrasadRequested(val === "yes")}
-                      className="flex gap-6 mt-3"
-                    >
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="yes" id="prasad-yes" />
-                        <Label htmlFor="prasad-yes" className="cursor-pointer font-normal">{t("booking_client.prasad_yes")}</Label>
+                    
+                    {isPaidPrasad && prasadPrice > 0 ? (
+                      <div className="mt-4 flex items-center gap-4">
+                        <div className="flex items-center space-x-2">
+                          <RadioGroup
+                            value={isPrasadRequested ? "yes" : "no"}
+                            onValueChange={(val) => {
+                              setIsPrasadRequested(val === "yes");
+                              if (val === "yes" && prasadQuantity < 1) setPrasadQuantity(1);
+                            }}
+                            className="flex gap-4"
+                          >
+                            <div className="flex items-center space-x-2">
+                              <RadioGroupItem value="yes" id="prasad-paid-yes" />
+                              <Label htmlFor="prasad-paid-yes" className="cursor-pointer font-normal text-sm">Yes (₹{prasadPrice} per box)</Label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <RadioGroupItem value="no" id="prasad-paid-no" />
+                              <Label htmlFor="prasad-paid-no" className="cursor-pointer font-normal text-sm">No</Label>
+                            </div>
+                          </RadioGroup>
+                        </div>
+                        
+                        {isPrasadRequested && (
+                          <div className="flex items-center gap-3 ml-4">
+                            <span className="text-sm font-semibold">Quantity:</span>
+                            <div className="flex items-center border border-slate-300 rounded-md overflow-hidden bg-white">
+                              <button 
+                                type="button"
+                                className="px-3 py-1 bg-slate-100 hover:bg-slate-200 transition"
+                                onClick={() => setPrasadQuantity(Math.max(1, prasadQuantity - 1))}
+                              >
+                                <Minus className="w-4 h-4 text-slate-600" />
+                              </button>
+                              <span className="w-10 text-center text-sm font-semibold select-none">{prasadQuantity}</span>
+                              <button 
+                                type="button"
+                                className="px-3 py-1 bg-slate-100 hover:bg-slate-200 transition"
+                                onClick={() => setPrasadQuantity(Math.min(10, prasadQuantity + 1))}
+                              >
+                                <Plus className="w-4 h-4 text-slate-600" />
+                              </button>
+                            </div>
+                          </div>
+                        )}
                       </div>
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="no" id="prasad-no" />
-                        <Label htmlFor="prasad-no" className="cursor-pointer font-normal">{t("booking_client.prasad_no")}</Label>
-                      </div>
-                    </RadioGroup>
+                    ) : (
+                      <RadioGroup
+                        value={isPrasadRequested ? "yes" : "no"}
+                        onValueChange={(val) => setIsPrasadRequested(val === "yes")}
+                        className="flex gap-6 mt-3"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="yes" id="prasad-yes" />
+                          <Label htmlFor="prasad-yes" className="cursor-pointer font-normal">{t("booking_client.prasad_yes") || "Yes"}</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="no" id="prasad-no" />
+                          <Label htmlFor="prasad-no" className="cursor-pointer font-normal">{t("booking_client.prasad_no") || "No"}</Label>
+                        </div>
+                      </RadioGroup>
+                    )}
                   </div>
                 )}
 
@@ -1498,10 +1558,18 @@ function BookingForm() {
                     <span className="text-muted-foreground">{t("booking_client.summary_package")}</span>
                     <span className="font-medium">{selectedPackageData?.name}</span>
                   </div>
-                  {selectedPoojaData?.hasPrasad && (
+                  {selectedPoojaData?.hasPrasad && isPrasadRequested && (
                     <div className="flex justify-between py-2 border-b border-border">
-                      <span className="text-muted-foreground">{t("booking_client.prasad_requested_label")}</span>
-                      <span className="font-medium">{isPrasadRequested ? t("booking_client.prasad_yes_short") : t("booking_client.prasad_no_short")}</span>
+                      <span className="text-muted-foreground">{t("booking_client.prasad_requested_label") || "Prasad Requested"}</span>
+                      <span className="font-medium flex items-center">
+                        {isPaidPrasad ? `${prasadQuantity} x ₹${prasadPrice}` : t("booking_client.prasad_yes_short")}
+                      </span>
+                    </div>
+                  )}
+                  {selectedPoojaData?.hasPrasad && !isPrasadRequested && (
+                    <div className="flex justify-between py-2 border-b border-border">
+                      <span className="text-muted-foreground">{t("booking_client.prasad_requested_label") || "Prasad Requested"}</span>
+                      <span className="font-medium">{t("booking_client.prasad_no_short")}</span>
                     </div>
                   )}
                   {/* <div className="flex justify-between py-2 border-b border-border">
@@ -1589,10 +1657,18 @@ function BookingForm() {
                     <span className="text-muted-foreground">{t("booking_client.confirmed_package")}</span>
                     <span className="font-medium">{selectedPackageData?.name}</span>
                   </div>
-                  {selectedPoojaData?.hasPrasad && (
+                  {selectedPoojaData?.hasPrasad && isPrasadRequested && (
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">{t("booking_client.prasad_requested_label")}</span>
-                      <span className="font-medium">{isPrasadRequested ? t("booking_client.prasad_yes_short") : t("booking_client.prasad_no_short")}</span>
+                      <span className="text-muted-foreground">{t("booking_client.prasad_requested_label") || "Prasad Requested"}</span>
+                      <span className="font-medium">
+                        {isPaidPrasad ? `${prasadQuantity} x ₹${prasadPrice}` : t("booking_client.prasad_yes_short")}
+                      </span>
+                    </div>
+                  )}
+                  {selectedPoojaData?.hasPrasad && !isPrasadRequested && (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">{t("booking_client.prasad_requested_label") || "Prasad Requested"}</span>
+                      <span className="font-medium">{t("booking_client.prasad_no_short")}</span>
                     </div>
                   )}
                   {formData.nativePlace && (
@@ -1638,6 +1714,7 @@ function BookingForm() {
                         packageName: selectedPackageData?.name || "",
                         packagePrice: basePrice,
                         platformFee: platformFee,
+                        prasadTotal: prasadTotal,
                         totalAmount: totalAmount,
                         status: "BOOKED",
                         createdAt: new Date().toISOString(),

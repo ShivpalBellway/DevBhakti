@@ -12,6 +12,7 @@ interface PoojaReceiptProps {
         packageName: string;
         packagePrice: number;
         platformFee: number;
+        prasadTotal?: number;
         totalAmount: number;
         status: string;
         createdAt: string;
@@ -191,7 +192,7 @@ export const generatePoojaReceiptHTML = (booking: PoojaReceiptProps["booking"], 
                         (Rupees ${numberToWords(booking.totalAmount)} Only)
                     </div>
                     <div style="margin-top: 10px; font-size: 12px; color: #7c4624;">
-                        ${t("booking_client.summary_package_price")}: ₹${booking.packagePrice} & ${t("booking_client.summary_platform_fee")}: ₹${booking.platformFee}
+                        ${t("booking_client.summary_package_price") || "Package Price"}: ₹${booking.packagePrice} & ${t("booking_client.summary_platform_fee") || "Platform Fee"}: ₹${booking.platformFee}${booking.prasadTotal ? ` & Prasad: ₹${booking.prasadTotal}` : ''}
                     </div>
                 </div>
 

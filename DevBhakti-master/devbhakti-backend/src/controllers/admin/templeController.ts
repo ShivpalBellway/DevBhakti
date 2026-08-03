@@ -430,6 +430,7 @@ export const createTemple = async (req: Request, res: Response) => {
               liveStatus: data.liveStatus === 'true',
               productCommissionRate: data.productCommissionRate && !isNaN(parseFloat(data.productCommissionRate)) ? parseFloat(data.productCommissionRate) : 10.0,
               poojaCommissionRate: data.poojaCommissionRate && !isNaN(parseFloat(data.poojaCommissionRate)) ? parseFloat(data.poojaCommissionRate) : 5.0,
+              prasadPrice: data.prasadPrice && !isNaN(parseFloat(data.prasadPrice)) ? parseFloat(data.prasadPrice) : 0,
               image: getFilePath(files, 'image'),
               heroImages: getFilePath(files, 'heroImages') || [],
               ...(data.youtubeLinks && { youtubeLinks: JSON.parse(data.youtubeLinks) } as any),
@@ -694,6 +695,7 @@ export const updateTemple = async (req: Request, res: Response) => {
               newsCuttings: newsCuttings,
               productCommissionRate: (data.productCommissionRate && !isNaN(parseFloat(data.productCommissionRate))) ? parseFloat(data.productCommissionRate) : undefined,
               poojaCommissionRate: (data.poojaCommissionRate && !isNaN(parseFloat(data.poojaCommissionRate))) ? parseFloat(data.poojaCommissionRate) : undefined,
+              prasadPrice: (data.prasadPrice !== undefined && !isNaN(parseFloat(data.prasadPrice))) ? parseFloat(data.prasadPrice) : undefined,
               ...(files?.image && { image: getFilePath(files, 'image') }),
               heroImages: [
                 ...existingHeroImages,
@@ -1098,6 +1100,14 @@ export const deleteTemple = async (req: Request, res: Response) => {
       // Delete update requests
       await tx.templeUpdateRequest.deleteMany({
         where: { templeId: templeId }
+      });
+
+      // Delete staff members associated with the temple
+      await tx.staffMember.deleteMany({
+        where: {
+          ownerId: templeId,
+          ownerType: 'TEMPLE'
+        }
       });
 
       // Delete the temple record

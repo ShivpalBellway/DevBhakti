@@ -24,6 +24,7 @@ import {
     Maximize2,
     Play,
     Phone,
+    Camera,
     Info,
      Globe,
     ExternalLink,
@@ -466,6 +467,32 @@ export default function DesktopTempleDetail({
                                             </Button>
                                         )}
                                     </div>
+                                    
+                                    {/* Secondary Action Grid (Darshan & Photography) */}
+                                    {(temple.isDarshanActive || temple.photographyEnabled) && (
+                                        <div className={`grid ${temple.isDarshanActive && temple.photographyEnabled ? "grid-cols-2" : "grid-cols-1"} gap-3`}>
+                                            {temple.isDarshanActive && (
+                                                <Button
+                                                    variant="secondary"
+                                                    className="w-full h-12 rounded-2xl border-dashed border-primary/30 text-primary hover:bg-primary/5 font-bold gap-2"
+                                                    onClick={() => router.push(`/darshan/${temple.id}`)}
+                                                >
+                                                    <MapPin className="h-4 w-4 shrink-0" />
+                                                    <span className="truncate">Book Darshan</span>
+                                                </Button>
+                                            )}
+                                            {temple.photographyEnabled && (
+                                                <Button
+                                                    variant="secondary"
+                                                    className="w-full h-12 rounded-2xl border-dashed border-primary/30 text-primary hover:bg-primary/5 font-bold gap-2"
+                                                    onClick={() => router.push(`/temples/${temple.id}/photography`)}
+                                                >
+                                                    <Camera className="h-4 w-4 shrink-0" />
+                                                    <span className="truncate">Photography</span>
+                                                </Button>
+                                            )}
+                                        </div>
+                                    )}
 
                                     {/* Prominent Donation Button */}
                                     <Button

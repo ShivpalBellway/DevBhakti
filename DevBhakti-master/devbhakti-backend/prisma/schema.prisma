@@ -8,35 +8,36 @@ datasource db {
 }
 
 model User {
-  id            String         @id @default(cuid())
-  name          String?
-  email         String?
-  password      String?
-  phone         String?
-  role          UserRole       @default(DEVOTEE)
-  isVerified    Boolean        @default(false)
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  otp           String?
-  otpExpires    DateTime?
-  profileImage  String?
-  gothra        String?
-  kuldevi       String?
-  kuldevta      String?
-  anniversary   String?
-  dob           String?
-  address       String?
-  isActive      Boolean        @default(true)
-  nativePlace   String?
-  displayId     String?        @unique
-  cart          Cart?
-  donations     Donation[]
-  favorites     Favorite[]
-  orders        Order[]
-  bookings      PoojaBooking[]
+  id                  String               @id @default(cuid())
+  name                String?
+  email               String?
+  password            String?
+  phone               String?
+  role                UserRole             @default(DEVOTEE)
+  isVerified          Boolean              @default(false)
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  otp                 String?
+  otpExpires          DateTime?
+  profileImage        String?
+  gothra              String?
+  kuldevi             String?
+  kuldevta            String?
+  anniversary         String?
+  dob                 String?
+  address             String?
+  isActive            Boolean              @default(true)
+  nativePlace         String?
+  displayId           String?              @unique
+  cart                Cart?
+  darshanTickets      DarshanTicket[]
+  donations           Donation[]
+  favorites           Favorite[]
+  orders              Order[]
   photographyBookings PhotographyBooking[]
-  sellerProfile SellerProfile?
-  temple        Temple?
+  bookings            PoojaBooking[]
+  sellerProfile       SellerProfile?
+  temple              Temple?
 
   @@unique([email, role])
   @@unique([phone, role])
@@ -99,40 +100,43 @@ model Temple {
   urlType               String                @default("slug")
   isPrimaryLive         Boolean               @default(false)
   showPhone             Boolean               @default(true)
-  showWebsite           Boolean               @default(true)
   instagramUrl          String?
   facebookUrl           String?
   youtubeUrl            String?
   newsCuttings          Json?
   operatingHours        Json?
-  category              Json? // {"en":"...","hi":"...","mr":"..."}
+  category              Json?
   description           Json?
   fullAddress           Json?
   history               Json?
   location              Json?
   name                  Json?
   pickupLocation        Json?
+  showWebsite           Boolean               @default(true)
+  allowedPhotoAreas     Json?
+  photographyEnabled    Boolean               @default(false)
+  photographyRules      Json?
+  darshanPrice          Float                 @default(0)
+  prasadPrice           Float                 @default(0)
+  isDarshanActive       Boolean               @default(false)
   availability          BookingAvailability[]
+  darshanSlots          DarshanSlot[]
+  darshanTickets        DarshanTicket[]
   donations             Donation[]
   events                Event[]
   favorites             Favorite[]
+  photographyBookings   PhotographyBooking[]
+  photographyPackages   PhotographyPackage[]
+  photographySlots      PhotographySlot[]
   poojas                Pooja[]
   bookings              PoojaBooking[]
+  poojaCategories       PoojaCategory[]
   products              Product[]
   subOrders             SubOrder[]
   user                  User                  @relation(fields: [userId], references: [id])
   ledgerEntries         TempleLedger[]
   updateRequests        TempleUpdateRequest[]
   withdrawals           WithdrawalRequest[]
-  poojaCategories       PoojaCategory[]
-  
-  // Photography Settings
-  photographyEnabled    Boolean               @default(false)
-  allowedPhotoAreas     Json?                 // e.g. ["GARDEN", "ENTRANCE", "COURTYARD"]
-  photographyRules      Json?                 // {"en": "...", "hi": "...", "mr": "..."}
-  photographyPackages   PhotographyPackage[]
-  photographySlots      PhotographySlot[]
-  photographyBookings   PhotographyBooking[]
 }
 
 model BookingAvailability {
@@ -221,45 +225,45 @@ model Pooja {
   updatedAt     DateTime              @updatedAt
   status        Boolean               @default(true)
   slug          String?               @unique
-  hasPrasad     Boolean               @default(false)
-  prasadType    PrasadType            @default(FREE)
-  about         Json? // {"en":"...","hi":"...","mr":"..."}
-  benefits      Json? // {"en":[...],"hi":[...],"mr":[...]}
-  bullets       Json? // {"en":[...],"hi":[...],"mr":[...]}
+  about         Json?
+  benefits      Json?
+  bullets       Json?
   category      Json?
   categoryId    String?
   categoryIds   String[]              @default([])
-  description   Json? // {"en":[...],"hi":[...],"mr":[...]}
+  description   Json?
   duration      Json?
   name          Json?
   process       Json?
   templeDetails Json?
+  hasPrasad     Boolean               @default(false)
+  prasadType    PrasadType            @default(FREE)
   availability  BookingAvailability[]
   favorites     Favorite[]
+  categoryObj   PoojaCategory?        @relation(fields: [categoryId], references: [id])
   masterPooja   Pooja?                @relation("MasterPoojaRelation", fields: [masterPoojaId], references: [id])
   templeCopies  Pooja[]               @relation("MasterPoojaRelation")
   temple        Temple?               @relation(fields: [templeId], references: [id])
-  categoryObj   PoojaCategory?        @relation(fields: [categoryId], references: [id])
   bookings      PoojaBooking[]
   Event         Event[]               @relation("EventToPooja")
 }
 
 model PoojaCategory {
   id        String   @id @default(cuid())
-  name      Json // {"en":"...","hi":"...","mr":"..."}
-  nameSlug  String   @unique // English slug for uniqueness e.g. "ram-navami-pooja"
+  name      Json
+  nameSlug  String   @unique
   status    String   @default("APPROVED")
   createdAt DateTime @default(now())
-  poojas    Pooja[]
   templeId  String?
+  poojas    Pooja[]
   temple    Temple?  @relation(fields: [templeId], references: [id])
 }
 
 model Event {
   id                 String   @id @default(cuid())
-  name               Json // {"en":"...","hi":"...","mr":"..."}
+  name               Json
   date               String
-  description        Json? // {"en":"...","hi":"...","mr":"..."}
+  description        Json?
   templeId           String?
   mandalId           String?
   mandalSpecificData Json?
@@ -267,8 +271,8 @@ model Event {
   updatedAt          DateTime @updatedAt
   status             Boolean  @default(true)
   time               String?
-  temple             Temple?  @relation(fields: [templeId], references: [id], onDelete: Cascade)
   mandal             Mandal?  @relation(fields: [mandalId], references: [id], onDelete: Cascade)
+  temple             Temple?  @relation(fields: [templeId], references: [id], onDelete: Cascade)
   Pooja              Pooja[]  @relation("EventToPooja")
 }
 
@@ -280,8 +284,8 @@ model Banner {
   order     Int      @default(0)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  title     Json? // {"en":"...","hi":"...","mr":"..."}
-  subtitle  Json? // {"en":"...","hi":"...","mr":"..."}
+  title     Json?
+  subtitle  Json?
 }
 
 model Feature {
@@ -292,8 +296,8 @@ model Feature {
   order       Int      @default(0)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-  description Json? // {"en":"...","hi":"...","mr":"..."}
-  title       Json? // {"en":"...","hi":"...","mr":"..."}
+  description Json?
+  title       Json?
 }
 
 model Testimonial {
@@ -304,9 +308,9 @@ model Testimonial {
   order     Int      @default(0)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  category  Json? // {"en":"...","hi":"...","mr":"..."}
-  subtitle  Json? // {"en":"...","hi":"...","mr":"..."}
-  title     Json? // {"en":"...","hi":"...","mr":"..."}
+  category  Json?
+  subtitle  Json?
+  title     Json?
 }
 
 model ProductCategory {
@@ -316,9 +320,9 @@ model ProductCategory {
   sortOrder   Int       @default(0)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
-  description Json? // {"en":"...","hi":"...","mr":"..."}
-  name        Json? // {"en":"...","hi":"...","mr":"..."}
-  nameSlug    String?   @unique // uniqueness ke liye
+  description Json?
+  name        Json?
+  nameSlug    String?   @unique
   products    Product[]
 }
 
@@ -336,13 +340,13 @@ model Product {
   width           Float?           @default(10)
   height          Float?           @default(10)
   sellerId        String?
-  category        Json? // {"en":"...","hi":"...","mr":"..."}
+  category        Json?
   description     Json?
   highlights      Json?
   longDescription Json?
   name            Json?
-  origin          Json? // {"en":"India","hi":"भारत","mr":"भारत"}
-  shippingInfo    Json? // {"en":"Ships in 24-48 Hours","hi":"...","mr":"..."}
+  origin          Json?
+  shippingInfo    Json?
   cartItems       CartItem[]
   favorites       Favorite[]
   orderItems      OrderItem[]
@@ -361,7 +365,7 @@ model ProductVariant {
   productId String
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
-  name      Json? // {"en":"...","hi":"...","mr":"..."}
+  name      Json?
   cartItems CartItem[]
   product   Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
 }
@@ -374,10 +378,10 @@ model Favorite {
   poojaId   String?
   createdAt DateTime @default(now())
   productId String?
+  mandal    Mandal?  @relation(fields: [mandalId], references: [id], onDelete: Cascade)
   pooja     Pooja?   @relation(fields: [poojaId], references: [id], onDelete: Cascade)
   product   Product? @relation(fields: [productId], references: [id], onDelete: Cascade)
   temple    Temple?  @relation(fields: [templeId], references: [id], onDelete: Cascade)
-  mandal    Mandal?  @relation(fields: [mandalId], references: [id], onDelete: Cascade)
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, templeId])
@@ -388,10 +392,10 @@ model Favorite {
 
 model CTACard {
   id         String   @id @default(cuid())
-  title      Json? // {"en":"...","hi":"...","mr":"..."}
-  points     Json? // {"en":[...],"hi":[...],"mr":[...]}
+  title      Json?
+  points     Json?
   icon       String
-  buttonText Json? // {"en":"...","hi":"...","mr":"..."}
+  buttonText Json?
   buttonLink String
   cardType   String
   active     Boolean  @default(true)
@@ -401,48 +405,50 @@ model CTACard {
 }
 
 model PoojaBooking {
-  id                    String        @id @default(cuid())
-  displayId             String
-  userId                String?
-  poojaId               String
-  templeId              String?
-  packageName           String
-  packagePrice          Float
-  devoteeName           String
-  devoteePhone          String
-  devoteeEmail          String?
-  bookingDate           String?
-  address               String?       // Full address (legacy / display)
-  prasadStreet          String?       // Structured: Street / House No
-  prasadCity            String?       // Structured: City
-  prasadState           String?       // Structured: State
-  prasadPincode         String?       // Structured: Pincode (6 digits)
-  specialRequests       String?
-  gothra                String?
-  kuldevi               String?
-  kuldevta              String?
-  status                BookingStatus @default(BOOKED)
-  isPrasadRequested     Boolean       @default(false)
-  prasadStatus          PrasadStatus  @default(NOT_APPLICABLE)
-  shiprocketOrderId     String?       // Shiprocket order_id for prasad shipment
-  awbCode               String?       // AWB / Tracking ID from Shiprocket
-  trackingUrl           String?       // Tracking URL (auto-generated)
-  courierName           String?       // Assigned courier partner
-  commissionAmount      Float         @default(0)
-  netEarning            Float         @default(0)
-  platformFee           Float         @default(0)
-  createdAt             DateTime      @default(now())
-  updatedAt             DateTime      @updatedAt
-  anniversary           String?
-  dob                   String?
-  gender                String?
-  proofPhotos           String[]      @default([])
-  additionalDevotees    Json?
-  nativePlace           String?
-  paymentMethod         String?       // CASH, UPI, CHEQUE, BANK, CARD (null = online Razorpay)
-  pooja                 Pooja         @relation(fields: [poojaId], references: [id])
-  temple                Temple?       @relation(fields: [templeId], references: [id])
-  user                  User?         @relation(fields: [userId], references: [id])
+  id                 String        @id @default(cuid())
+  displayId          String
+  userId             String?
+  poojaId            String
+  templeId           String?
+  packageName        String
+  packagePrice       Float
+  devoteeName        String
+  devoteePhone       String
+  devoteeEmail       String?
+  bookingDate        String?
+  address            String?
+  specialRequests    String?
+  gothra             String?
+  kuldevi            String?
+  kuldevta           String?
+  status             BookingStatus @default(BOOKED)
+  commissionAmount   Float         @default(0)
+  netEarning         Float         @default(0)
+  platformFee        Float         @default(0)
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+  anniversary        String?
+  dob                String?
+  gender             String?
+  proofPhotos        String[]      @default([])
+  additionalDevotees Json?
+  nativePlace        String?
+  awbCode            String?
+  courierName        String?
+  isPrasadRequested  Boolean       @default(false)
+  prasadQuantity     Int           @default(0)
+  prasadAmount       Float         @default(0)
+  prasadStatus       PrasadStatus  @default(NOT_APPLICABLE)
+  trackingUrl        String?
+  prasadCity         String?
+  prasadPincode      String?
+  prasadState        String?
+  prasadStreet       String?
+  shiprocketOrderId  String?
+  paymentMethod      String?
+  pooja              Pooja         @relation(fields: [poojaId], references: [id])
+  temple             Temple?       @relation(fields: [templeId], references: [id])
+  user               User?         @relation(fields: [userId], references: [id])
 }
 
 model Order {
@@ -653,8 +659,8 @@ model Donation {
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
   displayId        String?  @unique
-  temple           Temple?  @relation(fields: [templeId], references: [id])
   mandal           Mandal?  @relation(fields: [mandalId], references: [id])
+  temple           Temple?  @relation(fields: [templeId], references: [id])
   user             User?    @relation(fields: [userId], references: [id])
 }
 
@@ -669,16 +675,16 @@ model StandardFAQ {
 }
 
 model OtpVerification {
-  id             String     @id @default(cuid())
+  id             String   @id @default(cuid())
   phone          String
-  role           UserRole   @default(DEVOTEE)
+  role           UserRole @default(DEVOTEE)
   name           String?
   email          String?
   otp            String
   otpExpires     DateTime
-  isRegisterFlow Boolean    @default(false)
-  isUsed         Boolean    @default(false)
-  createdAt      DateTime   @default(now())
+  isRegisterFlow Boolean  @default(false)
+  isUsed         Boolean  @default(false)
+  createdAt      DateTime @default(now())
 }
 
 model GlobalSetting {
@@ -698,6 +704,182 @@ model IdSequence {
   @@id([prefix, yearCode])
 }
 
+model Mandal {
+  id                 String                    @id @default(cuid())
+  name               Json
+  mandalType         String?
+  description        Json?
+  about              Json?
+  presiding_deity    String?
+  festivals          String?
+  address            String?
+  city               String?
+  state              String?
+  pinCode            String?
+  mapUrl             String?
+  contactNumber      String
+  email              String?
+  presidentName      String?
+  registrationNumber String?
+  verificationDocUrl String?
+  presidentIdDocUrl  String?
+  image              String?
+  bannerImages       String[]                  @default([])
+  slug               String?                   @unique
+  isActive           Boolean                   @default(true)
+  status             String                    @default("PENDING")
+  adminNotes         String?
+  userId             String?                   @unique
+  liveUrl            String?
+  channelId          String?
+  liveStatus         Boolean                   @default(false)
+  isLive             Boolean                   @default(false)
+  isPrimaryLive      Boolean                   @default(false)
+  createdAt          DateTime                  @default(now())
+  updatedAt          DateTime                  @updatedAt
+  documentUrl        String[]                  @default([])
+  donations          Donation[]
+  events             Event[]
+  favorites          Favorite[]
+  ledgerEntries      MandalLedger[]
+  withdrawals        MandalWithdrawalRequest[]
+}
+
+model Lead {
+  id         String     @id @default(cuid())
+  name       String?
+  phone      String     @unique
+  email      String?
+  source     LeadSource @default(TEMPLE_ONBOARDING)
+  status     LeadStatus @default(NEW)
+  metadata   Json?
+  assignedTo String?
+  notes      String?
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+}
+
+model MandalLedger {
+  id          String       @id @default(cuid())
+  mandalId    String?
+  amount      Float
+  grossAmount Float        @default(0)
+  commission  Float        @default(0)
+  type        LedgerType
+  sourceId    String?
+  description String?
+  status      LedgerStatus @default(PENDING)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  mandal      Mandal?      @relation(fields: [mandalId], references: [id])
+}
+
+model MandalWithdrawalRequest {
+  id            String           @id @default(cuid())
+  mandalId      String?
+  amount        Float
+  status        WithdrawalStatus @default(PENDING)
+  bankDetails   Json?
+  transactionId String?
+  receiptImage  String?
+  adminNotes    String?
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  mandal        Mandal?          @relation(fields: [mandalId], references: [id])
+}
+
+model PhotographyPackage {
+  id          String               @id @default(cuid())
+  templeId    String
+  name        Json
+  price       Float
+  duration    Int
+  isActive    Boolean              @default(true)
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+  description Json?
+  bookings    PhotographyBooking[]
+  temple      Temple               @relation(fields: [templeId], references: [id], onDelete: Cascade)
+}
+
+model PhotographySlot {
+  id                String               @id @default(cuid())
+  templeId          String
+  slotName          String
+  maxBookingsPerDay Int                  @default(10)
+  isActive          Boolean              @default(true)
+  createdAt         DateTime             @default(now())
+  updatedAt         DateTime             @updatedAt
+  bookings          PhotographyBooking[]
+  temple            Temple               @relation(fields: [templeId], references: [id], onDelete: Cascade)
+}
+
+model PhotographyBooking {
+  id           String             @id @default(cuid())
+  displayId    String             @unique
+  userId       String?
+  templeId     String
+  packageId    String
+  slotId       String
+  selectedArea String
+  bookingDate  String
+  timeSlot     String
+  packagePrice Float
+  platformFee  Float              @default(0)
+  totalAmount  Float
+  status       BookingStatus      @default(PENDING)
+  paymentId    String?
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+  package      PhotographyPackage @relation(fields: [packageId], references: [id])
+  slot         PhotographySlot    @relation(fields: [slotId], references: [id])
+  temple       Temple             @relation(fields: [templeId], references: [id], onDelete: Cascade)
+  user         User?              @relation(fields: [userId], references: [id])
+}
+
+model DarshanSlot {
+  id          String          @id @default(cuid())
+  templeId    String
+  date        String
+  startTime   String
+  endTime     String
+  maxCapacity Int             @default(500)
+  bookedCount Int             @default(0)
+  isClosed    Boolean         @default(false)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  temple      Temple          @relation(fields: [templeId], references: [id], onDelete: Cascade)
+  tickets     DarshanTicket[]
+
+  @@unique([templeId, date, startTime])
+}
+
+model DarshanTicket {
+  id               String              @id @default(cuid())
+  displayId        String              @unique
+  userId           String
+  slotId           String
+  templeId         String
+  visitorName      String
+  visitorPhone     String
+  visitorEmail     String?
+  visitorCount     Int                 @default(1)
+  totalAmount      Float               @default(0)
+  platformFee      Float               @default(0)
+  commissionAmount Float               @default(0)
+  netEarning       Float               @default(0)
+  status           DarshanTicketStatus @default(PENDING)
+  qrToken          String              @unique @default(cuid())
+  scannedAt        DateTime?
+  scannedBy        String?
+  paymentMethod    String?
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+  slot             DarshanSlot         @relation(fields: [slotId], references: [id])
+  temple           Temple              @relation(fields: [templeId], references: [id])
+  user             User                @relation(fields: [userId], references: [id])
+}
+
 enum SlabType {
   GLOBAL
   TEMPLE
@@ -709,6 +891,7 @@ enum CommissionCategory {
   MARKETPLACE
   POOJA
   DONATION
+  DARSHAN
 }
 
 enum UserRole {
@@ -740,6 +923,7 @@ enum LedgerType {
   WITHDRAWAL
   DONATION_EARNING
   PHOTOGRAPHY_EARNING
+  DARSHAN_EARNING
 }
 
 enum LedgerStatus {
@@ -753,71 +937,6 @@ enum WithdrawalStatus {
   APPROVED
   REJECTED
   PAID
-}
-
-model Mandal{
-  id                 String   @id @default(cuid())
-
-  name               Json     // { "en": "...", "hi": "...", "mr": "..." }
-  mandalType         String?  // e.g. "Ganesh", "Durga", "Ram", "Other"
-  description        Json?    // { "en": "...", "hi": "...", "mr": "..." }
-  about              Json?    // { "en": "...", "hi": "...", "mr": "..." }
-  // Step 2: Deity Details
-  presiding_deity    String?
-  festivals          String?  // comma separated festivals
-  // Step 3: Location
-  address            String?
-  city               String?
-  state              String?
-  pinCode            String?
-  mapUrl             String?
-  // Step 4: Contact & Documents
-  contactNumber      String
-  email              String?
-  presidentName      String?
-  registrationNumber String?  // NGO/Trust registration number
-  verificationDocUrl String?  // Uploaded doc URL
-  presidentIdDocUrl  String?  // ID proof URL
-  // Media
-  image              String?  // Main image URL
-  bannerImages       String[] @default([]) // Gallery/banner images
-  documentUrl        String[] @default([]) // Verification document URL(s)
-  // Routing
-  slug               String?  @unique
-  // Status
-  isActive           Boolean  @default(true)
-  status             String   @default("PENDING") // PENDING | APPROVED | REJECTED
-  adminNotes         String?
-  
-  userId             String?  @unique
-  liveUrl            String?
-  channelId          String?
-  liveStatus         Boolean  @default(false)
-  isLive             Boolean  @default(false)
-  isPrimaryLive      Boolean  @default(false)
-
-  events             Event[]
-  donations          Donation[]
-  favorites          Favorite[]
-  ledgerEntries      MandalLedger[]
-  withdrawals        MandalWithdrawalRequest[]
-  
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
-}
-
-model Lead {
-  id          String      @id @default(cuid())
-  name        String?
-  phone       String      @unique
-  email       String?
-  source      LeadSource  @default(TEMPLE_ONBOARDING)
-  status      LeadStatus  @default(NEW)
-  metadata    Json?       // e.g. { "templeName": "..." }
-  assignedTo  String?     
-  notes       String?     
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
 }
 
 enum LeadSource {
@@ -837,35 +956,6 @@ enum LeadStatus {
   DEAD
 }
 
-model MandalLedger {
-  id          String         @id @default(cuid())
-  mandalId    String?
-  amount      Float
-  grossAmount Float          @default(0)
-  commission  Float          @default(0)
-  type        LedgerType
-  sourceId    String?
-  description String?
-  status      LedgerStatus   @default(PENDING)
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
-  mandal      Mandal?        @relation(fields: [mandalId], references: [id])
-}
-
-model MandalWithdrawalRequest {
-  id            String           @id @default(cuid())
-  mandalId      String?
-  amount        Float
-  status        WithdrawalStatus @default(PENDING)
-  bankDetails   Json?
-  transactionId String?
-  receiptImage  String?
-  adminNotes    String?
-  createdAt     DateTime         @default(now())
-  updatedAt     DateTime         @updatedAt
-  mandal        Mandal?          @relation(fields: [mandalId], references: [id])
-}
-
 enum PrasadStatus {
   NOT_APPLICABLE
   PREPARING
@@ -879,52 +969,9 @@ enum PrasadType {
   PAID
 }
 
-model PhotographyPackage {
-  id          String               @id @default(cuid())
-  templeId    String
-  name        Json                 // e.g. {"en": "Personal Mobile Pass", "hi": "..."}
-  description Json?                // e.g. {"en": "Description..."}
-  price       Float
-  duration    Int                  // in minutes
-  isActive    Boolean              @default(true)
-  createdAt   DateTime             @default(now())
-  updatedAt   DateTime             @updatedAt
-  temple      Temple               @relation(fields: [templeId], references: [id], onDelete: Cascade)
-  bookings    PhotographyBooking[]
+enum DarshanTicketStatus {
+  PENDING
+  CONFIRMED
+  USED
+  EXPIRED
 }
-
-model PhotographySlot {
-  id                String               @id @default(cuid())
-  templeId          String
-  slotName          String               // e.g. "08:00 AM - 10:00 AM"
-  maxBookingsPerDay Int                  @default(10)
-  isActive          Boolean              @default(true)
-  createdAt         DateTime             @default(now())
-  updatedAt         DateTime             @updatedAt
-  temple            Temple               @relation(fields: [templeId], references: [id], onDelete: Cascade)
-  bookings          PhotographyBooking[]
-}
-
-model PhotographyBooking {
-  id               String             @id @default(cuid())
-  displayId        String             @unique
-  userId           String?
-  templeId         String
-  packageId        String
-  slotId           String
-  selectedArea     String
-  bookingDate      String             // YYYY-MM-DD
-  timeSlot         String             // Display value
-  packagePrice     Float
-  platformFee      Float              @default(0)
-  totalAmount      Float
-  status           BookingStatus      @default(PENDING)
-  paymentId        String?
-  createdAt        DateTime           @default(now())
-  updatedAt        DateTime           @updatedAt
-  user             User?              @relation(fields: [userId], references: [id])
-  temple           Temple             @relation(fields: [templeId], references: [id], onDelete: Cascade)
-  package          PhotographyPackage @relation(fields: [packageId], references: [id])
-  slot             PhotographySlot    @relation(fields: [slotId], references: [id])
-}
-

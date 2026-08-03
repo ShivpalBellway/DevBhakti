@@ -121,3 +121,17 @@ export const downloadDonationReceipt = async (donationId: string) => {
         return { success: false };
     }
 };
+
+export const fetchMyDarshanTickets = async () => {
+    const token = localStorage.getItem("token");
+    if (!token) return { success: false, data: [] };
+    try {
+        const response = await axios.get(`${API_URL}/darshan/my-tickets`, {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+        return { success: true, data: response.data };
+    } catch (error) {
+        console.error("Fetch darshan tickets failed", error);
+        return { success: false, data: [] };
+    }
+};

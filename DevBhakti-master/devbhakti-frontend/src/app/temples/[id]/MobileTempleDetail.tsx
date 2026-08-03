@@ -569,12 +569,14 @@ export default function MobileTempleDetail({
                         </button>
 
                         {/* Darshan Tickets */}
-                        <button onClick={() => scrollToSection("mobile-poojas-section")} className="flex flex-col items-center p-2 rounded-2xl hover:bg-orange-50/50 active:scale-95 transition-all text-center">
-                            <div className="h-14 w-14 bg-amber-500/10 rounded-2xl flex items-center justify-center mb-2 text-amber-600 shadow-sm">
-                                <Ticket className="h-7 w-7" />
-                            </div>
-                            <span className="text-sm font-bold leading-tight">Darshan Tickets</span>
-                        </button>
+                        {temple.isDarshanActive && (
+                            <button onClick={() => router.push(`/darshan/${temple.id}`)} className="flex flex-col items-center p-2 rounded-2xl hover:bg-orange-50/50 active:scale-95 transition-all text-center">
+                                <div className="h-14 w-14 bg-amber-500/10 rounded-2xl flex items-center justify-center mb-2 text-amber-600 shadow-sm">
+                                    <Ticket className="h-7 w-7" />
+                                </div>
+                                <span className="text-sm font-bold leading-tight">Darshan</span>
+                            </button>
+                        )}
 
                     </div>
                 </div>
