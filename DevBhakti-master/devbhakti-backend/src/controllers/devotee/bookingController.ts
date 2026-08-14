@@ -47,6 +47,7 @@ export const createBooking = async (req: Request, res: Response) => {
             nativePlace,
             additionalDevotees,
             isPrasadRequested,
+            prasadSelectionType,
             prasadQuantity
         } = req.body;
 
@@ -157,17 +158,21 @@ export const createBooking = async (req: Request, res: Response) => {
         // --- PRASAD PRICE & VALIDATION ---
         let finalPrasadQuantity = 0;
         let finalPrasadAmount = 0;
-        let validPrasadRequested = pooja.hasPrasad && (isPrasadRequested === true || isPrasadRequested === 'true');
+        const templePrasadPrice = (pooja.temple as any)?.prasadPrice || 0;
+        
+        // Prasad can be requested if the Pooja has Free Prasad, or the Temple has Paid Prasad enabled.
+        const canRequestPrasad = pooja.hasPrasad || templePrasadPrice > 0 || pooja.prasadType === 'PAID';
+        let validPrasadRequested = canRequestPrasad && (isPrasadRequested === true || isPrasadRequested === 'true');
 
-        if (validPrasadRequested && pooja.prasadType === 'PAID') {
+        // Only calculate Prasad Price if PAID Prasad was explicitly requested, and it's available
+        if (validPrasadRequested && prasadSelectionType === 'PAID' && (pooja.prasadType === 'PAID' || templePrasadPrice > 0)) {
             finalPrasadQuantity = prasadQuantity ? parseInt(prasadQuantity, 10) : 1;
             
             // Backend Validation: Min 1, Max 10
             if (finalPrasadQuantity < 1) finalPrasadQuantity = 1;
             if (finalPrasadQuantity > 10) finalPrasadQuantity = 10;
             
-            const prasadPrice = (pooja.temple as any)?.prasadPrice || 0;
-            finalPrasadAmount = finalPrasadQuantity * prasadPrice;
+            finalPrasadAmount = finalPrasadQuantity * templePrasadPrice;
         }
 
         // Calculate commission via Slab System using verified price
@@ -264,7 +269,7 @@ export const createBooking = async (req: Request, res: Response) => {
                     userId,
                     poojaId: pooja.id,
                     templeId: effectiveTempleId,
-
+                    mandalId: pooja.mandalId || null,
 
                     packageName,
 
@@ -301,6 +306,7 @@ export const createBooking = async (req: Request, res: Response) => {
                     prasadAmount: finalPrasadAmount,
 
                     status: 'PENDING', // Mark as pending until Razorpay payment is verified
+                    razorpayOrderId: null,
 
                     commissionAmount,
                     platformFee: commissionAmount,
@@ -311,21 +317,34 @@ export const createBooking = async (req: Request, res: Response) => {
 
             });
 
-
-
-            // Create ledger entry for temple
-            await tx.templeLedger.create({
-                data: {
-                    templeId: effectiveTempleId,
-                    amount: netEarning,
-                    grossAmount: finalPrice + finalPrasadAmount, // Include prasad amount
-                    commission: commissionAmount,
-                    type: "POOJA_EARNING",
-                    sourceId: newBooking.id,
-                    description: `Pooja Booking: ${getEnglish((pooja as any).name)} (${packageName}) [${displayId}]${finalPrasadAmount > 0 ? ' + Prasad' : ''}`,
-                    status: "PENDING"
-                }
-            });
+            // Create ledger entry for mandal or temple
+            if (pooja.mandalId) {
+                await tx.mandalLedger.create({
+                    data: {
+                        mandalId: pooja.mandalId,
+                        amount: netEarning,
+                        grossAmount: finalPrice + finalPrasadAmount,
+                        commission: commissionAmount,
+                        type: "POOJA_EARNING",
+                        sourceId: newBooking.id,
+                        description: `Pooja Booking: ${getEnglish((pooja as any).name)} (${packageName}) [${displayId}]${finalPrasadAmount > 0 ? ' + Prasad' : ''}`,
+                        status: "PENDING"
+                    }
+                });
+            } else if (effectiveTempleId) {
+                await tx.templeLedger.create({
+                    data: {
+                        templeId: effectiveTempleId,
+                        amount: netEarning,
+                        grossAmount: finalPrice + finalPrasadAmount,
+                        commission: commissionAmount,
+                        type: "POOJA_EARNING",
+                        sourceId: newBooking.id,
+                        description: `Pooja Booking: ${getEnglish((pooja as any).name)} (${packageName}) [${displayId}]${finalPrasadAmount > 0 ? ' + Prasad' : ''}`,
+                        status: "PENDING"
+                    }
+                });
+            }
 
 
 
@@ -336,6 +355,25 @@ export const createBooking = async (req: Request, res: Response) => {
 
 
 
+        const razorpayOrder = await razorpay.orders.create({
+            amount: Math.round((finalPrice + commissionAmount + finalPrasadAmount) * 100),
+            currency: "INR",
+            receipt: `pooja_rcpt_${(booking.displayId || booking.id).slice(-10)}`,
+            notes: {
+                templeId: effectiveTempleId,
+                templeName: getEnglish((pooja as any).temple?.name) || "Dev Bhakti",
+                poojaName: getEnglish((pooja as any).name),
+                devoteeName,
+                displayId,
+                type: "POOJA"
+            }
+        });
+
+        await prisma.poojaBooking.update({
+            where: { id: booking.id },
+            data: { razorpayOrderId: razorpayOrder.id }
+        });
+
         res.status(201).json({
 
             success: true,
@@ -344,12 +382,7 @@ export const createBooking = async (req: Request, res: Response) => {
 
             data: booking,
 
-            razorpayOrder: await razorpay.orders.create({
-
-                amount: Math.round((finalPrice + commissionAmount + finalPrasadAmount) * 100),
-                currency: "INR",
-                receipt: `pooja_rcpt_${(booking.displayId || booking.id).slice(-10)}`,
-            })
+            razorpayOrder
 
         });
 

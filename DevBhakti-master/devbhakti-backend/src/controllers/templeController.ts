@@ -379,6 +379,12 @@ export const getPoojaById = async (req: Request, res: Response) => {
                     role: 'INSTITUTION'
                   }
                 }
+              },
+              {
+                mandal: {
+                  status: 'APPROVED',
+                  isActive: true
+                }
               }
             ]
           }
@@ -386,6 +392,7 @@ export const getPoojaById = async (req: Request, res: Response) => {
       },
       include: {
         temple: true,
+        mandal: true,
         templeCopies: {
           where: {
             status: true,
@@ -443,11 +450,71 @@ export const getPoojaById = async (req: Request, res: Response) => {
   }
 };
 
+const getLowestPriceOfPoojaRecord = (p: any): number => {
+  let prices: number[] = [];
+  if (p.price !== undefined && p.price !== null) {
+    const val = Number(p.price);
+    if (!isNaN(val) && val > 0) prices.push(val);
+  }
+  if (p.packages) {
+    try {
+      const pkgs = typeof p.packages === 'string' ? JSON.parse(p.packages) : p.packages;
+      if (Array.isArray(pkgs)) {
+        pkgs.forEach((pkg: any) => {
+          if (pkg && pkg.price !== undefined && pkg.price !== null) {
+            const val = Number(pkg.price);
+            if (!isNaN(val) && val > 0) prices.push(val);
+          }
+        });
+      }
+    } catch (e) {}
+  }
+  const validPrices = prices.filter(val => val > 0);
+  return validPrices.length > 0 ? Math.min(...validPrices) : (p.price || 0);
+};
+
+const resolvePoojaLowestPriceInfo = (pooja: any, filterLocation?: string) => {
+  const resolvedPooja = { ...pooja };
+  
+  if (pooja.isMaster && pooja.templeCopies && pooja.templeCopies.length > 0) {
+    let candidates = pooja.templeCopies;
+    if (filterLocation && filterLocation !== 'All') {
+      const lowLoc = filterLocation.toLowerCase().trim();
+      candidates = candidates.filter((c: any) => {
+        if (!c.temple) return false;
+        const locEn = (c.temple.location?.en || '').toLowerCase().trim();
+        const locHi = (c.temple.location?.hi || '').toLowerCase().trim();
+        return locEn.includes(lowLoc) || locHi.includes(lowLoc);
+      });
+    }
+
+    if (candidates.length > 0) {
+      let bestCopy = candidates[0];
+      let bestPrice = getLowestPriceOfPoojaRecord(bestCopy);
+
+      for (let i = 1; i < candidates.length; i++) {
+        const currentPrice = getLowestPriceOfPoojaRecord(candidates[i]);
+        if (currentPrice < bestPrice) {
+          bestPrice = currentPrice;
+          bestCopy = candidates[i];
+        }
+      }
+
+      resolvedPooja.temple = bestCopy.temple;
+      resolvedPooja.price = bestCopy.price;
+      resolvedPooja.packages = bestCopy.packages;
+    }
+  }
+
+  resolvedPooja.computedLowestPrice = getLowestPriceOfPoojaRecord(resolvedPooja);
+  return resolvedPooja;
+};
+
 export const getAllPoojas = async (req: Request, res: Response) => {
   try {
     const userId = getUserIdFromRequest(req);
     const lang = getLang(req);
-    const { templeId, category, location, search, categoryId } = req.query;
+    const { templeId, mandalId, category, location, search, categoryId } = req.query;
 
     const where: any = {
       status: true
@@ -455,7 +522,13 @@ export const getAllPoojas = async (req: Request, res: Response) => {
 
     // Search: Handled in JS for case-insensitivity on Json fields
 
-    if (templeId) {
+    if (mandalId) {
+      where.mandalId = String(mandalId);
+      where.mandal = {
+        status: 'APPROVED',
+        isActive: true
+      };
+    } else if (templeId) {
       where.templeId = String(templeId);
       where.temple = {
         isActive: true,
@@ -481,10 +554,20 @@ export const getAllPoojas = async (req: Request, res: Response) => {
             { isMaster: false },
             { masterPoojaId: null },
             {
-              temple: {
-                isActive: true,
-                user: { isVerified: true }
-              }
+              OR: [
+                {
+                  temple: {
+                    isActive: true,
+                    user: { isVerified: true }
+                  }
+                },
+                {
+                  mandal: {
+                    status: 'APPROVED',
+                    isActive: true
+                  }
+                }
+              ]
             }
           ]
         }
@@ -531,6 +614,14 @@ export const getAllPoojas = async (req: Request, res: Response) => {
                 isActive: true,
                 user: { isVerified: true }
               }
+            },
+            {
+              isMaster: false,
+              masterPoojaId: null,
+              mandal: {
+                status: 'APPROVED',
+                isActive: true
+              }
             }
           ]
         });
@@ -542,14 +633,40 @@ export const getAllPoojas = async (req: Request, res: Response) => {
       include: {
         temple: {
           select: {
+            id: true,
             name: true,       // Json — localize() handles
             location: true,   // Json — localize() handles
             image: true
           }
         },
+        mandal: {
+          select: {
+            id: true,
+            name: true,       // Json — localize() handles
+            address: true,
+            city: true,
+            state: true,
+            image: true
+          }
+        },
         templeCopies: {
-          where: { status: true },
-          select: { price: true, packages: true }
+          where: { 
+            status: true,
+            temple: {
+              isActive: true,
+              user: { isVerified: true }
+            }
+          },
+          include: {
+            temple: {
+              select: {
+                id: true,
+                name: true,
+                location: true,
+                image: true
+              }
+            }
+          }
         },
         _count: {
           select: { templeCopies: true }
@@ -575,18 +692,18 @@ export const getAllPoojas = async (req: Request, res: Response) => {
       });
     }
 
-    // Deduplicate Poojas in the backend API for Global View
+    // Deduplicate Poojas in the backend API for Global View by lowest price representation
     if (!templeId) {
+      const resolvedList = finalPoojas.map(p => resolvePoojaLowestPriceInfo(p, location as string));
+
       const uniquePoojasMap = new Map();
-      poojas.forEach((p: any) => {
+      resolvedList.forEach((p: any) => {
         const nameVal = p.name?.en || p.name?.hi || '';
         const key = nameVal.toLowerCase().trim();
         if (!key) return;
         
         const existing = uniquePoojasMap.get(key);
-        const isBetter = !existing || 
-                         (p.isMaster && !existing.isMaster) || 
-                         (!p.masterPoojaId && existing.masterPoojaId && !p.isMaster);
+        const isBetter = !existing || p.computedLowestPrice < existing.computedLowestPrice;
         
         if (isBetter) {
           uniquePoojasMap.set(key, p);

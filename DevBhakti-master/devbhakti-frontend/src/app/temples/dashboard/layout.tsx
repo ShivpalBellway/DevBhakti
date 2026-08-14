@@ -24,7 +24,8 @@ import {
     ShieldCheck,
     X,
     Camera,
-    Ticket
+    Ticket,
+    Gift
 } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -121,7 +122,8 @@ const sidebarItems = [
             { label: "All Bookings", href: "/temples/dashboard/bookings" },
             { label: "Booked Poojas", href: "/temples/dashboard/bookings?status=BOOKED" },
             { label: "Completed", href: "/temples/dashboard/bookings?status=COMPLETED" },
-            { label: "Offline Pooja Bookings", href: "/temples/dashboard/bookings?type=offline" },
+            { label: "➕ Add Offline Booking", href: "/temples/dashboard/bookings/add-offline" },
+            { label: "👥 Offline Users & Leads", href: "/temples/dashboard/offline-pooja-leads" },
         ]
     },
     {
@@ -155,6 +157,12 @@ const sidebarItems = [
         icon: Building2,
         href: "/temples/dashboard/bank",
         permission: "temple.bank.manage"
+    },
+    {
+        label: "Paid Prasad",
+        icon: Gift,
+        href: "/temples/dashboard/paid-prasad",
+        permission: "temple.profile.manage"
     },
     {
         label: "Profile",

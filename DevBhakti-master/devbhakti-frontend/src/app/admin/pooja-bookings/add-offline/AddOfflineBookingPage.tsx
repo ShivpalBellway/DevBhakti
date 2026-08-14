@@ -45,7 +45,7 @@ import { useToast } from "@/hooks/use-toast";
 import { AnimatePresence, motion } from "framer-motion";
 
 import { fetchPublicTemples, fetchPublicPoojas, fetchPublicPoojaById } from "@/api/publicController";
-import { createOfflineBookingAdmin } from "@/api/adminController";
+import { createOfflineBookingAdmin, lookupDevoteeByPhoneAdmin } from "@/api/adminController";
 import { generatePoojaReceiptHTML } from "@/utils/poojaReceipt";
 import { parseLocalizedValue } from '@/utils/textUtils';
 
@@ -62,6 +62,7 @@ export default function AddOfflineBookingPage() {
   const [step, setStep] = useState(initialStep);
   const [loading, setLoading] = useState(true);
   const [isPaymentLoading, setIsPaymentLoading] = useState(false);
+  const [isLookupLoading, setIsLookupLoading] = useState(false);
   
   const [allTemples, setAllTemples] = useState<any[]>([]);
   const [allPoojas, setAllPoojas] = useState<any[]>([]);
@@ -100,8 +101,42 @@ export default function AddOfflineBookingPage() {
   const [bookingId, setBookingId] = useState("");
   const [createdBooking, setCreatedBooking] = useState<any>(null);
   const [paymentMethod, setPaymentMethod] = useState("CASH");
+  const [transactionRef, setTransactionRef] = useState("");
+  const [adminNotes, setAdminNotes] = useState("");
   const [isPrasadRequested, setIsPrasadRequested] = useState(false);
   const requestedPoojaParam = searchParams.get("pooja");
+
+  const handlePhoneLookup = async (phoneVal: string) => {
+    const cleaned = phoneVal.replace(/\D/g, "");
+    if (cleaned.length < 10) return;
+    try {
+      setIsLookupLoading(true);
+      const res = await lookupDevoteeByPhoneAdmin(phoneVal);
+      if (res.success && res.exists && res.data) {
+        setFormData(prev => ({
+          ...prev,
+          name: res.data.name || prev.name,
+          email: res.data.email || prev.email,
+          gothra: res.data.gothra || prev.gothra,
+          kuldevi: res.data.kuldevi || prev.kuldevi,
+          kuldevta: res.data.kuldevta || prev.kuldevta,
+          address: res.data.address || prev.address,
+          dob: res.data.dob || prev.dob,
+          anniversary: res.data.anniversary || prev.anniversary,
+          nativePlace: res.data.nativePlace || prev.nativePlace,
+        }));
+        toast({
+          title: "Devotee Details Auto-Filled",
+          description: `Existing record found for ${res.data.name || 'devotee'}.`,
+        });
+      }
+    } catch (err) {
+      console.error("Phone lookup error", err);
+    } finally {
+      setIsLookupLoading(false);
+    }
+  };
+
 
 
   useEffect(() => {
@@ -571,6 +606,8 @@ export default function AddOfflineBookingPage() {
         nativePlace: formData.nativePlace || undefined,
         additionalDevotees: formData.additionalDevotees,
         paymentMethod: paymentMethod,
+        transactionRef: transactionRef || undefined,
+        adminNotes: adminNotes || undefined,
         isPrasadRequested: isPrasadRequested,
       };
 
@@ -1401,6 +1438,28 @@ export default function AddOfflineBookingPage() {
                     </SelectContent>
                   </Select>
                 </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="transactionRef">Transaction Ref / Receipt No.</Label>
+                  <Input
+                    id="transactionRef"
+                    placeholder="e.g. UPI-987654321 / Cash Receipt #1042"
+                    value={transactionRef}
+                    onChange={(e) => setTransactionRef(e.target.value)}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="adminNotes">Internal Admin Notes (Optional)</Label>
+                  <Textarea
+                    id="adminNotes"
+                    placeholder="Add any internal notes for this offline booking..."
+                    value={adminNotes}
+                    onChange={(e) => setAdminNotes(e.target.value)}
+                    rows={2}
+                  />
+                </div>
+
 
                 <div className="bg-[#794A05]/5 p-6 rounded-xl border border-[#794A05]/10 space-y-4">
                   <h3 className="font-medium text-lg">Booking Summary</h3>

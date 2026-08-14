@@ -401,6 +401,7 @@ function LedgerContent() {
                                 <th className="py-5 text-left text-[11px] font-extrabold text-slate-900 uppercase tracking-widest">Merchant (Temple/Seller)</th>
                                 <th className="py-5 text-left text-[11px] font-extrabold text-slate-900 uppercase tracking-widest">Type</th>
                                 <th className="py-5 text-center text-[11px] font-extrabold text-slate-900 uppercase tracking-widest">Status</th>
+                                <th className="py-5 text-left text-[11px] font-extrabold text-slate-900 uppercase tracking-widest">Payment ID / Method</th>
                                 <th className="py-5 text-right text-[11px] font-extrabold text-slate-900 uppercase tracking-widest">
                                     <Tooltip>
                                         <TooltipTrigger asChild>
@@ -437,7 +438,7 @@ function LedgerContent() {
                         <tbody className="divide-y divide-slate-50">
                             {filteredTransactions.length === 0 ? (
                                 <tr>
-                                    <td colSpan={7} className="py-20 text-center text-slate-400 font-serif">No transactions found.</td>
+                                    <td colSpan={8} className="py-20 text-center text-slate-400 font-serif">No transactions found.</td>
                                 </tr>
                             ) : (
                                 filteredTransactions.map((tx) => (
@@ -470,6 +471,10 @@ function LedgerContent() {
                                             <Badge variant="outline" className="rounded-full px-3 py-1 text-[10px] font-extrabold uppercase tracking-tighter">
                                                 {tx.type.replace('_', ' ')}
                                             </Badge>
+                                        </td>
+                                        <td className="py-6 max-w-[220px] text-sm text-slate-600">
+                                            <div className="font-bold truncate">{tx.razorpayPaymentId || tx.razorpayOrderId || 'N/A'}</div>
+                                            <div className="text-[11px] text-slate-400 uppercase tracking-[.18em] mt-1">{(tx.paymentMethod || 'RAZORPAY').toUpperCase()}</div>
                                         </td>
                                         <td className="py-6 text-center">
                                             <Badge className={cn("rounded-full px-3 py-1 text-[10px] font-bold border", tx.status === "COMPLETED" ? "bg-emerald-50 text-emerald-700 border-emerald-200" : tx.status === "PENDING" ? "bg-amber-50 text-amber-700 border-amber-200" : "bg-red-50 text-red-700 border-red-200")}>

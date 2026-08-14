@@ -103,6 +103,7 @@ router.get('/:id', async (req, res) => {
             where: { OR: [{ id }, { slug: id }], isActive: true, status: 'APPROVED' },
             include: {
                 events: { where: { status: true } },
+                poojas: { where: { status: true } },
                 _count: { select: { donations: true } }
             }
         });

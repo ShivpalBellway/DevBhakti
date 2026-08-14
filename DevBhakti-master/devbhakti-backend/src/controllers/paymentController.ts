@@ -32,6 +32,16 @@ export const verifyPayment = async (req: Request, res: Response) => {
             return res.status(400).json({ success: false, message: "Invalid signature" });
         }
 
+        let paymentMethod: string | undefined = undefined;
+        try {
+            const razorpayPayment = await razorpay.payments.fetch(razorpay_payment_id);
+            paymentMethod = razorpayPayment?.method || undefined;
+        } catch (fetchError) {
+            console.error("Failed to fetch Razorpay payment method:", fetchError);
+        }
+
+        const verifiedPaymentMethod = paymentMethod || (orderData?.paymentMethod as string) || "RAZORPAY";
+
         // Payment is verified
         if (orderType === "MARKETPLACE") {
             if (!orderData || !userId) {
@@ -40,7 +50,7 @@ export const verifyPayment = async (req: Request, res: Response) => {
 
             try {
                 const { createVerifiedOrder } = require('./marketplace/productOrderController');
-                await createVerifiedOrder(orderData, userId);
+                await createVerifiedOrder(orderData, userId, razorpay_order_id, razorpay_payment_id, verifiedPaymentMethod);
             } catch (orderErr: any) {
                 const msg: string = orderErr?.message || "";
 
@@ -80,13 +90,21 @@ export const verifyPayment = async (req: Request, res: Response) => {
                 },
                 data: {
                     status: "BOOKED",
+                    razorpayOrderId: razorpay_order_id,
+                    razorpayPaymentId: razorpay_payment_id,
+                    paymentMethod: verifiedPaymentMethod
                 },
             });
 
-            // Update ledger status to COMPLETED (from PENDING)
+            // Update ledger status to COMPLETED (from PENDING) and attach Razorpay metadata
             await prisma.templeLedger.updateMany({
                 where: { sourceId: referenceId, type: "POOJA_EARNING" },
-                data: { status: "COMPLETED" },
+                data: {
+                    status: "COMPLETED",
+                    razorpayOrderId: razorpay_order_id,
+                    razorpayPaymentId: razorpay_payment_id,
+                    paymentMethod: verifiedPaymentMethod
+                },
             });
 
             // Send Email Receipt
@@ -255,6 +273,9 @@ export const verifyPayment = async (req: Request, res: Response) => {
                 where: { id: referenceId },
                 data: {
                     status: "SUCCESS",
+                    razorpayOrderId: razorpay_order_id,
+                    razorpayPaymentId: razorpay_payment_id,
+                    paymentMethod: verifiedPaymentMethod
                 },
             });
 
@@ -274,7 +295,10 @@ export const verifyPayment = async (req: Request, res: Response) => {
                         type: "DONATION_EARNING",
                         sourceId: donation.id,
                         description: `Donation: ${donation.donorName}${donation.isAnonymous ? ' (Anonymous)' : ''}`,
-                        status: "COMPLETED"
+                        status: "COMPLETED",
+                        razorpayOrderId: razorpay_order_id,
+                        razorpayPaymentId: razorpay_payment_id,
+                        paymentMethod: verifiedPaymentMethod
                     }
                 });
             } else if (donation && donation.mandalId) {
@@ -287,7 +311,10 @@ export const verifyPayment = async (req: Request, res: Response) => {
                         type: "DONATION_EARNING",
                         sourceId: donation.id,
                         description: `Donation: ${donation.donorName}${donation.isAnonymous ? ' (Anonymous)' : ''}`,
-                        status: "COMPLETED"
+                        status: "COMPLETED",
+                        razorpayOrderId: razorpay_order_id,
+                        razorpayPaymentId: razorpay_payment_id,
+                        paymentMethod: verifiedPaymentMethod
                     }
                 });
             }

@@ -35,13 +35,18 @@ export const initiateDonation = async (req: Request, res: Response) => {
             return res.status(400).json({ success: false, message: "Donation amount exceeds the maximum limit of ₹1 Crore" });
         }
 
+        let temple = null;
+        let mandal = null;
+
         if (templeId) {
-            const temple = await prisma.temple.findUnique({ where: { id: templeId } });
+            temple = await prisma.temple.findUnique({ where: { id: templeId } });
             if (!temple) return res.status(404).json({ success: false, message: "Temple not found" });
         } else if (mandalId) {
-            const mandal = await prisma.mandal.findUnique({ where: { id: mandalId } });
+            mandal = await prisma.mandal.findUnique({ where: { id: mandalId } });
             if (!mandal) return res.status(404).json({ success: false, message: "Mandal not found" });
         }
+
+        const templeName = temple ? getEnglish(temple.name) : mandal ? getEnglish(mandal.name) : "Dev Bhakti";
 
         // Calculate Commission
         const commissionData = await getCommissionForAmount(
@@ -60,6 +65,12 @@ export const initiateDonation = async (req: Request, res: Response) => {
             amount: Math.round(totalPayable * 100), // amount in the smallest currency unit
             currency: "INR",
             receipt: `don_${Date.now()}`,
+            notes: {
+                templeId: templeId || null,
+                templeName,
+                donorName,
+                type: "DONATION"
+            }
         };
 
         const razorpayOrder = await razorpay.orders.create(options);

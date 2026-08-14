@@ -71,6 +71,8 @@ import mandalAdminEventRoutes from './routes/mandal_admin/eventRoutes';
 import mandalAdminDonationRoutes from './routes/mandal_admin/donationRoutes';
 import mandalAdminFinanceRoutes from './routes/mandal_admin/financeRoutes';
 import mandalAdminStaffManagementRoutes from './routes/mandal_admin/staffManagementRoutes';
+import mandalAdminPoojaRoutes from './routes/mandal_admin/poojaRoutes';
+import mandalAdminBookingRoutes from './routes/mandal_admin/bookingRoutes';
 
 
 const app = express();
@@ -140,6 +142,8 @@ app.use('/api/mandal-admin/events', mandalAdminEventRoutes);
 app.use('/api/mandal-admin/donations', mandalAdminDonationRoutes);
 app.use('/api/mandal-admin/finance', mandalAdminFinanceRoutes);
 app.use('/api/mandal-admin/team', mandalAdminStaffManagementRoutes);
+app.use('/api/mandal-admin/poojas', mandalAdminPoojaRoutes);
+app.use('/api/mandal-admin/bookings', mandalAdminBookingRoutes);
 
 // Devotee Auth Routes
 app.use('/api/auth', authRoutes);

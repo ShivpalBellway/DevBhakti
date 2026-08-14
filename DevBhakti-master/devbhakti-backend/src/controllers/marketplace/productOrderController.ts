@@ -115,7 +115,7 @@ export const createOrder = async (req: Request, res: Response) => {
  * Centrally create the order in DB after payment success
  * This is called from the payment controller
  */
-export const createVerifiedOrder = async (orderData: any, userId: string) => {
+export const createVerifiedOrder = async (orderData: any, userId: string, razorpayOrderId?: string, razorpayPaymentId?: string, razorpayPaymentMethod?: string) => {
   const { items, totalAmount, shippingAddress, paymentMethod } = orderData;
   const displayId = await generateCustomId('OID');
 
@@ -145,6 +145,8 @@ export const createVerifiedOrder = async (orderData: any, userId: string) => {
         userId,
         totalAmount,
         paymentMethod,
+        razorpayOrderId,
+        razorpayPaymentId,
         shippingAddress,
         status: "BOOKED",
         paymentStatus: "PAID",
@@ -231,7 +233,10 @@ export const createVerifiedOrder = async (orderData: any, userId: string) => {
             type: "MARKETPLACE_EARNING",
             sourceId: order.id,
             description: `Earning from Order #${displayId}`,
-            status: "COMPLETED"
+            status: "COMPLETED",
+            razorpayOrderId,
+            razorpayPaymentId,
+            paymentMethod: razorpayPaymentMethod || paymentMethod
           }
         });
       }

@@ -424,3 +424,28 @@ export const createOfflineBookingTemple = async (data: any) => {
     });
     return response.data;
 };
+
+export const lookupDevoteeByPhoneTemple = async (phone: string) => {
+    const token = localStorage.getItem("token");
+    const response = await axios.get(`${API_URL}/temple-admin/bookings/devotee-lookup?phone=${encodeURIComponent(phone)}`, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+
+export const fetchTempleOfflinePoojaLeads = async (params?: { search?: string, page?: number, limit?: number }) => {
+    const token = localStorage.getItem("token");
+    let url = `${API_URL}/temple-admin/bookings/offline-leads`;
+    if (params) {
+        const query = new URLSearchParams();
+        if (params.search) query.append('search', params.search);
+        if (params.page) query.append('page', params.page.toString());
+        if (params.limit) query.append('limit', params.limit.toString());
+        url += `?${query.toString()}`;
+    }
+    const response = await axios.get(url, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+

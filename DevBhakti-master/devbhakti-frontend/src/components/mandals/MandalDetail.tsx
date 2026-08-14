@@ -24,6 +24,7 @@ import {
   ExternalLink,
   User,
   X,
+  Flower2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -61,7 +62,7 @@ export function MandalDetail({ slug }: { slug: string }) {
   const [donationMessage, setDonationMessage] = useState("");
   const [isAnonymous, setIsAnonymous] = useState(false);
   const [isDonating, setIsDonating] = useState(false);
-  const [activeTab, setActiveTab] = useState<'about' | 'events' | 'gallery'>('about');
+  const [activeTab, setActiveTab] = useState<'about' | 'events' | 'gallery' | 'poojas'>('about');
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
@@ -308,6 +309,7 @@ razorpay.open();
     }
     return ev.title || "Mandal Festival Event";
   };
+
   const donationAmounts = [500, 1000, 2500, 5000, 10000];
 
   return (
@@ -604,12 +606,15 @@ razorpay.open();
           {/* Left Content - 2/3 */}
           <div className="lg:col-span-2 space-y-6">
             <Tabs defaultValue="about" className="w-full">
-              <TabsList className="grid w-full grid-cols-3 bg-muted/50 p-1 rounded-2xl">
+              <TabsList className="grid w-full grid-cols-4 bg-muted/50 p-1 rounded-2xl">
                 <TabsTrigger value="about" className="rounded-xl data-[state=active]:bg-[#7b4623] data-[state=active]:text-white font-semibold">
                   {t("mandal_detail.tab_about")}
                 </TabsTrigger>
                 <TabsTrigger value="events" className="rounded-xl data-[state=active]:bg-[#7b4623] data-[state=active]:text-white font-semibold">
                   {t("mandal_detail.tab_events")}
+                </TabsTrigger>
+                <TabsTrigger value="poojas" className="rounded-xl data-[state=active]:bg-[#7b4623] data-[state=active]:text-white font-semibold">
+                  🌺 Poojas
                 </TabsTrigger>
                 <TabsTrigger value="gallery" className="rounded-xl data-[state=active]:bg-[#7b4623] data-[state=active]:text-white font-semibold">
                   {t("mandal_detail.tab_gallery")}
@@ -746,6 +751,60 @@ razorpay.open();
                       <div className="text-center py-12 text-slate-400 space-y-2">
                         <Building2 className="w-10 h-10 mx-auto opacity-20" />
                         <p>{t("mandal_detail.no_images_available")}</p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="poojas" className="mt-6">
+                <Card className="rounded-2xl border-amber-900/10 shadow-sm">
+                  <CardContent className="p-6">
+                    <h2 className="text-xl font-bold mb-4 flex items-center gap-2 text-[#7b4623]">
+                       {t("mandal_detail.poojas") || "Poojas"}
+                    </h2>
+                    {mandal.poojas && mandal.poojas.length > 0 ? (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {mandal.poojas.map((pooja: any) => (
+                          <div key={pooja.id} className="p-5 border border-slate-200/80 rounded-2xl hover:border-[#7b4623] transition-all bg-white hover:shadow-md">
+                            <div className="space-y-3">
+                              <div>
+                                <h3 className="font-bold text-lg text-slate-900">{getLocalized(pooja, 'name') || pooja.name}</h3>
+                                <p className="text-xs font-medium text-slate-600 mt-1">{pooja.mandalCategory || pooja.category}</p>
+                              </div>
+                              
+                              <div className="flex items-center gap-2 text-base font-bold text-[#7b4623]">
+                                <IndianRupee className="w-4 h-4" />
+                                {pooja.price || 'N/A'}
+                              </div>
+
+                              {pooja.description && (
+                                <div className="text-xs text-slate-500 line-clamp-2 prose prose-xs">
+                                  <div dangerouslySetInnerHTML={{ __html: stripHtml(getLocalized(pooja, 'description') || pooja.description || '') }} />
+                                </div>
+                              )}
+
+                              <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200 w-fit">
+                                <CheckCircle className="w-3 h-3 mr-1" />
+                                Available
+                              </Badge>
+
+                              <Button
+                                className="w-full bg-[#7b4623] hover:bg-[#63381b] active:bg-[#5d351a] shadow-lg shadow-[#7b4623]/25 text-white px-4 py-2.5 text-sm font-bold rounded-xl gap-2 transition-all active:scale-[0.98] mt-2"
+                                onClick={() => {
+                                  router.push(`/mandals/${slug}/booking`);
+                                }}
+                              >
+                                📅 Book Now
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-12 text-slate-400 space-y-2">
+                        <Flower2 className="w-10 h-10 mx-auto opacity-30 text-[#7b4623]" />
+                        <p>{t("mandal_detail.no_poojas") || "No poojas available"}</p>
                       </div>
                     )}
                   </CardContent>
@@ -1081,6 +1140,8 @@ razorpay.open();
           )}
         </div>
       )}
+
+
     </div>
   );
 }

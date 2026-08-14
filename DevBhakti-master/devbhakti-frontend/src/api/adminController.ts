@@ -1232,6 +1232,32 @@ export const createOfflineBookingAdmin = async (data: any) => {
     return response.data;
 };
 
+export const lookupDevoteeByPhoneAdmin = async (phone: string) => {
+    const token = getAdminToken();
+    const response = await axios.get(`${API_URL}/admin/bookings/devotee-lookup?phone=${encodeURIComponent(phone)}`, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+
+export const fetchOfflinePoojaLeadsAdmin = async (params?: { search?: string, templeId?: string, page?: number, limit?: number }) => {
+    const token = getAdminToken();
+    let url = `${API_URL}/admin/bookings/offline-leads`;
+    if (params) {
+        const query = new URLSearchParams();
+        if (params.search) query.append('search', params.search);
+        if (params.templeId) query.append('templeId', params.templeId);
+        if (params.page) query.append('page', params.page.toString());
+        if (params.limit) query.append('limit', params.limit.toString());
+        url += `?${query.toString()}`;
+    }
+    const response = await axios.get(url, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+
+
 export const updateBookingStatusAdmin = async (id: string, data: any) => {
     const token = getAdminToken();
     const isFormData = data instanceof FormData;

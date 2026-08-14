@@ -716,6 +716,7 @@ export const updateMyTempleProfile = async (req: Request, res: Response) => {
       pickupLocation_hi: data.pickupLocation_hi,
       pickupLocation_mr: data.pickupLocation_mr,
       channelId: data.channelId || (typeof data.liveUrl === 'string' && data.liveUrl.trim().startsWith('UC') ? data.liveUrl.trim() : undefined),
+      prasadPrice: data.prasadPrice !== undefined ? (parseFloat(data.prasadPrice) || 0) : undefined,
     };
 
     // ─── Social Media URLs ──────────────────────────────────────────────────

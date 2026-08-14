@@ -217,9 +217,8 @@ const PoojaDetailClient = ({ id }: PoojaDetailClientProps) => {
                                             const parsedUser = savedUser ? JSON.parse(savedUser) : null;
 
                                             const effectiveTempleId = templeIdFromUrl || pooja.temple?.id || null;
-                                            const bookingUrl = effectiveTempleId
-                                                ? `/booking?pooja=${id}&temple=${effectiveTempleId}`
-                                                : `/booking?pooja=${id}`;
+                                            const institutionParam = pooja.mandalId ? `mandal=${pooja.mandalId}` : effectiveTempleId ? `temple=${effectiveTempleId}` : '';
+                                            const bookingUrl = `/booking?pooja=${id}${institutionParam ? `&${institutionParam}` : ''}`;
 
                                             if (!token || !parsedUser || parsedUser.role !== "DEVOTEE") {
                                                 toast({ title: t('common.login_required'), variant: "destructive" });
@@ -227,7 +226,7 @@ const PoojaDetailClient = ({ id }: PoojaDetailClientProps) => {
                                                 return;
                                             }
 
-                                            if (effectiveTempleId || pooja.isMaster) {
+                                            if (effectiveTempleId || pooja.isMaster || pooja.mandalId) {
                                                 router.push(bookingUrl);
                                             } else {
                                                 document.getElementById('temple-section')?.scrollIntoView({ behavior: 'smooth' });
@@ -242,7 +241,7 @@ const PoojaDetailClient = ({ id }: PoojaDetailClientProps) => {
                         </div>
                     </div>
 
-                    {/* Temple Section (Direct Content, No Tabs) */}
+                    {/* Temple/Mandal Section */}
                     <div id="temple-section" className="mt-20">
                         <div className="w-full">
 
@@ -253,7 +252,7 @@ const PoojaDetailClient = ({ id }: PoojaDetailClientProps) => {
 
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                                 {/* Any Location (Global) Booking Card */}
-                                {!pooja.temple && (
+                                {!pooja.temple && !pooja.mandal && (
                                 <div className="bg-[#FFF8F0] p-6 rounded-[2.5rem] border-2 border-primary/20 shadow-xl w-full group overflow-hidden relative text-center">
                                         <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full -mr-16 -mt-16 blur-2xl group-hover:bg-primary/20 transition-colors" />
                                         <div className="relative w-full h-52 mx-auto mb-4 rounded-2xl overflow-hidden border-4 border-white shadow-xl bg-white flex items-center justify-center group-hover:scale-105 transition-transform">
@@ -286,28 +285,29 @@ const PoojaDetailClient = ({ id }: PoojaDetailClientProps) => {
                                     </div>
                                 )}
 
-                                {/* Master Temple (if any) */}
-                                {pooja.temple && (
+                                {/* Master Temple or Mandal */}
+                                {(pooja.temple || pooja.mandal) && (
                                     <div className="bg-white p-6 rounded-[2.5rem] border border-primary/10 shadow-xl w-full group overflow-hidden relative text-center">
                                         <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16 blur-2xl group-hover:bg-primary/10 transition-colors" />
                                         <div className="relative w-full h-52 mx-auto mb-4 rounded-2xl overflow-hidden border-4 border-white shadow-xl group-hover:scale-105 transition-transform">
                                             <img
-                                                src={getFullImageUrl(pooja.temple.image)}
-                                                alt={getLocalized(pooja.temple, 'name', language)}
+                                                src={getFullImageUrl((pooja.temple || pooja.mandal).image)}
+                                                alt={getLocalized(pooja.temple || pooja.mandal, 'name', language)}
                                                 className="w-full h-full object-cover"
                                             />
                                         </div>
                                         <div className="text-center">
-                                            <h3 className="text-2xl font-serif font-bold text-[#1a1a1a] mb-1">{getLocalized(pooja.temple, 'name', language)}</h3>
+                                            <h3 className="text-2xl font-serif font-bold text-[#1a1a1a] mb-1">{getLocalized(pooja.temple || pooja.mandal, 'name', language)}</h3>
                                             <p className="flex items-center justify-center gap-2 text-[#777] text-sm mb-6 font-medium">
                                                 <MapPin className="w-4 h-4 text-primary" />
-                                                {getLocalized(pooja.temple, 'location', language)}
+                                                {getLocalized(pooja.temple || pooja.mandal, 'location', language)}
                                             </p>
                                             <div className="space-y-3">
                                                 <Button
                                                     className="w-full bg-[#5d4037] hover:bg-black text-white rounded-full h-12 font-bold flex items-center justify-center gap-2 transition-all group/btn"
                                                     onClick={() => {
-                                                        const bookingUrl = `/booking?pooja=${id}&temple=${pooja.temple.id}`;
+                                                        const instParam = pooja.mandalId ? `mandal=${pooja.mandalId}` : `temple=${pooja.temple?.id}`;
+                                                        const bookingUrl = `/booking?pooja=${id}&${instParam}`;
                                                         const token = localStorage.getItem("token");
                                                         const savedUser = localStorage.getItem("user");
                                                         const parsedUser = savedUser ? JSON.parse(savedUser) : null;
@@ -321,9 +321,11 @@ const PoojaDetailClient = ({ id }: PoojaDetailClientProps) => {
                                                 >
                                                     {t('common.book_pooja')} <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
                                                 </Button>
-                                                <Button variant="outline" className="w-full border-primary/5 text-[#5d4037] bg-[#FFF8F0]/30 hover:bg-[#FFF8F0]/50 rounded-full h-12 font-bold transition-all" asChild>
-                                                    <Link href={getTempleUrl(pooja.temple)}>{t('pooja_detail.explore_temple')}</Link>
-                                                </Button>
+                                                {pooja.temple && (
+                                                    <Button variant="outline" className="w-full border-primary/5 text-[#5d4037] bg-[#FFF8F0]/30 hover:bg-[#FFF8F0]/50 rounded-full h-12 font-bold transition-all" asChild>
+                                                        <Link href={getTempleUrl(pooja.temple)}>{t('pooja_detail.explore_temple')}</Link>
+                                                    </Button>
+                                                )}
                                             </div>
                                         </div>
                                     </div>

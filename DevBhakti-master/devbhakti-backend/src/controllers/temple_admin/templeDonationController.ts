@@ -164,7 +164,7 @@ export const createTempleDonation = async (req: Request, res: Response) => {
             pincode,
         } = req.body;
 
-        if (!templeId || !amount || !donorName || !donorPhone || !donorEmail) {
+        if (!templeId || !amount || !donorName || !donorPhone ) {
             return res.status(400).json({ success: false, message: "Missing required fields" });
         }
 
@@ -205,11 +205,11 @@ export const createTempleDonation = async (req: Request, res: Response) => {
         const netEarning = Number(amount);
         const displayId = await generateDonationDisplayId();
 
-        // 1️⃣ Find existing DEVOTEE user based on donorPhone, but do not create a new user for offline donation
+        // 1️⃣ Find existing DEVOTEE user based on donorPhone, or automatically create a new DEVOTEE user
         let userId: string | null = null;
         if (donorPhone) {
             // Normalize phone to match login system (+91XXXXXXXXXX)
-            let cleanedPhone = donorPhone.replace(/\D/g, '');
+            let cleanedPhone = String(donorPhone).replace(/\D/g, '');
             if (cleanedPhone.startsWith('00')) cleanedPhone = cleanedPhone.substring(2);
             if (cleanedPhone.length === 11 && cleanedPhone.startsWith('0')) cleanedPhone = cleanedPhone.substring(1);
             if (cleanedPhone.length === 12 && cleanedPhone.startsWith('91')) { }
@@ -218,11 +218,43 @@ export const createTempleDonation = async (req: Request, res: Response) => {
             const normalizedPhone = '+' + cleanedPhone;
 
             const existingUser = await prisma.user.findFirst({
-                where: { phone: normalizedPhone, role: "DEVOTEE" }
+                where: {
+                    OR: [
+                        { phone: normalizedPhone },
+                        { phone: cleanedPhone },
+                        { phone: String(donorPhone) }
+                    ],
+                    role: "DEVOTEE"
+                }
             });
 
             if (existingUser) {
                 userId = existingUser.id;
+                // Update missing profile info if available
+                await prisma.user.update({
+                    where: { id: existingUser.id },
+                    data: {
+                        name: existingUser.name || donorName,
+                        email: existingUser.email || donorEmail || null,
+                        address: existingUser.address || address || null
+                    }
+                });
+            } else {
+                // Auto-create DEVOTEE user for offline donation
+                const userDisplayId = `DEV-${Date.now().toString().slice(-6)}`;
+                const newUser = await prisma.user.create({
+                    data: {
+                        displayId: userDisplayId,
+                        name: donorName,
+                        phone: normalizedPhone,
+                        email: donorEmail || null,
+                        address: address || null,
+                        role: "DEVOTEE",
+                        isVerified: true,
+                        isActive: true
+                    }
+                });
+                userId = newUser.id;
             }
         }
 

@@ -187,3 +187,107 @@ export const fetchMandalPermissions = async () => {
     return response.data;
 };
 
+// Mandal Poojas Management
+export const fetchMyMandalPoojas = async () => {
+    const token = localStorage.getItem("token");
+    const response = await axios.get(`${API_URL}/mandal-admin/poojas?lang=raw`, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+
+export const createMandalPooja = async (formData: FormData) => {
+    const token = localStorage.getItem("token");
+    const response = await axios.post(`${API_URL}/mandal-admin/poojas`, formData, {
+        headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'multipart/form-data'
+        }
+    });
+    return response.data;
+};
+
+export const updateMandalPooja = async (id: string, formData: FormData) => {
+    const token = localStorage.getItem("token");
+    const response = await axios.put(`${API_URL}/mandal-admin/poojas/${id}`, formData, {
+        headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'multipart/form-data'
+        }
+    });
+    return response.data;
+};
+
+export const deleteMandalPooja = async (id: string) => {
+    const token = localStorage.getItem("token");
+    const response = await axios.delete(`${API_URL}/mandal-admin/poojas/${id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+
+export const toggleMandalPoojaStatus = async (id: string) => {
+    const token = localStorage.getItem("token");
+    const response = await axios.patch(`${API_URL}/mandal-admin/poojas/${id}/toggle-status`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+
+// Mandal Bookings Management
+export const fetchMyMandalBookings = async (params?: any) => {
+    const token = localStorage.getItem("token");
+    const response = await axios.get(`${API_URL}/mandal-admin/bookings`, {
+        headers: { Authorization: `Bearer ${token}` },
+        params
+    });
+    return response.data;
+};
+
+export const createOfflineBookingMandal = async (data: any) => {
+    const token = localStorage.getItem("token");
+    const response = await axios.post(`${API_URL}/mandal-admin/bookings`, data, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+
+export const deleteMandalBooking = async (id: string) => {
+    const token = localStorage.getItem("token");
+    const response = await axios.delete(`${API_URL}/mandal-admin/bookings/${id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+
+export const fetchMandalBookingById = async (id: string) => {
+    const token = localStorage.getItem("token");
+    const response = await axios.get(`${API_URL}/mandal-admin/bookings/${id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+
+export const lookupDevoteeByPhoneMandal = async (phone: string) => {
+    const token = localStorage.getItem("token");
+    const response = await axios.get(`${API_URL}/mandal-admin/bookings/devotee-lookup?phone=${encodeURIComponent(phone)}`, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+
+export const fetchMandalOfflinePoojaLeads = async (params?: { search?: string, page?: number, limit?: number }) => {
+    const token = localStorage.getItem("token");
+    let url = `${API_URL}/mandal-admin/bookings/offline-leads`;
+    if (params) {
+        const query = new URLSearchParams();
+        if (params.search) query.append('search', params.search);
+        if (params.page) query.append('page', params.page.toString());
+        if (params.limit) query.append('limit', params.limit.toString());
+        url += `?${query.toString()}`;
+    }
+    const response = await axios.get(url, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};

@@ -84,9 +84,15 @@ const sidebarItems = [
   {
     label: "Pooja Bookings",
     icon: Calendar,
-    href: "/admin/pooja-bookings",
+    href: "#",
     permission: "bookings.menu",
+    subItems: [
+      { label: "📅 All & Online Bookings", href: "/admin/pooja-bookings", permission: "bookings.view" },
+      { label: "➕ Add Offline Booking", href: "/admin/pooja-bookings/add-offline", permission: "bookings.manage" },
+      { label: "👥 Offline Users & Leads", href: "/admin/offline-pooja-leads", permission: "bookings.view" },
+    ]
   },
+
 
 
   {

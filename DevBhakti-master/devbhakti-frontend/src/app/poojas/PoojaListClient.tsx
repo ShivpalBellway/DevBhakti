@@ -496,45 +496,29 @@ const PoojaListClient: React.FC = () => {
                                                     {stripHtml(pooja.about || getLocalized(pooja, 'description', language))}
                                                 </p>
 
-                                                {pooja.temple && (
+                                                {(pooja.temple || pooja.mandal) && (
                                                     <div className="flex items-center gap-2 mb-3 text-zinc-500">
                                                         <MapPin className="w-3.5 h-3.5 text-primary" />
                                                         <span className="text-xs font-semibold truncate">
-                                                            {getLocalized(pooja.temple, 'name', language)}
+                                                            {getLocalized(pooja.temple || pooja.mandal, 'name', language)}
                                                         </span>
                                                     </div>
                                                 )}
 
                                                 <div className="space-y-3 mb-4">
-                                                    {/* <div className="flex items-center gap-2 text-zinc-600">
-                                                        <Clock className="w-4 h-4 text-primary" />
-                                                        <span className="text-sm font-medium">{pooja.duration || pooja.time}</span>
-                                                    </div> */}
-                                                    {/* {pooja.bullets && pooja.bullets.length > 0 && (
-                                                        <div className="flex flex-wrap gap-2">
-                                                            {pooja.bullets.slice(0, 3).map((bullet, idx) => (
-                                                                <span key={idx} className="text-[10px] uppercase tracking-wider font-bold text-zinc-400 px-2 py-1 bg-zinc-50 rounded-md">
-                                                                    {bullet}
-                                                                </span>
-                                                            ))}
-                                                        </div>
-                                                    )} */}
                                                 </div>
                                             </div>
 
                                             <div className="mt-auto px-3 pb-1">
                                                 <div className="flex items-center justify-between gap-4 pt-4 border-t border-orange-50">
-                                                    {/* <div className="flex flex-col">
-                                                        <span className="text-xs text-zinc-400 uppercase font-bold tracking-widest">Start From</span>
-                                                        <span className="text-2xl font-bold text-zinc-900 font-display">₹{pooja.price}</span>
-                                                    </div> */}
                                                     <div className="flex flex-col gap-3 w-full">
                                                         <Button
                                                             className="w-full rounded-2xl bg-[#794A05] hover:bg-[#5d3804] text-white group/book transition-all duration-300 font-bold h-12 shadow-md shadow-orange-900/10"
                                                             onClick={(e) => {
                                                                 e.preventDefault();
                                                                 e.stopPropagation();
-                                                                const bookingUrl = `/booking?temple=${pooja.temple?.id || ''}&pooja=${pooja.id}`;
+                                                                const institutionParam = pooja.mandalId ? `mandal=${pooja.mandalId}` : pooja.temple?.id ? `temple=${pooja.temple.id}` : '';
+                                                                const bookingUrl = `/booking?${institutionParam ? `${institutionParam}&` : ''}pooja=${pooja.id}`;
                                                                 const token = localStorage.getItem("token");
                                                                 const savedUser = localStorage.getItem("user");
                                                                 const parsedUser = savedUser ? JSON.parse(savedUser) : null;

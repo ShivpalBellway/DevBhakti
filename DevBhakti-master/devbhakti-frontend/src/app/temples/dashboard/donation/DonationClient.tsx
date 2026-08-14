@@ -182,8 +182,8 @@ export default function DonationClient() {
             return;
         }
 
-        if (!addDonorName.trim() || !addDonorPhone.trim() || !addDonorEmail.trim()) {
-            toast({ title: "Validation Error", description: "Please fill donor name, phone and email.", variant: "destructive" });
+        if (!addDonorName.trim() || !addDonorPhone.trim()) {
+            toast({ title: "Validation Error", description: "Please fill donor name and phone.", variant: "destructive" });
             return;
         }
 

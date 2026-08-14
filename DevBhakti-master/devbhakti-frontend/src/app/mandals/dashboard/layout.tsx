@@ -46,6 +46,17 @@ const sidebarItems = [
         permission: "dashboard.view"
     },
     {
+        label: "Poojas",
+        icon: Flower2,
+        href: "/mandals/dashboard/poojas",
+        permission: "poojas.view"
+    },
+    {
+        label: "Bookings",
+        icon: Calendar,
+        href: "/mandals/dashboard/bookings"
+    },
+    {
         label: "Events",
         icon: Calendar,
         href: "/mandals/dashboard/events",

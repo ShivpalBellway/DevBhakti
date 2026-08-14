@@ -244,6 +244,8 @@ model Pooja {
   masterPooja   Pooja?                @relation("MasterPoojaRelation", fields: [masterPoojaId], references: [id])
   templeCopies  Pooja[]               @relation("MasterPoojaRelation")
   temple        Temple?               @relation(fields: [templeId], references: [id])
+  mandalId      String?
+  mandal        Mandal?               @relation(fields: [mandalId], references: [id])
   bookings      PoojaBooking[]
   Event         Event[]               @relation("EventToPooja")
 }
@@ -446,8 +448,17 @@ model PoojaBooking {
   prasadStreet       String?
   shiprocketOrderId  String?
   paymentMethod      String?
+  razorpayOrderId    String?       @unique
+  razorpayPaymentId  String?       @unique
+  isOffline          Boolean       @default(false)
+  bookingSource      String        @default("ONLINE")
+  transactionRef     String?
+  createdByStaffId   String?
+  adminNotes         String?
   pooja              Pooja         @relation(fields: [poojaId], references: [id])
   temple             Temple?       @relation(fields: [templeId], references: [id])
+  mandalId           String?
+  mandal             Mandal?       @relation(fields: [mandalId], references: [id])
   user               User?         @relation(fields: [userId], references: [id])
 }
 
@@ -459,6 +470,8 @@ model Order {
   status          String     @default("PENDING")
   paymentStatus   String     @default("PENDING")
   paymentMethod   String?
+  razorpayOrderId String?    @unique
+  razorpayPaymentId String?  @unique
   shippingAddress Json?
   platformFee     Float      @default(0)
   shippingCost    Float      @default(0)
@@ -516,6 +529,9 @@ model TempleLedger {
   status      LedgerStatus   @default(PENDING)
   createdAt   DateTime       @default(now())
   updatedAt   DateTime       @updatedAt
+  razorpayOrderId    String?
+  razorpayPaymentId  String?
+  paymentMethod      String?
   sellerId    String?
   seller      SellerProfile? @relation(fields: [sellerId], references: [id])
   temple      Temple?        @relation(fields: [templeId], references: [id])
@@ -649,6 +665,7 @@ model Donation {
   status           String   @default("PENDING")
   paymentMethod    String?
   razorpayOrderId  String?  @unique
+  razorpayPaymentId String? @unique
   isAnonymous      Boolean  @default(false)
   is80GRequired    Boolean  @default(false)
   panNumber        String?
@@ -738,6 +755,8 @@ model Mandal {
   createdAt          DateTime                  @default(now())
   updatedAt          DateTime                  @updatedAt
   documentUrl        String[]                  @default([])
+  poojas             Pooja[]
+  bookings           PoojaBooking[]
   donations          Donation[]
   events             Event[]
   favorites          Favorite[]
@@ -771,6 +790,9 @@ model MandalLedger {
   status      LedgerStatus @default(PENDING)
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
+  razorpayOrderId    String?
+  razorpayPaymentId  String?
+  paymentMethod      String?
   mandal      Mandal?      @relation(fields: [mandalId], references: [id])
 }
 
@@ -975,3 +997,16 @@ enum DarshanTicketStatus {
   USED
   EXPIRED
 }
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  action      String
+  module      String
+  entityId    String?
+  performedBy String
+  userRole    String
+  details     Json?
+  ipAddress   String?
+  createdAt   DateTime @default(now())
+}
+

@@ -134,7 +134,8 @@
     "invalid_amount_desc": "Please select or enter a valid donation amount",
     "payment_init_error_desc": "Failed to initiate payment",
     "payment_error_desc": "Something went wrong. Please try again.",
-    "load_error_desc": "Failed to load mandal"
+    "load_error_desc": "Failed to load mandal",
+    "mandal_detail": "Pooja Details"
   },
   "marketplace": {
     "title": "Sacred Marketplace",
