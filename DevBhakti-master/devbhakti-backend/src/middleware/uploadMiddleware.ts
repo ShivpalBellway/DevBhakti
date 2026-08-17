@@ -12,12 +12,13 @@ const cmsBannerDir = 'uploads/cms/banners';
 const cmsFeatureDir = 'uploads/cms/features';
 const cmsTestimonialDir = 'uploads/cms/testimonials';
 const cmsCTADir = 'uploads/cms/cta';
+const cmsMandalDir = 'uploads/cms/mandal';
 const userUploadDir = 'uploads/users';
 const productUploadDir = 'uploads/products';
 const categoryUploadDir = 'uploads/categories';
 const proofUploadDir = 'uploads/proofs';
 
-[cmsBannerDir, cmsFeatureDir, cmsTestimonialDir, cmsCTADir, userUploadDir, productUploadDir, categoryUploadDir, proofUploadDir].forEach(dir => {
+[cmsBannerDir, cmsFeatureDir, cmsTestimonialDir, cmsCTADir, cmsMandalDir, userUploadDir, productUploadDir, categoryUploadDir, proofUploadDir].forEach(dir => {
     if (!fs.existsSync(dir)) {
         fs.mkdirSync(dir, { recursive: true });
     }
@@ -53,6 +54,8 @@ export const uploadCmsImage = multer({
                 cb(null, cmsBannerDir);
             } else if (req.originalUrl.includes('cta-cards')) {
                 cb(null, cmsCTADir);
+            } else if (req.originalUrl.includes('mandal')) {
+                cb(null, cmsMandalDir);
             } else {
                 cb(null, cmsFeatureDir);
             }

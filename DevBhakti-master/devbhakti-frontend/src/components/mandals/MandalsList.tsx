@@ -2,25 +2,26 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
-import { motion } from "framer-motion";
 import {
   Search,
   MapPin,
   Star,
   Heart,
-  Video,
   Calendar,
   Filter,
   X,
   ChevronsUpDown,
   Check,
+  Building2,
+  ArrowRight,
+  Sliders,
+  Share2,
   Users,
+  Sparkles,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
   Popover,
@@ -41,14 +42,15 @@ import { API_URL } from "@/config/apiConfig";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/context/LanguageContext";
 import { getLocalized } from "@/utils/localization";
-import { stripHtml } from "@/utils/textUtils";
 import { fetchUserFavorites, addFavorite, removeFavorite } from "@/api/userController";
+import { fetchMandalRegistrationStatus } from "@/api/publicController";
 
 export function MandalsList() {
   const [searchInput, setSearchInput] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [selectedLocation, setSelectedLocation] = useState("All");
+  const [selectedArea, setSelectedArea] = useState("All");
   const [mandals, setMandals] = useState<any[]>([]);
   const [allMandals, setAllMandals] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -60,26 +62,43 @@ export function MandalsList() {
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [suggestions, setSuggestions] = useState<any[]>([]);
   const [mounted, setMounted] = useState(false);
+  const [mandalSettings, setMandalSettings] = useState<any>(null);
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  // Load user and favorites
+  // Load user, favorites, and Admin Mandal Registration settings
   useEffect(() => {
-    const savedUser = localStorage.getItem("user");
-    if (savedUser) {
-      setUser(JSON.parse(savedUser));
-      loadFavorites();
+    try {
+      const savedUser = localStorage.getItem("user");
+      if (savedUser) {
+        setUser(JSON.parse(savedUser));
+        loadFavorites();
+      }
+    } catch (e) {
+      console.error("Error reading local user storage", e);
     }
     fetchInitialOptions();
+    loadMandalSettings();
   }, [language]);
+
+  const loadMandalSettings = async () => {
+    try {
+      const res = await fetchMandalRegistrationStatus();
+      if (res && res.success) {
+        setMandalSettings(res.settings || res);
+      }
+    } catch (error) {
+      console.error("Error fetching mandal registration settings:", error);
+    }
+  };
 
   const fetchInitialOptions = async () => {
     try {
       const response = await fetch(`${API_URL}/mandals`);
       const data = await response.json();
-      if (data.success) {
+      if (data && data.success) {
         setAllMandals(data.data || []);
       }
     } catch (error) {
@@ -90,7 +109,7 @@ export function MandalsList() {
   const loadFavorites = async () => {
     try {
       const res = await fetchUserFavorites();
-      if (res.success) {
+      if (res && res.success) {
         setFavorites(res.data || []);
       }
     } catch (error) {
@@ -102,14 +121,14 @@ export function MandalsList() {
   useEffect(() => {
     const timer = setTimeout(() => {
       setSearchQuery(searchInput);
-    }, 500);
+    }, 300);
     return () => clearTimeout(timer);
   }, [searchInput]);
 
   // Load mandals with filters
   useEffect(() => {
     loadMandals();
-  }, [searchQuery, selectedCategory, selectedLocation, language]);
+  }, [searchQuery, selectedCategory, selectedLocation, selectedArea, language]);
 
   const loadMandals = async () => {
     setLoading(true);
@@ -118,11 +137,12 @@ export function MandalsList() {
       if (searchQuery) params.append("search", searchQuery);
       if (selectedCategory !== "All") params.append("category", selectedCategory);
       if (selectedLocation !== "All") params.append("location", selectedLocation);
+      if (selectedArea !== "All") params.append("area", selectedArea);
       params.append("lang", language);
 
       const response = await fetch(`${API_URL}/mandals?${params.toString()}`);
       const data = await response.json();
-      if (data.success) {
+      if (data && data.success) {
         setMandals(data.data || []);
       }
     } catch (error) {
@@ -137,7 +157,7 @@ export function MandalsList() {
   };
 
   const getFullImageUrl = (path: string) => {
-    if (!path) return "/placeholder.jpg";
+    if (!path) return "https://images.unsplash.com/photo-1600093463592-8e36ae95ef56?auto=format&fit=crop&q=80&w=1200";
     if (path.startsWith("http")) return path;
     return `${API_URL.replace("/api", "")}${path}`;
   };
@@ -155,11 +175,11 @@ export function MandalsList() {
       return;
     }
 
-    const isFav = favorites.some((f) => f.mandalId === mandalId);
+    const isFav = favorites.some((f) => f && f.mandalId === mandalId);
     try {
       if (isFav) {
         await removeFavorite({ mandalId });
-        setFavorites(favorites.filter((f) => f.mandalId !== mandalId));
+        setFavorites(favorites.filter((f) => f && f.mandalId !== mandalId));
         toast({
           title: "Removed from Favorites",
           description: "Mandal removed from your favorites.",
@@ -175,19 +195,33 @@ export function MandalsList() {
     } catch (error: any) {
       toast({
         title: "Error",
-        description: error.response?.data?.message || error.message || "Failed to update favorites",
+        description:
+          error.response?.data?.message ||
+          error.message ||
+          "Failed to update favorites",
         variant: "destructive",
       });
     }
   };
 
-  // Get unique categories and locations from mandals
-  const categories = ["All", ...new Set(mandals.map((m) => m.mandalType).filter(Boolean))];
-  const locations = ["All", ...new Set(mandals.map((m) => m.city).filter(Boolean))];
+  // Get unique categories, locations, and areas from mandals
+  const categories = ["All", ...new Set(allMandals.map((m) => m?.mandalType).filter(Boolean))];
+  const locations = ["All", ...new Set(allMandals.map((m) => m?.city).filter(Boolean))];
+  const areas = ["All", ...new Set(allMandals.map((m) => m?.address || m?.area).filter(Boolean))];
+
+  // Popular search keywords
+  const popularSearches = [
+    "Lalbaugcha Raja",
+    "Ganesh Galli",
+    "Andhericha Raja",
+    "GSB Seva Mandal",
+    "Khetwadi",
+    "Parel",
+  ];
 
   // Fuzzy search suggestions
   const getFuzzySuggestions = (query: string) => {
-    if (query.length < 2) return [];
+    if (!query || query.length < 2) return [];
     const matches: any[] = [];
     allMandals.forEach((mandal) => {
       const name = getLocalized(mandal, "name", language) || "";
@@ -210,446 +244,649 @@ export function MandalsList() {
     }
   }, [searchInput, isSearchFocused, allMandals]);
 
-  const filteredMandals = mandals;
+  // Helpers for Admin Settings parsing
+  const getLocalizedSettingText = (field: "title" | "subtitle") => {
+    if (!mandalSettings?.[field]) return null;
+    const val = mandalSettings[field];
+    if (typeof val === "string") return val;
+    return val[language] || val["en"] || val["hi"] || val["mr"] || null;
+  };
+
+  const heroTitle =
+    getLocalizedSettingText("title") ||
+    (mounted ? t("mandal_list.title") : "Ganeshotsav 2026");
+
+  const heroSubtitle =
+    getLocalizedSettingText("subtitle") ||
+    (mounted
+      ? t("mandal_list.subtitle")
+      : "Celebrate Devotion. Experience Divinity.");
+
+  // Date range formatting
+  const formatDateStr = (dateStr: string) => {
+    if (!dateStr) return "";
+    try {
+      const parts = dateStr.split("-");
+      if (parts.length === 3) {
+        const d = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+        return d.toLocaleDateString("en-IN", { day: "numeric", month: "short" });
+      }
+      return dateStr;
+    } catch {
+      return dateStr;
+    }
+  };
+
+  let festivalDateDisplay = "27 Aug - 6 Sep 2026";
+  if (mandalSettings?.startDate && mandalSettings?.endDate) {
+    const sFormatted = formatDateStr(mandalSettings.startDate);
+    const eFormatted = formatDateStr(mandalSettings.endDate);
+    const endYear = mandalSettings.endDate.split("-")[0] || "2026";
+    festivalDateDisplay = `${sFormatted} - ${eFormatted} ${endYear}`;
+  } else if (mandalSettings?.startDate) {
+    festivalDateDisplay = formatDateStr(mandalSettings.startDate);
+  }
+
+  const adminBannerImage = mandalSettings?.image
+    ? getFullImageUrl(mandalSettings.image)
+    : "https://images.unsplash.com/photo-1600093463592-8e36ae95ef56?auto=format&fit=crop&q=80&w=1200";
 
   return (
-    <>
-      <div className="min-h-screen bg-background">
-        <Navbar />
+    <div className="min-h-screen bg-[#FDFBF7] text-zinc-900">
+      {/* Solid Navbar matching screenshot style */}
+      <Navbar isSolid={true} />
 
-        {/* Hero Section - Like Temple List */}
-        <section className="relative min-h-[480px] flex items-center justify-center overflow-hidden">
-          {/* Background image */}
-          <div className="absolute inset-0">
-            <Image
-              src="/images/sacred_temples_list_hero_bg.png"
-              alt="Sacred Mandals"
-              fill
-              priority
-              className="object-cover"
-              onError={(e) => {
-                (e.target as any).style.display = "none";
-              }}
-            />
-            <div className="absolute inset-0 bg-gradient-to-b from-background/80 via-background/60 to-background/90" />
+      {/* ─── HERO BANNER SECTION (WIDE FULL WIDTH 50-50 SPLIT) ──────────────── */}
+      <section className="relative bg-gradient-to-r from-[#1A0502] via-[#2A0C06] to-[#140402] text-white pt-32 pb-24 px-4 md:px-8 lg:px-12 overflow-hidden">
+        {/* Ambient Glow Effects */}
+        <div className="absolute top-0 right-1/4 w-[600px] h-[600px] bg-orange-600/15 rounded-full blur-[140px] pointer-events-none" />
+        <div className="absolute bottom-0 left-10 w-[500px] h-[500px] bg-amber-500/10 rounded-full blur-[120px] pointer-events-none" />
+
+        <div className="w-full max-w-[1700px] mx-auto relative z-10">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-14 items-center">
+            
+            {/* LEFT HALF (50%): CONTENT */}
+            <div className="space-y-6 flex flex-col justify-center pr-0 lg:pr-4">
+              {/* Top Divine Mantra */}
+              <div className="inline-flex items-center gap-2 text-amber-400 font-serif text-base tracking-wider font-semibold">
+                <span>|| गणपति बाप्पा मोरया ||</span>
+              </div>
+
+              {/* Dynamic Title */}
+              <h1 className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-serif font-bold text-white tracking-tight leading-[1.1]">
+                {heroTitle}
+              </h1>
+
+              {/* Dynamic Subtitle */}
+              <p className="text-base sm:text-lg lg:text-xl text-amber-100/90 font-light leading-relaxed max-w-2xl">
+                {heroSubtitle}
+              </p>
+
+              {/* Dynamic Feature Badges */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
+                {/* 1. Festival Dates */}
+                <div className="flex items-center gap-3 bg-white/5 backdrop-blur-md border border-white/10 p-3.5 rounded-2xl">
+                  <div className="p-2.5 bg-amber-500/20 rounded-xl text-amber-300 shrink-0">
+                    <Calendar className="w-5 h-5" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-[10px] uppercase font-bold tracking-wider text-amber-200/70 truncate">
+                      Festival Dates
+                    </div>
+                    <div className="text-xs font-bold text-white truncate mt-0.5">
+                      {festivalDateDisplay}
+                    </div>
+                  </div>
+                </div>
+
+                {/* 2. Location Info */}
+                <div className="flex items-center gap-3 bg-white/5 backdrop-blur-md border border-white/10 p-3.5 rounded-2xl">
+                  <div className="p-2.5 bg-amber-500/20 rounded-xl text-amber-300 shrink-0">
+                    <MapPin className="w-5 h-5" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-[10px] uppercase font-bold tracking-wider text-amber-200/70 truncate">
+                      Celebrated Across
+                    </div>
+                    <div className="text-xs font-bold text-white truncate mt-0.5">
+                      Maharashtra & Beyond
+                    </div>
+                  </div>
+                </div>
+
+                {/* 3. Mandal Info */}
+                <div className="flex items-center gap-3 bg-white/5 backdrop-blur-md border border-white/10 p-3.5 rounded-2xl">
+                  <div className="p-2.5 bg-amber-500/20 rounded-xl text-amber-300 shrink-0">
+                    <Building2 className="w-5 h-5" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-[10px] uppercase font-bold tracking-wider text-amber-200/70 truncate">
+                      Thousands of Mandals
+                    </div>
+                    <div className="text-xs font-bold text-white truncate mt-0.5">
+                      One Divine Celebration
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Button */}
+              <div className="pt-3">
+                <Button
+                  onClick={() => {
+                    const el = document.getElementById("mandals-search-section");
+                    el?.scrollIntoView({ behavior: "smooth" });
+                  }}
+                  className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-bold px-8 h-12 rounded-xl text-base shadow-lg shadow-amber-500/20 flex items-center gap-2 group transition-all"
+                >
+                  Explore Mandals
+                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                </Button>
+              </div>
+            </div>
+
+            {/* RIGHT HALF (50%): FULL IMAGE */}
+            <div className="relative w-full h-[360px] sm:h-[420px] lg:h-[480px] xl:h-[520px] rounded-3xl overflow-hidden shadow-2xl border border-amber-500/20 group">
+              <img
+                src={adminBannerImage}
+                alt={heroTitle}
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                onError={(e) => {
+                  (e.target as any).src =
+                    "https://images.unsplash.com/photo-1600093463592-8e36ae95ef56?auto=format&fit=crop&q=80&w=1200";
+                }}
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent" />
+              <div className="absolute bottom-6 left-6 right-6 text-white">
+                <Badge className="bg-amber-500 text-slate-950 font-bold text-xs mb-1.5">
+                  Ganeshotsav Special
+                </Badge>
+                <div className="text-lg font-bold truncate">{heroTitle}</div>
+              </div>
+            </div>
+
           </div>
+        </div>
+      </section>
 
-          {/* Background decorative elements */}
-          <div className="absolute inset-0 overflow-hidden pointer-events-none">
-            <div className="absolute top-1/4 -left-32 w-96 h-96 bg-primary/10 rounded-full blur-3xl animate-pulse-slow" />
-            <div className="absolute bottom-1/4 -right-32 w-80 h-80 bg-secondary/20 rounded-full blur-3xl animate-pulse-slow" />
-            <div className="absolute inset-0 bg-[url('/images/sacred_marketplace_hero_pattern.png')] opacity-10" />
-          </div>
+      {/* ─── FLOATING SEARCH & FILTER BAR ─────────────────────────────────── */}
+      <div id="mandals-search-section" className="w-full max-w-[1700px] mx-auto px-4 md:px-8 lg:px-12 -mt-10 md:-mt-14 relative z-30">
+        <div className="bg-white dark:bg-card rounded-3xl p-5 md:p-7 shadow-2xl border border-zinc-200/80 dark:border-zinc-800 space-y-4">
+          {/* Main Controls Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-3 items-center">
+            {/* Search Input (4 cols) */}
+            <div className="lg:col-span-4 relative">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-zinc-400" />
+              <input
+                type="text"
+                placeholder="Search by Mandal Name, Area or City..."
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                onFocus={() => setIsSearchFocused(true)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    setSearchQuery(searchInput);
+                    setIsSearchFocused(false);
+                  }
+                }}
+                className="w-full pl-12 pr-4 h-12 rounded-xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/40 text-zinc-800 dark:text-zinc-100"
+              />
 
-          <div className="container mx-auto px-4 pt-28 pb-12 relative z-10">
-            <div className="text-center max-w-4xl mx-auto">
-              <motion.h1
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.1 }}
-                className="text-4xl md:text-5xl lg:text-7xl font-serif font-bold text-foreground mb-6 leading-tight"
-              >
-                {mounted ? t('mandal_list.title') : "Browse Sacred Mandals"}
-              </motion.h1>
-              <motion.p
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 }}
-                className="text-lg text-slate-800 mb-10"
-              >
-                {mounted ? t('mandal_list.subtitle') : "Explore and support devotional mandals across India"}
-              </motion.p>
-
-              {/* Premium Search Bar */}
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.2 }}
-                className="relative max-w-2xl mx-auto group"
-              >
-                <div className="absolute -inset-1 bg-gradient-to-r from-primary to-orange-400 rounded-2xl blur opacity-25 group-hover:opacity-40 transition duration-1000 group-hover:duration-200" />
-                <div className="relative bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl border border-primary/10">
-                  <div className="relative flex items-center overflow-hidden">
-                    <Search className="absolute left-5 h-5 w-5 text-primary/50" />
-                    <input
-                      type="text"
-                      placeholder={mounted ? t('mandal_list.search_placeholder') : "Search mandals by name, city, or type..."}
-                      value={searchInput}
-                      onChange={(e) => setSearchInput(e.target.value)}
-                      onFocus={() => setIsSearchFocused(true)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                          setSearchQuery(searchInput);
-                          setIsSearchFocused(false);
-                        }
-                      }}
-                      className="w-full pl-14 pr-32 py-5 text-lg outline-none bg-transparent text-zinc-800 placeholder:text-zinc-400"
-                    />
-                    <Button
+              {/* Suggestions Dropdown */}
+              {isSearchFocused && suggestions.length > 0 && (
+                <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-zinc-900 rounded-xl shadow-xl border border-zinc-200 dark:border-zinc-800 max-h-60 overflow-y-auto z-50">
+                  {suggestions.map((suggestion, idx) => (
+                    <button
+                      key={idx}
+                      className="w-full px-4 py-3 text-left hover:bg-primary/5 flex items-center gap-3 transition-colors text-sm"
                       onClick={() => {
-                        setSearchQuery(searchInput);
+                        setSearchInput(suggestion.title);
+                        setSearchQuery(suggestion.title);
                         setIsSearchFocused(false);
                       }}
-                      className="absolute right-2 h-12 px-8 rounded-xl bg-primary hover:bg-primary/90 text-white hidden sm:flex font-bold"
                     >
-                      {mounted ? t('mandal_list.explore') : "Explore"}
-                    </Button>
-                  </div>
-
-                  {/* Suggestions Dropdown */}
-                  {isSearchFocused && suggestions.length > 0 && (
-                    <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-xl border border-border max-h-60 overflow-y-auto z-50">
-                      {suggestions.map((suggestion, idx) => (
-                        <button
-                          key={idx}
-                          className="w-full px-4 py-3 text-left hover:bg-primary/5 flex items-center gap-3 transition-colors"
-                          onClick={() => {
-                            setSearchInput(suggestion.title);
-                            setSearchQuery(suggestion.title);
-                            setIsSearchFocused(false);
-                          }}
-                        >
-                          <Search className="w-4 h-4 text-primary/50" />
-                          <div>
-                            <div className="font-medium">{suggestion.title}</div>
-                            <div className="text-xs text-muted-foreground">
-                              {suggestion.type && `${suggestion.type} • `}
-                              {suggestion.city && suggestion.city}
-                            </div>
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </motion.div>
-            </div>
-          </div>
-        </section>
-
-        {/* Filter Bar - Like Temple List */}
-        <section className="py-3 sticky top-0 md:top-[74px] z-40 bg-primary shadow-lg border-b border-black/20 transition-all">
-          <div className="container mx-auto px-4 relative z-10">
-            <div className="flex flex-col space-y-3">
-              <div className="flex items-center justify-between px-1">
-                <div className="flex items-center gap-3">
-                  <div className="p-1.5 bg-white/10 rounded-md">
-                    <Filter className="h-4 w-4 text-amber-200" />
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-[9px] uppercase tracking-[0.1em] font-medium text-amber-200/80 leading-snug">
-                      {mounted ? t('mandal_list.filter_experience') : "Filter Experience"}
-                    </span>
-                    <span className="text-lg font-serif font-bold text-white leading-none mt-2">
-                      {mounted ? t('mandal_list.refine_discovery') : "Refine Discovery"}
-                    </span>
-                  </div>
-                </div>
-                {(selectedCategory !== "All" || selectedLocation !== "All" || searchQuery !== "") && (
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => {
-                      setSelectedCategory("All");
-                      setSelectedLocation("All");
-                      setSearchInput("");
-                      setSearchQuery("");
-                    }}
-                    className="flex items-center gap-1.5 text-[10px] font-bold text-amber-200 hover:text-white transition-all bg-black/20 px-3 py-1.5 rounded-full border border-amber-500/30"
-                  >
-                    {mounted ? t('mandal_list.reset_all') : "Reset All"}
-                  </motion.button>
-                )}
-              </div>
-
-              {/* Filter Dropdowns */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {/* Category Filter */}
-                <div className="relative group bg-black/20 border border-white/10 rounded-xl shadow-inner hover:bg-black/30 transition-all duration-300 p-0.5">
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        role="combobox"
-                        className="w-full justify-start h-11 hover:bg-transparent rounded-lg border-none shadow-none text-left font-normal px-3"
-                      >
-                        <div className="flex items-center gap-2.5 w-full">
-                          <div className="text-amber-200/70 group-hover:text-amber-200 transition-colors shrink-0">
-                            <Star className="h-4 w-4" />
-                          </div>
-                          <div className="flex flex-col items-start leading-tight min-w-0">
-                            <span className="text-[9px] uppercase font-semibold text-white/50 tracking-wider">
-                              {mounted ? t('mandal_list.mandal_type') : "Mandal Type"}
-                            </span>
-                            <span className="truncate text-white text-xs font-semibold mt-0.5">
-                              {selectedCategory === "All" ? (mounted ? t('mandal_list.all_types') : "All Types") : selectedCategory}
-                            </span>
-                          </div>
+                      <Search className="w-4 h-4 text-primary/50" />
+                      <div>
+                        <div className="font-medium text-zinc-900 dark:text-zinc-100">
+                          {suggestion.title}
                         </div>
-                        <ChevronsUpDown className="ml-auto h-3 w-3 shrink-0 text-white/40" />
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-[300px] p-0 rounded-xl" align="start">
-                      <Command>
-                        <CommandInput placeholder="Search type..." className="h-9 text-xs" />
-                        <CommandList>
-                          <CommandEmpty className="py-2 text-xs text-center text-muted-foreground">
-                            No type found
-                          </CommandEmpty>
-                          <CommandGroup>
-                            {categories.map((category) => (
-                              <CommandItem
-                                key={category}
-                                value={category}
-                                onSelect={() => setSelectedCategory(category)}
-                                className="py-2 text-xs cursor-pointer"
-                              >
-                                <Check
-                                  className={cn(
-                                    "mr-2 h-3.5 w-3.5 text-primary",
-                                    selectedCategory === category ? "opacity-100" : "opacity-0"
-                                  )}
-                                />
-                                {category}
-                              </CommandItem>
-                            ))}
-                          </CommandGroup>
-                        </CommandList>
-                      </Command>
-                    </PopoverContent>
-                  </Popover>
-                </div>
-
-                {/* Location Filter */}
-                <div className="relative group bg-black/20 border border-white/10 rounded-xl shadow-inner hover:bg-black/30 transition-all duration-300 p-0.5">
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        role="combobox"
-                        className="w-full justify-start h-11 hover:bg-transparent rounded-lg border-none shadow-none text-left font-normal px-3"
-                      >
-                        <div className="flex items-center gap-2.5 w-full">
-                          <div className="text-amber-200/70 group-hover:text-amber-200 transition-colors shrink-0">
-                            <MapPin className="h-4 w-4" />
-                          </div>
-                          <div className="flex flex-col items-start leading-tight min-w-0">
-                            <span className="text-[9px] uppercase font-semibold text-white/50 tracking-wider">
-                              {mounted ? t('mandal_list.location') : "Location"}
-                            </span>
-                            <span className="truncate text-white text-xs font-semibold mt-0.5">
-                              {selectedLocation === "All" ? (mounted ? t('mandal_list.all_locations') : "All Locations") : selectedLocation}
-                            </span>
-                          </div>
+                        <div className="text-xs text-zinc-500">
+                          {suggestion.type && `${suggestion.type} • `}
+                          {suggestion.city && suggestion.city}
                         </div>
-                        <ChevronsUpDown className="ml-auto h-3 w-3 shrink-0 text-white/40" />
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-[300px] p-0 rounded-xl" align="start">
-                      <Command>
-                        <CommandInput placeholder="Search location..." className="h-9 text-xs" />
-                        <CommandList>
-                          <CommandEmpty className="py-2 text-xs text-center text-muted-foreground">
-                            No location found
-                          </CommandEmpty>
-                          <CommandGroup>
-                            {locations.map((location) => (
-                              <CommandItem
-                                key={location}
-                                value={location}
-                                onSelect={() => setSelectedLocation(location)}
-                                className="py-2 text-xs cursor-pointer"
-                              >
-                                <Check
-                                  className={cn(
-                                    "mr-2 h-3.5 w-3.5 text-primary",
-                                    selectedLocation === location ? "opacity-100" : "opacity-0"
-                                  )}
-                                />
-                                {location}
-                              </CommandItem>
-                            ))}
-                          </CommandGroup>
-                        </CommandList>
-                      </Command>
-                    </PopoverContent>
-                  </Popover>
-                </div>
-              </div>
-
-              {/* Active Filters */}
-              {(selectedCategory !== "All" || selectedLocation !== "All" || searchQuery !== "") && (
-                <div className="flex flex-wrap items-center gap-2 animate-in fade-in slide-in-from-bottom-2 duration-300 px-1">
-                  <span className="text-xs font-medium text-white/70 mr-1">Active:</span>
-                  {searchQuery !== "" && (
-                    <Badge className="bg-white/20 text-white border-white/20 rounded-full px-4 py-1.5 text-xs flex items-center gap-2 group cursor-pointer hover:bg-white/30 transition-colors">
-                      <Search className="w-3 h-3 text-white/60" />
-                      "{searchQuery}"
-                      <X
-                        className="w-3 h-3 opacity-40 group-hover:opacity-100 transition-opacity"
-                        onClick={() => {
-                          setSearchInput("");
-                          setSearchQuery("");
-                        }}
-                      />
-                    </Badge>
-                  )}
-                  {selectedCategory !== "All" && (
-                    <Badge className="bg-white/20 text-white border-white/20 rounded-full px-4 py-1.5 text-xs flex items-center gap-2 group cursor-pointer hover:bg-white/30 transition-colors">
-                      <Star className="w-3 h-3 text-white/60" />
-                      {selectedCategory}
-                      <X
-                        className="w-3 h-3 opacity-40 group-hover:opacity-100 transition-opacity"
-                        onClick={() => setSelectedCategory("All")}
-                      />
-                    </Badge>
-                  )}
-                  {selectedLocation !== "All" && (
-                    <Badge className="bg-white/20 text-white border-white/20 rounded-full px-4 py-1.5 text-xs flex items-center gap-2 group cursor-pointer hover:bg-white/30 transition-colors">
-                      <MapPin className="w-3 h-3 text-white/60" />
-                      {selectedLocation}
-                      <X
-                        className="w-3 h-3 opacity-40 group-hover:opacity-100 transition-opacity"
-                        onClick={() => setSelectedLocation("All")}
-                      />
-                    </Badge>
-                  )}
+                      </div>
+                    </button>
+                  ))}
                 </div>
               )}
             </div>
-          </div>
-        </section>
 
-        {/* Mandal Grid */}
-        <section className="py-6 min-h-[400px]">
-          <div className="container mx-auto px-4">
-            <div className="flex justify-between items-center mb-4">
-              <p className="text-foreground">
-                {mounted ? t('mandal_list.showing') : "Showing"} <span className="font-semibold">{filteredMandals.length}</span> {mounted ? t('mandal_list.mandals') : "mandals"}
-              </p>
+            {/* Dropdown 1: Locations (2 cols) */}
+            <div className="lg:col-span-2">
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="w-full h-12 justify-between bg-zinc-50 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 text-xs font-semibold px-3 rounded-xl"
+                  >
+                    <div className="flex items-center gap-2 truncate">
+                      <MapPin className="h-4 w-4 text-amber-600 shrink-0" />
+                      <span className="truncate">
+                        {selectedLocation === "All" ? "All Locations" : selectedLocation}
+                      </span>
+                    </div>
+                    <ChevronsUpDown className="h-3 w-3 shrink-0 text-zinc-400" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[220px] p-0 rounded-xl">
+                  <Command>
+                    <CommandInput placeholder="Search location..." className="h-9 text-xs" />
+                    <CommandList>
+                      <CommandEmpty className="py-2 text-xs text-center text-zinc-500">
+                        No location found
+                      </CommandEmpty>
+                      <CommandGroup>
+                        {locations.map((loc) => (
+                          <CommandItem
+                            key={loc}
+                            value={loc}
+                            onSelect={() => setSelectedLocation(loc)}
+                            className="py-2 text-xs cursor-pointer"
+                          >
+                            <Check
+                              className={cn(
+                                "mr-2 h-3.5 w-3.5 text-primary",
+                                selectedLocation === loc ? "opacity-100" : "opacity-0"
+                              )}
+                            />
+                            {loc === "All" ? "All Locations" : loc}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
             </div>
 
-            {loading ? (
-              <div className="flex justify-center items-center py-20">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-              </div>
-            ) : filteredMandals.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredMandals.map((mandal) => (
-                  <div key={mandal.id} className="relative group/card h-full">
-                    <Link href={`/mandals/${mandal.slug || mandal.id}`}>
-                      <Card className="group overflow-hidden hover:shadow-xl transition-all duration-300 border-border/50 hover:border-primary/30 h-full">
-                        <div className="relative aspect-[4/3] overflow-hidden">
-                          <img
-                            src={getFullImageUrl(mandal.image)}
-                            alt={getLocalized(mandal, "name", language)}
-                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                            onError={(e) => {
-                              (e.target as any).src = "https://via.placeholder.com/400x300?text=Mandal";
-                            }}
-                          />
-                          {mandal.isLive && (
-                            <Badge className="absolute top-3 left-3 bg-red-500 text-white animate-pulse">
-                              <span className="w-2 h-2 bg-white rounded-full mr-2 inline-block" />
-                              Live Now
-                            </Badge>
-                          )}
-                          {mandal.mandalType && (
-                            <Badge
-                              variant="secondary"
-                              className="absolute bottom-3 right-3 bg-background/90 backdrop-blur-sm"
-                            >
-                              {mandal.mandalType}
-                            </Badge>
-                          )}
-                        </div>
-                        <CardContent className="p-5">
-                          <h3 className="text-xl font-semibold text-foreground mb-2 group-hover:text-primary transition-colors">
-                            {getLocalized(mandal, "name", language)}
-                          </h3>
-                          <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
-                            {stripHtml(getLocalized(mandal, "description", language))}
-                          </p>
+            {/* Dropdown 2: Areas (2 cols) */}
+            <div className="lg:col-span-2">
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="w-full h-12 justify-between bg-zinc-50 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 text-xs font-semibold px-3 rounded-xl"
+                  >
+                    <div className="flex items-center gap-2 truncate">
+                      <Filter className="h-4 w-4 text-amber-600 shrink-0" />
+                      <span className="truncate">
+                        {selectedArea === "All" ? "All Areas" : selectedArea}
+                      </span>
+                    </div>
+                    <ChevronsUpDown className="h-3 w-3 shrink-0 text-zinc-400" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[220px] p-0 rounded-xl">
+                  <Command>
+                    <CommandInput placeholder="Search area..." className="h-9 text-xs" />
+                    <CommandList>
+                      <CommandEmpty className="py-2 text-xs text-center text-zinc-500">
+                        No area found
+                      </CommandEmpty>
+                      <CommandGroup>
+                        {areas.map((area) => (
+                          <CommandItem
+                            key={area}
+                            value={area}
+                            onSelect={() => setSelectedArea(area)}
+                            className="py-2 text-xs cursor-pointer"
+                          >
+                            <Check
+                              className={cn(
+                                "mr-2 h-3.5 w-3.5 text-primary",
+                                selectedArea === area ? "opacity-100" : "opacity-0"
+                              )}
+                            />
+                            {area === "All" ? "All Areas" : area}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+            </div>
 
-                          <div className="flex items-center gap-2 text-foreground mb-3">
-                            <MapPin className="h-4 w-4" />
-                            <span className="text-sm">
-                              {[mandal.city, mandal.state].filter(Boolean).join(", ")}
-                            </span>
-                          </div>
+            {/* Dropdown 3: Mandal Type (2 cols) */}
+            <div className="lg:col-span-2">
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="w-full h-12 justify-between bg-zinc-50 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 text-xs font-semibold px-3 rounded-xl"
+                  >
+                    <div className="flex items-center gap-2 truncate">
+                      <Star className="h-4 w-4 text-amber-600 shrink-0" />
+                      <span className="truncate">
+                        {selectedCategory === "All" ? "All Mandals" : selectedCategory}
+                      </span>
+                    </div>
+                    <ChevronsUpDown className="h-3 w-3 shrink-0 text-zinc-400" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[220px] p-0 rounded-xl">
+                  <Command>
+                    <CommandInput placeholder="Search type..." className="h-9 text-xs" />
+                    <CommandList>
+                      <CommandEmpty className="py-2 text-xs text-center text-zinc-500">
+                        No type found
+                      </CommandEmpty>
+                      <CommandGroup>
+                        {categories.map((cat) => (
+                          <CommandItem
+                            key={cat}
+                            value={cat}
+                            onSelect={() => setSelectedCategory(cat)}
+                            className="py-2 text-xs cursor-pointer"
+                          >
+                            <Check
+                              className={cn(
+                                "mr-2 h-3.5 w-3.5 text-primary",
+                                selectedCategory === cat ? "opacity-100" : "opacity-0"
+                              )}
+                            />
+                            {cat === "All" ? "All Mandals" : cat}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+            </div>
 
-                          {mandal.presiding_deity && (
-                            <div className="text-xs text-muted-foreground">
-                              <span className="font-medium">Deity:</span> {mandal.presiding_deity}
-                            </div>
-                          )}
+            {/* Search Button (2 cols) */}
+            <div className="lg:col-span-2 flex gap-2">
+              <Button
+                onClick={() => {
+                  setSearchQuery(searchInput);
+                }}
+                className="w-full h-12 bg-[#6B0F1A] hover:bg-[#520B14] text-white font-bold rounded-xl flex items-center justify-center gap-2 shadow-md"
+              >
+                <Search className="w-4 h-4" />
+                Search
+              </Button>
+            </div>
+          </div>
 
-                          {mandal.isLive && (
-                            <Badge variant="outline" className="mt-2 text-primary border-primary">
-                              <Video className="h-3 w-3 mr-1" />
-                              Live Darshan Available
-                            </Badge>
-                          )}
-                        </CardContent>
-                      </Card>
-                    </Link>
+          {/* Popular Searches Row */}
+          <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-zinc-100 dark:border-zinc-800 text-xs">
+            <span className="font-semibold text-zinc-500 mr-1">Popular Searches :</span>
+            {popularSearches.map((term, idx) => (
+              <button
+                key={idx}
+                onClick={() => {
+                  setSearchInput(term);
+                  setSearchQuery(term);
+                }}
+                className={`px-3 py-1 rounded-full border transition-all text-xs font-medium ${
+                  searchInput === term
+                    ? "bg-amber-100 text-amber-900 border-amber-300 font-bold"
+                    : "bg-zinc-50 hover:bg-zinc-100 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 border-zinc-200 dark:border-zinc-700"
+                }`}
+              >
+                {term}
+              </button>
+            ))}
+            {(selectedCategory !== "All" ||
+              selectedLocation !== "All" ||
+              selectedArea !== "All" ||
+              searchQuery !== "") && (
+              <button
+                onClick={() => {
+                  setSelectedCategory("All");
+                  setSelectedLocation("All");
+                  setSelectedArea("All");
+                  setSearchInput("");
+                  setSearchQuery("");
+                }}
+                className="ml-auto text-xs font-bold text-red-600 hover:underline flex items-center gap-1"
+              >
+                <X className="w-3.5 h-3.5" />
+                Reset Filters
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* ─── FEATURED MANDALS SECTION ───────────────────────────────────────── */}
+      <section className="py-12 px-4 md:px-8 lg:px-12 w-full max-w-[1700px] mx-auto space-y-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Star className="w-6 h-6 text-amber-500 fill-amber-500" />
+            <h2 className="text-2xl md:text-3xl font-serif font-bold text-zinc-900 dark:text-zinc-100">
+              Featured Mandals
+            </h2>
+          </div>
+          <Link
+            href="#mandals-search-section"
+            className="text-xs md:text-sm font-bold text-[#6B0F1A] dark:text-amber-400 hover:underline flex items-center gap-1"
+          >
+            View All Mandals
+            <ArrowRight className="w-4 h-4" />
+          </Link>
+        </div>
+
+        {/* Mandals Grid (Matching Screenshot Cards) */}
+        {loading ? (
+          <div className="flex justify-center items-center py-20">
+            <div className="animate-spin rounded-full h-10 w-10 border-4 border-amber-600 border-t-transparent" />
+          </div>
+        ) : mandals.length > 0 ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-5">
+            {mandals.map((mandal) => {
+              if (!mandal) return null;
+              const localizedName = getLocalized(mandal, "name", language) || mandal.name || "Mandal";
+              const isFav = favorites.some((f) => f && f.mandalId === mandal.id);
+
+              return (
+                <div
+                  key={mandal.id}
+                  className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200/80 dark:border-zinc-800 overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col group"
+                >
+                  {/* Image Container */}
+                  <div className="relative aspect-square overflow-hidden bg-zinc-100">
+                    <img
+                      src={getFullImageUrl(mandal.image)}
+                      alt={localizedName}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      onError={(e) => {
+                        (e.target as any).src =
+                          "https://images.unsplash.com/photo-1600093463592-8e36ae95ef56?auto=format&fit=crop&q=80&w=500";
+                      }}
+                    />
+
+                    {/* LIVE badge */}
+                    {mandal.isLive && (
+                      <Badge className="absolute top-3 left-3 bg-red-600 text-white font-bold text-[10px] px-2.5 py-0.5 rounded-full flex items-center gap-1.5 shadow-md animate-pulse">
+                        <span className="w-1.5 h-1.5 rounded-full bg-white" />
+                        LIVE
+                      </Badge>
+                    )}
 
                     {/* Favorite Button */}
                     <button
+                      type="button"
                       onClick={(e) => toggleFavorite(e, mandal.id)}
-                      className="absolute top-3 right-3 z-30 p-2 rounded-full bg-background/50 backdrop-blur-md border border-border hover:bg-background/80 transition-all group/fav"
+                      className="absolute top-3 right-3 p-2 rounded-full bg-black/40 backdrop-blur-md text-white hover:bg-black/70 transition-all"
                     >
                       <Heart
-                        className={`w-4 h-4 transition-all ${
-                          favorites.some((f) => f.mandalId === mandal.id)
-                            ? "fill-red-500 text-red-500"
-                            : "text-muted-foreground group-hover/fav:text-red-500"
+                        className={`w-4 h-4 ${
+                          isFav ? "fill-red-500 text-red-500" : "text-white"
                         }`}
                       />
                     </button>
                   </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-20">
-                <div className="max-w-md mx-auto">
-                  <div className="w-20 h-20 bg-muted/30 rounded-full flex items-center justify-center mx-auto mb-6">
-                    <Search className="w-10 h-10 text-muted-foreground/30" />
-                  </div>
-                  <h3 className="text-xl font-serif text-foreground mb-2">{mounted ? t('mandal_list.no_mandals') : "No mandals found"}</h3>
-                  <p className="text-muted-foreground mb-8">
-                    {mounted ? t('mandal_list.try_adjusting') : "Try adjusting your search criteria"}
-                  </p>
 
-                  {/* Suggestions */}
-                  {searchInput.length >= 2 && getFuzzySuggestions(searchInput).length > 0 && (
-                    <div className="bg-primary/5 p-8 rounded-[2.5rem] border border-primary/10 animate-in fade-in slide-in-from-bottom-4">
-                      <p className="text-foreground font-bold mb-4">Did you mean?</p>
-                      <div className="flex flex-wrap justify-center gap-2">
-                        {getFuzzySuggestions(searchInput).map((s: any, idx: number) => (
-                          <Button
-                            key={idx}
-                            variant="outline"
-                            onClick={() => {
-                              setSearchInput(s.title);
-                              setSearchQuery(s.title);
-                            }}
-                            className="rounded-full bg-white border-primary/20 hover:bg-primary hover:text-white transition-all font-serif italic"
-                          >
-                            {s.title}
-                          </Button>
-                        ))}
+                  {/* Card Content */}
+                  <div className="p-4 flex-1 flex flex-col justify-between space-y-3">
+                    <div className="space-y-1">
+                      <h3 className="font-bold text-base text-zinc-900 dark:text-zinc-100 truncate group-hover:text-[#6B0F1A] transition-colors">
+                        {localizedName}
+                      </h3>
+                      <div className="flex items-center gap-1 text-xs text-zinc-500 dark:text-zinc-400 truncate">
+                        <MapPin className="w-3.5 h-3.5 shrink-0 text-zinc-400" />
+                        <span className="truncate">
+                          {[mandal.city, mandal.state].filter(Boolean).join(", ")}
+                        </span>
                       </div>
                     </div>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
-        </section>
 
-        <Footer />
-      </div>
-    </>
+                    {/* Badges Row */}
+                    <div className="flex flex-wrap gap-1.5 pt-1">
+                      {mandal.isLive && (
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-red-50 text-red-600 border border-red-100">
+                          LIVE Darshan
+                        </span>
+                      )}
+                      {mandal.presiding_deity && (
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-amber-50 text-amber-700 border border-amber-200/60">
+                          {mandal.presiding_deity}
+                        </span>
+                      )}
+                      {mandal.mandalType && (
+                        <span className="text-[10px] font-medium px-2 py-0.5 rounded-md bg-zinc-100 text-zinc-600">
+                          {mandal.mandalType}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Action Button */}
+                    <div className="pt-2 border-t border-zinc-100 dark:border-zinc-800 flex justify-between items-center">
+                      <Link
+                        href={`/mandals/${mandal.slug || mandal.id}`}
+                        className="text-xs font-bold text-[#6B0F1A] dark:text-amber-400 hover:underline flex items-center gap-1 group/link"
+                      >
+                        Explore Mandal
+                        <ArrowRight className="w-3.5 h-3.5 group-hover/link:translate-x-1 transition-transform" />
+                      </Link>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="text-center py-16 bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200/80 p-8">
+            <div className="w-16 h-16 bg-amber-50 rounded-full flex items-center justify-center mx-auto mb-4 text-amber-600">
+              <Building2 className="w-8 h-8" />
+            </div>
+            <h3 className="text-xl font-bold text-zinc-800 dark:text-zinc-200 mb-2">
+              No Mandals Found
+            </h3>
+            <p className="text-sm text-zinc-500 max-w-sm mx-auto mb-6">
+              Try resetting your search query or selecting a different location.
+            </p>
+            <Button
+              onClick={() => {
+                setSelectedCategory("All");
+                setSelectedLocation("All");
+                setSelectedArea("All");
+                setSearchInput("");
+                setSearchQuery("");
+              }}
+              className="bg-amber-600 hover:bg-amber-700 text-white font-bold px-6 py-2 rounded-xl"
+            >
+              Reset Filters
+            </Button>
+          </div>
+        )}
+      </section>
+
+      {/* ─── IS YOUR MANDAL LISTED? CTA BANNER SECTION ─────────────────────── */}
+      <section className="py-8 px-4 md:px-8 lg:px-12 w-full max-w-[1700px] mx-auto">
+        <div className="bg-gradient-to-r from-[#24080A] via-[#3B0E12] to-[#200608] rounded-3xl p-6 md:p-8 border border-amber-500/25 shadow-2xl relative overflow-hidden text-white">
+          {/* Ambient background glow */}
+          <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-amber-500/10 rounded-full blur-[100px] pointer-events-none" />
+
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center relative z-10">
+            
+            {/* Left: Ganesha Emblem + Text + Action Button (7 cols) */}
+            <div className="lg:col-span-7 flex flex-col sm:flex-row items-center sm:items-start lg:items-center gap-5 text-center sm:text-left">
+              {/* Golden Ganesha Emblem */}
+              <div className="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 shrink-0 shadow-inner">
+                <svg className="w-9 h-9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                  <path d="M12 2C8 2 5 5 5 9C5 12 7 14 9 15C10 15.5 11 16 11 17V20C11 20.6 11.4 21 12 21C12.6 21 13 20.6 13 20V17C13 16 14 15.5 15 15C17 14 19 12 19 9C19 5 16 2 12 2Z" />
+                  <circle cx="12" cy="7" r="1.5" fill="currentColor" />
+                  <path d="M7 11C7 11 9 13 12 13C15 13 17 11 17 11" />
+                </svg>
+              </div>
+
+              {/* Text content */}
+              <div className="space-y-1 flex-1">
+                <h3 className="text-xl md:text-2xl font-serif font-bold text-white tracking-wide">
+                  Is Your Mandal Listed?
+                </h3>
+                <p className="text-xs md:text-sm text-amber-100/80 font-light">
+                  Claim your Mandal and connect with millions of devotees.
+                </p>
+              </div>
+
+              {/* Button linking to /register-mandal */}
+              <div className="shrink-0 pt-2 sm:pt-0">
+                <Button
+                  asChild
+                  className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-bold px-6 h-12 rounded-xl text-sm shadow-lg shadow-amber-500/20 flex items-center gap-2 group transition-transform hover:scale-105"
+                >
+                  <Link href="/register-mandal">
+                    Claim / Add Your Mandal
+                    <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                  </Link>
+                </Button>
+              </div>
+            </div>
+
+            {/* Right: 3 Highlights (5 cols) */}
+            <div className="lg:col-span-5 grid grid-cols-3 gap-3 border-t lg:border-t-0 lg:border-l border-amber-500/20 pt-6 lg:pt-0 lg:pl-6">
+              
+              {/* Feature 1 */}
+              <div className="flex flex-col items-center text-center space-y-2 group">
+                <div className="w-10 h-10 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400 group-hover:scale-110 transition-transform">
+                  <Sliders className="w-5 h-5" />
+                </div>
+                <span className="text-[11px] md:text-xs font-semibold text-amber-100/90 leading-tight">
+                  Manage Your Mandal Page
+                </span>
+              </div>
+
+              {/* Feature 2 */}
+              <div className="flex flex-col items-center text-center space-y-2 border-x border-amber-500/20 px-2 group">
+                <div className="w-10 h-10 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400 group-hover:scale-110 transition-transform">
+                  <Share2 className="w-5 h-5" />
+                </div>
+                <span className="text-[11px] md:text-xs font-semibold text-amber-100/90 leading-tight">
+                  Share Updates & Events
+                </span>
+              </div>
+
+              {/* Feature 3 */}
+              <div className="flex flex-col items-center text-center space-y-2 group">
+                <div className="w-10 h-10 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400 group-hover:scale-110 transition-transform">
+                  <Users className="w-5 h-5" />
+                </div>
+                <span className="text-[11px] md:text-xs font-semibold text-amber-100/90 leading-tight">
+                  Reach Devotees Easily
+                </span>
+              </div>
+
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+      <Footer />
+    </div>
   );
 }

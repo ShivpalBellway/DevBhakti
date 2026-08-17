@@ -110,33 +110,106 @@ export const updateSeoSettings = async (req: Request, res: Response) => {
 
 // ─── Mandal Registration Toggle ───────────────────────────────────────────────
 
-// PUBLIC: Frontend uses this to decide whether to show the footer link / page
+// PUBLIC & ADMIN: Fetch mandal registration settings (enabled, title, subtitle, image, festival dates)
 export const getMandalRegistrationStatus = async (req: Request, res: Response) => {
     try {
         const setting = await prisma.globalSetting.findUnique({
             where: { key: MANDAL_REGISTRATION_KEY }
         });
-        const enabled = setting ? (setting.value as any)?.enabled === true : false;
-        res.json({ success: true, enabled });
+        const val = (setting?.value as any) || {};
+        const enabled = val.enabled === true;
+        const settings = {
+            enabled,
+            title: val.title || { en: '', hi: '', mr: '' },
+            subtitle: val.subtitle || { en: '', hi: '', mr: '' },
+            image: val.image || '',
+            startDate: val.startDate || '',
+            endDate: val.endDate || ''
+        };
+        res.json({ success: true, ...settings });
     } catch (error) {
         console.error('Error fetching mandal registration status:', error);
         res.status(500).json({ success: false, message: 'Error fetching mandal registration status' });
     }
 };
 
-// ADMIN: Toggle mandal registration ON or OFF
+// ADMIN: Update mandal registration settings (toggle ON/OFF, title, subtitle, image, dates)
 export const updateMandalRegistrationStatus = async (req: Request, res: Response) => {
     try {
-        const { enabled } = req.body;
-        if (typeof enabled !== 'boolean') {
-            return res.status(400).json({ success: false, message: '`enabled` (boolean) is required' });
+        const existing = await prisma.globalSetting.findUnique({
+            where: { key: MANDAL_REGISTRATION_KEY }
+        });
+        const prevVal = (existing?.value as any) || {};
+
+        let enabled = req.body.enabled;
+        if (typeof enabled === 'string') {
+            enabled = enabled === 'true';
         }
+
+        let title = req.body.title;
+        if (typeof title === 'string') {
+            try {
+                title = JSON.parse(title);
+            } catch (e) {
+                title = undefined;
+            }
+        }
+        if (!title || typeof title !== 'object') {
+            title = {
+                en: req.body.title_en ?? req.body['title.en'] ?? prevVal.title?.en ?? '',
+                hi: req.body.title_hi ?? req.body['title.hi'] ?? prevVal.title?.hi ?? '',
+                mr: req.body.title_mr ?? req.body['title.mr'] ?? prevVal.title?.mr ?? ''
+            };
+        }
+
+        let subtitle = req.body.subtitle;
+        if (typeof subtitle === 'string') {
+            try {
+                subtitle = JSON.parse(subtitle);
+            } catch (e) {
+                subtitle = undefined;
+            }
+        }
+        if (!subtitle || typeof subtitle !== 'object') {
+            subtitle = {
+                en: req.body.subtitle_en ?? req.body['subtitle.en'] ?? prevVal.subtitle?.en ?? '',
+                hi: req.body.subtitle_hi ?? req.body['subtitle.hi'] ?? prevVal.subtitle?.hi ?? '',
+                mr: req.body.subtitle_mr ?? req.body['subtitle.mr'] ?? prevVal.subtitle?.mr ?? ''
+            };
+        }
+
+        let image = prevVal.image || '';
+        if (req.file) {
+            image = `/uploads/cms/mandal/${req.file.filename}`;
+        } else if (req.body.image !== undefined) {
+            image = req.body.image;
+        }
+
+        const startDate = req.body.startDate !== undefined ? req.body.startDate : (prevVal.startDate || '');
+        const endDate = req.body.endDate !== undefined ? req.body.endDate : (prevVal.endDate || '');
+
+        const newSettings = {
+            enabled: enabled !== undefined ? Boolean(enabled) : (prevVal.enabled ?? false),
+            title,
+            subtitle,
+            image,
+            startDate,
+            endDate
+        };
+
         const updated = await prisma.globalSetting.upsert({
             where: { key: MANDAL_REGISTRATION_KEY },
-            update: { value: { enabled } },
-            create: { key: MANDAL_REGISTRATION_KEY, value: { enabled } }
+            update: { value: newSettings },
+            create: { key: MANDAL_REGISTRATION_KEY, value: newSettings }
         });
-        res.json({ success: true, message: `Mandal registration ${enabled ? 'enabled' : 'disabled'}`, enabled: (updated.value as any)?.enabled });
+
+        const val = updated.value as any;
+        res.json({
+            success: true,
+            message: `Mandal registration settings updated successfully`,
+            enabled: val.enabled,
+            settings: val
+        });
     } catch (error) {
         console.error('Error updating mandal registration status:', error);
         res.status(500).json({ success: false, message: 'Error updating mandal registration status' });

@@ -598,7 +598,7 @@ const Navbar: React.FC<NavbarProps> = ({ variant = "default", isSolid = false })
                           </Link>
                         </Button>
                         <Button variant="ghost" size="lg" asChild className="justify-start gap-4 h-14 rounded-2xl border border-border/50 mt-2">
-                          <Link href="/mandals/register" onClick={() => setIsMobileMenuOpen(false)}>
+                          <Link href="/register-mandal" onClick={() => setIsMobileMenuOpen(false)}>
                             <Church className="w-5 h-5 text-orange-600" />
                             <span>{t('navbar.mandal_register')}</span>
                           </Link>

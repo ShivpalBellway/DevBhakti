@@ -673,7 +673,6 @@ export const downloadBookingsExcel = async (req: Request, res: Response) => {
             { header: 'Anniversary', key: 'anniversary', width: 15 },
             { header: 'Native Place', key: 'nativePlace', width: 25 },
             { header: 'Address', key: 'address', width: 40 },
-            { header: 'Special Requests', key: 'specialRequests', width: 40 },
             { header: 'Additional Devotees', key: 'additionalDevotees', width: 50 },
             { header: 'Created At', key: 'createdAt', width: 20 },
         ];

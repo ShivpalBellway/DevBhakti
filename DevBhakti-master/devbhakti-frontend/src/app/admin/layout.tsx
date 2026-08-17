@@ -67,6 +67,7 @@ const sidebarItems = [
     subItems: [
       { label: "All Mandals", href: "/admin/mandals", permission: "temples.view" },
       { label: "Add Mandal", href: "/admin/mandals/create", permission: "temples.create" },
+      { label: "Mandal Settings", href: "/admin/settings/mandal", permission: "temples.view" },
     ]
   },
   {
@@ -193,6 +194,7 @@ const sidebarItems = [
     href: "#",
     permission: "settings.commission",
     subItems: [
+      { label: "Mandal Settings", href: "/admin/settings/mandal", permission: "settings.commission" },
       { label: "Password Change", href: "/admin/settings", permission: "settings.commission" },
       { label: "Commission Slabs", href: "/admin/commission-slabs", permission: "settings.commission" },
     ]

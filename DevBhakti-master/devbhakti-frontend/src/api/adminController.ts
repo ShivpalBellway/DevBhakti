@@ -1421,3 +1421,24 @@ export const toggleMandalStatusAdmin = async (
     return response.data;
 };
 
+// Admin Mandal Settings Management
+export const fetchMandalRegistrationSettingsAdmin = async () => {
+    const token = getAdminToken();
+    const response = await axios.get(`${API_URL}/admin/settings/mandal-registration`, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+
+export const updateMandalRegistrationSettingsAdmin = async (data: FormData | any) => {
+    const token = getAdminToken();
+    let headers: any = { Authorization: `Bearer ${token}` };
+    if (data instanceof FormData) {
+        headers['Content-Type'] = 'multipart/form-data';
+    }
+    const response = await axios.patch(`${API_URL}/admin/settings/mandal-registration`, data, {
+        headers
+    });
+    return response.data;
+};
+

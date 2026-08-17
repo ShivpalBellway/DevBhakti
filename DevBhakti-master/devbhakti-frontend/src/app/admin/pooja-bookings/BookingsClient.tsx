@@ -763,12 +763,7 @@ function BookingsContent() {
                                             {selectedBooking.address || "No physical address provided."}
                                         </p>
                                     </div>
-                                    <div>
-                                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1">Special Requests</p>
-                                        <p className="text-sm text-slate-700 font-medium bg-slate-50 p-3 rounded-xl border border-dashed border-slate-200 min-h-[80px] italic">
-                                            "{selectedBooking.specialRequests || "No specific instructions."}"
-                                        </p>
-                                    </div>
+                                   
                                 </div>
 
                                 {/* Prasad Section */}
