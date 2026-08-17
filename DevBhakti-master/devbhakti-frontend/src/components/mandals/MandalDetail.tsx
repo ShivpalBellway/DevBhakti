@@ -713,89 +713,60 @@ export function MandalDetail({ slug }: { slug: string }) {
               </button>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-              {(mandal.poojas && mandal.poojas.length > 0 ? mandal.poojas : [
-                {
-                  id: "abhishek",
-                  name: "Abhishek",
-                  description: "Receive divine blessings",
-                  price: "501",
-                  image: "https://images.unsplash.com/photo-1609710228159-0fa9bd7c0827?auto=format&fit=crop&q=80&w=500"
-                },
-                {
-                  id: "5-coconut",
-                  name: "5 Coconut Mala",
-                  description: "Offer 5 coconut mala",
-                  price: "551",
-                  image: "https://images.unsplash.com/photo-1621847468516-1ed5d0df56fe?auto=format&fit=crop&q=80&w=500"
-                },
-                {
-                  id: "21-coconut",
-                  name: "21 Coconut Mala",
-                  description: "Offer 21 coconut mala",
-                  price: "2,101",
-                  image: "https://images.unsplash.com/photo-1621847468516-1ed5d0df56fe?auto=format&fit=crop&q=80&w=500"
-                },
-                {
-                  id: "sankashti",
-                  name: "Sankashti Seva",
-                  description: "Special Sankashti offering",
-                  price: "1,251",
-                  image: "https://images.unsplash.com/photo-1567157577867-05ccb1388e66?auto=format&fit=crop&q=80&w=500"
-                },
-                {
-                  id: "maha-aarti",
-                  name: "Maha Aarti Seva",
-                  description: "Participate in Maha Aarti",
-                  price: "751",
-                  image: "https://images.unsplash.com/photo-1609710228159-0fa9bd7c0827?auto=format&fit=crop&q=80&w=500"
-                }
-              ]).map((pooja: any, idx: number) => {
-                const poojaName = getLocalized(pooja, "name", language) || pooja.name || pooja.title;
-                const poojaDesc = getLocalized(pooja, "description", language) || pooja.description || "Offer sacred devotion";
-                const poojaImg = getFullImageUrl(pooja.imageUrl || pooja.image || pooja.bannerImage) || "https://images.unsplash.com/photo-1609710228159-0fa9bd7c0827?auto=format&fit=crop&q=80&w=500";
-                const poojaPrice = pooja.price || "501";
+            {mandal.poojas && mandal.poojas.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                {mandal.poojas.map((pooja: any, idx: number) => {
+                  const poojaName = getLocalized(pooja, "name", language) || pooja.name || pooja.title;
+                  const poojaDesc = getLocalized(pooja, "description", language) || pooja.description || "Offer sacred devotion";
+                  const poojaImg = getFullImageUrl(pooja.imageUrl || pooja.image || pooja.bannerImage) || "https://images.unsplash.com/photo-1609710228159-0fa9bd7c0827?auto=format&fit=crop&q=80&w=500";
+                  const poojaPrice = pooja.price || "501";
 
-                return (
-                  <Card
-                    key={pooja.id || idx}
-                    className="rounded-2xl border border-zinc-200/80 p-3 bg-white hover:shadow-md transition-all flex flex-col justify-between overflow-hidden group"
-                  >
-                    <div>
-                      {/* Card Image */}
-                      <div className="relative aspect-[4/3] rounded-xl overflow-hidden mb-3 bg-amber-50">
-                        <img
-                          src={poojaImg}
-                          alt={poojaName}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                        />
-                      </div>
-
-                      {/* Title & Description */}
-                      <h4 className="font-bold text-sm text-zinc-900 line-clamp-1 mb-0.5">
-                        {poojaName}
-                      </h4>
-                      <p className="text-xs text-zinc-500 line-clamp-1 mb-2 font-normal">
-                        {poojaDesc}
-                      </p>
-
-                      {/* Price */}
-                      <div className="font-extrabold text-sm text-zinc-900 mb-3">
-                        ₹{typeof poojaPrice === "number" ? poojaPrice.toLocaleString("en-IN") : poojaPrice}
-                      </div>
-                    </div>
-
-                    {/* Book Now Button */}
-                    <Button
-                      onClick={() => router.push(`/mandals/${slug}/booking`)}
-                      className="w-full bg-warm-brown hover:bg-warm-brown/90 text-white font-bold rounded-xl h-9 text-xs shadow-sm"
+                  return (
+                    <Card
+                      key={pooja.id || idx}
+                      className="rounded-2xl border border-zinc-200/80 p-3 bg-white hover:shadow-md transition-all flex flex-col justify-between overflow-hidden group"
                     >
-                      Book Now
-                    </Button>
-                  </Card>
-                );
-              })}
-            </div>
+                      <div>
+                        {/* Card Image */}
+                        <div className="relative aspect-[4/3] rounded-xl overflow-hidden mb-3 bg-amber-50">
+                          <img
+                            src={poojaImg}
+                            alt={poojaName}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          />
+                        </div>
+
+                        {/* Title & Description */}
+                        <h4 className="font-bold text-sm text-zinc-900 line-clamp-1 mb-0.5">
+                          {poojaName}
+                        </h4>
+                        <p className="text-xs text-zinc-500 line-clamp-1 mb-2 font-normal">
+                          {poojaDesc}
+                        </p>
+
+                        {/* Price */}
+                        <div className="font-extrabold text-sm text-zinc-900 mb-3">
+                          ₹{typeof poojaPrice === "number" ? poojaPrice.toLocaleString("en-IN") : poojaPrice}
+                        </div>
+                      </div>
+
+                      {/* Book Now Button */}
+                      <Button
+                        onClick={() => router.push(`/mandals/${slug}/booking`)}
+                        className="w-full bg-warm-brown hover:bg-warm-brown/90 text-white font-bold rounded-xl h-9 text-xs shadow-sm"
+                      >
+                        Book Now
+                      </Button>
+                    </Card>
+                  );
+                })}
+              </div>
+            ) : (
+              <Card className="rounded-3xl p-8 text-center text-zinc-500 bg-white">
+                <Gift className="w-10 h-10 mx-auto text-amber-600 mb-2 opacity-60" />
+                <div>No poojas & sevas are currently available for this mandal.</div>
+              </Card>
+            )}
           </div>
         )}
 
@@ -995,15 +966,37 @@ export function MandalDetail({ slug }: { slug: string }) {
                 </div>
                 <div className="relative">
                   <Phone className="w-4 h-4 text-zinc-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                  <input type="tel" placeholder="Mobile Number *" value={donorPhone} onChange={(e) => setDonorPhone(e.target.value)}
+                  <input type="tel" placeholder="Mobile Number (e.g. +91 9999999999) *" value={donorPhone} onChange={(e) => setDonorPhone(e.target.value)}
                     className="w-full pl-10 pr-4 py-2.5 bg-white border border-amber-900/15 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#6B0F1A]/20 focus:border-[#6B0F1A]" required />
                 </div>
               </div>
             </div>
 
+            {(() => {
+              const raw = donorPhone.trim();
+              const hasExplicitPlus = raw.startsWith('+');
+              const cleaned = raw.replace(/\D/g, '');
+              const isInternational = hasExplicitPlus && !cleaned.startsWith('91');
+
+              if (isInternational) {
+                return (
+                  <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-xs font-medium text-center">
+                    🚫 <strong>FCRA Notice:</strong> DevBhakti cannot accept international donations due to FCRA regulations. Thank you for your support!
+                  </div>
+                );
+              }
+              return null;
+            })()}
+
             <Button
-              className="w-full bg-[#6B0F1A] hover:bg-[#520B14] text-white py-3.5 h-auto text-base font-bold rounded-xl shadow-lg transition-all mt-2"
-              onClick={handleDonate} disabled={isDonating}
+              className="w-full bg-[#6B0F1A] hover:bg-[#520B14] text-white py-3.5 h-auto text-base font-bold rounded-xl shadow-lg transition-all mt-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              onClick={handleDonate}
+              disabled={isDonating || (() => {
+                const raw = donorPhone.trim();
+                const hasExplicitPlus = raw.startsWith('+');
+                const cleaned = raw.replace(/\D/g, '');
+                return hasExplicitPlus && !cleaned.startsWith('91');
+              })()}
             >
               {isDonating ? "Processing Donation..." : `Proceed to Donate ₹${(selectedAmount || parseInt(customAmount) || 0).toLocaleString("en-IN")}`}
             </Button>

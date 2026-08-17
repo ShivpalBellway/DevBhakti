@@ -247,7 +247,17 @@ export default function TempleDetail() {
         }
     };
 
+    const isVerified = temple?.user?.isVerified ?? temple?.isVerified ?? false;
+
     const handleDonation = () => {
+        if (!isVerified) {
+            toast({
+                title: "Donations Disabled",
+                description: "Donations are currently disabled for this temple as it is pending verification.",
+                variant: "destructive"
+            });
+            return;
+        }
         const donationUrl = `/donation?temple=${temple.id}`;
         const token = localStorage.getItem("token");
         const savedUser = localStorage.getItem("user");
@@ -261,6 +271,14 @@ export default function TempleDetail() {
     };
 
     const handleBookPooja = () => {
+        if (!isVerified) {
+            toast({
+                title: "Bookings Disabled",
+                description: "Pooja bookings are currently disabled for this temple as it is pending verification.",
+                variant: "destructive"
+            });
+            return;
+        }
         const bookingUrl = `/booking?temple=${temple.id}`;
         const token = localStorage.getItem("token");
         const savedUser = localStorage.getItem("user");
@@ -329,6 +347,14 @@ export default function TempleDetail() {
                     <div className="lg:col-span-2 space-y-6">
                         <Card className="border-border/50">
                             <CardContent className="p-6">
+                                {!isVerified && (
+                                    <div className="mb-5 p-3.5 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-xl flex items-center gap-3 text-amber-800 dark:text-amber-300 text-sm">
+                                        <Info className="h-5 w-5 shrink-0 text-amber-600 dark:text-amber-400" />
+                                        <div>
+                                            <span className="font-bold">Verification Pending:</span> Temple status is active, but website booking & donation capabilities remain disabled until verification is completed by admins.
+                                        </div>
+                                    </div>
+                                )}
                                 <div className="flex flex-wrap items-start justify-between gap-4 mb-5">
                                     <div>
                                         <Badge variant="secondary" className="mb-2">
@@ -664,11 +690,12 @@ export default function TempleDetail() {
                                     <div className={`grid ${temple.liveStatus ? "grid-cols-2" : "grid-cols-1"} gap-3`}>
                                         <Button
                                             variant="gold"
-                                            className="w-full gap-2 h-12 text-base font-bold shadow-sm group transition-all"
+                                            className="w-full gap-2 h-12 text-base font-bold shadow-sm group transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                                             onClick={handleBookPooja}
+                                            disabled={!isVerified}
                                         >
                                             <Calendar className="h-5 w-5 shrink-0 group-hover:scale-110 transition-transform" />
-                                            <span className="truncate">{t('temple_detail.book_pooja')}</span>
+                                            <span className="truncate">{!isVerified ? "Bookings Disabled" : t('temple_detail.book_pooja')}</span>
                                         </Button>
 
                                         {temple.liveStatus && (
@@ -749,11 +776,12 @@ export default function TempleDetail() {
 
                                 <Button
                                     variant="outline"
-                                    className="w-full h-12 rounded-2xl border-dashed border-primary/30 text-primary hover:bg-primary/5 font-bold gap-2"
+                                    className="w-full h-12 rounded-2xl border-dashed border-primary/30 text-primary hover:bg-primary/5 font-bold gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                                     onClick={handleDonation}
+                                    disabled={!isVerified}
                                 >
                                     <Heart className="h-4 w-4" />
-                                    Donation
+                                    {!isVerified ? "Donations Disabled" : "Donation"}
                                 </Button>
 
                                 {/* Compact Upcoming Events */}

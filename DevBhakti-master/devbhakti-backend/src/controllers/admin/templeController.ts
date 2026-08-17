@@ -105,7 +105,7 @@ export const getTempleById = async (req: Request, res: Response) => {
 export const getAllTemples = async (req: Request, res: Response) => {
   try {
     const { 
-      page, limit, search, isVerified, templeId, date, 
+      page, limit, search, isVerified, isActive, templeId, date, 
       startDate, endDate,
       deity, category, 
       state, district, location, 
@@ -120,6 +120,10 @@ export const getAllTemples = async (req: Request, res: Response) => {
 
     if (isVerified !== undefined) {
       where.isVerified = isVerified === 'true';
+    }
+
+    if (isActive !== undefined) {
+      where.temple = { ...where.temple, isActive: isActive === 'true' };
     }
 
     if (templeId && templeId !== 'all') {

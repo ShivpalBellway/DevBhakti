@@ -415,23 +415,37 @@ const PoojaDetailClient = ({ id }: PoojaDetailClientProps) => {
                                                         {getLocalized(copy.temple, 'location', language)}
                                                     </p>
                                                     <div className="space-y-3">
-                                                        <Button
-                                                            className="w-full bg-[#5d4037] hover:bg-black text-white rounded-full h-12 font-bold flex items-center justify-center gap-2 transition-all group/btn"
-                                                            onClick={() => {
-                                                                const bookingUrl = `/booking?pooja=${id}&temple=${copy.temple.id}`;
-                                                                const token = localStorage.getItem("token");
-                                                                const savedUser = localStorage.getItem("user");
-                                                                const parsedUser = savedUser ? JSON.parse(savedUser) : null;
-                                                                if (!token || !parsedUser || parsedUser.role !== "DEVOTEE") {
-                                                                    toast({ title: t('common.login_required'), variant: "destructive" });
-                                                                    router.push(`/auth?redirect=${encodeURIComponent(bookingUrl)}`);
-                                                                    return;
-                                                                }
-                                                                router.push(bookingUrl);
-                                                            }}
-                                                        >
-                                                            {t('common.book_pooja')} <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
-                                                        </Button>
+                                                 {(() => {
+                                                     const isCopyVerified = copy.temple?.user?.isVerified ?? copy.temple?.isVerified ?? false;
+                                                     return (
+                                                         <Button
+                                                             className="w-full bg-[#5d4037] hover:bg-black text-white rounded-full h-12 font-bold flex items-center justify-center gap-2 transition-all group/btn disabled:opacity-50 disabled:cursor-not-allowed"
+                                                             disabled={!isCopyVerified}
+                                                             onClick={() => {
+                                                                 if (!isCopyVerified) {
+                                                                     toast({
+                                                                         title: "Bookings Disabled",
+                                                                         description: "Pooja bookings are currently disabled for this temple as it is pending verification.",
+                                                                         variant: "destructive"
+                                                                     });
+                                                                     return;
+                                                                 }
+                                                                 const bookingUrl = `/booking?pooja=${id}&temple=${copy.temple.id}`;
+                                                                 const token = localStorage.getItem("token");
+                                                                 const savedUser = localStorage.getItem("user");
+                                                                 const parsedUser = savedUser ? JSON.parse(savedUser) : null;
+                                                                 if (!token || !parsedUser || parsedUser.role !== "DEVOTEE") {
+                                                                     toast({ title: t('common.login_required'), variant: "destructive" });
+                                                                     router.push(`/auth?redirect=${encodeURIComponent(bookingUrl)}`);
+                                                                     return;
+                                                                 }
+                                                                 router.push(bookingUrl);
+                                                             }}
+                                                         >
+                                                             {!isCopyVerified ? "Bookings Disabled" : t('common.book_pooja')} {!isCopyVerified ? null : <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />}
+                                                         </Button>
+                                                     );
+                                                 })()}
                                                         <Button variant="outline" className="w-full border-primary/5 text-[#5d4037] bg-[#FFF8F0]/30 hover:bg-[#FFF8F0]/50 rounded-full h-12 font-bold transition-all" asChild>
                                                             <Link href={getTempleUrl(copy.temple)}>{t('pooja_detail.explore_temple')}</Link>
                                                         </Button>

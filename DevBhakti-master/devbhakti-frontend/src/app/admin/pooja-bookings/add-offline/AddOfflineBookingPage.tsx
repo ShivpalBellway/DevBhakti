@@ -1449,16 +1449,7 @@ export default function AddOfflineBookingPage() {
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="adminNotes">Internal Admin Notes (Optional)</Label>
-                  <Textarea
-                    id="adminNotes"
-                    placeholder="Add any internal notes for this offline booking..."
-                    value={adminNotes}
-                    onChange={(e) => setAdminNotes(e.target.value)}
-                    rows={2}
-                  />
-                </div>
+              
 
 
                 <div className="bg-[#794A05]/5 p-6 rounded-xl border border-[#794A05]/10 space-y-4">

@@ -170,12 +170,21 @@ function DonationForm() {
             if (!formData.phone.trim()) {
                 newErrors.phone = "Phone number is required";
                 missingFields.push(t("step3.labels.phone_number"));
-            } else if (formData.phone.length !== 10) {
-                newErrors.phone = "Phone number must be exactly 10 digits";
-                missingFields.push(t("step3.labels.phone_number") + " (10 digits)");
-            } else if (isSequentialOrRepetitive(formData.phone)) {
-                newErrors.phone = "Phone number looks invalid (sequential or repetitive)";
-                missingFields.push(t("step3.labels.phone_number") + " (Invalid)");
+            } else {
+                const rawPhone = formData.phone.trim();
+                const hasPlus = rawPhone.startsWith("+");
+                const cleanedPhone = rawPhone.replace(/\D/g, "");
+                
+                if (hasPlus && !cleanedPhone.startsWith("91")) {
+                    newErrors.phone = "FCRA restriction: International donations are not accepted.";
+                    missingFields.push("Valid Indian Phone Number (+91)");
+                } else if (!hasPlus && cleanedPhone.length !== 10) {
+                    newErrors.phone = "Phone number must be 10 digits (or include +91)";
+                    missingFields.push(t("step3.labels.phone_number") + " (10 digits)");
+                } else if (isSequentialOrRepetitive(cleanedPhone)) {
+                    newErrors.phone = "Phone number looks invalid (sequential or repetitive)";
+                    missingFields.push(t("step3.labels.phone_number") + " (Invalid)");
+                }
             }
             if (!formData.email.trim()) {
                 newErrors.email = "Email address is required";
@@ -193,8 +202,8 @@ function DonationForm() {
             if (Object.keys(newErrors).length > 0) {
                 setErrors(newErrors);
                 toast({ 
-                    title: t("toasts.fill_required"), 
-                    description: `Missing: ${missingFields.join(", ")}`,
+                    title: newErrors.phone?.includes("FCRA") ? "FCRA Donation Restriction" : t("toasts.fill_required"), 
+                    description: newErrors.phone?.includes("FCRA") ? newErrors.phone : `Missing: ${missingFields.join(", ")}`,
                     variant: "destructive" 
                 });
                 return;
@@ -695,12 +704,17 @@ function DonationForm() {
                                                         <Phone className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                                                         <Input
                                                             id="phone"
-                                                            placeholder={t("step3.placeholders.phone")}
+                                                            placeholder="Phone (e.g. +91 9999999999)"
                                                             className={`pl-10 ${errors.phone ? 'border-red-500' : ''}`}
                                                             value={formData.phone}
-                                                            maxLength={10}
+                                                            maxLength={16}
                                                             onChange={(e) => {
-                                                                const val = e.target.value.replace(/\D/g, "").slice(0, 10);
+                                                                let val = e.target.value;
+                                                                if (val.startsWith("+")) {
+                                                                    val = "+" + val.slice(1).replace(/\D/g, "").slice(0, 15);
+                                                                } else {
+                                                                    val = val.replace(/\D/g, "").slice(0, 10);
+                                                                }
                                                                 setFormData({ ...formData, phone: val });
                                                                 if (errors.phone) setErrors(prev => ({ ...prev, phone: "" }));
                                                             }}

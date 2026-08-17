@@ -1322,143 +1322,162 @@ function BookingForm() {
                   </div>
                 )}
 
-                {/* Prasad Option (Free/Paid) */}
-                {(isPaidPrasadActive || isFreePrasadActive) && (
-                  <div className="mt-6 p-4 border rounded-xl bg-orange-50/50 border-orange-100">
-                    <Label className="text-sm font-bold text-slate-800 flex items-center gap-2">
-                      🙏 Prasad Selection
-                    </Label>
-                    <p className="text-xs text-slate-600 mb-4 mt-1">
-                      Choose if you would like Prasad delivered to your home.
-                    </p>
-                    
-                    <div className="space-y-3">
-                      <RadioGroup
-                        value={prasadSelection}
-                        onValueChange={(val: any) => {
-                          setPrasadSelection(val);
-                          if (val === "PAID" && prasadQuantity < 1) setPrasadQuantity(1);
-                        }}
-                        className="flex flex-col gap-4"
-                      >
-                        {isFreePrasadActive && (
-                          <div className="flex items-start space-x-3 p-3 border rounded-lg bg-white shadow-sm cursor-pointer hover:border-orange-200 transition-colors">
-                            <RadioGroupItem value="FREE" id="prasad-free" className="mt-1" />
-                            <div className="flex-1">
-                              <Label htmlFor="prasad-free" className="cursor-pointer font-bold text-slate-800 text-sm">
-                                Free Prasad
-                              </Label>
-                              <p className="text-xs text-slate-500 mt-1">Included with this pooja • ₹0</p>
-                            </div>
-                          </div>
-                        )}
+                {/* International FCRA Notice for Prasad */}
+                {(() => {
+                  const raw = formData.phone.trim();
+                  const hasExplicitPlus = raw.startsWith('+');
+                  const cleaned = raw.replace(/\D/g, '');
+                  const isInternational = hasExplicitPlus && !cleaned.startsWith('91');
+                  
+                  if (isInternational && (isPaidPrasadActive || isFreePrasadActive)) {
+                    return (
+                      <div className="mt-6 p-4 border border-amber-200 rounded-xl bg-amber-50 text-amber-800 text-sm font-medium">
+                        ℹ️ Physical Prasad delivery is only available within India. Your Pooja service booking will be conducted globally as requested!
+                      </div>
+                    );
+                  }
+
+                  if (!isInternational && (isPaidPrasadActive || isFreePrasadActive)) {
+                    return (
+                      <div className="mt-6 p-4 border rounded-xl bg-orange-50/50 border-orange-100">
+                        <Label className="text-sm font-bold text-slate-800 flex items-center gap-2">
+                          🙏 Prasad Selection
+                        </Label>
+                        <p className="text-xs text-slate-600 mb-4 mt-1">
+                          Choose if you would like Prasad delivered to your home.
+                        </p>
                         
-                        {isPaidPrasadActive && (
-                          <div className="flex flex-col sm:flex-row sm:items-center justify-between p-3 border rounded-lg bg-white shadow-sm cursor-pointer hover:border-orange-200 transition-colors gap-3">
-                            <div className="flex items-start space-x-3">
-                              <RadioGroupItem value="PAID" id="prasad-paid" className="mt-1" />
-                              <div>
-                                <Label htmlFor="prasad-paid" className="cursor-pointer font-bold text-slate-800 text-sm">
-                                  Paid Prasad
-                                </Label>
-                                <p className="text-xs text-slate-500 mt-1">₹{prasadPrice} per packet</p>
-                              </div>
-                            </div>
-                            
-                            {prasadSelection === "PAID" && (
-                              <div className="flex items-center gap-3 pl-7 sm:pl-0">
-                                <span className="text-sm font-semibold text-slate-700">Quantity:</span>
-                                <div className="flex items-center border border-slate-300 rounded-md overflow-hidden bg-slate-50 shadow-xs">
-                                  <button 
-                                    type="button"
-                                    className="px-3 py-1 bg-slate-100 hover:bg-slate-200 transition font-bold text-slate-700"
-                                    onClick={(e) => { e.preventDefault(); setPrasadQuantity(Math.max(1, prasadQuantity - 1)); }}
-                                  >
-                                    <Minus className="w-4 h-4 text-slate-600" />
-                                  </button>
-                                  <span className="w-10 text-center text-sm font-bold select-none text-slate-900 bg-white py-1">{prasadQuantity}</span>
-                                  <button 
-                                    type="button"
-                                    className="px-3 py-1 bg-slate-100 hover:bg-slate-200 transition font-bold text-slate-700"
-                                    onClick={(e) => { e.preventDefault(); setPrasadQuantity(Math.min(10, prasadQuantity + 1)); }}
-                                  >
-                                    <Plus className="w-4 h-4 text-slate-600" />
-                                  </button>
+                        <div className="space-y-3">
+                          <RadioGroup
+                            value={prasadSelection}
+                            onValueChange={(val: any) => {
+                              setPrasadSelection(val);
+                              if (val === "PAID" && prasadQuantity < 1) setPrasadQuantity(1);
+                            }}
+                            className="flex flex-col gap-4"
+                          >
+                            {isFreePrasadActive && (
+                              <div className="flex items-start space-x-3 p-3 border rounded-lg bg-white shadow-sm cursor-pointer hover:border-orange-200 transition-colors">
+                                <RadioGroupItem value="FREE" id="prasad-free" className="mt-1" />
+                                <div className="flex-1">
+                                  <Label htmlFor="prasad-free" className="cursor-pointer font-bold text-slate-800 text-sm">
+                                    Free Prasad
+                                  </Label>
+                                  <p className="text-xs text-slate-500 mt-1">Included with this pooja • ₹0</p>
                                 </div>
                               </div>
                             )}
+                            
+                            {isPaidPrasadActive && (
+                              <div className="flex flex-col sm:flex-row sm:items-center justify-between p-3 border rounded-lg bg-white shadow-sm cursor-pointer hover:border-orange-200 transition-colors gap-3">
+                                <div className="flex items-start space-x-3">
+                                  <RadioGroupItem value="PAID" id="prasad-paid" className="mt-1" />
+                                  <div>
+                                    <Label htmlFor="prasad-paid" className="cursor-pointer font-bold text-slate-800 text-sm">
+                                      Paid Prasad
+                                    </Label>
+                                    <p className="text-xs text-slate-500 mt-1">₹{prasadPrice} per packet</p>
+                                  </div>
+                                </div>
+                                
+                                {prasadSelection === "PAID" && (
+                                  <div className="flex items-center gap-3 pl-7 sm:pl-0">
+                                    <span className="text-sm font-semibold text-slate-700">Quantity:</span>
+                                    <div className="flex items-center border border-slate-300 rounded-md overflow-hidden bg-slate-50 shadow-xs">
+                                      <button 
+                                        type="button"
+                                        className="px-3 py-1 bg-slate-100 hover:bg-slate-200 transition font-bold text-slate-700"
+                                        onClick={(e) => { e.preventDefault(); setPrasadQuantity(Math.max(1, prasadQuantity - 1)); }}
+                                      >
+                                        <Minus className="w-4 h-4 text-slate-600" />
+                                      </button>
+                                      <span className="w-10 text-center text-sm font-bold select-none text-slate-900 bg-white py-1">{prasadQuantity}</span>
+                                      <button 
+                                        type="button"
+                                        className="px-3 py-1 bg-slate-100 hover:bg-slate-200 transition font-bold text-slate-700"
+                                        onClick={(e) => { e.preventDefault(); setPrasadQuantity(Math.min(10, prasadQuantity + 1)); }}
+                                      >
+                                        <Plus className="w-4 h-4 text-slate-600" />
+                                      </button>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                            
+                            <div className="flex items-start space-x-3 p-3 border rounded-lg bg-white shadow-sm cursor-pointer hover:border-slate-300 transition-colors">
+                              <RadioGroupItem value="NONE" id="prasad-none" className="mt-1" />
+                              <div className="flex-1">
+                                <Label htmlFor="prasad-none" className="cursor-pointer font-bold text-slate-800 text-sm">
+                                  No Prasad
+                                </Label>
+                                <p className="text-xs text-slate-500 mt-1">I do not wish to receive Prasad</p>
+                              </div>
+                            </div>
+                          </RadioGroup>
+                        </div>
+
+                        {/* Structured Prasad Delivery Address — only shown when prasad is requested */}
+                        {prasadSelection !== "NONE" && (
+                          <div className="mt-6 pt-4 border-t border-orange-200/60 space-y-4">
+                            <p className="text-sm font-bold text-[#794A05] flex items-center gap-2">
+                              📦 Delivery Address
+                              <span className="text-xs font-normal text-slate-500">(Prasad will be sent to this address)</span>
+                            </p>
+                            <div className="space-y-2">
+                              <Label htmlFor="prasadStreet">Street / House No. <span className="text-red-500">*</span></Label>
+                              <Textarea
+                                id="prasadStreet"
+                                placeholder="Enter street name, house number, landmark"
+                                value={formData.prasadStreet}
+                                onChange={(e) => setFormData({ ...formData, prasadStreet: e.target.value })}
+                                rows={2}
+                              />
+                            </div>
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                              <div className="space-y-2">
+                                <Label htmlFor="prasadCity">City <span className="text-red-500">*</span></Label>
+                                <input
+                                  id="prasadCity"
+                                  className="w-full h-10 px-3 rounded-lg border border-input bg-background text-sm focus:ring-1 focus:ring-orange-400 focus:outline-none"
+                                  placeholder="Enter city"
+                                  value={formData.prasadCity}
+                                  onChange={(e) => setFormData({ ...formData, prasadCity: e.target.value })}
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <Label htmlFor="prasadState">State <span className="text-red-500">*</span></Label>
+                                <input
+                                  id="prasadState"
+                                  className="w-full h-10 px-3 rounded-lg border border-input bg-background text-sm focus:ring-1 focus:ring-orange-400 focus:outline-none"
+                                  placeholder="Enter state"
+                                  value={formData.prasadState}
+                                  onChange={(e) => setFormData({ ...formData, prasadState: e.target.value })}
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <Label htmlFor="prasadPincode">Pincode <span className="text-red-500">*</span></Label>
+                                <input
+                                  id="prasadPincode"
+                                  className="w-full h-10 px-3 rounded-lg border border-input bg-background text-sm focus:ring-1 focus:ring-orange-400 focus:outline-none"
+                                  placeholder="6-digit pincode"
+                                  maxLength={6}
+                                  value={formData.prasadPincode}
+                                  onChange={(e) => {
+                                    const v = e.target.value.replace(/\D/g, "").slice(0, 6);
+                                    setFormData({ ...formData, prasadPincode: v });
+                                  }}
+                                />
+                              </div>
+                            </div>
                           </div>
                         )}
-                        
-                        <div className="flex items-start space-x-3 p-3 border rounded-lg bg-white shadow-sm cursor-pointer hover:border-slate-300 transition-colors">
-                          <RadioGroupItem value="NONE" id="prasad-none" className="mt-1" />
-                          <div className="flex-1">
-                            <Label htmlFor="prasad-none" className="cursor-pointer font-bold text-slate-800 text-sm">
-                              No Prasad
-                            </Label>
-                            <p className="text-xs text-slate-500 mt-1">I do not wish to receive Prasad</p>
-                          </div>
-                        </div>
-                      </RadioGroup>
-                    </div>
-
-                    {/* Structured Prasad Delivery Address — only shown when prasad is requested */}
-                    {prasadSelection !== "NONE" && (
-                      <div className="mt-6 pt-4 border-t border-orange-200/60 space-y-4">
-                        <p className="text-sm font-bold text-[#794A05] flex items-center gap-2">
-                          📦 Delivery Address
-                          <span className="text-xs font-normal text-slate-500">(Prasad will be sent to this address)</span>
-                        </p>
-                        <div className="space-y-2">
-                          <Label htmlFor="prasadStreet">Street / House No. <span className="text-red-500">*</span></Label>
-                          <Textarea
-                            id="prasadStreet"
-                            placeholder="Enter street name, house number, landmark"
-                            value={formData.prasadStreet}
-                            onChange={(e) => setFormData({ ...formData, prasadStreet: e.target.value })}
-                            rows={2}
-                          />
-                        </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                          <div className="space-y-2">
-                            <Label htmlFor="prasadCity">City <span className="text-red-500">*</span></Label>
-                            <input
-                              id="prasadCity"
-                              className="w-full h-10 px-3 rounded-lg border border-input bg-background text-sm focus:ring-1 focus:ring-orange-400 focus:outline-none"
-                              placeholder="Enter city"
-                              value={formData.prasadCity}
-                              onChange={(e) => setFormData({ ...formData, prasadCity: e.target.value })}
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="prasadState">State <span className="text-red-500">*</span></Label>
-                            <input
-                              id="prasadState"
-                              className="w-full h-10 px-3 rounded-lg border border-input bg-background text-sm focus:ring-1 focus:ring-orange-400 focus:outline-none"
-                              placeholder="Enter state"
-                              value={formData.prasadState}
-                              onChange={(e) => setFormData({ ...formData, prasadState: e.target.value })}
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="prasadPincode">Pincode <span className="text-red-500">*</span></Label>
-                            <input
-                              id="prasadPincode"
-                              className="w-full h-10 px-3 rounded-lg border border-input bg-background text-sm focus:ring-1 focus:ring-orange-400 focus:outline-none"
-                              placeholder="6-digit pincode"
-                              maxLength={6}
-                              value={formData.prasadPincode}
-                              onChange={(e) => {
-                                const v = e.target.value.replace(/\D/g, "").slice(0, 6);
-                                setFormData({ ...formData, prasadPincode: v });
-                              }}
-                            />
-                          </div>
-                        </div>
                       </div>
-                    )}
-                  </div>
-                )}
+                    );
+                  }
+
+                  return null;
+                })()}
 
                 <div className="space-y-2 mt-4">
                   <Label htmlFor="requests">{t("booking_client.field_special_requests")}</Label>

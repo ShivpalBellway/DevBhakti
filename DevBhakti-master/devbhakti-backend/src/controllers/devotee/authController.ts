@@ -13,12 +13,20 @@ const JWT_SECRET = process.env.JWT_SECRET || 'devbhakti_secret_key_2026';
 
 // Helper to normalize phone number to +91XXXXXXXXXX format
 const normalizePhone = (phone: string): string => {
+    // Check if user explicitly provided a country code with '+'
+    const hasExplicitPlus = phone.trim().startsWith('+');
+    
     // Remove all non-numeric characters
     let cleaned = phone.replace(/\D/g, '');
 
     // If it starts with 00 (double zero), replace with +
     if (cleaned.startsWith('00')) {
         cleaned = cleaned.substring(2);
+        return '+' + cleaned;
+    }
+
+    if (hasExplicitPlus) {
+        return '+' + cleaned;
     }
 
     // If it starts with 0 (11 digits), remove the 0

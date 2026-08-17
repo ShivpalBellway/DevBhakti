@@ -35,12 +35,59 @@ export const initiateDonation = async (req: Request, res: Response) => {
             return res.status(400).json({ success: false, message: "Donation amount exceeds the maximum limit of ₹1 Crore" });
         }
 
+        // Helper to check if a phone number belongs to India
+        const isIndianUser = (phone: string): boolean => {
+            if (!phone) return false;
+            let hasExplicitPlus = phone.trim().startsWith('+');
+            let cleaned = phone.replace(/\D/g, '');
+            
+            if (cleaned.startsWith('00')) {
+                cleaned = cleaned.substring(2);
+                hasExplicitPlus = true;
+            }
+            
+            if (hasExplicitPlus) {
+                return cleaned.startsWith('91') || cleaned.startsWith('9191');
+            }
+            
+            if (cleaned.length === 11 && cleaned.startsWith('0')) return true;
+            if (cleaned.length === 12 && cleaned.startsWith('91')) return true;
+            if (cleaned.length === 10) return true;
+            
+            return false;
+        };
+
+        // --- FCRA Security Guard 1: Phone Number Country Check ---
+        if (!isIndianUser(donorPhone)) {
+            return res.status(400).json({
+                success: false, 
+                message: "Due to FCRA regulations, DevBhakti cannot accept donations from international numbers. Thank you for your understanding."
+            });
+        }
+
+        // --- FCRA Security Guard 2: IP Geolocation Check ---
+        const cfCountry = req.headers['cf-ipcountry'] as string;
+        if (cfCountry && cfCountry.toUpperCase() !== 'IN' && cfCountry.toUpperCase() !== 'XX') {
+            console.warn(`[FCRA Guard] Donation blocked due to foreign IP location header (${cfCountry}) for phone: ${donorPhone}`);
+            return res.status(400).json({
+                success: false,
+                message: "Due to FCRA regulations, donations from foreign IP locations cannot be accepted. Thank you for your understanding."
+            });
+        }
+        // --------------------------------------------------------
+
         let temple = null;
         let mandal = null;
 
         if (templeId) {
-            temple = await prisma.temple.findUnique({ where: { id: templeId } });
+            temple = await prisma.temple.findUnique({
+                where: { id: templeId },
+                include: { user: { select: { isVerified: true } } }
+            });
             if (!temple) return res.status(404).json({ success: false, message: "Temple not found" });
+            if (!temple.isActive || !temple.user?.isVerified) {
+                return res.status(400).json({ success: false, message: "Donations are disabled for this temple as it is unverified or inactive." });
+            }
         } else if (mandalId) {
             mandal = await prisma.mandal.findUnique({ where: { id: mandalId } });
             if (!mandal) return res.status(404).json({ success: false, message: "Mandal not found" });

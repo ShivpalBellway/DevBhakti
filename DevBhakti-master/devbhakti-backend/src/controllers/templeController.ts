@@ -29,8 +29,7 @@ export const getTempleFilters = async (req: Request, res: Response) => {
     // Fetch distinct categories and locations from Active Temples
     const temples = await prisma.temple.findMany({
       where: {
-        isActive: true,
-        user: { isVerified: true }
+        isActive: true
       },
       select: {
         category: true,
@@ -73,8 +72,7 @@ export const getTempleFilters = async (req: Request, res: Response) => {
     // Fetch all active temples for dropdown
     const allTemples = await prisma.temple.findMany({
       where: {
-        isActive: true,
-        user: { isVerified: true }
+        isActive: true
       },
       select: {
         id: true,
@@ -124,8 +122,7 @@ export const getAllTemples = async (req: Request, res: Response) => {
     const { search, category, location, pooja, poojaId } = req.query;
 
     const whereClause: any = {
-      isActive: true,
-      user: { isVerified: true }
+      isActive: true
     };
 
     // Search: Handled in JS for case-insensitivity on Json fields
@@ -166,6 +163,9 @@ export const getAllTemples = async (req: Request, res: Response) => {
     let temples = await prisma.temple.findMany({
       where: whereClause,
       include: {
+        user: {
+          select: { isVerified: true }
+        },
         poojas: {
           where: { status: true }
         }
@@ -258,10 +258,6 @@ export const getTempleById = async (req: Request, res: Response) => {
           { slug: id as string },
           { subdomain: id as string }
         ],
-        user: {
-          isVerified: true,
-          role: 'INSTITUTION'
-        },
         isActive: true,
       },
       include: {
@@ -272,7 +268,7 @@ export const getTempleById = async (req: Request, res: Response) => {
     });
 
     if (!temple) {
-      return res.status(404).json({ success: false, message: 'Temple not found or not verified' });
+      return res.status(404).json({ success: false, message: 'Temple not found' });
     }
 
     const [poojas, events] = await Promise.all([

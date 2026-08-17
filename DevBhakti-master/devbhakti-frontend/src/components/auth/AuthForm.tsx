@@ -4,10 +4,13 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
-import { User, Phone, ArrowRight, Building2, Mail, Camera, Key, ArrowLeft } from "lucide-react";
+import { User, Phone, ArrowRight, Building2, Mail, Camera, Key, ArrowLeft, Check, ChevronsUpDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
 import Logo from "@/components/icons/Logo";
 import { sendOTP, verifyOTP, updateProfile, checkPhoneOnly } from "@/api/authController";
 import { isSequentialOrRepetitive } from "@/utils/textUtils";
@@ -17,6 +20,77 @@ import { useToast } from "@/hooks/use-toast";
 import heroBg from "@/assets/hero-temple.jpg";
 import { useLanguage } from "@/context/LanguageContext";
 
+
+const countries = [
+  { value: "+91", label: "India", flag: "🇮🇳" },
+  { value: "+1", label: "USA/Canada", flag: "🇺🇸" },
+  { value: "+44", label: "UK", flag: "🇬🇧" },
+  { value: "+61", label: "Australia", flag: "🇦🇺" },
+  { value: "+971", label: "UAE", flag: "🇦🇪" },
+  { value: "+65", label: "Singapore", flag: "🇸🇬" },
+  { value: "+60", label: "Malaysia", flag: "🇲🇾" },
+  { value: "+977", label: "Nepal", flag: "🇳🇵" },
+  { value: "+880", label: "Bangladesh", flag: "🇧🇩" },
+  { value: "+94", label: "Sri Lanka", flag: "🇱🇰" },
+  { value: "+49", label: "Germany", flag: "🇩🇪" },
+  { value: "+33", label: "France", flag: "🇫🇷" },
+  { value: "+81", label: "Japan", flag: "🇯🇵" },
+  { value: "+86", label: "China", flag: "🇨🇳" },
+  { value: "+39", label: "Italy", flag: "🇮🇹" },
+  { value: "+7", label: "Russia", flag: "🇷🇺" },
+  { value: "+55", label: "Brazil", flag: "🇧🇷" },
+  { value: "+27", label: "South Africa", flag: "🇿🇦" },
+  { value: "+52", label: "Mexico", flag: "🇲🇽" },
+];
+
+export function CountryCodePicker({ value, onChange }: { value: string, onChange: (val: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const selectedCountry = countries.find((country) => country.value === value) || countries[0];
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          className="flex items-center gap-1 text-slate-600 font-semibold border-l pl-2 border-slate-200 outline-none hover:text-primary transition-colors text-sm"
+        >
+          <span className="text-base leading-none">{selectedCountry?.flag}</span>
+          <span className="leading-none">{selectedCountry?.value}</span>
+          <ChevronsUpDown className="ml-0.5 h-3 w-3 opacity-50" />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent className="w-[200px] p-0" align="start">
+        <Command>
+          <CommandInput placeholder="Search country..." />
+          <CommandList>
+            <CommandEmpty>No country found.</CommandEmpty>
+            <CommandGroup>
+              {countries.map((country) => (
+                <CommandItem
+                  key={country.value + country.label}
+                  value={country.label + " " + country.value}
+                  onSelect={() => {
+                    onChange(country.value);
+                    setOpen(false);
+                  }}
+                >
+                  <Check
+                    className={cn(
+                      "mr-2 h-4 w-4",
+                      value === country.value ? "opacity-100" : "opacity-0"
+                    )}
+                  />
+                  <span className="mr-2 text-base">{country.flag}</span>
+                  {country.label} <span className="text-xs text-slate-400 ml-1">({country.value})</span>
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  );
+}
 
 const AuthForm: React.FC = () => {
   const searchParams = useSearchParams();
@@ -42,6 +116,7 @@ const AuthForm: React.FC = () => {
   });
   const [profileImage, setProfileImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [countryCode, setCountryCode] = useState("+91");
 
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -66,7 +141,7 @@ const AuthForm: React.FC = () => {
     if (resendTimer > 0 || loading) return;
     setLoading(true);
     try {
-      const normalizedPhone = formData.phone.replace(/\D/g, '');
+      const normalizedPhone = countryCode + formData.phone.replace(/\D/g, '');
       const response = await sendOTP({
         phone: normalizedPhone,
         role: "DEVOTEE",
@@ -93,16 +168,17 @@ const AuthForm: React.FC = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      const normalizedPhone = formData.phone.replace(/\D/g, '');
+      const rawDigits = formData.phone.replace(/\D/g, '');
+      const normalizedPhone = countryCode + rawDigits;
 
       // Basic client-side validation before server check
-      if (normalizedPhone.length !== 10) {
+      if (rawDigits.length < 7 || rawDigits.length > 15) {
         toast({ title: t('auth.otp_failed_title'), description: t('auth.invalid_phone'), variant: 'destructive' });
         setLoading(false);
         return;
       }
 
-      if (isSequentialOrRepetitive(normalizedPhone)) {
+      if (isSequentialOrRepetitive(rawDigits)) {
         toast({ title: t('auth.otp_failed_title'), description: 'Phone number looks invalid (sequential or repetitive).', variant: 'destructive' });
         setLoading(false);
         return;
@@ -161,7 +237,7 @@ const AuthForm: React.FC = () => {
     e.preventDefault();
     setLoading(true);
     // Strip spaces/hyphens for cleaner transmission
-    const normalizedPhone = formData.phone.replace(/\D/g, '');
+    const normalizedPhone = countryCode + formData.phone.replace(/\D/g, '');
     try {
       const TEST_MOBILE = "9999999999";
       const TEST_OTP = "123456";
@@ -345,22 +421,22 @@ const AuthForm: React.FC = () => {
 
               <div className="space-y-1.5">
                 <Label htmlFor="phone" className="text-slate-700 text-xs ml-1 font-medium">{t('auth.phone_number')}</Label>
-                <div className="relative group">
-                  <div className="absolute left-3.5 top-1/2 -translate-y-1/2 flex items-center gap-2">
-                    <Phone className="w-4 h-4 text-slate-400 group-focus-within:text-primary transition-colors" />
-                    <span className="text-slate-400 font-semibold border-l pl-2 border-slate-200 leading-none group-focus-within:border-primary/30 transition-colors text-sm">+91</span>
+                <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg p-1 focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary transition-all">
+                  <div className="flex items-center gap-2 pl-2.5 pr-2 py-1 border-r border-slate-200 shrink-0">
+                    <Phone className="w-4 h-4 text-slate-400" />
+                    <CountryCodePicker value={countryCode} onChange={setCountryCode} />
                   </div>
                   <Input
                     id="phone"
                     type="tel"
                     placeholder="XXXXX XXXXX"
-                    maxLength={10}
+                    maxLength={15}
                     value={formData.phone}
                     onChange={(e) => {
                       const val = e.target.value.replace(/\D/g, '');
                       setFormData({ ...formData, phone: val })
                     }}
-                    className="pl-20 bg-slate-50 border-slate-200 text-slate-900 placeholder:text-slate-400 h-11 rounded-lg focus:ring-primary/20 focus:border-primary transition-all text-sm font-medium tracking-wider"
+                    className="border-0 bg-transparent shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 h-9 px-2 text-slate-900 placeholder:text-slate-400 text-sm font-medium tracking-wider w-full"
                     required
                   />
                 </div>
@@ -402,7 +478,7 @@ const AuthForm: React.FC = () => {
                     />
                   </div>
                   <p className="text-sm text-slate-400 text-center">
-                    {t('auth.otp')} <span className="text-slate-700 font-medium">+91 {formData.phone}</span> {t('auth.otp_sent_to')}
+                    {t('auth.otp')} <span className="text-slate-700 font-medium">{countryCode} {formData.phone}</span> {t('auth.otp_sent_to')}
                   </p>
                 </div>
 

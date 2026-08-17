@@ -66,12 +66,22 @@ export const createBooking = async (req: Request, res: Response) => {
                 ]
             },
             include: {
-                temple: true
+                temple: {
+                    include: {
+                        user: { select: { isVerified: true } }
+                    }
+                }
             }
         });
 
         if (!initialPooja) {
             return res.status(404).json({ success: false, message: 'Pooja not found' });
+        }
+
+        if (initialPooja.temple) {
+            if (!initialPooja.temple.isActive || !initialPooja.temple.user?.isVerified) {
+                return res.status(400).json({ success: false, message: 'Pooja bookings are disabled for this temple as it is unverified or inactive.' });
+            }
         }
 
 
@@ -93,7 +103,13 @@ export const createBooking = async (req: Request, res: Response) => {
                         templeId: requestedTempleId,
                         masterPoojaId: masterId,
                     },
-                    include: { temple: true }
+                    include: {
+                        temple: {
+                            include: {
+                                user: { select: { isVerified: true } }
+                            }
+                        }
+                    }
                 });
 
                 if (templeSpecificPooja) {
@@ -111,7 +127,13 @@ export const createBooking = async (req: Request, res: Response) => {
                     masterPoojaId: initialPooja.id,
                     isMaster: false
                 },
-                include: { temple: true }
+                include: {
+                    temple: {
+                        include: {
+                            user: { select: { isVerified: true } }
+                        }
+                    }
+                }
             });
             if (platformSpecificPooja) {
                 console.log(`[Booking] Resolved master pooja "${initialPooja.id}" → platform-specific pooja "${platformSpecificPooja.id}"`);

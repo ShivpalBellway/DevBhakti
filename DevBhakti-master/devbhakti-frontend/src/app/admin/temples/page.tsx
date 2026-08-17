@@ -119,10 +119,12 @@ function TemplesContent() {
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [totalItems, setTotalItems] = useState(0);
+    const [allCount, setAllCount] = useState<number | null>(null);
     const [verifiedCount, setVerifiedCount] = useState<number | null>(null);
     const [unverifiedCount, setUnverifiedCount] = useState<number | null>(null);
+    const [inactiveCount, setInactiveCount] = useState<number | null>(null);
     const [itemsPerPage] = useState(10);
-    const [activeTab, setActiveTab] = useState("verified");
+    const [activeTab, setActiveTab] = useState("all");
     const [allTemplesForFilter, setAllTemplesForFilter] = useState<any[]>([]);
     const debouncedSearch = useDebounce(searchTerm, 500);
 
@@ -544,38 +546,8 @@ function TemplesContent() {
     const loadTemples = async (page: number) => {
         setIsLoading(true);
         try {
-            // Fetch total counts for both tabs in background
-            Promise.all([
-                fetchAllTemplesAdmin({
-                    page: 1, limit: 1, search: debouncedSearch, isVerified: true,
-                    templeId: idParam || (selectedTempleFilter === "all" ? undefined : selectedTempleFilter),
-                    startDate: date?.from ? date.from.toISOString() : undefined,
-                    endDate: date?.to ? date.to.toISOString() : undefined,
-                    category: selectedCategory === "all" ? undefined : selectedCategory,
-                    transactionRange: transactionRange === "all" ? undefined : transactionRange,
-                    location: selectedLocation === "all" ? undefined : selectedLocation,
-                    ritual: selectedRitual === "all" ? undefined : selectedRitual
-                }),
-                fetchAllTemplesAdmin({
-                    page: 1, limit: 1, search: debouncedSearch, isVerified: false,
-                    templeId: idParam || (selectedTempleFilter === "all" ? undefined : selectedTempleFilter),
-                    startDate: date?.from ? date.from.toISOString() : undefined,
-                    endDate: date?.to ? date.to.toISOString() : undefined,
-                    category: selectedCategory === "all" ? undefined : selectedCategory,
-                    transactionRange: transactionRange === "all" ? undefined : transactionRange,
-                    location: selectedLocation === "all" ? undefined : selectedLocation,
-                    ritual: selectedRitual === "all" ? undefined : selectedRitual
-                })
-            ]).then(([vRes, uRes]) => {
-                setVerifiedCount(vRes.pagination?.total ?? (Array.isArray(vRes) ? vRes.length : vRes.data?.length ?? 0));
-                setUnverifiedCount(uRes.pagination?.total ?? (Array.isArray(uRes) ? uRes.length : uRes.data?.length ?? 0));
-            }).catch(console.error);
-
-            const res = await fetchAllTemplesAdmin({
-                page,
-                limit: itemsPerPage,
+            const commonFilter = {
                 search: debouncedSearch,
-                isVerified: activeTab === "verified",
                 templeId: idParam || (selectedTempleFilter === "all" ? undefined : selectedTempleFilter),
                 startDate: date?.from ? date.from.toISOString() : undefined,
                 endDate: date?.to ? date.to.toISOString() : undefined,
@@ -583,6 +555,34 @@ function TemplesContent() {
                 transactionRange: transactionRange === "all" ? undefined : transactionRange,
                 location: selectedLocation === "all" ? undefined : selectedLocation,
                 ritual: selectedRitual === "all" ? undefined : selectedRitual
+            };
+
+            // Fetch total counts for all tabs in background
+            Promise.all([
+                fetchAllTemplesAdmin({ page: 1, limit: 1, ...commonFilter }),
+                fetchAllTemplesAdmin({ page: 1, limit: 1, isVerified: true, ...commonFilter }),
+                fetchAllTemplesAdmin({ page: 1, limit: 1, isVerified: false, ...commonFilter }),
+                fetchAllTemplesAdmin({ page: 1, limit: 1, isActive: false, ...commonFilter })
+            ]).then(([aRes, vRes, uRes, iRes]) => {
+                setAllCount(aRes.pagination?.total ?? (Array.isArray(aRes) ? aRes.length : aRes.data?.length ?? 0));
+                setVerifiedCount(vRes.pagination?.total ?? (Array.isArray(vRes) ? vRes.length : vRes.data?.length ?? 0));
+                setUnverifiedCount(uRes.pagination?.total ?? (Array.isArray(uRes) ? uRes.length : uRes.data?.length ?? 0));
+                setInactiveCount(iRes.pagination?.total ?? (Array.isArray(iRes) ? iRes.length : iRes.data?.length ?? 0));
+            }).catch(console.error);
+
+            let isVerifiedParam: boolean | undefined = undefined;
+            let isActiveParam: boolean | undefined = undefined;
+
+            if (activeTab === "verified") isVerifiedParam = true;
+            else if (activeTab === "unverified") isVerifiedParam = false;
+            else if (activeTab === "inactive") isActiveParam = false;
+
+            const res = await fetchAllTemplesAdmin({
+                page,
+                limit: itemsPerPage,
+                isVerified: isVerifiedParam,
+                isActive: isActiveParam,
+                ...commonFilter
             });
 
             const data = Array.isArray(res) ? res : res.data;
@@ -1039,30 +1039,42 @@ function TemplesContent() {
             {/* Tabs for Verified vs Pending */}
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                 <div className="flex flex-col md:flex-row items-center justify-between mb-4 gap-4">
-                    <TabsList className="grid grid-cols-2 bg-gray-100 p-1 rounded-xl w-full md:w-auto">
+                    <TabsList className="grid grid-cols-2 sm:grid-cols-4 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl w-full md:w-auto gap-1">
+                        {/* ALL TEMPLES TAB */}
+                        <TabsTrigger
+                            value="all"
+                            className="flex items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs md:text-sm font-medium transition-all data-[state=active]:bg-indigo-600 data-[state=active]:text-white shadow-none data-[state=active]:shadow-sm"
+                        >
+                            <Building2 className="w-4 h-4 shrink-0" />
+                            <span className="truncate">All {allCount !== null && `(${allCount})`}</span>
+                        </TabsTrigger>
 
                         {/* VERIFIED TAB */}
                         <TabsTrigger
                             value="verified"
-                            className="flex items-center gap-2 rounded-lg 
-    data-[state=active]:bg-emerald-600 
-    data-[state=active]:text-white"
+                            className="flex items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs md:text-sm font-medium transition-all data-[state=active]:bg-emerald-600 data-[state=active]:text-white shadow-none data-[state=active]:shadow-sm"
                         >
-                            <CheckCircle className="w-4 h-4 text-emerald-900 data-[state=active]:text-white" />
-                            Verified Temples {verifiedCount !== null && `(${verifiedCount})`}
+                            <CheckCircle className="w-4 h-4 shrink-0" />
+                            <span className="truncate">Verified {verifiedCount !== null && `(${verifiedCount})`}</span>
                         </TabsTrigger>
 
                         {/* PENDING TAB */}
                         <TabsTrigger
                             value="unverified"
-                            className="flex items-center gap-2 rounded-lg 
-    data-[state=active]:bg-amber-500 
-    data-[state=active]:text-white"
+                            className="flex items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs md:text-sm font-medium transition-all data-[state=active]:bg-amber-500 data-[state=active]:text-white shadow-none data-[state=active]:shadow-sm"
                         >
-                            <Clock className="w-4 h-4 text-amber-600 data-[state=active]:text-white" />
-                            Pending Verification {unverifiedCount !== null && `(${unverifiedCount})`}
+                            <Clock className="w-4 h-4 shrink-0" />
+                            <span className="truncate">Pending {unverifiedCount !== null && `(${unverifiedCount})`}</span>
                         </TabsTrigger>
 
+                        {/* INACTIVE TAB */}
+                        <TabsTrigger
+                            value="inactive"
+                            className="flex items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs md:text-sm font-medium transition-all data-[state=active]:bg-slate-700 data-[state=active]:text-white shadow-none data-[state=active]:shadow-sm"
+                        >
+                            <PowerOff className="w-4 h-4 shrink-0" />
+                            <span className="truncate">Inactive {inactiveCount !== null && `(${inactiveCount})`}</span>
+                        </TabsTrigger>
                     </TabsList>
 
                     {hasPermission("temples.create") && (
@@ -1085,7 +1097,7 @@ function TemplesContent() {
                     )}
                 </div>
 
-                <TabsContent value="verified">
+                <TabsContent value={activeTab}>
                     {/* Desktop Table View */}
                     <div className="hidden lg:block border rounded-xl bg-card overflow-hidden shadow-sm">
                         <Table>
@@ -1200,10 +1212,10 @@ function TemplesContent() {
                                                     {/* Active/Inactive Status */}
                                                     <div className="flex items-center gap-2">
                                                         <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium ${inst.temple?.isActive
-                                                            ? (inst.isVerified ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-red-50 text-red-700 border border-red-200')
+                                                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                                                             : 'bg-slate-50 text-slate-500 border border-slate-200'
                                                             }`}>
-                                                            {inst.isVerified && inst.temple?.isActive ? (
+                                                            {inst.temple?.isActive ? (
                                                                 <><Power className="w-3 h-3" /> Active</>
                                                             ) : (
                                                                 <><PowerOff className="w-3 h-3" /> Inactive</>
@@ -1212,7 +1224,7 @@ function TemplesContent() {
                                                         <Switch
                                                             checked={inst.temple?.isActive || false}
                                                             onCheckedChange={() => handleToggleActive(inst.userId, inst.isVerified, inst.temple?.isActive || false)}
-                                                            disabled={!inst.isVerified || !hasPermission("temples.edit")}
+                                                            disabled={!hasPermission("temples.edit")}
                                                         />
                                                     </div>
                                                 </div>
@@ -1343,11 +1355,11 @@ function TemplesContent() {
                                                             <span className="text-xs font-semibold">Pending</span>
                                                         </div>
                                                     )}
-                                                    <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium ${inst.isVerified && inst.temple?.isActive
+                                                    <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium ${inst.temple?.isActive
                                                         ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                                                        : 'bg-red-50 text-red-700 border border-red-200'
+                                                        : 'bg-slate-50 text-slate-500 border border-slate-200'
                                                         }`}>
-                                                        {inst.isVerified && inst.temple?.isActive ? (
+                                                        {inst.temple?.isActive ? (
                                                             <><Power className="w-3 h-3" /> Active</>
                                                         ) : (
                                                             <><PowerOff className="w-3 h-3" /> Inactive</>
@@ -1357,356 +1369,7 @@ function TemplesContent() {
                                                 <Switch
                                                     checked={inst.temple?.isActive || false}
                                                     onCheckedChange={() => handleToggleActive(inst.userId, inst.isVerified, inst.temple?.isActive || false)}
-                                                    disabled={!inst.isVerified || !hasPermission("temples.edit")}
-                                                    className="scale-90"
-                                                />
-                                            </div>
-
-                                            {/* Action Buttons */}
-                                            <div className="flex items-center justify-between pt-2 border-t">
-                                                <div className="flex gap-2">
-                                                    {!inst.isVerified && hasPermission("temples.verify") && (
-                                                        <Button
-                                                            size="sm"
-                                                            onClick={() => handleToggleStatus(inst.userId, inst.templeId, inst.isVerified, inst.temple?.isActive || false, inst.templeName)}
-                                                            className="bg-emerald-600 hover:bg-emerald-700"
-                                                        >
-                                                            <CheckCircle className="w-4 h-4 mr-2" />
-                                                            Approve
-                                                        </Button>
-                                                    )}
-                                                    {inst.isVerified && hasPermission("temples.verify") && (
-                                                        <Button
-                                                            size="sm"
-                                                            variant="outline"
-                                                            onClick={() => handleToggleStatus(inst.userId, inst.templeId, inst.isVerified, inst.temple?.isActive || false, inst.templeName)}
-                                                            className="border-amber-600 text-amber-600 hover:bg-amber-50"
-                                                        >
-                                                            <XCircle className="w-4 h-4 mr-2" />
-                                                            Revoke
-                                                        </Button>
-                                                    )}
-                                                </div>
-                                                <div className="flex gap-1">
-                                                    <TempleQrDialog
-                                                        temple={{
-                                                            id: inst.temple?.id || inst.templeId,
-                                                            slug: inst.temple?.slug,
-                                                            subdomain: inst.temple?.subdomain,
-                                                            urlType: inst.temple?.urlType,
-                                                            name: inst.templeName || inst.temple?.name
-                                                        }}
-                                                        buttonLabel="QR"
-                                                    />
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        className="h-8 w-8 text-slate-600"
-                                                        onClick={() => router.push(`/admin/temples/${inst.userId}`)}
-                                                        title="View Details"
-                                                    >
-                                                        <Eye className="w-4 h-4" />
-                                                    </Button>
-                                                    {hasPermission("temples.edit") && (
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="icon"
-                                                            className="h-8 w-8 text-blue-600"
-                                                            onClick={() => router.push(`/admin/temples/edit/${inst.userId}`)}
-                                                            title="Edit Temple Account"
-                                                        >
-                                                            <Edit2 className="w-4 h-4" />
-                                                        </Button>
-                                                    )}
-                                                    {hasPermission("temples.delete") && (
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="icon"
-                                                            className="h-8 w-8 text-destructive"
-                                                            onClick={() => handleDelete(inst.userId)}
-                                                            title="Delete Temple Account"
-                                                        >
-                                                            <Trash2 className="w-4 h-4" />
-                                                        </Button>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                            ))
-                        )}
-                    </div>
-                </TabsContent>
-
-                <TabsContent value="unverified">
-                    {/* Desktop Table View */}
-                    <div className="hidden lg:block border rounded-xl bg-card overflow-hidden shadow-sm">
-                        <Table>
-                            <TableHeader className="bg-slate-50/100">
-                                <TableRow>
-                                    <TableHead>Temple Profile</TableHead>
-                                    <TableHead>Temple ID</TableHead>
-                                    <TableHead>Temple Owner</TableHead>
-                                    <TableHead>Status</TableHead>
-                                    <TableHead>Live</TableHead>
-                                    <TableHead className="text-right">Actions</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {isLoading ? (
-                                    <TableRow>
-                                        <TableCell colSpan={5} className="text-center py-12 text-muted-foreground">
-                                            <div className="flex flex-col items-center gap-2">
-                                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                                                <span>Loading data...</span>
-                                            </div>
-                                        </TableCell>
-                                    </TableRow>
-                                ) : temples.length === 0 ? (
-                                    <TableRow>
-                                        <TableCell colSpan={5} className="text-center py-12 text-muted-foreground">
-                                            No pending verification temples found.
-                                        </TableCell>
-                                    </TableRow>
-                                ) : (
-                                    temples.map((inst) => (
-                                        <TableRow key={inst.userId} className="hover:bg-slate-50/50 transition-colors">
-                                            <TableCell>
-                                                <div className="flex flex-col gap-0.5">
-                                                    <div className="flex items-center gap-1.5 font-medium text-slate-900">
-                                                        <Building2 className="w-4 h-4 text-primary" />
-                                                        <span>{inst.templeName || "No Temple"}</span>
-                                                    </div>
-                                                    <div className="flex items-center gap-1 text-[12px] text-dark-foreground">
-                                                        <MapPin className="w-4 h-4" />
-                                                        <span>{inst.templeLocation || "N/A"}</span>
-                                                    </div>
-                                                </div>
-                                            </TableCell>
-                                            <TableCell>
-                                                <Badge variant="outline" className="font-mono text-xs">
-                                                    {inst.temple?.displayId || inst.templeId || "N/A"}
-                                                </Badge>
-                                            </TableCell>
-                                            <TableCell>
-                                                <div className="flex flex-col">
-                                                    <span className="font-semibold text-slate-900">{inst.userName || "N/A"}</span>
-                                                    <span className="text-[13px] text-slate-800">{inst.userEmail || inst.userPhone || "N/A"}</span>
-                                                    <span className="text-[13px] text-slate-800">{inst.userPhone || "N/A"}</span>
-                                                </div>
-                                            </TableCell>
-                                            <TableCell>
-                                                <div className="flex flex-col gap-1 text-[14px]">
-                                                    <span className="text-slate-800">Poojas: {inst._count?.poojas || 0}</span>
-                                                    <span className="text-slate-800">Events: {inst._count?.events || 0}</span>
-                                                </div>
-                                            </TableCell>
-                                            <TableCell>
-                                                <div className="flex flex-col gap-2">
-                                                    {/* Verification Status Dropdown */}
-                                                    <DropdownMenu>
-                                                        <DropdownMenuTrigger asChild>
-                                                            {inst.isVerified ? (
-                                                                <div className="cursor-pointer flex items-center gap-1.5 px-2.5 py-1.5 bg-emerald-50 text-emerald-700 rounded-lg border border-emerald-200 hover:bg-emerald-100 transition-colors">
-                                                                    <CheckCircle className="w-3.5 h-3.5" />
-                                                                    <span className="text-xs font-semibold">Verified</span>
-                                                                    <MoreVertical className="w-3 h-3 ml-auto" />
-                                                                </div>
-                                                            ) : (
-                                                                <div className="cursor-pointer flex items-center gap-1.5 px-2.5 py-1.5 bg-amber-50 text-amber-700 rounded-lg border border-amber-200 hover:bg-amber-100 transition-colors">
-                                                                    <Clock className="w-3.5 h-3.5" />
-                                                                    <span className="text-xs font-semibold">Pending</span>
-                                                                    <MoreVertical className="w-3 h-3 ml-auto" />
-                                                                </div>
-                                                            )}
-                                                        </DropdownMenuTrigger>
-                                                        <DropdownMenuContent align="end">
-                                                            {!inst.isVerified && hasPermission("temples.verify") && (
-                                                                <>
-                                                                    <DropdownMenuItem
-                                                                        onClick={() => handleToggleStatus(inst.userId, inst.templeId, inst.isVerified, inst.temple?.isActive || false, inst.templeName)}
-                                                                        className="text-emerald-600"
-                                                                    >
-                                                                        <CheckCircle className="w-4 h-4 mr-2" />
-                                                                        Approve Temple
-                                                                    </DropdownMenuItem>
-                                                                    <DropdownMenuSeparator />
-                                                                </>
-                                                            )}
-                                                            {inst.isVerified && hasPermission("temples.verify") && (
-                                                                <DropdownMenuItem
-                                                                    onClick={() => handleToggleStatus(inst.userId, inst.templeId, inst.isVerified, inst.temple?.isActive || false, inst.templeName)}
-                                                                    className="text-amber-600"
-                                                                >
-                                                                    <XCircle className="w-4 h-4 mr-2" />
-                                                                    Revoke Verification
-                                                                </DropdownMenuItem>
-                                                            )}
-                                                        </DropdownMenuContent>
-                                                    </DropdownMenu>
-
-                                                    {/* Active/Inactive Status */}
-                                                    <div className="flex items-center gap-2">
-                                                        <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium ${inst.temple?.isActive
-                                                            ? (inst.isVerified ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-red-50 text-red-700 border border-red-200')
-                                                            : 'bg-slate-50 text-slate-500 border border-slate-200'
-                                                            }`}>
-                                                            {inst.isVerified && inst.temple?.isActive ? (
-                                                                <><Power className="w-3 h-3" /> Active</>
-                                                            ) : (
-                                                                <><PowerOff className="w-3 h-3" /> Inactive</>
-                                                            )}
-                                                        </div>
-                                                        <Switch
-                                                            checked={inst.temple?.isActive || false}
-                                                            onCheckedChange={() => handleToggleActive(inst.userId, inst.isVerified, inst.temple?.isActive || false)}
-                                                            disabled={!inst.isVerified || !hasPermission("temples.edit")}
-                                                        />
-                                                    </div>
-                                                </div>
-                                            </TableCell>
-                                            <TableCell className="text-right">
-                                                <div className="flex justify-end gap-1">
-                                                    <TempleQrDialog
-                                                        temple={{
-                                                            id: inst.temple?.id || inst.templeId,
-                                                            slug: inst.temple?.slug,
-                                                            subdomain: inst.temple?.subdomain,
-                                                            urlType: inst.temple?.urlType,
-                                                            name: inst.templeName || inst.temple?.name
-                                                        }}
-                                                        buttonLabel="QR"
-                                                    />
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        className="h-8 w-8 text-slate-600"
-                                                        onClick={() => router.push(`/admin/temples/${inst.userId}`)}
-                                                        title="View Details"
-                                                    >
-                                                        <Eye className="w-4 h-4" />
-                                                    </Button>
-                                                    {hasPermission("temples.edit") && (
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="icon"
-                                                            className="h-8 w-8 text-blue-600"
-                                                            onClick={() => router.push(`/admin/temples/edit/${inst.userId}`)}
-                                                            title="Edit Temple Account"
-                                                        >
-                                                            <Edit2 className="w-4 h-4" />
-                                                        </Button>
-                                                    )}
-                                                    {hasPermission("temples.delete") && (
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="icon"
-                                                            className="h-8 w-8 text-destructive"
-                                                            onClick={() => handleDelete(inst.userId)}
-                                                            title="Delete Temple Account"
-                                                        >
-                                                            <Trash2 className="w-4 h-4" />
-                                                        </Button>
-                                                    )}
-                                                </div>
-                                            </TableCell>
-                                        </TableRow>
-                                    ))
-                                )}
-                            </TableBody>
-                        </Table>
-                    </div>
-
-                    {/* Mobile Card View */}
-                    <div className="lg:hidden space-y-4">
-                        {isLoading ? (
-                            <div className="flex items-center justify-center py-12">
-                                <div className="flex flex-col items-center gap-2">
-                                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                                    <span>Loading data...</span>
-                                </div>
-                            </div>
-                        ) : temples.length === 0 ? (
-                            <div className="text-center py-12 text-muted-foreground">
-                                No pending verification temples found.
-                            </div>
-                        ) : (
-                            temples.map((inst) => (
-                                <Card key={inst.userId} className="border rounded-xl bg-card shadow-sm">
-                                    <CardContent className="p-4 space-y-4">
-                                        {/* Header */}
-                                        <div className="flex items-start justify-between gap-4">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
-                                                    <Building2 className="w-6 h-6 text-primary" />
-                                                </div>
-                                                <div>
-                                                    <h3 className="font-semibold text-slate-900">{inst.templeName || "No Temple"}</h3>
-                                                    <p className="text-sm text-slate-600 flex items-center gap-1">
-                                                        <MapPin className="w-3 h-3" />
-                                                        {inst.templeLocation || "N/A"}
-                                                    </p>
-                                                </div>
-                                            </div>
-                                            <Badge variant="outline" className="font-mono text-xs">
-                                                {inst.temple?.displayId || inst.templeId || "N/A"}
-                                            </Badge>
-                                        </div>
-
-                                        {/* Owner Info */}
-                                        <div className="space-y-2">
-                                            <h4 className="text-sm font-semibold text-slate-700">Temple Owner</h4>
-                                            <div className="bg-slate-50 rounded-lg p-3">
-                                                <p className="font-medium text-slate-900">{inst.userName || "N/A"}</p>
-                                                <p className="text-sm text-slate-600">{inst.userEmail || inst.userPhone || "N/A"}</p>
-                                                <p className="text-sm text-slate-600">{inst.userPhone || "N/A"}</p>
-                                            </div>
-                                        </div>
-
-                                        {/* Stats */}
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <div className="bg-blue-50 rounded-lg p-3">
-                                                <p className="text-xs text-blue-600 font-medium">Poojas</p>
-                                                <p className="text-lg font-bold text-blue-900">{inst._count?.poojas || 0}</p>
-                                            </div>
-                                            <div className="bg-green-50 rounded-lg p-3">
-                                                <p className="text-xs text-green-600 font-medium">Events</p>
-                                                <p className="text-lg font-bold text-green-900">{inst._count?.events || 0}</p>
-                                            </div>
-                                        </div>
-
-                                        {/* Status */}
-                                        <div className="space-y-3">
-                                            <div className="flex items-center justify-between">
-                                                <span className="text-sm font-medium text-slate-700">Status</span>
-                                                <div className="flex items-center gap-2">
-                                                    {inst.isVerified ? (
-                                                        <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-emerald-50 text-emerald-700 rounded-lg border border-emerald-200">
-                                                            <CheckCircle className="w-3.5 h-3.5" />
-                                                            <span className="text-xs font-semibold">Verified</span>
-                                                        </div>
-                                                    ) : (
-                                                        <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-amber-50 text-amber-700 rounded-lg border border-amber-200">
-                                                            <Clock className="w-3.5 h-3.5" />
-                                                            <span className="text-xs font-semibold">Pending</span>
-                                                        </div>
-                                                    )}
-                                                    <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium ${inst.isVerified && inst.temple?.isActive
-                                                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                                                        : 'bg-red-50 text-red-700 border border-red-200'
-                                                        }`}>
-                                                        {inst.isVerified && inst.temple?.isActive ? (
-                                                            <><Power className="w-3 h-3" /> Active</>
-                                                        ) : (
-                                                            <><PowerOff className="w-3 h-3" /> Inactive</>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                                <Switch
-                                                    checked={inst.temple?.isActive || false}
-                                                    onCheckedChange={() => handleToggleActive(inst.userId, inst.isVerified, inst.temple?.isActive || false)}
-                                                    disabled={!inst.isVerified || !hasPermission("temples.edit")}
+                                                    disabled={!hasPermission("temples.edit")}
                                                     className="scale-90"
                                                 />
                                             </div>
