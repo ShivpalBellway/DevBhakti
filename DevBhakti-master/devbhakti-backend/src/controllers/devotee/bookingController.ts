@@ -70,6 +70,12 @@ export const createBooking = async (req: Request, res: Response) => {
                     include: {
                         user: { select: { isVerified: true } }
                     }
+                },
+                mandal: {
+                    select: {
+                        isActive: true,
+                        status: true
+                    }
                 }
             }
         });
@@ -79,8 +85,22 @@ export const createBooking = async (req: Request, res: Response) => {
         }
 
         if (initialPooja.temple) {
-            if (!initialPooja.temple.isActive || !initialPooja.temple.user?.isVerified) {
-                return res.status(400).json({ success: false, message: 'Pooja bookings are disabled for this temple as it is unverified or inactive.' });
+            // Independent statuses: Verification and Temple status are separate
+            // Show bookings only when BOTH are verified/active appropriately
+            const isTempleActive = initialPooja.temple.isActive;
+            const isUserVerified = initialPooja.temple.user?.isVerified;
+            
+            // Logic: 
+            // - Verified + Active → Show bookings enabled
+            // - Verified + Inactive → Don't show
+            // - Unverified + Active → Don't enable bookings  
+            // - Unverified + Inactive → Don't show
+            if (!isTempleActive || !isUserVerified) {
+                return res.status(400).json({ success: false, message: 'Pooja bookings are disabled for this temple.' });
+            }
+        } else if (initialPooja.mandal) {
+            if (!initialPooja.mandal.isActive || initialPooja.mandal.status !== 'APPROVED') {
+                return res.status(400).json({ success: false, message: 'Pooja bookings are disabled for this mandal.' });
             }
         }
 
@@ -90,7 +110,7 @@ export const createBooking = async (req: Request, res: Response) => {
         // If a templeId was provided by the client and the found pooja doesn't belong
         // to that temple (e.g. it's a master pooja or a different temple's copy),
         // resolve to the correct temple-specific copy.
-        let pooja = initialPooja;
+        let pooja: any = initialPooja;
         const effectiveTempleId = requestedTempleId || initialPooja.templeId || null;
 
         if (requestedTempleId && initialPooja.templeId !== requestedTempleId) {
@@ -1216,4 +1236,3 @@ export const getUnavailableDates = async (req: Request, res: Response) => {
     }
 
 };
-

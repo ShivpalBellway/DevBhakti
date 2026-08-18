@@ -131,9 +131,9 @@ export default function AdminMandalsPage() {
                 </div>
                 <div className="flex items-center gap-2">
                     <Filter className="w-4 h-4 text-muted-foreground" />
-                    {["ALL", "PENDING", "APPROVED", "REJECTED"].map(s => (
+                    {["ALL", "PENDING", "APPROVED"].map(s => (
                         <button
-                            key={s}
+                            key={s} 
                             onClick={() => { setStatusFilter(s); setPage(1); }}
                             className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
                                 statusFilter === s

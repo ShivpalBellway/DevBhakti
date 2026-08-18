@@ -247,13 +247,7 @@ export default function MandalDetailPage() {
                         {mandal.slug && <div className="flex justify-between"><span>Slug</span><span className="font-mono">{mandal.slug}</span></div>}
                     </div>
 
-                    {/* Admin Notes */}
-                    {mandal.adminNotes && (
-                        <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4">
-                            <h3 className="text-xs font-semibold text-yellow-800 mb-1">Admin Notes</h3>
-                            <p className="text-xs text-yellow-700">{mandal.adminNotes}</p>
-                        </div>
-                    )}
+                   
                 </div>
             </div>
         </div>

@@ -20,6 +20,7 @@ import {
   Share2,
   Users,
   Sparkles,
+  BadgeCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -689,6 +690,7 @@ export function MandalsList() {
               if (!mandal) return null;
               const localizedName = getLocalized(mandal, "name", language) || mandal.name || "Mandal";
               const isFav = favorites.some((f) => f && f.mandalId === mandal.id);
+              const isVerifiedMandal = mandal.isActive === true && String(mandal.status || "").toUpperCase() === "APPROVED";
 
               return (
                 <div
@@ -732,9 +734,19 @@ export function MandalsList() {
                   {/* Card Content */}
                   <div className="p-4 flex-1 flex flex-col justify-between space-y-3">
                     <div className="space-y-1">
-                      <h3 className="font-bold text-base text-zinc-900 dark:text-zinc-100 truncate group-hover:text-[#6B0F1A] transition-colors">
-                        {localizedName}
-                      </h3>
+                      <div className="flex items-start justify-between gap-3">
+                        <h3 className="font-bold text-base text-zinc-900 dark:text-zinc-100 truncate group-hover:text-[#6B0F1A] transition-colors">
+                          {localizedName}
+                        </h3>
+                        {isVerifiedMandal && (
+                          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#FFF4E6] dark:bg-[#2C1810] border border-[#DEB887]/30 shrink-0 mt-0.5">
+                            <BadgeCheck className="w-3.5 h-3.5 text-[#D97706] fill-white dark:fill-[#2C1810]" />
+                            <span className="text-[10px] font-bold text-[#92400E] dark:text-[#FCD34D] uppercase tracking-wider">
+                              Verified
+                            </span>
+                          </div>
+                        )}
+                      </div>
                       <div className="flex items-center gap-1 text-xs text-zinc-500 dark:text-zinc-400 truncate">
                         <MapPin className="w-3.5 h-3.5 shrink-0 text-zinc-400" />
                         <span className="truncate">

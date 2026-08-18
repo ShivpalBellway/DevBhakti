@@ -22,6 +22,18 @@ const getUserIdFromRequest = (req: Request): string | null => {
 
 // getLang is now imported from ../utils/localization
 
+const getTemplePublicAccess = (temple: { isActive: boolean; user?: { isVerified?: boolean | null } | null }) => {
+  const isTempleActive = temple.isActive === true;
+  const isTempleVerified = temple.user?.isVerified === true;
+  const canTransact = isTempleActive && isTempleVerified;
+
+  return {
+    showOnWebsite: isTempleActive,
+    canBookPooja: canTransact,
+    canDonate: canTransact
+  };
+};
+
 export const getTempleFilters = async (req: Request, res: Response) => {
   try {
     const lang = getLang(req);
@@ -231,6 +243,7 @@ export const getAllTemples = async (req: Request, res: Response) => {
 
       return {
         ...temple,
+        ...getTemplePublicAccess(temple),
         isLiveNow,
         liveUrl: resolvedLiveUrl,
         isFavorite: favoritedTempleIds.has(temple.id)
@@ -258,7 +271,7 @@ export const getTempleById = async (req: Request, res: Response) => {
           { slug: id as string },
           { subdomain: id as string }
         ],
-        isActive: true,
+        isActive: true
       },
       include: {
         user: {
@@ -323,6 +336,7 @@ export const getTempleById = async (req: Request, res: Response) => {
         ...temple,
         poojas,
         events,
+        ...getTemplePublicAccess(temple),
         isLiveNow,
         liveUrl: resolvedLiveUrl,
         isFavorite

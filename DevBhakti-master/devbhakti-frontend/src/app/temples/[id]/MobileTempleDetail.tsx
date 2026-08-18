@@ -78,6 +78,9 @@ export default function MobileTempleDetail({
     router,
     params,
 }: TempleDetailProps) {
+    const canBookPooja = temple.canBookPooja !== false;
+    const canDonate = temple.canDonate !== false;
+
     // Photography Dialog state
     const [isPhotoDialogOpen, setIsPhotoDialogOpen] = useState(false);
     const [photoStep, setPhotoStep] = useState(1);
@@ -514,20 +517,24 @@ export default function MobileTempleDetail({
                     <div className="grid grid-cols-3 gap-y-6 gap-x-3">
 
                         {/* Book Pooja */}
-                        <button onClick={() => scrollToSection("mobile-poojas-section")} className="flex flex-col items-center p-2 rounded-2xl hover:bg-orange-50/50 active:scale-95 transition-all text-center">
-                            <div className="h-14 w-14 bg-orange-100/70 rounded-2xl flex items-center justify-center mb-2 text-[#7c4624] shadow-sm">
-                                <Calendar className="h-7 w-7" />
-                            </div>
-                            <span className="text-sm font-bold leading-tight">Book Pooja</span>
-                        </button>
+                        {canBookPooja && (
+                            <button onClick={() => scrollToSection("mobile-poojas-section")} className="flex flex-col items-center p-2 rounded-2xl transition-all text-center hover:bg-orange-50/50 active:scale-95">
+                                <div className="h-14 w-14 bg-orange-100/70 rounded-2xl flex items-center justify-center mb-2 text-[#7c4624] shadow-sm">
+                                    <Calendar className="h-7 w-7" />
+                                </div>
+                                <span className="text-sm font-bold leading-tight">Book Pooja</span>
+                            </button>
+                        )}
 
                         {/* Donate */}
-                        <button onClick={() => scrollToSection("mobile-donation-section")} className="flex flex-col items-center p-2 rounded-2xl hover:bg-orange-50/50 active:scale-95 transition-all text-center">
-                            <div className="h-14 w-14 bg-red-50 rounded-2xl flex items-center justify-center mb-2 text-red-500 shadow-sm">
-                                <Heart className="h-7 w-7" />
-                            </div>
-                            <span className="text-sm font-bold leading-tight">Donate</span>
-                        </button>
+                        {canDonate && (
+                            <button onClick={() => scrollToSection("mobile-donation-section")} className="flex flex-col items-center p-2 rounded-2xl transition-all text-center hover:bg-orange-50/50 active:scale-95">
+                                <div className="h-14 w-14 bg-red-50 rounded-2xl flex items-center justify-center mb-2 text-red-500 shadow-sm">
+                                    <Heart className="h-7 w-7" />
+                                </div>
+                                <span className="text-sm font-bold leading-tight">Donate</span>
+                            </button>
+                        )}
 
                         {/* Live Darshan – only when live */}
                         {temple.liveStatus ? (
@@ -614,7 +621,7 @@ export default function MobileTempleDetail({
 
             {/* ───── Popular Poojas & Sevas ───── */}
 
-              {safePoojas.length > 0 && (
+              {canBookPooja && safePoojas.length > 0 && (
             <div id="mobile-poojas-section" className="mt-4 px-3">
                 <div className="flex justify-between items-center mb-3">
                     <h3 className="font-serif font-bold text-2xl text-[#5c3a21] flex items-center gap-2">
@@ -660,6 +667,7 @@ export default function MobileTempleDetail({
             </div>
   )}
             {/* ───── Donation Fast Action ───── */}
+            {canDonate && (
             <div id="mobile-donation-section" className="mt-4 px-3">
                 <div className="bg-[#fcede4] rounded-3xl p-4 shadow-sm border border-orange-100">
                     <h3 className="font-serif font-bold text-2xl text-[#5c3a21] mb-2">Donations</h3>
@@ -694,6 +702,7 @@ export default function MobileTempleDetail({
                     </Button>
                 </div>
             </div>
+            )}
 
             {/* ───── Temple Information ───── */}
             {(activeOperatingHours.length > 0 || temple.openTime || temple.mapUrl || (temple.phone && temple.showPhone !== false) || getLocalized(temple, "description", language)) && (
@@ -1073,22 +1082,26 @@ export default function MobileTempleDetail({
             {/* ───── Sticky Bottom Action Bar with all sections ───── */}
             <div className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-orange-50 py-3 px-6 flex justify-around items-center z-40 shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
                 {/* Book Pooja - Scroll to poojas section */}
-                <button 
-                    onClick={() => scrollToSection("mobile-poojas-section")} 
-                    className="flex flex-col items-center gap-1 text-sm font-bold text-[#7c4624] active:scale-95 transition-transform"
-                >
-                    <Calendar className="h-6 w-6" />
-                    <span>Book Pooja</span>
-                </button>
+                {canBookPooja && (
+                    <button 
+                        onClick={() => scrollToSection("mobile-poojas-section")} 
+                        className="flex flex-col items-center gap-1 text-sm font-bold active:scale-95 transition-transform text-[#7c4624]"
+                    >
+                        <Calendar className="h-6 w-6" />
+                        <span>Book Pooja</span>
+                    </button>
+                )}
 
                 {/* Donate - Scroll to donation section */}
-                <button 
-                    onClick={() => scrollToSection("mobile-donation-section")} 
-                    className="flex flex-col items-center gap-1 text-sm font-bold text-red-500 active:scale-95 transition-transform"
-                >
-                    <Heart className="h-6 w-6" />
-                    <span>Donate</span>
-                </button>
+                {canDonate && (
+                    <button 
+                        onClick={() => scrollToSection("mobile-donation-section")} 
+                        className="flex flex-col items-center gap-1 text-sm font-bold active:scale-95 transition-transform text-red-500"
+                    >
+                        <Heart className="h-6 w-6" />
+                        <span>Donate</span>
+                    </button>
+                )}
 
                 {/* Live Darshan - Scroll to live section if live, else navigate */}
                 {temple.liveStatus ? (

@@ -217,15 +217,17 @@ const TemplesSection: React.FC = () => {
                       {/* Content */}
                       <div className="p-4 flex-grow">
                         <div className="flex items-start justify-between gap-4 mb-2">
-                          <h3 className="text-xl font-serif font-bold text-foreground group-hover/card:text-primary transition-colors leading-tight">
+                          <h3 className="min-w-0 flex-1 text-xl font-serif font-bold text-foreground group-hover/card:text-primary transition-colors leading-tight">
                             {getLocalized(temple, 'name', language)}
                           </h3>
-                          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#FFF4E6] dark:bg-[#2C1810] border border-[#DEB887]/30 shrink-0 mt-0.5">
-                            <BadgeCheck className="w-3.5 h-3.5 text-[#D97706] fill-white dark:fill-[#2C1810]" />
-                            <span className="text-[10px] font-bold text-[#92400E] dark:text-[#FCD34D] uppercase tracking-wider">
-                              {t('landing.temples.verified')}
-                            </span>
-                          </div>
+                          {(temple.user?.isVerified ?? temple.isVerified) && (
+                            <div className="w-fit flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#FFF4E6] dark:bg-[#2C1810] border border-[#DEB887]/30 shrink-0 mt-0.5">
+                              <BadgeCheck className="w-3.5 h-3.5 text-[#D97706] fill-white dark:fill-[#2C1810]" />
+                              <span className="text-[10px] font-bold text-[#92400E] dark:text-[#FCD34D] uppercase tracking-wider">
+                                {t('landing.temples.verified')}
+                              </span>
+                            </div>
+                          )}
                         </div>
 
                         <p className="text-sm text-foreground mb-3 line-clamp-2">

@@ -85,12 +85,25 @@ export const initiateDonation = async (req: Request, res: Response) => {
                 include: { user: { select: { isVerified: true } } }
             });
             if (!temple) return res.status(404).json({ success: false, message: "Temple not found" });
-            if (!temple.isActive || !temple.user?.isVerified) {
-                return res.status(400).json({ success: false, message: "Donations are disabled for this temple as it is unverified or inactive." });
+            // Independent statuses: Verification and Temple status are separate
+            const isTempleActive = temple.isActive;
+            const isUserVerified = temple.user?.isVerified;
+            
+            // Logic:
+            // - Verified + Active → Donations enabled
+            // - Verified + Inactive → Donations disabled
+            // - Unverified + Active → Donations disabled
+            // - Unverified + Inactive → Donations disabled
+            if (!isTempleActive || !isUserVerified) {
+                return res.status(400).json({ success: false, message: "Donations are disabled for this temple." });
             }
         } else if (mandalId) {
             mandal = await prisma.mandal.findUnique({ where: { id: mandalId } });
             if (!mandal) return res.status(404).json({ success: false, message: "Mandal not found" });
+
+            if (!mandal.isActive || mandal.status !== "APPROVED") {
+                return res.status(400).json({ success: false, message: "Donations are disabled for this mandal." });
+            }
         }
 
         const templeName = temple ? getEnglish(temple.name) : mandal ? getEnglish(mandal.name) : "Dev Bhakti";

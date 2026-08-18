@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { createMandalAdmin, updateMandalAdmin, fetchMandalByIdAdmin } from "@/api/adminController";
 import { RichTextEditor } from "@/components/ui/rich-text-editor";
+import { ImageCropper } from "@/components/admin/ImageCropper";
 
 function getJsonVal(val: any, lang: string) {
   if (!val) return "";
@@ -77,6 +78,12 @@ export default function MandalFormPage({ mandalId }: MandalFormProps) {
   const [bannerFiles, setBannerFiles] = useState<File[]>([]);
   const [existingBanners, setExistingBanners] = useState<string[]>([]);
   const [docFile, setDocFile] = useState<File | null>(null);
+  const [tempImage, setTempImage] = useState<string | null>(null);
+  const [showCropper, setShowCropper] = useState(false);
+  const [cropTarget, setCropTarget] = useState<"main" | "document" | null>(null);
+  const [cropTitle, setCropTitle] = useState("Crop Image");
+  const [initialAspect, setInitialAspect] = useState(4 / 3);
+  const [lockAspect, setLockAspect] = useState(false);
 
   const imageInputRef = useRef<HTMLInputElement>(null);
   const bannerInputRef = useRef<HTMLInputElement>(null);
@@ -156,16 +163,69 @@ export default function MandalFormPage({ mandalId }: MandalFormProps) {
     if (!/^\d$/.test(e.key)) e.preventDefault();
   };
 
+  const openCropper = (
+    file: File,
+    target: "main" | "document",
+    title: string,
+    aspect: number,
+    shouldLockAspect = false
+  ) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      setTempImage(reader.result as string);
+      setCropTarget(target);
+      setCropTitle(title);
+      setInitialAspect(aspect);
+      setLockAspect(shouldLockAspect);
+      setShowCropper(true);
+    };
+    reader.readAsDataURL(file);
+  };
+
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    setImageFile(file);
-    setImagePreview(URL.createObjectURL(file));
+    openCropper(file, "main", "Crop Mandal Main Image", 4 / 3);
+    e.target.value = "";
   };
 
   const handleBannersChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
+    const files = Array.from(e.target.files || []).filter(file => file.type.startsWith("image/"));
+    if (!files.length) return;
+
     setBannerFiles(prev => [...prev, ...files]);
+    e.target.value = "";
+  };
+
+  const handleDocumentChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.type.startsWith("image/")) {
+      openCropper(file, "document", "Crop Document Image", 0);
+    } else {
+      setDocFile(file);
+    }
+    e.target.value = "";
+  };
+
+  const handleCropComplete = (croppedFile: File) => {
+    if (cropTarget === "main") {
+      setImageFile(croppedFile);
+      setImagePreview(URL.createObjectURL(croppedFile));
+    } else if (cropTarget === "document") {
+      setDocFile(croppedFile);
+    }
+
+    setShowCropper(false);
+    setTempImage(null);
+    setCropTarget(null);
+  };
+
+  const handleCropCancel = () => {
+    setShowCropper(false);
+    setTempImage(null);
+    setCropTarget(null);
   };
 
   const removeBanner = (idx: number, existing: boolean) => {
@@ -246,6 +306,17 @@ export default function MandalFormPage({ mandalId }: MandalFormProps) {
 
   return (
     <div className="max-w-5xl mx-auto space-y-6">
+      {showCropper && tempImage && (
+        <ImageCropper
+          image={tempImage}
+          title={cropTitle}
+          initialAspect={initialAspect}
+          lockAspect={lockAspect}
+          onCropComplete={handleCropComplete}
+          onCancel={handleCropCancel}
+        />
+      )}
+
       {/* Header */}
       <div className="flex items-center gap-4">
         <Link href="/admin/mandals" className="p-2 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-colors">
@@ -504,35 +575,15 @@ export default function MandalFormPage({ mandalId }: MandalFormProps) {
           </div>
 
           <div className="border-t border-border pt-4 space-y-4">
-            <div>
-              <label className={LabelClass}>Verification Doc URL</label>
-              <input
-                type="text"
-                name="verificationDocUrl"
-                value={form.verificationDocUrl}
-                onChange={handleChange}
-                className={InputClass}
-                placeholder="Link to trust/NGO document"
-              />
-            </div>
-            <div>
-              <label className={LabelClass}>President ID Proof URL</label>
-              <input
-                type="text"
-                name="presidentIdDocUrl"
-                value={form.presidentIdDocUrl}
-                onChange={handleChange}
-                className={InputClass}
-                placeholder="Link to ID proof"
-              />
-            </div>
+           
+           
             <div>
               <label className={LabelClass}>Upload Document (PDF/Image)</label>
               <input
                 ref={docInputRef}
                 type="file"
                 accept=".pdf,.jpg,.jpeg,.png"
-                onChange={e => setDocFile(e.target.files?.[0] || null)}
+                onChange={handleDocumentChange}
                 className="hidden"
               />
               <button
@@ -677,17 +728,7 @@ export default function MandalFormPage({ mandalId }: MandalFormProps) {
             </label>
           </div>
 
-          <div>
-            <label className={LabelClass}>Admin Notes</label>
-            <textarea
-              name="adminNotes"
-              value={form.adminNotes}
-              onChange={handleChange}
-              rows={4}
-              className={TextAreaClass}
-              placeholder="Internal notes…"
-            />
-          </div>
+        
         </SectionWrapper>
 
         {/* ── Submit Buttons ── */}

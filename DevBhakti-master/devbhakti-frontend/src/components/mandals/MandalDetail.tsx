@@ -55,6 +55,20 @@ import { getLocalized } from "@/utils/localization";
 import { stripHtml } from "@/utils/textUtils";
 import { fetchUserFavorites, addFavorite, removeFavorite } from "@/api/userController";
 
+type MandalTab =
+  | "overview"
+  | "gallery"
+  | "live"
+  | "poojas"
+  | "aarti"
+  | "events"
+  | "sacred"
+  | "donate"
+  | "about"
+  | "location";
+
+const TRANSACTION_TABS: MandalTab[] = ["poojas", "sacred", "donate"];
+
 export function MandalDetail({ slug }: { slug: string }) {
   const router = useRouter();
   const { toast } = useToast();
@@ -70,23 +84,13 @@ export function MandalDetail({ slug }: { slug: string }) {
   const [donationMessage, setDonationMessage] = useState("");
   const [isAnonymous, setIsAnonymous] = useState(false);
   const [isDonating, setIsDonating] = useState(false);
-  const [activeTab, setActiveTab] = useState<
-    | "overview"
-    | "gallery"
-    | "live"
-    | "poojas"
-    | "aarti"
-    | "events"
-    | "sacred"
-    | "donate"
-    | "about"
-    | "location"
-  >("overview");
+  const [activeTab, setActiveTab] = useState<MandalTab>("overview");
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
   const [products, setProducts] = useState<any[]>([]);
   const { language, t } = useLanguage();
+  const canUseMandalTransactions = mandal?.isActive === true && String(mandal?.status || "").toUpperCase() === "APPROVED";
 
   useEffect(() => {
     const script = document.createElement("script");
@@ -121,6 +125,12 @@ export function MandalDetail({ slug }: { slug: string }) {
       loadSacredProducts();
     }
   }, [slug]);
+
+  useEffect(() => {
+    if (mandal && !canUseMandalTransactions && TRANSACTION_TABS.includes(activeTab)) {
+      setActiveTab("overview");
+    }
+  }, [activeTab, canUseMandalTransactions, mandal]);
 
   const loadMandal = async () => {
     setLoading(true);
@@ -197,6 +207,15 @@ export function MandalDetail({ slug }: { slug: string }) {
   };
 
   const handleDonate = async () => {
+    if (!canUseMandalTransactions) {
+      toast({
+        title: "Donations Disabled",
+        description: "Donations are enabled only for approved and active mandals.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     const amount = selectedAmount || parseInt(customAmount);
     if (!amount || amount <= 0) {
       toast({
@@ -344,7 +363,7 @@ export function MandalDetail({ slug }: { slug: string }) {
     { id: "donate", label: "Donate", icon: IndianRupee },
     { id: "about", label: "About", icon: Info },
     { id: "location", label: "Location", icon: MapPin },
-  ];
+  ].filter((tab) => canUseMandalTransactions || !TRANSACTION_TABS.includes(tab.id as MandalTab));
 
   return (
     <div className="min-h-screen bg-[#FDFBF7] text-zinc-900">
@@ -405,32 +424,34 @@ export function MandalDetail({ slug }: { slug: string }) {
               </div>
 
               {/* Action Buttons Row */}
-              <div className="flex flex-wrap items-center gap-3 pt-2">
-                {/* Pooja & Seva Book Now */}
-                <Button
-                  onClick={() => setActiveTab("poojas")}
-                  className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold px-6 h-12 rounded-xl text-xs sm:text-sm flex items-center gap-2 shadow-lg shadow-amber-900/30"
-                >
-                  <Gift className="w-4 h-4 text-slate-950" />
-                  <div>
-                    <div className="leading-tight font-black">Pooja & Seva</div>
-                    <div className="text-[10px] font-semibold opacity-90">Book Now</div>
-                  </div>
-                </Button>
+              {canUseMandalTransactions && (
+                <div className="flex flex-wrap items-center gap-3 pt-2">
+                  {/* Pooja & Seva Book Now */}
+                  <Button
+                    onClick={() => setActiveTab("poojas")}
+                    className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold px-6 h-12 rounded-xl text-xs sm:text-sm flex items-center gap-2 shadow-lg shadow-amber-900/30"
+                  >
+                    <Gift className="w-4 h-4 text-slate-950" />
+                    <div>
+                      <div className="leading-tight font-black">Pooja & Seva</div>
+                      <div className="text-[10px] font-semibold opacity-90">Book Now</div>
+                    </div>
+                  </Button>
 
-                {/* Donate Now Support Mandal */}
-                <Button
-                  onClick={() => setShowDonateModal(true)}
-                  variant="outline"
-                  className="bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border-amber-500/40 font-bold px-6 h-12 rounded-xl text-xs sm:text-sm flex items-center gap-2"
-                >
-                  <IndianRupee className="w-4 h-4 text-amber-400" />
-                  <div>
-                    <div className="leading-tight">Donate Now</div>
-                    <div className="text-[10px] font-normal text-amber-200/80">Support Mandal</div>
-                  </div>
-                </Button>
-              </div>
+                  {/* Donate Now Support Mandal */}
+                  <Button
+                    onClick={() => setShowDonateModal(true)}
+                    variant="outline"
+                    className="bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border-amber-500/40 font-bold px-6 h-12 rounded-xl text-xs sm:text-sm flex items-center gap-2"
+                  >
+                    <IndianRupee className="w-4 h-4 text-amber-400" />
+                    <div>
+                      <div className="leading-tight">Donate Now</div>
+                      <div className="text-[10px] font-normal text-amber-200/80">Support Mandal</div>
+                    </div>
+                  </Button>
+                </div>
+              )}
 
               {/* Utility Interaction Row */}
               <div className="flex items-center gap-5 text-xs text-amber-200/70">
@@ -693,7 +714,7 @@ export function MandalDetail({ slug }: { slug: string }) {
         )}
 
         {/* 4. POOJAS & SEVAS TAB */}
-        {activeTab === "poojas" && (
+        {canUseMandalTransactions && activeTab === "poojas" && (
           <div className="space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-zinc-200/60 pb-3">
               <div>
@@ -797,7 +818,7 @@ export function MandalDetail({ slug }: { slug: string }) {
         )}
 
         {/* 7. SACRED ITEMS TAB */}
-        {activeTab === "sacred" && (
+        {canUseMandalTransactions && activeTab === "sacred" && (
           <div className="space-y-6">
             <h3 className="text-2xl font-serif font-bold text-zinc-900">Blessed Sacred Items & Prasad</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
@@ -821,7 +842,7 @@ export function MandalDetail({ slug }: { slug: string }) {
         )}
 
         {/* 8. DONATE TAB */}
-        {activeTab === "donate" && (
+        {canUseMandalTransactions && activeTab === "donate" && (
           <div className="max-w-2xl mx-auto space-y-6">
             <Card className="rounded-3xl border-amber-300 p-6 md:p-8 bg-gradient-to-b from-amber-50 to-white text-center space-y-5">
               <div className="w-16 h-16 rounded-full bg-amber-500/20 text-[#6B0F1A] flex items-center justify-center mx-auto">
@@ -903,7 +924,7 @@ export function MandalDetail({ slug }: { slug: string }) {
       <Footer />
 
       {/* ─── DONATION MODAL ─────────────────────────────────────────────────── */}
-      <Dialog open={showDonateModal} onOpenChange={setShowDonateModal}>
+      <Dialog open={canUseMandalTransactions && showDonateModal} onOpenChange={setShowDonateModal}>
         <DialogContent className="w-[95vw] sm:max-w-md max-h-[92vh] overflow-y-auto rounded-3xl p-5 sm:p-6 border border-amber-900/10 shadow-2xl bg-gradient-to-b from-[#FFFDF9] to-[#FFF9F2]">
           <DialogHeader className="text-center pb-2 border-b border-amber-900/10">
             <div className="w-14 h-14 rounded-full bg-gradient-to-br from-[#6B0F1A] to-amber-700 text-white flex items-center justify-center mx-auto mb-2 shadow-md">

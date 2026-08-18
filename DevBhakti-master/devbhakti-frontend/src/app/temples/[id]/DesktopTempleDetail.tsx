@@ -76,6 +76,10 @@ export default function DesktopTempleDetail({
     router,
     params,
 }: TempleDetailProps) {
+    const canBookPooja = temple.canBookPooja !== false;
+    const canDonate = temple.canDonate !== false;
+    const primaryActionCount = [canBookPooja, temple.liveStatus].filter(Boolean).length;
+
     return (
         <div className="min-h-screen bg-background">
             <Navbar isSolid={true} />
@@ -438,15 +442,17 @@ export default function DesktopTempleDetail({
                             <CardContent className="p-5 space-y-6">
                                 {/* Primary Actions */}
                                 <div className="space-y-3">
-                                    <div className={`grid ${temple.liveStatus ? "grid-cols-2" : "grid-cols-1"} gap-3`}>
-                                        <Button
-                                            variant="gold"
-                                            className="w-full gap-2 h-12 text-base font-bold shadow-sm group transition-all"
-                                            onClick={handleBookPooja}
-                                        >
-                                            <Calendar className="h-5 w-5 shrink-0 group-hover:scale-110 transition-transform" />
-                                            <span className="truncate">{t("temple_detail.book_pooja")}</span>
-                                        </Button>
+                                    <div className={`grid ${primaryActionCount > 1 ? "grid-cols-2" : "grid-cols-1"} gap-3`}>
+                                        {canBookPooja && (
+                                            <Button
+                                                variant="gold"
+                                                className="w-full gap-2 h-12 text-base font-bold shadow-sm group transition-all"
+                                                onClick={handleBookPooja}
+                                            >
+                                                <Calendar className="h-5 w-5 shrink-0 group-hover:scale-110 transition-transform" />
+                                                <span className="truncate">{t("temple_detail.book_pooja")}</span>
+                                            </Button>
+                                        )}
 
                                         {temple.liveStatus && (
                                             <Button
@@ -495,14 +501,16 @@ export default function DesktopTempleDetail({
                                     )}
 
                                     {/* Prominent Donation Button */}
-                                    <Button
-                                        variant="outline"
-                                        className="w-full h-12 rounded-2xl border-dashed border-primary/30 text-primary hover:bg-primary/5 font-bold gap-2"
-                                        onClick={handleDonation}
-                                    >
-                                        <Heart className="h-4 w-4" />
-                                        Donation
-                                    </Button>
+                                    {canDonate && (
+                                        <Button
+                                            variant="outline"
+                                            className="w-full h-12 rounded-2xl border-dashed border-primary/30 text-primary hover:bg-primary/5 font-bold gap-2"
+                                            onClick={handleDonation}
+                                        >
+                                            <Heart className="h-4 w-4" />
+                                            Donation
+                                        </Button>
+                                    )}
 
                                     {/* Operating Hours */}
                                     <div className="space-y-4">

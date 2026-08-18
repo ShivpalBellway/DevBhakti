@@ -43,6 +43,7 @@ interface Temple {
     location: string;
     image?: string;
     deity?: string;
+    canDonate?: boolean;
 }
 
 
@@ -129,6 +130,14 @@ function DonationForm() {
         if (step === 1) {
             if (!selectedTemple) {
                 toast({ title: t("toasts.select_temple"), variant: "destructive" });
+                return;
+            }
+            if (selectedTempleData?.canDonate === false) {
+                toast({
+                    title: "Donations Disabled",
+                    description: "Donations are enabled only for verified and active temples.",
+                    variant: "destructive"
+                });
                 return;
             }
             // Check login status
@@ -237,6 +246,15 @@ function DonationForm() {
 
     const handleConfirmDonation = async () => {
         try {
+            if (selectedTempleData?.canDonate === false) {
+                toast({
+                    title: "Donations Disabled",
+                    description: "Donations are enabled only for verified and active temples.",
+                    variant: "destructive"
+                });
+                return;
+            }
+
             setLoading(true);
             setIsPaymentLoading(true);
             const savedUser = localStorage.getItem("user");

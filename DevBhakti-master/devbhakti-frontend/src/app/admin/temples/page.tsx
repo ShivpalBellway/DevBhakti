@@ -122,6 +122,7 @@ function TemplesContent() {
     const [allCount, setAllCount] = useState<number | null>(null);
     const [verifiedCount, setVerifiedCount] = useState<number | null>(null);
     const [unverifiedCount, setUnverifiedCount] = useState<number | null>(null);
+    const [activeCount, setActiveCount] = useState<number | null>(null);
     const [inactiveCount, setInactiveCount] = useState<number | null>(null);
     const [itemsPerPage] = useState(10);
     const [activeTab, setActiveTab] = useState("all");
@@ -168,15 +169,18 @@ function TemplesContent() {
         return lang === "en" ? String(jsonObj) : "";
     };
 
-    const handleExportExcel = async (scope: 'all' | 'verified' | 'unverified') => {
+    const handleExportExcel = async (scope: 'all' | 'verified' | 'unverified' | 'active' | 'inactive') => {
         try {
             toast({ title: "Exporting...", description: "Gathering temple data. Please wait." });
             let isVerifiedParam = undefined;
+            let isActiveParam = undefined;
             if (scope === 'verified') isVerifiedParam = true;
             if (scope === 'unverified') isVerifiedParam = false;
+            if (scope === 'active') isActiveParam = true;
+            if (scope === 'inactive') isActiveParam = false;
 
             const res = await fetchAllTemplesAdmin({
-                page: 1, limit: 10000, search: debouncedSearch, isVerified: isVerifiedParam,
+                page: 1, limit: 10000, search: debouncedSearch, isVerified: isVerifiedParam, isActive: isActiveParam,
                 category: selectedCategory === "all" ? undefined : selectedCategory,
                 location: selectedLocation === "all" ? undefined : selectedLocation,
                 ritual: selectedRitual === "all" ? undefined : selectedRitual,
@@ -562,11 +566,13 @@ function TemplesContent() {
                 fetchAllTemplesAdmin({ page: 1, limit: 1, ...commonFilter }),
                 fetchAllTemplesAdmin({ page: 1, limit: 1, isVerified: true, ...commonFilter }),
                 fetchAllTemplesAdmin({ page: 1, limit: 1, isVerified: false, ...commonFilter }),
+                fetchAllTemplesAdmin({ page: 1, limit: 1, isActive: true, ...commonFilter }),
                 fetchAllTemplesAdmin({ page: 1, limit: 1, isActive: false, ...commonFilter })
-            ]).then(([aRes, vRes, uRes, iRes]) => {
+            ]).then(([aRes, vRes, uRes, activeRes, iRes]) => {
                 setAllCount(aRes.pagination?.total ?? (Array.isArray(aRes) ? aRes.length : aRes.data?.length ?? 0));
                 setVerifiedCount(vRes.pagination?.total ?? (Array.isArray(vRes) ? vRes.length : vRes.data?.length ?? 0));
                 setUnverifiedCount(uRes.pagination?.total ?? (Array.isArray(uRes) ? uRes.length : uRes.data?.length ?? 0));
+                setActiveCount(activeRes.pagination?.total ?? (Array.isArray(activeRes) ? activeRes.length : activeRes.data?.length ?? 0));
                 setInactiveCount(iRes.pagination?.total ?? (Array.isArray(iRes) ? iRes.length : iRes.data?.length ?? 0));
             }).catch(console.error);
 
@@ -575,6 +581,7 @@ function TemplesContent() {
 
             if (activeTab === "verified") isVerifiedParam = true;
             else if (activeTab === "unverified") isVerifiedParam = false;
+            else if (activeTab === "active") isActiveParam = true;
             else if (activeTab === "inactive") isActiveParam = false;
 
             const res = await fetchAllTemplesAdmin({
@@ -734,6 +741,7 @@ function TemplesContent() {
 
                 setApprovalData({
                     id,
+                    isActive: currentActive,
                     slug: generatedSlug,
                     subdomain: generatedSlug,
                     urlType: "slug",
@@ -766,7 +774,7 @@ function TemplesContent() {
             await toggleTempleStatusAdmin(
                 approvalData.id,
                 true, // isVerified
-                true, // isActive
+                approvalData.isActive, // keep existing active/inactive status unchanged
                 {
                     slug: approvalData.slug,
                     subdomain: approvalData.subdomain,
@@ -796,7 +804,7 @@ function TemplesContent() {
                     ]
                 }
             );
-            toast({ title: "Success", description: "Temple Approved Successfully" });
+            toast({ title: "Success", description: "Temple Verified Successfully" });
             setApprovalModalOpen(false);
             loadTemples(currentPage);
         } catch (error: any) {
@@ -1039,7 +1047,7 @@ function TemplesContent() {
             {/* Tabs for Verified vs Pending */}
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                 <div className="flex flex-col md:flex-row items-center justify-between mb-4 gap-4">
-                    <TabsList className="grid grid-cols-2 sm:grid-cols-4 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl w-full md:w-auto gap-1">
+                    <TabsList className="grid grid-cols-2 sm:grid-cols-5 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl w-full md:w-auto gap-1">
                         {/* ALL TEMPLES TAB */}
                         <TabsTrigger
                             value="all"
@@ -1064,7 +1072,16 @@ function TemplesContent() {
                             className="flex items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs md:text-sm font-medium transition-all data-[state=active]:bg-amber-500 data-[state=active]:text-white shadow-none data-[state=active]:shadow-sm"
                         >
                             <Clock className="w-4 h-4 shrink-0" />
-                            <span className="truncate">Pending {unverifiedCount !== null && `(${unverifiedCount})`}</span>
+                            <span className="truncate">Pending Verification{unverifiedCount !== null && `(${unverifiedCount})`}</span>
+                        </TabsTrigger>
+
+                        {/* ACTIVE TAB */}
+                        <TabsTrigger
+                            value="active"
+                            className="flex items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs md:text-sm font-medium transition-all data-[state=active]:bg-teal-600 data-[state=active]:text-white shadow-none data-[state=active]:shadow-sm"
+                        >
+                            <Power className="w-4 h-4 shrink-0" />
+                            <span className="truncate">Active {activeCount !== null && `(${activeCount})`}</span>
                         </TabsTrigger>
 
                         {/* INACTIVE TAB */}
@@ -1519,7 +1536,7 @@ function TemplesContent() {
             <Dialog open={approvalModalOpen} onOpenChange={setApprovalModalOpen}>
                 <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
-                        <DialogTitle>Approve Temple Account</DialogTitle>
+                        <DialogTitle>Verify Temple Account</DialogTitle>
                     </DialogHeader>
                     <div className="space-y-4 py-4">
                         {/* URL Configuration Section */}
@@ -1740,12 +1757,12 @@ function TemplesContent() {
 
                         <div className="bg-emerald-50 text-emerald-800 text-xs p-3 rounded-lg flex gap-2 items-start">
                             <CheckCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
-                            <p>This will activate the temple account, send a welcome email, and make the temple profile public with the configured settings.</p>
+                            <p>This will verify the temple account and save the configured settings. Active status remains controlled by the separate Active toggle.</p>
                         </div>
                     </div>
                     <div className="flex justify-end gap-3">
                         <Button variant="ghost" onClick={() => setApprovalModalOpen(false)}>Cancel</Button>
-                        <Button onClick={handleConfirmApproval} className="bg-emerald-600 hover:bg-emerald-700">Approve & Live</Button>
+                        <Button onClick={handleConfirmApproval} className="bg-emerald-600 hover:bg-emerald-700">Verify Temple</Button>
                     </div>
                 </DialogContent>
             </Dialog>
@@ -1787,4 +1804,3 @@ export default function TemplesManagementPage() {
         </Suspense>
     );
 }
-

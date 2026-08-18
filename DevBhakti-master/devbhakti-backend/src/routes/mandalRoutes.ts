@@ -68,7 +68,7 @@ router.post('/register', (upload as any).fields([
     }
 });
 
-// Public: Get all approved mandals
+// Public: Get all active mandals. Transaction capabilities are enabled only after approval.
 router.get('/', async (req, res) => {
     try {
         const { prisma } = await import('../lib/prisma');
@@ -78,7 +78,7 @@ router.get('/', async (req, res) => {
         const lang = getLang(req);
         
         const mandals = await prisma.mandal.findMany({
-            where: { isActive: true, status: 'APPROVED' },
+            where: { isActive: true },
             orderBy: { createdAt: 'desc' }
         });
         res.json({
@@ -100,7 +100,7 @@ router.get('/:id', async (req, res) => {
         const lang = getLang(req);
         
         const mandal = await prisma.mandal.findFirst({
-            where: { OR: [{ id }, { slug: id }], isActive: true, status: 'APPROVED' },
+            where: { OR: [{ id }, { slug: id }], isActive: true },
             include: {
                 events: { where: { status: true } },
                 poojas: { where: { status: true } },
@@ -111,9 +111,14 @@ router.get('/:id', async (req, res) => {
             res.status(404).json({ success: false, message: 'Mandal not found' });
             return;
         }
+        const data = {
+            ...mandal,
+            poojas: mandal.status === 'APPROVED' ? mandal.poojas : []
+        };
+
         res.json({
             success: true,
-            data: lang === 'raw' ? mandal : localize(mandal, lang)
+            data: lang === 'raw' ? data : localize(data, lang)
         });
     } catch (error: any) {
         console.error('Get mandal by id error:', error);

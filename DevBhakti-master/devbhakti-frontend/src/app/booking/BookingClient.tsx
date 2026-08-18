@@ -520,6 +520,15 @@ function BookingForm() {
         toast({ title: t("booking_client.toast_select_temple"), variant: "destructive" });
         return;
       }
+
+      if (selectedTempleData?.canBookPooja === false) {
+        toast({
+          title: "Bookings Disabled",
+          description: "Pooja bookings are enabled only for verified and active temples.",
+          variant: "destructive"
+        });
+        return;
+      }
     }
     if (step === 2) {
       if (!selectedDate || !selectedPackage) {
@@ -568,6 +577,15 @@ function BookingForm() {
       if (!token || !parsedUser) {
         toast({ title: t("booking_client.toast_login_to_book"), variant: "destructive" });
         router.push("/auth");
+        return;
+      }
+
+      if (selectedTempleData?.canBookPooja === false) {
+        toast({
+          title: "Bookings Disabled",
+          description: "Pooja bookings are enabled only for verified and active temples.",
+          variant: "destructive"
+        });
         return;
       }
 

@@ -265,6 +265,16 @@ export default function TempleDetail() {
     };
 
     const handleDonation = () => {
+        if (temple?.canDonate === false) {
+            toast({
+                title: "Donations Disabled",
+                description: "Donations are enabled only for verified and active temples.",
+                variant: "destructive",
+                duration: 3000,
+            });
+            return;
+        }
+
         const donationUrl = `/donation?temple=${temple.id}`;
         const token = localStorage.getItem("token");
         const savedUser = localStorage.getItem("user");
@@ -278,6 +288,16 @@ export default function TempleDetail() {
     };
 
     const handleBookPooja = () => {
+        if (temple?.canBookPooja === false) {
+            toast({
+                title: "Bookings Disabled",
+                description: "Pooja bookings are enabled only for verified and active temples.",
+                variant: "destructive",
+                duration: 3000,
+            });
+            return;
+        }
+
         const bookingUrl = `/booking?temple=${temple.id}`;
         const token = localStorage.getItem("token");
         const savedUser = localStorage.getItem("user");

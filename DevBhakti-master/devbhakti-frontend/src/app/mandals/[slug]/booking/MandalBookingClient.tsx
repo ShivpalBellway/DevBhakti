@@ -119,6 +119,16 @@ export default function MandalBookingClient({ slug }: MandalBookingClientProps) 
         if (mandalData.success) {
           setMandal(mandalData.data);
 
+          if (mandalData.data?.isActive !== true || String(mandalData.data?.status || "").toUpperCase() !== "APPROVED") {
+            toast({
+              title: "Bookings Disabled",
+              description: "Pooja bookings are enabled only for approved and active mandals.",
+              variant: "destructive",
+            });
+            router.push(`/mandals/${slug}`);
+            return;
+          }
+
           // Fetch mandal's poojas
           const poojasRes = await fetch(
             `${API_URL}/temples/poojas?mandalId=${mandalData.data.id}&lang=${language}`
