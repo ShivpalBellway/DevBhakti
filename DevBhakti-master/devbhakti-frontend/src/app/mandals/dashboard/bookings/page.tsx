@@ -195,15 +195,18 @@ export default function MandalBookingsPage() {
                 <th className="px-4 py-3 text-left font-semibold">Pooja</th>
                 <th className="px-4 py-3 text-left font-semibold">Package</th>
                 <th className="px-4 py-3 text-left font-semibold">Date</th>
+                <th className="px-4 py-3 text-left font-semibold">Pkg Price</th>
+                <th className="px-4 py-3 text-left font-semibold">Prasad Fee</th>
+                <th className="px-4 py-3 text-left font-semibold">Platform Fee</th>
+                <th className="px-4 py-3 text-left font-semibold">Total Paid</th>
                 <th className="px-4 py-3 text-left font-semibold">Status</th>
-                <th className="px-4 py-3 text-left font-semibold">Amount</th>
                 <th className="px-4 py-3 text-left font-semibold">Actions</th>
               </tr>
             </thead>
             <tbody>
               {filteredBookings.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-4 py-12 text-center text-slate-500">
+                  <td colSpan={10} className="px-4 py-12 text-center text-slate-500">
                     No bookings found for this filter.
                   </td>
                 </tr>
@@ -244,13 +247,25 @@ export default function MandalBookingsPage() {
                     </td>
 
                     <td className="px-4 py-3 align-top">
-                      <Badge className={`border ${statusColors[booking.status] || "bg-slate-100 text-slate-700 border-slate-200"}`}>
-                        {booking.status || "BOOKED"}
-                      </Badge>
+                      <div className="font-semibold text-slate-800">₹{Number(booking.packagePrice || 0).toLocaleString("en-IN")}</div>
                     </td>
 
                     <td className="px-4 py-3 align-top">
-                      <div className="font-semibold text-amber-700">₹{Number(booking.packagePrice || 0).toLocaleString("en-IN")}</div>
+                      <div className="font-semibold text-emerald-600">₹{Number(booking.prasadAmount || 0).toLocaleString("en-IN")}</div>
+                    </td>
+
+                    <td className="px-4 py-3 align-top">
+                      <div className="font-semibold text-slate-600">₹{Number(booking.platformFee || 0).toLocaleString("en-IN")}</div>
+                    </td>
+
+                    <td className="px-4 py-3 align-top">
+                      <div className="font-bold text-amber-700">₹{Number((booking.packagePrice || 0) + (booking.prasadAmount || 0) + (booking.platformFee || 0)).toLocaleString("en-IN")}</div>
+                    </td>
+
+                    <td className="px-4 py-3 align-top">
+                      <Badge className={`border ${statusColors[booking.status] || "bg-slate-100 text-slate-700 border-slate-200"}`}>
+                        {booking.status || "BOOKED"}
+                      </Badge>
                     </td>
 
                     <td className="px-4 py-3 align-top">
@@ -343,6 +358,31 @@ export default function MandalBookingsPage() {
                     <p className="text-sm font-medium text-slate-900">{viewBooking.nakshatra}</p>
                   </div>
                 )}
+              </div>
+
+              {/* Payment & Pricing Breakdown */}
+              <div className="p-4 bg-amber-50/50 rounded-2xl border border-amber-100/60 space-y-2">
+                <p className="text-[10px] text-amber-900/60 font-extrabold uppercase tracking-widest mb-2">Payment & Pricing Breakdown</p>
+                <div className="flex justify-between items-center text-sm font-semibold text-slate-700">
+                  <span>Pooja Package Price</span>
+                  <span className="font-bold text-slate-900">₹{viewBooking.packagePrice || 0}</span>
+                </div>
+                <div className="flex justify-between items-center text-sm font-semibold text-slate-700">
+                  <span>
+                    Prasad Fee {viewBooking.isPrasadRequested ? (viewBooking.prasadQuantity ? `(${viewBooking.prasadQuantity} Pkts)` : '') : ''}
+                  </span>
+                  <span className="font-bold text-emerald-600">
+                    {viewBooking.isPrasadRequested ? (viewBooking.prasadAmount ? `₹${viewBooking.prasadAmount}` : 'Free / Included') : 'N/A'}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center text-sm font-semibold text-slate-700">
+                  <span>Platform Fee</span>
+                  <span className="font-bold text-slate-600">₹{viewBooking.platformFee || 0}</span>
+                </div>
+                <div className="border-t border-amber-200/60 pt-2 flex justify-between items-center text-base font-bold text-slate-900">
+                  <span>Total Amount Paid</span>
+                  <span className="text-xl font-black text-amber-700">₹{(viewBooking.packagePrice || 0) + (viewBooking.prasadAmount || 0) + (viewBooking.platformFee || 0)}</span>
+                </div>
               </div>
               {viewBooking.specialInstructions && (
                 <div>

@@ -305,9 +305,44 @@ export default function LiveDarshanClient() {
     <div className="min-h-screen bg-[#FFF9F3] selection:bg-sacred/30 flex flex-col">
       <Navbar />
 
+      <section className="relative min-h-[480px] flex items-center justify-center overflow-hidden mb-0">
+        <div className="absolute inset-0">
+          <Image
+            src="/images/sacred_live_darshan_hero_bg.png"
+            alt={t('hero_title_highlight')}
+            fill
+            priority
+            className="object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-[#FFF9F3]/90 via-[#FFF9F3]/60 to-[#FFF9F3]/95" />
+        </div>
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute top-0 -left-32 w-[500px] h-[500px] bg-primary/20 rounded-full blur-[120px] opacity-60" />
+          <div className="absolute bottom-0 -right-32 w-[500px] h-[500px] bg-sacred/30 rounded-full blur-[120px] opacity-60" />
+        </div>
+        <div className="container mx-auto px-4 relative z-10 pt-12">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-center max-w-5xl mx-auto space-y-6"
+          >
+            <div className="space-y-6">
+              <Badge variant="outline" className="border-primary/30 text-primary px-6 py-1.5 rounded-full bg-white/70 backdrop-blur-md shadow-sm">
+                <Sparkles className="w-3.5 h-3.5 mr-2 fill-primary" />
+                <span className="font-bold tracking-wider">{t('hero_essence')}</span>
+              </Badge>
+              <h1 className="text-4xl md:text-6xl lg:text-7xl font-serif font-black text-foreground drop-shadow-md leading-tight md:whitespace-nowrap">
+                {t('hero_title')} <span className="text-primary italic">{t('hero_title_highlight')}</span>
+              </h1>
+              <p className="text-lg md:text-xl text-foreground/80 max-w-3xl mx-auto leading-relaxed font-medium">
+                {t('hero_subtitle')}
+              </p>
+            </div>
+          </motion.div>
+        </div>
+      </section>
 
-
-      <main className="relative pt-28 lg:pt-32 pb-12 w-full px-4 md:px-12 2xl:px-24 flex flex-col xl:flex-row gap-8 lg:gap-10">
+      <main className="relative pt-8 pb-12 w-full px-4 md:px-12 2xl:px-24 flex flex-col xl:flex-row gap-8 lg:gap-10">
         
         {/* Left Sidebar */}
         <div className="w-full xl:w-[400px] shrink-0">
@@ -453,16 +488,12 @@ export default function LiveDarshanClient() {
         {temples.length > 0 && (
           <section id="other-temples">
             <div className="flex flex-col lg:flex-row items-center justify-between mb-4 gap-4 relative z-10">
-              <div className="space-y-1 shrink-0 flex items-baseline gap-3">
-                <h3 className="text-[20px] font-bold text-[#2a1a10] font-sans">Other Live Darshans</h3>
-                <div className="flex items-center text-red-600 text-[11px] font-bold tracking-wider uppercase">
-                  <span className="w-1.5 h-1.5 bg-red-600 rounded-full mr-1.5" />
-                  {temples.length} Temples Live
-                </div>
+              <div className="space-y-1 shrink-0">
+                <h3 className="text-2xl md:text-3xl font-black text-[#5A1010] font-serif leading-tight">Other Temples</h3>
               </div>
               <div className="relative max-w-sm w-full lg:absolute lg:left-1/2 lg:-translate-x-1/2 group z-20">
-                {/* <div className="relative flex items-center bg-white border-2 border-[#DCC3A8] hover:border-[#F0D5B5] focus-within:border-[#F0D5B5] rounded-full shadow-sm py-0.5 transition-colors">
-                   <div className="flex-1 flex items-center px-4">
+                <div className="relative flex items-center bg-white border-2 border-[#DCC3A8] hover:border-[#F0D5B5] focus-within:border-[#F0D5B5] rounded-full shadow-sm py-0.5 transition-colors">
+                  <div className="flex-1 flex items-center px-4">
                     <Search className="h-4 w-4 text-[#7c4624]/70 mr-2 shrink-0" />
                     <input
                       type="text"
@@ -471,8 +502,8 @@ export default function LiveDarshanClient() {
                       onChange={(e) => setSearchQuery(e.target.value)}
                       className="w-full bg-transparent outline-none py-1.5 text-sm font-medium text-[#2a1b01] placeholder:text-[#2a1b01]/40"
                     />
-                  </div> 
-                </div> */}
+                  </div>
+                </div>
               </div>
             </div>
             
@@ -550,4 +581,57 @@ export default function LiveDarshanClient() {
       `}</style>
     </div>
   );
+}
+
+
+
+
+///pages import { Metadata } from "next";
+import { getPageMetadata } from "@/lib/seo";
+import LiveDarshanClient from "./LiveDarshanClient";
+import axios from "axios";
+import { API_URL } from "@/config/apiConfig";
+
+export async function generateMetadata({ params }: { params: Promise<{ slug?: string[] }> }): Promise<Metadata> {
+  const resolvedParams = await params;
+  const slug = resolvedParams.slug?.[0];
+  const fallback: Metadata = {
+    title: "Live Darshan | Experience Divine Rituals in Real-Time",
+    description: "Watch live darshan from sacred temples across India. Participate in aarti, witness rituals, and receive divine blessings from the comfort of your home.",
+    keywords: "live darshan, online aarti, temple live stream, spiritual experience",
+  };
+
+  // If no slug is provided (base /live-darshan page), use CMS tags
+  if (!slug) {
+    return getPageMetadata("live-darshan", fallback);
+  }
+
+  // If a slug is provided, try to fetch temple details for specific metadata
+  try {
+    const res = await axios.get(`${API_URL}/temples`);
+    if (res.data.success) {
+      const temples = res.data.data;
+      const temple = temples.find((t: any) => t.slug === slug || t.id === slug || t._id === slug);
+      
+      if (temple) {
+        return {
+          title: `Live Darshan of ${temple.name} | DevBhakti`,
+          description: `Experience the divine presence with the live darshan of ${temple.name} in ${temple.location}. Watch sacred rituals and aarti live.`,
+          keywords: `${temple.name} live darshan, ${temple.location} temple live, live aarti ${temple.name}`,
+          openGraph: {
+            title: `Live Darshan of ${temple.name}`,
+            description: `Watch sacred rituals live from ${temple.name}.`,
+          }
+        };
+      }
+    }
+  } catch (error) {
+    console.error("[SEO] Live Darshan metadata error:", error);
+  }
+
+  return fallback;
+}
+
+export default function LiveDarshanPage() {
+  return <LiveDarshanClient />;
 }

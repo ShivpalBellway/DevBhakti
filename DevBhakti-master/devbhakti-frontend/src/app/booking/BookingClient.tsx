@@ -1350,72 +1350,94 @@ function BookingForm() {
                   if (isInternational && (isPaidPrasadActive || isFreePrasadActive)) {
                     return (
                       <div className="mt-6 p-4 border border-amber-200 rounded-xl bg-amber-50 text-amber-800 text-sm font-medium">
-                        ℹ️ Physical Prasad delivery is only available within India. Your Pooja service booking will be conducted globally as requested!
+                        ℹ️ {t("booking_client.prasad_intl_notice")}
                       </div>
                     );
                   }
 
                   if (!isInternational && (isPaidPrasadActive || isFreePrasadActive)) {
                     return (
-                      <div className="mt-6 p-4 border rounded-xl bg-orange-50/50 border-orange-100">
-                        <Label className="text-sm font-bold text-slate-800 flex items-center gap-2">
-                          🙏 Prasad Selection
-                        </Label>
-                        <p className="text-xs text-slate-600 mb-4 mt-1">
-                          Choose if you would like Prasad delivered to your home.
-                        </p>
+                      <div className="mt-6 p-4 border rounded-xl bg-orange-50/50 border-orange-100 space-y-4">
+                        <div>
+                          <Label className="text-sm font-bold text-slate-800 flex items-center gap-2">
+                            🙏 {t("booking_client.prasad_selection_title")}
+                          </Label>
+                          <p className="text-xs text-slate-600 mt-1">
+                            {t("booking_client.prasad_selection_subtitle")}
+                          </p>
+                        </div>
                         
-                        <div className="space-y-3">
+                        <div>
                           <RadioGroup
                             value={prasadSelection}
                             onValueChange={(val: any) => {
                               setPrasadSelection(val);
                               if (val === "PAID" && prasadQuantity < 1) setPrasadQuantity(1);
                             }}
-                            className="flex flex-col gap-4"
+                            className="grid grid-cols-1 md:grid-cols-3 gap-3"
                           >
                             {isFreePrasadActive && (
-                              <div className="flex items-start space-x-3 p-3 border rounded-lg bg-white shadow-sm cursor-pointer hover:border-orange-200 transition-colors">
-                                <RadioGroupItem value="FREE" id="prasad-free" className="mt-1" />
-                                <div className="flex-1">
-                                  <Label htmlFor="prasad-free" className="cursor-pointer font-bold text-slate-800 text-sm">
-                                    Free Prasad
+                              <div
+                                onClick={() => setPrasadSelection("FREE")}
+                                className={cn(
+                                  "flex items-start space-x-3 p-3.5 border rounded-xl bg-white shadow-xs cursor-pointer transition-all hover:border-orange-300",
+                                  prasadSelection === "FREE" ? "border-orange-500 ring-2 ring-orange-200/50 bg-orange-50/30" : "border-slate-200"
+                                )}
+                              >
+                                <RadioGroupItem value="FREE" id="prasad-free" className="mt-1 text-orange-600 border-orange-400 focus:ring-orange-400" />
+                                <div className="flex-1 min-w-0">
+                                  <Label htmlFor="prasad-free" className="cursor-pointer font-bold text-slate-800 text-sm block">
+                                    {t("booking_client.prasad_free_title")}
                                   </Label>
-                                  <p className="text-xs text-slate-500 mt-1">Included with this pooja • ₹0</p>
+                                  <p className="text-xs text-slate-500 mt-0.5">{t("booking_client.prasad_free_desc")}</p>
                                 </div>
                               </div>
                             )}
                             
                             {isPaidPrasadActive && (
-                              <div className="flex flex-col sm:flex-row sm:items-center justify-between p-3 border rounded-lg bg-white shadow-sm cursor-pointer hover:border-orange-200 transition-colors gap-3">
+                              <div
+                                onClick={() => {
+                                  setPrasadSelection("PAID");
+                                  if (prasadQuantity < 1) setPrasadQuantity(1);
+                                }}
+                                className={cn(
+                                  "flex flex-col justify-between p-3.5 border rounded-xl bg-white shadow-xs cursor-pointer transition-all hover:border-orange-300 gap-2",
+                                  prasadSelection === "PAID" ? "border-orange-500 ring-2 ring-orange-200/50 bg-orange-50/30" : "border-slate-200"
+                                )}
+                              >
                                 <div className="flex items-start space-x-3">
-                                  <RadioGroupItem value="PAID" id="prasad-paid" className="mt-1" />
-                                  <div>
-                                    <Label htmlFor="prasad-paid" className="cursor-pointer font-bold text-slate-800 text-sm">
-                                      Paid Prasad
+                                  <RadioGroupItem value="PAID" id="prasad-paid" className="mt-1 text-orange-600 border-orange-400 focus:ring-orange-400" />
+                                  <div className="flex-1 min-w-0">
+                                    <Label htmlFor="prasad-paid" className="cursor-pointer font-bold text-slate-800 text-sm block">
+                                      {t("booking_client.prasad_paid_title")}
                                     </Label>
-                                    <p className="text-xs text-slate-500 mt-1">₹{prasadPrice} per packet</p>
+                                    <p className="text-xs text-slate-500 mt-0.5">
+                                      {t("booking_client.prasad_paid_desc", { price: prasadPrice })}
+                                    </p>
                                   </div>
                                 </div>
                                 
                                 {prasadSelection === "PAID" && (
-                                  <div className="flex items-center gap-3 pl-7 sm:pl-0">
-                                    <span className="text-sm font-semibold text-slate-700">Quantity:</span>
-                                    <div className="flex items-center border border-slate-300 rounded-md overflow-hidden bg-slate-50 shadow-xs">
+                                  <div 
+                                    className="flex items-center justify-between pt-2 border-t border-slate-100 mt-1"
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
+                                    <span className="text-xs font-semibold text-slate-700">{t("booking_client.prasad_quantity_label")}</span>
+                                    <div className="flex items-center border border-slate-300 rounded-lg overflow-hidden bg-slate-50 shadow-2xs">
                                       <button 
                                         type="button"
-                                        className="px-3 py-1 bg-slate-100 hover:bg-slate-200 transition font-bold text-slate-700"
-                                        onClick={(e) => { e.preventDefault(); setPrasadQuantity(Math.max(1, prasadQuantity - 1)); }}
+                                        className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 transition font-bold text-slate-700 active:scale-95"
+                                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); setPrasadQuantity(Math.max(1, prasadQuantity - 1)); }}
                                       >
-                                        <Minus className="w-4 h-4 text-slate-600" />
+                                        <Minus className="w-3.5 h-3.5 text-slate-600" />
                                       </button>
-                                      <span className="w-10 text-center text-sm font-bold select-none text-slate-900 bg-white py-1">{prasadQuantity}</span>
+                                      <span className="w-8 text-center text-xs font-bold select-none text-slate-900 bg-white py-1">{prasadQuantity}</span>
                                       <button 
                                         type="button"
-                                        className="px-3 py-1 bg-slate-100 hover:bg-slate-200 transition font-bold text-slate-700"
-                                        onClick={(e) => { e.preventDefault(); setPrasadQuantity(Math.min(10, prasadQuantity + 1)); }}
+                                        className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 transition font-bold text-slate-700 active:scale-95"
+                                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); setPrasadQuantity(Math.min(10, prasadQuantity + 1)); }}
                                       >
-                                        <Plus className="w-4 h-4 text-slate-600" />
+                                        <Plus className="w-3.5 h-3.5 text-slate-600" />
                                       </button>
                                     </div>
                                   </div>
@@ -1423,13 +1445,19 @@ function BookingForm() {
                               </div>
                             )}
                             
-                            <div className="flex items-start space-x-3 p-3 border rounded-lg bg-white shadow-sm cursor-pointer hover:border-slate-300 transition-colors">
+                            <div
+                              onClick={() => setPrasadSelection("NONE")}
+                              className={cn(
+                                "flex items-start space-x-3 p-3.5 border rounded-xl bg-white shadow-xs cursor-pointer transition-all hover:border-slate-300",
+                                prasadSelection === "NONE" ? "border-slate-400 ring-2 ring-slate-200 bg-slate-50/50" : "border-slate-200"
+                              )}
+                            >
                               <RadioGroupItem value="NONE" id="prasad-none" className="mt-1" />
-                              <div className="flex-1">
-                                <Label htmlFor="prasad-none" className="cursor-pointer font-bold text-slate-800 text-sm">
-                                  No Prasad
+                              <div className="flex-1 min-w-0">
+                                <Label htmlFor="prasad-none" className="cursor-pointer font-bold text-slate-800 text-sm block">
+                                  {t("booking_client.prasad_none_title")}
                                 </Label>
-                                <p className="text-xs text-slate-500 mt-1">I do not wish to receive Prasad</p>
+                                <p className="text-xs text-slate-500 mt-0.5">{t("booking_client.prasad_none_desc")}</p>
                               </div>
                             </div>
                           </RadioGroup>
@@ -1437,48 +1465,49 @@ function BookingForm() {
 
                         {/* Structured Prasad Delivery Address — only shown when prasad is requested */}
                         {prasadSelection !== "NONE" && (
-                          <div className="mt-6 pt-4 border-t border-orange-200/60 space-y-4">
+                          <div className="pt-3 border-t border-orange-200/60 space-y-4">
                             <p className="text-sm font-bold text-[#794A05] flex items-center gap-2">
-                              📦 Delivery Address
-                              <span className="text-xs font-normal text-slate-500">(Prasad will be sent to this address)</span>
+                              📦 {t("booking_client.prasad_delivery_title")}
+                              <span className="text-xs font-normal text-slate-500">{t("booking_client.prasad_delivery_subtitle")}</span>
                             </p>
                             <div className="space-y-2">
-                              <Label htmlFor="prasadStreet">Street / House No. <span className="text-red-500">*</span></Label>
+                              <Label htmlFor="prasadStreet">{t("booking_client.prasad_street_label")} <span className="text-red-500">*</span></Label>
                               <Textarea
                                 id="prasadStreet"
-                                placeholder="Enter street name, house number, landmark"
+                                placeholder={t("booking_client.prasad_street_placeholder")}
                                 value={formData.prasadStreet}
                                 onChange={(e) => setFormData({ ...formData, prasadStreet: e.target.value })}
                                 rows={2}
+                                className="bg-white"
                               />
                             </div>
                             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                               <div className="space-y-2">
-                                <Label htmlFor="prasadCity">City <span className="text-red-500">*</span></Label>
+                                <Label htmlFor="prasadCity">{t("booking_client.prasad_city_label")} <span className="text-red-500">*</span></Label>
                                 <input
                                   id="prasadCity"
-                                  className="w-full h-10 px-3 rounded-lg border border-input bg-background text-sm focus:ring-1 focus:ring-orange-400 focus:outline-none"
-                                  placeholder="Enter city"
+                                  className="w-full h-10 px-3 rounded-lg border border-input bg-white text-sm focus:ring-1 focus:ring-orange-400 focus:outline-none"
+                                  placeholder={t("booking_client.prasad_city_placeholder")}
                                   value={formData.prasadCity}
                                   onChange={(e) => setFormData({ ...formData, prasadCity: e.target.value })}
                                 />
                               </div>
                               <div className="space-y-2">
-                                <Label htmlFor="prasadState">State <span className="text-red-500">*</span></Label>
+                                <Label htmlFor="prasadState">{t("booking_client.prasad_state_label")} <span className="text-red-500">*</span></Label>
                                 <input
                                   id="prasadState"
-                                  className="w-full h-10 px-3 rounded-lg border border-input bg-background text-sm focus:ring-1 focus:ring-orange-400 focus:outline-none"
-                                  placeholder="Enter state"
+                                  className="w-full h-10 px-3 rounded-lg border border-input bg-white text-sm focus:ring-1 focus:ring-orange-400 focus:outline-none"
+                                  placeholder={t("booking_client.prasad_state_placeholder")}
                                   value={formData.prasadState}
                                   onChange={(e) => setFormData({ ...formData, prasadState: e.target.value })}
                                 />
                               </div>
                               <div className="space-y-2">
-                                <Label htmlFor="prasadPincode">Pincode <span className="text-red-500">*</span></Label>
+                                <Label htmlFor="prasadPincode">{t("booking_client.prasad_pincode_label")} <span className="text-red-500">*</span></Label>
                                 <input
                                   id="prasadPincode"
-                                  className="w-full h-10 px-3 rounded-lg border border-input bg-background text-sm focus:ring-1 focus:ring-orange-400 focus:outline-none"
-                                  placeholder="6-digit pincode"
+                                  className="w-full h-10 px-3 rounded-lg border border-input bg-white text-sm focus:ring-1 focus:ring-orange-400 focus:outline-none"
+                                  placeholder={t("booking_client.prasad_pincode_placeholder")}
                                   maxLength={6}
                                   value={formData.prasadPincode}
                                   onChange={(e) => {
@@ -1613,17 +1642,17 @@ function BookingForm() {
                   </div>
                   {(isPaidPrasadActive || isFreePrasadActive) && prasadSelection !== "NONE" && (
                     <div className="flex justify-between py-2 border-b border-border">
-                      <span className="text-muted-foreground">Prasad Requested</span>
+                      <span className="text-muted-foreground">{t("booking_client.prasad_requested_summary")}</span>
                       <span className="font-medium flex items-center flex-col items-end">
-                        {prasadSelection === "FREE" && <span>Free Prasad (Included)</span>}
-                        {prasadSelection === "PAID" && <span>Paid Prasad: {prasadQuantity} x ₹{prasadPrice}</span>}
+                        {prasadSelection === "FREE" && <span>{t("booking_client.free_prasad_included_summary")}</span>}
+                        {prasadSelection === "PAID" && <span>{t("booking_client.paid_prasad_summary", { qty: prasadQuantity, price: prasadPrice })}</span>}
                       </span>
                     </div>
                   )}
                   {(isPaidPrasadActive || isFreePrasadActive) && prasadSelection === "NONE" && (
                     <div className="flex justify-between py-2 border-b border-border">
-                      <span className="text-muted-foreground">Prasad Requested</span>
-                      <span className="font-medium">No</span>
+                      <span className="text-muted-foreground">{t("booking_client.prasad_requested_summary")}</span>
+                      <span className="font-medium">{t("booking_client.no_prasad_summary")}</span>
                     </div>
                   )}
                   {/* <div className="flex justify-between py-2 border-b border-border">
@@ -1638,6 +1667,14 @@ function BookingForm() {
                       <IndianRupee className="h-4 w-4" />{basePrice}
                     </span>
                   </div>
+                  {prasadSelection === "PAID" && prasadTotal > 0 && (
+                    <div className="flex justify-between py-2 border-b border-border text-orange-700 font-semibold">
+                      <span className="flex items-center gap-1">{t("booking_client.summary_prasad_fee", { qty: prasadQuantity, price: prasadPrice })}</span>
+                      <span className="flex items-center">
+                        + <IndianRupee className="h-4 w-4" />{prasadTotal}
+                      </span>
+                    </div>
+                  )}
                   <div className="flex justify-between py-2 border-b border-border text-primary font-semibold">
                     <span className="flex items-center gap-1">{t("booking_client.summary_platform_fee")} </span>
                     <span className="flex items-center">
@@ -1732,12 +1769,20 @@ function BookingForm() {
                       <span className="font-medium">{formData.nativePlace}</span>
                     </div>
                   )}
-                    <div className="flex justify-between py-2 border-b border-border">
+                  <div className="flex justify-between py-2 border-b border-border">
                     <span className="text-muted-foreground">{t("booking_client.summary_package_price")}</span>
                     <span className="font-medium flex items-center">
                       <IndianRupee className="h-4 w-4" />{basePrice}
                     </span>
                   </div>
+                  {prasadSelection === "PAID" && prasadTotal > 0 && (
+                    <div className="flex justify-between py-2 border-b border-border text-orange-700 font-semibold">
+                      <span className="flex items-center gap-1">{t("booking_client.summary_prasad_fee", { qty: prasadQuantity, price: prasadPrice })}</span>
+                      <span className="flex items-center">
+                        + <IndianRupee className="h-4 w-4" />{prasadTotal}
+                      </span>
+                    </div>
+                  )}
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">{t("booking_client.confirmed_platform_fee")}</span>
                     <span className="font-medium text-primary">₹{platformFee}</span>

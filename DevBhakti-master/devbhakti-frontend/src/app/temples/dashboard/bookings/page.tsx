@@ -268,10 +268,14 @@ export default function TempleBookingsPage() {
                 "Package": parseLocalizedValue(b.packageName),
                 "Ritual Date": b.bookingDate ? format(new Date(b.bookingDate), "dd MMM yyyy") : "N/A",
                 "Booked On": format(new Date(b.createdAt), "dd MMM yyyy HH:mm"),
-                "Amount": b.packagePrice,
+                "Pooja Amount": b.packagePrice || 0,
+                "Prasad Fee": b.prasadAmount || 0,
+                "Total Offering": (b.packagePrice || 0) + (b.prasadAmount || 0),
                 "Platform Fee": b.platformFee || 0,
-                "Total Paid": (b.packagePrice || 0) + (b.platformFee || 0),
+                "Total Paid": (b.packagePrice || 0) + (b.prasadAmount || 0) + (b.platformFee || 0),
                 "Status": b.status,
+                "Prasad Requested": b.isPrasadRequested ? (b.prasadAmount > 0 ? `Paid Prasad (${b.prasadQuantity || 1} x ₹${Math.round(b.prasadAmount / (b.prasadQuantity || 1))})` : "Free Prasad") : "No",
+                "Prasad Status": b.isPrasadRequested ? (b.prasadStatus || "PREPARING") : "N/A",
                 "Gothra": b.gothra || "N/A",
                 "Native Place": b.nativePlace || "N/A",
                 "Address": b.address || "N/A",
@@ -408,9 +412,9 @@ export default function TempleBookingsPage() {
             todayCount: bookings.filter(b => isToday(b.createdAt)).length,
             todayRevenue: bookings
                 .filter(b => isToday(b.createdAt) && b.status !== 'CANCELLED')
-                .reduce((acc, b) => acc + (b.packagePrice || 0), 0),
+                .reduce((acc, b) => acc + (b.packagePrice || 0) + (b.prasadAmount || 0), 0),
             completed: periodBookings.filter(b => b.status === "COMPLETED").length,
-            revenue: activePeriodBookings.reduce((acc, b) => acc + (b.packagePrice || 0), 0)
+            revenue: activePeriodBookings.reduce((acc, b) => acc + (b.packagePrice || 0) + (b.prasadAmount || 0), 0)
         };
     }, [bookings, statsPeriod]);
 
@@ -785,7 +789,10 @@ export default function TempleBookingsPage() {
                                             {viewMode === "booking" && <ArrowUpDown className="w-3 h-3" />}
                                         </button>
                                     </th>
-                                    <th className="text-left p-4 text-sm font-medium text-muted-foreground">Amount</th>
+                                    <th className="text-left p-4 text-sm font-medium text-muted-foreground whitespace-nowrap">Pkg Price</th>
+                                    <th className="text-left p-4 text-sm font-medium text-muted-foreground whitespace-nowrap">Prasad Fee</th>
+                                    <th className="text-left p-4 text-sm font-medium text-muted-foreground whitespace-nowrap">Platform Fee</th>
+                                    <th className="text-left p-4 text-sm font-medium text-muted-foreground whitespace-nowrap">Total Paid</th>
                                     <th className="text-left p-4 text-sm font-medium text-muted-foreground w-[150px]">Status</th>
                                     <th className="text-right p-4 text-sm font-medium text-muted-foreground w-[100px]">Actions</th>
                                 </tr>
@@ -793,7 +800,7 @@ export default function TempleBookingsPage() {
                             <tbody>
                                 {loading ? (
                                     <tr>
-                                        <td colSpan={8} className="p-12 text-center">
+                                        <td colSpan={11} className="p-12 text-center">
                                             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
                                             <p className="text-muted-foreground mt-2">Loading bookings...</p>
                                         </td>
@@ -842,7 +849,16 @@ export default function TempleBookingsPage() {
                                                     </span>
                                                 </td>
                                                 <td className="p-4">
-                                                    <span className="text-sm font-bold text-foreground">₹{booking.packagePrice}</span>
+                                                    <span className="text-sm font-bold text-foreground">₹{booking.packagePrice || 0}</span>
+                                                </td>
+                                                <td className="p-4">
+                                                    <span className="text-sm font-bold text-emerald-600">₹{booking.prasadAmount || 0}</span>
+                                                </td>
+                                                <td className="p-4">
+                                                    <span className="text-sm font-bold text-muted-foreground">₹{booking.platformFee || 0}</span>
+                                                </td>
+                                                <td className="p-4">
+                                                    <span className="text-sm font-bold text-primary">₹{(booking.packagePrice || 0) + (booking.prasadAmount || 0) + (booking.platformFee || 0)}</span>
                                                 </td>
                                                 <td className="p-4 w-[150px]">
                                                     <Badge variant="outline" className={cn("whitespace-nowrap", status.color)}>
@@ -1010,7 +1026,13 @@ export default function TempleBookingsPage() {
                                             <p className="text-xs font-semibold text-slate-500 mt-1 ml-0.5">
                                                 <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Prasad Requested: </span>
                                                 {selectedBooking.isPrasadRequested ? (
-                                                    <span className="text-emerald-600 font-bold">Yes</span>
+                                                    <span className="text-emerald-600 font-bold">
+                                                        {selectedBooking.prasadAmount > 0 ? (
+                                                            `Paid Prasad: ${selectedBooking.prasadQuantity || 1} x ₹${Math.round(selectedBooking.prasadAmount / (selectedBooking.prasadQuantity || 1))} (+₹${selectedBooking.prasadAmount})`
+                                                        ) : (
+                                                            "Free Prasad (Included)"
+                                                        )}
+                                                    </span>
                                                 ) : (
                                                     <span className="text-slate-500 font-medium">No</span>
                                                 )}
@@ -1203,12 +1225,37 @@ export default function TempleBookingsPage() {
                                     </div>
                                 )}
 
+                                {/* Payment & Pricing Breakdown */}
+                                <div className="p-4 bg-amber-50/50 rounded-2xl border border-amber-100/60 space-y-2">
+                                    <p className="text-[10px] text-amber-900/60 font-extrabold uppercase tracking-widest mb-2">Payment & Pricing Breakdown</p>
+                                    <div className="flex justify-between items-center text-sm font-semibold text-slate-700">
+                                        <span>Pooja Package Price</span>
+                                        <span className="font-bold text-slate-900">₹{selectedBooking.packagePrice || 0}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center text-sm font-semibold text-slate-700">
+                                        <span>
+                                            Prasad Fee {selectedBooking.isPrasadRequested ? (selectedBooking.prasadQuantity ? `(${selectedBooking.prasadQuantity} Pkts)` : '') : ''}
+                                        </span>
+                                        <span className="font-bold text-emerald-600">
+                                            {selectedBooking.isPrasadRequested ? (selectedBooking.prasadAmount ? `₹${selectedBooking.prasadAmount}` : 'Free / Included') : 'N/A'}
+                                        </span>
+                                    </div>
+                                    <div className="flex justify-between items-center text-sm font-semibold text-slate-700">
+                                        <span>Platform Fee</span>
+                                        <span className="font-bold text-slate-600">₹{selectedBooking.platformFee || 0}</span>
+                                    </div>
+                                    <div className="border-t border-amber-200/60 pt-2 flex justify-between items-center text-base font-bold text-slate-900">
+                                        <span>Total Amount Paid</span>
+                                        <span className="text-xl font-black text-primary">₹{(selectedBooking.packagePrice || 0) + (selectedBooking.prasadAmount || 0) + (selectedBooking.platformFee || 0)}</span>
+                                    </div>
+                                </div>
+
                                 {/* Summary & Actions */}
                                 <div className="pt-6 border-t border-slate-100 sticky bottom-0 bg-white pb-2">
                                     <div className="flex items-center justify-between">
                                         <div>
                                             <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1">Total Offering</p>
-                                            <p className="text-2xl font-bold text-primary">₹{selectedBooking.packagePrice}</p>
+                                            <p className="text-2xl font-bold text-primary">₹{(selectedBooking.packagePrice || 0) + (selectedBooking.prasadAmount || 0) + (selectedBooking.platformFee || 0)}</p>
                                         </div>
                                         <div className="flex gap-2">
                                             {selectedBooking.status === 'BOOKED' && hasPermission('bookings.manage') && (

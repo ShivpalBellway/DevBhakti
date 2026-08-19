@@ -232,14 +232,22 @@ export default function MyBookingsPage() {
                                                     <Calendar className="w-6 h-6 text-[#794A05]" />
                                                 </div>
                                                 <div>
-                                                    <div className="flex items-center gap-2 mb-1">
-                                                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tight">
+                                                    <div className="flex items-center gap-2 mb-1 flex-wrap">
+                                                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tight shrink-0">
                                                             {format(new Date(booking.createdAt), "dd MMM yyyy")}
                                                         </span>
-                                                        <div className="w-1 h-1 rounded-full bg-slate-300" />
-                                                        <Badge variant="secondary" className="bg-orange-100 text-[#794A05] hover:bg-orange-200 border-none px-2 py-0 h-4 text-[9px] font-bold uppercase tracking-tighter">
+                                                        <div className="w-1 h-1 rounded-full bg-slate-300 shrink-0" />
+                                                        <Badge variant="secondary" className="bg-orange-100 text-[#794A05] hover:bg-orange-200 border-none px-2 py-0 h-4 text-[9px] font-bold uppercase tracking-tighter w-fit">
                                                             {booking.packageName}
                                                         </Badge>
+                                                        {booking.isPrasadRequested && (
+                                                            <>
+                                                                <div className="w-1 h-1 rounded-full bg-slate-300 shrink-0" />
+                                                                <Badge variant="secondary" className="bg-amber-100 text-amber-700 hover:bg-amber-200 border-none px-2 py-0 h-4 text-[9px] font-bold uppercase tracking-tighter w-fit flex items-center gap-1">
+                                                                    <Sparkles className="w-2.5 h-2.5" /> Prasad Included
+                                                                </Badge>
+                                                            </>
+                                                        )}
                                                     </div>
                                                     <div className="flex flex-col">
                                                         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-1">{t("bookings.label_booking_id")}</p>
@@ -279,7 +287,7 @@ export default function MyBookingsPage() {
                                             </div>
                                             <div>
                                                 <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">{t("bookings.label_total_offering")}</p>
-                                                <p className="text-xl font-bold text-[#794A05]">₹{( (booking.packagePrice || 0) + (booking.platformFee || 0) ).toLocaleString()}</p>
+                                                <p className="text-xl font-bold text-[#794A05]">₹{( (booking.packagePrice || 0) + (booking.platformFee || 0) + (booking.isPrasadRequested ? (booking.prasadAmount || 0) : 0) ).toLocaleString()}</p>
                                             </div>
                                         </div>
 
@@ -383,13 +391,19 @@ export default function MyBookingsPage() {
                                                                         <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">{t("bookings.label_package_price") || "Package Price"}</p>
                                                                         <p className="text-sm font-bold text-slate-700">₹{booking.packagePrice?.toLocaleString()}</p>
                                                                     </div>
+                                                                    {booking.isPrasadRequested && (
+                                                                        <div className="flex justify-between items-center">
+                                                                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">Prasad Value</p>
+                                                                            <p className="text-sm font-bold text-slate-700">+ ₹{booking.prasadAmount?.toLocaleString() || 0}</p>
+                                                                        </div>
+                                                                    )}
                                                                     <div className="flex justify-between items-center">
                                                                         <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">{t("bookings.label_platform_fee") || "Platform Fee"}</p>
                                                                         <p className="text-sm font-bold text-slate-700">+ ₹{booking.platformFee?.toLocaleString() || 0}</p>
                                                                     </div>
                                                                     <div className="pt-2 border-t border-slate-200 flex justify-between items-center">
                                                                         <p className="text-[10px] text-slate-900 font-bold uppercase tracking-tighter">{t("bookings.label_total_paid") || "Total Paid"}</p>
-                                                                        <p className="text-sm font-bold text-[#794A05]">₹{((booking.packagePrice || 0) + (booking.platformFee || 0)).toLocaleString()}</p>
+                                                                        <p className="text-sm font-bold text-[#794A05]">₹{((booking.packagePrice || 0) + (booking.platformFee || 0) + (booking.isPrasadRequested ? (booking.prasadAmount || 0) : 0)).toLocaleString()}</p>
                                                                     </div>
                                                                 </div>
                                                             </div>

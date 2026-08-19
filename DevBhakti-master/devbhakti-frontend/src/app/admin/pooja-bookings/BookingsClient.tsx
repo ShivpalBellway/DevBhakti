@@ -478,16 +478,19 @@ function BookingsContent() {
                                 <th className="py-5 text-left text-[11px] font-extrabold text-slate-900 uppercase tracking-widest whitespace-nowrap">Devotee</th>
                                 <th className="py-5 text-left text-[11px] font-extrabold text-slate-900 uppercase tracking-widest whitespace-nowrap">Booking Date & Time</th>
                                 <th className="py-5 text-left text-[11px] font-extrabold text-slate-900 uppercase tracking-widest whitespace-nowrap">Ritual Date</th>
-                                <th className="py-5 text-left text-[11px] font-extrabold text-slate-900 uppercase tracking-widest whitespace-nowrap">Amount</th>
+                                <th className="py-5 text-left text-[11px] font-extrabold text-slate-900 uppercase tracking-widest whitespace-nowrap">Pkg Price</th>
+                                <th className="py-5 text-left text-[11px] font-extrabold text-slate-900 uppercase tracking-widest whitespace-nowrap">Prasad Fee</th>
+                                <th className="py-5 text-left text-[11px] font-extrabold text-slate-900 uppercase tracking-widest whitespace-nowrap">Platform Fee</th>
+                                <th className="py-5 text-left text-[11px] font-extrabold text-slate-900 uppercase tracking-widest whitespace-nowrap">Total Paid</th>
                                 <th className="py-5 text-center text-[11px] font-extrabold text-slate-900 uppercase tracking-widest whitespace-nowrap">Status</th>
                                 <th className="py-5 pr-8 text-right text-[11px] font-extrabold text-slate-900 uppercase tracking-widest whitespace-nowrap">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             {loading ? (
-                                <tr><td colSpan={9} className="p-8 sm:p-12 text-center text-slate-400 text-sm sm:text-base">Loading Sacred Data...</td></tr>
+                                <tr><td colSpan={12} className="p-8 sm:p-12 text-center text-slate-400 text-sm sm:text-base">Loading Sacred Data...</td></tr>
                             ) : bookings.length === 0 ? (
-                                <tr><td colSpan={9} className="p-8 sm:p-12 text-center text-slate-400 text-sm sm:text-base">No results found</td></tr>
+                                <tr><td colSpan={12} className="p-8 sm:p-12 text-center text-slate-400 text-sm sm:text-base">No results found</td></tr>
                             ) : bookings.map((booking) => {
                                 const status = statusConfig[booking.status as keyof typeof statusConfig] || statusConfig.BOOKED;
                                 return (
@@ -538,7 +541,16 @@ function BookingsContent() {
                                             </span>
                                         </td>
                                         <td className="py-6">
-                                            <p className="text-sm font-black text-slate-900">₹{String((booking.packagePrice || 0) + (booking.platformFee || 0))}</p>
+                                            <span className="text-sm font-bold text-slate-900">₹{booking.packagePrice || 0}</span>
+                                        </td>
+                                        <td className="py-6">
+                                            <span className="text-sm font-bold text-emerald-600">₹{booking.prasadAmount || 0}</span>
+                                        </td>
+                                        <td className="py-6">
+                                            <span className="text-sm font-bold text-slate-600">₹{booking.platformFee || 0}</span>
+                                        </td>
+                                        <td className="py-6">
+                                            <p className="text-sm font-black text-[#794A05]">₹{(booking.packagePrice || 0) + (booking.prasadAmount || 0) + (booking.platformFee || 0)}</p>
                                         </td>
                                         <td className="py-6 text-center">
                                             <Badge variant="outline" className={`rounded-full px-3 py-1 font-extrabold text-[9px] uppercase tracking-wider ${status.color}`}>
@@ -662,7 +674,13 @@ function BookingsContent() {
                                             <p className="text-xs font-semibold text-slate-500 mt-1 ml-0.5">
                                                 <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Prasad Requested: </span>
                                                 {selectedBooking.isPrasadRequested ? (
-                                                    <span className="text-emerald-600 font-bold">Yes</span>
+                                                    <span className="text-emerald-600 font-bold">
+                                                        {selectedBooking.prasadAmount > 0 ? (
+                                                            `Paid Prasad: ${selectedBooking.prasadQuantity || 1} x ₹${Math.round(selectedBooking.prasadAmount / (selectedBooking.prasadQuantity || 1))} (+₹${selectedBooking.prasadAmount})`
+                                                        ) : (
+                                                            "Free Prasad (Included)"
+                                                        )}
+                                                    </span>
                                                 ) : (
                                                     <span className="text-slate-500 font-medium">No</span>
                                                 )}
@@ -851,12 +869,37 @@ function BookingsContent() {
                                     </div>
                                 )}
 
+                                {/* Payment & Pricing Breakdown */}
+                                <div className="p-4 bg-amber-50/50 rounded-2xl border border-amber-100/60 space-y-2">
+                                    <p className="text-[10px] text-amber-900/60 font-extrabold uppercase tracking-widest mb-2">Payment & Pricing Breakdown</p>
+                                    <div className="flex justify-between items-center text-sm font-semibold text-slate-700">
+                                        <span>Pooja Package Price</span>
+                                        <span className="font-bold text-slate-900">₹{selectedBooking.packagePrice || 0}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center text-sm font-semibold text-slate-700">
+                                        <span>
+                                            Prasad Fee {selectedBooking.isPrasadRequested ? (selectedBooking.prasadQuantity ? `(${selectedBooking.prasadQuantity} Pkts)` : '') : ''}
+                                        </span>
+                                        <span className="font-bold text-emerald-600">
+                                            {selectedBooking.isPrasadRequested ? (selectedBooking.prasadAmount ? `₹${selectedBooking.prasadAmount}` : 'Free / Included') : 'N/A'}
+                                        </span>
+                                    </div>
+                                    <div className="flex justify-between items-center text-sm font-semibold text-slate-700">
+                                        <span>Platform Fee</span>
+                                        <span className="font-bold text-slate-600">₹{selectedBooking.platformFee || 0}</span>
+                                    </div>
+                                    <div className="border-t border-amber-200/60 pt-2 flex justify-between items-center text-base font-bold text-slate-900">
+                                        <span>Total Amount Paid</span>
+                                        <span className="text-xl font-black text-[#794A05]">₹{(selectedBooking.packagePrice || 0) + (selectedBooking.prasadAmount || 0) + (selectedBooking.platformFee || 0)}</span>
+                                    </div>
+                                </div>
+
                                 {/* Admin Actions */}
                                 <div className="pt-6 border-t border-slate-100 sticky bottom-0 bg-white pb-2">
                                     <div className="flex items-center justify-between gap-4">
                                         <div>
                                             <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1">Total Payment</p>
-                                            <p className="text-2xl font-black text-[#794A05]">₹{String((selectedBooking.packagePrice || 0) + (selectedBooking.platformFee || 0))}</p>
+                                            <p className="text-2xl font-black text-[#794A05]">₹{String((selectedBooking.packagePrice || 0) + (selectedBooking.prasadAmount || 0) + (selectedBooking.platformFee || 0))}</p>
                                         </div>
                                         <div className="flex gap-2">
                                             {hasPermission('bookings.manage') && selectedBooking.status === 'BOOKED' && (
