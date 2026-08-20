@@ -52,6 +52,7 @@ import { fetchPublicTemples, fetchPublicPoojas, fetchPublicPoojaById } from "@/a
 import { notifyFailedPayment } from "@/api/adminController";
 import { generatePoojaReceiptHTML } from "@/utils/poojaReceipt";
 import { parseLocalizedValue } from '@/utils/textUtils';
+import { trackPoojaPurchase } from "@/lib/analytics";
 
 
 function BookingForm() {
@@ -105,6 +106,12 @@ function BookingForm() {
   const [prasadSelection, setPrasadSelection] = useState<"FREE" | "PAID" | "NONE">("NONE");
   const [prasadQuantity, setPrasadQuantity] = useState(1);
   const requestedPoojaParam = searchParams.get("pooja");
+
+  const getFullImageUrl = (path?: string) => {
+    if (!path) return "https://images.unsplash.com/photo-1609710228159-0fa9bd7c0827?auto=format&fit=crop&q=80&w=300";
+    if (path.startsWith('http')) return path;
+    return `${API_URL.replace('/api', '')}${path}`;
+  };
 
 
   useEffect(() => {
@@ -661,6 +668,14 @@ function BookingForm() {
               const verifyData = await verifyRes.json();
 
               if (verifyData.success) {
+                trackPoojaPurchase({
+                  transactionId: responseData.razorpay_payment_id || res.data.id,
+                  poojaId: selectedPooja,
+                  poojaName: selectedPoojaData?.name,
+                  value: totalAmount,
+                  currency: "INR",
+                  templeName: selectedTempleData?.name,
+                });
                 setBookingId(res.data.id);
                 setIsPaymentLoading(false);
                 setStep(5); // Show confirmation
@@ -913,31 +928,36 @@ function BookingForm() {
 
               {searchParams.get("pooja") && selectedPoojaData && (
                 <Card className="border-border/50">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="flex items-center gap-2 text-base md:text-lg">
                       <Calendar className="h-5 w-5 text-primary" />
                       {t("booking_client.select_pooja_service")}
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div
-                      className="flex items-center justify-between p-4 rounded-lg border transition-colors border-primary bg-primary/5"
+                      className="flex items-center justify-between p-3 sm:p-3.5 rounded-xl border transition-all border-primary bg-primary/5 shadow-xs"
                     >
-                      <div className="flex items-center gap-3">
-                        <div className="h-4 w-4 rounded-full border border-primary flex items-center justify-center">
+                      <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+                        <div className="h-4 w-4 rounded-full border border-primary flex items-center justify-center shrink-0">
                           <div className="h-2 w-2 rounded-full bg-primary" />
                         </div>
-                        <div>
-                          <Label className="font-semibold">
+                        <img
+                          src={getFullImageUrl(selectedPoojaData.image || selectedPoojaData.imageUrl || selectedPoojaData.bannerImage)}
+                          alt={selectedPoojaData.name}
+                          className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl object-cover shrink-0 border border-orange-100/80 shadow-xs"
+                        />
+                        <div className="min-w-0 flex-1">
+                          <Label className="font-semibold text-sm sm:text-base truncate block">
                             {selectedPoojaData.name}
                           </Label>
                           <div 
-                            className="text-sm text-muted-foreground line-clamp-1"
+                            className="text-xs sm:text-sm text-muted-foreground line-clamp-1 mt-0.5"
                             dangerouslySetInnerHTML={{ __html: parseLocalizedValue(selectedPoojaData.description?.[0] || selectedPoojaData.about) || "" }}
                           />
                         </div>
                       </div>
-                      <div className="flex items-center text-primary font-bold text-lg">
+                      <div className="flex items-center text-primary font-bold text-base sm:text-lg shrink-0 ml-3">
                         <IndianRupee className="h-4 w-4" />
                         {selectedPoojaData.price}
                       </div>
@@ -948,36 +968,41 @@ function BookingForm() {
 
               {!searchParams.get("pooja") && (
                 <Card className="border-border/50">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="flex items-center gap-2 text-base md:text-lg">
                       <Calendar className="h-5 w-5 text-primary" />
                       {t("booking_client.select_pooja_service")}
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <RadioGroup value={selectedPooja} onValueChange={setSelectedPooja} className="space-y-3">
+                    <RadioGroup value={selectedPooja} onValueChange={setSelectedPooja} className="space-y-2.5">
                       {availablePoojas.map((pooja) => (
                         <div
                           key={pooja.id}
-                          className={`flex items-center justify-between p-4 rounded-lg border transition-colors cursor-pointer ${selectedPooja === pooja.id
-                            ? "border-primary bg-primary/5"
+                          className={`flex items-center justify-between p-3 sm:p-3.5 rounded-xl border transition-all cursor-pointer ${selectedPooja === pooja.id
+                            ? "border-primary bg-primary/5 shadow-xs"
                             : "border-border hover:border-primary/50"
                             }`}
                           onClick={() => setSelectedPooja(pooja.id)}
                         >
-                          <div className="flex items-center gap-3">
-                            <RadioGroupItem value={pooja.id} id={pooja.id} />
-                            <div>
-                              <Label htmlFor={pooja.id} className="font-semibold cursor-pointer">
+                          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+                            <RadioGroupItem value={pooja.id} id={pooja.id} className="shrink-0" />
+                            <img
+                              src={getFullImageUrl(pooja.image || pooja.imageUrl || pooja.bannerImage)}
+                              alt={parseLocalizedValue(pooja.name)}
+                              className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl object-cover shrink-0 border border-orange-100/80 shadow-xs"
+                            />
+                            <div className="min-w-0 flex-1">
+                              <Label htmlFor={pooja.id} className="font-semibold text-sm sm:text-base cursor-pointer truncate block">
                                 {parseLocalizedValue(pooja.name)}
                               </Label>
                               <div 
-                                className="text-sm text-muted-foreground line-clamp-1" 
+                                className="text-xs sm:text-sm text-muted-foreground line-clamp-1 mt-0.5" 
                                 dangerouslySetInnerHTML={{ __html: parseLocalizedValue(pooja.description?.[0] || pooja.about) || "" }} 
                               />
                             </div>
                           </div>
-                          <div className="flex items-center text-primary font-bold text-lg">
+                          <div className="flex items-center text-primary font-bold text-base sm:text-lg shrink-0 ml-3">
                             <IndianRupee className="h-4 w-4" />
                             {pooja.price}
                           </div>
@@ -1342,10 +1367,28 @@ function BookingForm() {
 
                 {/* International FCRA Notice for Prasad */}
                 {(() => {
-                  const raw = formData.phone.trim();
-                  const hasExplicitPlus = raw.startsWith('+');
-                  const cleaned = raw.replace(/\D/g, '');
-                  const isInternational = hasExplicitPlus && !cleaned.startsWith('91');
+                  const isIndianUser = (phone: string): boolean => {
+                      if (!phone) return true;
+                      let hasExplicitPlus = phone.trim().startsWith('+');
+                      let cleaned = phone.replace(/\D/g, '');
+                      
+                      if (cleaned.startsWith('00')) {
+                          cleaned = cleaned.substring(2);
+                          hasExplicitPlus = true;
+                      }
+                      
+                      if (hasExplicitPlus) {
+                          return cleaned.startsWith('91') || cleaned.startsWith('9191');
+                      }
+                      
+                      if (cleaned.length === 11 && cleaned.startsWith('0')) return true;
+                      if (cleaned.length === 12 && cleaned.startsWith('91')) return true;
+                      if (cleaned.length === 10) return true;
+                      
+                      return false;
+                  };
+                  
+                  const isInternational = formData.phone ? !isIndianUser(formData.phone) : false;
                   
                   if (isInternational && (isPaidPrasadActive || isFreePrasadActive)) {
                     return (

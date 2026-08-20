@@ -21,6 +21,8 @@ import {
   Users,
   Sparkles,
   BadgeCheck,
+  Compass,
+  Navigation,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -56,6 +58,8 @@ export function MandalsList() {
   const [allMandals, setAllMandals] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [favorites, setFavorites] = useState<any[]>([]);
+  const [userCoords, setUserCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const [isLocating, setIsLocating] = useState(false);
   const { toast } = useToast();
   const router = useRouter();
   const [user, setUser] = useState<any>(null);
@@ -129,7 +133,44 @@ export function MandalsList() {
   // Load mandals with filters
   useEffect(() => {
     loadMandals();
-  }, [searchQuery, selectedCategory, selectedLocation, selectedArea, language]);
+  }, [searchQuery, selectedCategory, selectedLocation, selectedArea, userCoords, language]);
+
+  const handleNearMe = () => {
+    if (!navigator.geolocation) {
+      toast({
+        title: "Geolocation Not Supported",
+        description: "Your browser does not support location services.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const coords = {
+          lat: position.coords.latitude,
+          lng: position.coords.longitude,
+        };
+        setUserCoords(coords);
+        setIsLocating(false);
+        toast({
+          title: "📍 Location Detected!",
+          description: "Showing mandals nearest to your current location.",
+        });
+      },
+      (error) => {
+        setIsLocating(false);
+        console.warn("Geolocation error:", error);
+        toast({
+          title: "Location Access Denied",
+          description: "Please allow location permission in your browser or select your city from the dropdown.",
+          variant: "destructive",
+        });
+      },
+      { timeout: 10000, enableHighAccuracy: true }
+    );
+  };
 
   const loadMandals = async () => {
     setLoading(true);
@@ -139,6 +180,10 @@ export function MandalsList() {
       if (selectedCategory !== "All") params.append("category", selectedCategory);
       if (selectedLocation !== "All") params.append("location", selectedLocation);
       if (selectedArea !== "All") params.append("area", selectedArea);
+      if (userCoords) {
+        params.append("lat", userCoords.lat.toString());
+        params.append("lng", userCoords.lng.toString());
+      }
       params.append("lang", language);
 
       const response = await fetch(`${API_URL}/mandals?${params.toString()}`);
@@ -413,10 +458,10 @@ export function MandalsList() {
       {/* ─── FLOATING SEARCH & FILTER BAR ─────────────────────────────────── */}
       <div id="mandals-search-section" className="w-full max-w-[1700px] mx-auto px-4 md:px-8 lg:px-12 -mt-10 md:-mt-14 relative z-30">
         <div className="bg-white dark:bg-card rounded-3xl p-5 md:p-7 shadow-2xl border border-zinc-200/80 dark:border-zinc-800 space-y-4">
-          {/* Main Controls Grid */}
+          {/* Main Controls Grid matching design screenshot */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-3 items-center">
-            {/* Search Input (4 cols) */}
-            <div className="lg:col-span-4 relative">
+            {/* Search Input (3 cols) */}
+            <div className="lg:col-span-3 relative">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-zinc-400" />
               <input
                 type="text"
@@ -606,16 +651,32 @@ export function MandalsList() {
               </Popover>
             </div>
 
-            {/* Search Button (2 cols) */}
-            <div className="lg:col-span-2 flex gap-2">
+            {/* Action Buttons: Near Me & Search (3 cols) */}
+            <div className="lg:col-span-3 flex items-center gap-2">
+              <Button
+                type="button"
+                onClick={handleNearMe}
+                disabled={isLocating}
+                className={`h-12 flex-1 font-bold rounded-xl border flex items-center justify-center gap-2 transition-all ${
+                  userCoords
+                    ? "bg-amber-100 dark:bg-amber-950/60 text-amber-900 dark:text-amber-200 border-amber-300 dark:border-amber-700"
+                    : "bg-white dark:bg-zinc-900 hover:bg-amber-50 text-slate-700 dark:text-slate-200 border-zinc-200 dark:border-zinc-800"
+                }`}
+              >
+                <Compass className={`w-4 h-4 text-amber-600 ${isLocating ? "animate-spin" : ""}`} />
+                <span className="text-xs sm:text-sm">
+                  {isLocating ? "Locating..." : userCoords ? "Near Me ✓" : "Near Me"}
+                </span>
+              </Button>
+
               <Button
                 onClick={() => {
                   setSearchQuery(searchInput);
                 }}
-                className="w-full h-12 bg-[#6B0F1A] hover:bg-[#520B14] text-white font-bold rounded-xl flex items-center justify-center gap-2 shadow-md"
+                className="h-12 flex-1 bg-[#6B0F1A] hover:bg-[#520B14] text-white font-bold rounded-xl flex items-center justify-center gap-2 shadow-md"
               >
                 <Search className="w-4 h-4" />
-                Search
+                <span className="text-xs sm:text-sm">Search</span>
               </Button>
             </div>
           </div>
@@ -642,12 +703,14 @@ export function MandalsList() {
             {(selectedCategory !== "All" ||
               selectedLocation !== "All" ||
               selectedArea !== "All" ||
+              userCoords !== null ||
               searchQuery !== "") && (
               <button
                 onClick={() => {
                   setSelectedCategory("All");
                   setSelectedLocation("All");
                   setSelectedArea("All");
+                  setUserCoords(null);
                   setSearchInput("");
                   setSearchQuery("");
                 }}
@@ -757,6 +820,17 @@ export function MandalsList() {
 
                     {/* Badges Row */}
                     <div className="flex flex-wrap gap-1.5 pt-1">
+                      {mandal.distanceKm !== undefined && (
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200/80 flex items-center gap-1">
+                          <Navigation className="w-2.5 h-2.5 text-emerald-600" />
+                          {mandal.distanceKm} km away
+                        </span>
+                      )}
+                      {mandal.establishedYear && (
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-amber-50 text-amber-900 border border-amber-200">
+                          {mandal.establishedYear.includes('+') || mandal.establishedYear.toLowerCase().includes('years') ? mandal.establishedYear : `${mandal.establishedYear} Years`}
+                        </span>
+                      )}
                       {mandal.isLive && (
                         <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-red-50 text-red-600 border border-red-100">
                           LIVE Darshan

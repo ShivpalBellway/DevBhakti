@@ -82,6 +82,7 @@ export const updateMyMandalProfile = async (req: Request, res: Response) => {
         description: buildLangJson(data.description_en || data.description || '', data.description_hi, data.description_mr),
         about: data.about ? buildLangJson(data.about_en || data.about || '', data.about_hi, data.about_mr) : undefined,
         mandalType: data.mandalType || undefined,
+        establishedYear: data.establishedYear || undefined,
         presiding_deity: data.presiding_deity || undefined,
         festivals: data.festivals || undefined,
         address: data.address || undefined,

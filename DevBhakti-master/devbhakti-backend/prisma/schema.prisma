@@ -745,6 +745,9 @@ model Mandal {
   slug               String?                   @unique
   isActive           Boolean                   @default(true)
   status             String                    @default("PENDING")
+  establishedYear    String?
+  latitude           Float?
+  longitude          Float?
   adminNotes         String?
   userId             String?                   @unique
   liveUrl            String?

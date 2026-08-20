@@ -161,6 +161,47 @@ const AartiAnimation = ({ trigger }: { trigger: number }) => {
   );
 };
 
+const DiyaAnimation = ({ trigger }: { trigger: number }) => {
+  const [show, setShow] = useState(false);
+  useEffect(() => {
+    if (trigger > 0) {
+      setShow(true);
+      const timer = setTimeout(() => setShow(false), 8000);
+      return () => clearTimeout(timer);
+    }
+  }, [trigger]);
+
+  return (
+    <AnimatePresence>
+      {show && (
+        <motion.div
+          initial={{ opacity: 0, scale: 0.5, x: "-50%", y: 200 }}
+          animate={{
+            opacity: [0, 1, 1, 0],
+            scale: [0.7, 1.2, 1, 0.7],
+            y: [150, 0, 0, 100],
+          }}
+          transition={{
+            duration: 8,
+            times: [0, 0.15, 0.85, 1],
+            ease: "easeOut"
+          }}
+          className="absolute bottom-10 left-1/2 -translate-x-1/2 pointer-events-none z-[100]"
+        >
+          <div className="relative">
+            <img
+              src="/images/diya.gif"
+              alt="Diya"
+              className="w-40 h-40 md:w-56 md:h-56 object-contain drop-shadow-[0_20px_60px_rgba(255,140,0,0.8)]"
+            />
+            <div className="absolute inset-0 bg-orange-500/20 rounded-full blur-[60px] -z-10 animate-pulse" />
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+};
+
 export default function LiveDarshanClient() {
   const [temples, setTemples] = useState<any[]>([]);
   const [selectedTemple, setSelectedTemple] = useState<any>(null);
@@ -169,6 +210,7 @@ export default function LiveDarshanClient() {
   const [bellTrigger, setBellTrigger] = useState(0);
   const [flowerTrigger, setFlowerTrigger] = useState(0);
   const [aartiTrigger, setAartiTrigger] = useState(0);
+  const [diyaTrigger, setDiyaTrigger] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
   const searchParams = useSearchParams();
   const params = useParams();
@@ -310,7 +352,7 @@ export default function LiveDarshanClient() {
       <main className="relative pt-28 lg:pt-32 pb-12 w-full px-4 md:px-12 2xl:px-24 flex flex-col xl:flex-row gap-8 lg:gap-10">
         
         {/* Left Sidebar */}
-        <div className="w-full xl:w-[400px] shrink-0">
+        <div className="w-full xl:w-[400px] shrink-0 order-2 xl:order-1">
           <div className="flex items-center gap-3 mb-4 text-[#7A3F1F]">
             <div className="rotate-45 w-2.5 h-2.5 bg-[#e3c299]" />
             <h1 className="text-[28px] font-serif font-black p-0 m-0 leading-none">Live Darshan</h1>
@@ -381,7 +423,7 @@ export default function LiveDarshanClient() {
                  <img src="/images/aarti_thali.png" alt="Aarti" className="w-full h-full object-contain" />
               </button>
               <button 
-                onClick={() => setAartiTrigger(prev => prev + 1)} 
+                onClick={() => setDiyaTrigger(prev => prev + 1)} 
                 className="hover:scale-110 transition-transform active:scale-95 text-[28px] drop-shadow-sm flex-1 flex justify-center"
               >
                 🪔
@@ -391,7 +433,7 @@ export default function LiveDarshanClient() {
         </div>
 
         {/* Right Content / Video */}
-        <div className="flex-1 w-full bg-black rounded-xl overflow-hidden relative shadow-2xl flex flex-col justify-center min-h-[50vh] xl:min-h-0 border-2 border-black group">
+        <div className="flex-1 w-full bg-black rounded-xl overflow-hidden relative shadow-2xl flex flex-col justify-center min-h-[50vh] xl:min-h-0 border-2 border-black group order-1 xl:order-2">
           <div className="aspect-video w-full h-full relative flex items-center justify-center">
              {isPlaying && selectedVideoInfo.kind !== "unknown" ? (
                 <UniversalVideoPlayer
@@ -444,6 +486,7 @@ export default function LiveDarshanClient() {
           <div className="absolute inset-0 z-20 pointer-events-none overflow-hidden">
             <AartiAnimation trigger={aartiTrigger} />
             <FlowerShower trigger={flowerTrigger} />
+            <DiyaAnimation trigger={diyaTrigger} />
           </div>
           <BellAnimation trigger={bellTrigger} />
         </div>

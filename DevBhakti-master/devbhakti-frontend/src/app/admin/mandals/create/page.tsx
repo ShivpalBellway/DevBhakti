@@ -91,7 +91,7 @@ export default function MandalFormPage({ mandalId }: MandalFormProps) {
 
   const [form, setForm] = useState({
     name_en: "", name_hi: "", name_mr: "",
-    mandalType: "",
+    mandalType: "", establishedYear: "",
     description_en: "", description_hi: "", description_mr: "",
     presiding_deity: "", festivals: "",
     address: "", city: "", state: "", pinCode: "",
@@ -113,6 +113,7 @@ export default function MandalFormPage({ mandalId }: MandalFormProps) {
             name_hi: getJsonVal(m.name, "hi"),
             name_mr: getJsonVal(m.name, "mr"),
             mandalType: m.mandalType || "",
+            establishedYear: m.establishedYear || "",
             description_en: getJsonVal(m.description, "en"),
             description_hi: getJsonVal(m.description, "hi"),
             description_mr: getJsonVal(m.description, "mr"),
@@ -407,15 +408,28 @@ export default function MandalFormPage({ mandalId }: MandalFormProps) {
           </div>
 
           {/* Non-language fields */}
-          <div className="mt-4">
-            <label className={LabelClass}>Mandal Type</label>
-            <select name="mandalType" value={form.mandalType} onChange={handleChange} className={InputClass}>
-              <option value="">Select Type</option>
-              <option value="Ganesh">Ganesh Mandal</option>
-              <option value="Durga">Durga Puja Samiti</option>
-              <option value="Ram">Ram Leela Samiti</option>
-              <option value="Other">Other</option>
-            </select>
+          <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className={LabelClass}>Mandal Type</label>
+              <select name="mandalType" value={form.mandalType} onChange={handleChange} className={InputClass}>
+                <option value="">Select Type</option>
+                <option value="Ganesh">Ganesh Mandal</option>
+                <option value="Durga">Durga Puja Samiti</option>
+                <option value="Ram">Ram Leela Samiti</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+            <div>
+              <label className={LabelClass}>Established Year / Active Since</label>
+              <input
+                type="text"
+                name="establishedYear"
+                value={form.establishedYear}
+                onChange={handleChange}
+                className={InputClass}
+                placeholder="e.g. 1950 or 80+ years"
+              />
+            </div>
           </div>
         </SectionWrapper>
 

@@ -79,7 +79,7 @@ export default function EnhancedMandalProfilePage() {
 
     const [form, setForm] = useState({
         name_en: "", name_hi: "", name_mr: "",
-        mandalType: "Ganesh",
+        mandalType: "Ganesh", establishedYear: "",
         description_en: "", description_hi: "", description_mr: "",
         presiding_deity: "", festivals: "",
         address: "", city: "", state: "", pinCode: "",
@@ -111,6 +111,7 @@ export default function EnhancedMandalProfilePage() {
                     name_hi: getJsonVal(m.name, "hi"),
                     name_mr: getJsonVal(m.name, "mr"),
                     mandalType: m.mandalType || "Ganesh",
+                    establishedYear: m.establishedYear || "",
                     description_en: getJsonVal(m.description, "en") || (typeof m.description === 'string' ? m.description : ''),
                     description_hi: getJsonVal(m.description, "hi"),
                     description_mr: getJsonVal(m.description, "mr"),
@@ -349,20 +350,33 @@ export default function EnhancedMandalProfilePage() {
                                     />
                                 </div>
 
-                                <div>
-                                    <Label className={LabelClass}>Mandal Category / Type</Label>
-                                    <select
-                                        name="mandalType"
-                                        value={form.mandalType}
-                                        onChange={handleChange}
-                                        className={InputClass}
-                                    >
-                                        <option value="Ganesh">Ganesh Mandal</option>
-                                        <option value="Durga">Durga Puja Samiti</option>
-                                        <option value="Ram">Ram Leela Samiti</option>
-                                        <option value="Navratri">Navratri Mandal</option>
-                                        <option value="Other">Other Religious Mandal</option>
-                                    </select>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <Label className={LabelClass}>Mandal Category / Type</Label>
+                                        <select
+                                            name="mandalType"
+                                            value={form.mandalType}
+                                            onChange={handleChange}
+                                            className={InputClass}
+                                        >
+                                            <option value="Ganesh">Ganesh Mandal</option>
+                                            <option value="Durga">Durga Puja Samiti</option>
+                                            <option value="Ram">Ram Leela Samiti</option>
+                                            <option value="Navratri">Navratri Mandal</option>
+                                            <option value="Other">Other Religious Mandal</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <Label className={LabelClass}>Established Year / Active Since</Label>
+                                        <Input
+                                            type="text"
+                                            name="establishedYear"
+                                            value={form.establishedYear}
+                                            onChange={handleChange}
+                                            className={InputClass}
+                                            placeholder="e.g. 1950 or 80+ years"
+                                        />
+                                    </div>
                                 </div>
                             </div>
                         </SectionWrapper>
@@ -723,6 +737,11 @@ export default function EnhancedMandalProfilePage() {
                                     <h3 className="text-xl font-bold text-slate-900 leading-snug">
                                         {activeName}
                                     </h3>
+                                    {form.establishedYear && (
+                                        <span className="text-[10px] text-[#7b4623] font-bold bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200 block w-fit mb-1 mt-1">
+                                            Since {form.establishedYear}
+                                        </span>
+                                    )}
                                     {(form.city || form.state) && (
                                         <p className="text-xs text-slate-500 flex items-center gap-1 font-medium">
                                             <MapPin className="w-3.5 h-3.5 text-[#7b4623]" />

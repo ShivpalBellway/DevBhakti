@@ -9,6 +9,7 @@ export const registerMandal = async (req: Request, res: Response): Promise<void>
             // English fields (primary)
             name, name_en, name_hi, name_mr,
             mandalType,
+            establishedYear,
             description, description_en, description_hi, description_mr,
             presiding_deity,
             festivals,
@@ -79,6 +80,7 @@ export const registerMandal = async (req: Request, res: Response): Promise<void>
                     ? JSON.stringify(buildLangJson(description_en || description, description_hi, description_mr))
                     : undefined,
                 mandalType,
+                establishedYear,
                 presiding_deity,
                 festivals,
                 address,

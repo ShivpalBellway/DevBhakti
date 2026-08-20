@@ -61,7 +61,7 @@ export const initiateDonation = async (req: Request, res: Response) => {
         if (!isIndianUser(donorPhone)) {
             return res.status(400).json({
                 success: false, 
-                message: "Due to FCRA regulations, DevBhakti cannot accept donations from international numbers. Thank you for your understanding."
+                message: "Donations from international locations or non-Indian accounts are restricted due to FCRA compliance."
             });
         }
 
@@ -71,7 +71,7 @@ export const initiateDonation = async (req: Request, res: Response) => {
             console.warn(`[FCRA Guard] Donation blocked due to foreign IP location header (${cfCountry}) for phone: ${donorPhone}`);
             return res.status(400).json({
                 success: false,
-                message: "Due to FCRA regulations, donations from foreign IP locations cannot be accepted. Thank you for your understanding."
+                message: "Donations from international locations or non-Indian accounts are restricted due to FCRA compliance."
             });
         }
         // --------------------------------------------------------

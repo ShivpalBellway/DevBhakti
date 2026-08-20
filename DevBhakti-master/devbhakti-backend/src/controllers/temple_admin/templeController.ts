@@ -665,13 +665,10 @@ export const updateMyTempleProfile = async (req: Request, res: Response) => {
     }
 
     // ─── Define sensitive fields ────────────────────────────────────────────
+    // Only truly critical fields (bank details, official contact phone, domain routing) require admin approval.
+    // Routine profile info (name, location, category, address, description, gallery, news cuttings) updates directly.
     const sensitiveFields = [
-      'name_en', 'name_hi', 'name_mr',
-      'location_en', 'location_hi', 'location_mr',
-      'category_en', 'category_hi', 'category_mr',
-      'fullAddress_en', 'fullAddress_hi', 'fullAddress_mr',
       'phone', 'slug', 'subdomain', 'urlType',
-      'pickupLocation_en', 'pickupLocation_hi', 'pickupLocation_mr',
       'accountHolderName', 'accountNumber', 'bankName', 'ifscCode', 'upiId'
     ];
 

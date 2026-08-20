@@ -35,6 +35,7 @@ export default function MandalRegistrationForm({ onClose }: { onClose?: () => vo
         email: "",
         name: "",
         mandalType: "",
+        establishedYear: "",
         description: "",
         presiding_deity: "",
         festivals: "",
@@ -234,20 +235,33 @@ export default function MandalRegistrationForm({ onClose }: { onClose?: () => vo
                             />
                         </div>
 
-                        <div className="space-y-2">
-                            <label className="text-sm font-bold text-slate-600 ml-1">{t("registerMandal.mandal_type")}</label>
-                            <select
-                                name="mandalType"
-                                value={formData.mandalType}
-                                onChange={handleChange}
-                                className="w-full h-12 px-3 border border-slate-200 focus:border-orange-500 rounded-xl"
-                            >
-                                <option value="">{t("registerMandal.mandal_type_select")}</option>
-                                <option value="Ganesh">{t("registerMandal.type_ganesh")}</option>
-                                <option value="Durga">{t("registerMandal.type_durga")}</option>
-                                <option value="Ram">{t("registerMandal.type_ram")}</option>
-                                <option value="Other">{t("registerMandal.type_other")}</option>
-                            </select>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="space-y-2">
+                                <label className="text-sm font-bold text-slate-600 ml-1">{t("registerMandal.mandal_type")}</label>
+                                <select
+                                    name="mandalType"
+                                    value={formData.mandalType}
+                                    onChange={handleChange}
+                                    className="w-full h-12 px-3 border border-slate-200 focus:border-orange-500 rounded-xl"
+                                >
+                                    <option value="">{t("registerMandal.mandal_type_select")}</option>
+                                    <option value="Ganesh">{t("registerMandal.type_ganesh")}</option>
+                                    <option value="Durga">{t("registerMandal.type_durga")}</option>
+                                    <option value="Ram">{t("registerMandal.type_ram")}</option>
+                                    <option value="Other">{t("registerMandal.type_other")}</option>
+                                </select>
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-sm font-bold text-slate-600 ml-1">Established Year / Active Since</label>
+                                <Input
+                                    name="establishedYear"
+                                    value={formData.establishedYear}
+                                    onChange={handleChange}
+                                    placeholder="e.g. 1950 or 80+ years"
+                                    className="h-12 border-slate-200 focus:border-orange-500 rounded-xl"
+                                />
+                            </div>
                         </div>
 
                         <div className="space-y-2">

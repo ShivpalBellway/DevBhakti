@@ -247,6 +247,29 @@ export default function TempleDetail() {
         }
     };
 
+    const isIndianUser = (phone: string): boolean => {
+        if (!phone) return true;
+        let hasExplicitPlus = phone.trim().startsWith('+');
+        let cleaned = phone.replace(/\D/g, '');
+        
+        if (cleaned.startsWith('00')) {
+            cleaned = cleaned.substring(2);
+            hasExplicitPlus = true;
+        }
+        
+        if (hasExplicitPlus) {
+            return cleaned.startsWith('91') || cleaned.startsWith('9191');
+        }
+        
+        if (cleaned.length === 11 && cleaned.startsWith('0')) return true;
+        if (cleaned.length === 12 && cleaned.startsWith('91')) return true;
+        if (cleaned.length === 10) return true;
+        
+        return false;
+    };
+
+    const isInternational = user?.phone ? !isIndianUser(user.phone) : false;
+
     const isVerified = temple?.user?.isVerified ?? temple?.isVerified ?? false;
 
     const handleDonation = () => {
@@ -254,6 +277,14 @@ export default function TempleDetail() {
             toast({
                 title: "Donations Disabled",
                 description: "Donations are currently disabled for this temple as it is pending verification.",
+                variant: "destructive"
+            });
+            return;
+        }
+        if (isInternational) {
+            toast({
+                title: "FCRA Restriction",
+                description: "International donations are restricted by law (FCRA). Razorpay order creation disabled.",
                 variant: "destructive"
             });
             return;
@@ -778,10 +809,10 @@ export default function TempleDetail() {
                                     variant="outline"
                                     className="w-full h-12 rounded-2xl border-dashed border-primary/30 text-primary hover:bg-primary/5 font-bold gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                                     onClick={handleDonation}
-                                    disabled={!isVerified}
+                                    disabled={!isVerified || isInternational}
                                 >
                                     <Heart className="h-4 w-4" />
-                                    {!isVerified ? "Donations Disabled" : "Donation"}
+                                    {isInternational ? "FCRA Restricted" : !isVerified ? "Donations Disabled" : "Donation"}
                                 </Button>
 
                                 {/* Compact Upcoming Events */}

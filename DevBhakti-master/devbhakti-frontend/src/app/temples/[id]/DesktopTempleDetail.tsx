@@ -479,21 +479,21 @@ export default function DesktopTempleDetail({
                                         <div className={`grid ${temple.isDarshanActive && temple.photographyEnabled ? "grid-cols-2" : "grid-cols-1"} gap-3`}>
                                             {temple.isDarshanActive && (
                                                 <Button
-                                                    variant="secondary"
-                                                    className="w-full h-12 rounded-2xl border-dashed border-primary/30 text-primary hover:bg-primary/5 font-bold gap-2"
+                                                    variant="gold"
+                                                    className="w-full gap-2 h-12 text-base font-bold shadow-sm group transition-all"
                                                     onClick={() => router.push(`/darshan/${temple.id}`)}
                                                 >
-                                                    <MapPin className="h-4 w-4 shrink-0" />
+                                                    <MapPin className="h-5 w-5 shrink-0 group-hover:scale-110 transition-transform" />
                                                     <span className="truncate">Book Darshan</span>
                                                 </Button>
                                             )}
                                             {temple.photographyEnabled && (
                                                 <Button
-                                                    variant="secondary"
-                                                    className="w-full h-12 rounded-2xl border-dashed border-primary/30 text-primary hover:bg-primary/5 font-bold gap-2"
+                                                    variant="gold"
+                                                    className="w-full gap-2 h-12 text-base font-bold shadow-sm group transition-all"
                                                     onClick={() => router.push(`/temples/${temple.id}/photography`)}
                                                 >
-                                                    <Camera className="h-4 w-4 shrink-0" />
+                                                    <Camera className="h-5 w-5 shrink-0 group-hover:scale-110 transition-transform" />
                                                     <span className="truncate">Photography</span>
                                                 </Button>
                                             )}

@@ -205,6 +205,28 @@ export function MandalDetail({ slug }: { slug: string }) {
     }
     return imgs.length > 0 ? imgs : ["https://images.unsplash.com/photo-1600093463592-8e36ae95ef56?auto=format&fit=crop&q=80&w=1200"];
   };
+  const isIndianUser = (phone: string): boolean => {
+      if (!phone) return true;
+      let hasExplicitPlus = phone.trim().startsWith('+');
+      let cleaned = phone.replace(/\D/g, '');
+      
+      if (cleaned.startsWith('00')) {
+          cleaned = cleaned.substring(2);
+          hasExplicitPlus = true;
+      }
+      
+      if (hasExplicitPlus) {
+          return cleaned.startsWith('91') || cleaned.startsWith('9191');
+      }
+      
+      if (cleaned.length === 11 && cleaned.startsWith('0')) return true;
+      if (cleaned.length === 12 && cleaned.startsWith('91')) return true;
+      if (cleaned.length === 10) return true;
+      
+      return false;
+  };
+
+  const isInternational = currentUser?.phone ? !isIndianUser(currentUser.phone) : false;
 
   const handleDonate = async () => {
     if (!canUseMandalTransactions) {
@@ -440,13 +462,24 @@ export function MandalDetail({ slug }: { slug: string }) {
 
                   {/* Donate Now Support Mandal */}
                   <Button
-                    onClick={() => setShowDonateModal(true)}
+                    onClick={() => {
+                        if (isInternational) {
+                            toast({
+                                title: "FCRA Restriction",
+                                description: "International donations are restricted by law (FCRA). Razorpay order creation disabled.",
+                                variant: "destructive",
+                            });
+                            return;
+                        }
+                        setShowDonateModal(true);
+                    }}
+                    disabled={isInternational}
                     variant="outline"
-                    className="bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border-amber-500/40 font-bold px-6 h-12 rounded-xl text-xs sm:text-sm flex items-center gap-2"
+                    className="bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border-amber-500/40 font-bold px-6 h-12 rounded-xl text-xs sm:text-sm flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <IndianRupee className="w-4 h-4 text-amber-400" />
                     <div>
-                      <div className="leading-tight">Donate Now</div>
+                      <div className="leading-tight">{isInternational ? "FCRA Restricted" : "Donate Now"}</div>
                       <div className="text-[10px] font-normal text-amber-200/80">Support Mandal</div>
                     </div>
                   </Button>
