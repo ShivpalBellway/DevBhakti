@@ -9,7 +9,7 @@ declare global {
   }
 }
 
-export const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
+export const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID || "G-1XXHNN7W4E";
 export const GTM_ID = process.env.NEXT_PUBLIC_GTM_ID;
 
 /**
