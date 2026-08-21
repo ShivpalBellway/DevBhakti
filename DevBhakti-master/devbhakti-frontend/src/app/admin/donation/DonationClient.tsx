@@ -191,9 +191,14 @@ export default function DonationClient() {
     };
 
     const handlePrintReceipt = (donation: any) => {
+        const parsedName = parseLocalizedValue(donation.templeName, "en");
+        const mappedTemple = temples.find(t => (t.temple?.id || t.id) === donation.templeId);
+        const fallbackName = mappedTemple ? parseLocalizedValue(mappedTemple.temple?.name || mappedTemple.name, "en") : "Sacred Temple Offering";
+        const finalName = (parsedName && parsedName !== "N/A") ? parsedName : fallbackName;
+
         const html = generateReceiptHTML({
             ...donation,
-            templeName: donation.templeName || "Sacred Temple Offering"
+            templeName: finalName
         });
         const printWindow = window.open('', '_blank');
         if (printWindow) {

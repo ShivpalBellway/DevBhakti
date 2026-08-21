@@ -12,8 +12,11 @@ import Providers from "./providers";
 import Script from "next/script";
 
 export const metadata: Metadata = {
-  title: "DevBhakti",
-  description: "DevBhakti - Connect with your spiritual side",
+  title: "DevBhakti - Connect with your spiritual side",
+  description: "Book Poojas, Temple Sevas, Sacred Prasad, and Watch Live Darshan from Mandals & Sacred Temples across India.",
+  verification: {
+    google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION,
+  },
 };
 
 export default function RootLayout({

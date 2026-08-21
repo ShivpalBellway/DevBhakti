@@ -157,6 +157,7 @@ export function MandalsList() {
         toast({
           title: "📍 Location Detected!",
           description: "Showing mandals nearest to your current location.",
+          className: "bg-emerald-50 text-emerald-900 border border-emerald-200",
         });
       },
       (error) => {

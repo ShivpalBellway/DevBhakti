@@ -116,7 +116,7 @@ export default function AdminOfflineUsersPage() {
       donorPhone: selectedLead?.phone || "",
       donorEmail: selectedLead?.email || item.donorEmail || "",
       amount: item.amount || 0,
-      templeName: parseLocalizedValue(item.templeName, 'en') || 'DevBhakti Sacred Offering',
+      templeName: (parseLocalizedValue(item.templeName, 'en') !== "N/A" ? parseLocalizedValue(item.templeName, 'en') : 'DevBhakti Sacred Offering'),
       paymentMethod: item.paymentMethod || 'CASH',
       status: item.status || 'SUCCESS',
       createdAt: item.createdAt,
