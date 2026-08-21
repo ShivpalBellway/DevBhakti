@@ -16,6 +16,7 @@ import { useLanguage } from "@/context/LanguageContext";
 import { getLocalized } from "@/utils/localization";
 import { getVideoRenderInfo, extractYouTubeId } from "@/lib/utils/videoUtils";
 import { UniversalVideoPlayer } from "@/components/video/UniversalVideoPlayer";
+import { trackViewLiveDarshan } from "@/lib/analytics";
 
 const getYouTubeVideoId = (url: string): string | null => {
   return extractYouTubeId(url);
@@ -276,6 +277,15 @@ export default function LiveDarshanClient() {
     };
     fetchLiveTemples();
   }, [params, searchParams, language]);
+
+  useEffect(() => {
+    if (selectedTemple) {
+      trackViewLiveDarshan({
+        streamId: selectedTemple.id,
+        templeName: selectedTemple.name,
+      });
+    }
+  }, [selectedTemple]);
 
   const handleTempleClick = (temple: any) => {
     setSelectedTemple(temple);

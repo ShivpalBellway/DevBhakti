@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { getMyCart, addItemToCart, updateCartItemQuantity, removeCartItem, clearMyCart } from "@/api/cartController";
 import { useLanguage } from "./LanguageContext";
+import { trackAddToCart, trackRemoveFromCart } from "@/lib/analytics";
 
 export interface CartItem {
     productId: string;
@@ -71,6 +72,12 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }, [cartItems, isInitialized, isLoggedIn]);
 
     const addToCart = async (newItem: CartItem) => {
+        trackAddToCart({
+            id: newItem.productId || newItem.variantId,
+            name: newItem.name || newItem.variantName,
+            price: newItem.price,
+        });
+
         if (isLoggedIn) {
             try {
                 await addItemToCart(newItem.productId, newItem.variantId, newItem.quantity);
@@ -95,6 +102,15 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     const removeFromCart = async (variantId: string) => {
+        const itemToRemove = cartItems.find((item) => item.variantId === variantId);
+        if (itemToRemove) {
+            trackRemoveFromCart({
+                id: itemToRemove.productId || itemToRemove.variantId,
+                name: itemToRemove.name || itemToRemove.variantName,
+                price: itemToRemove.price,
+            });
+        }
+
         if (isLoggedIn) {
             try {
                 await removeCartItem(variantId);

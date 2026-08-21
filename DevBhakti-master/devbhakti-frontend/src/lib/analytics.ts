@@ -35,6 +35,25 @@ export const trackEvent = (eventName: string, eventParams?: Record<string, any>)
 };
 
 /**
+ * Page view tracker for Next.js App Router route changes
+ */
+export const trackPageView = (url: string) => {
+  if (typeof window === "undefined" || !GA_MEASUREMENT_ID) return;
+
+  if (typeof window.gtag === "function") {
+    window.gtag("config", GA_MEASUREMENT_ID, {
+      page_path: url,
+    });
+  }
+
+  trackEvent("page_view", {
+    page_location: window.location.href,
+    page_path: url,
+    page_title: typeof document !== "undefined" ? document.title : "",
+  });
+};
+
+/**
  * Specific E-Commerce / Business Analytics Trackers
  */
 
@@ -105,4 +124,34 @@ export const trackViewLiveDarshan = (data: { streamId?: string; templeName: stri
 export const trackSearch = (searchTerm: string) => {
   if (!searchTerm || searchTerm.trim().length === 0) return;
   trackEvent("search", { search_term: searchTerm.trim() });
+};
+
+// Add to Cart Event
+export const trackAddToCart = (item: { id: string; name: string; price: number; category?: string }) => {
+  trackEvent("add_to_cart", {
+    item_id: item.id,
+    item_name: item.name,
+    price: item.price,
+    item_category: item.category || "Prasad / Sacred Items",
+    currency: "INR",
+  });
+};
+
+// Remove from Cart Event
+export const trackRemoveFromCart = (item: { id: string; name: string; price: number }) => {
+  trackEvent("remove_from_cart", {
+    item_id: item.id,
+    item_name: item.name,
+    price: item.price,
+    currency: "INR",
+  });
+};
+
+// Begin Checkout Event
+export const trackBeginCheckout = (value: number, itemCount: number) => {
+  trackEvent("begin_checkout", {
+    value,
+    items_count: itemCount,
+    currency: "INR",
+  });
 };

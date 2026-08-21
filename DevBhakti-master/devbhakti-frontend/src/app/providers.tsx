@@ -8,6 +8,7 @@ import { useState } from "react";
 import { CartProvider } from "@/context/CartContext";
 import { LanguageProvider } from "@/context/LanguageContext";
 import { NotificationManager } from "@/components/notifications/NotificationManager";
+import { GoogleAnalyticsTracker } from "@/components/analytics/GoogleAnalyticsTracker";
 
 export default function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(() => new QueryClient());
@@ -17,6 +18,7 @@ export default function Providers({ children }: { children: React.ReactNode }) {
       <LanguageProvider>
         <TooltipProvider>
           <CartProvider>
+            <GoogleAnalyticsTracker />
             {children}
             <NotificationManager />
             <Toaster />

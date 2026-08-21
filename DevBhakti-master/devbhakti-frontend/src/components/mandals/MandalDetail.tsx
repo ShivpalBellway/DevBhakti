@@ -54,6 +54,7 @@ import { useLanguage } from "@/context/LanguageContext";
 import { getLocalized } from "@/utils/localization";
 import { stripHtml } from "@/utils/textUtils";
 import { fetchUserFavorites, addFavorite, removeFavorite } from "@/api/userController";
+import { fetchPublicProducts } from "@/api/publicController";
 
 type MandalTab =
   | "overview"
@@ -153,39 +154,41 @@ export function MandalDetail({ slug }: { slug: string }) {
   };
 
   const loadSacredProducts = async () => {
+    const fallbackProducts = [
+      {
+        id: "p1",
+        name: "Lalbaugcha Raja Special Modak Prasad Box",
+        price: 251,
+        image: "https://images.unsplash.com/photo-1600093463592-8e36ae95ef56?auto=format&fit=crop&q=80&w=400",
+        category: "Sacred Prasad",
+      },
+      {
+        id: "p2",
+        name: "Blessed Ganesha Silver Coin (999 Purity)",
+        price: 1100,
+        image: "https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&q=80&w=400",
+        category: "Divine Keepsake",
+      },
+      {
+        id: "p3",
+        name: "Authentic Divine Incense & Dhoop Stick Set",
+        price: 151,
+        image: "https://images.unsplash.com/photo-1602526430780-782d6b17831f?auto=format&fit=crop&q=80&w=400",
+        category: "Pooja Samagri",
+      },
+    ];
+
     try {
-      const response = await fetch(`${API_URL}/products?category=SACRED_ITEM`);
-      const data = await response.json();
-      if (data && data.success) {
-        setProducts(data.data || []);
+      const data = await fetchPublicProducts({ lang: language, limit: 20 });
+      const productList = Array.isArray(data) ? data : (data?.products || []);
+      if (productList.length > 0) {
+        setProducts(productList);
       } else {
-        // Fallback default sacred items if no API products
-        setProducts([
-          {
-            id: "p1",
-            name: "Lalbaugcha Raja Special Modak Prasad Box",
-            price: 251,
-            image: "https://images.unsplash.com/photo-1600093463592-8e36ae95ef56?auto=format&fit=crop&q=80&w=400",
-            category: "Sacred Prasad",
-          },
-          {
-            id: "p2",
-            name: "Blessed Ganesha Silver Coin (999 Purity)",
-            price: 1100,
-            image: "https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&q=80&w=400",
-            category: "Divine Keepsake",
-          },
-          {
-            id: "p3",
-            name: "Authentic Divine Incense & Dhoop Stick Set",
-            price: 151,
-            image: "https://images.unsplash.com/photo-1602526430780-782d6b17831f?auto=format&fit=crop&q=80&w=400",
-            category: "Pooja Samagri",
-          },
-        ]);
+        setProducts(fallbackProducts);
       }
     } catch (error) {
       console.error("Error fetching sacred products:", error);
+      setProducts(fallbackProducts);
     }
   };
 
@@ -854,23 +857,44 @@ export function MandalDetail({ slug }: { slug: string }) {
         {canUseMandalTransactions && activeTab === "sacred" && (
           <div className="space-y-6">
             <h3 className="text-2xl font-serif font-bold text-zinc-900">Blessed Sacred Items & Prasad</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-              {products.map((item, idx) => (
-                <Card key={idx} className="rounded-3xl border-zinc-200 overflow-hidden bg-white shadow-sm hover:shadow-lg transition-all flex flex-col justify-between">
-                  <div className="aspect-square bg-zinc-100 overflow-hidden">
-                    <img src={getFullImageUrl(item.image)} alt={item.name} className="w-full h-full object-cover" />
-                  </div>
-                  <div className="p-4 space-y-2">
-                    <Badge className="bg-amber-100 text-amber-900 text-[10px]">{item.category || "Sacred Item"}</Badge>
-                    <h4 className="font-bold text-sm text-zinc-900 truncate">{item.name}</h4>
-                    <div className="text-base font-bold text-[#6B0F1A]">₹{item.price}</div>
-                    <Button onClick={() => router.push("/sacred-items")} className="w-full bg-[#6B0F1A] text-white font-bold text-xs h-9 rounded-xl">
-                      Order Sacred Item
-                    </Button>
-                  </div>
-                </Card>
-              ))}
-            </div>
+            {products && products.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                {products.map((item, idx) => {
+                  const price = item.price ?? item.variants?.[0]?.price ?? 0;
+                  const itemName = getLocalized(item, "name", language) || item.name || "Sacred Item";
+                  const itemCat = getLocalized(item.categoryObj, "name", language) || item.category || "Sacred Item";
+                  const itemImg = item.image ? getFullImageUrl(item.image) : "https://images.unsplash.com/photo-1600093463592-8e36ae95ef56?auto=format&fit=crop&q=80&w=400";
+                  
+                  return (
+                    <Card key={item.id || idx} className="rounded-3xl border-zinc-200 overflow-hidden bg-white shadow-sm hover:shadow-lg transition-all flex flex-col justify-between">
+                      <div className="aspect-square bg-zinc-100 overflow-hidden relative">
+                        <img src={itemImg} alt={itemName} className="w-full h-full object-cover" />
+                      </div>
+                      <div className="p-4 space-y-2 flex-1 flex flex-col justify-between">
+                        <div>
+                          <Badge className="bg-amber-100 text-amber-900 text-[10px] mb-1">{itemCat}</Badge>
+                          <h4 className="font-bold text-sm text-zinc-900 line-clamp-2" title={itemName}>{itemName}</h4>
+                        </div>
+                        <div className="space-y-2 pt-2">
+                          <div className="text-base font-bold text-[#6B0F1A]">₹{typeof price === 'number' ? price.toLocaleString('en-IN') : price}</div>
+                          <Button 
+                            onClick={() => router.push(item.id && !String(item.id).startsWith('p') ? `/marketplace/product/${item.id}` : "/marketplace")} 
+                            className="w-full bg-[#6B0F1A] hover:bg-[#520b14] text-white font-bold text-xs h-9 rounded-xl shadow-sm"
+                          >
+                            Order Sacred Item
+                          </Button>
+                        </div>
+                      </div>
+                    </Card>
+                  );
+                })}
+              </div>
+            ) : (
+              <Card className="rounded-3xl p-8 text-center text-zinc-500 bg-white">
+                <ShoppingBag className="w-10 h-10 mx-auto text-amber-600 mb-2 opacity-60" />
+                <div>No sacred items & prasad currently available.</div>
+              </Card>
+            )}
           </div>
         )}
 

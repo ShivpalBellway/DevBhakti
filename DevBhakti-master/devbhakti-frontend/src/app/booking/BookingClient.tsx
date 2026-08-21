@@ -52,7 +52,7 @@ import { fetchPublicTemples, fetchPublicPoojas, fetchPublicPoojaById } from "@/a
 import { notifyFailedPayment } from "@/api/adminController";
 import { generatePoojaReceiptHTML } from "@/utils/poojaReceipt";
 import { parseLocalizedValue } from '@/utils/textUtils';
-import { trackPoojaPurchase } from "@/lib/analytics";
+import { trackPoojaPurchase, trackBeginCheckout } from "@/lib/analytics";
 
 
 function BookingForm() {
@@ -546,6 +546,7 @@ function BookingForm() {
         toast({ title: t("booking_client.toast_date_unavailable"), description: availabilityStatus.message, variant: "destructive" });
         return;
       }
+      trackBeginCheckout(totalAmount, 1);
     }
     if (step === 3) {
       if (!formData.name || !formData.phone) {
