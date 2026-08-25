@@ -385,6 +385,10 @@ export default function DesktopTempleDetail({
                                                 key={index} 
                                                 className="break-inside-avoid rounded-xl overflow-hidden cursor-pointer group relative shadow-md hover:shadow-xl transition-all duration-300 border border-primary/5"
                                                 onClick={() => {
+                                                    if (!user) {
+                                                        router.push(`/auth?redirect=/temples/${params?.id || params?.subdomain}`);
+                                                        return;
+                                                    }
                                                     if (item.type === "video") {
                                                         setVideoPlayUrl(item.url);
                                                     } else {
@@ -481,17 +485,29 @@ export default function DesktopTempleDetail({
                                                 <Button
                                                     variant="gold"
                                                     className="w-full gap-2 h-12 text-base font-bold shadow-sm group transition-all"
-                                                    onClick={() => router.push(`/darshan/${temple.id}`)}
+                                                    onClick={() => {
+                                                        if (!user) {
+                                                            router.push(`/auth?redirect=/darshan/${temple.id}`);
+                                                            return;
+                                                        }
+                                                        router.push(`/darshan/${temple.id}`);
+                                                    }}
                                                 >
                                                     <MapPin className="h-5 w-5 shrink-0 group-hover:scale-110 transition-transform" />
-                                                    <span className="truncate">Book Darshan</span>
+                                                    <span className="truncate">Darshan Ticket</span>
                                                 </Button>
                                             )}
                                             {temple.photographyEnabled && (
                                                 <Button
                                                     variant="gold"
                                                     className="w-full gap-2 h-12 text-base font-bold shadow-sm group transition-all"
-                                                    onClick={() => router.push(`/temples/${temple.id}/photography`)}
+                                                    onClick={() => {
+                                                        if (!user) {
+                                                            router.push(`/auth?redirect=/temples/${temple.id}/photography`);
+                                                            return;
+                                                        }
+                                                        router.push(`/temples/${temple.id}/photography`);
+                                                    }}
                                                 >
                                                     <Camera className="h-5 w-5 shrink-0 group-hover:scale-110 transition-transform" />
                                                     <span className="truncate">Photography</span>

@@ -797,10 +797,10 @@ function BookingForm() {
             {searchParams.get("pooja") ? t("booking_client.back_to_poojas") : t("booking_client.back_to_temples")}
           </Link>
           <h1 className="text-3xl md:text-4xl font-display font-bold text-foreground">
-            {selectedPoojaData ? t("booking_client.book_prefix") + selectedPoojaData.name : t("booking_client.book_default")}
+            {selectedPoojaData ? `Book ${parseLocalizedValue(selectedPoojaData.name, language)}` : "Book Pooja"}
           </h1>
           <p className="text-muted-foreground mt-2">
-            {selectedPoojaData ? t("booking_client.complete_prefix") + selectedPoojaData.name : t("booking_client.complete_default")}
+            {selectedPoojaData ? `Complete your booking for ${parseLocalizedValue(selectedPoojaData.name, language)}` : "Complete your booking details below"}
           </p>
         </div>
       </section>
@@ -809,11 +809,11 @@ function BookingForm() {
       <section className="container mx-auto px-4 py-8">
         <div className="flex items-center justify-center mb-8">
           {[
-            { num: 1, label: t("booking_client.step_select_service") },
-            { num: 2, label: t("booking_client.step_choose_date") },
-            { num: 3, label: t("booking_client.step_your_details") },
-            { num: 4, label: t("booking_client.step_payment") },
-            { num: 5, label: t("booking_client.step_confirmation") },
+            { num: 1, label: "Select Service" },
+            { num: 2, label: "Choose Date" },
+            { num: 3, label: "Your Details" },
+            { num: 4, label: "Payment" },
+            { num: 5, label: "Confirmation" },
           ].map((s, idx) => (
             <React.Fragment key={s.num}>
               <div className="flex flex-col items-center">

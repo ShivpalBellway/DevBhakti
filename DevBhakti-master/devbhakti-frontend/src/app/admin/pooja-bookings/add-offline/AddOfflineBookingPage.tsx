@@ -40,13 +40,15 @@ import {
   CalendarDays,
   X,
   Loader2,
+  Printer,
+  Download,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { AnimatePresence, motion } from "framer-motion";
 
 import { fetchPublicTemples, fetchPublicPoojas, fetchPublicPoojaById } from "@/api/publicController";
 import { createOfflineBookingAdmin, lookupDevoteeByPhoneAdmin } from "@/api/adminController";
-import { generatePoojaReceiptHTML } from "@/utils/poojaReceipt";
+import { generatePoojaReceiptHTML, downloadPoojaReceiptPDF } from "@/utils/poojaReceipt";
 import { parseLocalizedValue } from '@/utils/textUtils';
 
 
@@ -633,25 +635,74 @@ export default function AddOfflineBookingPage() {
     }
   };
 
-  const handlePrintReceipt = () => {
-    if (!createdBooking) return;
-    
-    // Add additional fields needed for the receipt template if missing
-    const bookingForReceipt = {
+  const getReceiptBookingData = () => {
+    if (!createdBooking) return null;
+    return {
+      id: createdBooking.id || `OFF-${Date.now()}`,
+      devoteeName: createdBooking.devoteeName || formData.name || "Devotee",
+      devoteePhone: createdBooking.devoteePhone || formData.phone || "N/A",
+      devoteeEmail: createdBooking.devoteeEmail || formData.email || "",
+      poojaName: createdBooking.poojaName || createdBooking.pooja?.name || parseLocalizedValue(selectedPoojaData?.name) || "Pooja Service",
+      templeName: createdBooking.templeName || createdBooking.temple?.name || (allTemples.find((t: any) => t.id === selectedTemple)?.name) || "DevBhakti",
+      packageName: createdBooking.packageName || selectedPackageData?.name || "Standard Package",
+      packagePrice: Number(createdBooking.packagePrice ?? createdBooking.amount ?? totalAmount ?? 0),
+      platformFee: Number(createdBooking.platformFee ?? 0),
+      totalAmount: Number(createdBooking.totalAmount ?? createdBooking.amount ?? totalAmount ?? 0),
+      status: createdBooking.status || "CONFIRMED",
+      bookingDate: createdBooking.bookingDate || createdBooking.date || selectedDate || new Date().toISOString(),
+      createdAt: createdBooking.createdAt || new Date().toISOString(),
+      gothra: createdBooking.gothra || formData.gothra,
+      kuldevi: createdBooking.kuldevi || formData.kuldevi,
+      kuldevta: createdBooking.kuldevta || formData.kuldevta,
+      dob: createdBooking.dob || formData.dob,
+      anniversary: createdBooking.anniversary || formData.anniversary,
+      nativePlace: createdBooking.nativePlace || formData.nativePlace,
+      additionalDevotees: createdBooking.additionalDevotees || formData.additionalDevotees,
       ...createdBooking,
-      pooja: createdBooking.pooja || selectedPoojaData,
-      temple: createdBooking.temple || allTemples.find((t: any) => t.id === selectedTemple)
     };
+  };
 
-    const html = generatePoojaReceiptHTML(bookingForReceipt, t);
+  const handlePrintReceipt = () => {
+    const bookingForReceipt = getReceiptBookingData();
+    if (!bookingForReceipt) return;
+
+    const html = generatePoojaReceiptHTML(bookingForReceipt as any, t);
     const printWindow = window.open('', '_blank');
     if (printWindow) {
+      printWindow.document.open();
       printWindow.document.write(html);
       printWindow.document.close();
+      printWindow.focus();
       setTimeout(() => {
         printWindow.print();
       }, 500);
+    } else {
+      const iframe = document.createElement('iframe');
+      iframe.style.position = 'fixed';
+      iframe.style.right = '0';
+      iframe.style.bottom = '0';
+      iframe.style.width = '0';
+      iframe.style.height = '0';
+      iframe.style.border = '0';
+      document.body.appendChild(iframe);
+      const doc = iframe.contentWindow?.document;
+      if (doc) {
+        doc.open();
+        doc.write(html);
+        doc.close();
+        iframe.contentWindow?.focus();
+        iframe.contentWindow?.print();
+        setTimeout(() => {
+          document.body.removeChild(iframe);
+        }, 1000);
+      }
     }
+  };
+
+  const handleDownloadReceipt = () => {
+    const bookingForReceipt = getReceiptBookingData();
+    if (!bookingForReceipt) return;
+    downloadPoojaReceiptPDF(bookingForReceipt as any, t);
   };
 
   if (loading) {
@@ -696,10 +747,10 @@ export default function AddOfflineBookingPage() {
             {searchParams.get("pooja") ? t("booking_client.back_to_poojas") : t("booking_client.back_to_temples")}
           </Link>
           <h1 className="text-3xl md:text-4xl font-display font-bold text-foreground">
-            {selectedPoojaData ? t("booking_client.book_prefix") + selectedPoojaData.name : t("booking_client.book_default")}
+            {selectedPoojaData ? `Book ${parseLocalizedValue(selectedPoojaData.name)}` : "Book Offline Pooja"}
           </h1>
           <p className="text-muted-foreground mt-2">
-            {selectedPoojaData ? t("booking_client.complete_prefix") + selectedPoojaData.name : t("booking_client.complete_default")}
+            {selectedPoojaData ? `Complete your booking for ${parseLocalizedValue(selectedPoojaData.name)}` : "Complete offline pooja booking details"}
           </p>
         </div>
       </section>
@@ -708,11 +759,11 @@ export default function AddOfflineBookingPage() {
       <section className="container mx-auto px-4 py-8">
         <div className="flex items-center justify-center mb-8">
           {[
-            { num: 1, label: t("booking_client.step_select_service") },
-            { num: 2, label: t("booking_client.step_choose_date") },
-            { num: 3, label: t("booking_client.step_your_details") },
-            { num: 4, label: t("booking_client.step_payment") },
-            { num: 5, label: t("booking_client.step_confirmation") },
+            { num: 1, label: "Select Service" },
+            { num: 2, label: "Choose Date" },
+            { num: 3, label: "Your Details" },
+            { num: 4, label: "Payment" },
+            { num: 5, label: "Confirmation" },
           ].map((s, idx) => (
             <React.Fragment key={s.num}>
               <div className="flex flex-col items-center">
@@ -1509,12 +1560,23 @@ export default function AddOfflineBookingPage() {
                 </Button>
                 
                 {createdBooking && (
-                  <Button 
-                    onClick={handlePrintReceipt}
-                    className="gap-2 bg-[#794A05] hover:bg-[#794A05]/90 text-white"
-                  >
-                    Download Receipt
-                  </Button>
+                  <>
+                    <Button 
+                      onClick={handlePrintReceipt}
+                      className="gap-2 bg-[#794A05] hover:bg-[#794A05]/90 text-white shadow-md"
+                    >
+                      <Printer className="w-4 h-4" />
+                      Print Receipt
+                    </Button>
+                    <Button 
+                      onClick={handleDownloadReceipt}
+                      variant="outline"
+                      className="gap-2 border-[#794A05] text-[#794A05] hover:bg-[#794A05]/10"
+                    >
+                      <Download className="w-4 h-4" />
+                      Download Receipt
+                    </Button>
+                  </>
                 )}
               </div>
             </motion.div>

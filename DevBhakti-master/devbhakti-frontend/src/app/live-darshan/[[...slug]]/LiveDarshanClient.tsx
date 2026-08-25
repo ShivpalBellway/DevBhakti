@@ -229,6 +229,13 @@ export default function LiveDarshanClient() {
   const [isIpHost, setIsIpHost] = useState(false);
   const [isAartiAccordionOpen, setIsAartiAccordionOpen] = useState(false);
   const [isParticipateOpen, setIsParticipateOpen] = useState(false);
+
+  const activeOperatingHours = selectedTemple?.operatingHours && Array.isArray(selectedTemple.operatingHours)
+    ? selectedTemple.operatingHours.filter((s: any) => s.active)
+    : [];
+  const hasOperatingHours = activeOperatingHours.length > 0;
+  const hasOpenTime = Boolean(selectedTemple?.openTime);
+  const hasOpeningHours = hasOperatingHours || hasOpenTime;
   
   const handleShare = async () => {
     const url = window.location.href;
@@ -552,113 +559,96 @@ export default function LiveDarshanClient() {
         </AnimatePresence>
 
         {/* 3 Quick Action Cards Row */}
-        <div id="mobile-quick-actions" className="grid grid-cols-3 gap-2 py-1">
+        <div id="mobile-quick-actions" className="grid grid-cols-3 gap-1.5 py-1">
           <Link
             href={`/donation?temple=${selectedTemple?.id || ''}`}
-            className="bg-[#FFF4E8] border border-[#F0D5B5] hover:border-orange-300 rounded-xl p-2.5 flex items-center justify-between shadow-xs transition-all"
+            className="bg-[#FFF4E8] border border-[#F0D5B5] hover:border-orange-300 rounded-xl p-2 flex items-center gap-1.5 shadow-xs transition-all min-w-0"
           >
-            <div className="flex items-center gap-1.5 min-w-0">
-              <div className="w-6 h-6 rounded-md bg-orange-100/80 border border-orange-200/60 flex items-center justify-center shrink-0">
-                <Heart className="w-3.5 h-3.5 text-orange-600" />
-              </div>
-              <span className="text-[11px] font-bold text-[#5A1010] leading-tight line-clamp-2">{t('actions_donate')}</span>
+            <div className="w-6 h-6 rounded-md bg-orange-100/80 border border-orange-200/60 flex items-center justify-center shrink-0">
+              <Heart className="w-3.5 h-3.5 text-orange-600" />
             </div>
-            <span className="text-[#5A1010]/60 font-bold text-xs shrink-0 pl-0.5">&gt;</span>
+            <span className="text-[10.5px] font-bold text-[#5A1010] leading-tight min-w-0 line-clamp-2">{t('actions_donate')}</span>
           </Link>
 
           <Link
             href={`/booking?temple=${selectedTemple?.id || ''}`}
-            className="bg-[#FFF4E8] border border-[#F0D5B5] hover:border-orange-300 rounded-xl p-2.5 flex items-center justify-between shadow-xs transition-all"
+            className="bg-[#FFF4E8] border border-[#F0D5B5] hover:border-orange-300 rounded-xl p-2 flex items-center gap-1.5 shadow-xs transition-all min-w-0"
           >
-            <div className="flex items-center gap-1.5 min-w-0">
-              <div className="w-6 h-6 rounded-md bg-orange-100/80 border border-orange-200/60 flex items-center justify-center shrink-0">
-                <Calendar className="w-3.5 h-3.5 text-orange-600" />
-              </div>
-              <span className="text-[11px] font-bold text-[#5A1010] leading-tight line-clamp-2">{t('actions_book_pooja')}</span>
+            <div className="w-6 h-6 rounded-md bg-orange-100/80 border border-orange-200/60 flex items-center justify-center shrink-0">
+              <Calendar className="w-3.5 h-3.5 text-orange-600" />
             </div>
-            <span className="text-[#5A1010]/60 font-bold text-xs shrink-0 pl-0.5">&gt;</span>
+            <span className="text-[10.5px] font-bold text-[#5A1010] leading-tight min-w-0 line-clamp-2">{t('actions_book_pooja')}</span>
           </Link>
 
           <Link
             href="/marketplace?category=All"
-            className="bg-[#FFF4E8] border border-[#F0D5B5] hover:border-orange-300 rounded-xl p-2.5 flex items-center justify-between shadow-xs transition-all"
+            className="bg-[#FFF4E8] border border-[#F0D5B5] hover:border-orange-300 rounded-xl p-2 flex items-center gap-1.5 shadow-xs transition-all min-w-0"
           >
-            <div className="flex items-center gap-1.5 min-w-0">
-              <div className="w-6 h-6 rounded-md bg-orange-100/80 border border-orange-200/60 flex items-center justify-center shrink-0">
-                <ShoppingBag className="w-3.5 h-3.5 text-orange-600" />
-              </div>
-              <span className="text-[11px] font-bold text-[#5A1010] leading-tight line-clamp-2">{t('actions_sacred_items')}</span>
+            <div className="w-6 h-6 rounded-md bg-orange-100/80 border border-orange-200/60 flex items-center justify-center shrink-0">
+              <ShoppingBag className="w-3.5 h-3.5 text-orange-600" />
             </div>
-            <span className="text-[#5A1010]/60 font-bold text-xs shrink-0 pl-0.5">&gt;</span>
+            <span className="text-[10.5px] font-bold text-[#5A1010] leading-tight min-w-0 line-clamp-2">{t('actions_sacred_items')}</span>
           </Link>
         </div>
 
         {/* Dynamic Opening Hours Accordion Banner */}
-        <div className="bg-[#FFF4E8] border border-[#F0D5B5] rounded-xl overflow-hidden shadow-xs">
-          <button
-            onClick={() => setIsAartiAccordionOpen(!isAartiAccordionOpen)}
-            className="w-full p-3 flex items-center justify-between text-left"
-          >
-            <div className="flex items-center gap-2.5">
-              <div className="w-7 h-7 rounded-full bg-orange-500/10 border border-orange-400/30 flex items-center justify-center shrink-0">
-                <Clock className="w-3.5 h-3.5 text-orange-600" />
-              </div>
-              <div>
-                <div className="text-xs font-bold text-[#5A1010] flex items-center gap-1">
-                  {t('opening_hours')}
+        {hasOpeningHours && (
+          <div className="bg-[#FFF4E8] border border-[#F0D5B5] rounded-xl overflow-hidden shadow-xs">
+            <button
+              onClick={() => setIsAartiAccordionOpen(!isAartiAccordionOpen)}
+              className="w-full p-3 flex items-center justify-between text-left"
+            >
+              <div className="flex items-center gap-2.5">
+                <div className="w-7 h-7 rounded-full bg-orange-500/10 border border-orange-400/30 flex items-center justify-center shrink-0">
+                  <Clock className="w-3.5 h-3.5 text-orange-600" />
                 </div>
-                <div className="text-[11px] text-[#7A3F1F] font-medium">
-                  {selectedTemple?.openTime
-                    ? selectedTemple.openTime
-                    : selectedTemple?.operatingHours && Array.isArray(selectedTemple.operatingHours) && selectedTemple.operatingHours.length > 0
-                    ? `${selectedTemple.operatingHours[0]?.start || ''} - ${selectedTemple.operatingHours[selectedTemple.operatingHours.length - 1]?.end || selectedTemple.operatingHours[0]?.end || ''}`
-                    : "5:30 AM - 9:30 PM"}
+                <div>
+                  <div className="text-xs font-bold text-[#5A1010] flex items-center gap-1">
+                    {t('opening_hours')}
+                  </div>
+                  <div className="text-[11px] text-[#7A3F1F] font-medium">
+                    {hasOperatingHours
+                      ? `${activeOperatingHours[0]?.start || ''}${activeOperatingHours[activeOperatingHours.length - 1]?.end ? ` - ${activeOperatingHours[activeOperatingHours.length - 1]?.end}` : ''}`
+                      : selectedTemple?.openTime || ''}
+                  </div>
                 </div>
               </div>
-            </div>
-            <ChevronDown className={`w-4 h-4 text-[#7A3F1F] transition-transform duration-300 ${isAartiAccordionOpen ? "rotate-180" : ""}`} />
-          </button>
+              <ChevronDown className={`w-4 h-4 text-[#7A3F1F] transition-transform duration-300 ${isAartiAccordionOpen ? "rotate-180" : ""}`} />
+            </button>
 
-          <AnimatePresence>
-            {isAartiAccordionOpen && (
-              <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: "auto", opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                transition={{ duration: 0.2 }}
-                className="border-t border-[#F0D5B5]/60 bg-white/70 p-3 space-y-2 text-xs"
-              >
-                {selectedTemple?.operatingHours && Array.isArray(selectedTemple.operatingHours) && selectedTemple.operatingHours.filter((s: any) => s.active).length > 0 ? (
-                  selectedTemple.operatingHours.filter((s: any) => s.active).map((slot: any, idx: number) => (
-                    <div key={idx} className="flex items-center justify-between text-[#2a1a10]">
+            <AnimatePresence>
+              {isAartiAccordionOpen && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: "auto", opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="border-t border-[#F0D5B5]/60 bg-white/70 p-3 space-y-2 text-xs"
+                >
+                  {hasOperatingHours ? (
+                    activeOperatingHours.map((slot: any, idx: number) => (
+                      <div key={idx} className="flex items-center justify-between text-[#2a1a10]">
+                        <span className="flex items-center gap-1.5">
+                          <span className="text-orange-500">🔔</span>
+                          <span>{slot.label}</span>
+                        </span>
+                        <span className="font-bold text-[#7A3F1F]">{slot.start} {slot.end ? `- ${slot.end}` : ''}</span>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="flex items-center justify-between text-[#2a1a10]">
                       <span className="flex items-center gap-1.5">
                         <span className="text-orange-500">🔔</span>
-                        <span>{slot.label}</span>
+                        <span>{t('opening_hours')}</span>
                       </span>
-                      <span className="font-bold text-[#7A3F1F]">{slot.start} {slot.end ? `- ${slot.end}` : ''}</span>
+                      <span className="font-bold text-[#7A3F1F]">{selectedTemple?.openTime}</span>
                     </div>
-                  ))
-                ) : selectedTemple?.openTime ? (
-                  <div className="flex items-center justify-between text-[#2a1a10]">
-                    <span className="flex items-center gap-1.5">
-                      <span className="text-orange-500">🔔</span>
-                      <span>{t('opening_hours')}</span>
-                    </span>
-                    <span className="font-bold text-[#7A3F1F]">{selectedTemple.openTime}</span>
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-between text-[#2a1a10]">
-                    <span className="flex items-center gap-1.5">
-                      <span className="text-orange-500">🔔</span>
-                      <span>{t('opening_hours')}</span>
-                    </span>
-                    <span className="font-bold text-[#7A3F1F]">5:30 AM - 9:30 PM</span>
-                  </div>
-                )}
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
+                  )}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        )}
 
         {/* Other Live Darshans (2-Column Grid on Mobile) */}
         {temples.length > 0 && (
@@ -744,65 +734,42 @@ export default function LiveDarshanClient() {
               </div>
             </div>
             
-            {/* Desktop Aarti Timings Matching Design */}
-            <div className="bg-[#FCF5EA] rounded-xl border border-[#F0D5B5]/60 shadow-sm overflow-hidden">
-              <div className="p-4 space-y-3">
-                <div className="flex items-center justify-between uppercase pb-1 border-b border-[#F0D5B5]/40">
-                  <span className="text-[12px] font-black tracking-widest text-[#2A1A10]/80">
-                    {t('opening_hours')}
-                  </span>
-                  {/* <span className="text-[11px] font-bold text-orange-600 cursor-pointer hover:underline">
-                    View All
-                  </span> */}
-                </div>
+            {/* Desktop Aarti Timings / Opening Hours */}
+            {hasOpeningHours && (
+              <div className="bg-[#FCF5EA] rounded-xl border border-[#F0D5B5]/60 shadow-sm overflow-hidden">
+                <div className="p-4 space-y-3">
+                  <div className="flex items-center justify-between uppercase pb-1 border-b border-[#F0D5B5]/40">
+                    <span className="text-[12px] font-black tracking-widest text-[#2A1A10]/80">
+                      {t('opening_hours')}
+                    </span>
+                  </div>
 
-                {selectedTemple?.operatingHours && Array.isArray(selectedTemple.operatingHours) && selectedTemple.operatingHours.filter((s: any) => s.active).length > 0 ? (
-                  <div className="space-y-0.5">
-                    {selectedTemple.operatingHours.filter((s: any) => s.active).map((slot: any, idx: number, arr: any[]) => (
-                      <div key={idx} className={`flex items-center justify-between text-[13px] text-[#2a1a10] font-medium py-2 ${idx !== arr.length - 1 ? 'border-b border-[#F0D5B5]/40' : ''}`}>
+                  {hasOperatingHours ? (
+                    <div className="space-y-0.5">
+                      {activeOperatingHours.map((slot: any, idx: number, arr: any[]) => (
+                        <div key={idx} className={`flex items-center justify-between text-[13px] text-[#2a1a10] font-medium py-2 ${idx !== arr.length - 1 ? 'border-b border-[#F0D5B5]/40' : ''}`}>
+                          <span className="flex items-center gap-2.5">
+                            <Bell className="w-4 h-4 text-[#C16D38] fill-transparent" />
+                            <span>{slot.label}</span>
+                          </span>
+                          <span className="font-bold text-[#7A3F1F]/90">{slot.start} {slot.end ? `- ${slot.end}` : ''}</span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="space-y-0.5">
+                      <div className="flex items-center justify-between text-[13px] text-[#2a1a10] font-medium py-2">
                         <span className="flex items-center gap-2.5">
                           <Bell className="w-4 h-4 text-[#C16D38] fill-transparent" />
-                          <span>{slot.label}</span>
+                          <span>{t('opening_hours')}</span>
                         </span>
-                        <span className="font-bold text-[#7A3F1F]/90">{slot.start} {slot.end ? `- ${slot.end}` : ''}</span>
+                        <span className="font-bold text-[#7A3F1F]/90">{selectedTemple?.openTime}</span>
                       </div>
-                    ))}
-                  </div>
-                ) : (
-                  /* Fallback Aarti Timings */
-                  <div className="space-y-0.5">
-                    <div className="flex items-center justify-between text-[13px] text-[#2a1a10] font-medium py-2 border-b border-[#F0D5B5]/40">
-                      <span className="flex items-center gap-2.5">
-                        <Bell className="w-4 h-4 text-[#C16D38]" />
-                        <span>{t('kakad_aarti')}</span>
-                      </span>
-                      <span className="font-bold text-[#7A3F1F]/90">5:30 AM</span>
                     </div>
-                    <div className="flex items-center justify-between text-[13px] text-[#2a1a10] font-medium py-2 border-b border-[#F0D5B5]/40">
-                      <span className="flex items-center gap-2.5">
-                        <Bell className="w-4 h-4 text-[#C16D38]" />
-                        <span>{t('madhyan_aarti')}</span>
-                      </span>
-                      <span className="font-bold text-[#7A3F1F]/90">12:00 PM</span>
-                    </div>
-                    <div className="flex items-center justify-between text-[13px] text-[#2a1a10] font-medium py-2 border-b border-[#F0D5B5]/40">
-                      <span className="flex items-center gap-2.5">
-                        <Bell className="w-4 h-4 text-[#C16D38]" />
-                        <span>{t('dhoop_aarti')}</span>
-                      </span>
-                      <span className="font-bold text-[#7A3F1F]/90">7:00 PM</span>
-                    </div>
-                    <div className="flex items-center justify-between text-[13px] text-[#2a1a10] font-medium py-2">
-                      <span className="flex items-center gap-2.5">
-                        <Bell className="w-4 h-4 text-[#C16D38]" />
-                        <span>{t('shej_aarti')}</span>
-                      </span>
-                      <span className="font-bold text-[#7A3F1F]/90">9:30 PM</span>
-                    </div>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
-            </div>
+            )}
             
             <div className="flex flex-col gap-3">
               <Button className="w-full h-12 bg-[#5A1010] hover:bg-[#430707] text-white rounded-xl shadow-md text-sm font-semibold flex items-center justify-center gap-2" asChild>
@@ -941,7 +908,7 @@ export default function LiveDarshanClient() {
             <div className="relative group/scroll mt-3">
               <div
                 ref={scrollRef}
-                className="flex gap-4 md:gap-6 overflow-x-auto snap-x no-scrollbar pb-6 scroll-smooth"
+                className="flex gap-4 md:gap-6 overflow-x-auto snap-x no-scrollbar px-3.5 pt-3 pb-6 scroll-smooth"
               >
                 {temples
                   .filter(temple => temple.name.toLowerCase().includes(searchQuery.toLowerCase()) || temple.location.toLowerCase().includes(searchQuery.toLowerCase()))

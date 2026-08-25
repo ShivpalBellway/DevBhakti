@@ -581,7 +581,7 @@ export default function MobileTempleDetail({
                                 <div className="h-14 w-14 bg-amber-500/10 rounded-2xl flex items-center justify-center mb-2 text-amber-600 shadow-sm">
                                     <Ticket className="h-7 w-7" />
                                 </div>
-                                <span className="text-sm font-bold leading-tight">Darshan</span>
+                                <span className="text-sm font-bold leading-tight">Darshan Ticket</span>
                             </button>
                         )}
 

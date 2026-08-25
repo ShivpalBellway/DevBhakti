@@ -309,6 +309,13 @@ export default function TempleDetail() {
         router.push(bookingUrl);
     };
 
+    const handleGalleryClick = () => {
+        if (!user) {
+            router.push(`/auth?redirect=/temples/${params?.id || params?.subdomain}`);
+            return;
+        }
+    };
+
     const getYouTubeId = (url: string) => {
         const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
         const match = url.match(regExp);
