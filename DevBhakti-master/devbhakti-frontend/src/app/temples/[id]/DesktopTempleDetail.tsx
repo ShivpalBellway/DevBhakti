@@ -47,6 +47,7 @@ export default function DesktopTempleDetail({
     isFavorite,
     activeImageIndex,
     setActiveImageIndex,
+    user,
     isFullViewOpen,
     setIsFullViewOpen,
     selectedPurposes,

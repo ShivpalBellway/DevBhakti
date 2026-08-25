@@ -47,6 +47,7 @@ export default function MobileTempleDetail({
     isFavorite,
     activeImageIndex,
     setActiveImageIndex,
+    user,
     isFullViewOpen,
     setIsFullViewOpen,
     selectedPurposes,
