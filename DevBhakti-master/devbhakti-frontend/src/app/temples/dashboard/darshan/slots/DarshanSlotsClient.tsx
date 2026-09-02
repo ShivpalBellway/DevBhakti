@@ -20,11 +20,9 @@ export default function DarshanSlotsClient() {
   const [filterDate, setFilterDate] = useState("");
 
   const [formData, setFormData] = useState({
-    startDate: "",
-    endDate: "",
+    date: "",
     startTime: "08:00",
-    endTime: "20:00",
-    intervalMinutes: "60",
+    endTime: "09:00",
     maxCapacity: "500",
   });
 
@@ -51,7 +49,7 @@ export default function DarshanSlotsClient() {
     // Set initial filter to today
     const today = new Date().toISOString().split('T')[0];
     setFilterDate(today);
-    setFormData(prev => ({ ...prev, startDate: today, endDate: today }));
+    setFormData(prev => ({ ...prev, date: today }));
     fetchSlots(today);
   }, []);
 
@@ -66,11 +64,10 @@ export default function DarshanSlotsClient() {
     try {
       const token = localStorage.getItem("token");
       const payload = {
-        startDate: formData.startDate,
-        endDate: formData.endDate,
+        startDate: formData.date,
+        endDate: formData.date,
         startTime: formData.startTime,
         endTime: formData.endTime,
-        intervalMinutes: formData.intervalMinutes ? parseInt(formData.intervalMinutes) : undefined,
         maxCapacity: parseInt(formData.maxCapacity)
       };
 
@@ -132,30 +129,19 @@ export default function DarshanSlotsClient() {
         {/* Create Slots Form */}
         <Card className="md:col-span-1">
           <CardHeader>
-            <CardTitle className="text-lg">Generate Slots</CardTitle>
-            <CardDescription>Bulk create slots for a date range.</CardDescription>
+            <CardTitle className="text-lg">Create Slot</CardTitle>
+            <CardDescription>Manually create a specific time slot.</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleCreateSlots} className="space-y-4">
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <Label>Start Date</Label>
-                  <Input 
-                    type="date" 
-                    value={formData.startDate} 
-                    onChange={(e) => setFormData({...formData, startDate: e.target.value})}
-                    required
-                  />
-                </div>
-                <div className="space-y-1">
-                  <Label>End Date</Label>
-                  <Input 
-                    type="date" 
-                    value={formData.endDate} 
-                    onChange={(e) => setFormData({...formData, endDate: e.target.value})}
-                    required
-                  />
-                </div>
+              <div className="space-y-1">
+                <Label>Date</Label>
+                <Input 
+                  type="date" 
+                  value={formData.date} 
+                  onChange={(e) => setFormData({...formData, date: e.target.value})}
+                  required
+                />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
@@ -179,32 +165,20 @@ export default function DarshanSlotsClient() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <Label>Interval (Mins)</Label>
-                  <Input 
-                    type="number" 
-                    min="10"
-                    placeholder="e.g. 60"
-                    value={formData.intervalMinutes} 
-                    onChange={(e) => setFormData({...formData, intervalMinutes: e.target.value})}
-                  />
-                </div>
-                <div className="space-y-1">
-                  <Label>Max Capacity</Label>
-                  <Input 
-                    type="number" 
-                    min="1"
-                    value={formData.maxCapacity} 
-                    onChange={(e) => setFormData({...formData, maxCapacity: e.target.value})}
-                    required
-                  />
-                </div>
+              <div className="space-y-1">
+                <Label>Max Capacity</Label>
+                <Input 
+                  type="number" 
+                  min="1"
+                  value={formData.maxCapacity} 
+                  onChange={(e) => setFormData({...formData, maxCapacity: e.target.value})}
+                  required
+                />
               </div>
 
               <Button type="submit" className="w-full mt-2" disabled={isCreating}>
                 {isCreating ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Plus className="w-4 h-4 mr-2" />}
-                Generate Slots
+                Create Slot
               </Button>
             </form>
           </CardContent>

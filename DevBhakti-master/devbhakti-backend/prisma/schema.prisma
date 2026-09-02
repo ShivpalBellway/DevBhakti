@@ -333,6 +333,7 @@ model Product {
   status          String           @default("pending")
   image           String?
   templeId        String?
+  mandalId        String?
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
   categoryId      String?
@@ -355,6 +356,7 @@ model Product {
   categoryObj     ProductCategory? @relation(fields: [categoryId], references: [id])
   seller          SellerProfile?   @relation(fields: [sellerId], references: [id], onDelete: Cascade)
   temple          Temple?          @relation(fields: [templeId], references: [id], onDelete: Cascade)
+  mandal          Mandal?          @relation(fields: [mandalId], references: [id], onDelete: Cascade)
   variants        ProductVariant[]
 }
 
@@ -485,6 +487,7 @@ model SubOrder {
   id                String         @id @default(cuid())
   orderId           String
   templeId          String?
+  mandalId          String?
   totalAmount       Float
   status            String         @default("PENDING")
   commissionAmount  Float          @default(0)
@@ -501,6 +504,7 @@ model SubOrder {
   order             Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
   seller            SellerProfile? @relation(fields: [sellerId], references: [id])
   temple            Temple?        @relation(fields: [templeId], references: [id])
+  mandal            Mandal?        @relation(fields: [mandalId], references: [id])
 }
 
 model OrderItem {
@@ -755,10 +759,15 @@ model Mandal {
   liveStatus         Boolean                   @default(false)
   isLive             Boolean                   @default(false)
   isPrimaryLive      Boolean                   @default(false)
+  instagramUrl       String?
+  facebookUrl        String?
+  youtubeUrl         String?
   createdAt          DateTime                  @default(now())
   updatedAt          DateTime                  @updatedAt
   documentUrl        String[]                  @default([])
   poojas             Pooja[]
+  products           Product[]
+  subOrders          SubOrder[]
   bookings           PoojaBooking[]
   donations          Donation[]
   events             Event[]

@@ -27,6 +27,25 @@ router.post('/register', (upload as any).fields([
 
         const { prisma } = await import('../lib/prisma');
 
+        // Check if registration is enabled globally and active festival is set
+        const setting = await prisma.globalSetting.findUnique({
+            where: { key: 'mandal_registration_enabled' }
+        });
+        const val = (setting?.value as any) || {};
+        const globalEnabled = val.globalEnabled !== undefined ? Boolean(val.globalEnabled) : (val.enabled === true);
+        const festivals: any[] = Array.isArray(val.festivals) ? val.festivals : [];
+        const activeFestival = festivals.find((f: any) => f.isActive) || festivals[0] || null;
+
+        const isRegistrationOpen = globalEnabled && (!festivals.length || (activeFestival && activeFestival.isActive !== false));
+        if (!isRegistrationOpen) {
+            res.status(403).json({ success: false, message: 'Mandal registration is currently disabled by admin.' });
+            return;
+        }
+
+        // Determine effective mandalType / festival
+        const activeFestName = activeFestival?.name || activeFestival?.title?.en || '';
+        const mandalTypeToSave = data.mandalType || activeFestName || undefined;
+
         // Extract image paths
         const image = files?.image?.[0] ? `/uploads/mandals/${files.image[0].filename}` : data.image;
         const heroImages = files?.heroImages?.map((f: any) => `/uploads/mandals/${f.filename}`) || [];
@@ -43,9 +62,9 @@ router.post('/register', (upload as any).fields([
                     hi: data.description_hi || '',
                     mr: data.description_mr || ''
                 }),
-                mandalType: data.mandalType || undefined,
+                mandalType: mandalTypeToSave,
                 presiding_deity: data.presiding_deity || undefined,
-                festivals: data.festivals || undefined,
+                festivals: data.festivals || activeFestName || undefined,
                 address: data.address || undefined,
                 city: data.city || undefined,
                 state: data.state || undefined,
@@ -81,30 +100,126 @@ function calculateDistanceKm(lat1: number, lon1: number, lat2: number, lon2: num
     return Math.round(R * c * 10) / 10;
 }
 
-// Public: Get all active mandals with optional geolocation filtering
+// Public: Get all active mandals filtered by active festival with optional search, location, area, category & geolocation filtering
 router.get('/', async (req, res) => {
     try {
         const { prisma } = await import('../lib/prisma');
         const { getLang, localize } = await import('../utils/localization');
         const lang = getLang(req);
 
-        const { lat, lng, radius } = req.query;
+        const { lat, lng, radius, mandalType, festival, category, location, city, area, search, all } = req.query;
+
+        // Fetch global settings to determine active festival
+        const setting = await prisma.globalSetting.findUnique({
+            where: { key: 'mandal_registration_enabled' }
+        });
+        const val = (setting?.value as any) || {};
+        const globalEnabled = val.globalEnabled !== undefined ? Boolean(val.globalEnabled) : (val.enabled === true);
+        const festivalsList: any[] = Array.isArray(val.festivals) ? val.festivals : [];
+        const activeFestival = festivalsList.find((f: any) => f.isActive) || festivalsList[0] || null;
+
+        // Build Prisma where clause
+        const whereClause: any = { isActive: true };
+
+        const targetCategory = (category || mandalType || festival) as string | undefined;
+        const targetLocation = (location || city) as string | undefined;
+        const targetArea = area as string | undefined;
+        const searchQuery = (search as string || '').trim();
+
+        // 1. Festival / Category Filter
+        if (targetCategory && targetCategory !== 'All') {
+            whereClause.AND = whereClause.AND || [];
+            whereClause.AND.push({
+                OR: [
+                    { mandalType: { contains: targetCategory, mode: 'insensitive' } },
+                    { festivals: { contains: targetCategory, mode: 'insensitive' } }
+                ]
+            });
+        } else if (activeFestival && all !== 'true' && !searchQuery && (!targetLocation || targetLocation === 'All') && (!targetArea || targetArea === 'All')) {
+            // Apply default active festival filter only if no specific search/location/area/category filter is active
+            const festName = activeFestival.name || activeFestival.title?.en || '';
+            const festHi = activeFestival.title?.hi || '';
+            const festMr = activeFestival.title?.mr || '';
+            const festId = activeFestival.id || '';
+
+            const matchedNames = [festName, festHi, festMr, festId].filter(Boolean);
+
+            const orConditions: any[] = [
+                { mandalType: { in: matchedNames } },
+                { mandalType: { contains: festName, mode: 'insensitive' } },
+                { festivals: { contains: festName, mode: 'insensitive' } },
+                { mandalType: null } // include unassigned/legacy mandals
+            ];
+
+            if (festName.toLowerCase().includes('ganesh')) {
+                orConditions.push({ mandalType: { contains: 'Ganesh', mode: 'insensitive' } });
+            }
+            if (festName.toLowerCase().includes('durga')) {
+                orConditions.push({ mandalType: { contains: 'Durga', mode: 'insensitive' } });
+            }
+
+            whereClause.AND = whereClause.AND || [];
+            whereClause.AND.push({ OR: orConditions });
+        }
+
+        // 2. Location / City Filter
+        if (targetLocation && targetLocation !== 'All') {
+            whereClause.AND = whereClause.AND || [];
+            whereClause.AND.push({
+                OR: [
+                    { city: { contains: targetLocation, mode: 'insensitive' } },
+                    { state: { contains: targetLocation, mode: 'insensitive' } },
+                    { address: { contains: targetLocation, mode: 'insensitive' } }
+                ]
+            });
+        }
+
+        // 3. Area Filter
+        if (targetArea && targetArea !== 'All') {
+            whereClause.AND = whereClause.AND || [];
+            whereClause.AND.push({
+                OR: [
+                    { address: { contains: targetArea, mode: 'insensitive' } },
+                    { city: { contains: targetArea, mode: 'insensitive' } }
+                ]
+            });
+        }
 
         const rawMandals = await prisma.mandal.findMany({
-            where: { isActive: true },
+            where: whereClause,
             orderBy: { createdAt: 'desc' }
         });
 
         let mandals = lang === 'raw' ? rawMandals : localize(rawMandals, lang);
 
-        // If user location is provided, compute distance for each Mandal
+        // 4. In-Memory Search & Text Filter (handles JSON name field & multi-field keyword search)
+        if (searchQuery) {
+            const q = searchQuery.toLowerCase();
+            mandals = mandals.filter((m: any) => {
+                const nameVal = typeof m.name === 'string'
+                    ? m.name
+                    : [m.name?.en, m.name?.hi, m.name?.mr].filter(Boolean).join(' ') || JSON.stringify(m.name || {});
+                const searchHaystack = [
+                    nameVal,
+                    m.city,
+                    m.state,
+                    m.address,
+                    m.presiding_deity,
+                    m.mandalType,
+                    m.festivals
+                ].filter(Boolean).join(' ').toLowerCase();
+
+                return searchHaystack.includes(q);
+            });
+        }
+
+        // 5. If user location is provided, compute distance for each Mandal
         if (lat && lng) {
             const userLat = parseFloat(lat as string);
             const userLng = parseFloat(lng as string);
 
             if (!isNaN(userLat) && !isNaN(userLng)) {
                 mandals = mandals.map((m: any) => {
-                    // Use mandal's latitude/longitude or fallback based on area/city for realistic demonstration
                     let mLat = m.latitude;
                     let mLng = m.longitude;
 
@@ -119,7 +234,6 @@ router.get('/', async (req, res) => {
                         } else if (searchStr.includes('andheri')) {
                             mLat = 19.1197; mLng = 72.8464;
                         } else {
-                            // Default Mumbai baseline coordinates with small random offset per ID
                             const idHash = (m.id || '').split('').reduce((acc: number, c: string) => acc + c.charCodeAt(0), 0);
                             mLat = 19.0760 + ((idHash % 20) - 10) * 0.008;
                             mLng = 72.8777 + ((idHash % 15) - 7) * 0.008;
@@ -130,10 +244,8 @@ router.get('/', async (req, res) => {
                     return { ...m, distanceKm, latitude: mLat, longitude: mLng };
                 });
 
-                // Sort by nearest distance first
                 mandals.sort((a: any, b: any) => (a.distanceKm || 0) - (b.distanceKm || 0));
 
-                // Filter by radius if provided (e.g., radius=20 km)
                 if (radius) {
                     const maxRadius = parseFloat(radius as string);
                     if (!isNaN(maxRadius)) {
@@ -145,6 +257,8 @@ router.get('/', async (req, res) => {
 
         res.json({
             success: true,
+            globalEnabled,
+            activeFestival,
             data: mandals
         });
     } catch (error: any) {

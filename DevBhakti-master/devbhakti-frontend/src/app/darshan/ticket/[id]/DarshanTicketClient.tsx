@@ -8,7 +8,7 @@ import Footer from "@/components/landing/Footer";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import QRCode from "qrcode";
-import { format } from "date-fns";
+import { format, parseISO } from "date-fns";
 import { 
   CheckCircle2, 
   MapPin, 
@@ -148,7 +148,7 @@ export default function DarshanTicketClient() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                      <p className="text-sm font-bold text-muted-foreground uppercase tracking-wider mb-1 flex items-center gap-1.5"><Calendar className="w-3.5 h-3.5" /> Date</p>
-                     <p className="font-semibold">{format(new Date(ticket.slot.date), "dd MMM yyyy")}</p>
+                     <p className="font-semibold">{format(parseISO(ticket.slot.date.split('T')[0]), "dd MMM yyyy")}</p>
                   </div>
                   <div>
                      <p className="text-sm font-bold text-muted-foreground uppercase tracking-wider mb-1 flex items-center gap-1.5"><Clock className="w-3.5 h-3.5" /> Time Slot</p>

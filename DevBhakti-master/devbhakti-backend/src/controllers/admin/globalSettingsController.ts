@@ -110,30 +110,58 @@ export const updateSeoSettings = async (req: Request, res: Response) => {
 
 // ─── Mandal Registration Toggle ───────────────────────────────────────────────
 
-// PUBLIC & ADMIN: Fetch mandal registration settings (enabled, title, subtitle, image, festival dates)
+// ─── Mandal Registration & Multi-Festival Control ───────────────────────────────────
+
+// PUBLIC & ADMIN: Fetch mandal registration settings
 export const getMandalRegistrationStatus = async (req: Request, res: Response) => {
     try {
         const setting = await prisma.globalSetting.findUnique({
             where: { key: MANDAL_REGISTRATION_KEY }
         });
         const val = (setting?.value as any) || {};
-        const enabled = val.enabled === true;
-        const settings = {
-            enabled,
-            title: val.title || { en: '', hi: '', mr: '' },
-            subtitle: val.subtitle || { en: '', hi: '', mr: '' },
-            image: val.image || '',
-            startDate: val.startDate || '',
-            endDate: val.endDate || ''
-        };
-        res.json({ success: true, ...settings });
+
+        const globalEnabled = val.globalEnabled !== undefined ? Boolean(val.globalEnabled) : (val.enabled === true);
+        const festivals: any[] = Array.isArray(val.festivals) ? val.festivals : [];
+
+        // If legacy single festival format exists and festivals array is empty, convert legacy format
+        if (festivals.length === 0 && (val.title || val.image || val.startDate)) {
+            festivals.push({
+                id: 'fest_default',
+                name: val.title?.en || 'Ganesh Utsav Registration',
+                title: val.title || { en: '', hi: '', mr: '' },
+                subtitle: val.subtitle || { en: '', hi: '', mr: '' },
+                image: val.image || '',
+                startDate: val.startDate || '',
+                endDate: val.endDate || '',
+                isActive: val.enabled === true
+            });
+        }
+
+        let activeFestival = festivals.find((f: any) => f.isActive) || festivals[0] || null;
+
+        // Effective overall enabled state for public registration
+        const isRegistrationOpen = globalEnabled && !!activeFestival && activeFestival.isActive;
+
+        res.json({
+            success: true,
+            globalEnabled,
+            enabled: isRegistrationOpen, // Public convenience flag
+            activeFestival,
+            festivals,
+            // Fallback backward compatibility fields
+            title: activeFestival?.title || { en: '', hi: '', mr: '' },
+            subtitle: activeFestival?.subtitle || { en: '', hi: '', mr: '' },
+            image: activeFestival?.image || '',
+            startDate: activeFestival?.startDate || '',
+            endDate: activeFestival?.endDate || ''
+        });
     } catch (error) {
         console.error('Error fetching mandal registration status:', error);
         res.status(500).json({ success: false, message: 'Error fetching mandal registration status' });
     }
 };
 
-// ADMIN: Update mandal registration settings (toggle ON/OFF, title, subtitle, image, dates)
+// ADMIN: Update global toggle or festival list (add, edit, delete, activate)
 export const updateMandalRegistrationStatus = async (req: Request, res: Response) => {
     try {
         const existing = await prisma.globalSetting.findUnique({
@@ -141,60 +169,118 @@ export const updateMandalRegistrationStatus = async (req: Request, res: Response
         });
         const prevVal = (existing?.value as any) || {};
 
-        let enabled = req.body.enabled;
-        if (typeof enabled === 'string') {
-            enabled = enabled === 'true';
+        let globalEnabled = prevVal.globalEnabled !== undefined ? Boolean(prevVal.globalEnabled) : (prevVal.enabled ?? false);
+        if (req.body.globalEnabled !== undefined) {
+            globalEnabled = req.body.globalEnabled === true || req.body.globalEnabled === 'true';
+        } else if (req.body.enabled !== undefined && req.body.action === 'toggleGlobal') {
+            globalEnabled = req.body.enabled === true || req.body.enabled === 'true';
         }
 
-        let title = req.body.title;
-        if (typeof title === 'string') {
-            try {
-                title = JSON.parse(title);
-            } catch (e) {
-                title = undefined;
+        let festivals: any[] = Array.isArray(prevVal.festivals) ? [...prevVal.festivals] : [];
+        if (festivals.length === 0 && (prevVal.title || prevVal.image || prevVal.startDate)) {
+            festivals.push({
+                id: 'fest_default',
+                name: prevVal.title?.en || 'Ganesh Utsav Registration',
+                title: prevVal.title || { en: '', hi: '', mr: '' },
+                subtitle: prevVal.subtitle || { en: '', hi: '', mr: '' },
+                image: prevVal.image || '',
+                startDate: prevVal.startDate || '',
+                endDate: prevVal.endDate || '',
+                isActive: true
+            });
+        }
+
+        const action = req.body.action || 'saveFestival';
+
+        if (action === 'toggleGlobal') {
+            // Only toggles the master global switch
+        } else if (action === 'activateFestival') {
+            const festivalId = req.body.festivalId;
+            festivals = festivals.map((f) => ({
+                ...f,
+                isActive: f.id === festivalId
+            }));
+        } else if (action === 'deleteFestival') {
+            const festivalId = req.body.festivalId;
+            festivals = festivals.filter((f) => f.id !== festivalId);
+            if (festivals.length > 0 && !festivals.some((f) => f.isActive)) {
+                festivals[0].isActive = true;
+            }
+        } else if (action === 'saveFestival') {
+            const festivalId = req.body.id || `fest_${Date.now()}`;
+            
+            let title = req.body.title;
+            if (typeof title === 'string') {
+                try { title = JSON.parse(title); } catch (e) { title = undefined; }
+            }
+            if (!title || typeof title !== 'object') {
+                title = {
+                    en: req.body.title_en ?? req.body['title.en'] ?? '',
+                    hi: req.body.title_hi ?? req.body['title.hi'] ?? '',
+                    mr: req.body.title_mr ?? req.body['title.mr'] ?? ''
+                };
+            }
+
+            let subtitle = req.body.subtitle;
+            if (typeof subtitle === 'string') {
+                try { subtitle = JSON.parse(subtitle); } catch (e) { subtitle = undefined; }
+            }
+            if (!subtitle || typeof subtitle !== 'object') {
+                subtitle = {
+                    en: req.body.subtitle_en ?? req.body['subtitle.en'] ?? '',
+                    hi: req.body.subtitle_hi ?? req.body['subtitle.hi'] ?? '',
+                    mr: req.body.subtitle_mr ?? req.body['subtitle.mr'] ?? ''
+                };
+            }
+
+            let image = req.body.existingImage || '';
+            if (req.file) {
+                image = `/uploads/cms/mandal/${req.file.filename}`;
+            } else if (req.body.image && typeof req.body.image === 'string') {
+                image = req.body.image;
+            }
+
+            let isActive = req.body.isActive === true || req.body.isActive === 'true';
+
+            const existingIndex = festivals.findIndex((f) => f.id === festivalId);
+
+            if (isActive) {
+                festivals = festivals.map((f) => ({ ...f, isActive: false }));
+            } else if (festivals.length === 0 || existingIndex === -1 && !festivals.some((f) => f.isActive)) {
+                isActive = true;
+            }
+
+            const festivalItem = {
+                id: festivalId,
+                name: req.body.name || title.en || 'Festival Registration',
+                title,
+                subtitle,
+                image,
+                startDate: req.body.startDate || '',
+                endDate: req.body.endDate || '',
+                isActive
+            };
+
+            if (existingIndex >= 0) {
+                festivals[existingIndex] = festivalItem;
+            } else {
+                festivals.push(festivalItem);
             }
         }
-        if (!title || typeof title !== 'object') {
-            title = {
-                en: req.body.title_en ?? req.body['title.en'] ?? prevVal.title?.en ?? '',
-                hi: req.body.title_hi ?? req.body['title.hi'] ?? prevVal.title?.hi ?? '',
-                mr: req.body.title_mr ?? req.body['title.mr'] ?? prevVal.title?.mr ?? ''
-            };
-        }
 
-        let subtitle = req.body.subtitle;
-        if (typeof subtitle === 'string') {
-            try {
-                subtitle = JSON.parse(subtitle);
-            } catch (e) {
-                subtitle = undefined;
-            }
-        }
-        if (!subtitle || typeof subtitle !== 'object') {
-            subtitle = {
-                en: req.body.subtitle_en ?? req.body['subtitle.en'] ?? prevVal.subtitle?.en ?? '',
-                hi: req.body.subtitle_hi ?? req.body['subtitle.hi'] ?? prevVal.subtitle?.hi ?? '',
-                mr: req.body.subtitle_mr ?? req.body['subtitle.mr'] ?? prevVal.subtitle?.mr ?? ''
-            };
-        }
-
-        let image = prevVal.image || '';
-        if (req.file) {
-            image = `/uploads/cms/mandal/${req.file.filename}`;
-        } else if (req.body.image !== undefined) {
-            image = req.body.image;
-        }
-
-        const startDate = req.body.startDate !== undefined ? req.body.startDate : (prevVal.startDate || '');
-        const endDate = req.body.endDate !== undefined ? req.body.endDate : (prevVal.endDate || '');
+        const activeFestival = festivals.find((f) => f.isActive) || festivals[0] || null;
 
         const newSettings = {
-            enabled: enabled !== undefined ? Boolean(enabled) : (prevVal.enabled ?? false),
-            title,
-            subtitle,
-            image,
-            startDate,
-            endDate
+            globalEnabled,
+            enabled: globalEnabled && !!activeFestival && activeFestival.isActive,
+            activeFestivalId: activeFestival?.id || null,
+            festivals,
+            // Mirror active festival properties for legacy frontend consumers
+            title: activeFestival?.title || { en: '', hi: '', mr: '' },
+            subtitle: activeFestival?.subtitle || { en: '', hi: '', mr: '' },
+            image: activeFestival?.image || '',
+            startDate: activeFestival?.startDate || '',
+            endDate: activeFestival?.endDate || ''
         };
 
         const updated = await prisma.globalSetting.upsert({
@@ -207,6 +293,7 @@ export const updateMandalRegistrationStatus = async (req: Request, res: Response
         res.json({
             success: true,
             message: `Mandal registration settings updated successfully`,
+            globalEnabled: val.globalEnabled,
             enabled: val.enabled,
             settings: val
         });

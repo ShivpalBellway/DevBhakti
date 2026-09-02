@@ -32,7 +32,7 @@ import logo from "@/assets/logo2.png";
 import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 
-import { fetchMandalProfile } from "@/api/mandalAdminController";
+import { fetchMandalProfile, fetchMandalOrders, fetchMyMandalBookings } from "@/api/mandalAdminController";
 import { useAdminAuth } from "@/hooks/use-admin-auth";
 import { clearAllTokens } from "@/lib/auth-utils";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
@@ -57,6 +57,17 @@ const sidebarItems = [
         href: "/mandals/dashboard/bookings"
     },
     {
+        label: "Teller Module",
+        icon: CreditCard,
+        href: "/mandals/dashboard/teller",
+        permission: "finance.menu",
+        subItems: [
+            { label: "Offline Pooja Booking", href: "/mandals/dashboard/teller/offline-pooja", permission: "finance.menu" },
+            { label: "Offline Donation", href: "/mandals/dashboard/teller/offline-donation", permission: "finance.menu" },
+            { label: "Offline Product Booking", href: "/mandals/dashboard/teller/offline-product", permission: "finance.menu" },
+        ]
+    },
+    {
         label: "Events",
         icon: Calendar,
         href: "/mandals/dashboard/events",
@@ -71,6 +82,26 @@ const sidebarItems = [
           { label: "💳 Online Donations", href: "/mandals/dashboard/donation?type=online", permission: "donations.menu" },
         ]
     },
+    {
+        label: "Product Management",
+        icon: Package,
+        href: "/mandals/dashboard/products",
+        permission: "products.menu"
+    },
+    {
+        label: "Order Management",
+        icon: ShoppingBag,
+        href: "/mandals/dashboard/orders",
+        permission: "products.orders.view",
+        subItems: [
+            { label: "All Orders", href: "/mandals/dashboard/orders" },
+            { label: "Pending", href: "/mandals/dashboard/orders?status=PENDING" },
+            { label: "Accepted", href: "/mandals/dashboard/orders?status=ACCEPTED" },
+            { label: "Shipped", href: "/mandals/dashboard/orders?status=SHIPPED" },
+            { label: "Delivered", href: "/mandals/dashboard/orders?status=DELIVERED" },
+            { label: "Cancelled", href: "/mandals/dashboard/orders?status=CANCELLED" },
+        ]
+    },    
     {
         label: "Devotee Management",
         icon: Users,
@@ -217,9 +248,51 @@ export default function MandalAdminLayout({ children }: { children: React.ReactN
 
     const loadCounts = async () => {
         try {
-            const profileRes = await fetchMandalProfile();
-            if (profileRes.success) {
-                setMandalProfile(profileRes.data);
+            try {
+                const profileRes = await fetchMandalProfile();
+                if (profileRes.success) {
+                    setMandalProfile(profileRes.data);
+                    if (profileRes.data.id) {
+                        fetchMandalOrders(profileRes.data.id)
+                            .then(ordersRes => {
+                                if (ordersRes.success) {
+                                    const data = ordersRes.data;
+                                    setCounts((prev: any) => ({
+                                        ...prev,
+                                        orders: {
+                                            total: data.length,
+                                            pending: data.filter((o: any) => o.status === 'PENDING').length,
+                                            accepted: data.filter((o: any) => o.status === 'ACCEPTED').length,
+                                            shipped: data.filter((o: any) => o.status === 'SHIPPED').length,
+                                            delivered: data.filter((o: any) => o.status === 'DELIVERED').length,
+                                            cancelled: data.filter((o: any) => o.status === 'CANCELLED').length,
+                                        }
+                                    }));
+                                }
+                            })
+                            .catch((err: any) => console.error("Failed to load orders", err));
+                    }
+                }
+            } catch (err) {
+                console.error("Failed to load profile", err);
+            }
+
+            try {
+                const bookingsRes = await fetchMyMandalBookings();
+                if (bookingsRes.success) {
+                    const data = bookingsRes.data;
+                    setCounts((prev: any) => ({
+                        ...prev,
+                        bookings: {
+                            total: data.length,
+                            booked: data.filter((b: any) => b.status === 'BOOKED').length,
+                            completed: data.filter((b: any) => b.status === 'COMPLETED').length,
+                            cancelled: data.filter((b: any) => b.status === 'CANCELLED' || b.status === 'REJECTED').length
+                        }
+                    }));
+                }
+            } catch (err) {
+                console.error("Failed to load bookings", err);
             }
         } catch (error) {
             console.error("Unexpected error in loadCounts", error);
@@ -370,6 +443,26 @@ export default function MandalAdminLayout({ children }: { children: React.ReactN
                     .filter(item => !item.permission || hasPermission(item.permission))
                     .map((item) => {
                         let itemWithCounts = { ...item };
+                        if (item.label === "Bookings" && item.subItems) {
+                            itemWithCounts.subItems = item.subItems.map((sub: any) => {
+                                if (sub.label === "All Bookings") return { ...sub, count: counts.bookings.total };
+                                if (sub.label === "Booked Poojas") return { ...sub, count: counts.bookings.booked };
+                                if (sub.label === "Completed") return { ...sub, count: counts.bookings.completed };
+                                if (sub.label === "Cancelled") return { ...sub, count: counts.bookings.cancelled };
+                                return sub;
+                            });
+                        } else if (item.label === "Order Management" && item.subItems) {
+                            itemWithCounts.subItems = item.subItems.map((sub: any) => {
+                                if (sub.label === "All Orders") return { ...sub, count: counts.orders.total };
+                                if (sub.label === "Pending") return { ...sub, count: counts.orders.pending };
+                                if (sub.label === "Accepted") return { ...sub, count: counts.orders.accepted };
+                                if (sub.label === "Shipped") return { ...sub, count: counts.orders.shipped };
+                                if (sub.label === "Delivered") return { ...sub, count: counts.orders.delivered };
+                                if (sub.label === "Cancelled") return { ...sub, count: counts.orders.cancelled };
+                                return sub;
+                            });
+                        }
+
                         return (
                             <SidebarNavItem
                                 key={item.label}

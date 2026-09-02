@@ -77,6 +77,7 @@
         search?: string;
         category?: string;
         templeId?: string;
+        mandalId?: string;
         minPrice?: number;
         maxPrice?: number;
         sort?: string;

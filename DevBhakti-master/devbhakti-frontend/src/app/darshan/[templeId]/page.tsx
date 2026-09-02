@@ -2,7 +2,7 @@ import { Metadata } from "next";
 import DarshanBookingClient from "./DarshanBookingClient";
 
 export const metadata: Metadata = {
-  title: "Book Darshan - DevBhakti",
+  title: "Book Darshan Ticket  - DevBhakti",
   description: "Book your darshan slot easily on DevBhakti.",
 };
 

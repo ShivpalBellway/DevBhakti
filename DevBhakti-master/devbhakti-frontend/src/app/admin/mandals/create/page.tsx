@@ -19,8 +19,9 @@ import {
   CheckCircle,
   AlertCircle,
   Languages,
+  Video,
 } from "lucide-react";
-import { createMandalAdmin, updateMandalAdmin, fetchMandalByIdAdmin } from "@/api/adminController";
+import { createMandalAdmin, updateMandalAdmin, fetchMandalByIdAdmin, fetchMandalRegistrationSettingsAdmin } from "@/api/adminController";
 import { RichTextEditor } from "@/components/ui/rich-text-editor";
 import { ImageCropper } from "@/components/admin/ImageCropper";
 
@@ -70,6 +71,19 @@ export default function MandalFormPage({ mandalId }: MandalFormProps) {
   const [success, setSuccess] = useState(false);
   const [imageError, setImageError] = useState("");
   const [contactError, setContactError] = useState("");
+  const [festivalsList, setFestivalsList] = useState<any[]>([]);
+
+  // Fetch dynamic festivals configured in Mandal Settings
+  useEffect(() => {
+    fetchMandalRegistrationSettingsAdmin()
+      .then(res => {
+        if (res && res.success) {
+          const list = Array.isArray(res.festivals) ? res.festivals : [];
+          setFestivalsList(list);
+        }
+      })
+      .catch(console.error);
+  }, []);
 
   // Image state
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -98,6 +112,7 @@ export default function MandalFormPage({ mandalId }: MandalFormProps) {
     contactNumber: "", email: "", presidentName: "",
     registrationNumber: "", verificationDocUrl: "", presidentIdDocUrl: "",
     slug: "", status: "PENDING", isActive: true, adminNotes: "",
+    liveUrl: "", isLive: false,
   });
 
   // Load existing data if editing
@@ -133,6 +148,8 @@ export default function MandalFormPage({ mandalId }: MandalFormProps) {
             status: m.status || "PENDING",
             isActive: m.isActive ?? true,
             adminNotes: m.adminNotes || "",
+            liveUrl: m.liveUrl || "",
+            isLive: m.isLive ?? false,
           });
           if (m.image) setExistingImage(m.image);
           if (m.bannerImages?.length) setExistingBanners(m.bannerImages);
@@ -410,13 +427,26 @@ export default function MandalFormPage({ mandalId }: MandalFormProps) {
           {/* Non-language fields */}
           <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className={LabelClass}>Mandal Type</label>
+              <label className={LabelClass}>Festival / Mandal Type</label>
               <select name="mandalType" value={form.mandalType} onChange={handleChange} className={InputClass}>
-                <option value="">Select Type</option>
-                <option value="Ganesh">Ganesh Mandal</option>
-                <option value="Durga">Durga Puja Samiti</option>
-                <option value="Ram">Ram Leela Samiti</option>
-                <option value="Other">Other</option>
+                <option value="">Select Festival / Type</option>
+                {festivalsList.length > 0 ? (
+                  festivalsList.map((fest: any) => {
+                    const festName = fest.name || fest.title?.en || fest.title?.hi || fest.id;
+                    return (
+                      <option key={fest.id || festName} value={festName}>
+                        {festName} {fest.isActive ? "(Active Festival)" : ""}
+                      </option>
+                    );
+                  })
+                ) : (
+                  <>
+                    <option value="Ganesh">Ganesh Mandal</option>
+                    <option value="Durga">Durga Puja Samiti</option>
+                    <option value="Ram">Ram Leela Samiti</option>
+                    <option value="Other">Other</option>
+                  </>
+                )}
               </select>
             </div>
             <div>
@@ -741,8 +771,77 @@ export default function MandalFormPage({ mandalId }: MandalFormProps) {
               Active (visible to public)
             </label>
           </div>
+        </SectionWrapper>
 
-        
+        {/* ── Section 7: Live Darshan Settings ── */}
+        <SectionWrapper>
+          <SectionTitle icon={<Video className="w-5 h-5 text-red-600" />}>7. Live Darshan Settings</SectionTitle>
+
+          <div className="space-y-4">
+            <div className="flex items-center gap-3 p-4 bg-muted/40 rounded-lg">
+              <input
+                type="checkbox"
+                id="isLive"
+                name="isLive"
+                checked={form.isLive}
+                onChange={handleChange}
+                className="w-4 h-4 rounded text-primary"
+              />
+              <label htmlFor="isLive" className="text-sm font-medium cursor-pointer flex items-center gap-2">
+                Enable Live Darshan Stream for this Mandal
+                {form.isLive && (
+                  <span className="px-2 py-0.5 bg-red-600 text-white text-[10px] font-bold rounded-full animate-pulse">
+                    LIVE NOW
+                  </span>
+                )}
+              </label>
+            </div>
+
+            <div>
+              <label className={LabelClass}>Live Stream Video URL (YouTube Live / HLS / Embed Link)</label>
+              <input
+                type="text"
+                name="liveUrl"
+                value={form.liveUrl}
+                onChange={handleChange}
+                className={InputClass}
+                placeholder="e.g. https://www.youtube.com/watch?v=... or HLS URL"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Enter the YouTube live stream or embed URL for this Mandal. This will be played on the Mandal's public page when active.
+              </p>
+            </div>
+
+            {form.liveUrl && (
+              <div className="p-3 bg-zinc-950 rounded-xl border border-zinc-800 space-y-2">
+                <div className="flex items-center justify-between text-xs text-zinc-300">
+                  <span className="font-semibold flex items-center gap-1.5">
+                    <Video className="w-3.5 h-3.5 text-red-500" />
+                    Live Video Preview
+                  </span>
+                  {form.isLive ? (
+                    <span className="text-green-400 text-[10px] font-bold">Active</span>
+                  ) : (
+                    <span className="text-yellow-400 text-[10px] font-bold">Inactive (Enable switch above)</span>
+                  )}
+                </div>
+                <div className="aspect-video w-full rounded-lg overflow-hidden bg-black flex items-center justify-center">
+                  <iframe
+                    src={
+                      form.liveUrl.includes("youtube.com/watch?v=")
+                        ? form.liveUrl.replace("watch?v=", "embed/")
+                        : form.liveUrl.includes("youtu.be/")
+                        ? form.liveUrl.replace("youtu.be/", "youtube.com/embed/")
+                        : form.liveUrl
+                    }
+                    className="w-full h-full"
+                    allowFullScreen
+                    title="Mandal Live Darshan Admin Preview"
+                  />
+                </div>
+              </div>
+            )}
+          </div>
         </SectionWrapper>
 
         {/* ── Submit Buttons ── */}

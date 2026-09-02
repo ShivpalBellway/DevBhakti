@@ -68,6 +68,8 @@ const sidebarItems = [
       { label: "All Mandals", href: "/admin/mandals", permission: "temples.view" },
       { label: "Add Mandal", href: "/admin/mandals/create", permission: "temples.create" },
       { label: "Mandal Settings", href: "/admin/settings/mandal", permission: "temples.view" },
+      { label: "Mandal News", href: "/admin/mandals/news", permission: "temples.view" },
+
     ]
   },
   {

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useLanguage } from "@/context/LanguageContext";
 import {
@@ -21,13 +21,32 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { submitMandalRegistration } from "@/api/publicController";
+import { submitMandalRegistration, fetchMandalRegistrationStatus } from "@/api/publicController";
 
 export default function MandalRegistrationForm({ onClose }: { onClose?: () => void }) {
     const { t } = useLanguage();
     const [isLoading, setIsLoading] = useState(false);
     const [showSuccess, setShowSuccess] = useState(false);
     const [error, setError] = useState("");
+    const [festivalsList, setFestivalsList] = useState<any[]>([]);
+
+    useEffect(() => {
+        fetchMandalRegistrationStatus()
+            .then(res => {
+                if (res && res.success) {
+                    const list = Array.isArray(res.festivals) ? res.festivals : [];
+                    setFestivalsList(list);
+                    if (res.activeFestival && (res.activeFestival.name || res.activeFestival.title?.en)) {
+                        const defaultFestName = res.activeFestival.name || res.activeFestival.title?.en;
+                        setFormData(prev => ({
+                            ...prev,
+                            mandalType: prev.mandalType || defaultFestName
+                        }));
+                    }
+                }
+            })
+            .catch(console.error);
+    }, []);
 
     const [formData, setFormData] = useState({
         presidentName: "",
@@ -237,18 +256,31 @@ export default function MandalRegistrationForm({ onClose }: { onClose?: () => vo
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="space-y-2">
-                                <label className="text-sm font-bold text-slate-600 ml-1">{t("registerMandal.mandal_type")}</label>
+                                <label className="text-sm font-bold text-slate-600 ml-1">Festival / Mandal Type</label>
                                 <select
                                     name="mandalType"
                                     value={formData.mandalType}
                                     onChange={handleChange}
-                                    className="w-full h-12 px-3 border border-slate-200 focus:border-orange-500 rounded-xl"
+                                    className="w-full h-12 px-3 border border-slate-200 focus:border-orange-500 rounded-xl font-medium"
                                 >
-                                    <option value="">{t("registerMandal.mandal_type_select")}</option>
-                                    <option value="Ganesh">{t("registerMandal.type_ganesh")}</option>
-                                    <option value="Durga">{t("registerMandal.type_durga")}</option>
-                                    <option value="Ram">{t("registerMandal.type_ram")}</option>
-                                    <option value="Other">{t("registerMandal.type_other")}</option>
+                                    <option value="">{t("registerMandal.mandal_type_select") || "Select Festival / Type"}</option>
+                                    {festivalsList.length > 0 ? (
+                                        festivalsList.map((fest: any) => {
+                                            const festName = fest.name || fest.title?.en || fest.title?.hi || fest.id;
+                                            return (
+                                                <option key={fest.id || festName} value={festName}>
+                                                    {festName} {fest.isActive ? "(Active Festival)" : ""}
+                                                </option>
+                                            );
+                                        })
+                                    ) : (
+                                        <>
+                                            <option value="Ganesh">{t("registerMandal.type_ganesh") || "Ganesh Mandal"}</option>
+                                            <option value="Durga">{t("registerMandal.type_durga") || "Durga Puja Samiti"}</option>
+                                            <option value="Ram">{t("registerMandal.type_ram") || "Ram Leela Samiti"}</option>
+                                            <option value="Other">{t("registerMandal.type_other") || "Other"}</option>
+                                        </>
+                                    )}
                                 </select>
                             </div>
 

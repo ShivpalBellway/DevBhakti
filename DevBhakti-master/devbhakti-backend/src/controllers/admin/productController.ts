@@ -1006,7 +1006,7 @@ export const getProductsByTemple = async (req: Request, res: Response) => {
 // Get Public Products (for landing page - only approved products)
 export const getPublicProducts = async (req: Request, res: Response) => {
   try {
-    const { page = 1, limit = 10, search, category, templeId, minPrice, maxPrice, sort } = req.query;
+    const { page = 1, limit = 10, search, category, templeId, mandalId, minPrice, maxPrice, sort } = req.query;
 
     const skip = (Number(page) - 1) * Number(limit);
 
@@ -1022,6 +1022,11 @@ export const getPublicProducts = async (req: Request, res: Response) => {
           }
         },
         {
+          mandal: {
+            isActive: true
+          }
+        },
+        {
           seller: {
             user: {
               isVerified: true
@@ -1032,7 +1037,8 @@ export const getPublicProducts = async (req: Request, res: Response) => {
         {
           AND: [
             { templeId: null },
-            { sellerId: null }
+            { sellerId: null },
+            { mandalId: null }
           ]
         }
       ]
@@ -1050,9 +1056,11 @@ export const getPublicProducts = async (req: Request, res: Response) => {
       };
     }
 
-
-    if (templeId) {
-      where.templeId = templeId;
+    if (mandalId) {
+      where.mandalId = String(mandalId);
+      delete where.OR;
+    } else if (templeId) {
+      where.templeId = String(templeId);
     }
 
     let orderBy: any = { createdAt: "desc" };

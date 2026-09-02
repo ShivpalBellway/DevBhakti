@@ -72,6 +72,22 @@ export const fetchMandalDonations = async (params?: any) => {
     return response.data;
 };
 
+export const createMandalDonation = async (data: any) => {
+    const token = localStorage.getItem("token");
+    const response = await axios.post(`${API_URL}/mandal-admin/donations`, data, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+
+export const deleteMandalDonation = async (id: string) => {
+    const token = localStorage.getItem("token");
+    const response = await axios.delete(`${API_URL}/mandal-admin/donations/${id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+
 export const fetchMandalDonationStats = async () => {
     const token = localStorage.getItem("token");
     const response = await axios.get(`${API_URL}/mandal-admin/donations/stats`, {
@@ -287,6 +303,71 @@ export const fetchMandalOfflinePoojaLeads = async (params?: { search?: string, p
         url += `?${query.toString()}`;
     }
     const response = await axios.get(url, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+
+// ─── Mandal Product Management ──────────────────────────────────────────────
+export const fetchMandalProducts = async (params?: any) => {
+    const token = localStorage.getItem("token");
+    const response = await axios.get(`${API_URL}/mandal-admin/products?lang=raw`, {
+        headers: { Authorization: `Bearer ${token}` },
+        params
+    });
+    return response.data;
+};
+
+export const fetchMandalProductById = async (id: string) => {
+    const token = localStorage.getItem("token");
+    const response = await axios.get(`${API_URL}/mandal-admin/products/${id}?lang=raw`, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+
+export const createMandalProduct = async (formData: FormData) => {
+    const token = localStorage.getItem("token");
+    const response = await axios.post(`${API_URL}/mandal-admin/products`, formData, {
+        headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'multipart/form-data'
+        }
+    });
+    return response.data;
+};
+
+export const updateMandalProduct = async (id: string, formData: FormData) => {
+    const token = localStorage.getItem("token");
+    const response = await axios.put(`${API_URL}/mandal-admin/products/${id}`, formData, {
+        headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'multipart/form-data'
+        }
+    });
+    return response.data;
+};
+
+export const deleteMandalProduct = async (id: string) => {
+    const token = localStorage.getItem("token");
+    const response = await axios.delete(`${API_URL}/mandal-admin/products/${id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+
+// ─── Mandal Order Management ────────────────────────────────────────────────
+export const fetchMandalOrders = async (mandalId: string) => {
+    const token = localStorage.getItem("token");
+    const response = await axios.get(`${API_URL}/mandal-admin/orders/${mandalId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+
+export const updateMandalOrderStatus = async (subOrderId: string, data: { status: string; mandalId: string; shippingLabel?: string }) => {
+    const token = localStorage.getItem("token");
+    const response = await axios.patch(`${API_URL}/mandal-admin/orders/sub-order/${subOrderId}`, data, {
         headers: { Authorization: `Bearer ${token}` }
     });
     return response.data;

@@ -132,6 +132,18 @@ export const createMandal = async (req: Request, res: Response): Promise<void> =
             return;
         }
 
+        if (data.email) {
+            const emailToCheck = data.email.toLowerCase().trim();
+            const existingEmailMandal = await prisma.mandal.findFirst({
+                where: { email: emailToCheck }
+            });
+            
+            if (existingEmailMandal) {
+                res.status(400).json({ success: false, message: 'This email is already registered with another mandal' });
+                return;
+            }
+        }
+
         // Safely parse existing banner images
         const existingBannerImages: string[] = data.existingBannerImages
             ? JSON.parse(data.existingBannerImages)
@@ -197,9 +209,19 @@ export const createMandal = async (req: Request, res: Response): Promise<void> =
         res.status(201).json({ success: true, message: 'Mandal created successfully', data: mandal });
     } catch (error: any) {
         console.error('createMandal error:', error);
-        if (error.code === 'P2002' && error.meta?.target?.includes('slug')) {
-            res.status(400).json({ success: false, message: 'This slug is already in use by another mandal. Please provide a unique slug.' });
-            return;
+        if (error.code === 'P2002') {
+            if (error.meta?.target?.includes('slug')) {
+                res.status(400).json({ success: false, message: 'This slug is already in use by another mandal. Please provide a unique slug.' });
+                return;
+            }
+            if (error.meta?.target?.includes('email')) {
+                res.status(400).json({ success: false, message: 'This email is already registered with an existing user account.' });
+                return;
+            }
+            if (error.meta?.target?.includes('phone') || error.meta?.target?.includes('contactNumber')) {
+                res.status(400).json({ success: false, message: 'This number is already registered with an existing account.' });
+                return;
+            }
         }
         res.status(500).json({ success: false, message: 'Failed to create mandal', error: error.message });
     }
@@ -216,6 +238,38 @@ export const updateMandal = async (req: Request, res: Response): Promise<void> =
         if (!existing) {
             res.status(404).json({ success: false, message: 'Mandal not found' });
             return;
+        }
+
+        if (data.contactNumber) {
+            let cleanedContact = data.contactNumber.replace(/\D/g, '');
+            if (cleanedContact.length > 10 && cleanedContact.startsWith('91')) {
+                cleanedContact = cleanedContact.substring(2);
+            }
+            if (cleanedContact !== existing.contactNumber) {
+                const existingMandal = await prisma.mandal.findFirst({
+                    where: { contactNumber: cleanedContact }
+                });
+
+                if (existingMandal) {
+                    res.status(400).json({ success: false, message: 'This number is already with us in mandal register form' });
+                    return;
+                }
+            }
+            data.contactNumber = cleanedContact;
+        }
+
+        if (data.email) {
+            const emailToCheck = data.email.toLowerCase().trim();
+            if (emailToCheck !== existing.email?.toLowerCase()) {
+                const existingEmailMandal = await prisma.mandal.findFirst({
+                    where: { email: emailToCheck }
+                });
+                
+                if (existingEmailMandal) {
+                    res.status(400).json({ success: false, message: 'This email is already registered with another mandal' });
+                    return;
+                }
+            }
         }
 
         const existingBannerImages: string[] = data.existingBannerImages
@@ -262,9 +316,19 @@ export const updateMandal = async (req: Request, res: Response): Promise<void> =
         res.json({ success: true, message: 'Mandal updated successfully', data: mandal });
     } catch (error: any) {
         console.error('updateMandal error:', error);
-        if (error.code === 'P2002' && error.meta?.target?.includes('slug')) {
-            res.status(400).json({ success: false, message: 'This slug is already in use by another mandal. Please provide a unique slug.' });
-            return;
+        if (error.code === 'P2002') {
+            if (error.meta?.target?.includes('slug')) {
+                res.status(400).json({ success: false, message: 'This slug is already in use by another mandal. Please provide a unique slug.' });
+                return;
+            }
+            if (error.meta?.target?.includes('email')) {
+                res.status(400).json({ success: false, message: 'This email is already registered with an existing user account.' });
+                return;
+            }
+            if (error.meta?.target?.includes('phone') || error.meta?.target?.includes('contactNumber')) {
+                res.status(400).json({ success: false, message: 'This number is already registered with an existing account.' });
+                return;
+            }
         }
         res.status(500).json({ success: false, message: 'Failed to update mandal', error: error.message });
     }
@@ -362,6 +426,16 @@ export const toggleMandalStatus = async (req: Request, res: Response): Promise<v
         res.json({ success: true, message: 'Mandal status updated', data: mandal });
     } catch (error: any) {
         console.error('toggleMandalStatus error:', error);
+        if (error.code === 'P2002') {
+            if (error.meta?.target?.includes('email')) {
+                res.status(400).json({ success: false, message: 'This email is already registered with an existing user account.' });
+                return;
+            }
+            if (error.meta?.target?.includes('phone') || error.meta?.target?.includes('contactNumber')) {
+                res.status(400).json({ success: false, message: 'This number is already registered with an existing account.' });
+                return;
+            }
+        }
         res.status(500).json({ success: false, message: 'Failed to update mandal status', error: error.message });
     }
 };

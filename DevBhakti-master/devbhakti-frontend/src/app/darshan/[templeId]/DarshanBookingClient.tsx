@@ -10,7 +10,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
-import { format } from "date-fns";
+import { format, parseISO } from "date-fns";
 import { cn } from "@/lib/utils";
 import {
   Calendar,
@@ -345,7 +345,7 @@ function DarshanBookingFlow() {
                     <div className="bg-orange-50/50 p-4 rounded-xl inline-block border border-orange-100">
                         <CalendarComponent
                           mode="single"
-                          selected={selectedDate ? new Date(selectedDate) : undefined}
+                          selected={selectedDate ? parseISO(selectedDate.split('T')[0]) : undefined}
                           onSelect={(date) => {
                             if (date) {
                               const yyyy = date.getFullYear();
@@ -529,7 +529,7 @@ function DarshanBookingFlow() {
                           <Calendar className="w-5 h-5 text-muted-foreground shrink-0 mt-0.5" />
                           <div>
                             <p className="text-sm text-muted-foreground font-semibold">Date</p>
-                            <p className="font-medium mt-0.5">{format(new Date(selectedDate), "EEEE, dd MMMM yyyy")}</p>
+                            <p className="font-medium mt-0.5">{format(parseISO(selectedDate.split('T')[0]), "EEEE, dd MMMM yyyy")}</p>
                           </div>
                        </div>
                      )}

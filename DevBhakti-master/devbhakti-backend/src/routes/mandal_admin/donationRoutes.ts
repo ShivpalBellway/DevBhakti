@@ -7,6 +7,8 @@ const router = Router();
 router.use(authenticate, injectMandalContext);
 
 router.get('/', donationController.getMandalDonations);
+router.post('/', donationController.createMandalDonation);
+router.delete('/:id', donationController.deleteMandalDonation);
 router.get('/stats', donationController.getMandalDonationStats);
 
 export default router;

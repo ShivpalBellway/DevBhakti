@@ -65,6 +65,7 @@ import './services/firebaseService'; // Initialize Firebase Admin on startup
 import adminSettingsRoutes from './routes/admin/globalSettingsRoutes';
 import adminMandalRoutes from './routes/admin/mandalRoutes';
 import adminDarshanRoutes from './routes/admin/darshanSuperAdminRoutes';
+import mandalNewsRoutes from './routes/admin/mandalNewsRoutes';
 
 import mandalAdminProfileRoutes from './routes/mandal_admin/mandalRoutes';
 import mandalAdminEventRoutes from './routes/mandal_admin/eventRoutes';
@@ -73,6 +74,8 @@ import mandalAdminFinanceRoutes from './routes/mandal_admin/financeRoutes';
 import mandalAdminStaffManagementRoutes from './routes/mandal_admin/staffManagementRoutes';
 import mandalAdminPoojaRoutes from './routes/mandal_admin/poojaRoutes';
 import mandalAdminBookingRoutes from './routes/mandal_admin/bookingRoutes';
+import mandalAdminProductRoutes from './routes/mandal_admin/productRoutes';
+import mandalAdminOrderRoutes from './routes/mandal_admin/orderRoutes';
 
 
 const app = express();
@@ -111,6 +114,8 @@ app.use('/api/admin/marketing', adminMarketingRoutes);
 app.use('/api/admin/settings', adminSettingsRoutes);
 app.use('/api/admin/mandals', adminMandalRoutes);
 app.use('/api/admin/darshan', adminDarshanRoutes);
+app.use('/api/admin/mandal-news', mandalNewsRoutes);
+app.use('/api/mandal-news', mandalNewsRoutes);
 
 
 
@@ -144,6 +149,8 @@ app.use('/api/mandal-admin/finance', mandalAdminFinanceRoutes);
 app.use('/api/mandal-admin/team', mandalAdminStaffManagementRoutes);
 app.use('/api/mandal-admin/poojas', mandalAdminPoojaRoutes);
 app.use('/api/mandal-admin/bookings', mandalAdminBookingRoutes);
+app.use('/api/mandal-admin/products', mandalAdminProductRoutes);
+app.use('/api/mandal-admin/orders', mandalAdminOrderRoutes);
 
 // Devotee Auth Routes
 app.use('/api/auth', authRoutes);

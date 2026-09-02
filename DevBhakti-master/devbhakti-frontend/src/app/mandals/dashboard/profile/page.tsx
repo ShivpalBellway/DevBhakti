@@ -20,6 +20,7 @@ import {
     X,
     Eye,
     ShieldCheck,
+    Video,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -85,6 +86,11 @@ export default function EnhancedMandalProfilePage() {
         address: "", city: "", state: "", pinCode: "",
         contactNumber: "", email: "", presidentName: "",
         registrationNumber: "",
+        liveUrl: "",
+        isLive: false,
+        instagramUrl: "",
+        facebookUrl: "",
+        youtubeUrl: "",
     });
 
     const { toast } = useToast();
@@ -125,6 +131,11 @@ export default function EnhancedMandalProfilePage() {
                     email: m.email || "",
                     presidentName: m.presidentName || "",
                     registrationNumber: m.registrationNumber || "",
+                    liveUrl: m.liveUrl || "",
+                    isLive: m.isLive ?? false,
+                    instagramUrl: m.instagramUrl || "",
+                    facebookUrl: m.facebookUrl || "",
+                    youtubeUrl: m.youtubeUrl || "",
                 });
 
                 if (m.image) setExistingImage(m.image);
@@ -141,7 +152,8 @@ export default function EnhancedMandalProfilePage() {
     };
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-        const { name, value } = e.target;
+        const { name, value, type } = e.target;
+        const checked = (e.target as HTMLInputElement).checked;
 
         if (name === "contactNumber") {
             const digitsOnly = value.replace(/\D/g, "").slice(0, 10);
@@ -150,7 +162,10 @@ export default function EnhancedMandalProfilePage() {
             return;
         }
 
-        setForm(prev => ({ ...prev, [name]: value }));
+        setForm(prev => ({
+            ...prev,
+            [name]: type === "checkbox" ? checked : value
+        }));
     };
 
     const handleContactKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -472,7 +487,7 @@ export default function EnhancedMandalProfilePage() {
                             </div>
                         </SectionWrapper>
 
-                        {/* ── 4. Contact & Authority ── */}
+                        {/* ── 4. Contact & Registration ── */}
                         <SectionWrapper>
                             <SectionTitle icon={<Phone className="w-5 h-5" />}>
                                 4. Contact & Registration
@@ -540,6 +555,49 @@ export default function EnhancedMandalProfilePage() {
                                         onChange={handleChange}
                                         className={InputClass}
                                         placeholder="REG/12345/MUM"
+                                    />
+                                </div>
+                            </div>
+                        </SectionWrapper>
+
+                        {/* ── Social Media Links ── */}
+                        <SectionWrapper>
+                            <SectionTitle icon={<Globe className="w-5 h-5 text-indigo-600" />}>
+                                Social Media Profiles
+                            </SectionTitle>
+
+                            <div className="space-y-4">
+                                <div>
+                                    <Label className={LabelClass}>Instagram Profile URL</Label>
+                                    <Input
+                                        type="url"
+                                        name="instagramUrl"
+                                        value={form.instagramUrl}
+                                        onChange={handleChange}
+                                        className={InputClass}
+                                        placeholder="https://instagram.com/yourmandal"
+                                    />
+                                </div>
+                                <div>
+                                    <Label className={LabelClass}>Facebook Page URL</Label>
+                                    <Input
+                                        type="url"
+                                        name="facebookUrl"
+                                        value={form.facebookUrl}
+                                        onChange={handleChange}
+                                        className={InputClass}
+                                        placeholder="https://facebook.com/yourmandal"
+                                    />
+                                </div>
+                                <div>
+                                    <Label className={LabelClass}>YouTube Channel URL</Label>
+                                    <Input
+                                        type="url"
+                                        name="youtubeUrl"
+                                        value={form.youtubeUrl}
+                                        onChange={handleChange}
+                                        className={InputClass}
+                                        placeholder="https://youtube.com/@yourmandal"
                                     />
                                 </div>
                             </div>
@@ -645,6 +703,86 @@ export default function EnhancedMandalProfilePage() {
                                         <span className="text-[11px] font-medium">Add Photo</span>
                                     </button>
                                 </div>
+                            </div>
+                        </SectionWrapper>
+
+                        {/* ── 6. Live Darshan Settings ── */}
+                        <SectionWrapper>
+                            <SectionTitle icon={<Video className="w-5 h-5 text-red-600" />}>
+                                6. Live Darshan Settings
+                            </SectionTitle>
+
+                            <div className="space-y-4">
+                                <div className="flex items-center justify-between p-4 bg-amber-50/70 border border-amber-200/80 rounded-xl">
+                                    <div className="space-y-0.5">
+                                        <label htmlFor="isLive" className="text-sm font-bold text-slate-800 cursor-pointer flex items-center gap-2">
+                                            <span>Enable Live Darshan Stream</span>
+                                            {form.isLive && (
+                                                <Badge className="bg-red-600 text-white font-bold text-[10px] animate-pulse">
+                                                    LIVE NOW
+                                                </Badge>
+                                            )}
+                                        </label>
+                                        <p className="text-xs text-slate-500">
+                                            Turn on to show your live streaming video on your Mandal's public detail page.
+                                        </p>
+                                    </div>
+                                    <input
+                                        type="checkbox"
+                                        id="isLive"
+                                        name="isLive"
+                                        checked={form.isLive}
+                                        onChange={handleChange}
+                                        className="w-5 h-5 rounded text-[#7b4623] accent-[#7b4623] cursor-pointer"
+                                    />
+                                </div>
+
+                                <div>
+                                    <Label className={LabelClass}>
+                                        Live Darshan Video URL (YouTube Live / HLS / Embed Link)
+                                    </Label>
+                                    <Input
+                                        type="text"
+                                        name="liveUrl"
+                                        value={form.liveUrl}
+                                        onChange={handleChange}
+                                        className={InputClass}
+                                        placeholder="e.g. https://www.youtube.com/watch?v=... or HLS URL"
+                                    />
+                                    <p className="text-xs text-muted-foreground mt-1">
+                                        Paste your YouTube live stream URL or direct video stream link here.
+                                    </p>
+                                </div>
+
+                                {form.liveUrl && (
+                                    <div className="p-3 bg-slate-900 rounded-2xl border border-slate-800 space-y-2">
+                                        <div className="flex items-center justify-between text-xs text-white">
+                                            <span className="font-semibold flex items-center gap-1.5">
+                                                <Video className="w-3.5 h-3.5 text-red-500" />
+                                                Live Video Preview
+                                            </span>
+                                            {form.isLive ? (
+                                                <span className="text-emerald-400 text-[10px] font-bold">Active on Page</span>
+                                            ) : (
+                                                <span className="text-amber-400 text-[10px] font-bold">Disabled (Check switch above to activate)</span>
+                                            )}
+                                        </div>
+                                        <div className="aspect-video w-full rounded-xl overflow-hidden bg-black flex items-center justify-center">
+                                            <iframe
+                                                src={
+                                                    form.liveUrl.includes("youtube.com/watch?v=")
+                                                        ? form.liveUrl.replace("watch?v=", "embed/")
+                                                        : form.liveUrl.includes("youtu.be/")
+                                                        ? form.liveUrl.replace("youtu.be/", "youtube.com/embed/")
+                                                        : form.liveUrl
+                                                }
+                                                className="w-full h-full"
+                                                allowFullScreen
+                                                title="Mandal Live Darshan Preview"
+                                            />
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         </SectionWrapper>
 

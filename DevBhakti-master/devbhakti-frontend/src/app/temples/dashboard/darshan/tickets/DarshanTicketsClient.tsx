@@ -14,7 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Search, Download, Loader2, Calendar } from "lucide-react";
-import { format } from "date-fns";
+import { format, parseISO } from "date-fns";
 import { Label } from "@/components/ui/label";
 
 export default function DarshanTicketsClient() {
@@ -135,7 +135,7 @@ export default function DarshanTicketsClient() {
                       <div className="text-xs text-muted-foreground">{ticket.visitorPhone}</div>
                     </TableCell>
                     <TableCell>
-                      <div className="font-medium">{format(new Date(ticket.slot.date), "dd MMM yyyy")}</div>
+                      <div className="font-medium">{format(parseISO(ticket.slot.date.split('T')[0]), "dd MMM yyyy")}</div>
                       <div className="text-xs text-muted-foreground">{ticket.slot.startTime}</div>
                     </TableCell>
                     <TableCell>{ticket.visitorCount}</TableCell>

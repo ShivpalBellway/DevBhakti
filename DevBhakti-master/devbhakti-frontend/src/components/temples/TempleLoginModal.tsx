@@ -228,13 +228,13 @@ export default function TempleLoginModal({ onClose, loginType = "temple" }: Temp
                     )}
                     <div className="flex flex-col items-center gap-2">
                         <p className="text-slate-500 text-sm font-medium">
-                            {loginType === "mandal" ? (t('no_account_mandal') || "Don't have a registered mandal?") : t('footer.new_admin')}
+                            {loginType === "mandal" ? (t('footer.no_account_mandal') || "Don't have a registered mandal?") : t('footer.new_admin')}
                         </p>
                         <button 
                             onClick={() => setShowRegistrationModal(true)}
                             className="text-[#88542b] font-bold underline hover:text-[#794a05] transition-colors text-sm"
                         >
-                            {loginType === "mandal" ? (t('register_now_mandal') || "Register Mandal") : t('footer.register')}
+                            {loginType === "mandal" ? (t('footer.register_now_mandal') || "Register Mandal") : t('footer.register')}
                         </button>
                     </div>
                 </div>

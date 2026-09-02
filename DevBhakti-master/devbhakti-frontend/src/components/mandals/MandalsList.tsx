@@ -23,6 +23,12 @@ import {
   BadgeCheck,
   Compass,
   Navigation,
+  ChevronLeft,
+  ChevronRight,
+  Newspaper,
+  Info,
+  Clock,
+  ShieldAlert,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -45,8 +51,17 @@ import { API_URL } from "@/config/apiConfig";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/context/LanguageContext";
 import { getLocalized } from "@/utils/localization";
+import { stripHtml } from "@/utils/textUtils";
 import { fetchUserFavorites, addFavorite, removeFavorite } from "@/api/userController";
 import { fetchMandalRegistrationStatus } from "@/api/publicController";
+
+type MandalNewsItem = {
+  id: string;
+  title: string;
+  description?: string;
+  publishedAt?: string;
+  createdAt?: string;
+};
 
 export function MandalsList() {
   const [searchInput, setSearchInput] = useState("");
@@ -68,6 +83,15 @@ export function MandalsList() {
   const [suggestions, setSuggestions] = useState<any[]>([]);
   const [mounted, setMounted] = useState(false);
   const [mandalSettings, setMandalSettings] = useState<any>(null);
+  const [mandalNews, setMandalNews] = useState<MandalNewsItem[]>([]);
+  const featuredScrollRef = React.useRef<HTMLDivElement>(null);
+
+  const scrollFeatured = (direction: "left" | "right") => {
+    if (featuredScrollRef.current) {
+      const scrollAmount = direction === "left" ? -340 : 340;
+      featuredScrollRef.current.scrollBy({ left: scrollAmount, behavior: "smooth" });
+    }
+  };
 
   useEffect(() => {
     setMounted(true);
@@ -86,6 +110,7 @@ export function MandalsList() {
     }
     fetchInitialOptions();
     loadMandalSettings();
+    loadMandalNews();
   }, [language]);
 
   const loadMandalSettings = async () => {
@@ -101,13 +126,25 @@ export function MandalsList() {
 
   const fetchInitialOptions = async () => {
     try {
-      const response = await fetch(`${API_URL}/mandals`);
+      const response = await fetch(`${API_URL}/mandals?all=true`);
       const data = await response.json();
       if (data && data.success) {
         setAllMandals(data.data || []);
       }
     } catch (error) {
       console.error("Error fetching mandals:", error);
+    }
+  };
+
+  const loadMandalNews = async () => {
+    try {
+      const response = await fetch(`${API_URL}/mandal-news`);
+      const data = await response.json();
+      if (data?.success) {
+        setMandalNews((data.data || []).slice(0, 5));
+      }
+    } catch (error) {
+      console.error("Error fetching mandal news:", error);
     }
   };
 
@@ -256,15 +293,27 @@ export function MandalsList() {
   const locations = ["All", ...new Set(allMandals.map((m) => m?.city).filter(Boolean))];
   const areas = ["All", ...new Set(allMandals.map((m) => m?.address || m?.area).filter(Boolean))];
 
-  // Popular search keywords
-  const popularSearches = [
-    "Lalbaugcha Raja",
-    "Ganesh Galli",
-    "Andhericha Raja",
-    "GSB Seva Mandal",
-    "Khetwadi",
-    "Parel",
-  ];
+  // Dynamically extract popular searches keywords from actual mandal data
+  const dynamicPopularSearches = Array.from(
+    new Set(
+      allMandals
+        .flatMap((m) => [m?.area, m?.city, m?.mandalType, m?.presiding_deity])
+        .filter(Boolean)
+        .map((s) => s.trim())
+    )
+  ).slice(0, 6);
+
+  const popularSearches =
+    dynamicPopularSearches.length > 0
+      ? dynamicPopularSearches
+      : [
+          "Lalbaugcha Raja",
+          "Ganesh Galli",
+          "Andhericha Raja",
+          "GSB Seva Mandal",
+          "Khetwadi",
+          "Parel",
+        ];
 
   // Fuzzy search suggestions
   const getFuzzySuggestions = (query: string) => {
@@ -324,6 +373,19 @@ export function MandalsList() {
     }
   };
 
+  const formatNewsDate = (dateStr?: string) => {
+    if (!dateStr) return "";
+    try {
+      return new Date(dateStr).toLocaleDateString("en-IN", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      });
+    } catch {
+      return dateStr;
+    }
+  };
+
   let festivalDateDisplay = "27 Aug - 6 Sep 2026";
   if (mandalSettings?.startDate && mandalSettings?.endDate) {
     const sFormatted = formatDateStr(mandalSettings.startDate);
@@ -334,12 +396,21 @@ export function MandalsList() {
     festivalDateDisplay = formatDateStr(mandalSettings.startDate);
   }
 
+  const activeFestivalName =
+    getLocalizedSettingText("title") ||
+    mandalSettings?.name ||
+    "Ganesh Chaturthi";
+
+  const mainFestivalDay = mandalSettings?.startDate
+    ? `${activeFestivalName}, ${formatDateStr(mandalSettings.startDate)}`
+    : `${activeFestivalName}, 27 Aug 2026`;
+
   const adminBannerImage = mandalSettings?.image
     ? getFullImageUrl(mandalSettings.image)
-    : "https://images.unsplash.com/photo-1600093463592-8e36ae95ef56?auto=format&fit=crop&q=80&w=1200";
+    : "https://images.unsplash.com/photo-1620766182966-c6eb5ed2b788?auto=format&fit=crop&q=80&w=1200";
 
   return (
-    <div className="min-h-screen bg-[#FDFBF7] text-zinc-900">
+    <div className="min-h-screen bg-[#FDFBF7] text-zinc-900 flex flex-col justify-between">
       {/* Solid Navbar matching screenshot style */}
       <Navbar isSolid={true} />
 
@@ -352,8 +423,8 @@ export function MandalsList() {
         <div className="w-full max-w-[1700px] mx-auto relative z-10">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-14 items-center">
             
-            {/* LEFT HALF (50%): CONTENT */}
-            <div className="space-y-6 flex flex-col justify-center pr-0 lg:pr-4">
+            {/* LEFT HALF (50% ON DESKTOP, BELOW ON MOBILE/TABLET): CONTENT */}
+            <div className="order-2 lg:order-1 space-y-6 flex flex-col justify-center pr-0 lg:pr-4">
               {/* Top Divine Mantra */}
               <div className="inline-flex items-center gap-2 text-amber-400 font-serif text-base tracking-wider font-semibold">
                 <span>|| गणपति बाप्पा मोरया ||</span>
@@ -432,15 +503,15 @@ export function MandalsList() {
               </div>
             </div>
 
-            {/* RIGHT HALF (50%): FULL IMAGE */}
-            <div className="relative w-full h-[360px] sm:h-[420px] lg:h-[480px] xl:h-[520px] rounded-3xl overflow-hidden shadow-2xl border border-amber-500/20 group">
+            {/* RIGHT HALF (50% ON DESKTOP, TOP ON MOBILE/TABLET): FULL IMAGE */}
+            <div className="order-1 lg:order-2 relative w-full h-[280px] sm:h-[380px] md:h-[420px] lg:h-[480px] xl:h-[520px] rounded-3xl overflow-hidden shadow-2xl border border-amber-500/20 group">
               <img
                 src={adminBannerImage}
                 alt={heroTitle}
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                 onError={(e) => {
                   (e.target as any).src =
-                    "https://images.unsplash.com/photo-1600093463592-8e36ae95ef56?auto=format&fit=crop&q=80&w=1200";
+                    "https://images.unsplash.com/photo-1620766182966-c6eb5ed2b788?auto=format&fit=crop&q=80&w=1200";
                 }}
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent" />
@@ -725,6 +796,8 @@ export function MandalsList() {
         </div>
       </div>
 
+     
+
       {/* ─── FEATURED MANDALS SECTION ───────────────────────────────────────── */}
       <section className="py-12 px-4 md:px-8 lg:px-12 w-full max-w-[1700px] mx-auto space-y-6">
         <div className="flex items-center justify-between">
@@ -734,135 +807,165 @@ export function MandalsList() {
               Featured Mandals
             </h2>
           </div>
-          <Link
+          {/* <Link
             href="#mandals-search-section"
             className="text-xs md:text-sm font-bold text-[#6B0F1A] dark:text-amber-400 hover:underline flex items-center gap-1"
           >
             View All Mandals
             <ArrowRight className="w-4 h-4" />
-          </Link>
+          </Link> */}
         </div>
 
-        {/* Mandals Grid (Matching Screenshot Cards) */}
+        {/* Mandals Horizontal Carousel (Matching Screenshot Cards & Scroll Buttons) */}
         {loading ? (
           <div className="flex justify-center items-center py-20">
             <div className="animate-spin rounded-full h-10 w-10 border-4 border-amber-600 border-t-transparent" />
           </div>
         ) : mandals.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-5">
-            {mandals.map((mandal) => {
-              if (!mandal) return null;
-              const localizedName = getLocalized(mandal, "name", language) || mandal.name || "Mandal";
-              const isFav = favorites.some((f) => f && f.mandalId === mandal.id);
-              const isVerifiedMandal = mandal.isActive === true && String(mandal.status || "").toUpperCase() === "APPROVED";
+          <div className="relative group/carousel">
+            {/* Left Scroll Button */}
+            <button
+              type="button"
+              onClick={() => scrollFeatured("left")}
+              className="absolute -left-3 sm:-left-5 top-1/2 -translate-y-1/2 z-20 w-10 h-10 md:w-11 md:h-11 rounded-full bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 border border-zinc-200 dark:border-zinc-700 shadow-xl flex items-center justify-center hover:bg-amber-50 dark:hover:bg-zinc-700 hover:scale-110 active:scale-95 transition-all"
+              aria-label="Scroll Left"
+            >
+              <ChevronLeft className="w-6 h-6 text-zinc-700 dark:text-zinc-200" />
+            </button>
 
-              return (
-                <div
-                  key={mandal.id}
-                  className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200/80 dark:border-zinc-800 overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col group"
-                >
-                  {/* Image Container */}
-                  <div className="relative aspect-square overflow-hidden bg-zinc-100">
-                    <img
-                      src={getFullImageUrl(mandal.image)}
-                      alt={localizedName}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                      onError={(e) => {
-                        (e.target as any).src =
-                          "https://images.unsplash.com/photo-1600093463592-8e36ae95ef56?auto=format&fit=crop&q=80&w=500";
-                      }}
-                    />
+            {/* Scrollable Container */}
+            <div
+              ref={featuredScrollRef}
+              className="flex overflow-x-auto gap-5 pb-4 pt-1 px-1 scroll-smooth no-scrollbar snap-x"
+              style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+            >
+              {mandals.map((mandal) => {
+                if (!mandal) return null;
+                const localizedName = getLocalized(mandal, "name", language) || mandal.name || "Mandal";
+                const isFav = favorites.some((f) => f && f.mandalId === mandal.id);
+                const isVerifiedMandal = mandal.isActive === true && String(mandal.status || "").toUpperCase() === "APPROVED";
 
-                    {/* LIVE badge */}
-                    {mandal.isLive && (
-                      <Badge className="absolute top-3 left-3 bg-red-600 text-white font-bold text-[10px] px-2.5 py-0.5 rounded-full flex items-center gap-1.5 shadow-md animate-pulse">
-                        <span className="w-1.5 h-1.5 rounded-full bg-white" />
-                        LIVE
-                      </Badge>
-                    )}
-
-                    {/* Favorite Button */}
-                    <button
-                      type="button"
-                      onClick={(e) => toggleFavorite(e, mandal.id)}
-                      className="absolute top-3 right-3 p-2 rounded-full bg-black/40 backdrop-blur-md text-white hover:bg-black/70 transition-all"
-                    >
-                      <Heart
-                        className={`w-4 h-4 ${
-                          isFav ? "fill-red-500 text-red-500" : "text-white"
-                        }`}
+                return (
+                  <div
+                    key={mandal.id}
+                    onClick={() => router.push(`/mandals/${mandal.slug || mandal.id}`)}
+                    className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200/80 dark:border-zinc-800 overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col group cursor-pointer w-[260px] sm:w-[280px] md:w-[300px] shrink-0 snap-start select-none"
+                  >
+                    {/* Image Container */}
+                    <div className="relative aspect-square overflow-hidden bg-zinc-100">
+                      <img
+                        src={getFullImageUrl(mandal.image)}
+                        alt={localizedName}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        onError={(e) => {
+                          (e.target as any).src =
+                            "https://images.unsplash.com/photo-1620766182966-c6eb5ed2b788?auto=format&fit=crop&q=80&w=500";
+                        }}
                       />
-                    </button>
-                  </div>
 
-                  {/* Card Content */}
-                  <div className="p-4 flex-1 flex flex-col justify-between space-y-3">
-                    <div className="space-y-1">
-                      <div className="flex items-start justify-between gap-3">
-                        <h3 className="font-bold text-base text-zinc-900 dark:text-zinc-100 truncate group-hover:text-[#6B0F1A] transition-colors">
-                          {localizedName}
-                        </h3>
-                        {isVerifiedMandal && (
-                          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#FFF4E6] dark:bg-[#2C1810] border border-[#DEB887]/30 shrink-0 mt-0.5">
-                            <BadgeCheck className="w-3.5 h-3.5 text-[#D97706] fill-white dark:fill-[#2C1810]" />
-                            <span className="text-[10px] font-bold text-[#92400E] dark:text-[#FCD34D] uppercase tracking-wider">
-                              Verified
-                            </span>
-                          </div>
+                      {/* LIVE badge */}
+                      {mandal.isLive && (
+                        <Badge className="absolute top-3 left-3 bg-red-600 text-white font-bold text-[10px] px-2.5 py-0.5 rounded-full flex items-center gap-1.5 shadow-md animate-pulse">
+                          <span className="w-1.5 h-1.5 rounded-full bg-white" />
+                          LIVE
+                        </Badge>
+                      )}
+
+                      {/* Favorite Button */}
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleFavorite(e, mandal.id);
+                        }}
+                        className="absolute top-3 right-3 p-2 rounded-full bg-black/40 backdrop-blur-md text-white hover:bg-black/70 transition-all"
+                      >
+                        <Heart
+                          className={`w-4 h-4 ${
+                            isFav ? "fill-red-500 text-red-500" : "text-white"
+                          }`}
+                        />
+                      </button>
+                    </div>
+
+                    {/* Card Content */}
+                    <div className="p-4 flex-1 flex flex-col justify-between space-y-3">
+                      <div className="space-y-1">
+                        <div className="flex items-start justify-between gap-3">
+                          <h3 className="font-bold text-base text-zinc-900 dark:text-zinc-100 truncate group-hover:text-[#6B0F1A] transition-colors">
+                            {localizedName}
+                          </h3>
+                          {isVerifiedMandal && (
+                            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#FFF4E6] dark:bg-[#2C1810] border border-[#DEB887]/30 shrink-0 mt-0.5">
+                              <BadgeCheck className="w-3.5 h-3.5 text-[#D97706] fill-white dark:fill-[#2C1810]" />
+                              <span className="text-[10px] font-bold text-[#92400E] dark:text-[#FCD34D] uppercase tracking-wider">
+                                Verified
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-1 text-xs text-zinc-500 dark:text-zinc-400 truncate">
+                          <MapPin className="w-3.5 h-3.5 shrink-0 text-zinc-400" />
+                          <span className="truncate">
+                            {[mandal.city, mandal.state].filter(Boolean).join(", ")}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Badges Row */}
+                      <div className="flex flex-wrap gap-1.5 pt-1">
+                        {mandal.distanceKm !== undefined && (
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200/80 flex items-center gap-1">
+                            <Navigation className="w-2.5 h-2.5 text-emerald-600" />
+                            {mandal.distanceKm} km away
+                          </span>
+                        )}
+                        {mandal.isLive && (
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-red-50 text-red-600 border border-red-100">
+                            LIVE Darshan
+                          </span>
+                        )}
+                        {mandal.presiding_deity && (
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-amber-50 text-amber-700 border border-amber-200/60">
+                            {mandal.presiding_deity}
+                          </span>
+                        )}
+                        {mandal.mandalType && (
+                          <span className="text-[10px] font-medium px-2 py-0.5 rounded-md bg-zinc-100 text-zinc-600">
+                            {mandal.mandalType}
+                          </span>
                         )}
                       </div>
-                      <div className="flex items-center gap-1 text-xs text-zinc-500 dark:text-zinc-400 truncate">
-                        <MapPin className="w-3.5 h-3.5 shrink-0 text-zinc-400" />
-                        <span className="truncate">
-                          {[mandal.city, mandal.state].filter(Boolean).join(", ")}
-                        </span>
+
+                      {/* Action Button */}
+                      <div className="pt-2 border-t border-zinc-100 dark:border-zinc-800 flex justify-between items-center">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            router.push(`/mandals/${mandal.slug || mandal.id}`);
+                          }}
+                          className="text-xs font-bold text-[#6B0F1A] dark:text-amber-400 hover:underline flex items-center gap-1 group/link"
+                        >
+                          Explore Mandal
+                          <ArrowRight className="w-3.5 h-3.5 group-hover/link:translate-x-1 transition-transform" />
+                        </button>
                       </div>
                     </div>
-
-                    {/* Badges Row */}
-                    <div className="flex flex-wrap gap-1.5 pt-1">
-                      {mandal.distanceKm !== undefined && (
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200/80 flex items-center gap-1">
-                          <Navigation className="w-2.5 h-2.5 text-emerald-600" />
-                          {mandal.distanceKm} km away
-                        </span>
-                      )}
-                      {mandal.establishedYear && (
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-amber-50 text-amber-900 border border-amber-200">
-                          {mandal.establishedYear.includes('+') || mandal.establishedYear.toLowerCase().includes('years') ? mandal.establishedYear : `${mandal.establishedYear} Years`}
-                        </span>
-                      )}
-                      {mandal.isLive && (
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-red-50 text-red-600 border border-red-100">
-                          LIVE Darshan
-                        </span>
-                      )}
-                      {mandal.presiding_deity && (
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-amber-50 text-amber-700 border border-amber-200/60">
-                          {mandal.presiding_deity}
-                        </span>
-                      )}
-                      {mandal.mandalType && (
-                        <span className="text-[10px] font-medium px-2 py-0.5 rounded-md bg-zinc-100 text-zinc-600">
-                          {mandal.mandalType}
-                        </span>
-                      )}
-                    </div>
-
-                    {/* Action Button */}
-                    <div className="pt-2 border-t border-zinc-100 dark:border-zinc-800 flex justify-between items-center">
-                      <Link
-                        href={`/mandals/${mandal.slug || mandal.id}`}
-                        className="text-xs font-bold text-[#6B0F1A] dark:text-amber-400 hover:underline flex items-center gap-1 group/link"
-                      >
-                        Explore Mandal
-                        <ArrowRight className="w-3.5 h-3.5 group-hover/link:translate-x-1 transition-transform" />
-                      </Link>
-                    </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
+
+            {/* Right Scroll Button */}
+            <button
+              type="button"
+              onClick={() => scrollFeatured("right")}
+              className="absolute -right-3 sm:-right-5 top-1/2 -translate-y-1/2 z-20 w-10 h-10 md:w-11 md:h-11 rounded-full bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 border border-zinc-200 dark:border-zinc-700 shadow-xl flex items-center justify-center hover:bg-amber-50 dark:hover:bg-zinc-700 hover:scale-110 active:scale-95 transition-all"
+              aria-label="Scroll Right"
+            >
+              <ChevronRight className="w-6 h-6 text-zinc-700 dark:text-zinc-200" />
+            </button>
           </div>
         ) : (
           <div className="text-center py-16 bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200/80 p-8">
@@ -891,7 +994,395 @@ export function MandalsList() {
         )}
       </section>
 
-      {/* ─── IS YOUR MANDAL LISTED? CTA BANNER SECTION ─────────────────────── */}
+
+ {/* ─── EXPLORE BY LOCATION SECTION ───────────────────────────────────── */}
+      <section className="pt-2 pb-4 px-4 md:px-8 lg:px-12 w-full max-w-[1700px] mx-auto space-y-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-full bg-amber-100 dark:bg-amber-950/60 border border-amber-300 dark:border-amber-700 flex items-center justify-center text-amber-800 dark:text-amber-300">
+              <MapPin className="w-4 h-4" />
+            </div>
+            <h3 className="text-2xl md:text-3xl font-serif font-bold text-zinc-900 dark:text-zinc-100">
+              Explore by Location
+            </h3>
+          </div>
+          {/* <button
+            type="button"
+            onClick={() => {
+              setSelectedLocation("All");
+              const el = document.getElementById("mandals-search-section");
+              el?.scrollIntoView({ behavior: "smooth" });
+            }}
+            className="text-xs md:text-sm font-bold text-[#6B0F1A] dark:text-amber-400 hover:underline flex items-center gap-1"
+          >
+            View All Locations
+            <ArrowRight className="w-4 h-4" />
+          </button> */}
+        </div>
+
+        {/* Dynamic City Cards Grid derived from allMandals */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+          {(() => {
+            // Count mandals per city dynamically
+            const cityCounts: Record<string, number> = {};
+            allMandals.forEach((m) => {
+              if (m && m.city) {
+                const cName = m.city.trim();
+                cityCounts[cName] = (cityCounts[cName] || 0) + 1;
+              }
+            });
+
+            // Get top cities sorted by count descending
+            const topCityEntries = Object.entries(cityCounts)
+              .sort((a, b) => b[1] - a[1]);
+
+            // Sacred Icons pool: Swastik (#2), Tilak (#7), Tripundra (#8), Damru (#6), Agni (#17), Sun (#24), Dhwaja (#25)
+            const sacredIcons = [
+              /* 2. Swastik */
+              <svg key="swastik" viewBox="0 0 100 100" className="w-16 h-16 text-[#9A532C] stroke-[#9A532C]" fill="none" strokeWidth="6" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="50" y1="20" x2="50" y2="80" />
+                <line x1="20" y1="50" x2="80" y2="50" />
+                <line x1="50" y1="20" x2="75" y2="20" />
+                <line x1="80" y1="50" x2="80" y2="75" />
+                <line x1="50" y1="80" x2="25" y2="80" />
+                <line x1="20" y1="50" x2="20" y2="25" />
+                <circle cx="35" cy="35" r="2.5" fill="#9A532C" stroke="none" />
+                <circle cx="65" cy="35" r="2.5" fill="#9A532C" stroke="none" />
+                <circle cx="35" cy="65" r="2.5" fill="#9A532C" stroke="none" />
+                <circle cx="65" cy="65" r="2.5" fill="#9A532C" stroke="none" />
+              </svg>,
+              /* 7. Tilak (Vaishnav) */
+              <svg key="tilak" viewBox="0 0 100 100" className="w-16 h-16 text-[#9A532C] stroke-[#9A532C]" fill="none" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M 32 20 L 32 60 C 32 75 68 75 68 60 L 68 20" />
+                <path d="M 50 25 L 50 78" strokeWidth="6" />
+                <circle cx="50" cy="85" r="4" fill="#9A532C" />
+              </svg>,
+              /* 8. Tripundra (Shiva) */
+              <svg key="tripundra" viewBox="0 0 100 100" className="w-16 h-16 text-[#9A532C] stroke-[#9A532C]" fill="none" strokeWidth="5" strokeLinecap="round">
+                <line x1="20" y1="38" x2="80" y2="38" />
+                <line x1="20" y1="50" x2="80" y2="50" />
+                <line x1="20" y1="62" x2="80" y2="62" />
+                <circle cx="50" cy="50" r="5" fill="#9A532C" stroke="none" />
+              </svg>,
+              /* 6. Damru */
+              <svg key="damru" viewBox="0 0 100 100" className="w-16 h-16 text-[#9A532C] stroke-[#9A532C]" fill="none" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M 25 25 L 75 25 L 50 50 L 75 75 L 25 75 L 50 50 Z" fill="#9A532C" fillOpacity="0.1" />
+                <ellipse cx="50" cy="25" rx="25" ry="6" />
+                <ellipse cx="50" cy="75" rx="25" ry="6" />
+                <line x1="50" y1="50" x2="20" y2="40" strokeWidth="3" />
+                <line x1="50" y1="50" x2="80" y2="60" strokeWidth="3" />
+                <circle cx="20" cy="40" r="3" fill="#9A532C" />
+                <circle cx="80" cy="60" r="3" fill="#9A532C" />
+              </svg>,
+
+
+                    /* 19. Rudraksha Mala (exact reference image #19 match) */
+              <svg key="rudraksha" viewBox="0 0 100 100" className="w-16 h-16 text-[#9A532C] fill-[#9A532C]" stroke="#9A532C" strokeWidth="2">
+                <circle cx="50" cy="22" r="5" />
+                <circle cx="64" cy="26" r="5" />
+                <circle cx="74" cy="36" r="5" />
+                <circle cx="78" cy="50" r="5" />
+                <circle cx="74" cy="64" r="5" />
+                <circle cx="64" cy="74" r="5" />
+                <circle cx="50" cy="78" r="6" fillOpacity="0.8" />
+                <circle cx="36" cy="74" r="5" />
+                <circle cx="26" cy="64" r="5" />
+                <circle cx="22" cy="50" r="5" />
+                <circle cx="26" cy="36" r="5" />
+                <circle cx="36" cy="26" r="5" />
+                {/* Tassel / Bindu at bottom */}
+                <path d="M 50 84 L 46 94 L 54 94 Z" />
+              </svg>,
+
+
+
+              /* 10. Lotus (exact reference image #10 match) */
+              <svg key="lotus" viewBox="0 0 100 100" className="w-16 h-16 text-[#9A532C] stroke-[#9A532C]" fill="none" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M 50 20 C 35 40 40 70 50 75 C 60 70 65 40 50 20 Z" fill="#9A532C" fillOpacity="0.15" />
+                <path d="M 50 35 C 30 45 20 65 30 75 C 45 75 48 65 50 55" />
+                <path d="M 50 35 C 70 45 80 65 70 75 C 55 75 52 65 50 55" />
+                <path d="M 50 50 C 20 55 10 72 20 78 C 35 80 45 75 50 65" />
+                <path d="M 50 50 C 80 55 90 72 80 78 C 65 80 55 75 50 65" />
+                <path d="M 30 82 C 45 86 55 86 70 82" strokeWidth="4" />
+              </svg>,
+             
+
+
+                 <svg key="sun" viewBox="0 0 100 100" className="w-16 h-16 text-[#9A532C] stroke-[#9A532C]" fill="none" strokeWidth="4" strokeLinecap="round">
+                <circle cx="50" cy="50" r="16" fill="#9A532C" fillOpacity="0.2" />
+                <circle cx="50" cy="50" r="4" fill="#9A532C" stroke="none" />
+                <path d="M 50 18 L 50 26 M 50 74 L 50 82 M 18 50 L 26 50 M 74 50 L 82 50 M 27 27 L 33 33 M 67 67 L 73 73 M 27 73 L 33 67 M 67 33 L 73 27" strokeWidth="4" />
+                <path d="M 50 12 L 46 22 L 54 22 Z M 50 88 L 46 78 L 54 78 Z M 12 50 L 22 46 L 22 54 Z M 88 50 L 78 46 L 78 54 Z" fill="#9A532C" stroke="none" />
+              </svg>,
+
+
+
+              <svg key="agni" viewBox="0 0 100 100" className="w-16 h-16 text-[#9A532C] stroke-[#9A532C]" fill="none" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="25" y="75" width="50" height="10" rx="2" fill="#9A532C" fillOpacity="0.2" />
+                <path d="M 30 75 C 30 55 45 45 40 25 C 55 35 60 50 55 60 C 65 45 65 30 65 20 C 80 40 75 65 70 75 Z" fill="#9A532C" fillOpacity="0.15" />
+                <path d="M 40 75 C 40 65 50 60 48 45 C 55 52 58 62 55 75 Z" fill="#9A532C" />
+              </svg>,
+              /* 24. Sun (Surya) */
+              
+           
+            ];
+
+            // Default fallback cities if no mandal data in DB yet
+            const defaultCities = [
+              { name: "Mumbai", count: cityCounts["Mumbai"] || 0 },
+              { name: "Thane", count: cityCounts["Thane"] || 0 },
+              { name: "Pune", count: cityCounts["Pune"] || 0 },
+              { name: "Navi Mumbai", count: cityCounts["Navi Mumbai"] || 0 },
+              { name: "Nashik", count: cityCounts["Nashik"] || 0 },
+            ];
+
+            const top5 = topCityEntries.length > 0
+              ? topCityEntries.slice(0, 5).map(([name, count]) => ({ name, count }))
+              : defaultCities;
+
+            const cardsList = [
+              ...top5.map((item, idx) => ({
+                name: item.name,
+                count: `${item.count} Mandal${item.count !== 1 ? "s" : ""}`,
+                icon: sacredIcons[idx % sacredIcons.length],
+                isMore: false,
+              })),
+              {
+                name: "More Cities",
+                count: "View All",
+                isMore: true,
+                icon: (
+                  <div className="flex items-center gap-1.5 text-[#9A532C] py-3">
+                    <span className="w-2.5 h-2.5 rounded-full bg-[#9A532C]" />
+                    <span className="w-2.5 h-2.5 rounded-full bg-[#9A532C]" />
+                    <span className="w-2.5 h-2.5 rounded-full bg-[#9A532C]" />
+                  </div>
+                ),
+              }
+            ];
+
+            return cardsList.map((city, idx) => (
+              <button
+                key={idx}
+                type="button"
+                onClick={() => {
+                  if (city.isMore) {
+                    setSelectedLocation("All");
+                  } else {
+                    setSelectedLocation(city.name);
+                  }
+                  const el = document.getElementById("mandals-search-section");
+                  el?.scrollIntoView({ behavior: "smooth" });
+                }}
+                className={`bg-white dark:bg-zinc-900 border rounded-2xl p-5 text-center flex flex-col items-center justify-between gap-3 shadow-sm hover:shadow-md transition-all duration-300 group ${
+                  selectedLocation === city.name
+                    ? "border-[#9A532C] ring-2 ring-[#9A532C]/20 bg-amber-50/40"
+                    : "border-zinc-200/80 dark:border-zinc-800 hover:border-[#9A532C]/50"
+                }`}
+              >
+                {/* Icon direct render (without circular border wrapper) */}
+                <div className="flex items-center justify-center group-hover:scale-110 transition-transform duration-300 py-1">
+                  {city.icon}
+                </div>
+
+                {/* Title & Count */}
+                <div>
+                  <h3 className="font-bold text-sm text-zinc-900 dark:text-zinc-100 group-hover:text-[#6B0F1A] transition-colors">
+                    {city.name}
+                  </h3>
+                  <p className="text-xs text-zinc-500 font-medium mt-0.5">
+                    {city.count}
+                  </p>
+                </div>
+              </button>
+            ));
+          })()}
+        </div>
+      </section>
+
+
+
+      {/* ─── NEWS & FESTIVAL INFORMATION CARDS SECTION ─────────────────────── */}
+      <section className="pt-2 pb-8 px-4 md:px-8 lg:px-12 w-full max-w-[1700px] mx-auto">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Card 1: News Updates */}
+          <div className="bg-[#FAF7F2] dark:bg-zinc-900/90 border border-[#F0E6D8] dark:border-zinc-800 rounded-2xl md:rounded-3xl p-6 md:p-7 shadow-sm flex flex-col justify-between">
+            <div>
+              {/* Header */}
+              <div className="flex items-center justify-between gap-4 pb-4 mb-4 border-b border-[#F0E6D8] dark:border-zinc-800">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-red-100/60 dark:bg-red-950/40 border border-red-200 dark:border-red-900/60 flex items-center justify-center text-red-700 dark:text-red-400">
+                    <Newspaper className="w-5 h-5" />
+                  </div>
+                  <h3 className="text-xl md:text-2xl font-serif font-bold text-[#2C1810] dark:text-zinc-100">
+                    News Updates
+                  </h3>
+                </div>
+                <Link
+                  href="/mandals/news"
+                  className="text-xs md:text-sm font-bold text-red-700 dark:text-amber-400 hover:underline flex items-center gap-1 shrink-0"
+                >
+                  View All News
+                  <ArrowRight className="w-4 h-4" />
+                </Link>
+              </div>
+
+              {/* News List */}
+              <div className="space-y-3 md:space-y-4">
+                {(() => {
+                  const staticNewsItems = [
+                    {
+                      id: "news-1",
+                      title: "Mandal Registration for Ganeshotsav 2026 is now open",
+                      date: "20 May 2026",
+                    },
+                    {
+                      id: "news-2",
+                      title: "Traffic Advisory for Lalbaugcha Raja Visarjan Route",
+                      date: "18 May 2026",
+                    },
+                    {
+                      id: "news-3",
+                      title: "BMC Guidelines for Eco-friendly Ganeshotsav 2026",
+                      date: "16 May 2026",
+                    },
+                    {
+                      id: "news-4",
+                      title: "Best Decorated Mandal Competition - Registrations Open",
+                      date: "14 May 2026",
+                    },
+                    {
+                      id: "news-5",
+                      title: "Volunteer Registration for Festival Support Open Now",
+                      date: "12 May 2026",
+                    },
+                  ];
+
+                  const displayNews = mandalNews.length > 0
+                    ? mandalNews.slice(0, 5).map((item, idx) => ({
+                        id: item.id,
+                        title: item.title,
+                        date: formatNewsDate(item.publishedAt || item.createdAt) || staticNewsItems[idx]?.date || "20 May 2026",
+                      }))
+                    : staticNewsItems;
+
+                  return displayNews.map((item, idx) => (
+                    <Link
+                      key={item.id || idx}
+                      href={item.id && !item.id.startsWith("news-") ? `/mandals/news/${item.id}` : "/mandals/news"}
+                      className="group flex items-center justify-between gap-4 py-2 border-b border-[#F0E6D8]/70 dark:border-zinc-800/80 last:border-b-0"
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <span className="w-2 h-2 rounded-full bg-red-600 shrink-0" />
+                        <p className="text-xs md:text-sm font-semibold text-zinc-800 dark:text-zinc-200 truncate group-hover:text-red-700 dark:group-hover:text-amber-400 transition-colors">
+                          {item.title}
+                        </p>
+                      </div>
+                      <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400 shrink-0">
+                        {item.date}
+                      </span>
+                    </Link>
+                  ));
+                })()}
+              </div>
+            </div>
+          </div>
+
+          {/* Card 2: Festival Information */}
+          <div className="bg-[#FAF7F2] dark:bg-zinc-900/90 border border-[#F0E6D8] dark:border-zinc-800 rounded-2xl md:rounded-3xl p-6 md:p-7 shadow-sm relative overflow-hidden flex flex-col justify-between">
+            <div className="relative z-10">
+              {/* Header */}
+              <div className="flex items-center gap-3 pb-4 mb-4 border-b border-[#F0E6D8] dark:border-zinc-800">
+                <div className="w-9 h-9 rounded-full bg-amber-100/80 dark:bg-amber-950/50 border border-amber-300/80 dark:border-amber-700/60 flex items-center justify-center text-amber-700 dark:text-amber-300">
+                  <Info className="w-5 h-5" />
+                </div>
+                <h3 className="text-xl md:text-2xl font-serif font-bold text-[#2C1810] dark:text-zinc-100">
+                  Festival Information
+                </h3>
+              </div>
+
+              {/* Items List */}
+              <div className="space-y-3 md:space-y-4">
+                {/* Row 1: Festival Dates */}
+                <div className="flex items-start sm:items-center gap-3 py-2 border-b border-[#F0E6D8]/70 dark:border-zinc-800/80">
+                  <div className="p-1.5 rounded-lg bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-400 shrink-0 mt-0.5 sm:mt-0">
+                    <Calendar className="w-5 h-5" />
+                  </div>
+                  <div className="flex-1 flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                    <span className="text-xs md:text-sm font-bold text-zinc-900 dark:text-zinc-100 min-w-[160px]">
+                      Festival Dates
+                    </span>
+                    <span className="text-xs md:text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                      {festivalDateDisplay || "27 Aug – 5 Sep 2026"}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Row 2: Main Festival Day */}
+                <div className="flex items-start sm:items-center gap-3 py-2 border-b border-[#F0E6D8]/70 dark:border-zinc-800/80">
+                  <div className="p-1.5 rounded-lg bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-400 shrink-0 mt-0.5 sm:mt-0">
+                    <Calendar className="w-5 h-5" />
+                  </div>
+                  <div className="flex-1 flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                    <span className="text-xs md:text-sm font-bold text-zinc-900 dark:text-zinc-100 min-w-[160px]">
+                      Main Festival Day
+                    </span>
+                    <span className="text-xs md:text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                      {mainFestivalDay || "Ganesh Chaturthi, 27 Aug 2026"}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Row 3: Ganesh Aarti Timings */}
+                <div className="flex items-start sm:items-center gap-3 py-2 border-b border-[#F0E6D8]/70 dark:border-zinc-800/80">
+                  <div className="p-1.5 rounded-lg bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-400 shrink-0 mt-0.5 sm:mt-0">
+                    <Clock className="w-5 h-5" />
+                  </div>
+                  <div className="flex-1 flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                    <span className="text-xs md:text-sm font-bold text-zinc-900 dark:text-zinc-100 min-w-[160px]">
+                      Ganesh Aarti Timings
+                    </span>
+                    <span className="text-xs md:text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                      Morning 5:00 AM | Evening 7:00 PM
+                    </span>
+                  </div>
+                </div>
+
+                {/* Row 4: Visarjan Guidance */}
+                <div className="flex items-start sm:items-center gap-3 py-2 border-b border-[#F0E6D8]/70 dark:border-zinc-800/80">
+                  <div className="p-1.5 rounded-lg bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-400 shrink-0 mt-0.5 sm:mt-0">
+                    <Sparkles className="w-5 h-5" />
+                  </div>
+                  <div className="flex-1 flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                    <span className="text-xs md:text-sm font-bold text-zinc-900 dark:text-zinc-100 min-w-[160px]">
+                      Visarjan Guidance
+                    </span>
+                    <span className="text-xs md:text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                      Avoid plastic, keep the area clean, Follow police instructions
+                    </span>
+                  </div>
+                </div>
+
+                {/* Row 5: Emergency Help */}
+                <div className="flex items-start sm:items-center gap-3 py-2">
+                  <div className="p-1.5 rounded-lg bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-400 shrink-0 mt-0.5 sm:mt-0">
+                    <ShieldAlert className="w-5 h-5" />
+                  </div>
+                  <div className="flex-1 flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                    <span className="text-xs md:text-sm font-bold text-zinc-900 dark:text-zinc-100 min-w-[160px]">
+                      Emergency Help
+                    </span>
+                    <span className="text-xs md:text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                      Dial 100 for Police | 108 for Ambulance
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <section className="py-8 px-4 md:px-8 lg:px-12 w-full max-w-[1700px] mx-auto">
         <div className="bg-gradient-to-r from-[#24080A] via-[#3B0E12] to-[#200608] rounded-3xl p-6 md:p-8 border border-amber-500/25 shadow-2xl relative overflow-hidden text-white">
           {/* Ambient background glow */}

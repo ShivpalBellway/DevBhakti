@@ -100,7 +100,11 @@ export const updateMyMandalProfile = async (req: Request, res: Response) => {
         channelId: data.channelId || undefined,
         liveStatus: data.liveStatus !== undefined ? (data.liveStatus === 'true' || data.liveStatus === true) : undefined,
         isLive: data.isLive !== undefined ? (data.isLive === 'true' || data.isLive === true) : undefined,
-        isPrimaryLive: data.isPrimaryLive !== undefined ? (data.isPrimaryLive === 'true' || data.isPrimaryLive === true) : undefined
+        isPrimaryLive: data.isPrimaryLive !== undefined ? (data.isPrimaryLive === 'true' || data.isPrimaryLive === true) : undefined,
+        // Social links
+        instagramUrl: data.instagramUrl !== undefined ? data.instagramUrl : undefined,
+        facebookUrl: data.facebookUrl !== undefined ? data.facebookUrl : undefined,
+        youtubeUrl: data.youtubeUrl !== undefined ? data.youtubeUrl : undefined
       }
     });
 
