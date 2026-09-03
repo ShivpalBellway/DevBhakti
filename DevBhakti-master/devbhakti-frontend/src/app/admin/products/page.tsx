@@ -721,7 +721,15 @@ function ProductsContent() {
                   </TableCell>
                   <TableCell className="overflow-hidden">
                     <div className="flex min-w-0 items-center gap-1.5">
-                      {product.temple ? (
+                      {product.mandal ? (
+                        <div className="flex min-w-0 items-center gap-1.5 text-orange-600 bg-orange-50 px-2 py-1 rounded-md border border-orange-100">
+                          <Building2 className="w-3.5 h-3.5" />
+                          <div className="flex min-w-0 flex-col">
+                            <span className="text-[10px] font-bold uppercase leading-none mb-0.5">Mandal</span>
+                            <span className="truncate text-sm font-medium leading-none text-slate-700">{parseLocalizedValue(product.mandal.name, language)}</span>
+                          </div>
+                        </div>
+                      ) : product.temple ? (
                         <div className="flex min-w-0 items-center gap-1.5 text-primary bg-primary/5 px-2 py-1 rounded-md border border-primary/10">
                           <Building2 className="w-3.5 h-3.5" />
                           <div className="flex min-w-0 flex-col">

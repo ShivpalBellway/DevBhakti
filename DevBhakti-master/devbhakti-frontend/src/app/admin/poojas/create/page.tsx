@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { createPoojaAdmin, fetchAllTemplesAdmin, fetchPoojaCategoriesAdmin, fetchAllPoojasAdmin } from "@/api/adminController";
+import { createPoojaAdmin, fetchAllTemplesAdmin, fetchPoojaCategoriesAdmin, fetchAllPoojasAdmin, fetchAllMandalsAdmin } from "@/api/adminController";
 import { useToast } from "@/hooks/use-toast";
 import { PoojaForm } from "@/components/admin/poojas/PoojaForm";
 
@@ -12,15 +12,28 @@ export default function CreatePoojaPage() {
     const router = useRouter();
     const { toast } = useToast();
     const [temples, setTemples] = useState<any[]>([]);
+    const [mandals, setMandals] = useState<any[]>([]);
     const [availableCategories, setAvailableCategories] = useState<any[]>([]);
     const [masterTemplates, setMasterTemplates] = useState<any[]>([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     useEffect(() => {
         loadTemples();
+        loadMandals();
         loadCategories();
         loadMasterTemplates();
     }, []);
+
+    const loadMandals = async () => {
+        try {
+            const res = await fetchAllMandalsAdmin({ status: "APPROVED", isActive: true, limit: 100 });
+            if (res.success && res.data?.mandals) {
+                setMandals(res.data.mandals);
+            }
+        } catch (error) {
+            console.error("Failed to load mandals", error);
+        }
+    };
 
     const loadMasterTemplates = async () => {
         try {
@@ -88,6 +101,7 @@ export default function CreatePoojaPage() {
             <PoojaForm 
                 mode="create"
                 temples={temples}
+                mandals={mandals}
                 availableCategories={availableCategories}
                 masterTemplates={masterTemplates}
                 onSubmit={handleSubmit}

@@ -10,6 +10,7 @@ import {
   Eye,
   Calendar,
   Building2,
+  Languages,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -37,15 +38,16 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { API_URL } from "@/config/apiConfig";
-import { stripHtml } from "@/utils/textUtils";
+import { parseLocalizedValue, stripHtml } from "@/utils/textUtils";
 
 interface NewsItem {
   id: string;
-  title: string;
-  description: string;
-  content?: string;
+  title: any;
+  description: any;
+  content?: any;
   image?: string;
   category?: string;
   festival?: string;
@@ -73,11 +75,17 @@ export default function AdminMandalNewsPage() {
   const [viewingItem, setViewingItem] = useState<NewsItem | null>(null);
   const [itemToDelete, setItemToDelete] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [activeTab, setActiveTab] = useState<"en" | "hi" | "mr">("en");
+  const [viewTab, setViewTab] = useState<"en" | "hi" | "mr">("en");
 
-  // Form State
+  // Form State with Multi-Language support
   const [formData, setFormData] = useState({
-    title: "",
-    description: "",
+    title_en: "",
+    title_hi: "",
+    title_mr: "",
+    description_en: "",
+    description_hi: "",
+    description_mr: "",
     image: "",
     festival: "Ganesh Utsav 2026",
     mandalId: "",
@@ -124,9 +132,14 @@ export default function AdminMandalNewsPage() {
 
   const openAddModal = () => {
     setEditingItem(null);
+    setActiveTab("en");
     setFormData({
-      title: "",
-      description: "",
+      title_en: "",
+      title_hi: "",
+      title_mr: "",
+      description_en: "",
+      description_hi: "",
+      description_mr: "",
       image: "",
       festival: "Ganesh Utsav 2026",
       mandalId: "",
@@ -138,9 +151,17 @@ export default function AdminMandalNewsPage() {
 
   const openEditModal = (item: NewsItem) => {
     setEditingItem(item);
+    setActiveTab("en");
+
     setFormData({
-      title: item.title || "",
-      description: item.description || "",
+      title_en: parseLocalizedValue(item.title, "en") !== "N/A" ? parseLocalizedValue(item.title, "en") : (typeof item.title === "string" ? item.title : ""),
+      title_hi: typeof item.title === "object" && item.title?.hi ? item.title.hi : (parseLocalizedValue(item.title, "hi") !== "N/A" ? parseLocalizedValue(item.title, "hi") : ""),
+      title_mr: typeof item.title === "object" && item.title?.mr ? item.title.mr : (parseLocalizedValue(item.title, "mr") !== "N/A" ? parseLocalizedValue(item.title, "mr") : ""),
+
+      description_en: parseLocalizedValue(item.description, "en") !== "N/A" ? parseLocalizedValue(item.description, "en") : (typeof item.description === "string" ? item.description : ""),
+      description_hi: typeof item.description === "object" && item.description?.hi ? item.description.hi : (parseLocalizedValue(item.description, "hi") !== "N/A" ? parseLocalizedValue(item.description, "hi") : ""),
+      description_mr: typeof item.description === "object" && item.description?.mr ? item.description.mr : (parseLocalizedValue(item.description, "mr") !== "N/A" ? parseLocalizedValue(item.description, "mr") : ""),
+
       image: item.image || "",
       festival: item.festival || "Ganesh Utsav 2026",
       mandalId: item.mandalId || "",
@@ -152,15 +173,16 @@ export default function AdminMandalNewsPage() {
 
   const openViewModal = (item: NewsItem) => {
     setViewingItem(item);
+    setViewTab("en");
     setViewModalOpen(true);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.title.trim()) {
+    if (!formData.title_en.trim() && !formData.title_hi.trim() && !formData.title_mr.trim()) {
       toast({
         title: "Validation Error",
-        description: "Please enter a news title",
+        description: "Please enter a news title in at least one language",
         variant: "destructive",
       });
       return;
@@ -173,10 +195,33 @@ export default function AdminMandalNewsPage() {
         : `${API_URL}/admin/mandal-news/admin`;
       const method = editingItem ? "PUT" : "POST";
 
+      const titlePayload = {
+        en: formData.title_en.trim() || formData.title_hi.trim() || formData.title_mr.trim(),
+        hi: formData.title_hi.trim() || formData.title_en.trim(),
+        mr: formData.title_mr.trim() || formData.title_en.trim(),
+      };
+
+      const descriptionPayload = {
+        en: formData.description_en.trim() || formData.description_hi.trim() || formData.description_mr.trim(),
+        hi: formData.description_hi.trim() || formData.description_en.trim(),
+        mr: formData.description_mr.trim() || formData.description_en.trim(),
+      };
+
+      const payload = {
+        title: titlePayload,
+        description: descriptionPayload,
+        content: descriptionPayload,
+        image: formData.image,
+        festival: formData.festival,
+        mandalId: formData.mandalId,
+        mandalName: formData.mandalName,
+        isActive: formData.isActive,
+      };
+
       const res = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(payload),
       });
 
       const data = await res.json();
@@ -246,9 +291,10 @@ export default function AdminMandalNewsPage() {
 
   // Filtered List
   const filteredNews = newsList.filter((item) => {
-    const description = stripHtml(item.description || "");
+    const titleText = parseLocalizedValue(item.title, "en");
+    const description = stripHtml(parseLocalizedValue(item.description, "en"));
     const matchesSearch =
-      item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      titleText.toLowerCase().includes(searchQuery.toLowerCase()) ||
       description.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (item.mandalName || "").toLowerCase().includes(searchQuery.toLowerCase());
 
@@ -360,7 +406,7 @@ export default function AdminMandalNewsPage() {
                         <Newspaper className="w-5 h-5 text-[#7b4623]" />
                       </div>
                       <span className="font-semibold text-slate-900 line-clamp-1">
-                        {item.title}
+                        {parseLocalizedValue(item.title, "en")}
                       </span>
                     </div>
                   </TableCell>
@@ -384,7 +430,7 @@ export default function AdminMandalNewsPage() {
                   </TableCell>
                   <TableCell>
                     <div className="text-sm text-muted-foreground line-clamp-1 max-w-[420px]">
-                      {stripHtml(item.description || "") || "No description"}
+                      {stripHtml(parseLocalizedValue(item.description, "en")) || "No description"}
                     </div>
                   </TableCell>
                   <TableCell>
@@ -442,35 +488,121 @@ export default function AdminMandalNewsPage() {
         </Table>
       </div>
 
-      {/* CREATE / EDIT NEWS MODAL DIALOG */}
+      {/* CREATE / EDIT NEWS MODAL DIALOG WITH MULTI-LANGUAGE TABS */}
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold flex items-center gap-2">
               <Newspaper className="w-5 h-5 text-amber-600" />
               {editingItem ? "Edit Mandal News" : "Add New Mandal News"}
             </DialogTitle>
             <DialogDescription>
-              Fill in the details below to publish or update an announcement or news story.
+              Fill in the details below to publish or update an announcement or news story in English, Hindi, or Marathi.
             </DialogDescription>
           </DialogHeader>
 
           <form onSubmit={handleSubmit} className="space-y-4 py-2">
-            {/* Title */}
-            <div className="space-y-1.5">
-              <Label className="text-xs font-bold uppercase tracking-wider text-zinc-700">
-                News Title <span className="text-red-500">*</span>
-              </Label>
-              <Input
-                required
-                placeholder="e.g. Lalbaugcha Raja First Look Revealed for Ganeshotsav 2026"
-                value={formData.title}
-                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-              />
-            </div>
+            {/* Multi-Language Tabs Header */}
+            <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "en" | "hi" | "mr")}>
+              <div className="flex items-center justify-between border-b pb-2 mb-4">
+                <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-amber-900">
+                  <Languages className="w-4 h-4 text-amber-600" />
+                  Language Selection / भाषा चुनें
+                </div>
+                <TabsList className="bg-amber-50 border border-amber-200">
+                  <TabsTrigger value="en" className="data-[state=active]:bg-[#7b4623] data-[state=active]:text-white font-medium text-xs">
+                    English
+                  </TabsTrigger>
+                  <TabsTrigger value="hi" className="data-[state=active]:bg-[#7b4623] data-[state=active]:text-white font-medium text-xs">
+                    हिंदी (Hindi)
+                  </TabsTrigger>
+                  <TabsTrigger value="mr" className="data-[state=active]:bg-[#7b4623] data-[state=active]:text-white font-medium text-xs">
+                    मराठी (Marathi)
+                  </TabsTrigger>
+                </TabsList>
+              </div>
+
+              {/* English Tab */}
+              <TabsContent value="en" className="space-y-4 mt-0">
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-bold uppercase tracking-wider text-zinc-700">
+                    News Title (English) <span className="text-red-500">*</span>
+                  </Label>
+                  <Input
+                    placeholder="e.g. Lalbaugcha Raja First Look Revealed for Ganeshotsav 2026"
+                    value={formData.title_en}
+                    onChange={(e) => setFormData({ ...formData, title_en: e.target.value })}
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-bold uppercase tracking-wider text-zinc-700">
+                    Short Description & Full Details (English)
+                  </Label>
+                  <RichTextEditor
+                    placeholder="Write news content, schedule details, or press release announcements in English..."
+                    value={formData.description_en}
+                    onChange={(content) => setFormData({ ...formData, description_en: content })}
+                    minHeight="160px"
+                  />
+                </div>
+              </TabsContent>
+
+              {/* Hindi Tab */}
+              <TabsContent value="hi" className="space-y-4 mt-0">
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-bold uppercase tracking-wider text-zinc-700">
+                    समाचार शीर्षक (हिंदी)
+                  </Label>
+                  <Input
+                    placeholder="उदा. लालबागचा राजा का प्रथम दर्शन गणेशोत्सव 2026 के लिए जारी"
+                    value={formData.title_hi}
+                    onChange={(e) => setFormData({ ...formData, title_hi: e.target.value })}
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-bold uppercase tracking-wider text-zinc-700">
+                    विवरण एवं संपूर्ण जानकारी (हिंदी)
+                  </Label>
+                  <RichTextEditor
+                    placeholder="समाचार का विवरण, कार्यक्रम की जानकारी या घोषणाएं हिंदी में लिखें..."
+                    value={formData.description_hi}
+                    onChange={(content) => setFormData({ ...formData, description_hi: content })}
+                    minHeight="160px"
+                  />
+                </div>
+              </TabsContent>
+
+              {/* Marathi Tab */}
+              <TabsContent value="mr" className="space-y-4 mt-0">
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-bold uppercase tracking-wider text-zinc-700">
+                    बातमीचे शीर्षक (मराठी)
+                  </Label>
+                  <Input
+                    placeholder="उदा. लालबागच्या राजाचे पहिले दर्शन गणेशोत्सव २०२६"
+                    value={formData.title_mr}
+                    onChange={(e) => setFormData({ ...formData, title_mr: e.target.value })}
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-bold uppercase tracking-wider text-zinc-700">
+                    बातमीचा सविस्तर तपशील (मराठी)
+                  </Label>
+                  <RichTextEditor
+                    placeholder="बातमीचा मजकूर, कार्यक्रमाची वेळ किंवा घोषणा मराठीत लिहा..."
+                    value={formData.description_mr}
+                    onChange={(content) => setFormData({ ...formData, description_mr: content })}
+                    minHeight="160px"
+                  />
+                </div>
+              </TabsContent>
+            </Tabs>
 
             {/* Festival & Mandal Row */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t">
               <div className="space-y-1.5">
                 <Label className="text-xs font-bold uppercase tracking-wider text-zinc-700">
                   Festival / Tag
@@ -511,19 +643,6 @@ export default function AdminMandalNewsPage() {
               </div>
             </div>
 
-            {/* Description */}
-            <div className="space-y-1.5">
-              <Label className="text-xs font-bold uppercase tracking-wider text-zinc-700">
-                Short Description & Full Details <span className="text-red-500">*</span>
-              </Label>
-              <RichTextEditor
-                placeholder="Write news content, schedule details, or press release announcements here..."
-                value={formData.description}
-                onChange={(content) => setFormData({ ...formData, description: content })}
-                minHeight="180px"
-              />
-            </div>
-
             {/* Active Status */}
             <div className="flex items-center justify-between p-3 bg-zinc-50 rounded-xl border border-zinc-200">
               <div>
@@ -551,7 +670,7 @@ export default function AdminMandalNewsPage() {
               <Button
                 type="submit"
                 disabled={submitting}
-                className="bg-amber-600 hover:bg-amber-700 text-white font-bold gap-2"
+                className="bg-[#7b4623] hover:bg-[#5d351a] text-white font-bold gap-2"
               >
                 {submitting ? "Saving..." : editingItem ? "Update News" : "Publish News"}
               </Button>
@@ -560,23 +679,34 @@ export default function AdminMandalNewsPage() {
         </DialogContent>
       </Dialog>
 
-      {/* VIEW NEWS DETAILS MODAL */}
+      {/* VIEW NEWS DETAILS MODAL WITH LANGUAGE TABS */}
       <Dialog open={viewModalOpen} onOpenChange={setViewModalOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle className="text-xl font-bold flex items-center gap-2">
-              <Eye className="w-5 h-5 text-blue-600" />
-              Mandal News Preview
+            <DialogTitle className="text-xl font-bold flex items-center justify-between gap-2">
+              <span className="flex items-center gap-2">
+                <Eye className="w-5 h-5 text-blue-600" />
+                Mandal News Preview
+              </span>
+              <Tabs value={viewTab} onValueChange={(v) => setViewTab(v as "en" | "hi" | "mr")}>
+                <TabsList className="bg-slate-100 h-8">
+                  <TabsTrigger value="en" className="text-xs h-7">EN</TabsTrigger>
+                  <TabsTrigger value="hi" className="text-xs h-7">HI</TabsTrigger>
+                  <TabsTrigger value="mr" className="text-xs h-7">MR</TabsTrigger>
+                </TabsList>
+              </Tabs>
             </DialogTitle>
           </DialogHeader>
 
           {viewingItem && (
             <div className="space-y-4 py-2">
-              <h2 className="text-2xl font-bold text-zinc-900">{viewingItem.title}</h2>
+              <h2 className="text-2xl font-bold text-zinc-900">
+                {parseLocalizedValue(viewingItem.title, viewTab)}
+              </h2>
 
               <div
-                className="prose prose-sm max-w-none text-sm text-zinc-700 leading-relaxed bg-zinc-50 p-4 rounded-2xl border border-zinc-200"
-                dangerouslySetInnerHTML={{ __html: viewingItem.description || "" }}
+                className="prose prose-sm max-w-none text-sm text-zinc-700 leading-relaxed bg-zinc-50 p-4 rounded-2xl border border-zinc-200 min-h-[120px]"
+                dangerouslySetInnerHTML={{ __html: parseLocalizedValue(viewingItem.description, viewTab) || "" }}
               />
 
               <div className="text-xs text-zinc-400 pt-2 border-t border-zinc-100 flex justify-between">

@@ -125,7 +125,7 @@ export function MandalDetail({ slug }: { slug: string }) {
     if (slug) {
       loadMandal();
     }
-  }, [slug]);
+  }, [slug, language]);
 
   useEffect(() => {
     if (mandal?.id) {
@@ -142,7 +142,7 @@ export function MandalDetail({ slug }: { slug: string }) {
   const loadMandal = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`${API_URL}/mandals/${slug}`);
+      const response = await fetch(`${API_URL}/mandals/${slug}?lang=${language}`);
       const data = await response.json();
       if (data.success) {
         setMandal(data.data);
@@ -368,6 +368,17 @@ export function MandalDetail({ slug }: { slug: string }) {
 
   const donationAmounts = [500, 1000, 2500, 5000, 10000];
 
+  // ── Section visibility helpers ──
+  const hasLiveDarshan = !!(mandal?.isLive || mandal?.liveUrl);
+  const hasEvents = !!(mandal?.events && mandal.events.length > 0);
+  const hasPoojas = !!(mandal?.poojas && mandal.poojas.length > 0);
+  const hasProducts = products.length > 0;
+  const hasDescription = !!description;
+  const hasLocation = !!(mandal?.address || mandal?.city || mandal?.state);
+  const hasContact = !!(mandal?.phone || mandal?.contactPhone || mandal?.email || mandal?.contactEmail || mandal?.websiteUrl);
+  const hasSocialLinks = !!(mandal?.instagramUrl || mandal?.instagram || mandal?.youtubeUrl || mandal?.youtube || mandal?.facebookUrl || mandal?.facebook);
+  const hasContactOrSocial = hasContact || hasSocialLinks;
+
   // Helper to convert YouTube watch link to embed format
   const getEmbedUrl = (url: string) => {
     if (!url) return "";
@@ -390,16 +401,20 @@ export function MandalDetail({ slug }: { slug: string }) {
     }
   };
 
+  // Compute adaptive column count for Row 1
+  const row1Sections = [true, hasLiveDarshan, hasEvents].filter(Boolean).length; // gallery always shows
+  const liveColSpan = hasEvents ? 2 : 3; // Live Darshan expands if no Events
+
   const tabsList = [
-    { id: "gallery", label: "Gallery", icon: Camera },
-    ...(mandal?.isLive || mandal?.liveUrl ? [{ id: "live", label: "Live Darshan", icon: Video }] : []),
-    { id: "events", label: "Events", icon: Calendar },
-    { id: "poojas", label: "Poojas & Sevas", icon: Gift },
-    { id: "donate", label: "Donate", icon: IndianRupee },
-    ...(products.length > 0 ? [{ id: "sacred", label: "Sacred Items", icon: ShoppingBag }] : []),
-    { id: "about", label: "About", icon: Info },
-    { id: "location", label: "Location", icon: MapPin },
-    { id: "contact", label: "Contact", icon: Phone },
+    { id: "gallery", label: t("mandal_detail.tab_gallery"), icon: Camera },
+    ...(hasLiveDarshan ? [{ id: "live", label: t("mandal_detail.live_darshan"), icon: Video }] : []),
+    ...(hasEvents ? [{ id: "events", label: t("mandal_detail.tab_events"), icon: Calendar }] : []),
+    ...(hasPoojas ? [{ id: "poojas", label: t("common.poojas_sevas"), icon: Gift }] : []),
+    { id: "donate", label: t("mandal_detail.donate_now"), icon: IndianRupee },
+    ...(hasProducts ? [{ id: "sacred", label: t("common.sacred_items"), icon: ShoppingBag }] : []),
+    ...(hasDescription ? [{ id: "about", label: t("mandal_detail.tab_about"), icon: Info }] : []),
+    ...(hasLocation ? [{ id: "location", label: t("mandal_list.location"), icon: MapPin }] : []),
+    ...(hasContactOrSocial ? [{ id: "contact", label: t("mandal_detail.contact_info"), icon: Phone }] : []),
   ].filter((tab) => canUseMandalTransactions || !TRANSACTION_TABS.includes(tab.id as MandalTab));
 
   return (
@@ -421,7 +436,7 @@ export function MandalDetail({ slug }: { slug: string }) {
               className="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-200/80 hover:text-amber-400 transition-colors"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
-              Back to Mandals List
+              {t("mandal_detail.back_to_mandals")}
             </button>
           </div>
 
@@ -489,13 +504,13 @@ export function MandalDetail({ slug }: { slug: string }) {
                   <>
                     {/* Pooja & Seva Book Now */}
                     <Button
-                      onClick={() => setActiveTab("poojas")}
+                      onClick={() => router.push(`/mandals/${slug}/booking`)}
                       className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold px-6 h-12 rounded-xl text-xs sm:text-sm flex items-center gap-2 shadow-lg shadow-amber-900/30"
                     >
                       <Gift className="w-4 h-4 text-slate-950" />
                       <div className="text-left">
-                        <div className="leading-tight font-black">Pooja & Seva</div>
-                        <div className="text-[10px] font-semibold opacity-90">Book Now</div>
+                        <div className="leading-tight font-black">{t("common.poojas_sevas")}</div>
+                        <div className="text-[10px] font-semibold opacity-90">{t("common.book_now")}</div>
                       </div>
                     </Button>
 
@@ -518,8 +533,8 @@ export function MandalDetail({ slug }: { slug: string }) {
                     >
                       <IndianRupee className="w-4 h-4 text-amber-400" />
                       <div className="text-left">
-                        <div className="leading-tight font-bold">{isInternational ? "FCRA Restricted" : "Donate Now"}</div>
-                        <div className="text-[10px] font-normal text-amber-200/80">Support Mandal</div>
+                        <div className="leading-tight font-bold">{isInternational ? "FCRA Restricted" : t("mandal_detail.donate_now")}</div>
+                        <div className="text-[10px] font-normal text-amber-200/80">{t("mandal_detail.support_mandal")}</div>
                       </div>
                     </Button>
                   </>
@@ -533,7 +548,7 @@ export function MandalDetail({ slug }: { slug: string }) {
                   className="flex items-center gap-1.5 hover:text-white transition-colors"
                 >
                   <Heart className={`w-3.5 h-3.5 ${isLiked ? "fill-red-500 text-red-500" : ""}`} />
-                  <span>{isLiked ? "Following" : "Follow"}</span>
+                  <span>{isLiked ? t("mandal_detail.liked") : t("mandal_detail.like")}</span>
                 </button>
                 <button
                   onClick={() => {
@@ -547,14 +562,14 @@ export function MandalDetail({ slug }: { slug: string }) {
                   className="flex items-center gap-1.5 hover:text-white transition-colors"
                 >
                   <Share2 className="w-3.5 h-3.5" />
-                  <span>Share</span>
+                  <span>{t("common.share")}</span>
                 </button>
                 <button
                   onClick={() => setActiveTab("location")}
                   className="flex items-center gap-1.5 hover:text-white transition-colors"
                 >
                   <Navigation className="w-3.5 h-3.5" />
-                  <span>Directions</span>
+                  <span>{t("common.directions")}</span>
                 </button>
               </div>
 
@@ -566,7 +581,7 @@ export function MandalDetail({ slug }: { slug: string }) {
                     <Building2 className="w-4 h-4" />
                   </div>
                   <div>
-                    <div className="text-[8px] uppercase font-bold text-amber-200/60">Established</div>
+                    <div className="text-[8px] uppercase font-bold text-amber-200/60">{t("mandal_detail.established")}</div>
                     <div className="text-xs font-bold text-white">
                       {mandal.establishedYear || "1934"}
                     </div>
@@ -579,7 +594,7 @@ export function MandalDetail({ slug }: { slug: string }) {
                     <Users className="w-4 h-4" />
                   </div>
                   <div>
-                    <div className="text-[8px] uppercase font-bold text-amber-200/60">Devotees Every Year</div>
+                    <div className="text-[8px] uppercase font-bold text-amber-200/60">{t("mandal_detail.devotees_every_year")}</div>
                     <div className="text-xs font-bold text-white">
                       {mandal.annualDevotees || "10M+"}
                     </div>
@@ -592,7 +607,7 @@ export function MandalDetail({ slug }: { slug: string }) {
                     <Calendar className="w-4 h-4" />
                   </div>
                   <div>
-                    <div className="text-[8px] uppercase font-bold text-amber-200/60">Days of Celebration</div>
+                    <div className="text-[8px] uppercase font-bold text-amber-200/60">{t("mandal_detail.days_of_celebration")}</div>
                     <div className="text-xs font-bold text-white">
                       {mandal.celebrationDays || "10 Days"}
                     </div>
@@ -605,7 +620,7 @@ export function MandalDetail({ slug }: { slug: string }) {
                     <Clock className="w-4 h-4" />
                   </div>
                   <div>
-                    <div className="text-[8px] uppercase font-bold text-amber-200/60">Darshan Hours</div>
+                    <div className="text-[8px] uppercase font-bold text-amber-200/60">{t("mandal_detail.darshan_hours")}</div>
                     <div className="text-xs font-bold text-white">
                       {mandal.darshanTimings || "5:00 AM – 11:30 PM"}
                     </div>
@@ -656,9 +671,6 @@ export function MandalDetail({ slug }: { slug: string }) {
                       : "text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
                   }`}
                 >
-                  <span className="w-5 h-5 rounded-full bg-amber-500/20 text-[#6B0F1A] dark:text-amber-300 flex items-center justify-center text-[10px] font-bold">
-                    {idx + 1}
-                  </span>
                   <Icon className={`w-4 h-4 ${isActive ? "text-amber-300" : "text-zinc-500"}`} />
                   <span>{tab.label}</span>
                 </button>
@@ -671,246 +683,294 @@ export function MandalDetail({ slug }: { slug: string }) {
       {/* ─── UNIFIED SINGLE PAGE CONTENT (ALL SECTIONS RENDERED SEQUENTIALLY) ─── */}
       <main className="w-full max-w-[1700px] mx-auto px-4 md:px-8 lg:px-12 py-8 space-y-10">
 
-        {/* ─── ROW 1: TOP CARDS GRID (GALLERY, LIVE DARSHAN 2-COLS, EVENTS) ─── */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {/* ─── ROW 1: TOP CARDS GRID (GALLERY, LIVE DARSHAN, EVENTS) — ADAPTIVE ─── */}
+        <div className={`grid grid-cols-1 md:grid-cols-2 gap-6 ${hasLiveDarshan || hasEvents ? 'lg:grid-cols-4' : 'lg:grid-cols-1'}`}>
 
-          {/* CARD 1: GALLERY */}
-          <div id="section-gallery" className="lg:col-span-1 scroll-mt-28">
+          {/* CARD: GALLERY */}
+          <div id="section-gallery" className={`${hasLiveDarshan || hasEvents ? 'lg:col-span-1' : 'lg:col-span-4'} scroll-mt-28`}>
             <Card className="rounded-3xl border-zinc-200/80 p-5 bg-white shadow-sm hover:shadow-md transition-all flex flex-col justify-between h-full">
               <div>
-                <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2">
-                    <span className="w-6 h-6 rounded-full bg-amber-100 text-amber-900 flex items-center justify-center font-bold text-xs">1</span>
-                    <h3 className="font-serif font-bold text-lg text-zinc-900 flex items-center gap-1.5">
-                      <Camera className="w-4 h-4 text-warm-brown" />
-                      Gallery
+                    <h3 className="font-serif font-bold text-xl text-zinc-900 flex items-center gap-2">
+                      <Camera className="w-5 h-5 text-warm-brown" />
+                      Gallery Showcase
                     </h3>
+                    <Badge variant="outline" className="text-[10px] text-zinc-500 font-semibold border-zinc-200">
+                      {allImages.length} {allImages.length === 1 ? 'Photo' : 'Photos'}
+                    </Badge>
                   </div>
                   <Button
                     onClick={() => { setLightboxIndex(0); setLightboxOpen(true); }}
                     variant="ghost"
-                    className="text-xs text-zinc-500 hover:text-warm-brown font-semibold h-7 px-2"
+                    className="text-xs text-warm-brown hover:bg-amber-50 font-bold h-8 px-3 rounded-xl"
                   >
-                    View All Photos
+                    View All Photos ({allImages.length})
                   </Button>
                 </div>
 
-                <div className="grid grid-cols-2 gap-2">
-                  <div
-                    onClick={() => { setLightboxIndex(0); setLightboxOpen(true); }}
-                    className="col-span-2 aspect-[16/10] rounded-2xl overflow-hidden bg-zinc-100 cursor-pointer relative group"
-                  >
-                    <img
-                      src={getFullImageUrl(allImages[0])}
-                      alt="Gallery Main"
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                    />
-                  </div>
-                  {allImages.slice(1, 3).map((img, idx) => (
+                {!hasLiveDarshan && !hasEvents ? (
+                  /* Standalone Gallery Showcase (when no Live Darshan & Events) */
+                  <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
+                    {/* Main Featured Photo */}
                     <div
-                      key={idx}
-                      onClick={() => { setLightboxIndex(idx + 1); setLightboxOpen(true); }}
-                      className="aspect-square rounded-xl overflow-hidden bg-zinc-100 cursor-pointer relative group"
+                      onClick={() => { setLightboxIndex(0); setLightboxOpen(true); }}
+                      className="md:col-span-7 aspect-[16/10] md:aspect-auto md:h-[320px] rounded-2xl overflow-hidden bg-zinc-100 cursor-pointer relative group border border-zinc-100 shadow-sm"
                     >
                       <img
-                        src={getFullImageUrl(img)}
-                        alt={`Thumb ${idx + 1}`}
+                        src={getFullImageUrl(allImages[0])}
+                        alt="Gallery Featured"
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-4">
+                        <span className="text-white text-xs font-bold flex items-center gap-1.5">
+                          <Camera className="w-3.5 h-3.5" /> Click to expand image
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Secondary Grid of Photos */}
+                    <div className="md:col-span-5 grid grid-cols-2 gap-3">
+                      {allImages.slice(1, 4).map((img, idx) => (
+                        <div
+                          key={idx}
+                          onClick={() => { setLightboxIndex(idx + 1); setLightboxOpen(true); }}
+                          className={`aspect-[4/3] rounded-xl overflow-hidden bg-zinc-100 cursor-pointer relative group border border-zinc-100 shadow-sm ${
+                            allImages.length === 2 && idx === 0 ? "col-span-2 aspect-[16/9]" : ""
+                          }`}
+                        >
+                          <img
+                            src={getFullImageUrl(img)}
+                            alt={`Thumb ${idx + 1}`}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          />
+                        </div>
+                      ))}
+
+                      {allImages.length > 4 && (
+                        <div
+                          onClick={() => { setLightboxIndex(4); setLightboxOpen(true); }}
+                          className="aspect-[4/3] rounded-xl overflow-hidden bg-zinc-900 cursor-pointer relative group border border-zinc-100 flex items-center justify-center text-white font-bold text-xs shadow-sm"
+                        >
+                          <img
+                            src={getFullImageUrl(allImages[4])}
+                            alt="More"
+                            className="w-full h-full object-cover opacity-40 group-hover:scale-105 transition-transform duration-300"
+                          />
+                          <span className="absolute z-10 bg-black/60 backdrop-blur-sm px-3 py-1 rounded-full text-xs">
+                            +{allImages.length - 4} More
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  /* Compact Sidebar Gallery (when Live Darshan or Events present) */
+                  <div className="grid grid-cols-2 gap-2">
+                    <div
+                      onClick={() => { setLightboxIndex(0); setLightboxOpen(true); }}
+                      className="col-span-2 aspect-[16/10] rounded-2xl overflow-hidden bg-zinc-100 cursor-pointer relative group"
+                    >
+                      <img
+                        src={getFullImageUrl(allImages[0])}
+                        alt="Gallery Main"
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                       />
                     </div>
-                  ))}
-                  {allImages.length > 3 && (
-                    <div
-                      onClick={() => { setLightboxIndex(3); setLightboxOpen(true); }}
-                      className="aspect-square rounded-xl overflow-hidden bg-zinc-900 cursor-pointer relative group flex items-center justify-center text-white font-bold text-xs"
-                    >
-                      <img
-                        src={getFullImageUrl(allImages[3])}
-                        alt="More"
-                        className="w-full h-full object-cover opacity-40 group-hover:scale-105 transition-transform duration-300"
-                      />
-                      <span className="absolute z-10">+{allImages.length - 3} More</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </Card>
-          </div>
-
-          {/* CARD 2: LIVE DARSHAN (2-COLUMNS WIDE - PROPER VIDEO PROPORTION, NO GAP) */}
-          <div id="section-live" className="col-span-1 md:col-span-2 lg:col-span-2 scroll-mt-28">
-            <Card className="rounded-3xl border-zinc-200/80 p-5 bg-white shadow-sm hover:shadow-md transition-all flex flex-col justify-between h-full">
-              <div>
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-2">
-                    <span className="w-6 h-6 rounded-full bg-amber-100 text-amber-900 flex items-center justify-center font-bold text-xs">2</span>
-                    <h3 className="font-serif font-bold text-lg text-zinc-900 flex items-center gap-1.5">
-                      <Video className="w-4 h-4 text-red-600" />
-                      Live Darshan
-                    </h3>
-                  </div>
-                  <Badge className="bg-red-600 text-white font-bold text-[10px] px-2.5 py-0.5 animate-pulse">
-                    ● LIVE 24x7
-                  </Badge>
-                </div>
-
-                <div className="aspect-video w-full rounded-2xl overflow-hidden bg-zinc-950 relative border border-zinc-200 flex items-center justify-center">
-                  {mandal?.liveUrl ? (
-                    <iframe
-                      src={getEmbedUrl(mandal.liveUrl)}
-                      className="w-full h-full"
-                      allowFullScreen
-                      title="Live Darshan Stream"
-                    />
-                  ) : (
-                    <div className="text-center p-4">
-                      <Video className="w-12 h-12 text-red-500 mx-auto mb-2 animate-pulse" />
-                      <div className="text-base font-bold text-white">24x7 Live Darshan Stream</div>
-                      <div className="text-xs text-zinc-400 mt-1">Direct live stream from {name}</div>
-                    </div>
-                  )}
-                </div>
-
-                <p className="text-xs text-zinc-500 text-center font-medium mt-2">
-                  Experience divine live darshan directly from {name}.
-                </p>
-              </div>
-            </Card>
-          </div>
-
-          {/* CARD 3: EVENTS */}
-          <div id="section-events" className="lg:col-span-1 scroll-mt-28">
-            <Card className="rounded-3xl border-zinc-200/80 p-5 bg-white shadow-sm hover:shadow-md transition-all flex flex-col justify-between h-full">
-              <div>
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-2">
-                    <span className="w-6 h-6 rounded-full bg-amber-100 text-amber-900 flex items-center justify-center font-bold text-xs">3</span>
-                    <h3 className="font-serif font-bold text-lg text-zinc-900 flex items-center gap-1.5">
-                      <Calendar className="w-4 h-4 text-amber-600" />
-                      Events
-                    </h3>
-                  </div>
-                  <span className="text-[10px] font-semibold text-zinc-400">Festive Schedule</span>
-                </div>
-
-                <div className="space-y-2.5">
-                  {((mandal?.events && mandal.events.length > 0)
-                    ? mandal.events.map((e: any) => ({
-                        date: new Date(e.startDate || Date.now()).getDate().toString().padStart(2, "0"),
-                        month: new Date(e.startDate || Date.now()).toLocaleString("en-US", { month: "short" }).toUpperCase(),
-                        title: getLocalized(e, "title", language) || e.title || e.name || `${name} Event`,
-                        time: e.startDate ? new Date(e.startDate).toLocaleDateString() : "Festive Seva",
-                      }))
-                    : [
-                        { date: "27", month: "AUG", title: `${name} – Ganesh Sthapana`, time: "27 Aug • 10:00 AM" },
-                        { date: "30", month: "AUG", title: `${name} – Maha Kirtan`, time: "30 Aug • 07:00 PM" },
-                        { date: "02", month: "SEP", title: `${name} – Sankashti Seva`, time: "02 Sep • Full Day" },
-                        { date: "06", month: "SEP", title: `${name} – Visarjan Seva`, time: "06 Sep • 11:00 AM" },
-                      ]
-                  ).slice(0, 4).map((ev: any, idx: number) => (
-                    <div key={idx} className="flex items-center gap-2.5 bg-zinc-50 border border-zinc-200/60 p-2 rounded-xl text-xs">
-                      <div className="w-9 h-9 bg-amber-500/10 border border-amber-500/20 rounded-lg flex flex-col items-center justify-center shrink-0">
-                        <span className="text-[10px] font-black text-amber-900 leading-none">{ev.date}</span>
-                        <span className="text-[8px] font-bold text-amber-700 uppercase tracking-tighter mt-0.5">{ev.month}</span>
+                    {allImages.slice(1, 3).map((img, idx) => (
+                      <div
+                        key={idx}
+                        onClick={() => { setLightboxIndex(idx + 1); setLightboxOpen(true); }}
+                        className="aspect-square rounded-xl overflow-hidden bg-zinc-100 cursor-pointer relative group"
+                      >
+                        <img
+                          src={getFullImageUrl(img)}
+                          alt={`Thumb ${idx + 1}`}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        />
                       </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="font-bold text-zinc-900 text-xs truncate" title={ev.title}>{ev.title}</div>
-                        <div className="text-[10px] text-zinc-500 flex items-center gap-1 mt-0.5">
-                          <Clock className="w-3 h-3 text-zinc-400" />
-                          <span>{ev.time}</span>
-                        </div>
+                    ))}
+                    {allImages.length > 3 && (
+                      <div
+                        onClick={() => { setLightboxIndex(3); setLightboxOpen(true); }}
+                        className="aspect-square rounded-xl overflow-hidden bg-zinc-900 cursor-pointer relative group flex items-center justify-center text-white font-bold text-xs"
+                      >
+                        <img
+                          src={getFullImageUrl(allImages[3])}
+                          alt="More"
+                          className="w-full h-full object-cover opacity-40 group-hover:scale-105 transition-transform duration-300"
+                        />
+                        <span className="absolute z-10">+{allImages.length - 3} More</span>
                       </div>
-                    </div>
-                  ))}
-                </div>
+                    )}
+                  </div>
+                )}
               </div>
-
-              <Button
-                onClick={() => toast({ title: `${name} Events`, description: "All festival events & procession schedule active." })}
-                variant="outline"
-                className="w-full mt-3 h-8 text-xs font-bold border-zinc-200 text-zinc-700 hover:bg-zinc-50"
-              >
-                View Complete Schedule
-              </Button>
             </Card>
           </div>
 
-        </div>
-
-        {/* ─── ROW 2: SPLIT GRID (POOJAS & SEVAS 7 COLS + SUPPORT MANDAL DONATION 5 COLS) ─── */}
-        {canUseMandalTransactions && (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-
-            {/* SECTION 4: POOJAS & SEVAS (7 COLS - MORE SPACE) */}
-            <div id="section-poojas" className="lg:col-span-7 scroll-mt-28">
-              <Card className="rounded-3xl border-zinc-200/80 p-6 bg-white shadow-sm space-y-5 h-full flex flex-col justify-between">
+          {/* CARD: LIVE DARSHAN (adaptive: expands if no Events) */}
+          {hasLiveDarshan && (
+            <div id="section-live" className={`col-span-1 md:col-span-2 lg:col-span-${liveColSpan} scroll-mt-28`}>
+              <Card className="rounded-3xl border-zinc-200/80 p-5 bg-white shadow-sm hover:shadow-md transition-all flex flex-col justify-between h-full">
                 <div>
-                  <div className="flex items-center justify-between border-b border-zinc-100 pb-3">
-                    <div className="flex items-center gap-2.5">
-                      <span className="w-7 h-7 rounded-full bg-amber-100 text-amber-900 flex items-center justify-center font-bold text-sm">4</span>
-                      <div>
-                        <h3 className="text-xl font-serif font-bold text-zinc-900 flex items-center gap-2">
-                          <Gift className="w-5 h-5 text-warm-brown" />
-                          Poojas & Sevas
-                        </h3>
-                        <p className="text-xs text-zinc-500">Book divine poojas & sevas online</p>
-                      </div>
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-serif font-bold text-lg text-zinc-900 flex items-center gap-1.5">
+                        <Video className="w-4 h-4 text-red-600" />
+                        Live Darshan
+                      </h3>
                     </div>
-                    <button
-                      onClick={() => router.push(`/mandals/${slug}/booking`)}
-                      className="inline-flex items-center gap-1 text-xs font-bold text-warm-brown hover:underline"
-                    >
-                      View All
-                      <ChevronRight className="w-4 h-4" />
-                    </button>
+                    <Badge className="bg-red-600 text-white font-bold text-[10px] px-2.5 py-0.5 animate-pulse">
+                      ● LIVE 24x7
+                    </Badge>
                   </div>
 
-                  <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 mt-4">
-                    {(mandal.poojas && mandal.poojas.length > 0 ? mandal.poojas : [
-                      { name: "Abhishek", desc: "Receive divine blessings", price: 501, img: "https://images.unsplash.com/photo-1609710228159-0fa9bd7c0827?auto=format&fit=crop&q=80&w=500" },
-                      { name: "5 Coconut Mala", desc: "Offer 5 coconut mala", price: 551, img: "https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&q=80&w=500" },
-                      { name: "21 Coconut Mala", desc: "Offer 21 coconut mala", price: 2101, img: "https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&q=80&w=500" },
-                      { name: "Sankashti Seva", desc: "Special Sankashti offering", price: 1251, img: "https://images.unsplash.com/photo-1600093463592-8e36ae95ef56?auto=format&fit=crop&q=80&w=500" },
-                      { name: "Maha Aarti Seva", desc: "Participate in Maha Aarti", price: 751, img: "https://images.unsplash.com/photo-1602526430780-782d6b17831f?auto=format&fit=crop&q=80&w=500" },
-                    ]).map((p: any, idx: number) => {
-                      const pName = getLocalized(p, "name", language) || p.name || p.title;
-                      const pDesc = getLocalized(p, "description", language) || p.description || p.desc || "Receive divine blessings";
-                      const pImg = p.image ? getFullImageUrl(p.image) : p.img || "https://images.unsplash.com/photo-1609710228159-0fa9bd7c0827?auto=format&fit=crop&q=80&w=500";
-                      const pPrice = p.price || 501;
-
-                      return (
-                        <div key={p.id || idx} className="rounded-2xl border border-zinc-200/80 p-3 bg-white hover:shadow-md transition-all flex flex-col justify-between overflow-hidden group">
-                          <div>
-                            <div className="relative aspect-[16/9] w-full rounded-xl overflow-hidden mb-2 bg-zinc-100">
-                              <img src={pImg} alt={pName} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-                            </div>
-                            <h4 className="font-bold text-xs sm:text-sm text-zinc-900 truncate mb-0.5">{pName}</h4>
-                            <p className="text-[10px] sm:text-xs text-zinc-500 truncate mb-2">{pDesc}</p>
-                            <div className="font-extrabold text-xs sm:text-sm text-zinc-900 mb-2.5">
-                              ₹{typeof pPrice === "number" ? pPrice.toLocaleString("en-IN") : pPrice}
-                            </div>
-                          </div>
-                          <Button
-                            onClick={() => router.push(`/mandals/${slug}/booking`)}
-                            className="w-full bg-[#6B0F1A] hover:bg-[#520B14] text-white font-bold h-8 text-[11px] rounded-xl transition-all shadow-sm"
-                          >
-                            Book Now
-                          </Button>
-                        </div>
-                      );
-                    })}
+                  <div className="aspect-video w-full rounded-2xl overflow-hidden bg-zinc-950 relative border border-zinc-200 flex items-center justify-center">
+                    {mandal?.liveUrl ? (
+                      <iframe
+                        src={getEmbedUrl(mandal.liveUrl)}
+                        className="w-full h-full"
+                        allowFullScreen
+                        title="Live Darshan Stream"
+                      />
+                    ) : (
+                      <div className="text-center p-4">
+                        <Video className="w-12 h-12 text-red-500 mx-auto mb-2 animate-pulse" />
+                        <div className="text-base font-bold text-white">24x7 Live Darshan Stream</div>
+                        <div className="text-xs text-zinc-400 mt-1">Direct live stream from {name}</div>
+                      </div>
+                    )}
                   </div>
+
+                  <p className="text-xs text-zinc-500 text-center font-medium mt-2">
+                    Experience divine live darshan directly from {name}.
+                  </p>
                 </div>
               </Card>
             </div>
+          )}
 
-            {/* SECTION 5: SUPPORT THIS MANDAL / DONATION (5 COLS) */}
-            <div id="section-donate" className="lg:col-span-5 scroll-mt-28">
+          {/* CARD: EVENTS (only when mandal has real events) */}
+          {hasEvents && (
+            <div id="section-events" className="lg:col-span-1 scroll-mt-28">
+              <Card className="rounded-3xl border-zinc-200/80 p-5 bg-white shadow-sm hover:shadow-md transition-all flex flex-col justify-between h-full">
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-serif font-bold text-lg text-zinc-900 flex items-center gap-1.5">
+                        <Calendar className="w-4 h-4 text-amber-600" />
+                        Events
+                      </h3>
+                    </div>
+                    <span className="text-[10px] font-semibold text-zinc-400">Festive Schedule</span>
+                  </div>
+
+                  <div className="space-y-2.5">
+                    {mandal.events.map((e: any) => ({
+                      date: new Date(e.startDate || Date.now()).getDate().toString().padStart(2, "0"),
+                      month: new Date(e.startDate || Date.now()).toLocaleString("en-US", { month: "short" }).toUpperCase(),
+                      title: getLocalized(e, "title", language) || e.title || e.name || `${name} Event`,
+                      time: e.startDate ? new Date(e.startDate).toLocaleDateString() : "Festive Seva",
+                    })).slice(0, 4).map((ev: any, idx: number) => (
+                      <div key={idx} className="flex items-center gap-2.5 bg-zinc-50 border border-zinc-200/60 p-2 rounded-xl text-xs">
+                        <div className="w-9 h-9 bg-amber-500/10 border border-amber-500/20 rounded-lg flex flex-col items-center justify-center shrink-0">
+                          <span className="text-[10px] font-black text-amber-900 leading-none">{ev.date}</span>
+                          <span className="text-[8px] font-bold text-amber-700 uppercase tracking-tighter mt-0.5">{ev.month}</span>
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="font-bold text-zinc-900 text-xs truncate" title={ev.title}>{ev.title}</div>
+                          <div className="text-[10px] text-zinc-500 flex items-center gap-1 mt-0.5">
+                            <Clock className="w-3 h-3 text-zinc-400" />
+                            <span>{ev.time}</span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <Button
+                  onClick={() => toast({ title: `${name} Events`, description: "All festival events & procession schedule active." })}
+                  variant="outline"
+                  className="w-full mt-3 h-8 text-xs font-bold border-zinc-200 text-zinc-700 hover:bg-zinc-50"
+                >
+                  View Complete Schedule
+                </Button>
+              </Card>
+            </div>
+          )}
+
+        </div>
+
+        {/* ─── ROW 2: SPLIT GRID (POOJAS & SEVAS + SUPPORT MANDAL DONATION) ─── */}
+        {canUseMandalTransactions && (
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+            {/* SECTION 4: POOJAS & SEVAS (Only when mandal has actual poojas) */}
+            {mandal.poojas && mandal.poojas.length > 0 && (
+              <div id="section-poojas" className={`scroll-mt-28 ${mandal.poojas && mandal.poojas.length > 0 ? 'lg:col-span-7' : 'lg:col-span-0 hidden'}`}>
+                <Card className="rounded-3xl border-zinc-200/80 p-6 bg-white shadow-sm space-y-5 h-full flex flex-col justify-between">
+                  <div>
+                    <div className="flex items-center justify-between border-b border-zinc-100 pb-3">
+                      <div className="flex items-center gap-2.5">
+                        <div>
+                          <h3 className="text-xl font-serif font-bold text-zinc-900 flex items-center gap-2">
+                            <Gift className="w-5 h-5 text-warm-brown" />
+                            Poojas & Sevas
+                          </h3>
+                          <p className="text-xs text-zinc-500">Book divine poojas & sevas online</p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => router.push(`/mandals/${slug}/booking`)}
+                        className="inline-flex items-center gap-1 text-xs font-bold text-warm-brown hover:underline"
+                      >
+                        View All
+                        <ChevronRight className="w-4 h-4" />
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 mt-4">
+                      {mandal.poojas.map((p: any, idx: number) => {
+                        const pName = getLocalized(p, "name", language) || p.name || p.title;
+                        const pDesc = getLocalized(p, "description", language) || p.description || p.desc || "Receive divine blessings";
+                        const pImg = p.image ? getFullImageUrl(p.image) : "https://images.unsplash.com/photo-1609710228159-0fa9bd7c0827?auto=format&fit=crop&q=80&w=500";
+                        const pPrice = p.price || 501;
+
+                        return (
+                          <div key={p.id || idx} className="rounded-2xl border border-zinc-200/80 p-3 bg-white hover:shadow-md transition-all flex flex-col justify-between overflow-hidden group">
+                            <div>
+                              <div className="relative aspect-[16/9] w-full rounded-xl overflow-hidden mb-2 bg-zinc-100">
+                                <img src={pImg} alt={pName} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                              </div>
+                              <h4 className="font-bold text-xs sm:text-sm text-zinc-900 truncate mb-0.5">{pName}</h4>
+                              <p className="text-[10px] sm:text-xs text-zinc-500 truncate mb-2">{pDesc}</p>
+                              <div className="font-extrabold text-xs sm:text-sm text-zinc-900 mb-2.5">
+                                ₹{typeof pPrice === "number" ? pPrice.toLocaleString("en-IN") : pPrice}
+                              </div>
+                            </div>
+                            <Button
+                              onClick={() => router.push(`/mandals/${slug}/booking`)}
+                              className="w-full bg-[#6B0F1A] hover:bg-[#520B14] text-white font-bold h-8 text-[11px] rounded-xl transition-all shadow-sm"
+                            >
+                              Book Now
+                            </Button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </Card>
+              </div>
+            )}
+
+            {/* SECTION 5: SUPPORT THIS MANDAL / DONATION */}
+            <div id="section-donate" className={`scroll-mt-28 ${mandal.poojas && mandal.poojas.length > 0 ? 'lg:col-span-5' : 'lg:col-span-12'}`}>
               <Card className="rounded-3xl border-amber-200/80 p-6 bg-gradient-to-b from-amber-50/70 to-white shadow-sm space-y-5 h-full flex flex-col justify-between">
                 <div>
                   <div className="flex items-center justify-between border-b border-amber-200/50 pb-3">
                     <div className="flex items-center gap-2.5">
-                      <span className="w-7 h-7 rounded-full bg-amber-500/20 text-[#6B0F1A] flex items-center justify-center font-bold text-sm">5</span>
                       <div>
                         <h3 className="text-xl font-serif font-bold text-zinc-900 flex items-center gap-2">
                           <IndianRupee className="w-5 h-5 text-warm-brown" />
@@ -976,7 +1036,6 @@ export function MandalDetail({ slug }: { slug: string }) {
             <Card className="rounded-3xl border-zinc-200/80 p-6 bg-white shadow-sm space-y-6">
               <div className="flex items-center justify-between border-b border-zinc-100 pb-4">
                 <div className="flex items-center gap-2.5">
-                  <span className="w-7 h-7 rounded-full bg-amber-100 text-amber-900 flex items-center justify-center font-bold text-sm">6</span>
                   <div>
                     <h3 className="text-2xl font-serif font-bold text-zinc-900 flex items-center gap-2">
                       <ShoppingBag className="w-6 h-6 text-warm-brown" />
@@ -1001,7 +1060,11 @@ export function MandalDetail({ slug }: { slug: string }) {
                   const itemImg = item.image ? getFullImageUrl(item.image) : "https://images.unsplash.com/photo-1600093463592-8e36ae95ef56?auto=format&fit=crop&q=80&w=400";
 
                   return (
-                    <Card key={item.id || idx} className="rounded-2xl border border-zinc-200/80 p-3 bg-white hover:shadow-md transition-all flex flex-col justify-between overflow-hidden group">
+                    <Card
+                      key={item.id || idx}
+                      onClick={() => router.push(`/marketplace/product/${item.id}`)}
+                      className="rounded-2xl border border-zinc-200/80 p-3 bg-white hover:shadow-md transition-all flex flex-col justify-between overflow-hidden group cursor-pointer"
+                    >
                       <div>
                         <div className="relative aspect-square rounded-xl overflow-hidden mb-2 bg-zinc-100">
                           <img src={itemImg} alt={itemName} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
@@ -1010,8 +1073,11 @@ export function MandalDetail({ slug }: { slug: string }) {
                         <div className="font-extrabold text-xs text-warm-brown mt-1">₹{typeof price === "number" ? price.toLocaleString("en-IN") : price}</div>
                       </div>
                       <Button
-                        onClick={() => router.push(`/marketplace/${item.id}`)}
-                        className="w-full mt-2 bg-zinc-900 hover:bg-zinc-800 text-white font-bold h-7 text-[10px] rounded-lg"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          router.push(`/marketplace/product/${item.id}`);
+                        }}
+                        className="w-full mt-2 bg-[#6B0F1A] hover:bg-[#520B14] text-white font-bold h-8 text-[11px] rounded-xl transition-all shadow-sm"
                       >
                         Buy Now
                       </Button>
@@ -1023,129 +1089,146 @@ export function MandalDetail({ slug }: { slug: string }) {
           </div>
         )}
 
-        {/* ─── ROW 4: BOTTOM 3 CARDS (ABOUT, LOCATION, CONTACT US) ─── */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* ─── ROW 4: BOTTOM CARDS (ABOUT, LOCATION, CONTACT) — Only shown if data exists ─── */}
+        {(hasDescription || hasLocation || hasContactOrSocial) && (
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
 
-          {/* CARD 7: ABOUT */}
-          <div id="section-about" className="lg:col-span-6 scroll-mt-28">
-            <Card className="rounded-3xl border-zinc-200/80 p-5 bg-white shadow-sm space-y-3">
-              <div className="flex items-center gap-2.5 border-b border-zinc-100 pb-3">
-                <span className="w-7 h-7 rounded-full bg-amber-100 text-amber-900 flex items-center justify-center font-bold text-sm">7</span>
-                <h3 className="text-xl font-serif font-bold text-zinc-900">About {name}</h3>
-              </div>
-
-              <div className="text-xs sm:text-sm text-zinc-700 leading-relaxed whitespace-pre-line">
-                {description ? (
-                  typeof description === "string" && description.includes("<") ? (
-                    <span dangerouslySetInnerHTML={{ __html: description }} />
-                  ) : (
-                    description
-                  )
-                ) : (
-                  `${name} is a renowned Ganeshotsav Mandal dedicated to community harmony, divine devotion, and grand festive traditions. Devotees from all over gather every year to seek sacred blessings.`
-                )}
-              </div>
-            </Card>
-          </div>
-
-          {/* CARD 8: LOCATION */}
-          <div id="section-location" className="lg:col-span-3 scroll-mt-28">
-            <Card className="rounded-3xl border-zinc-200/80 p-5 bg-white shadow-sm space-y-3">
-              <div className="flex items-center gap-2.5 border-b border-zinc-100 pb-3">
-                <span className="w-7 h-7 rounded-full bg-amber-100 text-amber-900 flex items-center justify-center font-bold text-sm">8</span>
-                <h3 className="text-xl font-serif font-bold text-zinc-900 flex items-center gap-1.5">
-                  <MapPin className="w-4 h-4 text-warm-brown" />
-                  Location
-                </h3>
-              </div>
-
-              <div className="text-xs text-zinc-700 font-medium">
-                {[mandal.address, mandal.city, mandal.state].filter(Boolean).join(", ") || "Lalbaug, Mumbai, Maharashtra 400012"}
-              </div>
-
-              <div className="w-full rounded-2xl bg-zinc-100 border border-zinc-200 flex flex-col items-center justify-center p-4 text-center">
-                <Compass className="w-7 h-7 text-amber-600 mb-1" />
-                <div className="text-xs font-bold text-zinc-800">Google Maps Route</div>
-                <div className="text-[10px] text-zinc-400">Click to navigate to mandal</div>
-              </div>
-
-              <Button
-                onClick={() => {
-                  const query = encodeURIComponent(`${name} ${mandal.city || ""}`);
-                  window.open(`https://www.google.com/maps/search/?api=1&query=${query}`, "_blank");
-                }}
-                className="w-full bg-warm-brown hover:bg-warm-brown/90 text-white font-bold h-9 text-xs rounded-xl shadow-sm"
-              >
-                <Navigation className="w-3.5 h-3.5 mr-1.5" />
-                Get Directions
-              </Button>
-            </Card>
-          </div>
-
-          {/* CARD 9: CONTACT US */}
-          <div id="section-contact" className="lg:col-span-3 scroll-mt-28">
-            <Card className="rounded-3xl border-zinc-200/80 p-5 bg-white shadow-sm space-y-3">
-              <div>
-                <div className="flex items-center gap-2.5 border-b border-zinc-100 pb-3 mb-3">
-                  <span className="w-7 h-7 rounded-full bg-amber-100 text-amber-900 flex items-center justify-center font-bold text-sm">9</span>
-                  <h3 className="text-xl font-serif font-bold text-zinc-900 flex items-center gap-1.5">
-                    <Phone className="w-4 h-4 text-warm-brown" />
-                    Contact Us
-                  </h3>
-                </div>
-
-                <div className="space-y-2.5 text-xs text-zinc-700 font-medium">
-                  <div className="flex items-center gap-2">
-                    <Phone className="w-3.5 h-3.5 text-amber-600" />
-                    <span>{mandal?.phone || mandal?.contactPhone || "+91 22 2478 1111"}</span>
+            {/* ABOUT — only if mandal has a description */}
+            {hasDescription && (
+              <div id="section-about" className={`scroll-mt-28 ${hasLocation || hasContactOrSocial ? 'lg:col-span-6' : 'lg:col-span-12'}`}>
+                <Card className="rounded-3xl border-zinc-200/80 p-5 bg-white shadow-sm space-y-3">
+                  <div className="flex items-center gap-2.5 border-b border-zinc-100 pb-3">
+                    <h3 className="text-xl font-serif font-bold text-zinc-900">About {name}</h3>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Mail className="w-3.5 h-3.5 text-amber-600" />
-                    <span className="truncate">{mandal?.email || mandal?.contactEmail || `info@${slug}.org`}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <ExternalLink className="w-3.5 h-3.5 text-amber-600" />
-                    <span className="truncate">{mandal?.websiteUrl || `www.${slug}.org`}</span>
-                  </div>
-                </div>
-              </div>
 
-              <div>
-                <div className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider mb-2">Follow Us</div>
-                <div className="flex items-center gap-2.5 text-zinc-600">
-                  <a
-                    href={mandal?.instagramUrl || mandal?.instagram || `https://instagram.com/search?q=${encodeURIComponent(name)}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="w-9 h-9 rounded-full bg-pink-50 text-pink-600 hover:bg-pink-600 hover:text-white flex items-center justify-center transition-all shadow-sm"
-                    title="Instagram"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
-                  </a>
-                  <a
-                    href={mandal?.youtubeUrl || mandal?.youtube || `https://youtube.com/results?search_query=${encodeURIComponent(name)}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="w-9 h-9 rounded-full bg-red-50 text-red-600 hover:bg-red-600 hover:text-white flex items-center justify-center transition-all shadow-sm"
-                    title="YouTube"
-                  >
-                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M23.5 6.19a3.02 3.02 0 0 0-2.12-2.14C19.53 3.5 12 3.5 12 3.5s-7.53 0-9.38.55A3.02 3.02 0 0 0 .5 6.19 31.7 31.7 0 0 0 0 12a31.7 31.7 0 0 0 .5 5.81 3.02 3.02 0 0 0 2.12 2.14c1.85.55 9.38.55 9.38.55s7.53 0 9.38-.55a3.02 3.02 0 0 0 2.12-2.14A31.7 31.7 0 0 0 24 12a31.7 31.7 0 0 0-.5-5.81zM9.75 15.02V8.98L15.5 12l-5.75 3.02z"/></svg>
-                  </a>
-                  <a
-                    href={mandal?.facebookUrl || mandal?.facebook || `https://facebook.com/search/top?q=${encodeURIComponent(name)}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="w-9 h-9 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white flex items-center justify-center transition-all shadow-sm"
-                    title="Facebook"
-                  >
-                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
-                  </a>
-                </div>
+                  <div className="text-xs sm:text-sm text-zinc-700 leading-relaxed whitespace-pre-line">
+                    {typeof description === "string" && description.includes("<") ? (
+                      <span dangerouslySetInnerHTML={{ __html: description }} />
+                    ) : (
+                      description
+                    )}
+                  </div>
+                </Card>
               </div>
-            </Card>
+            )}
+
+            {/* LOCATION — only if mandal has address/city/state */}
+            {hasLocation && (
+              <div id="section-location" className={`scroll-mt-28 ${hasDescription ? 'lg:col-span-3' : 'lg:col-span-6'}`}>
+                <Card className="rounded-3xl border-zinc-200/80 p-5 bg-white shadow-sm space-y-3">
+                  <div className="flex items-center gap-2.5 border-b border-zinc-100 pb-3">
+                    <h3 className="text-xl font-serif font-bold text-zinc-900 flex items-center gap-1.5">
+                      <MapPin className="w-4 h-4 text-warm-brown" />
+                      Location
+                    </h3>
+                  </div>
+
+                  <div className="text-xs text-zinc-700 font-medium">
+                    {[mandal.address, mandal.city, mandal.state].filter(Boolean).join(", ")}
+                  </div>
+
+                  <div className="w-full rounded-2xl bg-zinc-100 border border-zinc-200 flex flex-col items-center justify-center p-4 text-center">
+                    <Compass className="w-7 h-7 text-amber-600 mb-1" />
+                    <div className="text-xs font-bold text-zinc-800">Google Maps Route</div>
+                    <div className="text-[10px] text-zinc-400">Click to navigate to mandal</div>
+                  </div>
+
+                  <Button
+                    onClick={() => {
+                      const query = encodeURIComponent(`${name} ${mandal.city || ""}`);
+                      window.open(`https://www.google.com/maps/search/?api=1&query=${query}`, "_blank");
+                    }}
+                    className="w-full bg-warm-brown hover:bg-warm-brown/90 text-white font-bold h-9 text-xs rounded-xl shadow-sm"
+                  >
+                    <Navigation className="w-3.5 h-3.5 mr-1.5" />
+                    Get Directions
+                  </Button>
+                </Card>
+              </div>
+            )}
+
+            {/* CONTACT US — only if mandal has phone/email/website or social links */}
+            {hasContactOrSocial && (
+              <div id="section-contact" className={`scroll-mt-28 ${hasDescription ? 'lg:col-span-3' : 'lg:col-span-6'}`}>
+                <Card className="rounded-3xl border-zinc-200/80 p-5 bg-white shadow-sm space-y-3">
+                  <div>
+                    <div className="flex items-center gap-2.5 border-b border-zinc-100 pb-3 mb-3">
+                      <h3 className="text-xl font-serif font-bold text-zinc-900 flex items-center gap-1.5">
+                        <Phone className="w-4 h-4 text-warm-brown" />
+                        Contact Us
+                      </h3>
+                    </div>
+
+                    {hasContact && (
+                      <div className="space-y-2.5 text-xs text-zinc-700 font-medium">
+                        {(mandal?.phone || mandal?.contactPhone) && (
+                          <div className="flex items-center gap-2">
+                            <Phone className="w-3.5 h-3.5 text-amber-600" />
+                            <span>{mandal?.phone || mandal?.contactPhone}</span>
+                          </div>
+                        )}
+                        {(mandal?.email || mandal?.contactEmail) && (
+                          <div className="flex items-center gap-2">
+                            <Mail className="w-3.5 h-3.5 text-amber-600" />
+                            <span className="truncate">{mandal?.email || mandal?.contactEmail}</span>
+                          </div>
+                        )}
+                        {mandal?.websiteUrl && (
+                          <div className="flex items-center gap-2">
+                            <ExternalLink className="w-3.5 h-3.5 text-amber-600" />
+                            <span className="truncate">{mandal.websiteUrl}</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {hasSocialLinks && (
+                    <div>
+                      <div className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider mb-2">Follow Us</div>
+                      <div className="flex items-center gap-2.5 text-zinc-600">
+                        {(mandal?.instagramUrl || mandal?.instagram) && (
+                          <a
+                            href={mandal?.instagramUrl || mandal?.instagram}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="w-9 h-9 rounded-full bg-pink-50 text-pink-600 hover:bg-pink-600 hover:text-white flex items-center justify-center transition-all shadow-sm"
+                            title="Instagram"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+                          </a>
+                        )}
+                        {(mandal?.youtubeUrl || mandal?.youtube) && (
+                          <a
+                            href={mandal?.youtubeUrl || mandal?.youtube}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="w-9 h-9 rounded-full bg-red-50 text-red-600 hover:bg-red-600 hover:text-white flex items-center justify-center transition-all shadow-sm"
+                            title="YouTube"
+                          >
+                            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M23.5 6.19a3.02 3.02 0 0 0-2.12-2.14C19.53 3.5 12 3.5 12 3.5s-7.53 0-9.38.55A3.02 3.02 0 0 0 .5 6.19 31.7 31.7 0 0 0 0 12a31.7 31.7 0 0 0 .5 5.81 3.02 3.02 0 0 0 2.12 2.14c1.85.55 9.38.55 9.38.55s7.53 0 9.38-.55a3.02 3.02 0 0 0 2.12-2.14A31.7 31.7 0 0 0 24 12a31.7 31.7 0 0 0-.5-5.81zM9.75 15.02V8.98L15.5 12l-5.75 3.02z"/></svg>
+                          </a>
+                        )}
+                        {(mandal?.facebookUrl || mandal?.facebook) && (
+                          <a
+                            href={mandal?.facebookUrl || mandal?.facebook}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="w-9 h-9 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white flex items-center justify-center transition-all shadow-sm"
+                            title="Facebook"
+                          >
+                            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </Card>
+              </div>
+            )}
+
           </div>
-
-        </div>
+        )}
 
       </main>
 

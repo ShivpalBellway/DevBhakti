@@ -64,7 +64,9 @@ const sidebarItems = [
         subItems: [
             { label: "Offline Pooja Booking", href: "/mandals/dashboard/teller/offline-pooja", permission: "finance.menu" },
             { label: "Offline Donation", href: "/mandals/dashboard/teller/offline-donation", permission: "finance.menu" },
+            { label: "Offline Ticket Booking", href: "/mandals/dashboard/teller/offline-ticket", permission: "finance.menu" },
             { label: "Offline Product Booking", href: "/mandals/dashboard/teller/offline-product", permission: "finance.menu" },
+            { label: "Offline Users / Devotees", href: "/mandals/dashboard/teller/offline-users", permission: "finance.menu" },
         ]
     },
     {

@@ -241,3 +241,133 @@ export const scanTicket = async (req: Request, res: Response) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 };
+
+// Create offline Darshan Ticket by Temple Admin / Teller
+export const createOfflineTicket = async (req: Request, res: Response) => {
+  try {
+    const templeId = (req as any).owner?.ownerId;
+    const {
+      slotId,
+      visitorName,
+      visitorPhone,
+      visitorEmail,
+      visitorCount,
+      paymentMode,
+      paymentReference,
+      notes
+    } = req.body;
+
+    if (!slotId || !visitorName || !visitorPhone || !visitorCount) {
+      return res.status(400).json({ error: 'Slot ID, Visitor Name, Phone, and Count are required' });
+    }
+
+    const count = parseInt(visitorCount);
+    if (isNaN(count) || count <= 0) {
+      return res.status(400).json({ error: 'Invalid visitor count' });
+    }
+
+    const ticket = await prisma.$transaction(async (tx) => {
+      const slot = await tx.darshanSlot.findUnique({
+        where: { id: slotId }
+      });
+
+      if (!slot) {
+        throw new Error('Darshan Slot not found');
+      }
+
+      if (slot.templeId !== templeId) {
+        throw new Error('Slot belongs to a different temple');
+      }
+
+      if (slot.isClosed || slot.bookedCount + count > slot.maxCapacity) {
+        throw new Error('Slot capacity full or slot is closed');
+      }
+
+      const temple = await tx.temple.findUnique({
+        where: { id: templeId }
+      });
+
+      if (!temple || !temple.isDarshanActive) {
+        throw new Error('Darshan is not active for this temple');
+      }
+
+      const totalAmount = temple.darshanPrice * count;
+
+      // Update slot capacity count
+      await tx.darshanSlot.update({
+        where: { id: slotId },
+        data: {
+          bookedCount: { increment: count }
+        }
+      });
+
+      // Find or create devotee user for userId
+      let userId: string;
+      const cleanedPhone = visitorPhone.replace(/\D/g, '');
+      const normalizedPhone = cleanedPhone.length === 10 ? `+91${cleanedPhone}` : `+${cleanedPhone}`;
+
+      const existingUser = await tx.user.findFirst({
+        where: {
+          OR: [
+            { phone: normalizedPhone },
+            { phone: cleanedPhone },
+            { phone: visitorPhone }
+          ],
+          role: 'DEVOTEE'
+        }
+      });
+
+      if (existingUser) {
+        userId = existingUser.id;
+      } else {
+        const userDisplayId = `DEV-${Date.now().toString().slice(-6)}`;
+        const newUser = await tx.user.create({
+          data: {
+            displayId: userDisplayId,
+            name: visitorName,
+            phone: normalizedPhone,
+            email: visitorEmail || null,
+            role: 'DEVOTEE',
+            isVerified: true,
+            isActive: true,
+          }
+        });
+        userId = newUser.id;
+      }
+
+      const { generateCustomId } = await import('../../utils/idGenerator');
+      const displayId = await generateCustomId('DRID');
+
+      const newTicket = await tx.darshanTicket.create({
+        data: {
+          displayId,
+          userId,
+          templeId,
+          slotId,
+          visitorName,
+          visitorPhone,
+          visitorEmail: visitorEmail || null,
+          visitorCount: count,
+          totalAmount,
+          platformFee: 0,
+          commissionAmount: 0,
+          netEarning: totalAmount,
+          status: DarshanTicketStatus.CONFIRMED,
+          qrToken: displayId
+        },
+        include: { slot: true }
+      });
+
+      return newTicket;
+    });
+
+    res.status(201).json({
+      message: 'Offline Darshan Ticket issued successfully',
+      ticket
+    });
+  } catch (error: any) {
+    console.error('Error issuing offline ticket:', error);
+    res.status(400).json({ error: error.message || 'Failed to issue ticket' });
+  }
+};
+

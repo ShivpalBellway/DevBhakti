@@ -1302,7 +1302,7 @@ export const fetchAllDonationsAdmin = async (params?: {
     templeId?: string;
     sortBy?: string;
     sortOrder?: string;
-    donationType?: "ONLINE" | "OFFLINE";
+    donationType?: "ALL" | "ONLINE" | "OFFLINE";
     donationSource?: "ALL" | "TEMPLE" | "MANDAL";
 }) => {
     const token = getAdminToken();
@@ -1318,7 +1318,7 @@ export const fetchAllDonationsAdmin = async (params?: {
         if (params.templeId && params.templeId !== 'all') query.append('templeId', params.templeId);
         if (params.sortBy) query.append('sortBy', params.sortBy);
         if (params.sortOrder) query.append('sortOrder', params.sortOrder);
-        if (params.donationType) query.append('donationType', params.donationType);
+        if (params.donationType && params.donationType !== 'ALL') query.append('donationType', params.donationType);
         if (params.donationSource && params.donationSource !== 'ALL') query.append('donationSource', params.donationSource);
         const qs = query.toString();
         if (qs) url += `?${qs}`;

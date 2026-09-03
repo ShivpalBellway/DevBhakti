@@ -76,7 +76,7 @@ const statusConfig = {
 };
 
 export default function DonationClient() {
-    const [donationType, setDonationType] = useState<"ONLINE" | "OFFLINE">("ONLINE");
+    const [donationType, setDonationType] = useState<"ALL" | "ONLINE" | "OFFLINE">("ALL");
     const [donationSource, setDonationSource] = useState<"ALL" | "TEMPLE" | "MANDAL">("ALL");
     const [searchQuery, setSearchQuery] = useState("");
     const debouncedSearch = useDebounce(searchQuery, 500);
@@ -333,6 +333,20 @@ export default function DonationClient() {
 
             {/* Donation Type Tabs */}
             <div className="flex gap-2 bg-white p-1.5 rounded-2xl border border-border shadow-sm w-fit flex-wrap">
+                <button
+                    onClick={() => {
+                        setDonationType("ALL");
+                        setCurrentPage(1);
+                    }}
+                    className={cn(
+                        "px-4 py-2.5 rounded-xl font-semibold text-sm transition-all",
+                        donationType === "ALL"
+                            ? "bg-primary text-white shadow-md"
+                            : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                    )}
+                >
+                    📜 All Donations
+                </button>
                 <button
                     onClick={() => {
                         setDonationType("ONLINE");

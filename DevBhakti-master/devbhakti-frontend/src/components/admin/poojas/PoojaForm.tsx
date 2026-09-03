@@ -39,6 +39,7 @@ interface PoojaFormProps {
     mode: "create" | "edit";
     initialData?: any;
     temples: any[];
+    mandals?: any[];
     availableCategories: any[];
     masterTemplates?: any[];
     onSubmit: (formData: FormData) => Promise<void>;
@@ -60,6 +61,7 @@ export const PoojaForm: React.FC<PoojaFormProps> = ({
     mode,
     initialData,
     temples,
+    mandals = [],
     availableCategories,
     masterTemplates = [],
     onSubmit,
@@ -74,6 +76,7 @@ export const PoojaForm: React.FC<PoojaFormProps> = ({
         price: 0,
         time: "",
         templeId: "",
+        mandalId: "",
         masterPoojaId: "",
         categoryId: "",
         categoryIds: [] as string[],
@@ -143,6 +146,7 @@ export const PoojaForm: React.FC<PoojaFormProps> = ({
                 price: initialData.price || 0,
                 time: initialData.time || "",
                 templeId: initialData.isMaster ? "platform" : (initialData.templeId || ""),
+                mandalId: initialData.mandalId || "",
                 masterPoojaId: initialData.masterPoojaId || "",
                 categoryId: initialData.categoryId || "",
                 categoryIds: initialData.categoryIds || (initialData.categoryId ? [initialData.categoryId] : []),
@@ -181,7 +185,9 @@ export const PoojaForm: React.FC<PoojaFormProps> = ({
             // Resolve pooja type
             let pType = "template";
             if (!initialData.isMaster) {
-                pType = initialData.templeId ? "temple" : "platform";
+                if (initialData.mandalId) pType = "mandal";
+                else if (initialData.templeId) pType = "temple";
+                else pType = "platform";
             }
             setPoojaType(pType);
 
@@ -454,6 +460,7 @@ export const PoojaForm: React.FC<PoojaFormProps> = ({
         fd.append("time", formData.time);
         fd.append("isMaster", isMasterVal.toString());
         fd.append("templeId", poojaType === "temple" ? formData.templeId : "null");
+        fd.append("mandalId", poojaType === "mandal" ? formData.mandalId : "null");
         fd.append("masterPoojaId", (poojaType !== "template" && formData.masterPoojaId) ? formData.masterPoojaId : "null");
 
         // Localized Fields
@@ -532,6 +539,7 @@ export const PoojaForm: React.FC<PoojaFormProps> = ({
                                             <option value="template">Template</option>
                                             <option value="platform">DevBhakti Platform Pooja</option>
                                             <option value="temple">Temple Pooja</option>
+                                            <option value="mandal">Mandal Pooja</option>
                                         </select>
                                     </div>
 
@@ -548,6 +556,25 @@ export const PoojaForm: React.FC<PoojaFormProps> = ({
                                                 {temples.map(t => (
                                                     <option key={t.id} value={t.id}>
                                                         {parseLocalizedValue(t[`name_${activeTab}`] || t.name_en || t.name, activeTab) || 'Unnamed'}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    )}
+
+                                    {poojaType === "mandal" && (
+                                        <div className="space-y-2.5">
+                                            <Label className="text-sm font-bold text-slate-700">Assigned Mandal <span className="text-destructive">*</span></Label>
+                                            <select
+                                                className="w-full h-12 px-4 rounded-xl border border-slate-200 bg-white text-sm focus:ring-2 focus:ring-primary/20 outline-none disabled:opacity-50 transition-all font-medium"
+                                                value={formData.mandalId}
+                                                onChange={e => handleInputChange("mandalId", e.target.value)}
+                                                required={poojaType === "mandal"}
+                                            >
+                                                <option value="">Select Mandal...</option>
+                                                {mandals.map(m => (
+                                                    <option key={m.id} value={m.id}>
+                                                        {parseLocalizedValue(m.name, activeTab) || 'Unnamed Mandal'}
                                                     </option>
                                                 ))}
                                             </select>

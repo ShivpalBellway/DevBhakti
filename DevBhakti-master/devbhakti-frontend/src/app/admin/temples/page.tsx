@@ -1051,7 +1051,7 @@ function TemplesContent() {
                         {/* ALL TEMPLES TAB */}
                         <TabsTrigger
                             value="all"
-                            className="flex items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs md:text-sm font-medium transition-all data-[state=active]:bg-indigo-600 data-[state=active]:text-white shadow-none data-[state=active]:shadow-sm"
+                            className="flex items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs md:text-sm font-medium transition-all data-[state=active]:bg-primary data-[state=active]:text-white shadow-none data-[state=active]:shadow-sm"
                         >
                             <Building2 className="w-4 h-4 shrink-0" />
                             <span className="truncate">All {allCount !== null && `(${allCount})`}</span>

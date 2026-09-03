@@ -126,7 +126,7 @@ export function MandalsList() {
 
   const fetchInitialOptions = async () => {
     try {
-      const response = await fetch(`${API_URL}/mandals?all=true`);
+      const response = await fetch(`${API_URL}/mandals?all=true&lang=${language}`);
       const data = await response.json();
       if (data && data.success) {
         setAllMandals(data.data || []);
@@ -449,7 +449,7 @@ export function MandalsList() {
                   </div>
                   <div className="min-w-0">
                     <div className="text-[10px] uppercase font-bold tracking-wider text-amber-200/70 truncate">
-                      Festival Dates
+                      {t("mandal_list.festival_dates")}
                     </div>
                     <div className="text-xs font-bold text-white truncate mt-0.5">
                       {festivalDateDisplay}
@@ -464,10 +464,10 @@ export function MandalsList() {
                   </div>
                   <div className="min-w-0">
                     <div className="text-[10px] uppercase font-bold tracking-wider text-amber-200/70 truncate">
-                      Celebrated Across
+                      {t("mandal_list.celebrated_across")}
                     </div>
                     <div className="text-xs font-bold text-white truncate mt-0.5">
-                      Maharashtra & Beyond
+                      {t("mandal_list.maharashtra_beyond")}
                     </div>
                   </div>
                 </div>
@@ -479,10 +479,10 @@ export function MandalsList() {
                   </div>
                   <div className="min-w-0">
                     <div className="text-[10px] uppercase font-bold tracking-wider text-amber-200/70 truncate">
-                      Thousands of Mandals
+                      {t("mandal_list.thousands_of_mandals")}
                     </div>
                     <div className="text-xs font-bold text-white truncate mt-0.5">
-                      One Divine Celebration
+                      {t("mandal_list.one_divine_celebration")}
                     </div>
                   </div>
                 </div>
@@ -497,7 +497,7 @@ export function MandalsList() {
                   }}
                   className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-bold px-8 h-12 rounded-xl text-base shadow-lg shadow-amber-500/20 flex items-center gap-2 group transition-all"
                 >
-                  Explore Mandals
+                  {t("mandal_list.explore_mandals")}
                   <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                 </Button>
               </div>
@@ -517,7 +517,7 @@ export function MandalsList() {
               <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent" />
               <div className="absolute bottom-6 left-6 right-6 text-white">
                 <Badge className="bg-amber-500 text-slate-950 font-bold text-xs mb-1.5">
-                  Ganeshotsav Special
+                  {t("mandal_list.ganeshotsav_special")}
                 </Badge>
                 <div className="text-lg font-bold truncate">{heroTitle}</div>
               </div>
@@ -537,7 +537,7 @@ export function MandalsList() {
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-zinc-400" />
               <input
                 type="text"
-                placeholder="Search by Mandal Name, Area or City..."
+                placeholder={t("mandal_list.search_placeholder")}
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
                 onFocus={() => setIsSearchFocused(true)}
@@ -590,7 +590,7 @@ export function MandalsList() {
                     <div className="flex items-center gap-2 truncate">
                       <MapPin className="h-4 w-4 text-amber-600 shrink-0" />
                       <span className="truncate">
-                        {selectedLocation === "All" ? "All Locations" : selectedLocation}
+                        {selectedLocation === "All" ? t("mandal_list.all_locations") : selectedLocation}
                       </span>
                     </div>
                     <ChevronsUpDown className="h-3 w-3 shrink-0 text-zinc-400" />
@@ -617,7 +617,7 @@ export function MandalsList() {
                                 selectedLocation === loc ? "opacity-100" : "opacity-0"
                               )}
                             />
-                            {loc === "All" ? "All Locations" : loc}
+                            {loc === "All" ? t("mandal_list.all_locations") : loc}
                           </CommandItem>
                         ))}
                       </CommandGroup>
@@ -638,7 +638,7 @@ export function MandalsList() {
                     <div className="flex items-center gap-2 truncate">
                       <Filter className="h-4 w-4 text-amber-600 shrink-0" />
                       <span className="truncate">
-                        {selectedArea === "All" ? "All Areas" : selectedArea}
+                        {selectedArea === "All" ? t("mandal_list.all_areas") : selectedArea}
                       </span>
                     </div>
                     <ChevronsUpDown className="h-3 w-3 shrink-0 text-zinc-400" />
@@ -665,7 +665,7 @@ export function MandalsList() {
                                 selectedArea === area ? "opacity-100" : "opacity-0"
                               )}
                             />
-                            {area === "All" ? "All Areas" : area}
+                            {area === "All" ? t("mandal_list.all_areas") : area}
                           </CommandItem>
                         ))}
                       </CommandGroup>
@@ -686,7 +686,7 @@ export function MandalsList() {
                     <div className="flex items-center gap-2 truncate">
                       <Star className="h-4 w-4 text-amber-600 shrink-0" />
                       <span className="truncate">
-                        {selectedCategory === "All" ? "All Mandals" : selectedCategory}
+                        {selectedCategory === "All" ? t("mandal_list.all_mandals") : selectedCategory}
                       </span>
                     </div>
                     <ChevronsUpDown className="h-3 w-3 shrink-0 text-zinc-400" />
@@ -713,7 +713,7 @@ export function MandalsList() {
                                 selectedCategory === cat ? "opacity-100" : "opacity-0"
                               )}
                             />
-                            {cat === "All" ? "All Mandals" : cat}
+                            {cat === "All" ? t("mandal_list.all_mandals") : cat}
                           </CommandItem>
                         ))}
                       </CommandGroup>
@@ -737,7 +737,7 @@ export function MandalsList() {
               >
                 <Compass className={`w-4 h-4 text-amber-600 ${isLocating ? "animate-spin" : ""}`} />
                 <span className="text-xs sm:text-sm">
-                  {isLocating ? "Locating..." : userCoords ? "Near Me ✓" : "Near Me"}
+                  {isLocating ? t("mandal_list.locating") : userCoords ? t("mandal_list.near_me_active") : t("mandal_list.near_me")}
                 </span>
               </Button>
 
@@ -748,14 +748,14 @@ export function MandalsList() {
                 className="h-12 flex-1 bg-[#6B0F1A] hover:bg-[#520B14] text-white font-bold rounded-xl flex items-center justify-center gap-2 shadow-md"
               >
                 <Search className="w-4 h-4" />
-                <span className="text-xs sm:text-sm">Search</span>
+                <span className="text-xs sm:text-sm">{t("mandal_list.search")}</span>
               </Button>
             </div>
           </div>
 
           {/* Popular Searches Row */}
           <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-zinc-100 dark:border-zinc-800 text-xs">
-            <span className="font-semibold text-zinc-500 mr-1">Popular Searches :</span>
+            <span className="font-semibold text-zinc-500 mr-1">{t("mandal_list.popular_searches")}</span>
             {popularSearches.map((term, idx) => (
               <button
                 key={idx}
@@ -789,14 +789,12 @@ export function MandalsList() {
                 className="ml-auto text-xs font-bold text-red-600 hover:underline flex items-center gap-1"
               >
                 <X className="w-3.5 h-3.5" />
-                Reset Filters
+                {t("mandal_list.reset_filters")}
               </button>
             )}
           </div>
         </div>
       </div>
-
-     
 
       {/* ─── FEATURED MANDALS SECTION ───────────────────────────────────────── */}
       <section className="py-12 px-4 md:px-8 lg:px-12 w-full max-w-[1700px] mx-auto space-y-6">
@@ -804,16 +802,9 @@ export function MandalsList() {
           <div className="flex items-center gap-2">
             <Star className="w-6 h-6 text-amber-500 fill-amber-500" />
             <h2 className="text-2xl md:text-3xl font-serif font-bold text-zinc-900 dark:text-zinc-100">
-              Featured Mandals
+              {t("mandal_list.featured_mandals")}
             </h2>
           </div>
-          {/* <Link
-            href="#mandals-search-section"
-            className="text-xs md:text-sm font-bold text-[#6B0F1A] dark:text-amber-400 hover:underline flex items-center gap-1"
-          >
-            View All Mandals
-            <ArrowRight className="w-4 h-4" />
-          </Link> */}
         </div>
 
         {/* Mandals Horizontal Carousel (Matching Screenshot Cards & Scroll Buttons) */}
@@ -899,7 +890,7 @@ export function MandalsList() {
                             <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#FFF4E6] dark:bg-[#2C1810] border border-[#DEB887]/30 shrink-0 mt-0.5">
                               <BadgeCheck className="w-3.5 h-3.5 text-[#D97706] fill-white dark:fill-[#2C1810]" />
                               <span className="text-[10px] font-bold text-[#92400E] dark:text-[#FCD34D] uppercase tracking-wider">
-                                Verified
+                                {t("mandal_list.verified")}
                               </span>
                             </div>
                           )}
@@ -917,12 +908,12 @@ export function MandalsList() {
                         {mandal.distanceKm !== undefined && (
                           <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200/80 flex items-center gap-1">
                             <Navigation className="w-2.5 h-2.5 text-emerald-600" />
-                            {mandal.distanceKm} km away
+                            {mandal.distanceKm} {t("mandal_list.km_away")}
                           </span>
                         )}
                         {mandal.isLive && (
                           <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-red-50 text-red-600 border border-red-100">
-                            LIVE Darshan
+                            {t("mandal_list.live_darshan")}
                           </span>
                         )}
                         {mandal.presiding_deity && (
@@ -947,7 +938,7 @@ export function MandalsList() {
                           }}
                           className="text-xs font-bold text-[#6B0F1A] dark:text-amber-400 hover:underline flex items-center gap-1 group/link"
                         >
-                          Explore Mandal
+                          {t("mandal_list.explore_mandal")}
                           <ArrowRight className="w-3.5 h-3.5 group-hover/link:translate-x-1 transition-transform" />
                         </button>
                       </div>
@@ -973,10 +964,10 @@ export function MandalsList() {
               <Building2 className="w-8 h-8" />
             </div>
             <h3 className="text-xl font-bold text-zinc-800 dark:text-zinc-200 mb-2">
-              No Mandals Found
+              {t("mandal_list.no_mandals")}
             </h3>
             <p className="text-sm text-zinc-500 max-w-sm mx-auto mb-6">
-              Try resetting your search query or selecting a different location.
+              {t("mandal_list.try_adjusting")}
             </p>
             <Button
               onClick={() => {
@@ -988,14 +979,13 @@ export function MandalsList() {
               }}
               className="bg-amber-600 hover:bg-amber-700 text-white font-bold px-6 py-2 rounded-xl"
             >
-              Reset Filters
+              {t("mandal_list.reset_filters")}
             </Button>
           </div>
         )}
       </section>
 
-
- {/* ─── EXPLORE BY LOCATION SECTION ───────────────────────────────────── */}
+      {/* ─── EXPLORE BY LOCATION SECTION ───────────────────────────────────── */}
       <section className="pt-2 pb-4 px-4 md:px-8 lg:px-12 w-full max-w-[1700px] mx-auto space-y-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2.5">
@@ -1003,7 +993,7 @@ export function MandalsList() {
               <MapPin className="w-4 h-4" />
             </div>
             <h3 className="text-2xl md:text-3xl font-serif font-bold text-zinc-900 dark:text-zinc-100">
-              Explore by Location
+              {t("mandal_list.explore_by_location")}
             </h3>
           </div>
           {/* <button
@@ -1143,13 +1133,13 @@ export function MandalsList() {
             const cardsList = [
               ...top5.map((item, idx) => ({
                 name: item.name,
-                count: `${item.count} Mandal${item.count !== 1 ? "s" : ""}`,
+                count: item.count === 1 ? t("mandal_list.mandal_count_one") : t("mandal_list.mandal_count_many", { count: item.count }),
                 icon: sacredIcons[idx % sacredIcons.length],
                 isMore: false,
               })),
               {
-                name: "More Cities",
-                count: "View All",
+                name: t("mandal_list.explore_by_location"),
+                count: t("mandal_list.view_all_locations"),
                 isMore: true,
                 icon: (
                   <div className="flex items-center gap-1.5 text-[#9A532C] py-3">

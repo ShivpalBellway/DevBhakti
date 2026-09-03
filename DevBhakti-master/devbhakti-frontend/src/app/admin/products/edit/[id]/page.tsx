@@ -12,6 +12,7 @@ import {
   Image as ImageIcon,
   ShieldCheck,
   Store,
+  Landmark,
   Building2,
   Check,
   ChevronsUpDown,
@@ -60,6 +61,7 @@ import {
   fetchAllTemplesAdmin,
   fetchActiveCategoriesAdmin,
   fetchAllSellersAdmin,
+  fetchAllMandalsAdmin,
 } from "@/api/adminController";
 import { parseLocalizedValue } from "@/utils/textUtils";
 
@@ -139,9 +141,10 @@ export default function EditProductPage() {
   const loadVendors = async () => {
     setIsLoadingVendors(true);
     try {
-      const [templesData, sellersData] = await Promise.all([
+      const [templesData, sellersData, mandalsRes] = await Promise.all([
         fetchAllTemplesAdmin({ isVerified: true, isActive: true }),
         fetchAllSellersAdmin(),
+        fetchAllMandalsAdmin({ isActive: true, status: 'APPROVED' })
       ]);
       const formattedTemples = (templesData || [])
         .filter((user: any) => user?.temple?.id)
@@ -161,10 +164,23 @@ export default function EditProductPage() {
           icon: <Store className="w-4 h-4 text-blue-600" />,
           searchText: `${seller.storeName} seller vendor store`,
         }));
+
+      const mandalsData = mandalsRes?.data?.mandals || mandalsRes?.data || [];
+      const formattedMandals = (Array.isArray(mandalsData) ? mandalsData : [])
+        .filter((mandal: any) => mandal?.id)
+        .map((mandal: any) => ({
+          id: mandal.id,
+          name: parseLocalizedValue(mandal.name, "en"),
+          role: "MANDAL",
+          icon: <Landmark className="w-4 h-4 text-orange-600" />,
+          searchText: `${parseLocalizedValue(mandal.name, "en")} mandal samiti`,
+        }));
+
       setVendors([
         { id: "general", name: "DevBhakti Exclusive", role: "DevBhakti Admin", icon: <ShieldCheck className="w-4 h-4 text-amber-600" />, searchText: "devbhakti exclusive admin general" },
         ...formattedTemples,
         ...formattedSellers,
+        ...formattedMandals,
       ]);
     } catch {
       setVendors([{ id: "general", name: "DevBhakti Exclusive", role: "ADMIN", icon: <ShieldCheck className="w-4 h-4 text-amber-600" /> }]);
@@ -207,7 +223,7 @@ export default function EditProductPage() {
         origin_hi: data.origin?.hi || data.origin_hi || "",
         origin_mr: data.origin?.mr || data.origin_mr || "",
         category: data.categoryId || "",
-        templeId: data.templeId || data.sellerId || "general",
+        templeId: data.templeId || data.sellerId || data.mandalId || "general",
         status: data.status,
         rating: data.rating?.toString() || "4.5",
         weight: data.weight?.toString() || "",
@@ -291,6 +307,17 @@ export default function EditProductPage() {
 
       if (productImage) fd.append("image", productImage);
       if (!existingImage && !productImage) fd.append("removeImage", "true");
+
+      // Determine vendor type and append appropriate field
+      if (formData.templeId && formData.templeId !== "general") {
+        const selectedVendor = vendors.find(v => v.id === formData.templeId);
+        if (selectedVendor?.role === "MANDAL") {
+          fd.append('mandalId', formData.templeId);
+          // Clear templeId from the FormData so backend doesn't use it for temple/seller lookup
+          fd.delete('templeId');
+          fd.append('templeId', '');
+        }
+      }
 
       const variantsData = validVariants.map((v, index) => {
         if (v.imageFile) fd.append(`variant_image_${index}`, v.imageFile);

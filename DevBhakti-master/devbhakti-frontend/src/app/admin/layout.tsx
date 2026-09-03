@@ -52,23 +52,23 @@ const sidebarItems = [
   {
     label: "Temples",
     icon: Building2,
-    href: "#",
+    href: "/admin/temples",
     permission: "temples.menu",
-    subItems: [
-      { label: "All Temples", href: "/admin/temples", permission: "temples.view" },
-      // { label: "Verification Requests", href: "/admin/temples/update-requests", permission: "temples.requests_view" },
-    ]
+    // subItems: [
+    //   { label: "All Temples", href: "/admin/temples", permission: "temples.view" },
+    //   // { label: "Verification Requests", href: "/admin/temples/update-requests", permission: "temples.requests_view" },
+    // ]
   },
   {
     label: "Mandals",
     icon: Building2,
     href: "#",
-    permission: "temples.menu",
+    permission: "mandals.menu",
     subItems: [
-      { label: "All Mandals", href: "/admin/mandals", permission: "temples.view" },
-      { label: "Add Mandal", href: "/admin/mandals/create", permission: "temples.create" },
-      { label: "Mandal Settings", href: "/admin/settings/mandal", permission: "temples.view" },
-      { label: "Mandal News", href: "/admin/mandals/news", permission: "temples.view" },
+      { label: "All Mandals", href: "/admin/mandals", permission: "mandals.view" },
+      { label: "Add Mandal", href: "/admin/mandals/create", permission: "mandals.create" },
+      { label: "Mandal Settings", href: "/admin/settings/mandal", permission: "mandals.manage" },
+      { label: "Mandal News", href: "/admin/mandals/news", permission: "mandals.news" },
 
     ]
   },
@@ -82,7 +82,7 @@ const sidebarItems = [
     label: "Leads Management",
     icon: Target,
     href: "/admin/leads",
-    permission: "users.menu",
+    permission: "leads.menu",
   },
   {
     label: "Pooja Bookings",
@@ -92,7 +92,7 @@ const sidebarItems = [
     subItems: [
       { label: "📅 All & Online Bookings", href: "/admin/pooja-bookings", permission: "bookings.view" },
       { label: "➕ Add Offline Booking", href: "/admin/pooja-bookings/add-offline", permission: "bookings.manage" },
-      { label: "👥 Offline Users & Leads", href: "/admin/offline-pooja-leads", permission: "bookings.view" },
+      { label: "👥 Offline Users & Leads", href: "/admin/offline-pooja-leads", permission: "leads.view" },
     ]
   },
 

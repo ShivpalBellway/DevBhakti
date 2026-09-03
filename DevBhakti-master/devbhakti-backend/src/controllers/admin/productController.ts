@@ -14,7 +14,7 @@ export const createProduct = async (req: Request, res: Response) => {
     let shippingInfo_en, shippingInfo_hi, shippingInfo_mr;
     let origin_en, origin_hi, origin_mr;
     
-    let categoryId, templeId, status, variants, image, rating;
+    let categoryId, templeId, mandalId, status, variants, image, rating;
 
     if (req.is('multipart/form-data')) {
       // FormData handling
@@ -48,6 +48,7 @@ export const createProduct = async (req: Request, res: Response) => {
 
       categoryId = req.body.categoryId || req.body.category || null;
       templeId = req.body.templeId || null;
+      mandalId = req.body.mandalId || null;
       
       // Handle templeId if it's an array (take first element)
       if (Array.isArray(templeId)) {
@@ -113,6 +114,7 @@ export const createProduct = async (req: Request, res: Response) => {
 
       categoryId = productCategoryId || req.body.category || null;
       templeId = productTempleId || null;
+      mandalId = req.body.mandalId || null;
       
       // Handle templeId if it's an array (take first element)
       if (Array.isArray(templeId)) {
@@ -163,8 +165,18 @@ export const createProduct = async (req: Request, res: Response) => {
       }
     }
 
-    // Handle Vendor (Temple or Seller)
-    if (templeId && templeId !== "general") {
+    // Handle Vendor (Temple, Seller, or Mandal)
+    if (mandalId && mandalId !== "general") {
+      const dbMandal = await prisma.mandal.findUnique({ where: { id: mandalId as string } });
+      if (dbMandal) {
+        createData.mandalId = dbMandal.id;
+      } else {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid mandal reference"
+        });
+      }
+    } else if (templeId && templeId !== "general") {
       const dbTemple = await prisma.temple.findUnique({ where: { id: templeId as string } });
       if (dbTemple) {
         createData.templeId = dbTemple.id;
@@ -173,10 +185,16 @@ export const createProduct = async (req: Request, res: Response) => {
         if (seller) {
           createData.sellerId = seller.id;
         } else {
-          return res.status(400).json({
-            success: false,
-            message: "Invalid vendor reference"
-          });
+          // Check if it's a mandal ID passed via templeId field
+          const mandal = await prisma.mandal.findUnique({ where: { id: templeId as string } });
+          if (mandal) {
+            createData.mandalId = mandal.id;
+          } else {
+            return res.status(400).json({
+              success: false,
+              message: "Invalid vendor reference"
+            });
+          }
         }
       }
     }
@@ -188,7 +206,8 @@ export const createProduct = async (req: Request, res: Response) => {
         variants: true,
         categoryObj: true,
         temple: true,
-        seller: true
+        seller: true,
+        mandal: true
       }
     });
 
@@ -265,11 +284,13 @@ export const getAllProducts = async (req: Request, res: Response) => {
       if (templeId === "admin") {
         where.AND.push({ templeId: null });
         where.AND.push({ sellerId: null });
+        where.AND.push({ mandalId: null });
       } else {
         where.AND.push({
           OR: [
             { templeId: templeId as string },
-            { sellerId: templeId as string }
+            { sellerId: templeId as string },
+            { mandalId: templeId as string }
           ]
         });
       }
@@ -325,6 +346,12 @@ export const getAllProducts = async (req: Request, res: Response) => {
                   role: true
                 }
               }
+            }
+          },
+          mandal: {
+            select: {
+              id: true,
+              name: true
             }
           }
         },
@@ -551,7 +578,7 @@ export const updateProduct = async (req: Request, res: Response) => {
     let shippingInfo_en, shippingInfo_hi, shippingInfo_mr;
     let origin_en, origin_hi, origin_mr;
 
-    let categoryId, templeId, status, variants, image, removeImage, rating;
+    let categoryId, templeId, mandalId, status, variants, image, removeImage, rating;
 
     if (req.is('multipart/form-data')) {
       // FormData handling
@@ -585,6 +612,7 @@ export const updateProduct = async (req: Request, res: Response) => {
 
       categoryId = req.body.categoryId || req.body.category || null;
       templeId = req.body.templeId || null;
+      mandalId = req.body.mandalId || null;
       status = req.body.status;
       rating = req.body.rating ? parseFloat(req.body.rating) : undefined;
 
@@ -647,6 +675,7 @@ export const updateProduct = async (req: Request, res: Response) => {
 
       categoryId = productCategoryId || req.body.category || null;
       templeId = productTempleId || null;
+      mandalId = req.body.mandalId || null;
       status = productStatus;
       variants = productVariants || [];
       rating = productRating;
@@ -678,21 +707,38 @@ export const updateProduct = async (req: Request, res: Response) => {
     }
 
     // Vendor Logic
-    if (templeId && templeId !== "general") {
+    if (mandalId && mandalId !== "general") {
+      const dbMandal = await prisma.mandal.findUnique({ where: { id: mandalId as string } });
+      if (dbMandal) {
+        updateData.mandalId = dbMandal.id;
+        updateData.templeId = null;
+        updateData.sellerId = null;
+      }
+    } else if (templeId && templeId !== "general") {
       const dbTemple = await prisma.temple.findUnique({ where: { id: templeId as string } });
       if (dbTemple) {
         updateData.templeId = dbTemple.id;
         updateData.sellerId = null;
+        updateData.mandalId = null;
       } else {
         const seller = await prisma.sellerProfile.findUnique({ where: { id: templeId as string } });
         if (seller) {
           updateData.sellerId = seller.id;
           updateData.templeId = null;
+          updateData.mandalId = null;
+        } else {
+          const mandal = await prisma.mandal.findUnique({ where: { id: templeId as string } });
+          if (mandal) {
+            updateData.mandalId = mandal.id;
+            updateData.templeId = null;
+            updateData.sellerId = null;
+          }
         }
       }
     } else if (templeId === "general") {
       updateData.templeId = null;
       updateData.sellerId = null;
+      updateData.mandalId = null;
     }
 
     if (name_en) updateData.name = buildLangJson(name_en, name_hi, name_mr);
@@ -754,7 +800,8 @@ export const updateProduct = async (req: Request, res: Response) => {
         variants: true,
         categoryObj: true,
         temple: true,
-        seller: true
+        seller: true,
+        mandal: true
       }
     });
 
@@ -1191,10 +1238,10 @@ export const getPublicProducts = async (req: Request, res: Response) => {
   }
 };
 
-// Get All Potential Product Owners (Temples & Sellers)
+// Get All Potential Product Owners (Temples, Sellers & Mandals)
 export const getProductOwners = async (req: Request, res: Response) => {
   try {
-    const [temples, sellers] = await Promise.all([
+    const [temples, sellers, mandals] = await Promise.all([
       prisma.temple.findMany({
         select: {
           id: true,
@@ -1209,6 +1256,13 @@ export const getProductOwners = async (req: Request, res: Response) => {
           name: true,
           userId: true,
           user: { select: { role: true } }
+        }
+      }),
+      prisma.mandal.findMany({
+        where: { isActive: true, status: 'APPROVED' },
+        select: {
+          id: true,
+          name: true
         }
       })
     ]);
@@ -1225,6 +1279,11 @@ export const getProductOwners = async (req: Request, res: Response) => {
         name: getEnglish(s.name),
         type: 'Seller',
         userId: s.userId
+      })),
+      ...mandals.map(m => ({
+        id: m.id,
+        name: getEnglish(m.name),
+        type: 'Mandal'
       }))
     ].sort((a, b) => a.name.localeCompare(b.name));
 

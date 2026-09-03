@@ -136,13 +136,14 @@ const sidebarItems = [
         ]
     },
     {
-        label: "Darshan Passes",
+        label: "Darshan Ticket",
         icon: Ticket,
         href: "/temples/dashboard/darshan",
         subItems: [
             { label: "Settings & Overview", href: "/temples/dashboard/darshan" },
             { label: "Manage Slots", href: "/temples/dashboard/darshan/slots" },
             { label: "Booked Tickets", href: "/temples/dashboard/darshan/tickets" },
+            { label: "➕ Issue Offline Ticket", href: "/temples/dashboard/darshan/offline" },
             { label: "Scan QR at Gate", href: "/temples/dashboard/darshan/scan" },
         ]
     },

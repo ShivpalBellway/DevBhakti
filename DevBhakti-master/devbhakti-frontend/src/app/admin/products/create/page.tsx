@@ -12,6 +12,7 @@ import {
   Image as ImageIcon,
   ShieldCheck,
   Store,
+  Landmark,
   Building2,
   Check,
   ChevronsUpDown,
@@ -53,7 +54,7 @@ import {
 } from "@/components/ui/command";
 import { useToast } from "@/hooks/use-toast";
 import { useLanguage, Language } from "@/context/LanguageContext";
-import { createProductAdmin, fetchAllTemplesAdmin, fetchActiveCategoriesAdmin, fetchAllSellersAdmin } from "@/api/adminController";
+import { createProductAdmin, fetchAllTemplesAdmin, fetchActiveCategoriesAdmin, fetchAllSellersAdmin, fetchAllMandalsAdmin } from "@/api/adminController";
 import { parseLocalizedValue } from "@/utils/textUtils";
 
 interface Variant {
@@ -130,9 +131,10 @@ export default function CreateProductPage() {
   const loadVendors = async () => {
     setIsLoadingVendors(true);
     try {
-      const [templesData, sellersData] = await Promise.all([
+      const [templesData, sellersData, mandalsRes] = await Promise.all([
         fetchAllTemplesAdmin({ isVerified: true, isActive: true }),
-        fetchAllSellersAdmin()
+        fetchAllSellersAdmin(),
+        fetchAllMandalsAdmin({ isActive: true, status: 'APPROVED' })
       ]);
 
       const formattedTemples = (templesData || [])
@@ -155,10 +157,22 @@ export default function CreateProductPage() {
           searchText: `${seller.storeName} seller vendor store`
         }));
 
+      const mandalsData = mandalsRes?.data?.mandals || mandalsRes?.data || [];
+      const formattedMandals = (Array.isArray(mandalsData) ? mandalsData : [])
+        .filter((mandal: any) => mandal?.id)
+        .map((mandal: any) => ({
+          id: mandal.id,
+          name: parseLocalizedValue(mandal.name, "en"),
+          role: "MANDAL",
+          icon: <Landmark className="w-4 h-4 text-orange-600" />,
+          searchText: `${parseLocalizedValue(mandal.name, "en")} mandal samiti`
+        }));
+
       setVendors([
         { id: "general", name: "DevBhakti Exclusive", role: "DevBhakti Admin", icon: <ShieldCheck className="w-4 h-4 text-amber-600" />, searchText: "devbhakti exclusive admin general" },
         ...formattedTemples,
-        ...formattedSellers
+        ...formattedSellers,
+        ...formattedMandals
       ]);
     } catch (error: any) {
       console.error("Load Vendors Error:", error);
@@ -235,7 +249,13 @@ export default function CreateProductPage() {
       fd.append('origin', formData.origin_en);
 
       if (formData.templeId && formData.templeId !== "general") {
-        fd.append('templeId', formData.templeId);
+        // Determine vendor type and append appropriate field
+        const selectedVendor = vendors.find(v => v.id === formData.templeId);
+        if (selectedVendor?.role === "MANDAL") {
+          fd.append('mandalId', formData.templeId);
+        } else {
+          fd.append('templeId', formData.templeId);
+        }
       }
 
       if (productImage) fd.append('image', productImage);

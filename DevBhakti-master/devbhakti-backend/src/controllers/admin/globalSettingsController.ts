@@ -147,13 +147,7 @@ export const getMandalRegistrationStatus = async (req: Request, res: Response) =
             globalEnabled,
             enabled: isRegistrationOpen, // Public convenience flag
             activeFestival,
-            festivals,
-            // Fallback backward compatibility fields
-            title: activeFestival?.title || { en: '', hi: '', mr: '' },
-            subtitle: activeFestival?.subtitle || { en: '', hi: '', mr: '' },
-            image: activeFestival?.image || '',
-            startDate: activeFestival?.startDate || '',
-            endDate: activeFestival?.endDate || ''
+            festivals
         });
     } catch (error) {
         console.error('Error fetching mandal registration status:', error);

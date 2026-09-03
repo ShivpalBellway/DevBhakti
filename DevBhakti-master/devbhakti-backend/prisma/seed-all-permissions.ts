@@ -16,10 +16,31 @@ const permissions = [
   { key: 'temples.requests_view',   module: 'temples', label: 'View Update Requests',        applicableTo: [OwnerType.ADMIN] },
   { key: 'temples.requests_action', module: 'temples', label: 'Action on Update Requests',   applicableTo: [OwnerType.ADMIN] },
 
-  // ── MANDALS MANAGEMENT (ADMIN SIDE) ─────────────────────
-  { key: 'mandals.menu',   module: 'mandals', label: 'Show Mandals Menu',   applicableTo: [OwnerType.ADMIN] },
-  { key: 'mandals.view',   module: 'mandals', label: 'View Mandals List',   applicableTo: [OwnerType.ADMIN] },
+  // ── MANDALS MANAGEMENT ───────────────────────────────────
+  { key: 'mandals.menu',   module: 'mandals', label: 'Show Mandals Menu',   applicableTo: [OwnerType.ADMIN, OwnerType.MANDAL] },
+  { key: 'mandals.view',   module: 'mandals', label: 'View Mandals List',   applicableTo: [OwnerType.ADMIN, OwnerType.MANDAL] },
+  { key: 'mandals.create', module: 'mandals', label: 'Add New Mandal',     applicableTo: [OwnerType.ADMIN] },
+  { key: 'mandals.edit',   module: 'mandals', label: 'Edit Mandal Details', applicableTo: [OwnerType.ADMIN, OwnerType.MANDAL] },
+  { key: 'mandals.delete', module: 'mandals', label: 'Delete Mandal',       applicableTo: [OwnerType.ADMIN] },
   { key: 'mandals.manage', module: 'mandals', label: 'Manage Mandals Status', applicableTo: [OwnerType.ADMIN] },
+  { key: 'mandals.news',        module: 'mandals', label: 'View Mandal News',        applicableTo: [OwnerType.ADMIN, OwnerType.MANDAL] },
+  { key: 'mandals.news.create', module: 'mandals', label: 'Create Mandal News Post', applicableTo: [OwnerType.ADMIN, OwnerType.MANDAL] },
+  { key: 'mandals.news.edit',   module: 'mandals', label: 'Edit Mandal News Post',   applicableTo: [OwnerType.ADMIN, OwnerType.MANDAL] },
+  { key: 'mandals.news.delete', module: 'mandals', label: 'Delete Mandal News Post', applicableTo: [OwnerType.ADMIN, OwnerType.MANDAL] },
+
+  // ── LEADS MANAGEMENT ─────────────────────────────────────
+  { key: 'leads.menu',   module: 'leads', label: 'Show Leads Menu',       applicableTo: [OwnerType.ADMIN, OwnerType.TEMPLE, OwnerType.MANDAL] },
+  { key: 'leads.view',   module: 'leads', label: 'View Offline Leads',    applicableTo: [OwnerType.ADMIN, OwnerType.TEMPLE, OwnerType.MANDAL] },
+  { key: 'leads.manage', module: 'leads', label: 'Manage & Assign Leads', applicableTo: [OwnerType.ADMIN, OwnerType.TEMPLE, OwnerType.MANDAL] },
+  { key: 'leads.export', module: 'leads', label: 'Export Leads Data',     applicableTo: [OwnerType.ADMIN, OwnerType.TEMPLE, OwnerType.MANDAL] },
+
+  // ── DARSHAN MANAGEMENT ───────────────────────────────────
+  { key: 'darshan.menu',   module: 'darshan', label: 'Show Darshan Menu', applicableTo: [OwnerType.ADMIN, OwnerType.TEMPLE, OwnerType.MANDAL] },
+  { key: 'darshan.view',   module: 'darshan', label: 'View Darshan Tickets', applicableTo: [OwnerType.ADMIN, OwnerType.TEMPLE, OwnerType.MANDAL] },
+  { key: 'darshan.create', module: 'darshan', label: 'Create Darshan Booking', applicableTo: [OwnerType.ADMIN, OwnerType.TEMPLE, OwnerType.MANDAL] },
+  { key: 'darshan.edit',   module: 'darshan', label: 'Edit Darshan Slot/Ticket', applicableTo: [OwnerType.ADMIN, OwnerType.TEMPLE, OwnerType.MANDAL] },
+  { key: 'darshan.delete', module: 'darshan', label: 'Cancel Darshan Ticket', applicableTo: [OwnerType.ADMIN, OwnerType.TEMPLE, OwnerType.MANDAL] },
+  { key: 'darshan.slots',  module: 'darshan', label: 'Manage Darshan Timings/Slots', applicableTo: [OwnerType.ADMIN, OwnerType.TEMPLE, OwnerType.MANDAL] },
 
   // ── MANDAL SPECIFIC (OWNER SIDE) ────────────────────────
   { key: 'mandal.profile.manage', module: 'mandals', label: 'Manage Mandal Profile', applicableTo: [OwnerType.MANDAL] },
@@ -43,33 +64,33 @@ const permissions = [
   { key: 'users.manage', module: 'users', label: 'Manage Users Status', applicableTo: [OwnerType.ADMIN] },
 
   // ── POOJA BOOKINGS ──────────────────────────────────────
-  { key: 'bookings.menu',   module: 'bookings', label: 'Show Bookings Menu',    applicableTo: [OwnerType.ADMIN, OwnerType.TEMPLE] },
-  { key: 'bookings.view',   module: 'bookings', label: 'View Bookings List',    applicableTo: [OwnerType.ADMIN, OwnerType.TEMPLE] },
-  { key: 'bookings.manage', module: 'bookings', label: 'Update Booking Status', applicableTo: [OwnerType.ADMIN, OwnerType.TEMPLE] },
+  { key: 'bookings.menu',   module: 'bookings', label: 'Show Bookings Menu',    applicableTo: [OwnerType.ADMIN, OwnerType.TEMPLE, OwnerType.MANDAL] },
+  { key: 'bookings.view',   module: 'bookings', label: 'View Bookings List',    applicableTo: [OwnerType.ADMIN, OwnerType.TEMPLE, OwnerType.MANDAL] },
+  { key: 'bookings.manage', module: 'bookings', label: 'Update Booking Status', applicableTo: [OwnerType.ADMIN, OwnerType.TEMPLE, OwnerType.MANDAL] },
 
   // ── DONATIONS ───────────────────────────────────────────
   { key: 'donations.menu', module: 'donations', label: 'Show Donations Menu',  applicableTo: [OwnerType.ADMIN, OwnerType.TEMPLE, OwnerType.MANDAL] },
   { key: 'donations.view', module: 'donations', label: 'View Donation History', applicableTo: [OwnerType.ADMIN, OwnerType.TEMPLE, OwnerType.MANDAL] },
 
   // ── PRODUCT MANAGEMENT ──────────────────────────────────
-  { key: 'products.menu',     module: 'products', label: 'Show Products Menu',   applicableTo: [OwnerType.ADMIN, OwnerType.TEMPLE, OwnerType.SELLER] },
-  { key: 'products.view',     module: 'products', label: 'View Product List',    applicableTo: [OwnerType.ADMIN, OwnerType.TEMPLE, OwnerType.SELLER] },
-  { key: 'products.create',   module: 'products', label: 'Add New Product',      applicableTo: [OwnerType.ADMIN, OwnerType.TEMPLE, OwnerType.SELLER] },
-  { key: 'products.edit',     module: 'products', label: 'Edit Product',         applicableTo: [OwnerType.ADMIN, OwnerType.TEMPLE, OwnerType.SELLER] },
-  { key: 'products.delete',   module: 'products', label: 'Delete Product',       applicableTo: [OwnerType.ADMIN, OwnerType.TEMPLE, OwnerType.SELLER] },
+  { key: 'products.menu',     module: 'products', label: 'Show Products Menu',   applicableTo: [OwnerType.ADMIN, OwnerType.TEMPLE, OwnerType.SELLER, OwnerType.MANDAL] },
+  { key: 'products.view',     module: 'products', label: 'View Product List',    applicableTo: [OwnerType.ADMIN, OwnerType.TEMPLE, OwnerType.SELLER, OwnerType.MANDAL] },
+  { key: 'products.create',   module: 'products', label: 'Add New Product',      applicableTo: [OwnerType.ADMIN, OwnerType.TEMPLE, OwnerType.SELLER, OwnerType.MANDAL] },
+  { key: 'products.edit',     module: 'products', label: 'Edit Product',         applicableTo: [OwnerType.ADMIN, OwnerType.TEMPLE, OwnerType.SELLER, OwnerType.MANDAL] },
+  { key: 'products.delete',   module: 'products', label: 'Delete Product',       applicableTo: [OwnerType.ADMIN, OwnerType.TEMPLE, OwnerType.SELLER, OwnerType.MANDAL] },
   { key: 'products.approval', module: 'products', label: 'Approve/Reject Products', applicableTo: [OwnerType.ADMIN] },
   
   { key: 'categories.view',   module: 'categories', label: 'View Categories',   applicableTo: [OwnerType.ADMIN] },
   { key: 'categories.manage', module: 'categories', label: 'Manage Categories', applicableTo: [OwnerType.ADMIN] },
 
-  { key: 'products.orders.view',   module: 'products', label: 'View Product Orders',   applicableTo: [OwnerType.ADMIN, OwnerType.TEMPLE, OwnerType.SELLER] },
-  { key: 'products.orders.manage', module: 'products', label: 'Manage Product Orders', applicableTo: [OwnerType.ADMIN, OwnerType.TEMPLE, OwnerType.SELLER] },
+  { key: 'products.orders.view',   module: 'products', label: 'View Product Orders',   applicableTo: [OwnerType.ADMIN, OwnerType.TEMPLE, OwnerType.SELLER, OwnerType.MANDAL] },
+  { key: 'products.orders.manage', module: 'products', label: 'Manage Product Orders', applicableTo: [OwnerType.ADMIN, OwnerType.TEMPLE, OwnerType.SELLER, OwnerType.MANDAL] },
 
   // ── POOJAS ──────────────────────────────────────────────
-  { key: 'poojas.view',       module: 'poojas', label: 'View Pooja List',    applicableTo: [OwnerType.ADMIN, OwnerType.TEMPLE] },
-  { key: 'poojas.create',     module: 'poojas', label: 'Add New Pooja',      applicableTo: [OwnerType.ADMIN, OwnerType.TEMPLE] },
-  { key: 'poojas.edit',       module: 'poojas', label: 'Edit Pooja',         applicableTo: [OwnerType.ADMIN, OwnerType.TEMPLE] },
-  { key: 'poojas.delete',     module: 'poojas', label: 'Delete Pooja',       applicableTo: [OwnerType.ADMIN, OwnerType.TEMPLE] },
+  { key: 'poojas.view',       module: 'poojas', label: 'View Pooja List',    applicableTo: [OwnerType.ADMIN, OwnerType.TEMPLE, OwnerType.MANDAL] },
+  { key: 'poojas.create',     module: 'poojas', label: 'Add New Pooja',      applicableTo: [OwnerType.ADMIN, OwnerType.TEMPLE, OwnerType.MANDAL] },
+  { key: 'poojas.edit',       module: 'poojas', label: 'Edit Pooja',         applicableTo: [OwnerType.ADMIN, OwnerType.TEMPLE, OwnerType.MANDAL] },
+  { key: 'poojas.delete',     module: 'poojas', label: 'Delete Pooja',       applicableTo: [OwnerType.ADMIN, OwnerType.TEMPLE, OwnerType.MANDAL] },
   { key: 'poojas.categories', module: 'poojas', label: 'Manage Pooja Purposes', applicableTo: [OwnerType.ADMIN] },
   { key: 'poojas.promote',    module: 'poojas', label: 'Promote to Master',   applicableTo: [OwnerType.ADMIN] },
 
