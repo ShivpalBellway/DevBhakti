@@ -51,7 +51,7 @@ import { API_URL } from "@/config/apiConfig";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/context/LanguageContext";
 import { getLocalized } from "@/utils/localization";
-import { stripHtml } from "@/utils/textUtils";
+import { stripHtml, parseLocalizedValue } from "@/utils/textUtils";
 import { fetchUserFavorites, addFavorite, removeFavorite } from "@/api/userController";
 import { fetchMandalRegistrationStatus } from "@/api/publicController";
 
@@ -832,7 +832,7 @@ export function MandalsList() {
             >
               {mandals.map((mandal) => {
                 if (!mandal) return null;
-                const localizedName = getLocalized(mandal, "name", language) || mandal.name || "Mandal";
+                const localizedName = getLocalized(mandal, "name", language) || (mandal.name ? parseLocalizedValue(mandal.name, language) : "Mandal");
                 const isFav = favorites.some((f) => f && f.mandalId === mandal.id);
                 const isVerifiedMandal = mandal.isActive === true && String(mandal.status || "").toUpperCase() === "APPROVED";
 
@@ -1251,7 +1251,7 @@ export function MandalsList() {
                   const displayNews = mandalNews.length > 0
                     ? mandalNews.slice(0, 5).map((item, idx) => ({
                         id: item.id,
-                        title: item.title,
+                        title: parseLocalizedValue(item.title, language),
                         date: formatNewsDate(item.publishedAt || item.createdAt) || staticNewsItems[idx]?.date || "20 May 2026",
                       }))
                     : staticNewsItems;

@@ -31,6 +31,7 @@ model User {
   displayId           String?              @unique
   cart                Cart?
   darshanTickets      DarshanTicket[]
+  mandalDarshanTickets MandalDarshanTicket[]
   donations           Donation[]
   favorites           Favorite[]
   orders              Order[]
@@ -774,6 +775,8 @@ model Mandal {
   favorites          Favorite[]
   ledgerEntries      MandalLedger[]
   withdrawals        MandalWithdrawalRequest[]
+  mandalDarshanSlots MandalDarshanSlot[]
+  mandalDarshanTickets MandalDarshanTicket[]
 }
 
 model Lead {
@@ -913,6 +916,44 @@ model DarshanTicket {
   temple           Temple              @relation(fields: [templeId], references: [id])
   user             User                @relation(fields: [userId], references: [id])
 }
+
+model MandalDarshanSlot {
+  id          String                  @id @default(cuid())
+  mandalId    String
+  date        String
+  startTime   String
+  endTime     String
+  maxCapacity Int                     @default(500)
+  bookedCount Int                     @default(0)
+  isClosed    Boolean                 @default(false)
+  createdAt   DateTime                @default(now())
+  updatedAt   DateTime                @updatedAt
+  mandal      Mandal                  @relation(fields: [mandalId], references: [id], onDelete: Cascade)
+  tickets     MandalDarshanTicket[]
+
+  @@unique([mandalId, date, startTime])
+}
+
+model MandalDarshanTicket {
+  id               String              @id @default(cuid())
+  displayId        String              @unique
+  userId           String?
+  slotId           String
+  mandalId         String
+  visitorName      String
+  visitorPhone     String
+  visitorEmail     String?
+  visitorCount     Int                 @default(1)
+  totalAmount      Float               @default(0)
+  status           DarshanTicketStatus @default(PENDING)
+  paymentMethod    String?
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+  slot             MandalDarshanSlot   @relation(fields: [slotId], references: [id])
+  mandal           Mandal              @relation(fields: [mandalId], references: [id])
+  user             User?               @relation(fields: [userId], references: [id])
+}
+
 
 enum SlabType {
   GLOBAL

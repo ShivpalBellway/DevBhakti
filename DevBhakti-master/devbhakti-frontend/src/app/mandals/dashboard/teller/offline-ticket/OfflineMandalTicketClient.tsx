@@ -62,7 +62,7 @@ export default function OfflineMandalTicketClient() {
     setSubmitting(true);
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(`${API_URL}/mandal-admin/offline-ticket`, {
+      const res = await fetch(`${API_URL}/mandal-admin/darshan-bookings/offline-ticket`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -74,13 +74,15 @@ export default function OfflineMandalTicketClient() {
           visitorEmail: visitorEmail.trim() || undefined,
           visitorCount,
           ticketType,
-          ticketPrice,
+          amount: ticketPrice * visitorCount,
           paymentMode,
           paymentReference: paymentReference.trim() || undefined
         })
       });
 
       const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "Failed to generate pass");
+
       const ticketData = json.ticket || json.data || {
         displayId: `MND-TK-${Date.now().toString().slice(-6)}`,
         visitorName,
