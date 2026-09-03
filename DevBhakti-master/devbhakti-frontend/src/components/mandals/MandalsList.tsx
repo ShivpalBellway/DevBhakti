@@ -341,9 +341,11 @@ export function MandalsList() {
   }, [searchInput, isSearchFocused, allMandals]);
 
   // Helpers for Admin Settings parsing
+  const activeFestival = mandalSettings?.activeFestival || mandalSettings; // Fallback to settings directly if legacy format
+
   const getLocalizedSettingText = (field: "title" | "subtitle") => {
-    if (!mandalSettings?.[field]) return null;
-    const val = mandalSettings[field];
+    if (!activeFestival?.[field]) return null;
+    const val = activeFestival[field];
     if (typeof val === "string") return val;
     return val[language] || val["en"] || val["hi"] || val["mr"] || null;
   };
@@ -387,26 +389,26 @@ export function MandalsList() {
   };
 
   let festivalDateDisplay = "27 Aug - 6 Sep 2026";
-  if (mandalSettings?.startDate && mandalSettings?.endDate) {
-    const sFormatted = formatDateStr(mandalSettings.startDate);
-    const eFormatted = formatDateStr(mandalSettings.endDate);
-    const endYear = mandalSettings.endDate.split("-")[0] || "2026";
+  if (activeFestival?.startDate && activeFestival?.endDate) {
+    const sFormatted = formatDateStr(activeFestival.startDate);
+    const eFormatted = formatDateStr(activeFestival.endDate);
+    const endYear = activeFestival.endDate.split("-")[0] || "2026";
     festivalDateDisplay = `${sFormatted} - ${eFormatted} ${endYear}`;
-  } else if (mandalSettings?.startDate) {
-    festivalDateDisplay = formatDateStr(mandalSettings.startDate);
+  } else if (activeFestival?.startDate) {
+    festivalDateDisplay = formatDateStr(activeFestival.startDate);
   }
 
   const activeFestivalName =
     getLocalizedSettingText("title") ||
-    mandalSettings?.name ||
+    activeFestival?.name ||
     "Ganesh Chaturthi";
 
-  const mainFestivalDay = mandalSettings?.startDate
-    ? `${activeFestivalName}, ${formatDateStr(mandalSettings.startDate)}`
+  const mainFestivalDay = activeFestival?.startDate
+    ? `${activeFestivalName}, ${formatDateStr(activeFestival.startDate)}`
     : `${activeFestivalName}, 27 Aug 2026`;
 
-  const adminBannerImage = mandalSettings?.image
-    ? getFullImageUrl(mandalSettings.image)
+  const adminBannerImage = activeFestival?.image
+    ? getFullImageUrl(activeFestival.image)
     : "https://images.unsplash.com/photo-1620766182966-c6eb5ed2b788?auto=format&fit=crop&q=80&w=1200";
 
   return (
