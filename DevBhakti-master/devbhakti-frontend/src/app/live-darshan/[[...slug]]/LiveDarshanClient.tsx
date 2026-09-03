@@ -3,7 +3,7 @@
 import React, { useState, useEffect, Suspense, useRef } from "react";
 import { useSearchParams, useParams, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Play, MapPin, Users, Heart, Share2, Calendar, Search, Sparkles, ChevronLeft, ChevronRight, ChevronDown, BadgeCheck, ShoppingBag, Clock, X, Bell } from "lucide-react";
+import { Play, MapPin, Users, Heart, Share2, Calendar, Search, Sparkles, ChevronLeft, ChevronRight, ChevronDown, BadgeCheck, ShoppingBag, Clock, X, Bell, Maximize } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -229,6 +229,17 @@ export default function LiveDarshanClient() {
   const [isIpHost, setIsIpHost] = useState(false);
   const [isAartiAccordionOpen, setIsAartiAccordionOpen] = useState(false);
   const [isParticipateOpen, setIsParticipateOpen] = useState(false);
+  const mobileVideoRef = useRef<HTMLDivElement>(null);
+
+  const toggleFullScreen = () => {
+    if (!document.fullscreenElement) {
+        mobileVideoRef.current?.requestFullscreen().catch((err: any) => {
+          console.error(`Error attempting to enable fullscreen: ${err.message}`);
+        });
+    } else {
+      if (document.exitFullscreen) document.exitFullscreen();
+    }
+  };
 
   const activeOperatingHours = selectedTemple?.operatingHours && Array.isArray(selectedTemple.operatingHours)
     ? selectedTemple.operatingHours.filter((s: any) => s.active)
@@ -411,8 +422,28 @@ export default function LiveDarshanClient() {
           <div className="h-[1px] w-8 bg-gradient-to-l from-transparent to-[#7A3F1F]/40" />
         </div>
 
+        {/* Global Orientation Style for Auto-Rotation */}
+        <style dangerouslySetInnerHTML={{__html: `
+          @media (max-width: 768px) and (orientation: landscape) {
+            .mobile-darshan-container {
+              position: fixed !important;
+              top: 0 !important;
+              left: 0 !important;
+              width: 100vw !important;
+              height: 100vh !important;
+              max-width: none !important;
+              z-index: 9999 !important;
+              border-radius: 0 !important;
+              border: none !important;
+            }
+          }
+        `}} />
+
         {/* Video Player Box */}
-        <div className="w-full bg-black rounded-2xl overflow-hidden relative shadow-xl aspect-video border border-black/80 group">
+        <div 
+          ref={mobileVideoRef}
+          className="mobile-darshan-container w-full bg-black rounded-2xl overflow-hidden relative shadow-xl aspect-video border border-black/80 group"
+        >
           <div className="aspect-video w-full h-full relative flex items-center justify-center">
             {isPlaying && selectedVideoInfo.kind !== "unknown" ? (
               <UniversalVideoPlayer
@@ -461,6 +492,16 @@ export default function LiveDarshanClient() {
             <Badge className="bg-black/50 backdrop-blur-md text-white font-medium h-5 px-2 rounded-full border border-white/20 shadow text-[10px]">
               <Users size={10} className="mr-1" /> {selectedTemple?.viewerCount || "1.2K"}
             </Badge>
+          </div>
+
+          <div className="absolute top-2.5 right-2.5 z-40">
+            <button
+              onClick={toggleFullScreen}
+              className="bg-black/50 hover:bg-black/80 backdrop-blur-md text-white p-1.5 rounded-full border border-white/20 shadow transition-all duration-300 pointer-events-auto"
+              title="Fullscreen"
+            >
+              <Maximize className="w-3.5 h-3.5" />
+            </button>
           </div>
 
           <div className="absolute inset-0 z-20 pointer-events-none overflow-hidden">
