@@ -9,6 +9,7 @@ import { CartProvider } from "@/context/CartContext";
 import { LanguageProvider } from "@/context/LanguageContext";
 import { NotificationManager } from "@/components/notifications/NotificationManager";
 import { GoogleAnalyticsTracker } from "@/components/analytics/GoogleAnalyticsTracker";
+import { FloatingDownloadApp } from "@/components/layout/FloatingDownloadApp";
 
 export default function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(() => new QueryClient());
@@ -20,6 +21,7 @@ export default function Providers({ children }: { children: React.ReactNode }) {
           <CartProvider>
             <GoogleAnalyticsTracker />
             {children}
+            <FloatingDownloadApp />
             <NotificationManager />
             <Toaster />
             <Sonner />
