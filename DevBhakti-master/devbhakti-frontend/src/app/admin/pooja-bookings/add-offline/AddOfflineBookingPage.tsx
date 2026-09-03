@@ -741,7 +741,7 @@ export default function AddOfflineBookingPage() {
 
       {/* Header */}
       <section className="bg-gradient-to-br from-primary/10 via-secondary/20 to-background pt-24 pb-12">
-        <div className="container mx-auto px-4">
+        <div className="w-full max-w-7xl mx-auto px-4">
           <Link href={searchParams.get("pooja") ? "/poojas" : "/temples"} className="inline-flex items-center text-muted-foreground hover:text-foreground mb-4 transition-colors">
             <ArrowLeft className="h-4 w-4 mr-2" />
             {searchParams.get("pooja") ? t("booking_client.back_to_poojas") : t("booking_client.back_to_temples")}
@@ -756,7 +756,7 @@ export default function AddOfflineBookingPage() {
       </section>
 
       {/* Progress Steps */}
-      <section className="container mx-auto px-4 py-8">
+      <section className="w-full max-w-7xl mx-auto px-4 py-8">
         <div className="flex items-center justify-center mb-8">
           {[
             { num: 1, label: "Select Service" },
@@ -784,7 +784,7 @@ export default function AddOfflineBookingPage() {
           ))}
         </div>
 
-        <div className="max-w-4xl mx-auto">
+        <div className="w-full max-w-7xl mx-auto">
           {/* Step 1: Select Temple & Pooja */}
           {step === 1 && (
             <div className="space-y-6">

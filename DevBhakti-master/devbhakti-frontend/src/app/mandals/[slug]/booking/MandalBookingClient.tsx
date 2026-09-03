@@ -515,6 +515,14 @@ export default function MandalBookingClient({ slug }: MandalBookingClientProps) 
     );
   }
 
+  const getPoojaImageUrl = (pooja: any) => {
+    if (!pooja) return null;
+    const img = pooja.image || (Array.isArray(pooja.images) && pooja.images[0]) || pooja.masterPooja?.image;
+    if (!img) return null;
+    if (img.startsWith("http")) return img;
+    return `${API_URL.replace("/api", "")}${img.startsWith("/") ? "" : "/"}${img}`;
+  };
+
   const packageOptions = getPackageOptions();
   const totalAmount = (selectedPackage?.price || selectedPooja?.price || 0) + platformFee;
 
@@ -604,38 +612,55 @@ export default function MandalBookingClient({ slug }: MandalBookingClientProps) 
               <CardContent className="space-y-6">
                 <div className="space-y-3">
                   {mandalPoojas.length > 0 ? (
-                    mandalPoojas.map((pooja) => (
-                      <button
-                        key={pooja.id}
-                        onClick={() => {
-                          setSelectedPooja(pooja);
-                          setSelectedPackage(null);
-                        }}
-                        className={cn(
-                          "w-full text-left p-4 rounded-lg border-2 transition-all",
-                          selectedPooja?.id === pooja.id
-                            ? "border-primary bg-primary/5"
-                            : "border-border hover:border-primary/50"
-                        )}
-                      >
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <h3 className="font-semibold">
-                              {getLocalized(pooja, "name", language)}
-                            </h3>
-                            <p className="text-sm text-muted-foreground">
-                              {pooja.category || "Pooja Service"}
-                            </p>
+                    mandalPoojas.map((pooja) => {
+                      const imageUrl = getPoojaImageUrl(pooja);
+                      const isSelected = selectedPooja?.id === pooja.id;
+
+                      return (
+                        <button
+                          key={pooja.id}
+                          onClick={() => {
+                            setSelectedPooja(pooja);
+                            setSelectedPackage(null);
+                          }}
+                          className={cn(
+                            "w-full text-left p-4 rounded-xl border-2 transition-all flex items-center gap-4",
+                            isSelected
+                              ? "border-primary bg-primary/5 ring-1 ring-primary/20 shadow-sm"
+                              : "border-border hover:border-primary/50 bg-white"
+                          )}
+                        >
+                          <div className="w-16 h-16 rounded-xl overflow-hidden shrink-0 bg-amber-50/80 border border-amber-100/80 flex items-center justify-center shadow-inner">
+                            {imageUrl ? (
+                              <img
+                                src={imageUrl}
+                                alt={getLocalized(pooja, "name", language)}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <Sparkles className="w-6 h-6 text-amber-600" />
+                            )}
                           </div>
-                          <div className="text-right">
-                            <p className="font-bold text-primary flex items-center gap-1">
-                              <IndianRupee className="w-4 h-4" />
-                              {pooja.price}
-                            </p>
+
+                          <div className="flex-1 flex justify-between items-center min-w-0">
+                            <div>
+                              <h3 className="font-semibold text-base text-slate-900 truncate">
+                                {getLocalized(pooja, "name", language)}
+                              </h3>
+                              <p className="text-sm text-muted-foreground">
+                                {pooja.category || "Pooja Service"}
+                              </p>
+                            </div>
+                            <div className="text-right shrink-0">
+                              <p className="font-bold text-primary text-base flex items-center gap-0.5 justify-end">
+                                <IndianRupee className="w-4 h-4" />
+                                {pooja.price}
+                              </p>
+                            </div>
                           </div>
-                        </div>
-                      </button>
-                    ))
+                        </button>
+                      );
+                    })
                   ) : (
                     <p className="text-center text-muted-foreground py-8">
                       No poojas available
@@ -644,38 +669,60 @@ export default function MandalBookingClient({ slug }: MandalBookingClientProps) 
                 </div>
 
                 {selectedPooja && packageOptions.length > 0 && (
-                  <div className="space-y-3">
-                    <Label className="text-base font-semibold">
+                  <div className="space-y-3 pt-2">
+                    <Label className="text-base font-semibold text-slate-900">
                       Choose Package
                     </Label>
-                    {packageOptions.map((pkg) => (
-                      <button
-                        key={pkg.id || pkg.name}
-                        onClick={() => setSelectedPackage(pkg)}
-                        className={cn(
-                          "w-full text-left p-4 rounded-lg border-2 transition-all",
-                          selectedPackage?.id === pkg.id ||
-                            selectedPackage?.name === pkg.name
-                            ? "border-primary bg-primary/5"
-                            : "border-border hover:border-primary/50"
-                        )}
-                      >
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <h3 className="font-semibold">{pkg.name}</h3>
-                            {pkg.description && (
-                              <p className="text-sm text-muted-foreground">
-                                {pkg.description}
-                              </p>
-                            )}
+                    {packageOptions.map((pkg) => {
+                      const isPackageSelected =
+                        selectedPackage &&
+                        (pkg.id && pkg.id !== "default"
+                          ? selectedPackage.id === pkg.id
+                          : selectedPackage.name === pkg.name &&
+                            selectedPackage.price === pkg.price);
+
+                      return (
+                        <button
+                          key={pkg.id || pkg.name}
+                          onClick={() => setSelectedPackage(pkg)}
+                          className={cn(
+                            "w-full text-left p-4 rounded-xl border-2 transition-all flex items-center justify-between gap-4",
+                            isPackageSelected
+                              ? "border-[#794A05] bg-amber-50/70 shadow-md ring-2 ring-[#794A05]/20"
+                              : "border-slate-200 hover:border-amber-300 bg-white"
+                          )}
+                        >
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div
+                              className={cn(
+                                "w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all",
+                                isPackageSelected
+                                  ? "border-[#794A05] bg-[#794A05] text-white"
+                                  : "border-slate-300 bg-white"
+                              )}
+                            >
+                              {isPackageSelected && (
+                                <CheckCircle2 className="w-4 h-4 text-white" />
+                              )}
+                            </div>
+                            <div className="truncate">
+                              <h3 className="font-semibold text-slate-900">
+                                {pkg.name}
+                              </h3>
+                              {pkg.description && (
+                                <p className="text-xs text-slate-500 truncate">
+                                  {pkg.description}
+                                </p>
+                              )}
+                            </div>
                           </div>
-                          <p className="font-bold text-primary flex items-center gap-1">
+                          <p className="font-bold text-[#794A05] flex items-center gap-0.5 text-base shrink-0">
                             <IndianRupee className="w-4 h-4" />
                             {pkg.price}
                           </p>
-                        </div>
-                      </button>
-                    ))}
+                        </button>
+                      );
+                    })}
                   </div>
                 )}
 

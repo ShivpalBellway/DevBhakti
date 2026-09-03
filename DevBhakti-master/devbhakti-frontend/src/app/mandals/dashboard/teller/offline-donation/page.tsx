@@ -199,7 +199,7 @@ export default function MandalOfflineDonationPage() {
 
     // ─── Form Screen ───────────────────────────────────────────
     return (
-        <div className="max-w-3xl mx-auto p-4 md:p-6 space-y-6 pb-20">
+        <div className="w-full max-w-7xl mx-auto p-4 md:p-6 space-y-6 pb-20">
             {/* Header */}
             <div className="flex items-center gap-3">
                 <Button variant="ghost" size="icon" className="rounded-full" onClick={() => router.back()}>

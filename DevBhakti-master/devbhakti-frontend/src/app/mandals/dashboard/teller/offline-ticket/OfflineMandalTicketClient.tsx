@@ -13,6 +13,8 @@ import { fetchMandalProfile } from "@/api/mandalAdminController";
 import { parseLocalizedValue } from "@/utils/textUtils";
 import { useRouter } from "next/navigation";
 import { printDarshanPassReceipt } from "@/utils/darshanReceipt";
+import { formatSlotTime } from "@/utils/textUtils";
+import { Calendar, Clock, Users, Plus } from "lucide-react";
 
 export default function OfflineMandalTicketClient() {
   const { toast } = useToast();
@@ -23,6 +25,12 @@ export default function OfflineMandalTicketClient() {
   const [ticketsList, setTicketsList] = useState<any[]>([]);
   const [loadingTickets, setLoadingTickets] = useState<boolean>(false);
   
+  // Slots state
+  const [slots, setSlots] = useState<any[]>([]);
+  const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split("T")[0]);
+  const [selectedSlotId, setSelectedSlotId] = useState<string>("");
+  const [loadingSlots, setLoadingSlots] = useState<boolean>(false);
+
   // Form fields
   const [visitorName, setVisitorName] = useState<string>("");
   const [visitorPhone, setVisitorPhone] = useState<string>("");
@@ -48,9 +56,50 @@ export default function OfflineMandalTicketClient() {
     }
   };
 
+  const fetchSlots = async (date: string) => {
+    setLoadingSlots(true);
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${API_URL}/mandal-admin/darshan-bookings/slots?date=${date}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const json = await res.json();
+      if (res.ok) {
+        setSlots(Array.isArray(json) ? json : []);
+      }
+    } catch (err) {
+      console.error("Failed to fetch slots", err);
+    } finally {
+      setLoadingSlots(false);
+    }
+  };
+
+  const fetchIssuedTickets = async () => {
+    setLoadingTickets(true);
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${API_URL}/mandal-admin/darshan-bookings/tickets`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const json = await res.json();
+      if (res.ok) {
+        setTicketsList(Array.isArray(json) ? json : []);
+      }
+    } catch (err) {
+      console.error("Failed to fetch tickets list", err);
+    } finally {
+      setLoadingTickets(false);
+    }
+  };
+
   useEffect(() => {
     loadProfile();
+    fetchIssuedTickets();
   }, []);
+
+  useEffect(() => {
+    fetchSlots(selectedDate);
+  }, [selectedDate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -69,6 +118,7 @@ export default function OfflineMandalTicketClient() {
           Authorization: `Bearer ${token}`
         },
         body: JSON.stringify({
+          slotId: selectedSlotId || undefined,
           visitorName: visitorName.trim(),
           visitorPhone: visitorPhone.trim(),
           visitorEmail: visitorEmail.trim() || undefined,
@@ -104,21 +154,11 @@ export default function OfflineMandalTicketClient() {
       setVisitorEmail("");
       setVisitorCount(1);
       setPaymentReference("");
-    } catch (err) {
+      fetchSlots(selectedDate);
+      fetchIssuedTickets();
+    } catch (err: any) {
       console.error("Issue Offline Ticket Error", err);
-      const ticketData = {
-        displayId: `MND-TK-${Date.now().toString().slice(-6)}`,
-        visitorName,
-        visitorPhone,
-        visitorCount,
-        ticketType,
-        totalAmount: ticketPrice * visitorCount,
-        paymentMode,
-        createdAt: new Date().toISOString()
-      };
-      setIssuedTicket(ticketData);
-      setTicketsList((prev) => [ticketData, ...prev]);
-      toast({ title: "Success!", description: "Offline Pass generated successfully.", variant: "success" });
+      toast({ title: "Error", description: err.message || "Failed to generate pass", variant: "destructive" });
     } finally {
       setSubmitting(false);
     }
@@ -132,20 +172,29 @@ export default function OfflineMandalTicketClient() {
   };
 
   return (
-    <div className="space-y-8 max-w-5xl mx-auto p-4 md:p-6 pb-20">
+    <div className="space-y-8 max-w-6xl mx-auto p-4 md:p-6 pb-20">
       {/* Header */}
-      <div className="flex items-center gap-3">
-        <Button variant="ghost" size="icon" className="rounded-full" onClick={() => router.back()}>
-          <ArrowLeft className="w-5 h-5" />
-        </Button>
-        <div>
-          <h1 className="text-2xl md:text-3xl font-bold font-serif text-slate-900">
-            Offline Ticket Booking (Teller Counter)
-          </h1>
-          <p className="text-sm text-muted-foreground mt-0.5">
-            Issue Darshan Passes / Counter Tickets for Devotees visiting {mandalName}
-          </p>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div className="flex items-center gap-3">
+          <Button variant="ghost" size="icon" className="rounded-full" onClick={() => router.back()}>
+            <ArrowLeft className="w-5 h-5" />
+          </Button>
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold font-serif text-slate-900">
+              Offline Ticket Booking (Teller Counter)
+            </h1>
+            <p className="text-sm text-muted-foreground mt-0.5">
+              Issue Darshan Passes / Counter Tickets for Devotees visiting {mandalName}
+            </p>
+          </div>
         </div>
+
+        <Button
+          onClick={() => router.push("/mandals/dashboard/darshan/slots")}
+          className="bg-[#7b4623] hover:bg-[#5d351a] text-white rounded-xl shadow-sm text-sm"
+        >
+          <Plus className="w-4 h-4 mr-1.5" /> Manage Darshan Slots
+        </Button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -179,15 +228,20 @@ export default function OfflineMandalTicketClient() {
                     <Label htmlFor="visitorPhone" className="text-xs uppercase font-bold text-slate-500">
                       Phone Number *
                     </Label>
-                    <Input
-                      id="visitorPhone"
-                      type="tel"
-                      placeholder="10-digit mobile number"
-                      value={visitorPhone}
-                      onChange={(e) => setVisitorPhone(e.target.value.replace(/\D/g, "").slice(0, 10))}
-                      className="rounded-xl h-11"
-                      required
-                    />
+                    <div className="flex items-center rounded-xl border border-slate-200 bg-white overflow-hidden focus-within:ring-2 focus-within:ring-[#7b4623]/20 focus-within:border-[#7b4623] transition-all">
+                      <span className="bg-slate-100/90 px-3 py-2.5 border-r border-slate-200 text-slate-700 font-bold text-xs flex items-center gap-1 shrink-0">
+                        🇮🇳 +91
+                      </span>
+                      <Input
+                        id="visitorPhone"
+                        type="tel"
+                        placeholder="10-digit mobile number"
+                        value={visitorPhone}
+                        onChange={(e) => setVisitorPhone(e.target.value.replace(/\D/g, "").slice(0, 10))}
+                        className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0 rounded-none h-11 text-sm font-medium"
+                        required
+                      />
+                    </div>
                   </div>
                 </div>
 
@@ -296,8 +350,106 @@ export default function OfflineMandalTicketClient() {
           </Card>
         </div>
 
-        {/* Ticket Summary Box */}
-        <div>
+        {/* Slot Selector & Ticket Summary Box */}
+        <div className="space-y-6">
+          {/* Slot Selection Card */}
+          <Card className="border shadow-sm rounded-2xl overflow-hidden">
+            <CardHeader className="bg-slate-50 border-b py-3.5">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm font-bold text-slate-800 flex items-center gap-2">
+                  <Calendar className="w-4 h-4 text-[#7b4623]" /> Select Darshan Slot
+                </CardTitle>
+                <Badge variant="outline" className="text-[11px] font-normal">
+                  {slots.length} available
+                </Badge>
+              </div>
+            </CardHeader>
+            <CardContent className="p-4 space-y-3">
+              <div className="space-y-1">
+                <Label htmlFor="slotDate" className="text-xs uppercase font-bold text-slate-500">
+                  Select Date
+                </Label>
+                <Input
+                  id="slotDate"
+                  type="date"
+                  value={selectedDate}
+                  onChange={(e) => {
+                    setSelectedDate(e.target.value);
+                    setSelectedSlotId("");
+                  }}
+                  className="rounded-xl h-10 text-sm"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-xs uppercase font-bold text-slate-500">Available Slots</Label>
+                {loadingSlots ? (
+                  <div className="flex justify-center p-4">
+                    <Loader2 className="w-5 h-5 animate-spin text-[#7b4623]" />
+                  </div>
+                ) : slots.length === 0 ? (
+                  <div className="text-xs text-center text-muted-foreground p-4 bg-slate-50 rounded-xl border border-dashed">
+                    No slots created for this date.
+                    <Button
+                      variant="link"
+                      size="sm"
+                      onClick={() => router.push("/mandals/dashboard/darshan/slots")}
+                      className="text-[#7b4623] text-xs h-auto p-0 ml-1 font-bold"
+                    >
+                      + Create Slot
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="space-y-2 max-h-[260px] overflow-y-auto pr-1">
+                    {slots.map((slot) => {
+                      const available = Math.max(0, slot.maxCapacity - slot.bookedCount);
+                      const isSelected = slot.id === selectedSlotId;
+                      const isFull = available < visitorCount || slot.isClosed;
+
+                      const offlineCountForSlot = ticketsList
+                        .filter((t) => t.slotId === slot.id || t.slot?.id === slot.id)
+                        .reduce((acc, t) => acc + (t.visitorCount || 1), 0);
+
+                      return (
+                        <div
+                          key={slot.id}
+                          onClick={() => !isFull && setSelectedSlotId(slot.id)}
+                          className={`p-3 rounded-xl border text-sm transition-all cursor-pointer space-y-2 ${
+                            isSelected
+                              ? "border-[#7b4623] bg-amber-50/80 shadow-sm font-semibold ring-1 ring-[#7b4623]"
+                              : isFull
+                              ? "opacity-50 cursor-not-allowed bg-gray-100 border-slate-200"
+                              : "hover:border-[#7b4623]/50 bg-white"
+                          }`}
+                        >
+                          <div className="flex justify-between items-center">
+                            <span className="font-bold text-slate-800 flex items-center gap-1.5 text-xs">
+                              <Clock className="w-3.5 h-3.5 text-[#7b4623]" />
+                              {formatSlotTime(slot.startTime)} - {formatSlotTime(slot.endTime)}
+                            </span>
+                            <Badge variant={available > 0 ? "outline" : "destructive"} className="text-[10px]">
+                              {available} left
+                            </Badge>
+                          </div>
+
+                          <div className="flex items-center justify-between text-[11px] text-slate-500 pt-1 border-t border-slate-100">
+                            <span className="text-slate-600">
+                              Booked: <strong className="text-slate-800">{slot.bookedCount}</strong>/{slot.maxCapacity}
+                            </span>
+                            <span className="font-semibold text-amber-900 bg-amber-100/80 px-1.5 py-0.5 rounded text-[10px] flex items-center gap-1">
+                              <Ticket className="w-3 h-3 text-amber-700" /> Offline: {offlineCountForSlot}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Ticket Summary Box */}
           <Card className="border-none shadow-sm rounded-2xl overflow-hidden bg-gradient-to-b from-amber-50/50 to-white border">
             <CardHeader className="border-b bg-amber-100/40">
               <CardTitle className="text-sm font-bold text-[#7b4623] uppercase tracking-wider flex items-center gap-2">

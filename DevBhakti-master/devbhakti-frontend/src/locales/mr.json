@@ -102,8 +102,19 @@
     "verified": "तपासलेले",
     "explore_by_location": "स्थान निवडून शोधा",
     "view_all_locations": "सर्व स्थाने पहा",
-    "mandal_count_one": "1 मंडळ",
-    "mandal_count_many": "{{count}} मंडळे"
+    "mandal_count_many": "{{count}} मंडळे",
+    "festival_information": "उत्सवाची माहिती",
+    "festival_dates_label": "उत्सवाच्या तारखा",
+    "main_festival_day": "मुख्य उत्सवाचा दिवस",
+    "ganesh_aarti_timings": "गणेश आरतीची वेळ",
+    "visarjan_guidance": "विसर्जन मार्गदर्शन",
+    "emergency_help": "आणीबाणी मदत",
+    "timings_desc": "सकाळी 5:00 वा | संध्याकाळी 7:00 वा",
+    "visarjan_desc": "प्लास्टिक टाळा, परिसर स्वच्छ ठेवा, पोलिसांच्या सूचनांचे पालन करा",
+    "emergency_desc": "पोलिसांसाठी 100 | रुग्णवाहिकेसाठी 108 डायल करा",
+    "news_updates": "बातम्या अपडेट्स",
+    "view_all_news": "सर्व बातम्या पहा",
+    "support_mandals_devotion": "लाखो भक्तांशी जोडले जा."
   },
   "mandal_detail": {
     "not_found_title": "मंडळ सापडले नाही",

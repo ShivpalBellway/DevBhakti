@@ -104,8 +104,19 @@
     "verified": "Verified",
     "explore_by_location": "Explore by Location",
     "view_all_locations": "View All Locations",
-    "mandal_count_one": "1 Mandal",
-    "mandal_count_many": "{{count}} Mandals"
+    "mandal_count_many": "{{count}} Mandals",
+    "festival_information": "Festival Information",
+    "festival_dates_label": "Festival Dates",
+    "main_festival_day": "Main Festival Day",
+    "ganesh_aarti_timings": "Ganesh Aarti Timings",
+    "visarjan_guidance": "Visarjan Guidance",
+    "emergency_help": "Emergency Help",
+    "timings_desc": "Morning 5:00 AM | Evening 7:00 PM",
+    "visarjan_desc": "Avoid plastic, keep the area clean, Follow police instructions",
+    "emergency_desc": "Dial 100 for Police | 108 for Ambulance",
+    "news_updates": "News Updates",
+    "view_all_news": "View All News",
+    "support_mandals_devotion": "Connecting with millions of devotees."
   },
   "mandal_detail": {
     "not_found_title": "Mandal Not Found",

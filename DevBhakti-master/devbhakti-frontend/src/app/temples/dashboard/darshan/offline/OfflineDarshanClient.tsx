@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Loader2, Ticket, CheckCircle2, User, Phone, Calendar, Clock, Printer, RefreshCw, Eye } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { printDarshanPassReceipt } from "@/utils/darshanReceipt";
+import { formatSlotTime } from "@/utils/textUtils";
 
 export default function OfflineDarshanClient() {
   const { toast } = useToast();
@@ -167,15 +168,21 @@ export default function OfflineDarshanClient() {
 
                   <div className="space-y-2">
                     <Label htmlFor="visitorPhone">Phone Number *</Label>
-                    <Input
-                      id="visitorPhone"
-                      type="tel"
-                      placeholder="e.g. 9876543210"
-                      value={visitorPhone}
-                      onChange={(e) => setVisitorPhone(e.target.value.replace(/\D/g, ""))}
-                      maxLength={10}
-                      required
-                    />
+                    <div className="flex items-center rounded-md border border-input bg-background overflow-hidden focus-within:ring-2 focus-within:ring-[#7c4624]/20 focus-within:border-[#7c4624] transition-all">
+                      <span className="bg-slate-100 px-3 py-2 border-r text-slate-700 font-bold text-xs flex items-center gap-1 shrink-0">
+                        🇮🇳 +91
+                      </span>
+                      <Input
+                        id="visitorPhone"
+                        type="tel"
+                        placeholder="e.g. 9876543210"
+                        value={visitorPhone}
+                        onChange={(e) => setVisitorPhone(e.target.value.replace(/\D/g, "").slice(0, 10))}
+                        maxLength={10}
+                        className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0 rounded-none text-sm font-medium"
+                        required
+                      />
+                    </div>
                   </div>
                 </div>
 
@@ -292,26 +299,39 @@ export default function OfflineDarshanClient() {
                       const isSelected = slot.id === selectedSlotId;
                       const isFull = available < visitorCount || slot.isClosed;
 
+                      const offlineCountForSlot = ticketsList
+                        .filter((t) => t.slotId === slot.id || t.slot?.id === slot.id)
+                        .reduce((acc, t) => acc + (t.visitorCount || 1), 0);
+
                       return (
                         <div
                           key={slot.id}
                           onClick={() => !isFull && setSelectedSlotId(slot.id)}
-                          className={`p-3 rounded-lg border text-sm transition-all cursor-pointer ${
+                          className={`p-3 rounded-lg border text-sm transition-all cursor-pointer space-y-2 ${
                             isSelected
-                              ? "border-[#7c4624] bg-amber-50/60 shadow-sm font-semibold"
+                              ? "border-[#7c4624] bg-amber-50/80 shadow-sm font-semibold ring-1 ring-[#7c4624]"
                               : isFull
-                              ? "opacity-50 cursor-not-allowed bg-gray-100"
+                              ? "opacity-50 cursor-not-allowed bg-gray-100 border-slate-200"
                               : "hover:border-[#7c4624]/50 bg-white"
                           }`}
                         >
                           <div className="flex justify-between items-center">
                             <span className="font-bold text-slate-800 flex items-center gap-1.5">
                               <Clock className="w-3.5 h-3.5 text-[#7c4624]" />
-                              {slot.startTime} - {slot.endTime}
+                              {formatSlotTime(slot.startTime)} - {formatSlotTime(slot.endTime)}
                             </span>
                             <Badge variant={available > 0 ? "outline" : "destructive"} className="text-xs">
                               {available} left
                             </Badge>
+                          </div>
+
+                          <div className="flex items-center justify-between text-xs text-slate-500 pt-1.5 border-t border-slate-100">
+                            <span className="text-slate-600">
+                              Booked: <strong className="text-slate-800">{slot.bookedCount}</strong>/{slot.maxCapacity}
+                            </span>
+                            <span className="font-medium text-amber-900 bg-amber-100/80 px-2 py-0.5 rounded text-[11px] flex items-center gap-1">
+                              <Ticket className="w-3 h-3 text-amber-700" /> Offline: {offlineCountForSlot}
+                            </span>
                           </div>
                         </div>
                       );
@@ -369,7 +389,7 @@ export default function OfflineDarshanClient() {
                       <td className="p-3.5 text-slate-600">{t.visitorPhone}</td>
                       <td className="p-3.5 font-medium">{t.visitorCount} Person(s)</td>
                       <td className="p-3.5 text-slate-600">
-                        {t.slot ? `${t.slot.date || ""} (${t.slot.startTime} - ${t.slot.endTime})` : "General"}
+                        {t.slot ? `${t.slot.date || ""} (${formatSlotTime(t.slot.startTime)} - ${formatSlotTime(t.slot.endTime)})` : "General"}
                       </td>
                       <td className="p-3.5 font-bold text-emerald-700">₹{t.totalAmount}</td>
                       <td className="p-3.5">
@@ -424,7 +444,7 @@ export default function OfflineDarshanClient() {
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Slot Time:</span>
                   <span className="font-bold text-[#7c4624]">
-                    {issuedTicket.slot?.startTime} - {issuedTicket.slot?.endTime}
+                    {formatSlotTime(issuedTicket.slot?.startTime)} - {formatSlotTime(issuedTicket.slot?.endTime)}
                   </span>
                 </div>
                 <div className="flex justify-between">

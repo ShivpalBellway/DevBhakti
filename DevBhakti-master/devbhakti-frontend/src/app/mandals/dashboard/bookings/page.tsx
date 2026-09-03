@@ -24,6 +24,7 @@ export default function MandalBookingsPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
+  const [bookingTab, setBookingTab] = useState<"ALL" | "ONLINE" | "OFFLINE">("ALL");
   const [viewBooking, setViewBooking] = useState<any>(null);
   const [viewLoading, setViewLoading] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -58,9 +59,13 @@ export default function MandalBookingsPage() {
         (booking.pooja?.name ? parseLocalizedValue(booking.pooja.name).toLowerCase() : "").includes(search.toLowerCase());
 
       const matchesStatus = statusFilter === "ALL" || booking.status === statusFilter;
-      return matchesSearch && matchesStatus;
+
+      const isOfflineBooking = booking.isOffline === true || booking.bookingSource === "OFFLINE" || (booking.paymentMethod === "CASH" && !booking.razorpayPaymentId);
+      const matchesTab = bookingTab === "ALL" ? true : bookingTab === "OFFLINE" ? isOfflineBooking : !isOfflineBooking;
+
+      return matchesSearch && matchesStatus && matchesTab;
     });
-  }, [bookings, search, statusFilter]);
+  }, [bookings, search, statusFilter, bookingTab]);
 
   const handleView = async (booking: any) => {
     setViewLoading(true);
@@ -154,6 +159,51 @@ export default function MandalBookingsPage() {
         </Button>
       </div>
 
+      {/* Booking Type Tabs */}
+      <div className="flex border-b border-orange-100 font-medium text-sm gap-2">
+        <button
+          onClick={() => setBookingTab("ALL")}
+          className={`px-4 py-2.5 rounded-t-xl transition-all border-b-2 font-semibold flex items-center gap-2 ${
+            bookingTab === "ALL"
+              ? "border-[#7b4623] text-[#7b4623] bg-amber-50/70"
+              : "border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50"
+          }`}
+        >
+          All Bookings
+          <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${bookingTab === "ALL" ? "bg-[#7b4623] text-white" : "bg-slate-200 text-slate-700"}`}>
+            {bookings.length}
+          </span>
+        </button>
+
+        <button
+          onClick={() => setBookingTab("ONLINE")}
+          className={`px-4 py-2.5 rounded-t-xl transition-all border-b-2 font-semibold flex items-center gap-2 ${
+            bookingTab === "ONLINE"
+              ? "border-[#7b4623] text-[#7b4623] bg-amber-50/70"
+              : "border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50"
+          }`}
+        >
+          Online Bookings
+          <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${bookingTab === "ONLINE" ? "bg-[#7b4623] text-white" : "bg-slate-200 text-slate-700"}`}>
+            {bookings.filter((b) => !b.isOffline && b.bookingSource !== "OFFLINE" && (b.razorpayPaymentId || b.paymentMethod !== "CASH")).length}
+          </span>
+        </button>
+
+        <button
+          onClick={() => setBookingTab("OFFLINE")}
+          className={`px-4 py-2.5 rounded-t-xl transition-all border-b-2 font-semibold flex items-center gap-2 ${
+            bookingTab === "OFFLINE"
+              ? "border-[#7b4623] text-[#7b4623] bg-amber-50/70"
+              : "border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50"
+          }`}
+        >
+          Offline Bookings
+          <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${bookingTab === "OFFLINE" ? "bg-[#7b4623] text-white" : "bg-slate-200 text-slate-700"}`}>
+            {bookings.filter((b) => b.isOffline === true || b.bookingSource === "OFFLINE" || (b.paymentMethod === "CASH" && !b.razorpayPaymentId)).length}
+          </span>
+        </button>
+      </div>
+
       <Card className="border border-orange-100 bg-white">
         <CardContent className="p-4">
           <div className="flex flex-col md:flex-row gap-3 md:items-center md:justify-between">
@@ -194,6 +244,7 @@ export default function MandalBookingsPage() {
                 <th className="px-4 py-3 text-left font-semibold">Devotee</th>
                 <th className="px-4 py-3 text-left font-semibold">Pooja</th>
                 <th className="px-4 py-3 text-left font-semibold">Package</th>
+                <th className="px-4 py-3 text-left font-semibold">Source</th>
                 <th className="px-4 py-3 text-left font-semibold">Date</th>
                 <th className="px-4 py-3 text-left font-semibold">Pkg Price</th>
                 <th className="px-4 py-3 text-left font-semibold">Prasad Fee</th>
@@ -206,38 +257,46 @@ export default function MandalBookingsPage() {
             <tbody>
               {filteredBookings.length === 0 ? (
                 <tr>
-                  <td colSpan={10} className="px-4 py-12 text-center text-slate-500">
+                  <td colSpan={11} className="px-4 py-12 text-center text-slate-500">
                     No bookings found for this filter.
                   </td>
                 </tr>
               ) : (
-                filteredBookings.map((booking) => (
-                  <tr key={booking.id} className="border-t border-slate-100 hover:bg-slate-50/70">
-                    <td className="px-4 py-3 align-top">
-                      <div className="space-y-1">
-                        <div className="font-semibold text-slate-900">{booking.devoteeName || "N/A"}</div>
-                        <div className="flex items-center gap-2 text-slate-500">
-                          <Phone className="h-3.5 w-3.5" />
-                          <span>{booking.devoteePhone || "N/A"}</span>
-                        </div>
-                        {booking.devoteeEmail && (
+                filteredBookings.map((booking) => {
+                  const isOffline = booking.isOffline === true || booking.bookingSource === "OFFLINE" || (booking.paymentMethod === "CASH" && !booking.razorpayPaymentId);
+                  return (
+                    <tr key={booking.id} className="border-t border-slate-100 hover:bg-slate-50/70">
+                      <td className="px-4 py-3 align-top">
+                        <div className="space-y-1">
+                          <div className="font-semibold text-slate-900">{booking.devoteeName || "N/A"}</div>
                           <div className="flex items-center gap-2 text-slate-500">
-                            <Mail className="h-3.5 w-3.5" />
-                            <span className="break-all">{booking.devoteeEmail}</span>
+                            <Phone className="h-3.5 w-3.5" />
+                            <span>{booking.devoteePhone || "N/A"}</span>
                           </div>
-                        )}
-                      </div>
-                    </td>
+                          {booking.devoteeEmail && (
+                            <div className="flex items-center gap-2 text-slate-500">
+                              <Mail className="h-3.5 w-3.5" />
+                              <span className="break-all">{booking.devoteeEmail}</span>
+                            </div>
+                          )}
+                        </div>
+                      </td>
 
-                    <td className="px-4 py-3 align-top">
-                      <div className="font-medium text-slate-800">
-                        {booking.pooja ? parseLocalizedValue(booking.pooja.name) : "N/A"}
-                      </div>
-                    </td>
+                      <td className="px-4 py-3 align-top">
+                        <div className="font-medium text-slate-800">
+                          {booking.pooja ? parseLocalizedValue(booking.pooja.name) : "N/A"}
+                        </div>
+                      </td>
 
-                    <td className="px-4 py-3 align-top">
-                      <div className="text-slate-700">{booking.packageName || "Standard"}</div>
-                    </td>
+                      <td className="px-4 py-3 align-top">
+                        <div className="text-slate-700">{booking.packageName || "Standard"}</div>
+                      </td>
+
+                      <td className="px-4 py-3 align-top">
+                        <Badge variant="outline" className={`font-semibold text-xs uppercase ${isOffline ? "bg-amber-50 text-amber-800 border-amber-200" : "bg-blue-50 text-blue-800 border-blue-200"}`}>
+                          {isOffline ? "OFFLINE" : "ONLINE"}
+                        </Badge>
+                      </td>
 
                     <td className="px-4 py-3 align-top">
                       <div className="flex items-center gap-2 text-slate-700">
@@ -279,7 +338,8 @@ export default function MandalBookingsPage() {
                       </div>
                     </td>
                   </tr>
-                ))
+                );
+              })
               )}
             </tbody>
           </table>

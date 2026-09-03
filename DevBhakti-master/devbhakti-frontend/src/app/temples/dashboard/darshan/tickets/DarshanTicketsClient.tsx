@@ -16,6 +16,7 @@ import { Badge } from "@/components/ui/badge";
 import { Search, Download, Loader2, Calendar } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { Label } from "@/components/ui/label";
+import { formatSlotTime } from "@/utils/textUtils";
 
 export default function DarshanTicketsClient() {
   const [tickets, setTickets] = useState<any[]>([]);
@@ -136,7 +137,9 @@ export default function DarshanTicketsClient() {
                     </TableCell>
                     <TableCell>
                       <div className="font-medium">{format(parseISO(ticket.slot.date.split('T')[0]), "dd MMM yyyy")}</div>
-                      <div className="text-xs text-muted-foreground">{ticket.slot.startTime}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {formatSlotTime(ticket.slot.startTime)} {ticket.slot.endTime ? `- ${formatSlotTime(ticket.slot.endTime)}` : ''}
+                      </div>
                     </TableCell>
                     <TableCell>{ticket.visitorCount}</TableCell>
                     <TableCell className="font-medium text-[#7c4624]">{ticket.totalAmount}</TableCell>

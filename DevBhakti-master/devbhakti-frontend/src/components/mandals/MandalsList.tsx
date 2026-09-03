@@ -1207,14 +1207,14 @@ export function MandalsList() {
                     <Newspaper className="w-5 h-5" />
                   </div>
                   <h3 className="text-xl md:text-2xl font-serif font-bold text-[#2C1810] dark:text-zinc-100">
-                    News Updates
+                    {t("mandal_list.news_updates")}
                   </h3>
                 </div>
                 <Link
                   href="/mandals/news"
                   className="text-xs md:text-sm font-bold text-red-700 dark:text-amber-400 hover:underline flex items-center gap-1 shrink-0"
                 >
-                  View All News
+                  {t("mandal_list.view_all_news")}
                   <ArrowRight className="w-4 h-4" />
                 </Link>
               </div>
@@ -1289,7 +1289,7 @@ export function MandalsList() {
                   <Info className="w-5 h-5" />
                 </div>
                 <h3 className="text-xl md:text-2xl font-serif font-bold text-[#2C1810] dark:text-zinc-100">
-                  Festival Information
+                  {t("mandal_list.festival_information")}
                 </h3>
               </div>
 
@@ -1302,7 +1302,7 @@ export function MandalsList() {
                   </div>
                   <div className="flex-1 flex flex-col sm:flex-row sm:items-center justify-between gap-1">
                     <span className="text-xs md:text-sm font-bold text-zinc-900 dark:text-zinc-100 min-w-[160px]">
-                      Festival Dates
+                      {t("mandal_list.festival_dates_label")}
                     </span>
                     <span className="text-xs md:text-sm font-medium text-zinc-700 dark:text-zinc-300">
                       {festivalDateDisplay || "27 Aug – 5 Sep 2026"}
@@ -1317,7 +1317,7 @@ export function MandalsList() {
                   </div>
                   <div className="flex-1 flex flex-col sm:flex-row sm:items-center justify-between gap-1">
                     <span className="text-xs md:text-sm font-bold text-zinc-900 dark:text-zinc-100 min-w-[160px]">
-                      Main Festival Day
+                      {t("mandal_list.main_festival_day")}
                     </span>
                     <span className="text-xs md:text-sm font-medium text-zinc-700 dark:text-zinc-300">
                       {mainFestivalDay || "Ganesh Chaturthi, 27 Aug 2026"}
@@ -1332,10 +1332,10 @@ export function MandalsList() {
                   </div>
                   <div className="flex-1 flex flex-col sm:flex-row sm:items-center justify-between gap-1">
                     <span className="text-xs md:text-sm font-bold text-zinc-900 dark:text-zinc-100 min-w-[160px]">
-                      Ganesh Aarti Timings
+                      {t("mandal_list.ganesh_aarti_timings")}
                     </span>
                     <span className="text-xs md:text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                      Morning 5:00 AM | Evening 7:00 PM
+                      {t("mandal_list.timings_desc")}
                     </span>
                   </div>
                 </div>
@@ -1347,10 +1347,10 @@ export function MandalsList() {
                   </div>
                   <div className="flex-1 flex flex-col sm:flex-row sm:items-center justify-between gap-1">
                     <span className="text-xs md:text-sm font-bold text-zinc-900 dark:text-zinc-100 min-w-[160px]">
-                      Visarjan Guidance
+                      {t("mandal_list.visarjan_guidance")}
                     </span>
                     <span className="text-xs md:text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                      Avoid plastic, keep the area clean, Follow police instructions
+                      {t("mandal_list.visarjan_desc")}
                     </span>
                   </div>
                 </div>
@@ -1362,10 +1362,10 @@ export function MandalsList() {
                   </div>
                   <div className="flex-1 flex flex-col sm:flex-row sm:items-center justify-between gap-1">
                     <span className="text-xs md:text-sm font-bold text-zinc-900 dark:text-zinc-100 min-w-[160px]">
-                      Emergency Help
+                      {t("mandal_list.emergency_help")}
                     </span>
                     <span className="text-xs md:text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                      Dial 100 for Police | 108 for Ambulance
+                      {t("mandal_list.emergency_desc")}
                     </span>
                   </div>
                 </div>
@@ -1399,7 +1399,7 @@ export function MandalsList() {
                   Is Your Mandal Listed?
                 </h3>
                 <p className="text-xs md:text-sm text-amber-100/80 font-light">
-                  Claim your Mandal and connect with millions of devotees.
+                  {t("mandal_list.support_mandals_devotion")}
                 </p>
               </div>
 

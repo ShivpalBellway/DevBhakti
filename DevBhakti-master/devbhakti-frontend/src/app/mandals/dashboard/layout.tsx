@@ -67,6 +67,7 @@ const sidebarItems = [
             { label: "Offline Ticket Booking", href: "/mandals/dashboard/teller/offline-ticket", permission: "finance.menu" },
             { label: "Offline Product Booking", href: "/mandals/dashboard/teller/offline-product", permission: "finance.menu" },
             { label: "Offline Users / Devotees", href: "/mandals/dashboard/teller/offline-users", permission: "finance.menu" },
+            { label: " Darshan Ticket Slots", href: "/mandals/dashboard/darshan/slots", permission: "finance.menu" },
         ]
     },
     {

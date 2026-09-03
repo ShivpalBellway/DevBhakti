@@ -49,6 +49,18 @@ const sidebarItems = [
         permission: "dashboard.view"
     },
     {
+        label: "Teller Module",
+        icon: Ticket,
+        href: "/temples/dashboard/bookings/add-offline",
+        subItems: [
+            { label: "Offline Pooja Booking", href: "/temples/dashboard/bookings/add-offline" },
+            { label: "Offline Darshan Ticket", href: "/temples/dashboard/darshan/offline" },
+            { label: "Offline Product Booking", href: "/temples/dashboard/teller/offline-product" },
+            { label: "Offline Donation", href: "/temples/dashboard/donation?type=offline" },
+            { label: "Offline Devotees & Leads", href: "/temples/dashboard/offline-pooja-leads" },
+        ]
+    },
+    {
         label: "Poojas ",
         icon: Flower2,
         href: "/temples/dashboard/poojas",
@@ -76,23 +88,12 @@ const sidebarItems = [
             { label: "Roles & Permissions", href: "/temples/dashboard/team/roles" },
         ]
     },
-    // {
-    //     label: "Donations",
-    //     icon: Heart,
-    //     href: "/temples/dashboard/donation",
-    //     permission: "donations.menu"
-    // },
-
     {
         label: "Donation",
         icon: Heart,
-        href: "/temples/dashboard/donation"   ,
+        href: "/temples/dashboard/donation",
         permission: "donations.menu",
-        subItems: [
-          { label: "💳 Online Donations", href: "/temples/dashboard/donation?type=online", permission: "donations.menu" },
-          { label: "📝 Offline Donations", href: "/temples/dashboard/donation?type=offline", permission: "donations.menu" },
-        ]
-      },
+    },
     {
         label: "Product Management",
         icon: Package,
@@ -122,8 +123,6 @@ const sidebarItems = [
             { label: "All Bookings", href: "/temples/dashboard/bookings" },
             { label: "Booked Poojas", href: "/temples/dashboard/bookings?status=BOOKED" },
             { label: "Completed", href: "/temples/dashboard/bookings?status=COMPLETED" },
-            { label: "➕ Add Offline Booking", href: "/temples/dashboard/bookings/add-offline" },
-            { label: "👥 Offline Users & Leads", href: "/temples/dashboard/offline-pooja-leads" },
         ]
     },
     {
@@ -143,7 +142,6 @@ const sidebarItems = [
             { label: "Settings & Overview", href: "/temples/dashboard/darshan" },
             { label: "Manage Slots", href: "/temples/dashboard/darshan/slots" },
             { label: "Booked Tickets", href: "/temples/dashboard/darshan/tickets" },
-            { label: "➕ Issue Offline Ticket", href: "/temples/dashboard/darshan/offline" },
             { label: "Scan QR at Gate", href: "/temples/dashboard/darshan/scan" },
         ]
     },

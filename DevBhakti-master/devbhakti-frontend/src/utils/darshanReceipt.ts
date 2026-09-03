@@ -1,4 +1,4 @@
-import { parseLocalizedValue } from "./textUtils";
+import { parseLocalizedValue, formatSlotTime } from "./textUtils";
 
 interface DarshanReceiptData {
   displayId?: string;
@@ -30,7 +30,7 @@ export const generateDarshanReceiptHTML = (data: DarshanReceiptData) => {
     : new Date().toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
   
   const slotTime = (data.slot?.startTime && data.slot?.endTime)
-    ? `${data.slot.startTime} - ${data.slot.endTime}`
+    ? `${formatSlotTime(data.slot.startTime)} - ${formatSlotTime(data.slot.endTime)}`
     : "General Slot";
 
   const totalAmount = data.totalAmount ?? 0;

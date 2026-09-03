@@ -50,7 +50,7 @@ import { fetchMyMandalPoojas, createOfflineBookingMandal, lookupDevoteeByPhoneMa
 import { parseLocalizedValue } from '@/utils/textUtils';
 
 
-export default function AddOfflineBookingPage() {
+export default function AddOfflineBookingPage({ onBack }: { onBack?: () => void }) {
   const searchParams = useSearchParams();
   const { toast } = useToast();
   const router = useRouter();
@@ -659,17 +659,24 @@ export default function AddOfflineBookingPage() {
 
       {/* Top Breadcrumb */}
       <div className="flex items-center gap-2 px-6 py-3 border-b bg-slate-50/50 text-sm">
-        <Link href="/mandals/dashboard/teller" className="flex items-center gap-1.5 text-slate-600 hover:text-[#7b4623] transition-colors font-medium">
-          <ArrowLeft className="w-4 h-4" />
-          Back to Teller Module
-        </Link>
+        {onBack ? (
+          <button onClick={onBack} className="flex items-center gap-1.5 text-slate-600 hover:text-[#7b4623] transition-colors font-medium">
+            <ArrowLeft className="w-4 h-4" />
+            Back to Offline Bookings List
+          </button>
+        ) : (
+          <Link href="/mandals/dashboard/teller" className="flex items-center gap-1.5 text-slate-600 hover:text-[#7b4623] transition-colors font-medium">
+            <ArrowLeft className="w-4 h-4" />
+            Back to Teller Module
+          </Link>
+        )}
         <span className="text-slate-400">/</span>
         <span className="font-semibold text-slate-800">Add Offline Pooja Booking</span>
       </div>
 
       {/* Header Banner */}
       <section className="bg-gradient-to-br from-amber-100/60 via-orange-50/40 to-background py-8 border-b">
-        <div className="container mx-auto px-6">
+        <div className="w-full max-w-7xl mx-auto px-4 md:px-6">
           <h1 className="text-2xl md:text-3xl font-serif font-bold text-slate-900">
             {selectedPoojaData ? `Book ${parseLocalizedValue(selectedPoojaData.name, language)}` : "Book Offline Pooja"}
           </h1>
@@ -680,7 +687,7 @@ export default function AddOfflineBookingPage() {
       </section>
 
       {/* Progress Steps */}
-      <section className="container mx-auto px-4 py-8">
+      <section className="w-full max-w-7xl mx-auto px-4 py-8">
         <div className="flex items-center justify-center mb-8">
           {[
             { num: 1, label: "Select Service" },
@@ -708,7 +715,7 @@ export default function AddOfflineBookingPage() {
           ))}
         </div>
 
-        <div className="max-w-4xl mx-auto">
+        <div className="w-full max-w-7xl mx-auto">
           {/* Step 1: Select Pooja */}
           {step === 1 && (
             <motion.div
@@ -958,14 +965,17 @@ export default function AddOfflineBookingPage() {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="phone">{t("booking_client.field_phone")}</Label>
-                    <div className="relative">
-                      <Phone className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <div className="flex items-center rounded-md border border-input bg-background overflow-hidden focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary transition-all">
+                      <span className="bg-slate-100 px-3 py-2 border-r text-slate-700 font-bold text-xs flex items-center gap-1 shrink-0">
+                        🇮🇳 +91
+                      </span>
                       <Input
                         id="phone"
+                        type="tel"
                         placeholder={t("booking_client.placeholder_phone")}
-                        className="pl-10"
+                        className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0 rounded-none text-sm font-medium"
                         value={formData.phone}
-                        onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                        onChange={(e) => setFormData({ ...formData, phone: e.target.value.replace(/\D/g, "").slice(0, 10) })}
                       />
                     </div>
                   </div>

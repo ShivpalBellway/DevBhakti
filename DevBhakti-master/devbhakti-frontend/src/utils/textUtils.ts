@@ -92,3 +92,27 @@ export const isSequentialOrRepetitive = (num: string) => {
     }
     return maxRun >= 6;
 };
+
+/**
+ * Formats a 24-hour time string like "00:00", "08:30", "12:00", "17:00"
+ * into a user-friendly 12-hour string like "12:00 AM", "08:30 AM", "12:00 PM", "05:00 PM".
+ */
+export const formatSlotTime = (timeStr: string): string => {
+    if (!timeStr) return "";
+    if (timeStr.includes("AM") || timeStr.includes("PM") || timeStr.includes("am") || timeStr.includes("pm")) {
+        return timeStr;
+    }
+
+    const [hStr, mStr] = timeStr.split(":");
+    let hours = parseInt(hStr, 10);
+    const minutes = mStr || "00";
+
+    if (isNaN(hours)) return timeStr;
+
+    const ampm = hours >= 12 ? "PM" : "AM";
+    hours = hours % 12;
+    if (hours === 0) hours = 12;
+
+    const formattedHours = hours < 10 ? `0${hours}` : `${hours}`;
+    return `${formattedHours}:${minutes} ${ampm}`;
+};

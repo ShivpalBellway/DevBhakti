@@ -102,8 +102,19 @@
     "verified": "सत्यापित",
     "explore_by_location": "स्थान के अनुसार खोजें",
     "view_all_locations": "सभी स्थान देखें",
-    "mandal_count_one": "1 मंडल",
-    "mandal_count_many": "{{count}} मंडल"
+    "mandal_count_many": "{{count}} मंडल",
+    "festival_information": "उत्सव की जानकारी",
+    "festival_dates_label": "उत्सव की तारीखें",
+    "main_festival_day": "मुख्य उत्सव का दिन",
+    "ganesh_aarti_timings": "गणेश आरती का समय",
+    "visarjan_guidance": "विसर्जन मार्गदर्शन",
+    "emergency_help": "आपातकालीन सहायता",
+    "timings_desc": "सुबह 5:00 बजे | शाम 7:00 बजे",
+    "visarjan_desc": "प्लास्टिक से बचें, क्षेत्र साफ रखें, पुलिस के निर्देशों का पालन करें",
+    "emergency_desc": "पुलिस के लिए 100 | एम्बुलेंस के लिए 108 पर डायल करें",
+    "news_updates": "समाचार अपडेट",
+    "view_all_news": "सभी समाचार देखें",
+    "support_mandals_devotion": "लाखों भक्तों के साथ जुड़ें।"
   },
   "mandal_detail": {
     "not_found_title": "मंडल नहीं मिला",

@@ -449,3 +449,11 @@ export const fetchTempleOfflinePoojaLeads = async (params?: { search?: string, p
     return response.data;
 };
 
+export const createOfflineTempleOrder = async (data: any) => {
+    const token = localStorage.getItem("token");
+    const response = await axios.post(`${API_URL}/temple-admin/orders/offline`, data, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+

@@ -8,11 +8,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { format } from "date-fns";
-import { Loader2, Plus, Calendar, Clock, Users, Trash2 } from "lucide-react";
+import { Loader2, Plus, Calendar, Clock, Users, Trash2, ArrowLeft } from "lucide-react";
 import { formatSlotTime } from "@/utils/textUtils";
+import { useRouter } from "next/navigation";
 
-export default function DarshanSlotsClient() {
+export default function MandalDarshanSlotsPage() {
   const { toast } = useToast();
+  const router = useRouter();
 
   const [slots, setSlots] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -31,13 +33,13 @@ export default function DarshanSlotsClient() {
     setIsLoading(true);
     try {
       const token = localStorage.getItem("token");
-      const url = `${API_URL}/temple-admin/darshan/slots${dateFilter ? `?date=${dateFilter}` : ''}`;
+      const url = `${API_URL}/mandal-admin/darshan-bookings/slots${dateFilter ? `?date=${dateFilter}` : ''}`;
       const res = await fetch(url, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const json = await res.json();
       if (res.ok) {
-        setSlots(json);
+        setSlots(Array.isArray(json) ? json : []);
       }
     } catch (err) {
       console.error(err);
@@ -47,7 +49,6 @@ export default function DarshanSlotsClient() {
   };
 
   useEffect(() => {
-    // Set initial filter to today
     const today = new Date().toISOString().split('T')[0];
     setFilterDate(today);
     setFormData(prev => ({ ...prev, date: today }));
@@ -72,7 +73,7 @@ export default function DarshanSlotsClient() {
         maxCapacity: parseInt(formData.maxCapacity)
       };
 
-      const res = await fetch(`${API_URL}/temple-admin/darshan/slots`, {
+      const res = await fetch(`${API_URL}/mandal-admin/darshan-bookings/slots`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -83,7 +84,7 @@ export default function DarshanSlotsClient() {
 
       const json = await res.json();
       if (res.ok) {
-        toast({ title: "Success", description: json.message, variant: "success" });
+        toast({ title: "Success", description: json.message || "Slot created successfully", variant: "success" });
         fetchSlots(filterDate);
       } else {
         toast({ title: "Error", description: json.error || "Failed to create slots", variant: "destructive" });
@@ -100,7 +101,7 @@ export default function DarshanSlotsClient() {
     if (!confirm("Are you sure you want to delete this slot?")) return;
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(`${API_URL}/temple-admin/darshan/slots/${id}`, {
+      const res = await fetch(`${API_URL}/mandal-admin/darshan-bookings/slots/${id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -118,20 +119,23 @@ export default function DarshanSlotsClient() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+    <div className="space-y-6 max-w-6xl mx-auto p-4 md:p-6 pb-20">
+      <div className="flex items-center gap-3">
+        <Button variant="ghost" size="icon" className="rounded-full" onClick={() => router.back()}>
+          <ArrowLeft className="w-5 h-5" />
+        </Button>
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Manage Slots</h1>
-          <p className="text-muted-foreground mt-1">Create and manage Darshan time slots.</p>
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-slate-900">Manage Darshan Slots</h1>
+          <p className="text-muted-foreground mt-1">Create and manage Darshan time slots for your Mandal.</p>
         </div>
       </div>
 
       <div className="grid gap-6 md:grid-cols-3">
         {/* Create Slots Form */}
-        <Card className="md:col-span-1">
+        <Card className="md:col-span-1 shadow-sm border rounded-2xl">
           <CardHeader>
-            <CardTitle className="text-lg">Create Slot</CardTitle>
-            <CardDescription>Manually create a specific time slot.</CardDescription>
+            <CardTitle className="text-lg font-bold text-slate-800">Create Slot</CardTitle>
+            <CardDescription>Manually create a specific time slot for devotees.</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleCreateSlots} className="space-y-4">
@@ -141,6 +145,7 @@ export default function DarshanSlotsClient() {
                   type="date" 
                   value={formData.date} 
                   onChange={(e) => setFormData({...formData, date: e.target.value})}
+                  className="rounded-xl"
                   required
                 />
               </div>
@@ -152,6 +157,7 @@ export default function DarshanSlotsClient() {
                     type="time" 
                     value={formData.startTime} 
                     onChange={(e) => setFormData({...formData, startTime: e.target.value})}
+                    className="rounded-xl"
                     required
                   />
                 </div>
@@ -161,6 +167,7 @@ export default function DarshanSlotsClient() {
                     type="time" 
                     value={formData.endTime} 
                     onChange={(e) => setFormData({...formData, endTime: e.target.value})}
+                    className="rounded-xl"
                     required
                   />
                 </div>
@@ -173,11 +180,12 @@ export default function DarshanSlotsClient() {
                   min="1"
                   value={formData.maxCapacity} 
                   onChange={(e) => setFormData({...formData, maxCapacity: e.target.value})}
+                  className="rounded-xl"
                   required
                 />
               </div>
 
-              <Button type="submit" className="w-full mt-2" disabled={isCreating}>
+              <Button type="submit" className="w-full mt-2 bg-[#7b4623] hover:bg-[#5d351a] text-white rounded-xl h-11" disabled={isCreating}>
                 {isCreating ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Plus className="w-4 h-4 mr-2" />}
                 Create Slot
               </Button>
@@ -186,26 +194,26 @@ export default function DarshanSlotsClient() {
         </Card>
 
         {/* Existing Slots */}
-        <Card className="md:col-span-2">
+        <Card className="md:col-span-2 shadow-sm border rounded-2xl">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <div>
-              <CardTitle className="text-lg">Existing Slots</CardTitle>
+              <CardTitle className="text-lg font-bold text-slate-800">Existing Slots</CardTitle>
               <CardDescription>View and manage generated slots.</CardDescription>
             </div>
             <div className="flex items-center gap-2">
-              <Label className="whitespace-nowrap text-sm text-muted-foreground">Filter Date:</Label>
+              <Label className="whitespace-nowrap text-xs uppercase font-bold text-muted-foreground">Filter Date:</Label>
               <Input 
                 type="date" 
                 value={filterDate}
                 onChange={handleFilterChange}
-                className="w-auto h-9"
+                className="w-auto h-9 rounded-xl text-sm"
               />
             </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="pt-2">
             {isLoading ? (
               <div className="flex justify-center p-8">
-                <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                <Loader2 className="w-6 h-6 animate-spin text-[#7b4623]" />
               </div>
             ) : slots.length === 0 ? (
               <div className="text-center p-8 text-muted-foreground bg-gray-50 rounded-xl border border-dashed">
@@ -215,10 +223,10 @@ export default function DarshanSlotsClient() {
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {slots.map((slot) => (
-                  <div key={slot.id} className="border rounded-xl p-3 bg-white hover:border-primary/50 transition-colors group relative">
+                  <div key={slot.id} className="border rounded-xl p-3.5 bg-white hover:border-[#7b4623]/50 transition-colors group relative shadow-sm">
                     <div className="flex justify-between items-start mb-2">
-                      <div className="font-semibold flex items-center gap-1.5 text-sm">
-                        <Clock className="w-4 h-4 text-primary" />
+                      <div className="font-semibold flex items-center gap-1.5 text-sm text-slate-900">
+                        <Clock className="w-4 h-4 text-[#7b4623]" />
                         {formatSlotTime(slot.startTime)} - {formatSlotTime(slot.endTime)}
                       </div>
                       <button 
@@ -230,17 +238,13 @@ export default function DarshanSlotsClient() {
                       </button>
                     </div>
                     
-                    <div className="flex items-center justify-between text-xs text-muted-foreground">
-                      <span className="flex items-center gap-1"><Calendar className="w-3 h-3" /> {format(new Date(slot.date), "dd MMM yyyy")}</span>
-                      <span className="flex items-center gap-1"><Users className="w-3 h-3" /> {slot.bookedCount}/{slot.maxCapacity}</span>
-                    </div>
-                    
-                    {/* Progress bar for capacity */}
-                    <div className="w-full bg-gray-100 h-1.5 rounded-full mt-2 overflow-hidden">
-                       <div 
-                         className={`h-full rounded-full ${slot.bookedCount >= slot.maxCapacity ? 'bg-red-500' : 'bg-primary'}`}
-                         style={{ width: `${Math.min(100, (slot.bookedCount / slot.maxCapacity) * 100)}%` }}
-                       />
+                    <div className="flex items-center justify-between text-xs text-slate-500 pt-1 border-t border-slate-100">
+                      <span className="flex items-center gap-1">
+                        <Calendar className="w-3 h-3 text-slate-400" /> {slot.date ? format(new Date(slot.date), "dd MMM yyyy") : ""}
+                      </span>
+                      <span className="flex items-center gap-1 font-semibold text-slate-700">
+                        <Users className="w-3 h-3 text-slate-400" /> {slot.bookedCount}/{slot.maxCapacity}
+                      </span>
                     </div>
                   </div>
                 ))}
