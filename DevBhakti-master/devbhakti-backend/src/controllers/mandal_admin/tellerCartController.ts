@@ -250,6 +250,9 @@ export const processTellerCheckout = async (req: Request, res: Response) => {
       });
 
       return tellerOrder;
+    }, {
+      timeout: 20000, // 20 seconds timeout for interactive transaction
+      maxWait: 10000,  // 10 seconds max wait to acquire connection
     });
 
     res.status(201).json({
