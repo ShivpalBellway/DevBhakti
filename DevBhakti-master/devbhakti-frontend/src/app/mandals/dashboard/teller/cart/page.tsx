@@ -72,7 +72,7 @@ export default function UnifiedTellerCartPage() {
     setLoading(true);
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/api/mandal-admin/teller/catalog`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/mandal-admin/teller/catalog`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       const json = await res.json();
@@ -180,7 +180,7 @@ export default function UnifiedTellerCartPage() {
         }))
       };
 
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/api/mandal-admin/teller/checkout`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/mandal-admin/teller/checkout`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -279,33 +279,55 @@ export default function UnifiedTellerCartPage() {
                   {/* POOJA TAB */}
                   {activeTab === "pooja" && (
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      {catalog.poojas
-                        .filter(p => !searchQuery || parseLocalizedValue(p.name).toLowerCase().includes(searchQuery.toLowerCase()))
-                        .map(pooja => (
-                          <div key={pooja.id} className="p-3 border rounded-xl bg-white hover:border-amber-400 hover:shadow-md transition-all flex flex-col justify-between">
-                            <div>
-                              <div className="flex justify-between items-start gap-2">
-                                <h4 className="font-bold text-sm text-foreground">{parseLocalizedValue(pooja.name)}</h4>
-                                <Badge className="bg-amber-100 text-[#7b4623] hover:bg-amber-100 font-bold shrink-0">
-                                  ₹{pooja.price}
-                                </Badge>
+                      {catalog.poojas.length === 0 ? (
+                        <div className="col-span-2 text-center py-10 text-slate-500">
+                          <Flower2 className="w-10 h-10 mx-auto text-slate-300 mb-2" />
+                          <p className="font-bold text-sm">No Active Poojas Found</p>
+                          <p className="text-xs">Create poojas in My Poojas to list them here</p>
+                        </div>
+                      ) : (
+                        catalog.poojas
+                          .filter(p => !searchQuery || parseLocalizedValue(p.name).toLowerCase().includes(searchQuery.toLowerCase()))
+                          .map(pooja => (
+                            <div key={pooja.id} className="p-3 border rounded-xl bg-white hover:border-amber-400 hover:shadow-md transition-all flex flex-col justify-between">
+                              <div>
+                                <div className="flex gap-3 items-start">
+                                  {pooja.image ? (
+                                    <img src={pooja.image} alt={parseLocalizedValue(pooja.name)} className="w-14 h-14 object-cover rounded-lg border border-slate-100 shrink-0" />
+                                  ) : (
+                                    <div className="w-14 h-14 bg-amber-100/70 rounded-lg flex items-center justify-center text-[#7b4623] shrink-0 font-bold text-lg">
+                                      🪔
+                                    </div>
+                                  )}
+                                  <div className="space-y-1 flex-1 min-w-0">
+                                    {pooja.category && (
+                                      <Badge variant="outline" className="text-[10px] bg-amber-50 text-[#7b4623] border-amber-200 py-0">
+                                        {parseLocalizedValue(pooja.category)}
+                                      </Badge>
+                                    )}
+                                    <h4 className="font-bold text-sm text-foreground truncate">{parseLocalizedValue(pooja.name)}</h4>
+                                    <Badge className="bg-amber-100 text-[#7b4623] hover:bg-amber-100 font-bold">
+                                      ₹{pooja.price}
+                                    </Badge>
+                                  </div>
+                                </div>
                               </div>
+                              <Button
+                                onClick={() => addToCart({
+                                  id: pooja.id,
+                                  itemType: "POOJA",
+                                  itemName: parseLocalizedValue(pooja.name),
+                                  unitPrice: pooja.price,
+                                  price: pooja.price
+                                })}
+                                size="sm"
+                                className="mt-3 w-full bg-[#7b4623] hover:bg-[#603519] text-xs h-8"
+                              >
+                                <Plus className="w-3.5 h-3.5 mr-1" /> Add to Cart
+                              </Button>
                             </div>
-                            <Button
-                              onClick={() => addToCart({
-                                id: pooja.id,
-                                itemType: "POOJA",
-                                itemName: parseLocalizedValue(pooja.name),
-                                unitPrice: pooja.price,
-                                price: pooja.price
-                              })}
-                              size="sm"
-                              className="mt-3 w-full bg-[#7b4623] hover:bg-[#603519] text-xs h-8"
-                            >
-                              <Plus className="w-3.5 h-3.5 mr-1" /> Add to Cart
-                            </Button>
-                          </div>
-                        ))}
+                          ))
+                      )}
                     </div>
                   )}
 
@@ -367,66 +389,117 @@ export default function UnifiedTellerCartPage() {
                   {/* TICKET TAB */}
                   {activeTab === "ticket" && (
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      {catalog.slots.map(slot => (
-                        <div key={slot.id} className="p-3 border rounded-xl bg-white hover:border-amber-400 transition-all flex flex-col justify-between">
-                          <div>
-                            <h4 className="font-bold text-sm text-foreground">{slot.title || "Darshan Pass"}</h4>
-                            <p className="text-xs text-muted-foreground mt-0.5">{slot.slotTime}</p>
-                            <Badge className="mt-2 bg-amber-100 text-[#7b4623] font-bold">
-                              ₹{slot.price || 0}
-                            </Badge>
-                          </div>
-                          <Button
-                            onClick={() => addToCart({
-                              id: slot.id,
-                              itemType: "TICKET",
-                              itemName: slot.title || "Darshan Ticket",
-                              unitPrice: slot.price || 0,
-                              price: slot.price || 0,
-                              slotTime: slot.slotTime
-                            })}
-                            size="sm"
-                            className="mt-3 w-full bg-[#7b4623] hover:bg-[#603519] text-xs h-8"
-                          >
-                            <Plus className="w-3.5 h-3.5 mr-1" /> Add Ticket
-                          </Button>
+                      {catalog.slots.length === 0 ? (
+                        <div className="col-span-2 text-center py-10 text-slate-500">
+                          <Ticket className="w-10 h-10 mx-auto text-slate-300 mb-2" />
+                          <p className="font-bold text-sm">No Darshan Slots Available</p>
+                          <p className="text-xs">Create or open slots in Darshan Ticket Slots page</p>
                         </div>
-                      ))}
+                      ) : (
+                        catalog.slots.map(slot => {
+                          const remaining = (slot.maxCapacity || 0) - (slot.bookedCount || 0);
+                          return (
+                            <div key={slot.id} className="p-3 border rounded-xl bg-white hover:border-amber-400 shadow-xs transition-all flex flex-col justify-between">
+                              <div>
+                                <div className="flex justify-between items-start gap-2">
+                                  <h4 className="font-bold text-sm text-foreground">{slot.title || "Darshan Slot Pass"}</h4>
+                                  <Badge className="bg-amber-100 text-[#7b4623] hover:bg-amber-100 font-bold shrink-0">
+                                    ₹{slot.price || 0}
+                                  </Badge>
+                                </div>
+                                <p className="text-xs font-mono text-slate-600 mt-1 flex items-center gap-1">
+                                  <Ticket className="w-3.5 h-3.5 text-amber-700" />
+                                  {slot.date ? `${slot.date} | ` : ''}{slot.startTime || ''} - {slot.endTime || ''}
+                                </p>
+                                <div className="mt-2 flex items-center gap-2">
+                                  <Badge variant="outline" className="text-[10px] bg-emerald-50 text-emerald-700 border-emerald-200">
+                                    Capacity: {remaining > 0 ? `${remaining} Open` : 'Full'}
+                                  </Badge>
+                                </div>
+                              </div>
+                              <Button
+                                onClick={() => addToCart({
+                                  id: slot.id,
+                                  itemType: "TICKET",
+                                  itemName: `${slot.title || 'Darshan Ticket'} (${slot.startTime || 'Standard'})`,
+                                  unitPrice: slot.price || 0,
+                                  price: slot.price || 0,
+                                  slotTime: `${slot.startTime} - ${slot.endTime}`
+                                })}
+                                size="sm"
+                                className="mt-3 w-full bg-[#7b4623] hover:bg-[#603519] text-xs h-8"
+                              >
+                                <Plus className="w-3.5 h-3.5 mr-1" /> Add Ticket Pass
+                              </Button>
+                            </div>
+                          );
+                        })
+                      )}
                     </div>
                   )}
 
                   {/* PRODUCT / PRASAD TAB */}
                   {activeTab === "product" && (
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      {catalog.products
-                        .filter(p => !searchQuery || parseLocalizedValue(p.name).toLowerCase().includes(searchQuery.toLowerCase()))
-                        .map(prod => {
-                          const firstVariant = prod.variants?.[0];
-                          const price = firstVariant ? firstVariant.price : 100;
-                          return (
-                            <div key={prod.id} className="p-3 border rounded-xl bg-white hover:border-amber-400 transition-all flex flex-col justify-between">
-                              <div>
-                                <h4 className="font-bold text-sm text-foreground">{parseLocalizedValue(prod.name)}</h4>
-                                <Badge className="mt-1 bg-amber-100 text-[#7b4623] font-bold">
-                                  ₹{price}
-                                </Badge>
+                      {catalog.products.length === 0 ? (
+                        <div className="col-span-2 text-center py-10 text-slate-500">
+                          <Package className="w-10 h-10 mx-auto text-slate-300 mb-2" />
+                          <p className="font-bold text-sm">No Approved Products Found</p>
+                          <p className="text-xs">Approved products from Product Management will appear here</p>
+                        </div>
+                      ) : (
+                        catalog.products
+                          .filter(p => !searchQuery || parseLocalizedValue(p.name).toLowerCase().includes(searchQuery.toLowerCase()))
+                          .map(prod => {
+                            const firstVariant = prod.variants?.[0];
+                            const price = firstVariant ? firstVariant.price : 100;
+                            const stock = firstVariant ? firstVariant.stock : null;
+                            const categoryName = parseLocalizedValue(prod.category) || "Prasad / Items";
+
+                            return (
+                              <div key={prod.id} className="p-3 border rounded-xl bg-white hover:border-amber-400 shadow-xs transition-all flex flex-col justify-between">
+                                <div>
+                                  <div className="flex gap-3 items-start">
+                                    {prod.image ? (
+                                      <img src={prod.image} alt={parseLocalizedValue(prod.name)} className="w-14 h-14 object-cover rounded-lg border border-slate-100 shrink-0" />
+                                    ) : (
+                                      <div className="w-14 h-14 bg-amber-100/70 rounded-lg flex items-center justify-center text-[#7b4623] shrink-0 font-bold text-lg">
+                                        🎁
+                                      </div>
+                                    )}
+                                    <div className="space-y-1 flex-1 min-w-0">
+                                      <Badge variant="outline" className="text-[10px] bg-amber-50 text-[#7b4623] border-amber-200 py-0">
+                                        {categoryName}
+                                      </Badge>
+                                      <h4 className="font-bold text-sm text-foreground truncate">{parseLocalizedValue(prod.name)}</h4>
+                                      <div className="flex items-center justify-between gap-2">
+                                        <span className="font-bold text-sm text-[#7b4623]">₹{price}</span>
+                                        {stock !== null && (
+                                          <span className={`text-[10px] font-medium ${stock > 0 ? 'text-emerald-700' : 'text-rose-600'}`}>
+                                            {stock > 0 ? `Stock: ${stock}` : 'Out of Stock'}
+                                          </span>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                                <Button
+                                  onClick={() => addToCart({
+                                    id: prod.id,
+                                    itemType: "PRODUCT",
+                                    itemName: parseLocalizedValue(prod.name),
+                                    unitPrice: price,
+                                    price
+                                  })}
+                                  size="sm"
+                                  className="mt-3 w-full bg-[#7b4623] hover:bg-[#603519] text-xs h-8"
+                                >
+                                  <Plus className="w-3.5 h-3.5 mr-1" /> Add Product
+                                </Button>
                               </div>
-                              <Button
-                                onClick={() => addToCart({
-                                  id: prod.id,
-                                  itemType: "PRODUCT",
-                                  itemName: parseLocalizedValue(prod.name),
-                                  unitPrice: price,
-                                  price
-                                })}
-                                size="sm"
-                                className="mt-3 w-full bg-[#7b4623] hover:bg-[#603519] text-xs h-8"
-                              >
-                                <Plus className="w-3.5 h-3.5 mr-1" /> Add Product
-                              </Button>
-                            </div>
-                          );
-                        })}
+                            );
+                          })
+                      )}
                     </div>
                   )}
                 </>
@@ -468,11 +541,11 @@ export default function UnifiedTellerCartPage() {
 
                       <div className="flex items-center gap-1.5">
                         <div className="flex items-center border border-amber-300 rounded-lg bg-white">
-                          <button onClick={() => updateQuantity(idx, -1)} className="p-1 hover:bg-amber-100 text-amber-900 rounded-l-lg">
+                          <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); updateQuantity(idx, -1); }} className="p-1 hover:bg-amber-100 text-amber-900 rounded-l-lg">
                             <Minus className="w-3 h-3" />
                           </button>
                           <span className="px-2 font-bold text-xs">{item.quantity}</span>
-                          <button onClick={() => updateQuantity(idx, 1)} className="p-1 hover:bg-amber-100 text-amber-900 rounded-r-lg">
+                          <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); updateQuantity(idx, 1); }} className="p-1 hover:bg-amber-100 text-amber-900 rounded-r-lg">
                             <Plus className="w-3 h-3" />
                           </button>
                         </div>

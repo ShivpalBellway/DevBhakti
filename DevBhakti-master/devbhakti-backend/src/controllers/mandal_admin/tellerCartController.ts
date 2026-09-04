@@ -23,6 +23,7 @@ export const getTellerCatalog = async (req: Request, res: Response) => {
           packages: true,
           image: true,
           category: true,
+          description: true,
         },
       }),
       prisma.product.findMany({
@@ -32,6 +33,7 @@ export const getTellerCatalog = async (req: Request, res: Response) => {
           name: true,
           image: true,
           category: true,
+          description: true,
           variants: {
             where: { isActive: true },
             select: { id: true, name: true, price: true, stock: true },
@@ -42,6 +44,8 @@ export const getTellerCatalog = async (req: Request, res: Response) => {
         where: { mandalId, isClosed: false },
         select: {
           id: true,
+          title: true,
+          price: true,
           date: true,
           startTime: true,
           endTime: true,
@@ -87,21 +91,37 @@ export const processTellerCheckout = async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, message: 'Cart items cannot be empty' });
     }
 
-    // 1. Find or create Devotee User by phone
+    // 1. Normalize phone and find or auto-create Devotee User
+    let cleanedPhone = String(devotee.phone || '').replace(/\D/g, '');
+    if (cleanedPhone.startsWith('00')) cleanedPhone = cleanedPhone.substring(2);
+    if (cleanedPhone.length === 11 && cleanedPhone.startsWith('0')) cleanedPhone = cleanedPhone.substring(1);
+    if (cleanedPhone.length === 10) cleanedPhone = '91' + cleanedPhone;
+    const normalizedPhone = '+' + cleanedPhone;
+
     let devoteeUser = await prisma.user.findFirst({
-      where: { phone: devotee.phone, role: 'DEVOTEE' },
+      where: {
+        OR: [
+          { phone: devotee.phone },
+          { phone: normalizedPhone },
+          { phone: cleanedPhone }
+        ],
+        role: 'DEVOTEE'
+      },
     });
 
     if (!devoteeUser) {
+      const userDisplayId = `DEV-${Date.now().toString().slice(-6)}`;
       devoteeUser = await prisma.user.create({
         data: {
+          displayId: userDisplayId,
           name: devotee.name,
-          phone: devotee.phone,
+          phone: normalizedPhone,
           email: devotee.email || null,
           address: devotee.address || null,
           gothra: devotee.gothra || null,
           role: 'DEVOTEE',
           isVerified: true,
+          isActive: true,
         },
       });
     }
@@ -208,20 +228,46 @@ export const processTellerCheckout = async (req: Request, res: Response) => {
               donorPhone: devotee.phone,
               donorEmail: devotee.email || '',
               amount: Number(item.price || item.amount || 0),
-              status: 'PAID',
+              status: 'SUCCESS',
               paymentMethod: payment?.method || 'CASH',
               address: devotee.address || null,
               message: item.message || 'Counter Offline Donation',
             },
           });
         } else if (type === 'TICKET') {
+          let targetSlotId = item.itemId || item.slotId;
+          if (targetSlotId) {
+            const slotExists = await tx.mandalDarshanSlot.findUnique({ where: { id: targetSlotId } });
+            if (!slotExists) targetSlotId = null;
+          }
+
+          if (!targetSlotId) {
+            const todayStr = new Date().toISOString().split('T')[0];
+            let defaultSlot = await tx.mandalDarshanSlot.findFirst({ where: { mandalId, date: todayStr } });
+            if (!defaultSlot) {
+              defaultSlot = await tx.mandalDarshanSlot.findFirst({ where: { mandalId } });
+            }
+            if (!defaultSlot) {
+              defaultSlot = await tx.mandalDarshanSlot.create({
+                data: {
+                  mandalId,
+                  date: todayStr,
+                  startTime: '06:00',
+                  endTime: '22:00',
+                  maxCapacity: 1000,
+                },
+              });
+            }
+            targetSlotId = defaultSlot.id;
+          }
+
           const ticketDisplayId = await generateCustomId('MDRID');
           await tx.mandalDarshanTicket.create({
             data: {
               displayId: ticketDisplayId,
               userId: devoteeUser!.id,
               mandalId,
-              slotId: item.itemId || item.slotId || null,
+              slotId: targetSlotId!,
               visitorName: devotee.name,
               visitorPhone: devotee.phone,
               visitorEmail: devotee.email || null,

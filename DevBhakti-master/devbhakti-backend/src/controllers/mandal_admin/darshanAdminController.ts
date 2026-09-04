@@ -6,11 +6,14 @@ import { DarshanTicketStatus } from '@prisma/client';
 export const createSlots = async (req: Request, res: Response) => {
   try {
     const mandalId = (req as any).owner?.ownerId;
-    const { startDate, endDate, startTime, endTime, maxCapacity, intervalMinutes } = req.body;
+    const { startDate, endDate, startTime, endTime, maxCapacity, intervalMinutes, title, price } = req.body;
 
     if (!startDate || !endDate || !startTime || !endTime || !maxCapacity) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
+
+    const slotTitle = title && title.trim() ? title.trim() : "General Darshan Ticket";
+    const slotPrice = price !== undefined && price !== null && price !== "" ? Number(price) : 0;
 
     const start = new Date(startDate);
     const end = new Date(endDate);
@@ -38,6 +41,8 @@ export const createSlots = async (req: Request, res: Response) => {
             date: dateStr,
             startTime: currentSlotStart.toISOString().substring(11, 16),
             endTime: slotEnd.toISOString().substring(11, 16),
+            title: slotTitle,
+            price: slotPrice,
             maxCapacity
           });
 
@@ -49,6 +54,8 @@ export const createSlots = async (req: Request, res: Response) => {
           date: dateStr,
           startTime,
           endTime,
+          title: slotTitle,
+          price: slotPrice,
           maxCapacity
         });
       }

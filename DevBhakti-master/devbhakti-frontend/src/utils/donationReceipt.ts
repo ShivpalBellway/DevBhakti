@@ -164,3 +164,15 @@ const numberToWords = (num: number): string => {
 
     return str.trim();
 };
+
+export const downloadDonationReceiptPDF = (donation: ReceiptProps["donation"]) => {
+    const html = generateReceiptHTML(donation);
+    const printWindow = window.open("", "_blank");
+    if (printWindow) {
+        printWindow.document.open();
+        printWindow.document.write(html);
+        printWindow.document.close();
+        setTimeout(() => printWindow.print(), 400);
+    }
+};
+

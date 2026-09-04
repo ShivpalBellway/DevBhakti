@@ -936,7 +936,9 @@ export function MandalsList() {
                           type="button"
                           onClick={(e) => {
                             e.stopPropagation();
-                            router.push(`/mandals/${mandal.slug || mandal.id}`);
+                            const targetSlug = mandal.slug || mandal.id;
+                            console.log("Navigating to mandal detail:", targetSlug);
+                            router.push(`/mandals/${targetSlug}`);
                           }}
                           className="text-xs font-bold text-[#6B0F1A] dark:text-amber-400 hover:underline flex items-center gap-1 group/link"
                         >

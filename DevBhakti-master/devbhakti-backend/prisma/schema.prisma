@@ -926,6 +926,8 @@ model MandalDarshanSlot {
   date        String
   startTime   String
   endTime     String
+  title       String                  @default("General Darshan Ticket")
+  price       Float                   @default(0)
   maxCapacity Int                     @default(500)
   bookedCount Int                     @default(0)
   isClosed    Boolean                 @default(false)

@@ -24,6 +24,8 @@ export default function MandalDarshanSlotsPage() {
 
   const [formData, setFormData] = useState({
     date: "",
+    title: "General Darshan Ticket",
+    price: "0",
     startTime: "08:00",
     endTime: "09:00",
     maxCapacity: "500",
@@ -68,6 +70,8 @@ export default function MandalDarshanSlotsPage() {
       const payload = {
         startDate: formData.date,
         endDate: formData.date,
+        title: formData.title,
+        price: parseFloat(formData.price || "0"),
         startTime: formData.startTime,
         endTime: formData.endTime,
         maxCapacity: parseInt(formData.maxCapacity)
@@ -126,7 +130,7 @@ export default function MandalDarshanSlotsPage() {
         </Button>
         <div>
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-slate-900">Manage Darshan Slots</h1>
-          <p className="text-muted-foreground mt-1">Create and manage Darshan time slots for your Mandal.</p>
+          <p className="text-muted-foreground mt-1">Create and manage Darshan time slots with Ticket Types & Pricing for your Mandal.</p>
         </div>
       </div>
 
@@ -139,6 +143,44 @@ export default function MandalDarshanSlotsPage() {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleCreateSlots} className="space-y-4">
+              <div className="space-y-1">
+                <Label>Ticket Title / Type</Label>
+                <Input 
+                  type="text" 
+                  placeholder="e.g. General Darshan, Special VIP Pass, Maha Aarti"
+                  value={formData.title} 
+                  onChange={(e) => setFormData({...formData, title: e.target.value})}
+                  className="rounded-xl"
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label>Ticket Price (₹)</Label>
+                  <Input 
+                    type="number"
+                    min="0" 
+                    placeholder="0"
+                    value={formData.price} 
+                    onChange={(e) => setFormData({...formData, price: e.target.value})}
+                    className="rounded-xl font-bold"
+                    required
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label>Max Capacity</Label>
+                  <Input 
+                    type="number" 
+                    min="1"
+                    value={formData.maxCapacity} 
+                    onChange={(e) => setFormData({...formData, maxCapacity: e.target.value})}
+                    className="rounded-xl"
+                    required
+                  />
+                </div>
+              </div>
+
               <div className="space-y-1">
                 <Label>Date</Label>
                 <Input 
@@ -171,18 +213,6 @@ export default function MandalDarshanSlotsPage() {
                     required
                   />
                 </div>
-              </div>
-
-              <div className="space-y-1">
-                <Label>Max Capacity</Label>
-                <Input 
-                  type="number" 
-                  min="1"
-                  value={formData.maxCapacity} 
-                  onChange={(e) => setFormData({...formData, maxCapacity: e.target.value})}
-                  className="rounded-xl"
-                  required
-                />
               </div>
 
               <Button type="submit" className="w-full mt-2 bg-[#7b4623] hover:bg-[#5d351a] text-white rounded-xl h-11" disabled={isCreating}>
@@ -223,22 +253,34 @@ export default function MandalDarshanSlotsPage() {
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {slots.map((slot) => (
-                  <div key={slot.id} className="border rounded-xl p-3.5 bg-white hover:border-[#7b4623]/50 transition-colors group relative shadow-sm">
-                    <div className="flex justify-between items-start mb-2">
-                      <div className="font-semibold flex items-center gap-1.5 text-sm text-slate-900">
-                        <Clock className="w-4 h-4 text-[#7b4623]" />
-                        {formatSlotTime(slot.startTime)} - {formatSlotTime(slot.endTime)}
+                  <div key={slot.id} className="border rounded-xl p-3.5 bg-white hover:border-[#7b4623]/50 transition-colors group relative shadow-sm flex flex-col justify-between">
+                    <div>
+                      <div className="flex justify-between items-start mb-2 gap-2">
+                        <div>
+                          <span className="font-bold text-xs text-[#7b4623] block truncate">
+                            {slot.title || "General Darshan Ticket"}
+                          </span>
+                          <div className="font-semibold flex items-center gap-1.5 text-xs text-slate-900 mt-0.5">
+                            <Clock className="w-3.5 h-3.5 text-[#7b4623]" />
+                            {formatSlotTime(slot.startTime)} - {formatSlotTime(slot.endTime)}
+                          </div>
+                        </div>
+                        <div className="flex flex-col items-end gap-1">
+                          <button 
+                            onClick={() => handleDeleteSlot(slot.id)}
+                            className="text-red-500 opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-red-50 rounded"
+                            title="Delete Slot"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                          <span className="bg-amber-100 text-[#7b4623] text-[11px] font-black px-2 py-0.5 rounded-full shrink-0">
+                            ₹{slot.price ?? 0}
+                          </span>
+                        </div>
                       </div>
-                      <button 
-                        onClick={() => handleDeleteSlot(slot.id)}
-                        className="text-red-500 opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-red-50 rounded"
-                        title="Delete Slot"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
                     </div>
                     
-                    <div className="flex items-center justify-between text-xs text-slate-500 pt-1 border-t border-slate-100">
+                    <div className="flex items-center justify-between text-xs text-slate-500 pt-2 border-t border-slate-100 mt-2">
                       <span className="flex items-center gap-1">
                         <Calendar className="w-3 h-3 text-slate-400" /> {slot.date ? format(new Date(slot.date), "dd MMM yyyy") : ""}
                       </span>

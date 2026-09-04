@@ -363,8 +363,8 @@ export default function MandalOfflineUsersPage() {
               <div key={idx} className="p-4 rounded-xl border border-slate-200 bg-slate-50/60 flex flex-col md:flex-row md:items-center justify-between gap-3">
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
-                    <Badge className="bg-amber-100 text-[#7b4623] border-amber-200 text-xs font-bold">
-                      OFFLINE POOJA
+                    <Badge className={`text-xs font-bold ${item.type === 'DONATION' ? 'bg-rose-100 text-rose-800 border-rose-200' : item.type === 'TICKET' ? 'bg-blue-100 text-blue-800 border-blue-200' : 'bg-amber-100 text-[#7b4623] border-amber-200'}`}>
+                      {item.type || 'OFFLINE POOJA'}
                     </Badge>
                     <span className="font-bold text-slate-900 font-mono text-sm">{item.displayId}</span>
                     <Badge variant="outline" className="text-xs bg-emerald-50 text-emerald-700 border-emerald-200">
@@ -372,7 +372,7 @@ export default function MandalOfflineUsersPage() {
                     </Badge>
                   </div>
                   <p className="text-sm font-semibold text-slate-800">
-                    {parseLocalizedValue(item.poojaName || item.title, 'en')} {item.packageName ? `- ${item.packageName}` : ''}
+                    {item.title || parseLocalizedValue(item.poojaName, 'en')} {item.packageName ? `- ${item.packageName}` : ''}
                   </p>
                   <p className="text-xs text-slate-500">
                     Date: {item.bookingDate || new Date(item.createdAt).toLocaleDateString()} | Status: {item.status}
@@ -386,7 +386,7 @@ export default function MandalOfflineUsersPage() {
                   <Button 
                     size="sm" 
                     variant="outline" 
-                    onClick={() => handlePrintPoojaReceipt(item)}
+                    onClick={() => item.type === 'DONATION' ? handlePrintDonationReceipt(item) : handlePrintPoojaReceipt(item)}
                     className="gap-1.5 text-xs border-[#7b4623] text-[#7b4623] hover:bg-amber-50 rounded-lg"
                   >
                     <Printer className="w-3.5 h-3.5" />

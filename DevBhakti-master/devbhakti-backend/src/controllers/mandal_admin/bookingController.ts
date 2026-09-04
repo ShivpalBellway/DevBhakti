@@ -425,36 +425,86 @@ export const getMandalOfflinePoojaLeads = async (req: Request, res: Response) =>
         const pageNum = parseInt(String(page), 10) || 1;
         const limitNum = parseInt(String(limit), 10) || 50;
         const skip = (pageNum - 1) * limitNum;
+        const searchStr = search ? String(search).trim() : '';
 
-        const whereCondition: any = {
+        // 1. Fetch Offline Pooja Bookings
+        const poojaWhere: any = {
             mandalId: String(mandalId),
             OR: [
                 { isOffline: true },
                 { bookingSource: { in: ['MANDAL_OFFLINE', 'ADMIN_OFFLINE', 'COUNTER'] } }
             ]
         };
-
-        if (search) {
-            whereCondition.AND = [{
+        if (searchStr) {
+            poojaWhere.AND = [{
                 OR: [
-                    { devoteeName: { contains: String(search), mode: 'insensitive' } },
-                    { devoteePhone: { contains: String(search), mode: 'insensitive' } },
-                    { devoteeEmail: { contains: String(search), mode: 'insensitive' } },
-                    { displayId: { contains: String(search), mode: 'insensitive' } }
+                    { devoteeName: { contains: searchStr, mode: 'insensitive' } },
+                    { devoteePhone: { contains: searchStr, mode: 'insensitive' } },
+                    { devoteeEmail: { contains: searchStr, mode: 'insensitive' } },
+                    { displayId: { contains: searchStr, mode: 'insensitive' } }
                 ]
             }];
         }
 
-        const offlineBookings = await prisma.poojaBooking.findMany({
-            where: whereCondition,
-            orderBy: { createdAt: 'desc' },
-            include: {
-                pooja: { select: { name: true } },
-                user: { select: { id: true, displayId: true, isVerified: true } }
-            }
-        });
+        // 2. Fetch Offline Donations
+        const donationWhere: any = {
+            mandalId: String(mandalId),
+            status: { in: ['SUCCESS', 'PAID'] }
+        };
+        if (searchStr) {
+            donationWhere.AND = [{
+                OR: [
+                    { donorName: { contains: searchStr, mode: 'insensitive' } },
+                    { donorPhone: { contains: searchStr, mode: 'insensitive' } },
+                    { donorEmail: { contains: searchStr, mode: 'insensitive' } },
+                    { displayId: { contains: searchStr, mode: 'insensitive' } }
+                ]
+            }];
+        }
+
+        // 3. Fetch Offline Tickets
+        const ticketWhere: any = {
+            mandalId: String(mandalId)
+        };
+        if (searchStr) {
+            ticketWhere.AND = [{
+                OR: [
+                    { visitorName: { contains: searchStr, mode: 'insensitive' } },
+                    { visitorPhone: { contains: searchStr, mode: 'insensitive' } },
+                    { visitorEmail: { contains: searchStr, mode: 'insensitive' } },
+                    { displayId: { contains: searchStr, mode: 'insensitive' } }
+                ]
+            }];
+        }
+
+        const [offlineBookings, offlineDonations, offlineTickets] = await Promise.all([
+            prisma.poojaBooking.findMany({
+                where: poojaWhere,
+                orderBy: { createdAt: 'desc' },
+                include: {
+                    pooja: { select: { name: true } },
+                    user: { select: { id: true, displayId: true, isVerified: true } }
+                }
+            }),
+            prisma.donation.findMany({
+                where: donationWhere,
+                orderBy: { createdAt: 'desc' },
+                include: {
+                    user: { select: { id: true, displayId: true } }
+                }
+            }),
+            prisma.mandalDarshanTicket.findMany({
+                where: ticketWhere,
+                orderBy: { createdAt: 'desc' },
+                include: {
+                    user: { select: { id: true, displayId: true } }
+                }
+            })
+        ]);
 
         const leadsMap = new Map<string, any>();
+
+        // Aggregate Pooja Bookings
         offlineBookings.forEach((booking) => {
             const phone = booking.devoteePhone || 'UNKNOWN';
             if (!leadsMap.has(phone)) {
@@ -472,6 +522,7 @@ export const getMandalOfflinePoojaLeads = async (req: Request, res: Response) =>
                     userId: booking.userId,
                     userDisplayId: booking.user?.displayId || null,
                     totalBookings: 0,
+                    totalDonations: 0,
                     totalSpent: 0,
                     lastBookingDate: booking.createdAt,
                     bookings: []
@@ -482,6 +533,7 @@ export const getMandalOfflinePoojaLeads = async (req: Request, res: Response) =>
             lead.totalBookings += 1;
             lead.totalSpent += (booking.packagePrice || 0);
             lead.bookings.push({
+                type: 'POOJA',
                 id: booking.id,
                 displayId: booking.displayId,
                 poojaName: booking.pooja?.name,
@@ -495,15 +547,92 @@ export const getMandalOfflinePoojaLeads = async (req: Request, res: Response) =>
             });
         });
 
+        // Aggregate Donations
+        offlineDonations.forEach((donation) => {
+            const phone = donation.donorPhone || 'UNKNOWN';
+            if (!leadsMap.has(phone)) {
+                leadsMap.set(phone, {
+                    phone,
+                    name: donation.donorName,
+                    email: donation.donorEmail,
+                    address: donation.address,
+                    userId: donation.userId,
+                    userDisplayId: donation.user?.displayId || null,
+                    totalBookings: 0,
+                    totalDonations: 0,
+                    totalSpent: 0,
+                    lastBookingDate: donation.createdAt,
+                    bookings: []
+                });
+            }
+
+            const lead = leadsMap.get(phone);
+            lead.totalDonations += 1;
+            lead.totalSpent += Number(donation.amount || 0);
+            if (!lead.userDisplayId && donation.user?.displayId) {
+                lead.userDisplayId = donation.user.displayId;
+                lead.userId = donation.userId;
+            }
+            lead.bookings.push({
+                type: 'DONATION',
+                id: donation.id,
+                displayId: donation.displayId || donation.id,
+                title: `Donation (${donation.message || 'General'})`,
+                amount: Number(donation.amount || 0),
+                paymentMethod: donation.paymentMethod,
+                status: donation.status,
+                createdAt: donation.createdAt
+            });
+        });
+
+        // Aggregate Tickets
+        offlineTickets.forEach((ticket) => {
+            const phone = ticket.visitorPhone || 'UNKNOWN';
+            if (!leadsMap.has(phone)) {
+                leadsMap.set(phone, {
+                    phone,
+                    name: ticket.visitorName,
+                    email: ticket.visitorEmail,
+                    userId: ticket.userId,
+                    userDisplayId: ticket.user?.displayId || null,
+                    totalBookings: 0,
+                    totalDonations: 0,
+                    totalSpent: 0,
+                    lastBookingDate: ticket.createdAt,
+                    bookings: []
+                });
+            }
+
+            const lead = leadsMap.get(phone);
+            lead.totalSpent += Number(ticket.totalAmount || 0);
+            lead.bookings.push({
+                type: 'TICKET',
+                id: ticket.id,
+                displayId: ticket.displayId,
+                title: `Darshan Pass (${ticket.visitorCount} Visitors)`,
+                amount: Number(ticket.totalAmount || 0),
+                paymentMethod: ticket.paymentMethod,
+                status: ticket.status,
+                createdAt: ticket.createdAt
+            });
+        });
+
         const allLeads = Array.from(leadsMap.values());
+        allLeads.sort((a, b) => new Date(b.lastBookingDate).getTime() - new Date(a.lastBookingDate).getTime());
+
         const paginatedLeads = allLeads.slice(skip, skip + limitNum);
+
+        const totalRevenue = offlineBookings.reduce((sum, b) => sum + (b.packagePrice || 0), 0) +
+            offlineDonations.reduce((sum, d) => sum + Number(d.amount || 0), 0) +
+            offlineTickets.reduce((sum, t) => sum + Number(t.totalAmount || 0), 0);
 
         res.status(200).json({
             success: true,
             data: paginatedLeads,
             totalLeads: allLeads.length,
             totalBookingsCount: offlineBookings.length,
-            totalRevenue: offlineBookings.reduce((sum, b) => sum + (b.packagePrice || 0), 0),
+            totalDonationsCount: offlineDonations.length,
+            totalRevenue: totalRevenue,
             page: pageNum,
             limit: limitNum
         });
