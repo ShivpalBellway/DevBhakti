@@ -47,7 +47,7 @@ export function FloatingDownloadApp() {
                 {/* Logo / Badge */}
                 <div className="w-8 h-8 rounded-full bg-white p-0.5 shadow-md flex items-center justify-center shrink-0 animate-pulse group-hover:animate-none">
                     <img
-                        src={logo2.src || logo2}
+                        src={typeof logo2 === "string" ? logo2 : logo2.src}
                         alt="DevBhakti Logo"
                         className="w-full h-full object-contain rounded-full"
                     />
