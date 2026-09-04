@@ -62,6 +62,7 @@ const sidebarItems = [
         href: "/mandals/dashboard/teller",
         permission: "finance.menu",
         subItems: [
+            { label: "🛒 Unified Counter Cart", href: "/mandals/dashboard/teller/cart", permission: "finance.menu" },
             { label: "Offline Pooja Booking", href: "/mandals/dashboard/teller/offline-pooja", permission: "finance.menu" },
             { label: "Offline Donation", href: "/mandals/dashboard/teller/offline-donation", permission: "finance.menu" },
             { label: "Offline Ticket Booking", href: "/mandals/dashboard/teller/offline-ticket", permission: "finance.menu" },

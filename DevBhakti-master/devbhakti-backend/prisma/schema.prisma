@@ -37,6 +37,7 @@ model User {
   orders              Order[]
   photographyBookings PhotographyBooking[]
   bookings            PoojaBooking[]
+  tellerOrders        TellerOrder[]
   sellerProfile       SellerProfile?
   temple              Temple?
 
@@ -138,6 +139,7 @@ model Temple {
   ledgerEntries         TempleLedger[]
   updateRequests        TempleUpdateRequest[]
   withdrawals           WithdrawalRequest[]
+  tellerOrders          TellerOrder[]
 }
 
 model BookingAvailability {
@@ -777,6 +779,7 @@ model Mandal {
   withdrawals        MandalWithdrawalRequest[]
   mandalDarshanSlots MandalDarshanSlot[]
   mandalDarshanTickets MandalDarshanTicket[]
+  tellerOrders       TellerOrder[]
 }
 
 model Lead {
@@ -1061,5 +1064,41 @@ model AuditLog {
   details     Json?
   ipAddress   String?
   createdAt   DateTime @default(now())
+}
+
+model TellerOrder {
+  id               String            @id @default(cuid())
+  displayId        String            @unique
+  mandalId         String?
+  templeId         String?
+  devoteeId        String?
+  devoteeName      String
+  devoteePhone     String
+  devoteeEmail     String?
+  totalAmount      Float
+  paymentMethod    String            @default("CASH")
+  paymentStatus    String            @default("PAID")
+  transactionRef   String?
+  createdByStaffId String?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  items            TellerOrderItem[]
+  mandal           Mandal?           @relation(fields: [mandalId], references: [id])
+  temple           Temple?           @relation(fields: [templeId], references: [id])
+  devotee          User?             @relation(fields: [devoteeId], references: [id])
+}
+
+model TellerOrderItem {
+  id            String      @id @default(cuid())
+  tellerOrderId String
+  itemType      String
+  itemId        String?
+  itemName      String
+  unitPrice     Float
+  quantity      Int         @default(1)
+  totalPrice    Float
+  metadata      Json?
+  createdAt     DateTime    @default(now())
+  tellerOrder   TellerOrder @relation(fields: [tellerOrderId], references: [id], onDelete: Cascade)
 }
 
