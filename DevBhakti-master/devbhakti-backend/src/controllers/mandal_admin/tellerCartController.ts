@@ -159,29 +159,44 @@ export const processTellerCheckout = async (req: Request, res: Response) => {
       for (const item of items) {
         const type = (item.itemType || item.type || '').toUpperCase();
         if (type === 'POOJA') {
-          const poojaDisplayId = await generateCustomId('PB');
-          await tx.poojaBooking.create({
-            data: {
-              displayId: poojaDisplayId,
-              userId: devoteeUser!.id,
-              poojaId: item.itemId || item.poojaId,
-              mandalId,
-              packageName: item.packageName || item.itemName || 'Standard Pooja',
-              packagePrice: Number(item.price || 0),
-              devoteeName: devotee.name,
-              devoteePhone: devotee.phone,
-              devoteeEmail: devotee.email || null,
-              bookingDate: item.bookingDate || new Date().toISOString().split('T')[0],
-              specialRequests: item.specialRequests || null,
-              gothra: devotee.gothra || null,
-              status: 'BOOKED',
-              isOffline: true,
-              bookingSource: 'COUNTER',
-              paymentMethod: payment?.method || 'CASH',
-              createdByStaffId: staffId || null,
-              transactionRef: displayId, // linked to Master Teller Order
-            },
-          });
+          let targetPoojaId = item.itemId || item.poojaId;
+
+          // Verify if poojaId exists in DB to prevent foreign key constraint error
+          if (targetPoojaId) {
+            const exists = await tx.pooja.findUnique({ where: { id: targetPoojaId } });
+            if (!exists) targetPoojaId = null;
+          }
+
+          if (!targetPoojaId) {
+            const firstPooja = await tx.pooja.findFirst({ where: { mandalId, status: true } });
+            targetPoojaId = firstPooja?.id;
+          }
+
+          if (targetPoojaId) {
+            const poojaDisplayId = await generateCustomId('PB');
+            await tx.poojaBooking.create({
+              data: {
+                displayId: poojaDisplayId,
+                userId: devoteeUser!.id,
+                poojaId: targetPoojaId,
+                mandalId,
+                packageName: item.packageName || item.itemName || 'Standard Pooja',
+                packagePrice: Number(item.price || item.unitPrice || 0),
+                devoteeName: devotee.name,
+                devoteePhone: devotee.phone,
+                devoteeEmail: devotee.email || null,
+                bookingDate: item.bookingDate || new Date().toISOString().split('T')[0],
+                specialRequests: item.specialRequests || null,
+                gothra: devotee.gothra || null,
+                status: 'BOOKED',
+                isOffline: true,
+                bookingSource: 'COUNTER',
+                paymentMethod: payment?.method || 'CASH',
+                createdByStaffId: staffId || null,
+                transactionRef: displayId, // linked to Master Teller Order
+              },
+            });
+          }
         } else if (type === 'DONATION') {
           const donDisplayId = await generateCustomId('DN');
           await tx.donation.create({
