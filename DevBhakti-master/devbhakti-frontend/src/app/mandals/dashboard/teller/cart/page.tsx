@@ -29,6 +29,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { parseLocalizedValue } from "@/utils/textUtils";
+import { lookupDevoteeByPhoneMandal } from "@/api/mandalAdminController";
 
 export default function UnifiedTellerCartPage() {
   const [activeTab, setActiveTab] = useState("pooja");
@@ -66,6 +67,31 @@ export default function UnifiedTellerCartPage() {
   // Receipt Modal State
   const [completedOrder, setCompletedOrder] = useState<any | null>(null);
   const [showReceipt, setShowReceipt] = useState(false);
+  
+  const [isLookupLoading, setIsLookupLoading] = useState(false);
+
+  const handlePhoneLookup = async (phoneVal: string) => {
+    const cleaned = phoneVal.replace(/\D/g, "");
+    if (cleaned.length < 10) return;
+    try {
+      setIsLookupLoading(true);
+      const res = await lookupDevoteeByPhoneMandal(phoneVal);
+      if (res.success && res.exists && res.data) {
+        setDevotee(prev => ({
+          ...prev,
+          name: res.data.name || prev.name,
+          email: res.data.email || prev.email,
+          gothra: res.data.gothra || prev.gothra,
+          address: res.data.address || prev.address,
+        }));
+        toast.success(`Existing record found for ${res.data.name || 'devotee'}. Details Auto-Filled.`);
+      }
+    } catch (err) {
+      console.error("Phone lookup error", err);
+    } finally {
+      setIsLookupLoading(false);
+    }
+  };
 
   // Fetch Catalog
   const fetchCatalog = async () => {
@@ -567,19 +593,42 @@ export default function UnifiedTellerCartPage() {
               {/* Devotee Input Fields */}
               <div className="space-y-2.5 pt-2 border-t">
                 <h4 className="font-bold text-xs text-[#7b4623] uppercase tracking-wider">Devotee Details</h4>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 relative">
                   <Input
                     placeholder="Full Name *"
                     value={devotee.name}
                     onChange={e => setDevotee(prev => ({ ...prev, name: e.target.value }))}
                     className="h-8 text-xs border-amber-200"
                   />
-                  <Input
-                    placeholder="Phone Number *"
-                    value={devotee.phone}
-                    onChange={e => setDevotee(prev => ({ ...prev, phone: e.target.value }))}
-                    className="h-8 text-xs border-amber-200"
-                  />
+                  <div className="relative">
+                    <Input
+                      placeholder="Phone Number *"
+                      value={devotee.phone}
+                      onChange={e => {
+                        let val = e.target.value;
+                        if (!val.startsWith("+91 ") && !val.startsWith("+91")) {
+                          val = val.replace(/^\+?91\s*/, "");
+                          val = val ? `+91 ${val.replace(/\D/g, "")}` : "";
+                        } else {
+                          val = `+91 ${val.replace(/^\+91\s*/, "").replace(/\D/g, "")}`;
+                        }
+                        const cleaned = val.replace(/\D/g, "").slice(2);
+                        val = cleaned ? `+91 ${cleaned.slice(0, 10)}` : "";
+                        
+                        setDevotee(prev => ({ ...prev, phone: val }));
+                        if (cleaned.length === 10) {
+                           handlePhoneLookup(val);
+                        }
+                      }}
+                      className="h-8 text-xs border-amber-200"
+                      maxLength={14}
+                    />
+                    {isLookupLoading && (
+                      <div className="absolute right-2 top-1/2 -translate-y-1/2">
+                        <RefreshCw className="w-3.5 h-3.5 animate-spin text-amber-500" />
+                      </div>
+                    )}
+                  </div>
                 </div>
                 <Input
                   placeholder="Gothra / Additional Notes (Optional)"

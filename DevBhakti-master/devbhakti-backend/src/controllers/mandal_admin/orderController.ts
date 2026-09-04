@@ -92,15 +92,29 @@ export const createOfflineMandalOrder = async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, message: "Customer name and phone are required" });
     }
 
-    // Find or create user by phone
+    // Normalize phone to prevent duplicate users with same number in different formats
+    // e.g. "+91 9977132450", "91 9977132450", "+919977132450" → "+919977132450"
+    let cleanedPhone = String(customerPhone || '').replace(/\D/g, '');
+    if (cleanedPhone.startsWith('00')) cleanedPhone = cleanedPhone.substring(2);
+    if (cleanedPhone.length === 11 && cleanedPhone.startsWith('0')) cleanedPhone = cleanedPhone.substring(1);
+    if (cleanedPhone.length === 10) cleanedPhone = '91' + cleanedPhone;
+    const normalizedPhone = '+' + cleanedPhone;
+
+    // Find user by any known format of the same number
     let user = await prisma.user.findFirst({
-      where: { phone: customerPhone }
+      where: {
+        OR: [
+          { phone: normalizedPhone },
+          { phone: customerPhone },
+          { phone: cleanedPhone },
+        ],
+      }
     });
 
     if (!user) {
       user = await prisma.user.create({
         data: {
-          phone: customerPhone,
+          phone: normalizedPhone,
           name: customerName,
           email: customerEmail || undefined,
           role: "DEVOTEE"

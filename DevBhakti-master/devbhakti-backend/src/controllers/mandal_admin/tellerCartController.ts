@@ -313,6 +313,127 @@ export const processTellerCheckout = async (req: Request, res: Response) => {
 };
 
 /**
+ * Get All Teller Orders (for history listing)
+ */
+export const getTellerOrders = async (req: Request, res: Response) => {
+  try {
+    const mandalId = (req as any).owner?.ownerId;
+    if (!mandalId) {
+      return res.status(400).json({ success: false, message: 'Mandal context required' });
+    }
+
+    const orders = await prisma.tellerOrder.findMany({
+      where: { mandalId },
+      include: { items: true },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    res.json({ success: true, data: orders });
+  } catch (error: any) {
+    console.error('Get Teller Orders Error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+/**
+ * Get Teller Orders that contain PRODUCT items (for Offline Product Orders page)
+ * Sources: 1) TellerOrder with PRODUCT items, 2) SubOrder/Order from dedicated Offline Product form
+ */
+export const getTellerProductOrders = async (req: Request, res: Response) => {
+  try {
+    const mandalId = (req as any).owner?.ownerId;
+    if (!mandalId) {
+      return res.status(400).json({ success: false, message: 'Mandal context required' });
+    }
+
+    // SOURCE 1: TellerOrder (from Unified Cart checkout - itemType = 'PRODUCT')
+    const tellerOrders = await prisma.tellerOrder.findMany({
+      where: {
+        mandalId,
+        items: { some: { itemType: 'PRODUCT' } },
+      },
+      include: { items: { where: { itemType: 'PRODUCT' } } },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    // SOURCE 2: SubOrder/Order from dedicated Offline Product form (createOfflineMandalOrder)
+    // Using (prisma as any) to bypass stale generated type issues while keeping correct runtime behavior
+    const subOrders: any[] = await (prisma as any).subOrder.findMany({
+      where: { mandalId },
+      include: {
+        order: {
+          select: {
+            id: true,
+            displayId: true,
+            userId: true,
+            totalAmount: true,
+            paymentMethod: true,
+            paymentStatus: true,
+            createdAt: true,
+            user: { select: { name: true, phone: true, email: true } },
+          },
+        },
+        items: {
+          include: {
+            product: { select: { name: true } },
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    // Normalize SOURCE 1 (TellerOrders)
+    const tellerNormalized = tellerOrders.map((o) => ({
+      id: o.id,
+      displayId: o.displayId,
+      customerName: o.devoteeName,
+      customerPhone: o.devoteePhone,
+      paymentMethod: o.paymentMethod,
+      totalAmount: Number(o.totalAmount),
+      createdAt: o.createdAt,
+      source: 'TELLER',
+      items: o.items.map((it) => ({
+        productName: it.itemName,
+        variantName: '',
+        price: it.unitPrice,
+        quantity: it.quantity,
+      })),
+    }));
+
+    // Normalize SOURCE 2 (SubOrders from Order model)
+    const subOrderNormalized = subOrders.map((s: any) => ({
+      id: s.order?.id || s.id,
+      displayId: s.order?.displayId || `ORD-${s.id.slice(-6)}`,
+      customerName: s.order?.user?.name || 'Customer',
+      customerPhone: s.order?.user?.phone || '',
+      paymentMethod: s.order?.paymentMethod || 'CASH',
+      totalAmount: Number(s.totalAmount || s.order?.totalAmount || 0),
+      createdAt: s.createdAt,
+      source: 'OFFLINE_FORM',
+      items: (s.items || []).map((it: any) => ({
+        productName: typeof it.product?.name === 'string'
+          ? it.product.name
+          : (it.product?.name ? JSON.stringify(it.product.name) : 'Product'),
+        variantName: '',
+        price: Number(it.price || 0),
+        quantity: Number(it.quantity || 1),
+      })),
+    }));
+
+    // Merge both, sort by most recent first
+    const all = [...tellerNormalized, ...subOrderNormalized].sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+
+    res.json({ success: true, data: all });
+  } catch (error: any) {
+    console.error('Get Teller Product Orders Error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+
+/**
  * Get Today's Teller Counter Summary / Reports
  */
 export const getTellerSummary = async (req: Request, res: Response) => {
