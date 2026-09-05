@@ -79,6 +79,7 @@ import mandalAdminOrderRoutes from './routes/mandal_admin/orderRoutes';
 import mandalAdminDarshanRoutes from './routes/mandal_admin/darshanAdminRoutes';
 import mandalAdminTellerCartRoutes from './routes/mandal_admin/tellerCartRoutes';
 import mandalAdminBankRoutes from './routes/mandal_admin/bankRoutes';
+import mandalAdminDevoteeRoutes from './routes/mandal_admin/devoteeRoutes';
 
 
 const app = express();
@@ -157,6 +158,7 @@ app.use('/api/mandal-admin/orders', mandalAdminOrderRoutes);
 app.use('/api/mandal-admin/darshan-bookings', mandalAdminDarshanRoutes);
 app.use('/api/mandal-admin/teller', mandalAdminTellerCartRoutes);
 app.use('/api/mandal-admin/bank', mandalAdminBankRoutes);
+app.use('/api/mandal-admin/devotees', mandalAdminDevoteeRoutes);
 
 // Devotee Auth Routes
 app.use('/api/auth', authRoutes);

@@ -1137,7 +1137,7 @@ export function MandalsList() {
             const cardsList = [
               ...top5.map((item, idx) => ({
                 name: item.name,
-                count: item.count === 1 ? t("mandal_list.mandal_count_one") : t("mandal_list.mandal_count_many", { count: item.count }),
+                count: item.count === 1 ? t("mandal_list.mandal_count_one", { count: item.count }) : t("mandal_list.mandal_count_many", { count: item.count }),
                 icon: sacredIcons[idx % sacredIcons.length],
                 isMore: false,
               })),

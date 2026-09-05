@@ -217,7 +217,19 @@ export const getMandalFinancialReport = async (req: Request, res: Response) => {
       return res.status(401).json({ success: false, message: "Unauthorized: Mandal ID missing" });
     }
 
-    const { period = "this_month", startDate: customStartDate, endDate: customEndDate } = req.query;
+    const {
+      period = "this_month",
+      startDate: customStartDate,
+      endDate: customEndDate,
+      page = "1",
+      limit = "10",
+      category: filterCategory,
+      channel: filterChannel,
+      search: filterSearch
+    } = req.query;
+
+    const pageNum = Math.max(1, parseInt(String(page)) || 1);
+    const limitNum = Math.max(1, Math.min(100, parseInt(String(limit)) || 10));
 
     const now = new Date();
 
@@ -308,11 +320,11 @@ export const getMandalFinancialReport = async (req: Request, res: Response) => {
       todayTellerOrders,
       todayTickets
     ] = await Promise.all([
-      prisma.poojaBooking.findMany({ where: rangePoojaWhere }),
-      prisma.donation.findMany({ where: rangeDonationWhere }),
-      prisma.subOrder.findMany({ where: rangeSubOrderWhere, include: { order: true } }),
+      prisma.poojaBooking.findMany({ where: rangePoojaWhere, include: { user: { select: { name: true, phone: true, email: true } } } }),
+      prisma.donation.findMany({ where: rangeDonationWhere, include: { user: { select: { name: true, phone: true, email: true } } } }),
+      prisma.subOrder.findMany({ where: rangeSubOrderWhere, include: { order: { include: { user: { select: { name: true, phone: true, email: true } } } } } }),
       prisma.tellerOrder.findMany({ where: rangeTellerOrderWhere }),
-      prisma.mandalDarshanTicket.findMany({ where: rangeTicketWhere }),
+      prisma.mandalDarshanTicket.findMany({ where: rangeTicketWhere, include: { user: { select: { name: true, phone: true, email: true } } } }),
       prisma.poojaBooking.findMany({ where: todayPoojaWhere }),
       prisma.donation.findMany({ where: todayDonationWhere }),
       prisma.subOrder.findMany({ where: todaySubOrderWhere }),
@@ -360,6 +372,8 @@ export const getMandalFinancialReport = async (req: Request, res: Response) => {
       return "Other";
     };
 
+    const allTransactionsList: any[] = [];
+
     rangePoojas.forEach(b => {
       const amt = (b.packagePrice || 0) + (b.prasadAmount || 0);
       const isOff = b.isOffline || b.bookingSource === "MANDAL_OFFLINE" || b.bookingSource === "COUNTER" || b.bookingSource === "TELLER" || !b.razorpayOrderId;
@@ -372,6 +386,24 @@ export const getMandalFinancialReport = async (req: Request, res: Response) => {
       }
       const mode = normalizePaymentMode(b.paymentMethod || (isOff ? "Cash" : "UPI"));
       paymentModes[mode] = (paymentModes[mode] || 0) + amt;
+
+      allTransactionsList.push({
+        id: b.id,
+        receiptNo: b.displayId || b.id,
+        category: "POOJA_SEVA",
+        categoryName: "Pooja & Seva",
+        title: b.packageName || "Pooja Booking",
+        amount: amt,
+        channel: isOff ? "OFFLINE" : "ONLINE",
+        paymentMode: mode,
+        status: b.status,
+        createdAt: b.createdAt,
+        devotee: {
+          name: b.devoteeName || (b.user ? b.user.name : "Devotee"),
+          phone: b.devoteePhone || (b.user ? b.user.phone : ""),
+          email: b.devoteeEmail || (b.user ? b.user.email : "")
+        }
+      });
     });
 
     rangeDonations.forEach(d => {
@@ -386,10 +418,30 @@ export const getMandalFinancialReport = async (req: Request, res: Response) => {
       }
       const mode = normalizePaymentMode(d.paymentMethod || (isOff ? "Cash" : "UPI"));
       paymentModes[mode] = (paymentModes[mode] || 0) + amt;
+
+      const donationObj = d as any;
+      allTransactionsList.push({
+        id: d.id,
+        receiptNo: donationObj.receiptNo || donationObj.transactionRef || d.id,
+        category: "DONATIONS",
+        categoryName: "Donation",
+        title: d.donorName ? `Donation from ${d.donorName}` : "Mandal Donation",
+        amount: amt,
+        channel: isOff ? "OFFLINE" : "ONLINE",
+        paymentMode: mode,
+        status: d.status,
+        createdAt: d.createdAt,
+        devotee: {
+          name: d.donorName || (d.user ? d.user.name : "Anonymous Donor"),
+          phone: donationObj.phone || (d.user ? d.user.phone : ""),
+          email: donationObj.email || (d.user ? d.user.email : "")
+        }
+      });
     });
 
     rangeSubOrders.forEach(o => {
       const amt = o.totalAmount || 0;
+      const subOrderObj = o as any;
       const isOff = !o.order?.razorpayOrderId;
       if (isOff) {
         offlineCollection += amt;
@@ -400,14 +452,51 @@ export const getMandalFinancialReport = async (req: Request, res: Response) => {
       }
       const mode = normalizePaymentMode(o.order?.paymentMethod || (isOff ? "Cash" : "UPI"));
       paymentModes[mode] = (paymentModes[mode] || 0) + amt;
+
+      allTransactionsList.push({
+        id: o.id,
+        receiptNo: subOrderObj.subOrderNumber || o.id,
+        category: "SACRED_ITEMS",
+        categoryName: "Sacred Items",
+        title: `Marketplace Order #${subOrderObj.subOrderNumber || o.id.slice(-6)}`,
+        amount: amt,
+        channel: isOff ? "OFFLINE" : "ONLINE",
+        paymentMode: mode,
+        status: o.status,
+        createdAt: o.createdAt,
+        devotee: {
+          name: o.order?.user?.name || "Customer",
+          phone: o.order?.user?.phone || "",
+          email: o.order?.user?.email || ""
+        }
+      });
     });
 
     rangeTellerOrders.forEach(t => {
       const amt = t.totalAmount || 0;
+      const tellerObj = t as any;
       offlineCollection += amt;
       offlineTxCount++;
       const mode = normalizePaymentMode(t.paymentMethod || "Cash");
       paymentModes[mode] = (paymentModes[mode] || 0) + amt;
+
+      allTransactionsList.push({
+        id: t.id,
+        receiptNo: tellerObj.receiptNumber || t.displayId || t.id,
+        category: "SACRED_ITEMS",
+        categoryName: "Sacred Items",
+        title: "Counter Sacred Items Sale",
+        amount: amt,
+        channel: "OFFLINE",
+        paymentMode: mode,
+        status: t.paymentStatus,
+        createdAt: t.createdAt,
+        devotee: {
+          name: t.devoteeName || "Counter Devotee",
+          phone: t.devoteePhone || "",
+          email: t.devoteeEmail || ""
+        }
+      });
     });
 
     rangeTickets.forEach(t => {
@@ -422,7 +511,61 @@ export const getMandalFinancialReport = async (req: Request, res: Response) => {
       }
       const mode = normalizePaymentMode(t.paymentMethod || (isOff ? "Cash" : "UPI"));
       paymentModes[mode] = (paymentModes[mode] || 0) + amt;
+
+      allTransactionsList.push({
+        id: t.id,
+        receiptNo: t.displayId || t.id,
+        category: "TICKETING",
+        categoryName: "Darshan Ticket",
+        title: `Darshan Ticket (${t.visitorCount || 1} Person)`,
+        amount: amt,
+        channel: isOff ? "OFFLINE" : "ONLINE",
+        paymentMode: mode,
+        status: t.status,
+        createdAt: t.createdAt,
+        devotee: {
+          name: t.visitorName || (t.user ? t.user.name : "Devotee"),
+          phone: t.visitorPhone || (t.user ? t.user.phone : ""),
+          email: t.visitorEmail || (t.user ? t.user.email : "")
+        }
+      });
     });
+
+    // Sort transactions descending by createdAt date
+    allTransactionsList.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+    // Filter transaction list if optional filter parameters are passed
+    let filteredTransactions = allTransactionsList;
+
+    if (filterCategory && String(filterCategory).toUpperCase() !== "ALL") {
+      filteredTransactions = filteredTransactions.filter(
+        t => t.category.toUpperCase() === String(filterCategory).toUpperCase()
+      );
+    }
+
+    if (filterChannel && String(filterChannel).toUpperCase() !== "ALL") {
+      filteredTransactions = filteredTransactions.filter(
+        t => t.channel.toUpperCase() === String(filterChannel).toUpperCase()
+      );
+    }
+
+    if (filterSearch && String(filterSearch).trim() !== "") {
+      const s = String(filterSearch).toLowerCase().trim();
+      filteredTransactions = filteredTransactions.filter(
+        t =>
+          (t.receiptNo && t.receiptNo.toLowerCase().includes(s)) ||
+          (t.title && t.title.toLowerCase().includes(s)) ||
+          (t.devotee?.name && t.devotee.name.toLowerCase().includes(s)) ||
+          (t.devotee?.phone && t.devotee.phone.toLowerCase().includes(s)) ||
+          (t.devotee?.email && t.devotee.email.toLowerCase().includes(s))
+      );
+    }
+
+    // Pagination for transaction list
+    const totalTxCount = filteredTransactions.length;
+    const totalPages = Math.ceil(totalTxCount / limitNum) || 1;
+    const startIndex = (pageNum - 1) * limitNum;
+    const paginatedTransactions = filteredTransactions.slice(startIndex, startIndex + limitNum);
 
     const paymentModeSummary = [
       { mode: "UPI", label: "UPI", amount: paymentModes.UPI || 0, percentage: getPercent(paymentModes.UPI || 0) },
@@ -474,6 +617,15 @@ export const getMandalFinancialReport = async (req: Request, res: Response) => {
             amount: totalCollection,
             count: totalTransactions
           }
+        },
+        transactions: {
+          pagination: {
+            total: totalTxCount,
+            page: pageNum,
+            limit: limitNum,
+            totalPages
+          },
+          list: paginatedTransactions
         }
       }
     });

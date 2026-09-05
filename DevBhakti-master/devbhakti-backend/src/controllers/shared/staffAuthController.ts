@@ -72,7 +72,7 @@ export const staffLogin = async (req: Request, res: Response) => {
         permissions,
       },
       JWT_SECRET,
-      { expiresIn: '24h' }
+      { expiresIn: '48h' }
     );
 
     const { password: _, ...staffWithoutPassword } = staff;

@@ -62,6 +62,16 @@ import {
     DialogTitle,
 } from "@/components/ui/dialog";
 import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
     Table,
     TableBody,
     TableCell,
@@ -143,6 +153,24 @@ function TemplesContent() {
         donationSlabs: [],
         poojaRateType: "DEFAULT",
         marketplaceRateType: "DEFAULT"
+    });
+
+    const [confirmModal, setConfirmModal] = useState<{
+        isOpen: boolean;
+        title: string;
+        description: string;
+        confirmText?: string;
+        cancelText?: string;
+        variant?: "destructive" | "default";
+        onConfirm?: () => Promise<void> | void;
+    }>({
+        isOpen: false,
+        title: "",
+        description: "",
+        confirmText: "Confirm",
+        cancelText: "Cancel",
+        variant: "default",
+        onConfirm: undefined,
     });
 
     // Excel feature states
@@ -635,56 +663,51 @@ function TemplesContent() {
         }
     };
 
-    const handleDelete = async (id: string) => {
-        if (window.confirm("Are you sure you want to delete this temple account? All associated logins (staff and owner) will also be deleted. A new creation of temple will be required on the platform.")) {
-            try {
-                await deleteTempleAdmin(id);
-                toast({
-                    title: "Success",
-                    description: "Temple account and all associated logins deleted successfully."
-                });
-                loadTemples(currentPage);
-            } catch (error: any) {
-                console.error('Delete error:', error);
-
-                // Check if error has relatedData from backend
-                const errorData = error.response?.data;
-
-                if (errorData?.relatedData) {
-                    // Build detailed message showing what data exists
-                    const dataItems = [];
-                    if (errorData.relatedData.products) {
-                        dataItems.push(`${errorData.relatedData.products} Product${errorData.relatedData.products > 1 ? 's' : ''}`);
-                    }
-                    if (errorData.relatedData.bookings) {
-                        dataItems.push(`${errorData.relatedData.bookings} Booking${errorData.relatedData.bookings > 1 ? 's' : ''}`);
-                    }
-                    if (errorData.relatedData.poojas) {
-                        dataItems.push(`${errorData.relatedData.poojas} Pooja${errorData.relatedData.poojas > 1 ? 's' : ''}`);
-                    }
-                    if (errorData.relatedData.events) {
-                        dataItems.push(`${errorData.relatedData.events} Event${errorData.relatedData.events > 1 ? 's' : ''}`);
-                    }
-
-                    const detailedMessage = dataItems.length > 0
-                        ? `Cannot delete this temple. It has: ${dataItems.join(', ')}. Please remove this data first.`
-                        : errorData.error || "Cannot delete this temple. It has existing data.";
-
+    const handleDelete = (id: string) => {
+        setConfirmModal({
+            isOpen: true,
+            title: "Delete Temple Account?",
+            description: "Are you sure you want to delete this temple account? All associated logins (staff and owner) will also be deleted. A new creation of temple will be required on the platform.",
+            confirmText: "Delete Account",
+            cancelText: "Cancel",
+            variant: "destructive",
+            onConfirm: async () => {
+                try {
+                    await deleteTempleAdmin(id);
                     toast({
-                        title: "âŒ Cannot Delete Temple",
-                        description: detailedMessage,
-                        variant: "destructive",
+                        title: "Success",
+                        description: "Temple account and all associated logins deleted successfully."
                     });
-                } else {
-                    // Fallback for other errors
-                    toast({
-                        title: "Error",
-                        description: errorData?.error || errorData?.message || "Failed to delete temple account",
-                        variant: "destructive",
-                    });
+                    loadTemples(currentPage);
+                } catch (error: any) {
+                    console.error('Delete error:', error);
+                    const errorData = error.response?.data;
+                    if (errorData?.relatedData) {
+                        const dataItems = [];
+                        if (errorData.relatedData.products) dataItems.push(`${errorData.relatedData.products} Product${errorData.relatedData.products > 1 ? 's' : ''}`);
+                        if (errorData.relatedData.bookings) dataItems.push(`${errorData.relatedData.bookings} Booking${errorData.relatedData.bookings > 1 ? 's' : ''}`);
+                        if (errorData.relatedData.poojas) dataItems.push(`${errorData.relatedData.poojas} Pooja${errorData.relatedData.poojas > 1 ? 's' : ''}`);
+                        if (errorData.relatedData.events) dataItems.push(`${errorData.relatedData.events} Event${errorData.relatedData.events > 1 ? 's' : ''}`);
+
+                        const detailedMessage = dataItems.length > 0
+                            ? `Cannot delete this temple. It has: ${dataItems.join(', ')}. Please remove this data first.`
+                            : errorData.error || "Cannot delete this temple. It has existing data.";
+
+                        toast({
+                            title: "❌ Cannot Delete Temple",
+                            description: detailedMessage,
+                            variant: "destructive",
+                        });
+                    } else {
+                        toast({
+                            title: "Error",
+                            description: errorData?.error || errorData?.message || "Failed to delete temple account",
+                            variant: "destructive",
+                        });
+                    }
                 }
             }
-        }
+        });
     };
 
     const handleToggleStatus = async (id: string, templeId: string, currentVerified: boolean, currentActive: boolean, templeName?: string) => {
@@ -752,15 +775,23 @@ function TemplesContent() {
                 toast({ title: "Error", description: "Failed to load commission slabs" });
             }
         } else {
-            if (window.confirm("Are you sure you want to revoke verification for this temple?")) {
-                try {
-                    await toggleTempleStatusAdmin(id, false, currentActive);
-                    toast({ title: "Success", description: "Temple verification revoked" });
-                    await loadTemples(currentPage);
-                } catch (error) {
-                    toast({ title: "Error", description: "Failed to update status", variant: "destructive" });
+            setConfirmModal({
+                isOpen: true,
+                title: "Revoke Temple Verification?",
+                description: "Are you sure you want to revoke verification for this temple? This will change the temple status to unverified.",
+                confirmText: "Revoke Verification",
+                cancelText: "Cancel",
+                variant: "destructive",
+                onConfirm: async () => {
+                    try {
+                        await toggleTempleStatusAdmin(id, false, currentActive);
+                        toast({ title: "Success", description: "Temple verification revoked" });
+                        await loadTemples(currentPage);
+                    } catch (error) {
+                        toast({ title: "Error", description: "Failed to update status", variant: "destructive" });
+                    }
                 }
-            }
+            });
         }
     };
 
@@ -2082,6 +2113,43 @@ function TemplesContent() {
                     </div>
                 </DialogContent>
             </Dialog>
+
+            {/* Custom Confirmation Modal */}
+            <AlertDialog open={confirmModal.isOpen} onOpenChange={(open) => !open && setConfirmModal(prev => ({ ...prev, isOpen: false }))}>
+                <AlertDialogContent className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-6 shadow-2xl max-w-md">
+                    <AlertDialogHeader className="space-y-2">
+                        <AlertDialogTitle className="text-xl font-serif font-bold text-zinc-900 dark:text-zinc-100">
+                            {confirmModal.title}
+                        </AlertDialogTitle>
+                        <AlertDialogDescription className="text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed">
+                            {confirmModal.description}
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter className="mt-6 flex items-center justify-end gap-3 sm:space-x-0">
+                        <AlertDialogCancel 
+                            onClick={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
+                            className="h-10 px-4 rounded-xl border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 font-semibold text-sm"
+                        >
+                            {confirmModal.cancelText || "Cancel"}
+                        </AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={async () => {
+                                const action = confirmModal.onConfirm;
+                                setConfirmModal(prev => ({ ...prev, isOpen: false }));
+                                if (action) await action();
+                            }}
+                            className={cn(
+                                "h-10 px-5 rounded-xl font-bold text-sm shadow-md transition-all",
+                                confirmModal.variant === "destructive" 
+                                    ? "bg-red-600 hover:bg-red-700 text-white shadow-red-600/20"
+                                    : "bg-amber-600 hover:bg-amber-700 text-white shadow-amber-600/20"
+                            )}
+                        >
+                            {confirmModal.confirmText || "Confirm"}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
 
         </div>
     );

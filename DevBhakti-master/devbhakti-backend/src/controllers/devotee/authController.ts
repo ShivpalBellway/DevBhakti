@@ -592,7 +592,7 @@ export const verifyOTP = async (req: Request, res: Response) => {
         const token = jwt.sign(
             { userId: user!.id, phone: user!.phone, role: user!.role },
             JWT_SECRET,
-            { expiresIn: '7d' }
+            { expiresIn: '90d' }
         );
 
         res.json({

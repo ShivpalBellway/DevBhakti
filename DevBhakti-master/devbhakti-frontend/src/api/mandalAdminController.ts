@@ -96,6 +96,16 @@ export const fetchMandalDonationStats = async () => {
     return response.data;
 };
 
+// Mandal Devotees API
+export const fetchMandalDevotees = async (params?: any) => {
+    const token = localStorage.getItem("token");
+    const response = await axios.get(`${API_URL}/mandal-admin/devotees`, {
+        headers: { Authorization: `Bearer ${token}` },
+        params
+    });
+    return response.data;
+};
+
 // Mandal Finance (Ledger & Payouts)
 export const fetchMandalFinanceSummary = async () => {
     const token = localStorage.getItem("token");
@@ -113,7 +123,7 @@ export const fetchMandalLedger = async () => {
     return response.data;
 };
 
-export const fetchMandalFinancialReport = async (params?: { period?: string; startDate?: string; endDate?: string }) => {
+export const fetchMandalFinancialReport = async (params?: any) => {
     const token = localStorage.getItem("token");
     const response = await axios.get(`${API_URL}/mandal-admin/finance/report`, {
         headers: { Authorization: `Bearer ${token}` },

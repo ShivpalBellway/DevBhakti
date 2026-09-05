@@ -41,7 +41,7 @@ import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { useDebounce } from "@/hooks/use-debounce";
-import { fetchMandalDonations, fetchMandalDonationStats } from "@/api/mandalAdminController";
+import { fetchMandalDevotees } from "@/api/mandalAdminController";
 import * as XLSX from "xlsx";
 
 interface DevoteeGroup {
@@ -63,7 +63,7 @@ export default function MandalUsersPage() {
     const [searchQuery, setSearchQuery] = useState("");
     const debouncedSearch = useDebounce(searchQuery, 400);
     const [dateRange, setDateRange] = useState<DateRange | undefined>();
-    const [rawDonations, setRawDonations] = useState<any[]>([]);
+    const [devoteeGroups, setDevoteeGroups] = useState<DevoteeGroup[]>([]);
     const [selectedDevotee, setSelectedDevotee] = useState<DevoteeGroup | null>(null);
     const [detailSearch, setDetailSearch] = useState("");
     const [loading, setLoading] = useState(true);
@@ -78,7 +78,7 @@ export default function MandalUsersPage() {
         successCount: 0,
     });
 
-    const fetchDonationsData = async (page: number) => {
+    const fetchDevoteesData = async (page: number) => {
         try {
             setLoading(true);
             const params: any = {
@@ -89,9 +89,16 @@ export default function MandalUsersPage() {
             if (dateRange?.from) params.startDate = dateRange.from.toISOString();
             if (dateRange?.to) params.endDate = dateRange.to.toISOString();
 
-            const response = await fetchMandalDonations(params);
+            const response = await fetchMandalDevotees(params);
             if (response.success) {
-                setRawDonations(response.data || []);
+                setDevoteeGroups(response.data || []);
+                if (response.stats) {
+                    setStats({
+                        totalAmount: response.stats.totalAmount || 0,
+                        totalDonors: response.stats.totalDonors || 0,
+                        successCount: response.stats.successCount || 0
+                    });
+                }
                 if (response.pagination) {
                     setTotalPages(response.pagination.totalPages || 1);
                     setTotalItems(response.pagination.total || 0);
@@ -105,82 +112,12 @@ export default function MandalUsersPage() {
         }
     };
 
-    const fetchStatsData = async () => {
-        try {
-            const response = await fetchMandalDonationStats();
-            if (response.success) {
-                const s = response.data;
-                setStats({
-                    totalAmount: s.totalAmount || 0,
-                    totalDonors: s.totalDonors || 0,
-                    successCount: s.successCount || 0,
-                });
-            }
-        } catch (error) {
-            console.error("Fetch Devotee Stats Error:", error);
-        }
-    };
-
     useEffect(() => {
-        fetchDonationsData(currentPage);
-        fetchStatsData();
+        fetchDevoteesData(currentPage);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [debouncedSearch, dateRange, currentPage]);
 
-    // Group raw donations into unique devotees based on email/phone/name
-    const devoteeGroups = useMemo(() => {
-        const groups: Record<string, DevoteeGroup> = {};
-
-        rawDonations.forEach((donation) => {
-            const name = (donation.donorName || "Anonymous").trim();
-            const phone = (donation.donorPhone || "").trim();
-            const email = (donation.donorEmail || "").trim();
-            const key = (phone || email || name).toLowerCase();
-
-            if (!groups[key]) {
-                groups[key] = {
-                    key,
-                    donorName: name,
-                    donorPhone: phone,
-                    donorEmail: email,
-                    address: donation.address,
-                    panNumber: donation.panNumber,
-                    is80GRequired: donation.is80GRequired,
-                    totalAmount: 0,
-                    donationCount: 0,
-                    lastDonationDate: donation.createdAt,
-                    firstDonationDate: donation.createdAt,
-                    donations: [],
-                };
-            }
-
-            groups[key].totalAmount += Number(donation.amount) || 0;
-            groups[key].donationCount += 1;
-            groups[key].donations.push(donation);
-
-            if (new Date(donation.createdAt) > new Date(groups[key].lastDonationDate)) {
-                groups[key].lastDonationDate = donation.createdAt;
-            }
-
-            if (new Date(donation.createdAt) < new Date(groups[key].firstDonationDate)) {
-                groups[key].firstDonationDate = donation.createdAt;
-            }
-
-            if (!groups[key].address && donation.address) {
-                groups[key].address = donation.address;
-            }
-            if (!groups[key].panNumber && donation.panNumber) {
-                groups[key].panNumber = donation.panNumber;
-            }
-            if (donation.is80GRequired) {
-                groups[key].is80GRequired = true;
-            }
-        });
-
-        return Object.values(groups).sort(
-            (a, b) => new Date(b.lastDonationDate).getTime() - new Date(a.lastDonationDate).getTime()
-        );
-    }, [rawDonations]);
+    // devoteeGroups is populated directly from GET /api/mandal-admin/devotees API response.
 
     const handleExportExcel = async () => {
         try {
