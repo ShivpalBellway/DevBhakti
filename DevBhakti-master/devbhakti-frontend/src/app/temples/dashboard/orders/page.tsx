@@ -245,34 +245,47 @@ function TempleOrdersClient() {
                     </p>
                 </div>
 
-                <AnimatePresence>
-                    {selectedOrders.size > 0 && (
-                        <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: 20 }}
-                            className="flex items-center gap-3 bg-white p-2 rounded-2xl shadow-xl border border-orange-100"
-                        >
-                            <div className="px-4 py-2 bg-orange-50 rounded-xl">
-                                <span className="text-sm font-bold text-[#794A05]">{selectedOrders.size} Selected</span>
-                            </div>
-                            <Button
-                                onClick={handleBulkPrint}
-                                className="bg-[#794A05] hover:bg-[#5d3904] text-white rounded-xl px-6 flex items-center gap-2"
+                <div className="flex flex-wrap items-center gap-3">
+                    <Button
+                        onClick={handleExportExcel}
+                        variant="outline"
+                        className="bg-white border-slate-200 hover:bg-[#794A05]/5 text-[#794A05] font-bold h-11 px-4 rounded-xl shadow-sm"
+                    >
+                        <Download className="w-4 h-4 mr-2" />
+                        Export Excel
+                    </Button>
+
+                    <AnimatePresence>
+                        {selectedOrders.size > 0 && (
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.95 }}
+                                className="flex items-center gap-2 bg-orange-50 p-1.5 rounded-xl border border-orange-100 shadow-sm"
                             >
-                                <Printer className="w-4 h-4" />
-                                Print Labels
-                            </Button>
-                            <Button
-                                variant="ghost"
-                                onClick={() => setSelectedOrders(new Set())}
-                                className="text-slate-500 hover:text-red-500 rounded-xl"
-                            >
-                                Cancel
-                            </Button>
-                        </motion.div>
-                    )}
-                </AnimatePresence>
+                                <div className="px-3 py-1.5">
+                                    <span className="text-sm font-bold text-[#794A05]">{selectedOrders.size} Selected</span>
+                                </div>
+                                <Button
+                                    onClick={handleBulkPrint}
+                                    size="sm"
+                                    className="bg-[#794A05] hover:bg-[#5d3904] text-white rounded-lg px-4 flex items-center gap-2 h-9"
+                                >
+                                    <Printer className="w-4 h-4" />
+                                    Print
+                                </Button>
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => setSelectedOrders(new Set())}
+                                    className="text-slate-500 hover:text-red-500 hover:bg-white rounded-lg h-9 w-9 p-0 flex items-center justify-center"
+                                >
+                                    <XCircle className="w-4 h-4" />
+                                </Button>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+                </div>
             </div>
 
             {/* Stats */}
@@ -283,7 +296,7 @@ function TempleOrdersClient() {
                     { label: "Ready to Ship", value: orders.filter(o => o.status === "ACCEPTED").length, color: "text-blue-400", icon: Package },
                     { label: "Revenue", value: `₹${orders.filter(o => o.status !== "CANCELLED").reduce((acc, curr) => acc + Number(curr.totalAmount || 0), 0).toLocaleString()}`, color: "text-emerald-700", icon: IndianRupee },
                 ].map((stat) => (
-                    <Card key={stat.label} className="border-none shadow-sm bg-white/50 backdrop-blur-sm hover:shadow-md transition-shadow">
+                    <Card key={stat.label} className="border-none shadow-sm bg-white/50 backdrop-blur-sm hover:shadow-md transition-shadow rounded-2xl">
                         <CardContent className="p-6">
                             <div className="flex justify-between items-start">
                                 <div>
@@ -310,14 +323,6 @@ function TempleOrdersClient() {
                         className="pl-12 h-12 rounded-xl border-slate-200 bg-white shadow-sm focus:border-[#794A05] transition-all"
                     />
                 </div>
-                <Button
-                    onClick={handleExportExcel}
-                    variant="outline"
-                    className="h-12 px-6 rounded-xl border-slate-200 hover:bg-[#794A05]/5 text-[#794A05] font-bold flex items-center gap-2"
-                >
-                    <Download className="w-4 h-4" />
-                    Export Orders
-                </Button>
             </div>
 
             {/* Orders Table */}

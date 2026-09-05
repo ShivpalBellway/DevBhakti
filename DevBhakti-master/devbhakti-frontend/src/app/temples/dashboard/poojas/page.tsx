@@ -18,7 +18,7 @@ import {
     FileText
 } from "lucide-react";
 import * as XLSX from 'xlsx';
-import { createMyPooja } from "@/api/templeAdminController";
+import { createMyPooja, createBulkMyPoojas } from "@/api/templeAdminController";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -195,60 +195,41 @@ export default function TemplePoojasListPage() {
 
                 toast({ title: "Import Started", description: `Importing ${data.length} poojas...`, variant: "success" });
 
-                let successCount = 0;
-                let failCount = 0;
-                const errors: string[] = [];
+                const mappedPoojas = data.map((row: any) => ({
+                    name_en: String(row.Name_EN || "").trim(),
+                    name_hi: String(row.Name_HI || "").trim(),
+                    name_mr: String(row.Name_MR || "").trim(),
+                    price: String(row.Price),
+                    category: String(row.Category || "").trim(),
+                    time: String(row.Time || "").trim(),
+                    about_en: String(row.About_EN || "").trim(),
+                    about_hi: String(row.About_HI || "").trim(),
+                    about_mr: String(row.About_MR || "").trim(),
+                    status: String(row.Status || "TRUE").toUpperCase() === "TRUE" ? "true" : "false"
+                }));
 
-                for (let i = 0; i < data.length; i++) {
-                    const row = data[i];
-                    const rowNum = i + 2;
-                    try {
-                        if (!row.Name_EN) throw new Error("English name is required");
-                        if (!row.Price) throw new Error("Price is required");
+                try {
+                    const result = await createBulkMyPoojas({ poojas: mappedPoojas });
+                    const { successCount, failCount, errors } = result.data;
 
-                        const submissionData = new FormData();
-                        submissionData.append('name_en', String(row.Name_EN || "").trim());
-                        submissionData.append('name_hi', String(row.Name_HI || "").trim());
-                        submissionData.append('name_mr', String(row.Name_MR || "").trim());
-                        submissionData.append('price', String(row.Price));
-                        submissionData.append('category', String(row.Category || "").trim());
-                        submissionData.append('time', String(row.Time || "").trim());
-                        submissionData.append('about_en', String(row.About_EN || "").trim());
-                        submissionData.append('about_hi', String(row.About_HI || "").trim());
-                        submissionData.append('about_mr', String(row.About_MR || "").trim());
-                        submissionData.append('status', String(row.Status || "TRUE").toUpperCase() === "TRUE" ? "true" : "false");
-                        
-                        // Arrays as empty for now
-                        submissionData.append('description', JSON.stringify([]));
-                        submissionData.append('benefits', JSON.stringify([]));
-                        submissionData.append('bullets', JSON.stringify([]));
-                        submissionData.append('packages', JSON.stringify([{ name: "Single", description: "For 1 person", price: row.Price }]));
-                        submissionData.append('processSteps', JSON.stringify([]));
-                        submissionData.append('faqs', JSON.stringify([]));
-
-                        await createMyPooja(submissionData);
-                        successCount++;
-                    } catch (err: any) {
-                        const errorMsg = err.response?.data?.message || err.message || "Unknown error";
-                        failCount++;
-                        errors.push(`Row ${rowNum}: ${errorMsg}`);
-                        console.error(`Import Error Row ${rowNum}:`, errorMsg);
+                    if (failCount > 0) {
+                        toast({
+                            title: "Import Partially Failed",
+                            description: `Success: ${successCount}, Failed: ${failCount}. Check console or fix these: ${errors.slice(0, 3).join(", ")}${errors.length > 3 ? "..." : ""}`,
+                            variant: "destructive"
+                        });
+                        console.error('Bulk Import Errors:', errors);
+                    } else {
+                        toast({
+                            title: "Import Successful",
+                            description: `Successfully imported ${successCount} poojas.`,
+                            variant: "success"
+                        });
                     }
+                    loadPoojas();
+                } catch (bulkErr: any) {
+                    toast({ title: "Import Failed", description: bulkErr.response?.data?.message || "Failed to process bulk upload.", variant: "destructive" });
                 }
-
-                if (failCount > 0) {
-                    toast({
-                        title: "Import Partially Failed",
-                        description: `Success: ${successCount}, Failed: ${failCount}. Check console or fix these: ${errors.slice(0, 3).join(", ")}${errors.length > 3 ? "..." : ""}`,
-                        variant: "destructive"
-                    });
-                } else {
-                    toast({
-                        title: "Import Successful",
-                        description: `Successfully imported ${successCount} poojas.`
-                    });
-                }
-                loadPoojas();
             } catch (error) {
                 toast({ title: "Import Failed", description: "Failed to process Excel file", variant: "destructive" });
             }
@@ -268,15 +249,15 @@ export default function TemplePoojasListPage() {
                     </p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2 sm:gap-3 w-full md:w-auto">
-                    {/* <Button
+                    <Button
                         onClick={downloadTemplate}
                         variant="outline"
-                        className="flex-1 md:flex-initial border-[#7b4623]/20 hover:bg-[#7b4623]/5"
+                        className="flex-1 md:flex-initial border-[#7b4623]/20 hover:bg-[#7b4623]/5 text-xs h-9"
                     >
                         <FileText className="w-4 h-4 mr-2" />
                         Template
-                    </Button> */}
-                    {/* <div className="relative flex-1 md:flex-initial">
+                    </Button>
+                    <div className="relative flex-1 md:flex-initial">
                         <input
                             type="file"
                             accept=".xlsx, .xls"
@@ -287,20 +268,20 @@ export default function TemplePoojasListPage() {
                         <Button
                             onClick={() => document.getElementById('import-excel')?.click()}
                             variant="outline"
-                            className="w-full border-[#7b4623]/20 hover:bg-[#7b4623]/5"
+                            className="w-full border-[#7b4623]/20 hover:bg-[#7b4623]/5 text-xs h-9"
                         >
                             <Upload className="w-4 h-4 mr-2" />
-                            Import
+                            Import Excel
                         </Button>
-                    </div> */}
-                    {/* <Button
+                    </div>
+                    <Button
                         onClick={handleExportExcel}
                         variant="outline"
-                        className="flex-1 md:flex-initial border-[#7b4623]/20 hover:bg-[#7b4623]/5"
+                        className="flex-1 md:flex-initial border-[#7b4623]/20 hover:bg-[#7b4623]/5 text-xs h-9"
                     >
                         <Download className="w-4 h-4 mr-2" />
-                        Export
-                    </Button> */}
+                        Export All
+                    </Button>
                     {hasPermission('poojas.create') && (
                         <Button
                             onClick={() => router.push('/temples/dashboard/poojas/create')}

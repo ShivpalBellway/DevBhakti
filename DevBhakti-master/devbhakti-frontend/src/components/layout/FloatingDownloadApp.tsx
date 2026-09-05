@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { usePathname } from "next/navigation";
 import { Download, Smartphone } from "lucide-react";
 import logo2 from "@/assets/logo2.png";
 
@@ -8,6 +9,7 @@ const PLAY_STORE_URL = "https://play.google.com/store/search?q=devbhakti&c=apps&
 const APP_STORE_URL = "https://apps.apple.com/in/app/devbhakti/id6503041661";
 
 export function FloatingDownloadApp() {
+    const pathname = usePathname();
     const [downloadUrl, setDownloadUrl] = useState(PLAY_STORE_URL);
     const [platformName, setPlatformName] = useState("App");
     const [isVisible, setIsVisible] = useState(true);
@@ -35,7 +37,12 @@ export function FloatingDownloadApp() {
         window.open(downloadUrl, "_blank", "noopener,noreferrer");
     };
 
-    if (!isVisible) return null;
+    // Hide the floating widget on all admin, seller, and dashboard routes
+    const isAdminRoute = pathname?.startsWith('/admin') || 
+                         pathname?.includes('/dashboard') || 
+                         pathname?.startsWith('/seller');
+                         
+    if (!isVisible || isAdminRoute) return null;
 
     return (
         <div className="fixed right-0 top-1/2 -translate-y-1/2 z-50 group flex items-center select-none">

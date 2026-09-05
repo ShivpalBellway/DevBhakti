@@ -9,6 +9,7 @@ router.use(authenticate);
 router.use(injectMandalContext);
 
 router.get('/', poojaController.getMandalPoojas);
+router.post('/bulk', poojaController.createBulkPoojas);
 router.post('/', uploadPoojaImage.single('image'), poojaController.createMandalPooja);
 router.put('/:id', uploadPoojaImage.single('image'), poojaController.updateMandalPooja);
 router.delete('/:id', poojaController.deleteMandalPooja);

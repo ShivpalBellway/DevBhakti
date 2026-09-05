@@ -8,6 +8,7 @@ router.use(authenticate, injectMandalContext);
 
 router.get('/ledger', financeController.getMandalLedger);
 router.get('/summary', financeController.getMandalFinanceSummary);
+router.get('/report', financeController.getMandalFinancialReport);
 router.post('/withdraw', financeController.requestMandalWithdrawal);
 
 export default router;

@@ -12,7 +12,11 @@ import {
     Eye,
     Power,
     PowerOff,
+    Upload,
+    Download,
+    FileText,
 } from "lucide-react";
+import * as XLSX from 'xlsx';
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -56,6 +60,7 @@ import {
     updateMandalEvent,
     deleteMandalEvent,
     toggleMandalEventStatus,
+    createBulkMandalEvents,
 } from "@/api/mandalAdminController";
 import { useToast } from "@/hooks/use-toast";
 import { Switch } from "@/components/ui/switch";
@@ -224,6 +229,107 @@ export default function MandalEventsPage() {
         return matchesSearch && matchesDate;
     });
 
+    // --- BULK MANAGEMENT ---
+    const downloadTemplate = () => {
+        const template = [
+            {
+                "Name_EN": "Ganesh Chaturthi Utsav",
+                "Name_HI": "गणेश चतुर्थी उत्सव",
+                "Name_MR": "गणेश चतुर्थी उत्सव",
+                "Date": "Sep 15, 2026",
+                "Status": "TRUE",
+                "Description_EN": "Grand celebration of Ganesh Chaturthi.",
+                "Description_HI": "गणेश चतुर्थी का भव्य उत्सव।",
+                "Description_MR": "गणेश चतुर्थीचा भव्य सोहळा."
+            }
+        ];
+        const ws = XLSX.utils.json_to_sheet(template);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Event Template");
+        XLSX.writeFile(wb, "Mandal_Event_Import_Template.xlsx");
+    };
+
+    const handleExportExcel = () => {
+        const exportData = events.map(e => ({
+            "ID": e.id,
+            "Name_EN": getL(e.name, 'en'),
+            "Name_HI": getL(e.name, 'hi'),
+            "Name_MR": getL(e.name, 'mr'),
+            "Date": e.date,
+            "Status": e.status ? "TRUE" : "FALSE",
+            "Description_EN": getL(e.description, 'en'),
+            "Description_HI": getL(e.description, 'hi'),
+            "Description_MR": getL(e.description, 'mr'),
+            "Created_At": e.createdAt
+        }));
+        const ws = XLSX.utils.json_to_sheet(exportData);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "My Events");
+        XLSX.writeFile(wb, `My_Events_Export_${new Date().toISOString().split('T')[0]}.xlsx`);
+    };
+
+    const handleImportExcel = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = async (evt) => {
+            try {
+                const bstr = evt.target?.result;
+                const wb = XLSX.read(bstr, { type: 'binary' });
+                const wsname = wb.SheetNames[0];
+                const ws = wb.Sheets[wsname];
+                const data = XLSX.utils.sheet_to_json(ws) as any[];
+
+                if (data.length === 0) {
+                    toast({ title: "Error", description: "Excel file is empty", variant: "destructive" });
+                    return;
+                }
+
+                toast({ title: "Import Started", description: `Importing ${data.length} events...`, variant: "success" });
+
+                const mappedEvents = data.map((row: any) => ({
+                    name_en: String(row.Name_EN || "").trim(),
+                    name_hi: String(row.Name_HI || "").trim(),
+                    name_mr: String(row.Name_MR || "").trim(),
+                    date: String(row.Date || "").trim(),
+                    description_en: String(row.Description_EN || "").trim(),
+                    description_hi: String(row.Description_HI || "").trim(),
+                    description_mr: String(row.Description_MR || "").trim(),
+                    status: String(row.Status || "TRUE").toUpperCase() === "TRUE",
+                    recommendedPoojaIds: []
+                }));
+
+                try {
+                    const result = await createBulkMandalEvents({ events: mappedEvents });
+                    const { successCount, failCount, errors } = result.data;
+
+                    if (failCount > 0) {
+                        toast({
+                            title: "Import Partially Failed",
+                            description: `Success: ${successCount}, Failed: ${failCount}. Check console or fix these: ${errors.slice(0, 3).join(", ")}${errors.length > 3 ? "..." : ""}`,
+                            variant: "destructive"
+                        });
+                        console.error('Bulk Import Errors:', errors);
+                    } else {
+                        toast({
+                            title: "Import Successful",
+                            description: `Successfully imported ${successCount} events.`,
+                            variant: "success"
+                        });
+                    }
+                    loadData();
+                } catch (bulkErr: any) {
+                    toast({ title: "Import Failed", description: bulkErr.response?.data?.message || "Failed to process bulk upload.", variant: "destructive" });
+                }
+            } catch (error) {
+                toast({ title: "Import Failed", description: "Failed to process Excel file", variant: "destructive" });
+            }
+        };
+        reader.readAsBinaryString(file);
+        e.target.value = '';
+    };
+
     return (
         <div className="space-y-6">
             {/* Page Header */}
@@ -237,6 +343,39 @@ export default function MandalEventsPage() {
                     </p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2 sm:gap-3 w-full md:w-auto">
+                    <Button
+                        onClick={downloadTemplate}
+                        variant="outline"
+                        className="flex-1 md:flex-initial border-[#7b4623]/20 hover:bg-[#7b4623]/5 text-xs h-9"
+                    >
+                        <FileText className="w-4 h-4 mr-2" />
+                        Template
+                    </Button>
+                    <div className="relative flex-1 md:flex-initial">
+                        <input
+                            type="file"
+                            accept=".xlsx, .xls"
+                            className="hidden"
+                            id="import-excel"
+                            onChange={handleImportExcel}
+                        />
+                        <Button
+                            onClick={() => document.getElementById('import-excel')?.click()}
+                            variant="outline"
+                            className="w-full border-[#7b4623]/20 hover:bg-[#7b4623]/5 text-xs h-9"
+                        >
+                            <Upload className="w-4 h-4 mr-2" />
+                            Import Excel
+                        </Button>
+                    </div>
+                    <Button
+                        onClick={handleExportExcel}
+                        variant="outline"
+                        className="flex-1 md:flex-initial border-[#7b4623]/20 hover:bg-[#7b4623]/5 text-xs h-9"
+                    >
+                        <Download className="w-4 h-4 mr-2" />
+                        Export All
+                    </Button>
                     {(!canCreate || !canEdit || !canManage || !canDelete) && (
                         <Badge className="bg-slate-100 text-slate-500 border-slate-200 uppercase font-black tracking-widest px-4 py-2 rounded-xl">
                             View Only Mode

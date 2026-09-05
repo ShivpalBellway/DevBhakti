@@ -319,3 +319,74 @@ export const deleteProduct = async (req: Request, res: Response) => {
     res.status(500).json({ success: false, message: "Internal server error" });
   }
 };
+
+// Create Bulk Products
+export const createBulkProducts = async (req: Request, res: Response) => {
+  try {
+    const templeId = (req as any).owner.ownerId;
+    const { products } = req.body;
+
+    if (!Array.isArray(products) || products.length === 0) {
+      return res.status(400).json({ success: false, message: "Payload must be a non-empty 'products' array." });
+    }
+
+    let successCount = 0;
+    let failCount = 0;
+    const errors: string[] = [];
+
+    for (let i = 0; i < products.length; i++) {
+        const data = products[i];
+        try {
+            if (!data.name_en && !data.name) throw new Error("Name is required");
+            if (!data.category) throw new Error("Category is required");
+
+            const tryParse = (val: any) => {
+                if (typeof val !== 'string') return val;
+                if (!val || (!val.trim().startsWith('[') && !val.trim().startsWith('{'))) return val;
+                try { return JSON.parse(val); } catch (e) { return val; }
+            };
+
+            await prisma.product.create({
+              data: {
+                name: buildLangJson(data.name_en || data.name, data.name_hi, data.name_mr),
+                description: buildLangJson(data.description_en || data.description, data.description_hi, data.description_mr),
+                category: buildLangJson(data.category_en || data.category, data.category_hi, data.category_mr),
+                highlights: buildLangJson(
+                    tryParse(data.highlights_en),
+                    tryParse(data.highlights_hi),
+                    tryParse(data.highlights_mr)
+                ),
+                longDescription: buildLangJson(data.longDescription_en, data.longDescription_hi, data.longDescription_mr),
+                shippingInfo: buildLangJson(data.shippingInfo_en, data.shippingInfo_hi, data.shippingInfo_mr),
+                origin: buildLangJson(data.origin_en, data.origin_hi, data.origin_mr),
+                categoryId: data.category,
+                templeId: templeId,
+                status: "pending",
+                image: null,
+                variants: {
+                  create: Array.isArray(data.variants) ? data.variants.map((v: any) => ({
+                    name: buildLangJson(v.name_en || v.name || "Standard", v.name_hi, v.name_mr),
+                    price: parseFloat(v.price) || 0,
+                    stock: parseInt(v.stock) || 0,
+                    image: null
+                  })) : []
+                }
+              }
+            });
+            successCount++;
+        } catch (err: any) {
+            failCount++;
+            errors.push(`Row ${i + 2}: ${err.message}`);
+        }
+    }
+
+    res.status(201).json({
+        success: true,
+        data: { successCount, failCount, errors }
+    });
+
+  } catch (error: any) {
+    console.error("Create Bulk Products Error:", error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};

@@ -198,7 +198,8 @@ export const createTempleDonation = async (req: Request, res: Response) => {
             Number(amount),
             SlabType.GLOBAL,
             undefined,
-            CommissionCategory.DONATION
+            CommissionCategory.DONATION,
+            true
         );
 
         const commissionAmount = commissionData.totalCommission || 0;

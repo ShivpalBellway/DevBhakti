@@ -18,7 +18,8 @@ import {
   RefreshCw,
   Eye,
   MapPin,
-  Ticket
+  Ticket,
+  Download
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,6 +37,7 @@ import { generatePoojaReceiptHTML } from "@/utils/poojaReceipt";
 import { generateReceiptHTML } from "@/utils/donationReceipt";
 import { printDarshanPassReceipt } from "@/utils/darshanReceipt";
 import { parseLocalizedValue } from "@/utils/textUtils";
+import * as XLSX from "xlsx";
 
 export default function MandalOfflineUsersPage() {
   const { toast } = useToast();
@@ -137,6 +139,28 @@ export default function MandalOfflineUsersPage() {
     }
   };
 
+  const handleExportExcel = () => {
+    if (leads.length === 0) {
+      toast({ title: "No Data", description: "There are no devotees to export.", variant: "destructive" });
+      return;
+    }
+
+    const exportData = leads.map((lead: any) => ({
+      "Devotee Name": lead.name || "Offline Devotee",
+      "Phone Number": lead.phone || "N/A",
+      "Email": lead.email || "N/A",
+      "Total Bookings": lead.totalBookings || 0,
+      "Total Amount (₹)": lead.totalSpent || 0,
+      "Registered Date": lead.lastBookingDate ? new Date(lead.lastBookingDate).toLocaleDateString("en-IN") : "N/A",
+      "Account Status": lead.userId ? `Auto Registered (${lead.userDisplayId || 'Active'})` : "Counter Linked"
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(exportData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Offline Devotees");
+    XLSX.writeFile(wb, `Mandal_Offline_Devotees_${new Date().toISOString().slice(0,10)}.xlsx`);
+  };
+
   return (
     <div className="p-4 md:p-6 space-y-6 max-w-[1400px] mx-auto pb-20">
       {/* Header */}
@@ -151,14 +175,18 @@ export default function MandalOfflineUsersPage() {
           </p>
         </div>
         <div className="flex items-center gap-3">
+          <Button variant="outline" onClick={handleExportExcel} disabled={loading || leads.length === 0} className="border-[#7b4623]/20 hover:bg-[#7b4623]/5 text-[#7b4623] gap-2 rounded-xl">
+            <Download className="w-4 h-4" />
+            <span className="hidden sm:inline">Export Excel</span>
+          </Button>
           <Button variant="outline" onClick={loadLeads} disabled={loading} className="gap-2 rounded-xl">
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-            Refresh List
+            <span className="hidden sm:inline">Refresh List</span>
           </Button>
           <Link href="/mandals/dashboard/teller/offline-pooja">
             <Button className="bg-[#7b4623] hover:bg-[#5d351a] text-white gap-2 rounded-xl">
               <Plus className="w-4 h-4" />
-              New Offline Booking
+              <span className="hidden sm:inline">New Offline Booking</span>
             </Button>
           </Link>
         </div>

@@ -22,6 +22,7 @@ import {
     ChevronRight,
     X,
     IndianRupee,
+    Download
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -34,6 +35,7 @@ import { fetchMandalProducts, fetchMandalProfile } from "@/api/mandalAdminContro
 import { parseLocalizedValue } from "@/utils/textUtils";
 import { BASE_URL, API_URL } from "@/config/apiConfig";
 import axios from "axios";
+import * as XLSX from "xlsx";
 
 interface CartItem {
     productId: string;
@@ -308,6 +310,32 @@ export default function MandalOfflineProductPage() {
         if (w) { w.document.write(html); w.document.close(); }
     };
 
+    const handleExportExcel = () => {
+        if (filteredOrders.length === 0) {
+            toast({ title: "No Data", description: "There are no orders to export.", variant: "destructive" });
+            return;
+        }
+
+        const exportData = filteredOrders.map((o: any) => {
+            const itemsArr = o.items || o.subOrders || [];
+            const itemSummary = itemsArr.map((i: any) => `${i.productName || i.product?.name || "Product"} (${i.quantity})`).join(", ");
+            return {
+                "Order ID": o.displayId || o.id?.slice(-8) || "N/A",
+                "Customer Name": o.customerName || o.user?.name || "Customer",
+                "Phone": o.customerPhone || o.user?.phone || "N/A",
+                "Items": itemSummary,
+                "Date": o.createdAt ? new Date(o.createdAt).toLocaleDateString("en-IN") : "N/A",
+                "Amount (₹)": Number(o.totalAmount || o.amount || 0),
+                "Payment": o.paymentMethod || "CASH"
+            };
+        });
+
+        const ws = XLSX.utils.json_to_sheet(exportData);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Offline Product Orders");
+        XLSX.writeFile(wb, `Mandal_Offline_Orders_${new Date().toISOString().slice(0,10)}.xlsx`);
+    };
+
     if (isLoading) {
         return (
             <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
@@ -334,9 +362,14 @@ export default function MandalOfflineProductPage() {
                 </div>
 
                 {viewMode === "list" ? (
-                    <Button onClick={() => setViewMode("add")} className="bg-[#7b4623] hover:bg-[#5d351a] text-white shadow-md rounded-xl font-bold">
-                        <Plus className="w-4 h-4 mr-2" /> New Offline Order
-                    </Button>
+                    <div className="flex flex-wrap items-center gap-3">
+                        <Button onClick={handleExportExcel} variant="outline" className="border-[#7b4623]/20 hover:bg-[#7b4623]/5 text-[#7b4623] shadow-sm rounded-xl font-bold">
+                            <Download className="w-4 h-4 mr-2" /> Export Excel
+                        </Button>
+                        <Button onClick={() => setViewMode("add")} className="bg-[#7b4623] hover:bg-[#5d351a] text-white shadow-md rounded-xl font-bold">
+                            <Plus className="w-4 h-4 mr-2" /> New Offline Order
+                        </Button>
+                    </div>
                 ) : (
                     <Button onClick={() => { setViewMode("list"); setCart([]); setStep(1); }} variant="outline" className="border-slate-300 rounded-xl font-medium">
                         <ArrowLeft className="w-4 h-4 mr-2" /> Back to Orders List

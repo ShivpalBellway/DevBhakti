@@ -31,6 +31,7 @@ import { fetchMyMandalBookings } from "@/api/mandalAdminController";
 import { parseLocalizedValue } from "@/utils/textUtils";
 import { generatePoojaReceiptHTML, downloadPoojaReceiptPDF } from "@/utils/poojaReceipt";
 import AddOfflineBookingPage from "./AddOfflineBookingPage";
+import * as XLSX from "xlsx";
 
 const statusColors: Record<string, string> = {
     BOOKED: "bg-emerald-100 text-emerald-800 border-emerald-200",
@@ -174,6 +175,31 @@ export default function MandalOfflinePoojaPage() {
         downloadPoojaReceiptPDF(receiptData as any, t);
     };
 
+    const handleExportExcel = () => {
+        if (filteredBookings.length === 0) {
+            toast({ title: "No Data", description: "There are no bookings to export.", variant: "destructive" });
+            return;
+        }
+
+        const exportData = filteredBookings.map((b: any) => ({
+            "Booking ID": b.displayId || b.id?.slice(-8) || "N/A",
+            "Devotee Name": b.devoteeName || "Devotee",
+            "Phone": b.devoteePhone || "N/A",
+            "Pooja Service": b.pooja ? parseLocalizedValue(b.pooja.name) : "Pooja Service",
+            "Package Name": b.packageName || "Standard",
+            "Booking Date": b.bookingDate || (b.createdAt ? new Date(b.createdAt).toLocaleDateString("en-IN") : "N/A"),
+            "Amount (₹)": Number(b.packagePrice || b.totalAmount || 0),
+            "Payment": b.paymentMethod || "CASH",
+            "Status": b.status || "BOOKED"
+        }));
+
+        const ws = XLSX.utils.json_to_sheet(exportData);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Offline Pooja Bookings");
+        XLSX.writeFile(wb, `Mandal_Offline_Pooja_${new Date().toISOString().slice(0,10)}.xlsx`);
+    };
+
+
     if (viewMode === "add") {
         return <AddOfflineBookingPage onBack={() => setViewMode("list")} />;
     }
@@ -190,9 +216,14 @@ export default function MandalOfflinePoojaPage() {
                     <span>/</span>
                     <span className="font-semibold text-slate-800">Offline Pooja Management</span>
                 </div>
-                <Button onClick={() => setViewMode("add")} className="bg-[#7b4623] hover:bg-[#5d351a] text-white shadow-md rounded-xl">
-                    <Plus className="w-4 h-4 mr-2" /> Add Offline Pooja Booking
-                </Button>
+                <div className="flex flex-wrap items-center gap-3">
+                    <Button onClick={handleExportExcel} variant="outline" className="border-[#7b4623]/20 hover:bg-[#7b4623]/5 text-[#7b4623] shadow-sm rounded-xl">
+                        <Download className="w-4 h-4 mr-2" /> Export Excel
+                    </Button>
+                    <Button onClick={() => setViewMode("add")} className="bg-[#7b4623] hover:bg-[#5d351a] text-white shadow-md rounded-xl">
+                        <Plus className="w-4 h-4 mr-2" /> Add Offline Pooja Booking
+                    </Button>
+                </div>
             </div>
 
             {/* Header Title */}

@@ -157,3 +157,74 @@ export const toggleMandalPoojaStatus = async (req: Request, res: Response) => {
     }
 };
 
+export const createBulkPoojas = async (req: Request, res: Response) => {
+    try {
+        const mandalId = (req as any).owner.ownerId;
+        const { poojas } = req.body;
+
+        if (!Array.isArray(poojas) || poojas.length === 0) {
+            return res.status(400).json({ success: false, message: "Payload must be a non-empty 'poojas' array." });
+        }
+
+        let successCount = 0;
+        let failCount = 0;
+        const errors: string[] = [];
+
+        for (let i = 0; i < poojas.length; i++) {
+            const data = poojas[i];
+            try {
+                if (!data.name_en && !data.name) throw new Error("Name is required");
+
+                await prisma.pooja.create({
+                    data: {
+                        name: buildLangJson(data.name_en || data.name, data.name_hi, data.name_mr),
+                        category: buildLangJson(data.category_en || data.category, data.category_hi, data.category_mr),
+                        duration: buildLangJson(data.duration_en || data.duration || 'N/A', data.duration_hi, data.duration_mr),
+                        about: buildLangJson(data.about_en || data.about, data.about_hi, data.about_mr),
+                        process: buildLangJson(data.process_en || data.process, data.process_hi, data.process_mr),
+                        templeDetails: buildLangJson(data.templeDetails_en || data.templeDetails, data.templeDetails_hi, data.templeDetails_mr),
+                        description: buildLangArray(
+                            safeParse(data.description_en || data.description, []),
+                            safeParse(data.description_hi, []),
+                            safeParse(data.description_mr, [])
+                        ),
+                        benefits: buildLangArray(
+                            safeParse(data.benefits_en || data.benefits, []),
+                            safeParse(data.benefits_hi, []),
+                            safeParse(data.benefits_mr, [])
+                        ),
+                        bullets: buildLangArray(
+                            safeParse(data.bullets_en || data.bullets, []),
+                            safeParse(data.bullets_hi, []),
+                            safeParse(data.bullets_mr, [])
+                        ),
+                        price: parseFloat(data.price) || 0,
+                        time: data.time || '',
+                        processSteps: safeParse(data.processSteps, []),
+                        packages: safeParse(data.packages, []),
+                        faqs: safeParse(data.faqs, []),
+                        image: null,
+                        mandalId,
+                        status: data.status === 'false' ? false : true,
+                        hasPrasad: data.hasPrasad === 'true' || data.hasPrasad === true,
+                        prasadType: 'FREE'
+                    }
+                });
+                successCount++;
+            } catch (err: any) {
+                failCount++;
+                errors.push(`Row ${i + 2}: ${err.message}`);
+            }
+        }
+
+        res.status(201).json({
+            success: true,
+            data: { successCount, failCount, errors }
+        });
+    } catch (error: any) {
+        console.error('Create Bulk Poojas Error:', error);
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+

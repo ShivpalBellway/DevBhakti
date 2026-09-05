@@ -115,82 +115,84 @@ export default function PaidPrasadPage() {
     <motion.div
       initial={{ opacity: 0, y: 15 }}
       animate={{ opacity: 1, y: 0 }}
-      className="max-w-4xl mx-auto space-y-8 pb-16 px-4"
+      className="w-full p-4 md:p-8 space-y-6 md:space-y-8 min-h-screen bg-slate-50/50"
     >
       {/* Header Banner - #7b4623 Temple Dashboard Theme */}
-      <div className="bg-gradient-to-r from-[#7b4623] via-[#8c5029] to-[#5d351a] text-white rounded-3xl p-6 md:p-8 shadow-xl relative overflow-hidden">
-        <div className="absolute right-0 top-0 opacity-10 pointer-events-none translate-x-8 -translate-y-8">
-          <Gift className="w-72 h-72 text-white" />
+      <div className="bg-gradient-to-r from-[#7b4623] via-[#8c5029] to-[#5d351a] text-white rounded-[2rem] p-8 md:p-10 shadow-xl relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div className="absolute right-0 top-0 opacity-10 pointer-events-none translate-x-12 -translate-y-12">
+          <Gift className="w-80 h-80 text-white" />
         </div>
-        <div className="relative z-10 space-y-2">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/15 backdrop-blur-md text-xs font-semibold uppercase tracking-wider text-amber-100 border border-white/20">
-            <Sparkles className="w-3.5 h-3.5" /> Devotee Prasad Delivery Config
+        <div className="relative z-10 flex-col space-y-3">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 backdrop-blur-md text-[10px] md:text-xs font-black uppercase tracking-widest text-amber-100 border border-white/20 shadow-sm">
+            <Sparkles className="w-4 h-4" /> Devotee Prasad Delivery Config
           </div>
-          <h1 className="text-2xl md:text-3xl font-bold font-serif">
+          <h1 className="text-3xl md:text-5xl font-black font-serif tracking-tight">
             Paid Prasad Management
           </h1>
-          <p className="text-amber-100/90 text-sm max-w-xl leading-relaxed">
+          <p className="text-amber-100/90 text-sm md:text-base font-medium max-w-2xl leading-relaxed">
             Configure Paid Prasad pricing for your temple. When enabled, devotees booking any Pooja of this temple can request home-delivered Prasad packets.
           </p>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8 items-start relative z-10">
         {/* Main Settings Form */}
-        <div className="md:col-span-2 space-y-6">
-          <Card className="border-[#7b4623]/20 shadow-md rounded-2xl overflow-hidden bg-white">
-            <CardHeader className="bg-[#7b4623]/5 border-b border-[#7b4623]/15 p-6">
+        <div className="lg:col-span-2 space-y-6 md:space-y-8">
+          <Card className="border border-slate-100/60 shadow-sm rounded-[2rem] overflow-hidden bg-white hover:shadow-xl transition-all duration-300">
+            <CardHeader className="bg-slate-50/50 border-b border-slate-100 p-6 md:p-8">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-lg font-bold text-slate-800 flex items-center gap-2">
-                  <Gift className="w-5 h-5 text-[#7b4623]" />
+                <CardTitle className="text-xl md:text-2xl font-black text-slate-900 flex items-center gap-3">
+                  <span className="w-10 h-10 rounded-xl bg-[#7b4623]/10 flex items-center justify-center shrink-0">
+                    <Gift className="w-5 h-5 text-[#7b4623]" />
+                  </span>
                   Prasad Service Status
                 </CardTitle>
                 <Badge
                   variant={hasPaidPrasad ? "default" : "secondary"}
-                  className={hasPaidPrasad ? "bg-[#7b4623] text-white" : "bg-slate-200 text-slate-600"}
+                  className={`px-4 py-1.5 text-xs font-black uppercase tracking-widest ${hasPaidPrasad ? "bg-emerald-500 hover:bg-emerald-600 text-white" : "bg-slate-200 text-slate-600"}`}
                 >
                   {hasPaidPrasad ? "ACTIVE" : "DISABLED"}
                 </Badge>
               </div>
-              <CardDescription className="text-xs text-slate-500 mt-1">
-                Toggle Paid Prasad for all Poojas offered by {templeData?.name?.en || templeData?.name || "your temple"}.
+              <CardDescription className="text-sm text-slate-500 mt-2 font-medium">
+                Toggle Paid Prasad for all Poojas offered by <span className="font-bold text-slate-700">{templeData?.name?.en || templeData?.name || "your temple"}</span>.
               </CardDescription>
             </CardHeader>
 
-            <CardContent className="p-6 space-y-6">
+            <CardContent className="p-6 md:p-8 space-y-8">
               {/* Service Toggle */}
-              <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-200/80">
-                <div className="space-y-0.5">
-                  <Label htmlFor="paid-prasad-toggle" className="text-base font-semibold text-slate-800 cursor-pointer">
+              <div className="flex items-center justify-between p-5 md:p-6 bg-slate-50/80 rounded-2xl border border-slate-200/80 hover:bg-white transition-all shadow-sm">
+                <div className="space-y-1 pr-4">
+                  <Label htmlFor="paid-prasad-toggle" className="text-lg font-black text-slate-800 cursor-pointer block">
                     Enable Paid Prasad Delivery
                   </Label>
-                  <p className="text-xs text-slate-500">
-                    Allow devotees to add paid prasad packets during pooja booking
+                  <p className="text-sm font-medium text-slate-500 mt-1">
+                    Allow devotees to add paid prasad packets during pooja booking checkout.
                   </p>
                 </div>
                 <Switch
                   id="paid-prasad-toggle"
                   checked={hasPaidPrasad}
                   onCheckedChange={(checked) => setHasPaidPrasad(checked)}
-                  className="data-[state=checked]:bg-[#7b4623]"
+                  className="data-[state=checked]:bg-[#7b4623] scale-125 mr-2"
                 />
               </div>
 
               {/* Price Input */}
               {hasPaidPrasad && (
                 <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
-                  exit={{ opacity: 0, height: 0 }}
-                  className="space-y-4 pt-2"
+                  initial={{ opacity: 0, y: -20, height: 0 }}
+                  animate={{ opacity: 1, y: 0, height: "auto" }}
+                  exit={{ opacity: 0, y: -20, height: 0 }}
+                  className="space-y-6"
                 >
-                  <div className="space-y-2">
-                    <Label htmlFor="prasad-price" className="text-sm font-bold text-slate-700 flex items-center gap-1.5">
+                  <div className="space-y-3">
+                    <Label htmlFor="prasad-price" className="text-sm font-black text-slate-700 flex items-center gap-2 uppercase tracking-widest">
                       <IndianRupee className="w-4 h-4 text-[#7b4623]" />
-                      Prasad Packet Price (₹) <span className="text-red-500">*</span>
+                      Prasad Packet Price (₹) <span className="text-rose-500">*</span>
                     </Label>
-                    <div className="relative">
-                      <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 font-bold text-base">₹</span>
+                    <div className="relative max-w-sm">
+                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 font-extrabold text-xl">₹</span>
                       <Input
                         id="prasad-price"
                         type="number"
@@ -199,28 +201,28 @@ export default function PaidPrasadPage() {
                         value={prasadPrice}
                         onChange={(e) => setPrasadPrice(e.target.value)}
                         placeholder="e.g. 51"
-                        className="pl-8 h-12 text-lg font-bold font-mono rounded-xl border-slate-300 focus-visible:ring-[#7b4623]"
+                        className="pl-10 h-14 text-xl font-black rounded-xl border-slate-200 focus:bg-white focus:ring-[#7b4623] bg-slate-50 hover:bg-white transition-colors"
                       />
                     </div>
-                    <p className="text-xs text-slate-500 flex items-center gap-1 mt-1">
-                      <Info className="w-3.5 h-3.5 text-[#7b4623] shrink-0" />
+                    <p className="text-sm font-medium text-slate-500 flex items-center gap-2 mt-1">
+                      <Info className="w-4 h-4 text-[#7b4623] shrink-0" />
                       This price per packet will be multiplied by the quantity chosen by the devotee.
                     </p>
                   </div>
 
                   {/* Preset Price Quick Chips */}
-                  <div className="space-y-1.5">
-                    <span className="text-xs font-semibold text-slate-500">Quick Select Price:</span>
-                    <div className="flex flex-wrap gap-2">
-                      {["21", "51", "101", "151", "201", "501"].map((val) => (
+                  <div className="space-y-2">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Quick Select Price:</span>
+                    <div className="flex flex-wrap gap-3">
+                      {["21", "51", "101", "151", "251", "501"].map((val) => (
                         <button
                           key={val}
                           type="button"
                           onClick={() => setPrasadPrice(val)}
-                          className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all border ${
+                          className={`px-5 py-2.5 rounded-xl text-sm font-black transition-all border shadow-sm ${
                             prasadPrice === val
-                              ? "bg-[#7b4623] text-white border-[#7b4623] shadow-xs"
-                              : "bg-white text-slate-700 border-slate-200 hover:border-[#7b4623]/40 hover:bg-[#7b4623]/5"
+                              ? "bg-[#7b4623] text-white border-[#7b4623] scale-105"
+                              : "bg-white text-slate-600 border-slate-200 hover:border-[#7b4623]/40 hover:bg-[#7b4623]/5 hover:text-[#7b4623]"
                           }`}
                         >
                           ₹{val}
@@ -232,43 +234,71 @@ export default function PaidPrasadPage() {
               )}
 
               {/* Action Button */}
-              <div className="pt-4 border-t border-slate-100 flex items-center justify-end gap-4">
+              <div className="pt-8 border-t border-slate-100 flex items-center justify-end">
                 <Button
                   onClick={handleSave}
                   disabled={isSaving || (hasPaidPrasad && (!prasadPrice || parseFloat(prasadPrice) <= 0))}
-                  className="bg-[#7b4623] hover:bg-[#5d351a] text-white px-8 h-12 rounded-xl shadow-lg shadow-[#7b4623]/20 font-bold text-sm transition-all"
+                  className="bg-[#7b4623] hover:bg-[#5d351a] text-white px-10 h-14 rounded-xl shadow-xl shadow-[#7b4623]/20 font-black text-base transition-all hover:scale-105 w-full sm:w-auto"
                 >
                   {isSaving ? (
                     <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Saving...
+                      <Loader2 className="w-5 h-5 mr-3 animate-spin" /> Saving Configuration...
                     </>
                   ) : (
                     <>
-                      <Save className="w-4 h-4 mr-2" /> Save Prasad Settings
+                      <Save className="w-5 h-5 mr-3" /> Save Prasad Settings
                     </>
                   )}
                 </Button>
               </div>
             </CardContent>
           </Card>
-
-          {/* Info Card */}
-          <Card className="border-[#7b4623]/20 bg-[#7b4623]/5 rounded-2xl p-4 md:p-6 text-slate-700 space-y-2">
-            <div className="flex items-center gap-2 font-bold text-[#7b4623] text-sm">
-              <CheckCircle2 className="w-4 h-4 text-[#7b4623]" />
-              How Paid Prasad Booking Works for Devotees
-            </div>
-            <ul className="text-xs space-y-1.5 text-slate-600 pl-6 list-disc">
-              <li>When enabled, step 3 of booking shows <b>"Would you like Prasad delivered to your home?"</b> option.</li>
-              <li>Devotees can choose <b>Yes (₹{numericPrice > 0 ? numericPrice : 51} per box)</b> or <b>No</b>.</li>
-              <li>Choosing <b>Yes</b> displays a quantity counter (1 to 10 packets).</li>
-              <li>Prasad total amount is automatically calculated and added to the booking payment summary.</li>
-            </ul>
-          </Card>
         </div>
 
-        {/* Live Preview Sidebar Card */}
-     
+        {/* Sidebar Info & Summary Cards */}
+        <div className="space-y-6 md:space-y-8">
+            {/* Info Card */}
+            <Card className="border-none shadow-xl bg-white rounded-[2rem] overflow-hidden group hover:shadow-2xl transition-all duration-300">
+                <div className="bg-[#7b4623]/5 p-6 border-b border-[#7b4623]/10">
+                    <div className="flex items-center gap-3 font-black text-[#7b4623] text-base">
+                        <div className="w-10 h-10 rounded-full bg-[#7b4623]/10 flex items-center justify-center shrink-0">
+                            <CheckCircle2 className="w-5 h-5 text-[#7b4623]" />
+                        </div>
+                        How Paid Prasad Booking Works
+                    </div>
+                </div>
+                <CardContent className="p-6">
+                    <ul className="text-sm font-medium space-y-4 text-slate-600 list-none">
+                    <li className="flex gap-3">
+                        <span className="w-6 h-6 rounded-full bg-orange-100 text-[#7b4623] flex items-center justify-center text-xs font-black shrink-0">1</span>
+                        <span>When enabled, step 3 of the booking flow prominently displays the <b>"Would you like Prasad delivered to your home?"</b> option.</span>
+                    </li>
+                    <li className="flex gap-3">
+                        <span className="w-6 h-6 rounded-full bg-orange-100 text-[#7b4623] flex items-center justify-center text-xs font-black shrink-0">2</span>
+                        <span>Devotees can explicitly choose <b>Yes (₹{numericPrice > 0 ? numericPrice : 51} per box)</b> or opt-out by selecting <b>No</b>.</span>
+                    </li>
+                    <li className="flex gap-3">
+                        <span className="w-6 h-6 rounded-full bg-orange-100 text-[#7b4623] flex items-center justify-center text-xs font-black shrink-0">3</span>
+                        <span>Choosing <b>Yes</b> opens a clean quantity counter (enabling devotees to select 1 to 10 packets).</span>
+                    </li>
+                    <li className="flex gap-3">
+                        <span className="w-6 h-6 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-xs font-black shrink-0">4</span>
+                        <span>The total Prasad amount is instantly calculated in real-time and securely added to the final payment summary before checkout!</span>
+                    </li>
+                    </ul>
+                </CardContent>
+            </Card>
+
+            <Card className="border-2 border-dashed border-slate-200 shadow-none bg-slate-50/50 rounded-[2rem] p-6 text-center group">
+                <div className="w-16 h-16 bg-white rounded-full mx-auto flex items-center justify-center shadow-sm border border-slate-100 mb-4 group-hover:scale-110 transition-transform">
+                    <Package className="w-8 h-8 text-slate-400" />
+                </div>
+                <h3 className="font-bold text-slate-900 mb-2">Need Help?</h3>
+                <p className="text-sm font-medium text-slate-500 mb-4">
+                    For questions about dispatching prasad or configuring courier charges, contact dev support.
+                </p>
+            </Card>
+        </div>
       </div>
     </motion.div>
   );

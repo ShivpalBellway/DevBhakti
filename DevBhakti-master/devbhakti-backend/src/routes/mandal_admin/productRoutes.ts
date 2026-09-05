@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { createProduct, updateProduct, deleteProduct, getMyProducts, getMyProductById } from '../../controllers/mandal_admin/productController';
+import { createProduct, updateProduct, deleteProduct, getMyProducts, getMyProductById, createBulkProducts } from '../../controllers/mandal_admin/productController';
 import { authenticate, injectMandalContext } from '../../middleware/authMiddleware';
 import multer from 'multer';
 import path from 'path';
@@ -21,6 +21,7 @@ router.use(authenticate, injectMandalContext);
 
 router.get('/', getMyProducts);
 router.get('/:id', getMyProductById);
+router.post('/bulk', createBulkProducts);
 router.post('/', upload.any(), createProduct);
 router.put('/:id', upload.any(), updateProduct);
 router.delete('/:id', deleteProduct);

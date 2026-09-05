@@ -119,10 +119,27 @@ export function TempleForm({
 
     const [selectedPoojaIds, setSelectedPoojaIds] = useState<string[]>([]);
     const [inlineEvents, setInlineEvents] = useState<any[]>([]);
+
+    // Online Slabs State
     const [marketplaceSlabs, setMarketplaceSlabs] = useState<any[]>([]);
     const [poojaSlabs, setPoojaSlabs] = useState<any[]>([]);
+    const [donationSlabs, setDonationSlabs] = useState<any[]>([]);
+
     const [marketplaceRateType, setMarketplaceRateType] = useState<"DEFAULT" | "CUSTOM">("DEFAULT");
     const [poojaRateType, setPoojaRateType] = useState<"DEFAULT" | "CUSTOM">("DEFAULT");
+    const [donationRateType, setDonationRateType] = useState<"DEFAULT" | "CUSTOM">("DEFAULT");
+
+    // Offline Slabs State
+    const [offlineMarketplaceSlabs, setOfflineMarketplaceSlabs] = useState<any[]>([]);
+    const [offlinePoojaSlabs, setOfflinePoojaSlabs] = useState<any[]>([]);
+    const [offlineDonationSlabs, setOfflineDonationSlabs] = useState<any[]>([]);
+
+    const [offlineMarketplaceRateType, setOfflineMarketplaceRateType] = useState<"DEFAULT" | "CUSTOM">("DEFAULT");
+    const [offlinePoojaRateType, setOfflinePoojaRateType] = useState<"DEFAULT" | "CUSTOM">("DEFAULT");
+    const [offlineDonationRateType, setOfflineDonationRateType] = useState<"DEFAULT" | "CUSTOM">("DEFAULT");
+
+    // Form Commission Active Tab
+    const [formCommTab, setFormCommTab] = useState<"online" | "offline">("online");
 
     // Inline Validation States
     const [phoneValidation, setPhoneValidation] = useState<any>({ status: "idle", message: "" });
@@ -274,10 +291,21 @@ export function TempleForm({
 
     const loadGlobalSlabs = async () => {
         try {
-            const mRes = await fetchCommissionSlabsAdmin('GLOBAL', undefined, 'MARKETPLACE');
+            // Online Slabs
+            const mRes = await fetchCommissionSlabsAdmin('GLOBAL', undefined, 'MARKETPLACE', false);
             if (mRes.success) setMarketplaceSlabs(mRes.data);
-            const pRes = await fetchCommissionSlabsAdmin('GLOBAL', undefined, 'POOJA');
+            const pRes = await fetchCommissionSlabsAdmin('GLOBAL', undefined, 'POOJA', false);
             if (pRes.success) setPoojaSlabs(pRes.data);
+            const dRes = await fetchCommissionSlabsAdmin('GLOBAL', undefined, 'DONATION', false);
+            if (dRes.success) setDonationSlabs(dRes.data);
+
+            // Offline Slabs
+            const omRes = await fetchCommissionSlabsAdmin('GLOBAL', undefined, 'MARKETPLACE', true);
+            if (omRes.success) setOfflineMarketplaceSlabs(omRes.data);
+            const opRes = await fetchCommissionSlabsAdmin('GLOBAL', undefined, 'POOJA', true);
+            if (opRes.success) setOfflinePoojaSlabs(opRes.data);
+            const odRes = await fetchCommissionSlabsAdmin('GLOBAL', undefined, 'DONATION', true);
+            if (odRes.success) setOfflineDonationSlabs(odRes.data);
         } catch (e) {
             console.error("Error loading global slabs", e);
         }
@@ -285,24 +313,66 @@ export function TempleForm({
 
     const loadSlabs = async (templeId: string) => {
         try {
-            const mRes = await fetchCommissionSlabsAdmin('TEMPLE', templeId, 'MARKETPLACE');
+            const dedupe = (list: any[]) => list.filter((s, i, self) => i === self.findIndex(t => t.minAmount === s.minAmount));
+
+            // Online Marketplace
+            const mRes = await fetchCommissionSlabsAdmin('TEMPLE', templeId, 'MARKETPLACE', false);
             if (mRes.success && mRes.data.length > 0) {
-                const dedupe = (list: any[]) => list.filter((s, i, self) => i === self.findIndex(t => t.minAmount === s.minAmount));
                 setMarketplaceSlabs(dedupe(mRes.data));
                 setMarketplaceRateType("CUSTOM");
             } else {
-                const globalM = await fetchCommissionSlabsAdmin('GLOBAL', undefined, 'MARKETPLACE');
+                const globalM = await fetchCommissionSlabsAdmin('GLOBAL', undefined, 'MARKETPLACE', false);
                 if (globalM.success) setMarketplaceSlabs(globalM.data);
             }
 
-            const pRes = await fetchCommissionSlabsAdmin('TEMPLE', templeId, 'POOJA');
+            // Offline Marketplace
+            const omRes = await fetchCommissionSlabsAdmin('TEMPLE', templeId, 'MARKETPLACE', true);
+            if (omRes.success && omRes.data.length > 0) {
+                setOfflineMarketplaceSlabs(dedupe(omRes.data));
+                setOfflineMarketplaceRateType("CUSTOM");
+            } else {
+                const globalOM = await fetchCommissionSlabsAdmin('GLOBAL', undefined, 'MARKETPLACE', true);
+                if (globalOM.success) setOfflineMarketplaceSlabs(globalOM.data);
+            }
+
+            // Online Pooja
+            const pRes = await fetchCommissionSlabsAdmin('TEMPLE', templeId, 'POOJA', false);
             if (pRes.success && pRes.data.length > 0) {
-                const dedupe = (list: any[]) => list.filter((s, i, self) => i === self.findIndex(t => t.minAmount === s.minAmount));
                 setPoojaSlabs(dedupe(pRes.data));
                 setPoojaRateType("CUSTOM");
             } else {
-                const globalP = await fetchCommissionSlabsAdmin('GLOBAL', undefined, 'POOJA');
+                const globalP = await fetchCommissionSlabsAdmin('GLOBAL', undefined, 'POOJA', false);
                 if (globalP.success) setPoojaSlabs(globalP.data);
+            }
+
+            // Offline Pooja
+            const opRes = await fetchCommissionSlabsAdmin('TEMPLE', templeId, 'POOJA', true);
+            if (opRes.success && opRes.data.length > 0) {
+                setOfflinePoojaSlabs(dedupe(opRes.data));
+                setOfflinePoojaRateType("CUSTOM");
+            } else {
+                const globalOP = await fetchCommissionSlabsAdmin('GLOBAL', undefined, 'POOJA', true);
+                if (globalOP.success) setOfflinePoojaSlabs(globalOP.data);
+            }
+
+            // Online Donation
+            const dRes = await fetchCommissionSlabsAdmin('TEMPLE', templeId, 'DONATION', false);
+            if (dRes.success && dRes.data.length > 0) {
+                setDonationSlabs(dedupe(dRes.data));
+                setDonationRateType("CUSTOM");
+            } else {
+                const globalD = await fetchCommissionSlabsAdmin('GLOBAL', undefined, 'DONATION', false);
+                if (globalD.success) setDonationSlabs(globalD.data);
+            }
+
+            // Offline Donation
+            const odRes = await fetchCommissionSlabsAdmin('TEMPLE', templeId, 'DONATION', true);
+            if (odRes.success && odRes.data.length > 0) {
+                setOfflineDonationSlabs(dedupe(odRes.data));
+                setOfflineDonationRateType("CUSTOM");
+            } else {
+                const globalOD = await fetchCommissionSlabsAdmin('GLOBAL', undefined, 'DONATION', true);
+                if (globalOD.success) setOfflineDonationSlabs(globalOD.data);
             }
         } catch (e) {
             console.error("Error loading temple slabs", e);
@@ -313,8 +383,17 @@ export function TempleForm({
         const newType = checked ? "CUSTOM" : "DEFAULT";
         setMarketplaceRateType(newType);
         if (newType === "DEFAULT") {
-            const res = await fetchCommissionSlabsAdmin('GLOBAL', undefined, 'MARKETPLACE');
+            const res = await fetchCommissionSlabsAdmin('GLOBAL', undefined, 'MARKETPLACE', false);
             if (res.success) setMarketplaceSlabs(res.data);
+        }
+    };
+
+    const handleOfflineMarketplaceRateTypeChange = async (checked: boolean) => {
+        const newType = checked ? "CUSTOM" : "DEFAULT";
+        setOfflineMarketplaceRateType(newType);
+        if (newType === "DEFAULT") {
+            const res = await fetchCommissionSlabsAdmin('GLOBAL', undefined, 'MARKETPLACE', true);
+            if (res.success) setOfflineMarketplaceSlabs(res.data);
         }
     };
 
@@ -322,8 +401,35 @@ export function TempleForm({
         const newType = checked ? "CUSTOM" : "DEFAULT";
         setPoojaRateType(newType);
         if (newType === "DEFAULT") {
-            const res = await fetchCommissionSlabsAdmin('GLOBAL', undefined, 'POOJA');
+            const res = await fetchCommissionSlabsAdmin('GLOBAL', undefined, 'POOJA', false);
             if (res.success) setPoojaSlabs(res.data);
+        }
+    };
+
+    const handleOfflinePoojaRateTypeChange = async (checked: boolean) => {
+        const newType = checked ? "CUSTOM" : "DEFAULT";
+        setOfflinePoojaRateType(newType);
+        if (newType === "DEFAULT") {
+            const res = await fetchCommissionSlabsAdmin('GLOBAL', undefined, 'POOJA', true);
+            if (res.success) setOfflinePoojaSlabs(res.data);
+        }
+    };
+
+    const handleDonationRateTypeChange = async (checked: boolean) => {
+        const newType = checked ? "CUSTOM" : "DEFAULT";
+        setDonationRateType(newType);
+        if (newType === "DEFAULT") {
+            const res = await fetchCommissionSlabsAdmin('GLOBAL', undefined, 'DONATION', false);
+            if (res.success) setDonationSlabs(res.data);
+        }
+    };
+
+    const handleOfflineDonationRateTypeChange = async (checked: boolean) => {
+        const newType = checked ? "CUSTOM" : "DEFAULT";
+        setOfflineDonationRateType(newType);
+        if (newType === "DEFAULT") {
+            const res = await fetchCommissionSlabsAdmin('GLOBAL', undefined, 'DONATION', true);
+            if (res.success) setOfflineDonationSlabs(res.data);
         }
     };
 
@@ -524,10 +630,15 @@ export function TempleForm({
             fd.append("existingHeroImages", JSON.stringify(existingHeroImages));
         }
 
-        // Combine both slab types for backend, but ONLY if they are CUSTOM
+        // Combine slab types for backend, but ONLY if they are CUSTOM
         const combinedSlabs = [
-            ...(marketplaceRateType === 'CUSTOM' ? marketplaceSlabs.map(s => ({ ...s, category: 'MARKETPLACE' })) : []),
-            ...(poojaRateType === 'CUSTOM' ? poojaSlabs.map(s => ({ ...s, category: 'POOJA' })) : [])
+            ...(marketplaceRateType === 'CUSTOM' ? marketplaceSlabs.map(s => ({ ...s, category: 'MARKETPLACE', isOffline: false })) : []),
+            ...(poojaRateType === 'CUSTOM' ? poojaSlabs.map(s => ({ ...s, category: 'POOJA', isOffline: false })) : []),
+            ...(donationRateType === 'CUSTOM' ? donationSlabs.map(s => ({ ...s, category: 'DONATION', isOffline: false })) : []),
+
+            ...(offlineMarketplaceRateType === 'CUSTOM' ? offlineMarketplaceSlabs.map(s => ({ ...s, category: 'MARKETPLACE', isOffline: true })) : []),
+            ...(offlinePoojaRateType === 'CUSTOM' ? offlinePoojaSlabs.map(s => ({ ...s, category: 'POOJA', isOffline: true })) : []),
+            ...(offlineDonationRateType === 'CUSTOM' ? offlineDonationSlabs.map(s => ({ ...s, category: 'DONATION', isOffline: true })) : [])
         ];
         fd.append("commissionSlabs", JSON.stringify(combinedSlabs));
 
@@ -1339,234 +1450,380 @@ export function TempleForm({
 
                     {/* Commission Configuration */}
                     <div className="bg-card border rounded-xl p-8 shadow-sm space-y-6">
-                        <div className="flex items-center gap-2 text-primary font-bold">
-                            <Layout className="w-5 h-5" />
-                            <h2 className="text-xl">Commission Configuration</h2>
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                            {/* Marketplace Commission */}
-                            <div className="space-y-4">
-                                <div className="flex items-center justify-between">
-                                    <Label className="text-sm font-bold flex items-center gap-2">
-                                        Marketplace Commission
-                                        <Badge variant={marketplaceRateType === 'CUSTOM' ? 'default' : 'secondary'} className="text-[10px] px-2 py-0.5 rounded-full">
-                                            {marketplaceRateType === 'CUSTOM' ? 'CUSTOM RATE' : 'GLOBAL DEFAULT'}
-                                        </Badge>
-                                    </Label>
-                                    <div className="flex items-center gap-3 bg-slate-100/50 p-1.5 rounded-lg border border-slate-200 shadow-sm">
-                                        <span className={`text-[10px] font-bold tracking-tight transition-colors ${marketplaceRateType === "DEFAULT" ? "text-primary" : "text-muted-foreground/60"}`}>DEFAULT</span>
-                                        <Switch
-                                            checked={marketplaceRateType === "CUSTOM"}
-                                            onCheckedChange={handleMarketplaceRateTypeChange}
-                                        />
-                                        <span className={`text-[10px] font-bold tracking-tight transition-colors ${marketplaceRateType === "CUSTOM" ? "text-orange-600" : "text-muted-foreground/60"}`}>CUSTOM</span>
-                                    </div>
-                                </div>
-                                <div className="space-y-3">
-                                    <div className="grid grid-cols-12 gap-2 px-2 text-[9px] font-bold text-slate-500 uppercase tracking-wider">
-                                        <div className="col-span-5">Amount Range (₹)</div>
-                                        <div className="col-span-3">P. Fee (₹)</div>
-                                        <div className="col-span-3">Comm (%)</div>
-                                        <div className="col-span-1"></div>
-                                    </div>
-                                    {marketplaceSlabs.map((slab, i) => (
-                                        <div key={i} className="group relative flex items-center gap-2 p-2 bg-slate-50/50 rounded-lg border border-slate-200 transition-all hover:border-primary/30">
-                                            <div className="grid grid-cols-12 gap-2 flex-1 items-center">
-                                                <div className="col-span-5 flex items-center gap-1">
-                                                    <Input 
-                                                        type="number" 
-                                                        value={slab.minAmount} 
-                                                        onChange={e => {
-                                                            const newSlabs = [...marketplaceSlabs];
-                                                            newSlabs[i].minAmount = parseFloat(e.target.value) || 0;
-                                                            setMarketplaceSlabs(newSlabs);
-                                                        }}
-                                                        className="h-8 text-[11px] px-1.5"
-                                                        placeholder="Min"
-                                                        disabled={marketplaceRateType === "DEFAULT"}
-                                                    />
-                                                    <span className="text-slate-400 font-bold">-</span>
-                                                    <Input 
-                                                        type="number" 
-                                                        value={slab.maxAmount || ""} 
-                                                        onChange={e => {
-                                                            const newSlabs = [...marketplaceSlabs];
-                                                            newSlabs[i].maxAmount = e.target.value ? parseFloat(e.target.value) : null;
-                                                            setMarketplaceSlabs(newSlabs);
-                                                        }}
-                                                        placeholder="Max"
-                                                        className="h-8 text-[11px] px-1.5"
-                                                        disabled={marketplaceRateType === "DEFAULT"}
-                                                    />
-                                                </div>
-                                                <div className="col-span-3">
-                                                    <Input 
-                                                        type="number" 
-                                                        value={slab.platformFee} 
-                                                        onChange={e => {
-                                                            const newSlabs = [...marketplaceSlabs];
-                                                            newSlabs[i].platformFee = parseFloat(e.target.value) || 0;
-                                                            setMarketplaceSlabs(newSlabs);
-                                                        }}
-                                                        className="h-8 text-[11px] px-1.5"
-                                                        disabled={marketplaceRateType === "DEFAULT"}
-                                                    />
-                                                </div>
-                                                <div className="col-span-4 flex items-center gap-1">
-                                                    <Input 
-                                                        type="number" 
-                                                        value={slab.percentage} 
-                                                        onChange={e => {
-                                                            const newSlabs = [...marketplaceSlabs];
-                                                            const val = parseFloat(e.target.value);
-                                                            newSlabs[i].percentage = isNaN(val) ? 0 : val;
-                                                            setMarketplaceSlabs(newSlabs);
-                                                        }}
-                                                        className="h-8 text-[11px] px-1.5"
-                                                        disabled={marketplaceRateType === "DEFAULT"}
-                                                    />
-                                                    <span className="text-[10px] text-slate-500 font-bold">%</span>
-                                                </div>
-                                            </div>
-                                            {marketplaceRateType === 'CUSTOM' && (
-                                                <Button 
-                                                    type="button" 
-                                                    variant="ghost" 
-                                                    size="icon" 
-                                                    className="h-6 w-6 text-destructive opacity-0 group-hover:opacity-100 transition-opacity" 
-                                                    onClick={() => setMarketplaceSlabs(prev => prev.filter((_, idx) => idx !== i))}
-                                                >
-                                                    <Trash2 className="w-3.5 h-3.5" />
-                                                </Button>
-                                            )}
-                                        </div>
-                                    ))}
-                                    {marketplaceRateType === 'CUSTOM' && (
-                                        <Button 
-                                            type="button" 
-                                            variant="outline" 
-                                            size="sm" 
-                                            className="w-full border-dashed text-[10px] h-8 bg-orange-50/30 hover:bg-orange-50 border-orange-200 text-orange-600"
-                                            onClick={() => setMarketplaceSlabs([...marketplaceSlabs, { minAmount: 0, maxAmount: null, platformFee: 0, percentage: 0 }])}
-                                        >
-                                            <Plus className="w-3 h-3 mr-1" /> Add Custom Slab
-                                        </Button>
-                                    )}
-                                </div>
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                            <div className="flex items-center gap-2 text-primary font-bold">
+                                <Layout className="w-5 h-5" />
+                                <h2 className="text-xl">Commission Configuration</h2>
                             </div>
 
-                            {/* Pooja Commission */}
-                            <div className="space-y-4">
-                                <div className="flex items-center justify-between">
-                                    <Label className="text-sm font-bold flex items-center gap-2">
-                                        Pooja Commission
-                                        <Badge variant={poojaRateType === 'CUSTOM' ? 'default' : 'secondary'} className="text-[10px] px-2 py-0.5 rounded-full">
-                                            {poojaRateType === 'CUSTOM' ? 'CUSTOM RATE' : 'GLOBAL DEFAULT'}
-                                        </Badge>
-                                    </Label>
-                                    <div className="flex items-center gap-3 bg-slate-100/50 p-1.5 rounded-lg border border-slate-200 shadow-sm">
-                                        <span className={`text-[10px] font-bold tracking-tight transition-colors ${poojaRateType === "DEFAULT" ? "text-primary" : "text-muted-foreground/60"}`}>DEFAULT</span>
-                                        <Switch
-                                            checked={poojaRateType === "CUSTOM"}
-                                            onCheckedChange={handlePoojaRateTypeChange}
-                                        />
-                                        <span className={`text-[10px] font-bold tracking-tight transition-colors ${poojaRateType === "CUSTOM" ? "text-orange-600" : "text-muted-foreground/60"}`}>CUSTOM</span>
-                                    </div>
-                                </div>
-                                <div className="space-y-3">
-                                    <div className="grid grid-cols-12 gap-2 px-2 text-[9px] font-bold text-slate-500 uppercase tracking-wider">
-                                        <div className="col-span-5">Amount Range (₹)</div>
-                                        <div className="col-span-3">P. Fee (₹)</div>
-                                        <div className="col-span-3">Comm (%)</div>
-                                        <div className="col-span-1"></div>
-                                    </div>
-                                    {poojaSlabs.map((slab, i) => (
-                                        <div key={i} className="group relative flex items-center gap-2 p-2 bg-slate-50/50 rounded-lg border border-slate-200 transition-all hover:border-primary/30">
-                                            <div className="grid grid-cols-12 gap-2 flex-1 items-center">
-                                                <div className="col-span-5 flex items-center gap-1">
-                                                    <Input 
-                                                        type="number" 
-                                                        value={slab.minAmount} 
-                                                        onChange={e => {
-                                                            const newSlabs = [...poojaSlabs];
-                                                            newSlabs[i].minAmount = parseFloat(e.target.value) || 0;
-                                                            setPoojaSlabs(newSlabs);
-                                                        }}
-                                                        className="h-8 text-[11px] px-1.5"
-                                                        placeholder="Min"
-                                                        disabled={poojaRateType === "DEFAULT"}
-                                                    />
-                                                    <span className="text-slate-400 font-bold">-</span>
-                                                    <Input 
-                                                        type="number" 
-                                                        value={slab.maxAmount || ""} 
-                                                        onChange={e => {
-                                                            const newSlabs = [...poojaSlabs];
-                                                            newSlabs[i].maxAmount = e.target.value ? parseFloat(e.target.value) : null;
-                                                            setPoojaSlabs(newSlabs);
-                                                        }}
-                                                        placeholder="Max"
-                                                        className="h-8 text-[11px] px-1.5"
-                                                        disabled={poojaRateType === "DEFAULT"}
-                                                    />
-                                                </div>
-                                                <div className="col-span-3">
-                                                    <Input 
-                                                        type="number" 
-                                                        value={slab.platformFee} 
-                                                        onChange={e => {
-                                                            const newSlabs = [...poojaSlabs];
-                                                            newSlabs[i].platformFee = parseFloat(e.target.value) || 0;
-                                                            setPoojaSlabs(newSlabs);
-                                                        }}
-                                                        className="h-8 text-[11px] px-1.5"
-                                                        disabled={poojaRateType === "DEFAULT"}
-                                                    />
-                                                </div>
-                                                <div className="col-span-4 flex items-center gap-1">
-                                                    <Input 
-                                                        type="number" 
-                                                        value={slab.percentage} 
-                                                        onChange={e => {
-                                                            const newSlabs = [...poojaSlabs];
-                                                            const val = parseFloat(e.target.value);
-                                                            newSlabs[i].percentage = isNaN(val) ? 0 : val;
-                                                            setPoojaSlabs(newSlabs);
-                                                        }}
-                                                        className="h-8 text-[11px] px-1.5"
-                                                        disabled={poojaRateType === "DEFAULT"}
-                                                    />
-                                                    <span className="text-[10px] text-slate-500 font-bold">%</span>
-                                                </div>
-                                            </div>
-                                            {poojaRateType === 'CUSTOM' && (
-                                                <Button 
-                                                    type="button" 
-                                                    variant="ghost" 
-                                                    size="icon" 
-                                                    className="h-6 w-6 text-destructive opacity-0 group-hover:opacity-100 transition-opacity" 
-                                                    onClick={() => setPoojaSlabs(prev => prev.filter((_, idx) => idx !== i))}
-                                                >
-                                                    <Trash2 className="w-3.5 h-3.5" />
-                                                </Button>
-                                            )}
-                                        </div>
-                                    ))}
-                                    {poojaRateType === 'CUSTOM' && (
-                                        <Button 
-                                            type="button" 
-                                            variant="outline" 
-                                            size="sm" 
-                                            className="w-full border-dashed text-[10px] h-8 bg-orange-50/30 hover:bg-orange-50 border-orange-200 text-orange-600"
-                                            onClick={() => setPoojaSlabs([...poojaSlabs, { minAmount: 0, maxAmount: null, platformFee: 0, percentage: 0 }])}
-                                        >
-                                            <Plus className="w-3 h-3 mr-1" /> Add Custom Slab
-                                        </Button>
-                                    )}
-                                </div>
+                            {/* Online / Offline Tab Switcher */}
+                            <div className="inline-flex p-1 bg-slate-100 rounded-xl border border-slate-200">
+                                <button
+                                    type="button"
+                                    onClick={() => setFormCommTab("online")}
+                                    className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                                        formCommTab === "online"
+                                            ? "bg-white text-slate-900 shadow-sm"
+                                            : "text-slate-500 hover:text-slate-900"
+                                    }`}
+                                >
+                                    🌐 Online Commission
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setFormCommTab("offline")}
+                                    className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                                        formCommTab === "offline"
+                                            ? "bg-white text-slate-900 shadow-sm"
+                                            : "text-slate-500 hover:text-slate-900"
+                                    }`}
+                                >
+                                    🏢 Offline Commission
+                                </button>
                             </div>
                         </div>
+
+                        {formCommTab === "online" ? (
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                {/* Online Pooja Commission */}
+                                <div className="space-y-4 p-4 rounded-xl border bg-slate-50/50">
+                                    <div className="flex items-center justify-between">
+                                        <Label className="text-sm font-bold flex items-center gap-1.5">
+                                            Pooja Commission
+                                            <Badge variant={poojaRateType === 'CUSTOM' ? 'default' : 'secondary'} className="text-[9px] px-1.5 py-0.5 rounded-full">
+                                                {poojaRateType === 'CUSTOM' ? 'CUSTOM' : 'GLOBAL'}
+                                            </Badge>
+                                        </Label>
+                                        <div className="flex items-center gap-2 bg-slate-100 p-1 rounded-lg border">
+                                            <span className={`text-[9px] font-bold ${poojaRateType === "DEFAULT" ? "text-primary" : "text-muted-foreground"}`}>DEFAULT</span>
+                                            <Switch
+                                                checked={poojaRateType === "CUSTOM"}
+                                                onCheckedChange={handlePoojaRateTypeChange}
+                                            />
+                                            <span className={`text-[9px] font-bold ${poojaRateType === "CUSTOM" ? "text-orange-600" : "text-muted-foreground"}`}>CUSTOM</span>
+                                        </div>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <div className="grid grid-cols-12 gap-1 text-[9px] font-bold text-slate-500 uppercase">
+                                            <div className="col-span-5">Range (₹)</div>
+                                            <div className="col-span-3">Fee (₹)</div>
+                                            <div className="col-span-3">%</div>
+                                            <div className="col-span-1"></div>
+                                        </div>
+                                        {poojaSlabs.map((slab, i) => (
+                                            <div key={i} className="flex items-center gap-1">
+                                                <div className="grid grid-cols-12 gap-1 flex-1 items-center">
+                                                    <div className="col-span-5 flex items-center gap-0.5">
+                                                        <Input type="number" value={slab.minAmount} onChange={e => { const n = [...poojaSlabs]; n[i].minAmount = parseFloat(e.target.value) || 0; setPoojaSlabs(n); }} className="h-7 text-[10px] px-1" disabled={poojaRateType === "DEFAULT"} />
+                                                        <span className="text-slate-400 font-bold">-</span>
+                                                        <Input type="number" value={slab.maxAmount || ""} onChange={e => { const n = [...poojaSlabs]; n[i].maxAmount = e.target.value ? parseFloat(e.target.value) : null; setPoojaSlabs(n); }} placeholder="∞" className="h-7 text-[10px] px-1" disabled={poojaRateType === "DEFAULT"} />
+                                                    </div>
+                                                    <div className="col-span-3">
+                                                        <Input type="number" value={slab.platformFee} onChange={e => { const n = [...poojaSlabs]; n[i].platformFee = parseFloat(e.target.value) || 0; setPoojaSlabs(n); }} className="h-7 text-[10px] px-1" disabled={poojaRateType === "DEFAULT"} />
+                                                    </div>
+                                                    <div className="col-span-4 flex items-center gap-0.5">
+                                                        <Input type="number" value={slab.percentage} onChange={e => { const n = [...poojaSlabs]; const val = parseFloat(e.target.value); n[i].percentage = isNaN(val) ? 0 : val; setPoojaSlabs(n); }} className="h-7 text-[10px] px-1" disabled={poojaRateType === "DEFAULT"} />
+                                                        <span className="text-[9px] text-slate-500 font-bold">%</span>
+                                                    </div>
+                                                </div>
+                                                {poojaRateType === 'CUSTOM' && (
+                                                    <Button type="button" variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => setPoojaSlabs(prev => prev.filter((_, idx) => idx !== i))}>
+                                                        <Trash2 className="w-3 h-3" />
+                                                    </Button>
+                                                )}
+                                            </div>
+                                        ))}
+                                        {poojaRateType === 'CUSTOM' && (
+                                            <Button type="button" variant="outline" size="sm" className="w-full text-[10px] h-7 border-dashed" onClick={() => setPoojaSlabs([...poojaSlabs, { minAmount: 0, maxAmount: null, platformFee: 0, percentage: 0 }])}>
+                                                <Plus className="w-3 h-3 mr-1" /> Add Slab
+                                            </Button>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Online Marketplace Commission */}
+                                <div className="space-y-4 p-4 rounded-xl border bg-slate-50/50">
+                                    <div className="flex items-center justify-between">
+                                        <Label className="text-sm font-bold flex items-center gap-1.5">
+                                            Marketplace
+                                            <Badge variant={marketplaceRateType === 'CUSTOM' ? 'default' : 'secondary'} className="text-[9px] px-1.5 py-0.5 rounded-full">
+                                                {marketplaceRateType === 'CUSTOM' ? 'CUSTOM' : 'GLOBAL'}
+                                            </Badge>
+                                        </Label>
+                                        <div className="flex items-center gap-2 bg-slate-100 p-1 rounded-lg border">
+                                            <span className={`text-[9px] font-bold ${marketplaceRateType === "DEFAULT" ? "text-primary" : "text-muted-foreground"}`}>DEFAULT</span>
+                                            <Switch
+                                                checked={marketplaceRateType === "CUSTOM"}
+                                                onCheckedChange={handleMarketplaceRateTypeChange}
+                                            />
+                                            <span className={`text-[9px] font-bold ${marketplaceRateType === "CUSTOM" ? "text-orange-600" : "text-muted-foreground"}`}>CUSTOM</span>
+                                        </div>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <div className="grid grid-cols-12 gap-1 text-[9px] font-bold text-slate-500 uppercase">
+                                            <div className="col-span-5">Range (₹)</div>
+                                            <div className="col-span-3">Fee (₹)</div>
+                                            <div className="col-span-3">%</div>
+                                            <div className="col-span-1"></div>
+                                        </div>
+                                        {marketplaceSlabs.map((slab, i) => (
+                                            <div key={i} className="flex items-center gap-1">
+                                                <div className="grid grid-cols-12 gap-1 flex-1 items-center">
+                                                    <div className="col-span-5 flex items-center gap-0.5">
+                                                        <Input type="number" value={slab.minAmount} onChange={e => { const n = [...marketplaceSlabs]; n[i].minAmount = parseFloat(e.target.value) || 0; setMarketplaceSlabs(n); }} className="h-7 text-[10px] px-1" disabled={marketplaceRateType === "DEFAULT"} />
+                                                        <span className="text-slate-400 font-bold">-</span>
+                                                        <Input type="number" value={slab.maxAmount || ""} onChange={e => { const n = [...marketplaceSlabs]; n[i].maxAmount = e.target.value ? parseFloat(e.target.value) : null; setMarketplaceSlabs(n); }} placeholder="∞" className="h-7 text-[10px] px-1" disabled={marketplaceRateType === "DEFAULT"} />
+                                                    </div>
+                                                    <div className="col-span-3">
+                                                        <Input type="number" value={slab.platformFee} onChange={e => { const n = [...marketplaceSlabs]; n[i].platformFee = parseFloat(e.target.value) || 0; setMarketplaceSlabs(n); }} className="h-7 text-[10px] px-1" disabled={marketplaceRateType === "DEFAULT"} />
+                                                    </div>
+                                                    <div className="col-span-4 flex items-center gap-0.5">
+                                                        <Input type="number" value={slab.percentage} onChange={e => { const n = [...marketplaceSlabs]; const val = parseFloat(e.target.value); n[i].percentage = isNaN(val) ? 0 : val; setMarketplaceSlabs(n); }} className="h-7 text-[10px] px-1" disabled={marketplaceRateType === "DEFAULT"} />
+                                                        <span className="text-[9px] text-slate-500 font-bold">%</span>
+                                                    </div>
+                                                </div>
+                                                {marketplaceRateType === 'CUSTOM' && (
+                                                    <Button type="button" variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => setMarketplaceSlabs(prev => prev.filter((_, idx) => idx !== i))}>
+                                                        <Trash2 className="w-3 h-3" />
+                                                    </Button>
+                                                )}
+                                            </div>
+                                        ))}
+                                        {marketplaceRateType === 'CUSTOM' && (
+                                            <Button type="button" variant="outline" size="sm" className="w-full text-[10px] h-7 border-dashed" onClick={() => setMarketplaceSlabs([...marketplaceSlabs, { minAmount: 0, maxAmount: null, platformFee: 0, percentage: 0 }])}>
+                                                <Plus className="w-3 h-3 mr-1" /> Add Slab
+                                            </Button>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Online Donation Commission */}
+                                <div className="space-y-4 p-4 rounded-xl border bg-slate-50/50">
+                                    <div className="flex items-center justify-between">
+                                        <Label className="text-sm font-bold flex items-center gap-1.5">
+                                            Donation
+                                            <Badge variant={donationRateType === 'CUSTOM' ? 'default' : 'secondary'} className="text-[9px] px-1.5 py-0.5 rounded-full">
+                                                {donationRateType === 'CUSTOM' ? 'CUSTOM' : 'GLOBAL'}
+                                            </Badge>
+                                        </Label>
+                                        <div className="flex items-center gap-2 bg-slate-100 p-1 rounded-lg border">
+                                            <span className={`text-[9px] font-bold ${donationRateType === "DEFAULT" ? "text-primary" : "text-muted-foreground"}`}>DEFAULT</span>
+                                            <Switch
+                                                checked={donationRateType === "CUSTOM"}
+                                                onCheckedChange={handleDonationRateTypeChange}
+                                            />
+                                            <span className={`text-[9px] font-bold ${donationRateType === "CUSTOM" ? "text-orange-600" : "text-muted-foreground"}`}>CUSTOM</span>
+                                        </div>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <div className="grid grid-cols-12 gap-1 text-[9px] font-bold text-slate-500 uppercase">
+                                            <div className="col-span-5">Range (₹)</div>
+                                            <div className="col-span-3">Fee (₹)</div>
+                                            <div className="col-span-3">%</div>
+                                            <div className="col-span-1"></div>
+                                        </div>
+                                        {donationSlabs.map((slab, i) => (
+                                            <div key={i} className="flex items-center gap-1">
+                                                <div className="grid grid-cols-12 gap-1 flex-1 items-center">
+                                                    <div className="col-span-5 flex items-center gap-0.5">
+                                                        <Input type="number" value={slab.minAmount} onChange={e => { const n = [...donationSlabs]; n[i].minAmount = parseFloat(e.target.value) || 0; setDonationSlabs(n); }} className="h-7 text-[10px] px-1" disabled={donationRateType === "DEFAULT"} />
+                                                        <span className="text-slate-400 font-bold">-</span>
+                                                        <Input type="number" value={slab.maxAmount || ""} onChange={e => { const n = [...donationSlabs]; n[i].maxAmount = e.target.value ? parseFloat(e.target.value) : null; setDonationSlabs(n); }} placeholder="∞" className="h-7 text-[10px] px-1" disabled={donationRateType === "DEFAULT"} />
+                                                    </div>
+                                                    <div className="col-span-3">
+                                                        <Input type="number" value={slab.platformFee} onChange={e => { const n = [...donationSlabs]; n[i].platformFee = parseFloat(e.target.value) || 0; setDonationSlabs(n); }} className="h-7 text-[10px] px-1" disabled={donationRateType === "DEFAULT"} />
+                                                    </div>
+                                                    <div className="col-span-4 flex items-center gap-0.5">
+                                                        <Input type="number" value={slab.percentage} onChange={e => { const n = [...donationSlabs]; const val = parseFloat(e.target.value); n[i].percentage = isNaN(val) ? 0 : val; setDonationSlabs(n); }} className="h-7 text-[10px] px-1" disabled={donationRateType === "DEFAULT"} />
+                                                        <span className="text-[9px] text-slate-500 font-bold">%</span>
+                                                    </div>
+                                                </div>
+                                                {donationRateType === 'CUSTOM' && (
+                                                    <Button type="button" variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => setDonationSlabs(prev => prev.filter((_, idx) => idx !== i))}>
+                                                        <Trash2 className="w-3 h-3" />
+                                                    </Button>
+                                                )}
+                                            </div>
+                                        ))}
+                                        {donationRateType === 'CUSTOM' && (
+                                            <Button type="button" variant="outline" size="sm" className="w-full text-[10px] h-7 border-dashed" onClick={() => setDonationSlabs([...donationSlabs, { minAmount: 0, maxAmount: null, platformFee: 0, percentage: 0 }])}>
+                                                <Plus className="w-3 h-3 mr-1" /> Add Slab
+                                            </Button>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                {/* Offline Pooja Commission */}
+                                <div className="space-y-4 p-4 rounded-xl border bg-slate-50/50">
+                                    <div className="flex items-center justify-between">
+                                        <Label className="text-sm font-bold flex items-center gap-1.5">
+                                            Offline Pooja
+                                            <Badge variant={offlinePoojaRateType === 'CUSTOM' ? 'default' : 'secondary'} className="text-[9px] px-1.5 py-0.5 rounded-full">
+                                                {offlinePoojaRateType === 'CUSTOM' ? 'CUSTOM' : 'GLOBAL'}
+                                            </Badge>
+                                        </Label>
+                                        <div className="flex items-center gap-2 bg-slate-100 p-1 rounded-lg border">
+                                            <span className={`text-[9px] font-bold ${offlinePoojaRateType === "DEFAULT" ? "text-primary" : "text-muted-foreground"}`}>DEFAULT</span>
+                                            <Switch
+                                                checked={offlinePoojaRateType === "CUSTOM"}
+                                                onCheckedChange={handleOfflinePoojaRateTypeChange}
+                                            />
+                                            <span className={`text-[9px] font-bold ${offlinePoojaRateType === "CUSTOM" ? "text-orange-600" : "text-muted-foreground"}`}>CUSTOM</span>
+                                        </div>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <div className="grid grid-cols-12 gap-1 text-[9px] font-bold text-slate-500 uppercase">
+                                            <div className="col-span-5">Range (₹)</div>
+                                            <div className="col-span-3">Fee (₹)</div>
+                                            <div className="col-span-3">%</div>
+                                            <div className="col-span-1"></div>
+                                        </div>
+                                        {offlinePoojaSlabs.map((slab, i) => (
+                                            <div key={i} className="flex items-center gap-1">
+                                                <div className="grid grid-cols-12 gap-1 flex-1 items-center">
+                                                    <div className="col-span-5 flex items-center gap-0.5">
+                                                        <Input type="number" value={slab.minAmount} onChange={e => { const n = [...offlinePoojaSlabs]; n[i].minAmount = parseFloat(e.target.value) || 0; setOfflinePoojaSlabs(n); }} className="h-7 text-[10px] px-1" disabled={offlinePoojaRateType === "DEFAULT"} />
+                                                        <span className="text-slate-400 font-bold">-</span>
+                                                        <Input type="number" value={slab.maxAmount || ""} onChange={e => { const n = [...offlinePoojaSlabs]; n[i].maxAmount = e.target.value ? parseFloat(e.target.value) : null; setOfflinePoojaSlabs(n); }} placeholder="∞" className="h-7 text-[10px] px-1" disabled={offlinePoojaRateType === "DEFAULT"} />
+                                                    </div>
+                                                    <div className="col-span-3">
+                                                        <Input type="number" value={slab.platformFee} onChange={e => { const n = [...offlinePoojaSlabs]; n[i].platformFee = parseFloat(e.target.value) || 0; setOfflinePoojaSlabs(n); }} className="h-7 text-[10px] px-1" disabled={offlinePoojaRateType === "DEFAULT"} />
+                                                    </div>
+                                                    <div className="col-span-4 flex items-center gap-0.5">
+                                                        <Input type="number" value={slab.percentage} onChange={e => { const n = [...offlinePoojaSlabs]; const val = parseFloat(e.target.value); n[i].percentage = isNaN(val) ? 0 : val; setOfflinePoojaSlabs(n); }} className="h-7 text-[10px] px-1" disabled={offlinePoojaRateType === "DEFAULT"} />
+                                                        <span className="text-[9px] text-slate-500 font-bold">%</span>
+                                                    </div>
+                                                </div>
+                                                {offlinePoojaRateType === 'CUSTOM' && (
+                                                    <Button type="button" variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => setOfflinePoojaSlabs(prev => prev.filter((_, idx) => idx !== i))}>
+                                                        <Trash2 className="w-3 h-3" />
+                                                    </Button>
+                                                )}
+                                            </div>
+                                        ))}
+                                        {offlinePoojaRateType === 'CUSTOM' && (
+                                            <Button type="button" variant="outline" size="sm" className="w-full text-[10px] h-7 border-dashed" onClick={() => setOfflinePoojaSlabs([...offlinePoojaSlabs, { minAmount: 0, maxAmount: null, platformFee: 0, percentage: 0 }])}>
+                                                <Plus className="w-3 h-3 mr-1" /> Add Slab
+                                            </Button>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Offline Marketplace Commission */}
+                                <div className="space-y-4 p-4 rounded-xl border bg-slate-50/50">
+                                    <div className="flex items-center justify-between">
+                                        <Label className="text-sm font-bold flex items-center gap-1.5">
+                                            Offline Market
+                                            <Badge variant={offlineMarketplaceRateType === 'CUSTOM' ? 'default' : 'secondary'} className="text-[9px] px-1.5 py-0.5 rounded-full">
+                                                {offlineMarketplaceRateType === 'CUSTOM' ? 'CUSTOM' : 'GLOBAL'}
+                                            </Badge>
+                                        </Label>
+                                        <div className="flex items-center gap-2 bg-slate-100 p-1 rounded-lg border">
+                                            <span className={`text-[9px] font-bold ${offlineMarketplaceRateType === "DEFAULT" ? "text-primary" : "text-muted-foreground"}`}>DEFAULT</span>
+                                            <Switch
+                                                checked={offlineMarketplaceRateType === "CUSTOM"}
+                                                onCheckedChange={handleOfflineMarketplaceRateTypeChange}
+                                            />
+                                            <span className={`text-[9px] font-bold ${offlineMarketplaceRateType === "CUSTOM" ? "text-orange-600" : "text-muted-foreground"}`}>CUSTOM</span>
+                                        </div>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <div className="grid grid-cols-12 gap-1 text-[9px] font-bold text-slate-500 uppercase">
+                                            <div className="col-span-5">Range (₹)</div>
+                                            <div className="col-span-3">Fee (₹)</div>
+                                            <div className="col-span-3">%</div>
+                                            <div className="col-span-1"></div>
+                                        </div>
+                                        {offlineMarketplaceSlabs.map((slab, i) => (
+                                            <div key={i} className="flex items-center gap-1">
+                                                <div className="grid grid-cols-12 gap-1 flex-1 items-center">
+                                                    <div className="col-span-5 flex items-center gap-0.5">
+                                                        <Input type="number" value={slab.minAmount} onChange={e => { const n = [...offlineMarketplaceSlabs]; n[i].minAmount = parseFloat(e.target.value) || 0; setOfflineMarketplaceSlabs(n); }} className="h-7 text-[10px] px-1" disabled={offlineMarketplaceRateType === "DEFAULT"} />
+                                                        <span className="text-slate-400 font-bold">-</span>
+                                                        <Input type="number" value={slab.maxAmount || ""} onChange={e => { const n = [...offlineMarketplaceSlabs]; n[i].maxAmount = e.target.value ? parseFloat(e.target.value) : null; setOfflineMarketplaceSlabs(n); }} placeholder="∞" className="h-7 text-[10px] px-1" disabled={offlineMarketplaceRateType === "DEFAULT"} />
+                                                    </div>
+                                                    <div className="col-span-3">
+                                                        <Input type="number" value={slab.platformFee} onChange={e => { const n = [...offlineMarketplaceSlabs]; n[i].platformFee = parseFloat(e.target.value) || 0; setOfflineMarketplaceSlabs(n); }} className="h-7 text-[10px] px-1" disabled={offlineMarketplaceRateType === "DEFAULT"} />
+                                                    </div>
+                                                    <div className="col-span-4 flex items-center gap-0.5">
+                                                        <Input type="number" value={slab.percentage} onChange={e => { const n = [...offlineMarketplaceSlabs]; const val = parseFloat(e.target.value); n[i].percentage = isNaN(val) ? 0 : val; setOfflineMarketplaceSlabs(n); }} className="h-7 text-[10px] px-1" disabled={offlineMarketplaceRateType === "DEFAULT"} />
+                                                        <span className="text-[9px] text-slate-500 font-bold">%</span>
+                                                    </div>
+                                                </div>
+                                                {offlineMarketplaceRateType === 'CUSTOM' && (
+                                                    <Button type="button" variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => setOfflineMarketplaceSlabs(prev => prev.filter((_, idx) => idx !== i))}>
+                                                        <Trash2 className="w-3 h-3" />
+                                                    </Button>
+                                                )}
+                                            </div>
+                                        ))}
+                                        {offlineMarketplaceRateType === 'CUSTOM' && (
+                                            <Button type="button" variant="outline" size="sm" className="w-full text-[10px] h-7 border-dashed" onClick={() => setOfflineMarketplaceSlabs([...offlineMarketplaceSlabs, { minAmount: 0, maxAmount: null, platformFee: 0, percentage: 0 }])}>
+                                                <Plus className="w-3 h-3 mr-1" /> Add Slab
+                                            </Button>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Offline Donation Commission */}
+                                <div className="space-y-4 p-4 rounded-xl border bg-slate-50/50">
+                                    <div className="flex items-center justify-between">
+                                        <Label className="text-sm font-bold flex items-center gap-1.5">
+                                            Offline Donation
+                                            <Badge variant={offlineDonationRateType === 'CUSTOM' ? 'default' : 'secondary'} className="text-[9px] px-1.5 py-0.5 rounded-full">
+                                                {offlineDonationRateType === 'CUSTOM' ? 'CUSTOM' : 'GLOBAL'}
+                                            </Badge>
+                                        </Label>
+                                        <div className="flex items-center gap-2 bg-slate-100 p-1 rounded-lg border">
+                                            <span className={`text-[9px] font-bold ${offlineDonationRateType === "DEFAULT" ? "text-primary" : "text-muted-foreground"}`}>DEFAULT</span>
+                                            <Switch
+                                                checked={offlineDonationRateType === "CUSTOM"}
+                                                onCheckedChange={handleOfflineDonationRateTypeChange}
+                                            />
+                                            <span className={`text-[9px] font-bold ${offlineDonationRateType === "CUSTOM" ? "text-orange-600" : "text-muted-foreground"}`}>CUSTOM</span>
+                                        </div>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <div className="grid grid-cols-12 gap-1 text-[9px] font-bold text-slate-500 uppercase">
+                                            <div className="col-span-5">Range (₹)</div>
+                                            <div className="col-span-3">Fee (₹)</div>
+                                            <div className="col-span-3">%</div>
+                                            <div className="col-span-1"></div>
+                                        </div>
+                                        {offlineDonationSlabs.map((slab, i) => (
+                                            <div key={i} className="flex items-center gap-1">
+                                                <div className="grid grid-cols-12 gap-1 flex-1 items-center">
+                                                    <div className="col-span-5 flex items-center gap-0.5">
+                                                        <Input type="number" value={slab.minAmount} onChange={e => { const n = [...offlineDonationSlabs]; n[i].minAmount = parseFloat(e.target.value) || 0; setOfflineDonationSlabs(n); }} className="h-7 text-[10px] px-1" disabled={offlineDonationRateType === "DEFAULT"} />
+                                                        <span className="text-slate-400 font-bold">-</span>
+                                                        <Input type="number" value={slab.maxAmount || ""} onChange={e => { const n = [...offlineDonationSlabs]; n[i].maxAmount = e.target.value ? parseFloat(e.target.value) : null; setOfflineDonationSlabs(n); }} placeholder="∞" className="h-7 text-[10px] px-1" disabled={offlineDonationRateType === "DEFAULT"} />
+                                                    </div>
+                                                    <div className="col-span-3">
+                                                        <Input type="number" value={slab.platformFee} onChange={e => { const n = [...offlineDonationSlabs]; n[i].platformFee = parseFloat(e.target.value) || 0; setOfflineDonationSlabs(n); }} className="h-7 text-[10px] px-1" disabled={offlineDonationRateType === "DEFAULT"} />
+                                                    </div>
+                                                    <div className="col-span-4 flex items-center gap-0.5">
+                                                        <Input type="number" value={slab.percentage} onChange={e => { const n = [...offlineDonationSlabs]; const val = parseFloat(e.target.value); n[i].percentage = isNaN(val) ? 0 : val; setOfflineDonationSlabs(n); }} className="h-7 text-[10px] px-1" disabled={offlineDonationRateType === "DEFAULT"} />
+                                                        <span className="text-[9px] text-slate-500 font-bold">%</span>
+                                                    </div>
+                                                </div>
+                                                {offlineDonationRateType === 'CUSTOM' && (
+                                                    <Button type="button" variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => setOfflineDonationSlabs(prev => prev.filter((_, idx) => idx !== i))}>
+                                                        <Trash2 className="w-3 h-3" />
+                                                    </Button>
+                                                )}
+                                            </div>
+                                        ))}
+                                        {offlineDonationRateType === 'CUSTOM' && (
+                                            <Button type="button" variant="outline" size="sm" className="w-full text-[10px] h-7 border-dashed" onClick={() => setOfflineDonationSlabs([...offlineDonationSlabs, { minAmount: 0, maxAmount: null, platformFee: 0, percentage: 0 }])}>
+                                                <Plus className="w-3 h-3 mr-1" /> Add Slab
+                                            </Button>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
                     </div>
 
                     <div className="flex justify-end pt-8">

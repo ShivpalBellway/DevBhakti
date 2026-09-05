@@ -38,7 +38,8 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { fetchMandalProducts, deleteMandalProduct } from "@/api/mandalAdminController";
+import * as XLSX from 'xlsx';
+import { fetchMandalProducts, deleteMandalProduct, createMandalProduct, createBulkMandalProducts } from "@/api/mandalAdminController";
 import { fetchCategories } from "@/api/templeAdminController";
 import { useToast } from "@/hooks/use-toast";
 import { BASE_URL } from "@/config/apiConfig";
@@ -120,6 +121,118 @@ export default function MandalProductsPage() {
         router.push(`/mandals/dashboard/products/${product.id}/view`);
     };
 
+    const downloadTemplate = () => {
+        const template = [
+            {
+                "Name_EN": "Brass Pooja Thali",
+                "Name_HI": "पीतल पूजा थाली",
+                "Name_MR": "पितळी पूजा ताट",
+                "Category": "Pooja Items",
+                "Description_EN": "High quality brass pooja thali set.",
+                "Description_HI": "उच्च गुणवत्ता वाली पीतल पूजा थाली सेट।",
+                "Description_MR": "उच्च दर्जाचा पितळी पूजा ताट संच.",
+                "Variant_Name": "Standard",
+                "Price": 499,
+                "Stock": 50,
+                "SKU": "BPT-001"
+            }
+        ];
+        const ws = XLSX.utils.json_to_sheet(template);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Product Template");
+        XLSX.writeFile(wb, "Mandal_Product_Import_Template.xlsx");
+    };
+
+    const handleExportExcel = () => {
+        const exportData = products.map(p => ({
+            "ID": p.id,
+            "Name_EN": parseLocalizedValue(p.name, 'en'),
+            "Name_HI": parseLocalizedValue(p.name, 'hi'),
+            "Name_MR": parseLocalizedValue(p.name, 'mr'),
+            "Category": parseLocalizedValue(p.categoryObj?.name, 'en') || "",
+            "Status": p.status,
+            "Description_EN": parseLocalizedValue(p.description, 'en'),
+            "Variants_Count": p.variants?.length || 0,
+            "Created_At": p.createdAt
+        }));
+        const ws = XLSX.utils.json_to_sheet(exportData);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "My Products");
+        XLSX.writeFile(wb, `My_Products_Export_${new Date().toISOString().split('T')[0]}.xlsx`);
+    };
+
+    const handleImportExcel = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = async (evt) => {
+            try {
+                const bstr = evt.target?.result;
+                const wb = XLSX.read(bstr, { type: 'binary' });
+                const wsname = wb.SheetNames[0];
+                const ws = wb.Sheets[wsname];
+                const data = XLSX.utils.sheet_to_json(ws) as any[];
+
+                if (data.length === 0) {
+                    toast({ title: "Error", description: "Excel file is empty", variant: "destructive" });
+                    return;
+                }
+
+                const mappedProducts = data.map((row: any, i: number) => {
+                    let catId = categories[0]?.id || "";
+                    if (row.Category) {
+                        const foundCat = categories.find(c => parseLocalizedValue(c.name).toLowerCase() === String(row.Category).toLowerCase());
+                        if (foundCat) catId = foundCat.id;
+                    }
+                    
+                    return {
+                        name_en: String(row.Name_EN || "").trim(),
+                        name_hi: String(row.Name_HI || "").trim(),
+                        name_mr: String(row.Name_MR || "").trim(),
+                        description_en: String(row.Description_EN || "").trim(),
+                        description_hi: String(row.Description_HI || "").trim(),
+                        description_mr: String(row.Description_MR || "").trim(),
+                        category: catId,
+                        variants: [{
+                            name: String(row.Variant_Name || "Standard"),
+                            price: Number(row.Price) || 0,
+                            stock: Number(row.Stock) || 0,
+                            sku: String(row.SKU || `SKU-${Date.now()}-${i}`)
+                        }]
+                    };
+                });
+
+                try {
+                    const result = await createBulkMandalProducts({ products: mappedProducts });
+                    const { successCount, failCount, errors } = result.data;
+
+                    if (failCount > 0) {
+                        toast({
+                            title: "Import Partially Failed",
+                            description: `Success: ${successCount}, Failed: ${failCount}. Check console or fix these: ${errors.slice(0, 3).join(", ")}${errors.length > 3 ? "..." : ""}`,
+                            variant: "destructive"
+                        });
+                        console.error('Bulk Import Errors:', errors);
+                    } else {
+                        toast({
+                            title: "Import Successful",
+                            description: `Successfully imported ${successCount} products.`,
+                            variant: "success"
+                        });
+                    }
+                    loadProducts();
+                } catch (bulkErr: any) {
+                    toast({ title: "Import Failed", description: bulkErr.response?.data?.message || "Failed to process bulk upload.", variant: "destructive" });
+                }
+            } catch (error) {
+                toast({ title: "Import Failed", description: "Failed to process Excel file", variant: "destructive" });
+            }
+        };
+        reader.readAsBinaryString(file);
+        e.target.value = '';
+    };
+
     const filteredProducts = products;
 
     const getStatusBadge = (status: string) => {
@@ -148,6 +261,39 @@ export default function MandalProductsPage() {
                     </p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2 sm:gap-3 w-full md:w-auto">
+                    <Button
+                        onClick={downloadTemplate}
+                        variant="outline"
+                        className="flex-1 md:flex-initial border-[#7b4623]/20 hover:bg-[#7b4623]/5 text-xs h-9"
+                    >
+                        <FileText className="w-4 h-4 mr-2" />
+                        Template
+                    </Button>
+                    <div className="relative flex-1 md:flex-initial">
+                        <input
+                            type="file"
+                            accept=".xlsx, .xls"
+                            className="hidden"
+                            id="import-excel"
+                            onChange={handleImportExcel}
+                        />
+                        <Button
+                            onClick={() => document.getElementById('import-excel')?.click()}
+                            variant="outline"
+                            className="w-full border-[#7b4623]/20 hover:bg-[#7b4623]/5 text-xs h-9"
+                        >
+                            <Upload className="w-4 h-4 mr-2" />
+                            Import Excel
+                        </Button>
+                    </div>
+                    <Button
+                        onClick={handleExportExcel}
+                        variant="outline"
+                        className="flex-1 md:flex-initial border-[#7b4623]/20 hover:bg-[#7b4623]/5 text-xs h-9"
+                    >
+                        <Download className="w-4 h-4 mr-2" />
+                        Export All
+                    </Button>
                     <Button
                         onClick={() => router.push('/mandals/dashboard/products/create')}
                         className="bg-[#7b4623] hover:bg-[#5d351a] text-white shadow-lg shadow-primary/20 transition-all hover:scale-105 flex-1 md:flex-initial"

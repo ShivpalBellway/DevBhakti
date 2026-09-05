@@ -37,7 +37,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { fetchMyMandalPoojas, deleteMandalPooja, toggleMandalPoojaStatus } from "@/api/mandalAdminController";
+import { fetchMyMandalPoojas, deleteMandalPooja, toggleMandalPoojaStatus, createBulkMandalPoojas } from "@/api/mandalAdminController";
 import { fetchPoojaCategories } from "@/api/templeAdminController";
 import { useToast } from "@/hooks/use-toast";
 import { useAdminAuth } from "@/hooks/use-admin-auth";
@@ -132,6 +132,96 @@ export default function MandalPoojasListPage() {
         return `${API_URL.replace('/api', '')}${path}`;
     };
 
+    const downloadTemplate = () => {
+        const template = [
+            {
+                "Name_EN": "Ganesh Yagya",
+                "Name_HI": "गणेश यज्ञ",
+                "Name_MR": "गणेश याग",
+                "Price": 1100,
+                "Category": "Ganpati Puja",
+                "Time": "2 Hours",
+                "Status": "TRUE",
+                "About_EN": "Special Ganesh Yagya ritual.",
+                "About_HI": "विशेष गणेश यज्ञ अनुष्ठान।",
+                "About_MR": "विशेष गणेश याग विधी."
+            }
+        ];
+        const ws = XLSX.utils.json_to_sheet(template);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Mandal Pooja Template");
+        XLSX.writeFile(wb, "Mandal_Pooja_Import_Template.xlsx");
+    };
+
+    const handleImportExcel = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = async (evt) => {
+            try {
+                const bstr = evt.target?.result;
+                const wb = XLSX.read(bstr, { type: 'binary' });
+                const wsname = wb.SheetNames[0];
+                const ws = wb.Sheets[wsname];
+                const data = XLSX.utils.sheet_to_json(ws) as any[];
+
+                if (data.length === 0) {
+                    toast({ title: "Error", description: "Excel file is empty", variant: "destructive" });
+                    return;
+                }
+
+                toast({ title: "Import Started", description: `Importing ${data.length} poojas...`, variant: "success" });
+
+                const mappedPoojas = data.map((row: any) => ({
+                    name_en: String(row.Name_EN || "").trim(),
+                    name_hi: String(row.Name_HI || "").trim(),
+                    name_mr: String(row.Name_MR || "").trim(),
+                    price: String(row.Price),
+                    category: String(row.Category || "").trim(),
+                    time: String(row.Time || "").trim(),
+                    about_en: String(row.About_EN || "").trim(),
+                    about_hi: String(row.About_HI || "").trim(),
+                    about_mr: String(row.About_MR || "").trim(),
+                    status: String(row.Status || "TRUE").toUpperCase() === "TRUE",
+                    description: [],
+                    benefits: [],
+                    bullets: [],
+                    packages: [{ name: "Single", description: "For 1 person", price: row.Price }],
+                    processSteps: [],
+                    faqs: []
+                }));
+
+                try {
+                    const result = await createBulkMandalPoojas({ poojas: mappedPoojas });
+                    const { successCount, failCount, errors } = result.data;
+
+                    if (failCount > 0) {
+                        toast({
+                            title: "Import Partially Failed",
+                            description: `Success: ${successCount}, Failed: ${failCount}. Check console or fix these: ${errors.slice(0, 3).join(", ")}${errors.length > 3 ? "..." : ""}`,
+                            variant: "destructive"
+                        });
+                        console.error('Bulk Import Errors:', errors);
+                    } else {
+                        toast({
+                            title: "Import Successful",
+                            description: `Successfully imported ${successCount} poojas.`,
+                            variant: "success"
+                        });
+                    }
+                    loadPoojas();
+                } catch (bulkErr: any) {
+                    toast({ title: "Import Failed", description: bulkErr.response?.data?.message || "Failed to process bulk upload.", variant: "destructive" });
+                }
+            } catch (error) {
+                toast({ title: "Import Failed", description: "Failed to process Excel file", variant: "destructive" });
+            }
+        };
+        reader.readAsBinaryString(file);
+        e.target.value = '';
+    };
+
     const handleExportExcel = () => {
         const exportData = poojas.map(p => ({
             "ID": p.id,
@@ -164,6 +254,39 @@ export default function MandalPoojasListPage() {
                     </p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2 sm:gap-3 w-full md:w-auto">
+                    <Button
+                        onClick={downloadTemplate}
+                        variant="outline"
+                        className="flex-1 md:flex-initial border-[#7b4623]/20 hover:bg-[#7b4623]/5 text-xs h-9"
+                    >
+                        <FileText className="w-4 h-4 mr-2" />
+                        Template
+                    </Button>
+                    <div className="relative flex-1 md:flex-initial">
+                        <input
+                            type="file"
+                            accept=".xlsx, .xls"
+                            className="hidden"
+                            id="import-excel"
+                            onChange={handleImportExcel}
+                        />
+                        <Button
+                            onClick={() => document.getElementById('import-excel')?.click()}
+                            variant="outline"
+                            className="w-full border-[#7b4623]/20 hover:bg-[#7b4623]/5 text-xs h-9"
+                        >
+                            <Upload className="w-4 h-4 mr-2" />
+                            Import Excel
+                        </Button>
+                    </div>
+                    <Button
+                        onClick={handleExportExcel}
+                        variant="outline"
+                        className="flex-1 md:flex-initial border-[#7b4623]/20 hover:bg-[#7b4623]/5 text-xs h-9"
+                    >
+                        <Download className="w-4 h-4 mr-2" />
+                        Export All
+                    </Button>
                     {hasPermission('poojas.create') && (
                         <Button
                             onClick={() => router.push('/mandals/dashboard/poojas/create')}

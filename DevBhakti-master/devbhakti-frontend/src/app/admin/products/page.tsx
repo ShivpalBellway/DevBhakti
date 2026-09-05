@@ -23,6 +23,7 @@ import {
   ChevronRight,
   Download,
   Upload,
+  Loader2,
 } from "lucide-react";
 import * as XLSX from 'xlsx';
 import {
@@ -447,36 +448,37 @@ function ProductsContent() {
           <p className="text-slate-600">{t("admin.products.list.desc")}</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          {/* <Button
+          <Button
             variant="outline"
             onClick={downloadTemplate}
             className="text-xs h-9"
           >
             <Download className="w-4 h-4 mr-2" />
             Template
-          </Button> */}
+          </Button>
 
-          {/* <div className="relative">
+          <div className="relative">
             <input
               type="file"
               accept=".xlsx, .xls"
               className="absolute inset-0 opacity-0 cursor-pointer"
               onChange={handleImportExcel}
+              disabled={isImporting}
             />
-            <Button variant="outline" className="text-xs h-9">
-              <Upload className="w-4 h-4 mr-2" />
-              Import
+            <Button variant="outline" className="text-xs h-9" disabled={isImporting}>
+              {isImporting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Upload className="w-4 h-4 mr-2" />}
+              Import Excel
             </Button>
-          </div> */}
+          </div>
 
-          {/* <Button
+          <Button
             variant="outline"
             onClick={handleExportExcel}
             className="text-xs h-9"
           >
             <Download className="w-4 h-4 mr-2" />
             Export All
-          </Button> */}
+          </Button>
 
           {hasPermission("products.create") && (
             <Button onClick={() => router.push('/admin/products/create')} className="bg-primary text-xs h-9">

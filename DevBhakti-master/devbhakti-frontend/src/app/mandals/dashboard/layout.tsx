@@ -123,6 +123,21 @@ const sidebarItems = [
         ]
     },
     {
+        label: "Bank Details add",
+        icon: CreditCard,
+        href: "/mandals/dashboard/bank",
+        permission: "finance.menu"
+    }, 
+
+
+
+    {
+        label: "Collection Reports",
+        icon: CreditCard,
+        href: "/mandals/dashboard/reports",
+        permission: "finance.menu"
+    },
+    {
         label: "Earnings & Settlement",
         icon: CreditCard,
         href: "/mandals/dashboard/finance",

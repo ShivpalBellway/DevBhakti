@@ -457,3 +457,28 @@ export const createOfflineTempleOrder = async (data: any) => {
     return response.data;
 };
 
+// Bulk Operations
+export const createBulkMyProducts = async (data: { products: any[] }) => {
+    const token = localStorage.getItem("token");
+    const response = await axios.post(`${API_URL}/temple-admin/products/bulk`, data, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+
+export const createBulkMyPoojas = async (data: { poojas: any[] }) => {
+    const token = localStorage.getItem("token");
+    const response = await axios.post(`${API_URL}/temple-admin/poojas/bulk`, data, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+
+export const createBulkMyEvents = async (data: { events: any[] }) => {
+    const token = localStorage.getItem("token");
+    const response = await axios.post(`${API_URL}/temple-admin/events/bulk`, data, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+

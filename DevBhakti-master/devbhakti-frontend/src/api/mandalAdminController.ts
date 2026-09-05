@@ -113,6 +113,15 @@ export const fetchMandalLedger = async () => {
     return response.data;
 };
 
+export const fetchMandalFinancialReport = async (params?: { period?: string; startDate?: string; endDate?: string }) => {
+    const token = localStorage.getItem("token");
+    const response = await axios.get(`${API_URL}/mandal-admin/finance/report`, {
+        headers: { Authorization: `Bearer ${token}` },
+        params
+    });
+    return response.data;
+};
+
 export const requestMandalWithdrawal = async (data: { amount: number; bankDetails: any }) => {
     const token = localStorage.getItem("token");
     const response = await axios.post(`${API_URL}/mandal-admin/finance/withdraw`, data, {
@@ -372,3 +381,29 @@ export const updateMandalOrderStatus = async (subOrderId: string, data: { status
     });
     return response.data;
 };
+
+// ─── Mandal Bulk Upload APIs ────────────────────────────────────────────────
+export const createBulkMandalProducts = async (data: any) => {
+    const token = localStorage.getItem("token");
+    const response = await axios.post(`${API_URL}/mandal-admin/products/bulk`, data, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+
+export const createBulkMandalPoojas = async (data: any) => {
+    const token = localStorage.getItem("token");
+    const response = await axios.post(`${API_URL}/mandal-admin/poojas/bulk`, data, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+
+export const createBulkMandalEvents = async (data: any) => {
+    const token = localStorage.getItem("token");
+    const response = await axios.post(`${API_URL}/mandal-admin/events/bulk`, data, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+

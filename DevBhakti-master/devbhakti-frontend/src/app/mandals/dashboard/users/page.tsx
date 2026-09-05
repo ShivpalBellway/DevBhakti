@@ -23,7 +23,8 @@ import {
     Clock,
     Share2,
     Copy,
-    Building2
+    Building2,
+    Download
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -41,6 +42,7 @@ import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { useDebounce } from "@/hooks/use-debounce";
 import { fetchMandalDonations, fetchMandalDonationStats } from "@/api/mandalAdminController";
+import * as XLSX from "xlsx";
 
 interface DevoteeGroup {
     key: string;
@@ -179,6 +181,38 @@ export default function MandalUsersPage() {
             (a, b) => new Date(b.lastDonationDate).getTime() - new Date(a.lastDonationDate).getTime()
         );
     }, [rawDonations]);
+
+    const handleExportExcel = async () => {
+        try {
+            if (devoteeGroups.length === 0) {
+                toast({ title: "No Data", description: "There are no devotees to export", variant: "destructive" });
+                return;
+            }
+
+            toast({ title: "Exporting...", description: "Preparing data for export" });
+
+            const exportData = devoteeGroups.map((d: any) => ({
+                "Name": d.donorName || "Anonymous",
+                "Phone": d.donorPhone || "N/A",
+                "Email": d.donorEmail || "N/A",
+                "Address": d.address || "N/A",
+                "Total Donations": d.donationCount,
+                "Total Amount (₹)": d.totalAmount,
+                "PAN Number": d.panNumber || "N/A",
+                "80G Required": d.is80GRequired ? "Yes" : "No",
+                "First Contribution": format(new Date(d.firstDonationDate), "dd MMM yyyy"),
+                "Last Contribution": format(new Date(d.lastDonationDate), "dd MMM yyyy")
+            }));
+
+            const ws = XLSX.utils.json_to_sheet(exportData);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Devotees");
+            XLSX.writeFile(wb, `Mandal_Devotees_${new Date().toISOString().slice(0, 10)}.xlsx`);
+        } catch (error) {
+            console.error("Export Error:", error);
+            toast({ title: "Export Failed", description: "Failed to export data", variant: "destructive" });
+        }
+    };
 
     const formatCurrency = (amount: number) =>
         new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(amount);
@@ -604,7 +638,7 @@ export default function MandalUsersPage() {
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                     <Input
                         placeholder="Search by devotee name, phone, or email..."
-                        className="pl-10 border-slate-200 focus:border-[#7b4623] focus:ring-[#7b4623]/10"
+                        className="pl-10 border-slate-200 focus:border-[#7b4623] focus:ring-[#7b4623]/10 h-10"
                         value={searchQuery}
                         onChange={(e) => {
                             setSearchQuery(e.target.value);
@@ -613,15 +647,16 @@ export default function MandalUsersPage() {
                     />
                 </div>
 
-                <Popover>
-                    <PopoverTrigger asChild>
-                        <Button
-                            variant="outline"
-                            className={cn(
-                                "w-full sm:w-auto justify-start text-left font-normal border-slate-200",
-                                !dateRange && "text-muted-foreground"
-                            )}
-                        >
+                <div className="flex gap-2 shrink-0">
+                    <Popover>
+                        <PopoverTrigger asChild>
+                            <Button
+                                variant="outline"
+                                className={cn(
+                                    "w-full sm:w-[240px] justify-start text-left font-normal border-slate-200 h-10",
+                                    !dateRange && "text-muted-foreground"
+                                )}
+                            >
                             <CalendarIcon className="mr-2 h-4 w-4" />
                             {dateRange?.from ? (
                                 dateRange.to ? (
@@ -659,6 +694,16 @@ export default function MandalUsersPage() {
                         )}
                     </PopoverContent>
                 </Popover>
+
+                <Button
+                    onClick={handleExportExcel}
+                    variant="outline"
+                    className="h-10 px-4 rounded-md border-slate-200 hover:bg-[#7b4623]/5 text-[#7b4623] gap-2 flex items-center shrink-0"
+                >
+                    <Download className="w-4 h-4" />
+                    <span className="hidden sm:inline font-semibold">Export</span>
+                </Button>
+                </div>
             </div>
 
             {/* Devotees List / Table */}

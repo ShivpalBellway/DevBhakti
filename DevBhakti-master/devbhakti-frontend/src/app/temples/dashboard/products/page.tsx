@@ -45,7 +45,7 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { fetchMyProducts, deleteMyProduct, createMyProduct, fetchCategories } from "@/api/templeAdminController";
+import { fetchMyProducts, deleteMyProduct, createMyProduct, fetchCategories, createBulkMyProducts } from "@/api/templeAdminController";
 import { useToast } from "@/hooks/use-toast";
 import { BASE_URL } from "@/config/apiConfig";
 import { parseLocalizedValue, stripHtml } from '@/utils/textUtils';
@@ -203,89 +203,73 @@ export default function TempleProductsPage() {
 
                 toast({ title: "Import Started", description: `Importing ${data.length} products...`, variant: "success" });
 
-                let successCount = 0;
-                let failCount = 0;
-                const errors: string[] = [];
+                const mappedProducts = data.map((row: any) => {
+                    const categoryName = String(row.Category || "").trim();
+                    const foundCategory = categories.find(c => 
+                        c.name.toLowerCase() === categoryName.toLowerCase() || 
+                        c.id === categoryName
+                    );
 
-                for (let i = 0; i < data.length; i++) {
-                    const row = data[i];
-                    const rowNum = i + 2;
+                    let variantsArray = [];
                     try {
-                        if (!row.Name_EN) throw new Error("Product Name (EN) is required");
-                        
-                        // Find category ID
-                        const categoryName = String(row.Category || "").trim();
-                        const foundCategory = categories.find(c => 
-                            c.name.toLowerCase() === categoryName.toLowerCase() || 
-                            c.id === categoryName
-                        );
-                        
-                        if (!foundCategory && row.Category) {
-                            throw new Error(`Category '${categoryName}' not found`);
+                        if (row.Variants_JSON) {
+                            variantsArray = JSON.parse(row.Variants_JSON);
+                        } else {
+                            variantsArray = [{
+                                name_en: "Standard",
+                                name_hi: "मानक",
+                                name_mr: "प्रमाणित",
+                                price: Number(row.Price_Starting || 0),
+                                stock: Number(row.Total_Stock || 0)
+                            }];
                         }
-
-                        const formDataToSend = new FormData();
-                        formDataToSend.append('name_en', String(row.Name_EN || "").trim());
-                        formDataToSend.append('name_hi', String(row.Name_HI || "").trim());
-                        formDataToSend.append('name_mr', String(row.Name_MR || "").trim());
-                        formDataToSend.append('description_en', String(row.Short_Description_EN || "").trim());
-                        formDataToSend.append('description_hi', String(row.Short_Description_HI || "").trim());
-                        formDataToSend.append('description_mr', String(row.Short_Description_MR || "").trim());
-                        formDataToSend.append('category', foundCategory?.id || categories[0]?.id || "");
-                        formDataToSend.append('highlights_en', String(row.Highlights_EN || "").trim());
-                        formDataToSend.append('highlights_hi', String(row.Highlights_HI || "").trim());
-                        formDataToSend.append('highlights_mr', String(row.Highlights_MR || "").trim());
-                        formDataToSend.append('origin', String(row.Origin || "India").trim());
-                        formDataToSend.append('rating', String(row.Base_Rating || "4.5"));
-                        formDataToSend.append('weight', String(row.Weight || "0.5"));
-                        formDataToSend.append('length', String(row.Length || "10"));
-                        formDataToSend.append('width', String(row.Width || "10"));
-                        formDataToSend.append('height', String(row.Height || "10"));
-                        formDataToSend.append('shippingInfo', "Ships in 24-48 Hours");
-
-                        // Variants handling
-                        let variantsArray = [];
-                        try {
-                            if (row.Variants_JSON) {
-                                variantsArray = JSON.parse(row.Variants_JSON);
-                            } else {
-                                variantsArray = [{
-                                    name_en: "Standard",
-                                    name_hi: "मानक",
-                                    name_mr: "प्रमाणित",
-                                    price: Number(row.Price_Starting || 0),
-                                    stock: Number(row.Total_Stock || 0)
-                                }];
-                            }
-                        } catch (e) {
-                            throw new Error("Invalid Variants_JSON format");
-                        }
-                        
-                        formDataToSend.append('variants', JSON.stringify(variantsArray));
-
-                        await createMyProduct(formDataToSend);
-                        successCount++;
-                    } catch (err: any) {
-                        const errorMsg = err.response?.data?.message || err.message || "Unknown error";
-                        failCount++;
-                        errors.push(`Row ${rowNum}: ${errorMsg}`);
-                        console.error(`Import Error Row ${rowNum}:`, errorMsg);
+                    } catch (e) {
+                         variantsArray = [];
                     }
-                }
 
-                if (failCount > 0) {
-                    toast({
-                        title: "Import Partially Failed",
-                        description: `Success: ${successCount}, Failed: ${failCount}. Check console or fix these: ${errors.slice(0, 3).join(", ")}${errors.length > 3 ? "..." : ""}`,
-                        variant: "destructive"
-                    });
-                } else {
-                    toast({
-                        title: "Import Successful",
-                        description: `Successfully imported ${successCount} products.`
-                    });
+                    return {
+                        name_en: String(row.Name_EN || "").trim(),
+                        name_hi: String(row.Name_HI || "").trim(),
+                        name_mr: String(row.Name_MR || "").trim(),
+                        description_en: String(row.Short_Description_EN || "").trim(),
+                        description_hi: String(row.Short_Description_HI || "").trim(),
+                        description_mr: String(row.Short_Description_MR || "").trim(),
+                        category: foundCategory?.id || categories[0]?.id || "",
+                        highlights_en: String(row.Highlights_EN || "").trim(),
+                        highlights_hi: String(row.Highlights_HI || "").trim(),
+                        highlights_mr: String(row.Highlights_MR || "").trim(),
+                        origin: String(row.Origin || "India").trim(),
+                        rating: String(row.Base_Rating || "4.5"),
+                        weight: String(row.Weight || "0.5"),
+                        length: String(row.Length || "10"),
+                        width: String(row.Width || "10"),
+                        height: String(row.Height || "10"),
+                        variants: variantsArray
+                    };
+                });
+
+                try {
+                    const result = await createBulkMyProducts({ products: mappedProducts });
+                    const { successCount, failCount, errors } = result.data;
+
+                    if (failCount > 0) {
+                        toast({
+                            title: "Import Partially Failed",
+                            description: `Success: ${successCount}, Failed: ${failCount}. Check console or fix these: ${errors.slice(0, 3).join(", ")}${errors.length > 3 ? "..." : ""}`,
+                            variant: "destructive"
+                        });
+                        console.error('Bulk Import Errors:', errors);
+                    } else {
+                        toast({
+                            title: "Import Successful",
+                            description: `Successfully imported ${successCount} products.`,
+                            variant: "success"
+                        });
+                    }
+                    loadProducts();
+                } catch (bulkErr: any) {
+                     toast({ title: "Import Failed", description: bulkErr.response?.data?.message || "Failed to process bulk upload.", variant: "destructive" });
                 }
-                loadProducts();
             } catch (error) {
                 toast({ title: "Import Failed", description: "Failed to process Excel file", variant: "destructive" });
             }
@@ -297,38 +281,39 @@ export default function TempleProductsPage() {
     const getStatusBadge = (status: string) => {
         switch (status) {
             case 'approved':
-                return <Badge className="bg-emerald-500 hover:bg-emerald-600">Approved</Badge>;
+                return <Badge className="bg-emerald-500 hover:bg-emerald-600 font-bold uppercase tracking-widest text-[10px] px-3 py-1">Approved</Badge>;
             case 'pending':
-                return <Badge className="bg-amber-500 hover:bg-amber-600">Pending</Badge>;
+                return <Badge className="bg-amber-500 hover:bg-amber-600 font-bold uppercase tracking-widest text-[10px] px-3 py-1">Pending</Badge>;
             case 'rejected':
-                return <Badge className="bg-red-500 hover:bg-red-600">Rejected</Badge>;
+                return <Badge className="bg-rose-500 hover:bg-rose-600 font-bold uppercase tracking-widest text-[10px] px-3 py-1">Rejected</Badge>;
             default:
-                return <Badge variant="secondary">Unknown</Badge>;
+                return <Badge variant="secondary" className="font-bold uppercase tracking-widest text-[10px] px-3 py-1">Unknown</Badge>;
         }
     };
 
     return (
-        <div className="space-y-8 max-w-7xl mx-auto p-4 md:p-6 pb-20">
+        <div className="w-full p-4 md:p-8 space-y-6 md:space-y-8 min-h-screen bg-slate-50/50">
             {/* Header Section */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-                <div>
-                    <h1 className="text-3xl font-bold text-slate-900 tracking-tight">
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 bg-white p-6 md:p-8 rounded-[2rem] shadow-sm border border-slate-100/60 relative overflow-hidden group">
+                <div className="absolute top-0 right-0 w-64 h-64 bg-[#7b4623]/5 rounded-full -mr-32 -mt-32 blur-3xl opacity-100 pointer-events-none" />
+                <div className="relative z-10 w-full md:w-auto">
+                    <h1 className="text-3xl md:text-4xl font-black text-slate-900 tracking-tight font-serif mb-2">
                         Product Management
                     </h1>
-                    <p className="text-slate-500 mt-2 text-sm md:text-base">
-                        Manage your temple's marketplace inventory, track stock, and organize variants.
+                    <p className="text-slate-500 font-medium text-sm md:text-base max-w-xl">
+                        Manage your temple's marketplace inventory, track stock, organize variants, and monitor overall performance.
                     </p>
                 </div>
-                <div className="flex flex-wrap items-center gap-2 sm:gap-3 w-full md:w-auto">
-                    {/* <Button
+                <div className="flex flex-wrap items-center justify-start md:justify-end gap-3 w-full md:w-auto relative z-10">
+                    <Button
                         onClick={downloadTemplate}
                         variant="outline"
-                        className="flex-1 md:flex-initial border-[#7b4623]/20 hover:bg-[#7b4623]/5"
+                        className="flex-1 md:flex-none border-slate-200 hover:bg-slate-50 text-slate-700 h-11 px-4 rounded-xl font-semibold transition-colors"
                     >
-                        <FileText className="w-4 h-4 mr-2" />
+                        <FileText className="w-4 h-4 mr-2 text-slate-500" />
                         Template
-                    </Button> */}
-                    <div className="relative flex-1 md:flex-initial">
+                    </Button>
+                    <div className="relative flex-1 md:flex-none">
                         <input
                             type="file"
                             accept=".xlsx, .xls"
@@ -336,26 +321,26 @@ export default function TempleProductsPage() {
                             id="import-excel"
                             onChange={handleImportExcel}
                         />
-                        {/* <Button
+                        <Button
                             onClick={() => document.getElementById('import-excel')?.click()}
                             variant="outline"
-                            className="w-full border-[#7b4623]/20 hover:bg-[#7b4623]/5"
+                            className="w-full border-slate-200 hover:bg-slate-50 text-slate-700 h-11 px-4 rounded-xl font-semibold transition-colors"
                         >
-                            <Upload className="w-4 h-4 mr-2" />
+                            <Upload className="w-4 h-4 mr-2 text-slate-500" />
                             Import
-                        </Button> */}
+                        </Button>
                     </div>
-                    {/* <Button
+                    <Button
                         onClick={handleExportExcel}
                         variant="outline"
-                        className="flex-1 md:flex-initial border-[#7b4623]/20 hover:bg-[#7b4623]/5"
+                        className="flex-1 md:flex-none border-slate-200 hover:bg-slate-50 text-slate-700 h-11 px-4 rounded-xl font-semibold transition-colors"
                     >
-                        <Download className="w-4 h-4 mr-2" />
+                        <Download className="w-4 h-4 mr-2 text-slate-500" />
                         Export
-                    </Button> */}
+                    </Button>
                     <Button
                         onClick={() => router.push('/temples/dashboard/products/create')}
-                        className="bg-[#7b4623] hover:bg-[#5d351a] text-white shadow-lg shadow-primary/20 transition-all hover:scale-105 flex-1 md:flex-initial"
+                        className="bg-[#7b4623] hover:bg-[#5d351a] text-white shadow-xl shadow-[#7b4623]/20 transition-all hover:scale-105 h-11 px-6 rounded-xl font-bold flex-1 md:flex-none w-full md:w-auto"
                     >
                         <Plus className="w-5 h-5 mr-2" />
                         Add New Product
@@ -364,48 +349,55 @@ export default function TempleProductsPage() {
             </div>
 
             {/* Stats Grid */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
                 {[
-                    { label: "Total Products", value: totalProducts, icon: ShoppingBag, color: "text-blue-600", bg: "bg-blue-50" },
-                    { label: "Active", value: activeProducts, icon: Package, color: "text-emerald-600", bg: "bg-emerald-50" },
-                    { label: "Pending", value: pendingProducts, icon: Layers, color: "text-amber-600", bg: "bg-amber-50" },
-                    { label: "Out of Stock", value: outOfStockCount, icon: Trash2, color: "text-red-600", bg: "bg-red-50" },
-                ].map((stat) => (
-                    <Card key={stat.label} className="border-slate-100 shadow-sm hover:shadow-md transition-shadow">
-                        <CardContent className="p-6 flex items-center justify-between">
-                            <div>
-                                <p className="text-sm font-medium text-slate-500">{stat.label}</p>
-                                <p className={`text-3xl font-bold mt-2 ${stat.color}`}>{stat.value}</p>
-                            </div>
-                            <div className={`p-3 rounded-xl ${stat.bg}`}>
-                                <stat.icon className={`w-6 h-6 ${stat.color}`} />
-                            </div>
-                        </CardContent>
-                    </Card>
+                    { label: "Total Products", value: totalProducts, icon: ShoppingBag, color: "text-blue-600", bg: "bg-blue-50/80 border border-blue-100" },
+                    { label: "Active Items", value: activeProducts, icon: Package, color: "text-emerald-600", bg: "bg-emerald-50/80 border border-emerald-100" },
+                    { label: "Pending Approval", value: pendingProducts, icon: Layers, color: "text-amber-600", bg: "bg-amber-50/80 border border-amber-100" },
+                    { label: "Out of Stock", value: outOfStockCount, icon: Trash2, color: "text-rose-600", bg: "bg-rose-50/80 border border-rose-100" },
+                ].map((stat, idx) => (
+                    <motion.div
+                        key={stat.label}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: idx * 0.1 }}
+                    >
+                        <Card className="border-none shadow-sm hover:shadow-xl transition-all duration-300 rounded-[1.5rem] bg-white group h-full">
+                            <CardContent className="p-6 md:p-8 flex items-center justify-between">
+                                <div>
+                                    <p className="text-[11px] md:text-sm font-black uppercase tracking-widest text-slate-400 mb-2">{stat.label}</p>
+                                    <p className={`text-4xl md:text-5xl font-black ${stat.color} tracking-tight`}>{stat.value}</p>
+                                </div>
+                                <div className={`w-14 h-14 md:w-16 md:h-16 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110 ${stat.bg}`}>
+                                    <stat.icon className={`w-6 h-6 md:w-8 md:h-8 ${stat.color}`} />
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </motion.div>
                 ))}
             </div>
 
             {/* Filters & Search */}
-            <div className="flex flex-col md:flex-row gap-4 items-center bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
+            <div className="flex flex-col xl:flex-row gap-4 items-center bg-white p-3 md:p-4 rounded-[1.5rem] border border-slate-100/80 shadow-sm relative z-10">
                 <div className="relative flex-1 w-full">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
                     <Input
-                        placeholder="Search products by name..."
+                        placeholder="Search products by name or SKU..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="pl-10 h-11 bg-slate-50 border-slate-200 focus:bg-white transition-colors"
+                        className="pl-12 h-12 md:h-14 bg-slate-50/80 border-slate-200 focus:bg-white focus:ring-[#7b4623] hover:bg-white transition-all rounded-xl text-base font-medium"
                     />
                 </div>
                 
-                <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+                <div className="flex w-full xl:w-auto flex-col sm:flex-row gap-3">
                     <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                        <SelectTrigger className="w-full sm:w-[180px] h-11 border-slate-200 bg-slate-50 focus:ring-[#7b4623]">
+                        <SelectTrigger className="w-full sm:w-[220px] h-12 md:h-14 border-slate-200 bg-slate-50/80 hover:bg-white focus:ring-[#7b4623] rounded-xl font-bold text-slate-700 transition-colors">
                             <SelectValue placeholder="Category" />
                         </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">All Categories</SelectItem>
+                        <SelectContent className="rounded-xl border-slate-100 shadow-xl">
+                            <SelectItem value="all" className="font-semibold text-slate-700">All Categories</SelectItem>
                             {categories.map((cat) => (
-                                <SelectItem key={cat.id} value={cat.id}>
+                                <SelectItem key={cat.id} value={cat.id} className="font-semibold text-slate-700">
                                     {cat.name}
                                 </SelectItem>
                             ))}
@@ -413,13 +405,13 @@ export default function TempleProductsPage() {
                     </Select>
 
                     <Select value={stockStatus} onValueChange={setStockStatus}>
-                        <SelectTrigger className="w-full sm:w-[180px] h-11 border-slate-200 bg-slate-50 focus:ring-[#7b4623]">
+                        <SelectTrigger className="w-full sm:w-[200px] h-12 md:h-14 border-slate-200 bg-slate-50/80 hover:bg-white focus:ring-[#7b4623] rounded-xl font-bold text-slate-700 transition-colors">
                             <SelectValue placeholder="Stock Status" />
                         </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">All Stock</SelectItem>
-                            <SelectItem value="in_stock">In Stock</SelectItem>
-                            <SelectItem value="out_of_stock">Out of Stock</SelectItem>
+                        <SelectContent className="rounded-xl border-slate-100 shadow-xl">
+                            <SelectItem value="all" className="font-semibold text-slate-700">All Stock</SelectItem>
+                            <SelectItem value="in_stock" className="font-semibold text-emerald-600">In Stock</SelectItem>
+                            <SelectItem value="out_of_stock" className="font-semibold text-rose-600">Out of Stock</SelectItem>
                         </SelectContent>
                     </Select>
 
@@ -431,7 +423,7 @@ export default function TempleProductsPage() {
                                 setStockStatus("all");
                                 setSearchQuery("");
                             }}
-                            className="h-11 px-4 text-slate-500 hover:text-[#7b4623]"
+                            className="h-12 md:h-14 px-6 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-xl font-bold transition-colors"
                         >
                             Reset
                         </Button>
@@ -441,31 +433,30 @@ export default function TempleProductsPage() {
 
             {/* Products Grid */}
             {isLoading ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {[1, 2, 3, 4, 5, 6].map((i) => (
-                        <div key={i} className="h-80 bg-slate-100 rounded-2xl animate-pulse" />
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                    {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+                        <div key={i} className="h-[420px] bg-white rounded-[2rem] border border-slate-100 animate-pulse shadow-sm" />
                     ))}
                 </div>
             ) : filteredProducts.length === 0 ? (
-                <div className="text-center py-20 bg-slate-50 rounded-3xl border-2 border-dashed border-slate-200">
-                    <div className="bg-white p-4 rounded-full w-20 h-20 mx-auto flex items-center justify-center shadow-sm mb-4">
-                        <Package className="w-10 h-10 text-slate-300" />
+                <div className="text-center py-24 bg-white rounded-[2rem] border-2 border-dashed border-slate-200 shadow-sm flex flex-col items-center justify-center">
+                    <div className="bg-slate-50 p-6 rounded-3xl w-28 h-28 mx-auto flex items-center justify-center shadow-inner mb-6 border border-slate-100">
+                        <Package className="w-12 h-12 text-slate-400" />
                     </div>
-                    <h3 className="text-xl font-semibold text-slate-900">No products found</h3>
-                    <p className="text-slate-500 mt-2 max-w-sm mx-auto">
-                        Get started by adding your first product to the marketplace.
+                    <h3 className="text-2xl font-black text-slate-900 font-serif">No products found</h3>
+                    <p className="text-slate-500 mt-2 max-w-sm mx-auto font-medium">
+                        Get started by adding your first product to the temple's marketplace inventory.
                     </p>
                     <Button
-                        variant="outline"
-                        className="mt-6"
+                        className="mt-8 bg-[#7b4623] hover:bg-[#5d351a] text-white shadow-xl shadow-[#7b4623]/20 h-12 px-8 rounded-xl font-bold text-base transition-all hover:scale-105"
                         onClick={() => router.push('/temples/dashboard/products/create')}
                     >
-                        <Plus className="w-4 h-4 mr-2" />
-                        Add Product
+                        <Plus className="w-5 h-5 mr-2" />
+                        Add First Product
                     </Button>
                 </div>
             ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8">
                     <AnimatePresence>
                         {filteredProducts.map((product, index) => {
                             const totalStock = product.variants?.reduce((sum: number, v: any) => sum + (v.stock || 0), 0) || 0;
@@ -480,78 +471,77 @@ export default function TempleProductsPage() {
                                     initial={{ opacity: 0, y: 20 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     exit={{ opacity: 0, scale: 0.95 }}
-                                    transition={{ duration: 0.3, delay: index * 0.05 }}
+                                    transition={{ duration: 0.4, delay: index * 0.05 }}
+                                    className="h-full"
                                 >
-                                    <Card className="group h-full flex flex-col overflow-hidden border-slate-100 shadow-sm hover:shadow-xl hover:border-primary/20 transition-all duration-300">
+                                    <Card className="group h-full flex flex-col overflow-hidden border-slate-100 shadow-sm hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 rounded-[2rem] bg-white">
                                         {/* Image Area */}
-                                        <div className="relative aspect-video bg-slate-50 overflow-hidden cursor-pointer" onClick={() => handleView(product)}>
+                                        <div className="relative aspect-square md:aspect-[4/3] bg-slate-50 overflow-hidden cursor-pointer" onClick={() => handleView(product)}>
                                             {product.image ? (
                                                 <img
                                                     src={`${BASE_URL}${product.image}`}
                                                     alt={parseLocalizedValue(product.name)}
-                                                    className="w-full h-full object-contain p-4 group-hover:scale-105 transition-transform duration-500"
+                                                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                                                 />
                                             ) : (
-                                                <div className="w-full h-full flex items-center justify-center">
-                                                    <Package className="w-12 h-12 text-slate-300" />
+                                                <div className="w-full h-full flex items-center justify-center bg-slate-100">
+                                                    <Package className="w-16 h-16 text-slate-300" />
                                                 </div>
                                             )}
 
-                                            <div className="absolute top-3 right-3 flex flex-col gap-2">
+                                            <div className="absolute top-4 right-4 flex flex-col gap-2">
                                                 {getStatusBadge(product.status)}
                                             </div>
 
-                                            <div className="absolute top-3 left-3">
-                                                <Badge variant="secondary" className="bg-white/90 backdrop-blur-sm shadow-sm text-xs font-semibold">
+                                            <div className="absolute top-4 left-4">
+                                                <Badge variant="secondary" className="bg-white/95 backdrop-blur-md shadow-sm text-[10px] font-black uppercase tracking-wider px-3 py-1 text-slate-700">
                                                     {variantsCount} {variantsCount === 1 ? 'Variant' : 'Variants'}
                                                 </Badge>
                                             </div>
 
                                             {/* Hover Qucik Actions */}
-                                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3 backdrop-blur-[2px]">
+                                            <div className="absolute inset-0 bg-slate-900/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-center gap-3 backdrop-blur-[2px]">
                                                 <Button
-                                                    size="sm"
-                                                    className="bg-white text-slate-900 hover:bg-white/90"
+                                                    className="bg-white text-slate-900 hover:bg-slate-50 shadow-xl w-36 h-11 rounded-xl font-bold transition-all hover:scale-105"
                                                     onClick={(e) => { e.stopPropagation(); handleView(product); }}
                                                 >
                                                     <Eye className="w-4 h-4 mr-2" />
-                                                    View
+                                                    View Item
                                                 </Button>
                                                 <Button
-                                                    size="sm"
-                                                    className="bg-white text-slate-900 hover:bg-white/90"
+                                                    className="bg-[#7b4623] text-white hover:bg-[#5d351a] shadow-xl w-36 h-11 rounded-xl font-bold transition-all hover:scale-105"
                                                     onClick={(e) => { e.stopPropagation(); router.push(`/temples/dashboard/products/edit/${product.id}`); }}
                                                 >
                                                     <Edit className="w-4 h-4 mr-2" />
-                                                    Edit
+                                                    Edit Item
                                                 </Button>
                                             </div>
                                         </div>
 
                                         {/* Content Area */}
-                                        <CardContent className="p-4 flex-1">
-                                            <div className="mb-2">
-                                                <span className="text-xs font-medium text-primary bg-primary/5 px-2 py-1 rounded-full">
-                                                {parseLocalizedValue(product.categoryObj?.name || "General")}
-                                            </span>
-                                        </div>
-                                        <h3 className="font-bold text-lg text-slate-900 line-clamp-1 mb-1" title={parseLocalizedValue(product.name)}>
-                                            {parseLocalizedValue(product.name)}
-                                        </h3>
-                                        <p className="text-sm text-slate-500 line-clamp-2 mb-3 h-10">
-                                            {stripHtml(parseLocalizedValue(product.description))}
-                                        </p>
+                                        <CardContent className="p-5 md:p-6 flex-1 flex flex-col">
+                                            <div className="mb-3">
+                                                <span className="text-[10px] font-black uppercase tracking-widest text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-full border border-emerald-100 inline-block shadow-sm">
+                                                    {parseLocalizedValue(product.categoryObj?.name || "General")}
+                                                </span>
+                                            </div>
+                                            <h3 className="font-bold text-lg md:text-xl text-slate-900 line-clamp-2 mb-2 leading-tight group-hover:text-[#7b4623] transition-colors" title={parseLocalizedValue(product.name)}>
+                                                {parseLocalizedValue(product.name)}
+                                            </h3>
+                                            <p className="text-sm text-slate-500 line-clamp-2 mb-4 flex-1 font-medium leading-relaxed">
+                                                {stripHtml(parseLocalizedValue(product.description))}
+                                            </p>
 
-                                            <Separator className="my-3" />
+                                            <Separator className="my-4 md:my-5 border-slate-100" />
 
-                                            <div className="flex items-center justify-between">
+                                            <div className="flex items-end justify-between">
                                                 <div>
-                                                    <p className="text-xs text-slate-500">Starting from</p>
-                                                    <p className="text-lg font-bold text-slate-900">₹{minPrice}</p>
+                                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Starting from</p>
+                                                    <p className="text-2xl font-black text-slate-900 tracking-tight">₹{minPrice}</p>
                                                 </div>
                                                 <div className="text-right">
-                                                    <p className="text-xs text-slate-500">Total Stock</p>
-                                                    <p className={`font-medium ${totalStock === 0 ? "text-red-600" : "text-emerald-600"}`}>
+                                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Total Stock</p>
+                                                    <p className={`text-sm font-black px-3 py-1.5 rounded-xl inline-block shadow-sm ${totalStock === 0 ? "text-rose-700 bg-rose-50 border border-rose-100" : "text-emerald-700 bg-emerald-50 border border-emerald-100"}`}>
                                                         {totalStock} units
                                                     </p>
                                                 </div>
@@ -559,10 +549,10 @@ export default function TempleProductsPage() {
                                         </CardContent>
 
                                         {/* Footer Actions (Visible on mobile/tap) */}
-                                        <div className="md:hidden p-3 border-t bg-slate-50 flex justify-between gap-2">
-                                            <Button variant="ghost" size="sm" className="flex-1" onClick={() => handleView(product)}>View</Button>
-                                            <Button variant="ghost" size="sm" className="flex-1" onClick={() => router.push(`/temples/dashboard/products/edit/${product.id}`)}>Edit</Button>
-                                            <Button variant="ghost" size="sm" className="flex-1 text-red-600" onClick={() => handleDelete(product.id)}>Delete</Button>
+                                        <div className="md:hidden p-3 border-t border-slate-100 bg-slate-50/50 flex justify-between gap-2">
+                                            <Button variant="outline" size="sm" className="flex-1 bg-white border-slate-200 text-slate-700 font-bold" onClick={() => handleView(product)}>View</Button>
+                                            <Button variant="outline" size="sm" className="flex-1 bg-white border-slate-200 text-slate-700 font-bold" onClick={() => router.push(`/temples/dashboard/products/edit/${product.id}`)}>Edit</Button>
+                                            <Button variant="outline" size="sm" className="flex-1 bg-rose-50 text-rose-600 hover:bg-rose-100 border-rose-100 font-bold" onClick={() => handleDelete(product.id)}>Delete</Button>
                                         </div>
                                     </Card>
                                 </motion.div>
@@ -571,7 +561,6 @@ export default function TempleProductsPage() {
                     </AnimatePresence>
                 </div>
             )}
-
         </div>
     );
 }

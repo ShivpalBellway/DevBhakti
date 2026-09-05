@@ -102,6 +102,7 @@
     "verified": "सत्यापित",
     "explore_by_location": "स्थान के अनुसार खोजें",
     "view_all_locations": "सभी स्थान देखें",
+    "mandal_count_one": "{{count}} मंडल",
     "mandal_count_many": "{{count}} मंडल",
     "festival_information": "उत्सव की जानकारी",
     "festival_dates_label": "उत्सव की तारीखें",

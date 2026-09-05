@@ -1000,13 +1000,14 @@ export const fetchAdminDashboardStats = async () => {
 };
 
 // Commission Slabs Management
-export const fetchCommissionSlabsAdmin = async (type?: string, targetId?: string, category?: string) => {
+export const fetchCommissionSlabsAdmin = async (type?: string, targetId?: string, category?: string, isOffline?: boolean) => {
     const token = getAdminToken();
     let url = `${API_URL}/admin/commission-slabs`;
     const params = new URLSearchParams();
     if (type) params.append("type", type);
     if (targetId) params.append("targetId", targetId);
     if (category) params.append("category", category);
+    if (isOffline !== undefined) params.append("isOffline", isOffline.toString());
     if (params.toString()) url += `?${params.toString()}`;
     const response = await axios.get(url, {
         headers: { Authorization: `Bearer ${token}` }

@@ -192,9 +192,10 @@ export const createMandalDonation = async (req: Request, res: Response) => {
 
         const commissionData = await getCommissionForAmount(
             Number(amount),
-            SlabType.GLOBAL,
-            undefined,
-            CommissionCategory.DONATION
+            SlabType.MANDAL,
+            mandalId,
+            CommissionCategory.DONATION,
+            true
         );
 
         const commissionAmount = commissionData.totalCommission || 0;

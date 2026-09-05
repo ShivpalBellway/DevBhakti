@@ -691,53 +691,40 @@ function TemplesContent() {
         if (!currentVerified) {
             try {
                 // First try to fetch existing slabs for this temple
-                let slabs = [];
+                let onlineSlabs = [];
+                let offlineSlabs = [];
 
                 // 1. Try fetching existing TEMPLE specific slabs using the TEMPLE ID
-                const templeSlabsResponse = await fetchCommissionSlabsAdmin('TEMPLE', templeId);
-                if (templeSlabsResponse.success && templeSlabsResponse.data && templeSlabsResponse.data.length > 0) {
-                    slabs = templeSlabsResponse.data;
+                const templeOnlineResponse = await fetchCommissionSlabsAdmin('TEMPLE', templeId, undefined, false);
+                const templeOfflineResponse = await fetchCommissionSlabsAdmin('TEMPLE', templeId, undefined, true);
+
+                if (templeOnlineResponse.success && templeOnlineResponse.data && templeOnlineResponse.data.length > 0) {
+                    onlineSlabs = templeOnlineResponse.data;
                 } else {
-                    // 2. Fallback to GLOBAL slabs if no specific slabs exist
-                    const globalResponse = await fetchCommissionSlabsAdmin('GLOBAL');
-                    slabs = globalResponse.success ? globalResponse.data : [];
+                    const globalResponse = await fetchCommissionSlabsAdmin('GLOBAL', undefined, undefined, false);
+                    onlineSlabs = globalResponse.success ? globalResponse.data : [];
+                }
+
+                if (templeOfflineResponse.success && templeOfflineResponse.data && templeOfflineResponse.data.length > 0) {
+                    offlineSlabs = templeOfflineResponse.data;
+                } else {
+                    const globalOfflineResponse = await fetchCommissionSlabsAdmin('GLOBAL', undefined, undefined, true);
+                    offlineSlabs = globalOfflineResponse.success ? globalOfflineResponse.data : [];
                 }
 
                 const generatedSlug = templeName ? templeName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') : "";
 
-                // Deduplicate slabs based on unique properties (minAmount + classification) to prevent UI duplication issues
-                const uniqueSlabs = slabs.filter((s: any, index: number, self: any[]) =>
-                    index === self.findIndex((t: any) => (
-                        t.minAmount === s.minAmount &&
-                        t.category === s.category &&
-                        t.slabType === s.slabType
-                    ))
-                );
-
-                // Separate slabs by category
-                const poojaSlabs = uniqueSlabs.filter((s: any) => s.category === 'POOJA').map((s: any) => ({
-                    minAmount: s.minAmount,
-                    maxAmount: s.maxAmount,
-                    platformFee: s.platformFee.toString(),
-                    percentage: s.percentage.toString(),
-                    category: s.category
-                }));
-
-                const marketplaceSlabs = uniqueSlabs.filter((s: any) => s.category === 'MARKETPLACE' || !s.category).map((s: any) => ({
-                    minAmount: s.minAmount,
-                    maxAmount: s.maxAmount,
-                    platformFee: s.platformFee.toString(),
-                    percentage: s.percentage.toString(),
-                    category: 'MARKETPLACE'
-                }));
-
-                const donationSlabs = uniqueSlabs.filter((s: any) => s.category === 'DONATION').map((s: any) => ({
-                    minAmount: s.minAmount,
-                    maxAmount: s.maxAmount,
-                    platformFee: s.platformFee.toString(),
-                    percentage: s.percentage.toString(),
-                    category: 'DONATION'
-                }));
+                const filterSlabs = (slabsList: any[], cat: string) => {
+                    return slabsList
+                        .filter((s: any) => cat === 'MARKETPLACE' ? (s.category === 'MARKETPLACE' || !s.category) : s.category === cat)
+                        .map((s: any) => ({
+                            minAmount: s.minAmount,
+                            maxAmount: s.maxAmount,
+                            platformFee: s.platformFee.toString(),
+                            percentage: s.percentage.toString(),
+                            category: cat
+                        }));
+                };
 
                 setApprovalData({
                     id,
@@ -745,12 +732,20 @@ function TemplesContent() {
                     slug: generatedSlug,
                     subdomain: generatedSlug,
                     urlType: "slug",
-                    poojaSlabs,
-                    marketplaceSlabs,
-                    donationSlabs,
+                    poojaSlabs: filterSlabs(onlineSlabs, 'POOJA'),
+                    marketplaceSlabs: filterSlabs(onlineSlabs, 'MARKETPLACE'),
+                    donationSlabs: filterSlabs(onlineSlabs, 'DONATION'),
+                    offlinePoojaSlabs: filterSlabs(offlineSlabs, 'POOJA'),
+                    offlineMarketplaceSlabs: filterSlabs(offlineSlabs, 'MARKETPLACE'),
+                    offlineDonationSlabs: filterSlabs(offlineSlabs, 'DONATION'),
                     poojaRateType: "DEFAULT",
                     marketplaceRateType: "DEFAULT",
-                    slabs: [] // Keeping this for backward compatibility if needed, but we rely on split slabs
+                    donationRateType: "DEFAULT",
+                    offlinePoojaRateType: "DEFAULT",
+                    offlineMarketplaceRateType: "DEFAULT",
+                    offlineDonationRateType: "DEFAULT",
+                    activeSlabTab: "online",
+                    slabs: []
                 });
                 setApprovalModalOpen(true);
             } catch (error) {
@@ -771,6 +766,60 @@ function TemplesContent() {
 
     const handleConfirmApproval = async () => {
         try {
+            const onlineSlabs = [
+                ...(approvalData.poojaRateType === 'CUSTOM' ? (approvalData.poojaSlabs || []).map((s: any) => ({
+                    minAmount: parseFloat(s.minAmount),
+                    maxAmount: s.maxAmount ? parseFloat(s.maxAmount) : null,
+                    platformFee: parseFloat(s.platformFee),
+                    percentage: parseFloat(s.percentage),
+                    category: 'POOJA',
+                    isOffline: false
+                })) : []),
+                ...(approvalData.marketplaceRateType === 'CUSTOM' ? (approvalData.marketplaceSlabs || []).map((s: any) => ({
+                    minAmount: parseFloat(s.minAmount),
+                    maxAmount: s.maxAmount ? parseFloat(s.maxAmount) : null,
+                    platformFee: parseFloat(s.platformFee),
+                    percentage: parseFloat(s.percentage),
+                    category: 'MARKETPLACE',
+                    isOffline: false
+                })) : []),
+                ...(approvalData.donationRateType === 'CUSTOM' ? (approvalData.donationSlabs || []).map((s: any) => ({
+                    minAmount: parseFloat(s.minAmount),
+                    maxAmount: s.maxAmount ? parseFloat(s.maxAmount) : null,
+                    platformFee: parseFloat(s.platformFee),
+                    percentage: parseFloat(s.percentage),
+                    category: 'DONATION',
+                    isOffline: false
+                })) : [])
+            ];
+
+            const offlineSlabs = [
+                ...(approvalData.offlinePoojaRateType === 'CUSTOM' ? (approvalData.offlinePoojaSlabs || []).map((s: any) => ({
+                    minAmount: parseFloat(s.minAmount),
+                    maxAmount: s.maxAmount ? parseFloat(s.maxAmount) : null,
+                    platformFee: parseFloat(s.platformFee),
+                    percentage: parseFloat(s.percentage),
+                    category: 'POOJA',
+                    isOffline: true
+                })) : []),
+                ...(approvalData.offlineMarketplaceRateType === 'CUSTOM' ? (approvalData.offlineMarketplaceSlabs || []).map((s: any) => ({
+                    minAmount: parseFloat(s.minAmount),
+                    maxAmount: s.maxAmount ? parseFloat(s.maxAmount) : null,
+                    platformFee: parseFloat(s.platformFee),
+                    percentage: parseFloat(s.percentage),
+                    category: 'MARKETPLACE',
+                    isOffline: true
+                })) : []),
+                ...(approvalData.offlineDonationRateType === 'CUSTOM' ? (approvalData.offlineDonationSlabs || []).map((s: any) => ({
+                    minAmount: parseFloat(s.minAmount),
+                    maxAmount: s.maxAmount ? parseFloat(s.maxAmount) : null,
+                    platformFee: parseFloat(s.platformFee),
+                    percentage: parseFloat(s.percentage),
+                    category: 'DONATION',
+                    isOffline: true
+                })) : [])
+            ];
+
             await toggleTempleStatusAdmin(
                 approvalData.id,
                 true, // isVerified
@@ -779,29 +828,7 @@ function TemplesContent() {
                     slug: approvalData.slug,
                     subdomain: approvalData.subdomain,
                     urlType: approvalData.urlType,
-                    commissionSlabs: [
-                        ...(approvalData.poojaRateType === 'CUSTOM' ? approvalData.poojaSlabs.map((s: any) => ({
-                            minAmount: parseFloat(s.minAmount),
-                            maxAmount: s.maxAmount ? parseFloat(s.maxAmount) : null,
-                            platformFee: parseFloat(s.platformFee),
-                            percentage: parseFloat(s.percentage),
-                            category: 'POOJA'
-                        })) : []),
-                        ...(approvalData.marketplaceRateType === 'CUSTOM' ? approvalData.marketplaceSlabs.map((s: any) => ({
-                            minAmount: parseFloat(s.minAmount),
-                            maxAmount: s.maxAmount ? parseFloat(s.maxAmount) : null,
-                            platformFee: parseFloat(s.platformFee),
-                            percentage: parseFloat(s.percentage),
-                            category: 'MARKETPLACE'
-                        })) : []),
-                        ...approvalData.donationSlabs.map((s: any) => ({
-                            minAmount: parseFloat(s.minAmount),
-                            maxAmount: s.maxAmount ? parseFloat(s.maxAmount) : null,
-                            platformFee: parseFloat(s.platformFee),
-                            percentage: parseFloat(s.percentage),
-                            category: 'DONATION'
-                        }))
-                    ]
+                    commissionSlabs: [...onlineSlabs, ...offlineSlabs]
                 }
             );
             toast({ title: "Success", description: "Temple Verified Successfully" });
@@ -1541,7 +1568,7 @@ function TemplesContent() {
                     <div className="space-y-4 py-4">
                         {/* URL Configuration Section */}
                         <div className="space-y-4 p-4 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl border border-blue-200">
-                            <label className="text-sm font-bold text-slate-800 uppercase tracking-widest text-[11px]">ðŸŒ Public URL Configuration</label>
+                            <label className="text-sm font-bold text-slate-800 uppercase tracking-widest text-[11px]">Public URL Configuration</label>
 
                             {/* URL Type Selection */}
                             <div className="flex items-center gap-6 mb-2">
@@ -1574,7 +1601,7 @@ function TemplesContent() {
                                 <div className="space-y-2">
                                     <div className="flex flex-col sm:flex-row sm:items-center gap-1">
                                         <span className="text-[10px] text-muted-foreground bg-white px-2 py-2 rounded-l-md border sm:border-r-0 border-b-0 sm:border-b border-border font-mono whitespace-nowrap hidden sm:block">devbhakti.in/temples/</span>
-                                        <span className="text-[10px] text-muted-foreground sm:hidden mb-1 block">devbhakti.in/temples/</span>
+                                        <span className="text-[10px] text-muted-foreground sm:hidden mb-1 block">devbhakti.com/temples/</span>
                                         <Input
                                             value={approvalData.slug}
                                             onChange={e => {
@@ -1586,7 +1613,7 @@ function TemplesContent() {
                                         />
                                     </div>
                                     <p className="text-[10px] font-mono text-blue-600 truncate">
-                                        Preview: https://devbhakti.in/temples/{approvalData.slug || "---"}
+                                        Preview: https://devbhakti.com/temples/{approvalData.slug || "---"}
                                     </p>
                                 </div>
                             )}
@@ -1613,151 +1640,414 @@ function TemplesContent() {
                             )}
                         </div>
 
-                        {/* Slab management - Pooja */}
-                        <div className="space-y-4">
-                            <div className="flex items-center justify-between">
-                                <label className="text-sm font-bold text-slate-800 uppercase tracking-widest text-[11px]">ðŸ•‰ï¸ Pooja Platform Fee Slabs</label>
-                                <div className="flex items-center gap-3 bg-slate-100/50 p-1 rounded-lg border border-slate-200">
-                                    <span className={`text-[9px] font-bold ${approvalData.poojaRateType === "DEFAULT" ? "text-primary" : "text-muted-foreground"}`}>DEFAULT</span>
-                                    <Switch
-                                        checked={approvalData.poojaRateType === "CUSTOM"}
-                                        onCheckedChange={(checked) => setApprovalData({ ...approvalData, poojaRateType: checked ? "CUSTOM" : "DEFAULT" })}
-                                        className="scale-75"
-                                    />
-                                    <span className={`text-[9px] font-bold ${approvalData.poojaRateType === "CUSTOM" ? "text-orange-600" : "text-muted-foreground"}`}>CUSTOM</span>
+                         {/* Slab management - Tabs for Online and Offline */}
+                        <div className="space-y-4 pt-2">
+                            <div className="flex items-center justify-between border-b pb-2">
+                                <label className="text-sm font-bold text-slate-800 uppercase tracking-widest text-[11px]">Commission Slabs</label>
+                                <div className="flex gap-1 bg-slate-100 p-1 rounded-lg">
+                                    <button
+                                        type="button"
+                                        onClick={() => setApprovalData({ ...approvalData, activeSlabTab: 'online' })}
+                                        className={`px-3 py-1 text-xs font-semibold rounded-md transition-all ${approvalData.activeSlabTab !== 'offline' ? 'bg-white text-primary shadow-sm' : 'text-slate-500 hover:text-slate-900'}`}
+                                    >
+                                        🌐 Online Slabs
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setApprovalData({ ...approvalData, activeSlabTab: 'offline' })}
+                                        className={`px-3 py-1 text-xs font-semibold rounded-md transition-all ${approvalData.activeSlabTab === 'offline' ? 'bg-white text-orange-600 shadow-sm' : 'text-slate-500 hover:text-slate-900'}`}
+                                    >
+                                        📍 Offline Slabs
+                                    </button>
                                 </div>
                             </div>
-                            <div className="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
-                                {approvalData.poojaSlabs?.length > 0 ? (
-                                    approvalData.poojaSlabs.map((slab: any, index: number) => (
-                                        <div key={index} className="grid grid-cols-2 gap-3 items-center pb-3 border-b border-slate-200 last:border-0 last:pb-0">
-                                            <div className="text-[11px] font-semibold text-slate-600">
-                                                â‚¹{slab.minAmount} - {slab.maxAmount ? `â‚¹${slab.maxAmount}` : 'âˆž'}
-                                            </div>
-                                            <div className="flex gap-2">
-                                                <div className="relative flex-1">
-                                                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] text-slate-400">â‚¹</span>
-                                                    <Input
-                                                        type="number"
-                                                        value={slab.platformFee}
-                                                        onChange={(e) => {
-                                                            const newSlabs = [...approvalData.poojaSlabs];
-                                                            newSlabs[index].platformFee = e.target.value;
-                                                            setApprovalData({ ...approvalData, poojaSlabs: newSlabs });
-                                                        }}
-                                                        className="pl-5 h-8 text-xs font-mono"
-                                                        placeholder="Fee"
-                                                        disabled={approvalData.poojaRateType === "DEFAULT"}
-                                                    />
-                                                </div>
-                                                <div className="relative flex-1">
-                                                    <Input
-                                                        type="number"
-                                                        step="0.01"
-                                                        value={slab.percentage}
-                                                        onChange={(e) => {
-                                                            const newSlabs = [...approvalData.poojaSlabs];
-                                                            newSlabs[index].percentage = e.target.value;
-                                                            setApprovalData({ ...approvalData, poojaSlabs: newSlabs });
-                                                        }}
-                                                        className="pr-5 h-8 text-xs text-right font-mono"
-                                                        placeholder="%"
-                                                        disabled={approvalData.poojaRateType === "DEFAULT"}
-                                                    />
-                                                    <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-slate-400 font-mono">%</span>
-                                                </div>
+
+                            {/* ONLINE SLABS CONTENT */}
+                            {approvalData.activeSlabTab !== 'offline' && (
+                                <div className="space-y-4">
+                                    {/* Online Pooja */}
+                                    <div className="space-y-2">
+                                        <div className="flex items-center justify-between">
+                                            <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">🕉️ Pooja Platform Fee Slabs</label>
+                                            <div className="flex items-center gap-2 bg-slate-100 p-1 rounded-lg">
+                                                <span className={`text-[9px] font-bold ${approvalData.poojaRateType === "DEFAULT" ? "text-primary" : "text-muted-foreground"}`}>DEFAULT</span>
+                                                <Switch
+                                                    checked={approvalData.poojaRateType === "CUSTOM"}
+                                                    onCheckedChange={(checked) => setApprovalData({ ...approvalData, poojaRateType: checked ? "CUSTOM" : "DEFAULT" })}
+                                                    className="scale-75"
+                                                />
+                                                <span className={`text-[9px] font-bold ${approvalData.poojaRateType === "CUSTOM" ? "text-orange-600" : "text-muted-foreground"}`}>CUSTOM</span>
                                             </div>
                                         </div>
-                                    ))
-                                ) : (
-                                    <p className="text-[10px] text-center text-slate-400 py-2 italic font-mono">No Pooja slabs defined.</p>
-                                )}
-                            </div>
-                        </div>
-
-                        {/* Slab management - Marketplace */}
-                        <div className="space-y-4">
-                            <div className="flex items-center justify-between">
-                                <label className="text-sm font-bold text-slate-800 uppercase tracking-widest text-[11px]">ðŸ›ï¸ Marketplace Platform Fee Slabs</label>
-                                <div className="flex items-center gap-3 bg-slate-100/50 p-1 rounded-lg border border-slate-200">
-                                    <span className={`text-[9px] font-bold ${approvalData.marketplaceRateType === "DEFAULT" ? "text-primary" : "text-muted-foreground"}`}>DEFAULT</span>
-                                    <Switch
-                                        checked={approvalData.marketplaceRateType === "CUSTOM"}
-                                        onCheckedChange={(checked) => setApprovalData({ ...approvalData, marketplaceRateType: checked ? "CUSTOM" : "DEFAULT" })}
-                                        className="scale-75"
-                                    />
-                                    <span className={`text-[9px] font-bold ${approvalData.marketplaceRateType === "CUSTOM" ? "text-orange-600" : "text-muted-foreground"}`}>CUSTOM</span>
-                                </div>
-                            </div>
-                            <div className="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
-                                {approvalData.marketplaceSlabs?.length > 0 ? (
-                                    approvalData.marketplaceSlabs.map((slab: any, index: number) => (
-                                        <div key={index} className="grid grid-cols-2 gap-3 items-center pb-3 border-b border-slate-200 last:border-0 last:pb-0">
-                                            <div className="text-[11px] font-semibold text-slate-600">
-                                                â‚¹{slab.minAmount} - {slab.maxAmount ? `â‚¹${slab.maxAmount}` : 'âˆž'}
-                                            </div>
-                                            <div className="flex gap-2">
-                                                <div className="relative flex-1">
-                                                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] text-slate-400">â‚¹</span>
-                                                    <Input
-                                                        type="number"
-                                                        value={slab.platformFee}
-                                                        onChange={(e) => {
-                                                            const newSlabs = [...approvalData.marketplaceSlabs];
-                                                            newSlabs[index].platformFee = e.target.value;
-                                                            setApprovalData({ ...approvalData, marketplaceSlabs: newSlabs });
-                                                        }}
-                                                        className="pl-5 h-8 text-xs font-mono"
-                                                        placeholder="Fee"
-                                                        disabled={approvalData.marketplaceRateType === "DEFAULT"}
-                                                    />
-                                                </div>
-                                                <div className="relative flex-1">
-                                                    <Input
-                                                        type="number"
-                                                        step="0.01"
-                                                        value={slab.percentage}
-                                                        onChange={(e) => {
-                                                            const newSlabs = [...approvalData.marketplaceSlabs];
-                                                            newSlabs[index].percentage = e.target.value;
-                                                            setApprovalData({ ...approvalData, marketplaceSlabs: newSlabs });
-                                                        }}
-                                                        className="pr-5 h-8 text-xs text-right font-mono"
-                                                        placeholder="%"
-                                                        disabled={approvalData.marketplaceRateType === "DEFAULT"}
-                                                    />
-                                                    <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-slate-400 font-mono">%</span>
-                                                </div>
-                                            </div>
+                                        <div className="space-y-2 bg-slate-50 p-3 rounded-xl border border-slate-200">
+                                            {approvalData.poojaSlabs?.length > 0 ? (
+                                                approvalData.poojaSlabs.map((slab: any, index: number) => (
+                                                    <div key={index} className="grid grid-cols-2 gap-3 items-center pb-2 border-b border-slate-200 last:border-0 last:pb-0">
+                                                        <div className="text-[11px] font-semibold text-slate-600">
+                                                            ₹{slab.minAmount} - {slab.maxAmount ? `₹${slab.maxAmount}` : '∞'}
+                                                        </div>
+                                                        <div className="flex gap-2">
+                                                            <div className="relative flex-1">
+                                                                <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] text-slate-400">₹</span>
+                                                                <Input
+                                                                    type="number"
+                                                                    value={slab.platformFee}
+                                                                    onChange={(e) => {
+                                                                        const newSlabs = [...approvalData.poojaSlabs];
+                                                                        newSlabs[index].platformFee = e.target.value;
+                                                                        setApprovalData({ ...approvalData, poojaSlabs: newSlabs });
+                                                                    }}
+                                                                    className="pl-5 h-8 text-xs font-mono"
+                                                                    placeholder="Fee"
+                                                                    disabled={approvalData.poojaRateType === "DEFAULT"}
+                                                                />
+                                                            </div>
+                                                            <div className="relative flex-1">
+                                                                <Input
+                                                                    type="number"
+                                                                    step="0.01"
+                                                                    value={slab.percentage}
+                                                                    onChange={(e) => {
+                                                                        const newSlabs = [...approvalData.poojaSlabs];
+                                                                        newSlabs[index].percentage = e.target.value;
+                                                                        setApprovalData({ ...approvalData, poojaSlabs: newSlabs });
+                                                                    }}
+                                                                    className="pr-5 h-8 text-xs text-right font-mono"
+                                                                    placeholder="%"
+                                                                    disabled={approvalData.poojaRateType === "DEFAULT"}
+                                                                />
+                                                                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-slate-400 font-mono">%</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                ))
+                                            ) : (
+                                                <p className="text-[10px] text-center text-slate-400 py-2 italic font-mono">No Online Pooja slabs defined.</p>
+                                            )}
                                         </div>
-                                    ))
-                                ) : (
-                                    <p className="text-[10px] text-center text-slate-400 py-2 italic font-mono">No Marketplace slabs defined.</p>
-                                )}
-                            </div>
-                        </div>
-
-                        {/* Slab management - Donation */}
-                        <div className="space-y-4">
-                            <label className="text-sm font-bold text-slate-800 uppercase tracking-widest text-[11px]">ðŸ’³ Donation Platform Fee</label>
-                            <div className="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
-                                {approvalData.donationSlabs?.length > 0 ? (
-                                    <div className="flex flex-wrap gap-2">
-                                        {approvalData.donationSlabs.map((slab: any, index: number) => (
-                                            <Badge key={index} variant="outline" className="bg-white text-emerald-700 border-emerald-200 font-mono px-4 py-2 text-[11px] shadow-sm">
-                                                {slab.percentage}% Platform Commission
-                                            </Badge>
-                                        ))}
                                     </div>
-                                ) : (
-                                    <p className="text-[10px] text-center text-slate-400 py-2 italic font-mono">No Donation slabs defined.</p>
-                                )}
-                            </div>
+
+                                    {/* Online Marketplace */}
+                                    <div className="space-y-2">
+                                        <div className="flex items-center justify-between">
+                                            <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">🛍️ Marketplace Platform Fee Slabs</label>
+                                            <div className="flex items-center gap-2 bg-slate-100 p-1 rounded-lg">
+                                                <span className={`text-[9px] font-bold ${approvalData.marketplaceRateType === "DEFAULT" ? "text-primary" : "text-muted-foreground"}`}>DEFAULT</span>
+                                                <Switch
+                                                    checked={approvalData.marketplaceRateType === "CUSTOM"}
+                                                    onCheckedChange={(checked) => setApprovalData({ ...approvalData, marketplaceRateType: checked ? "CUSTOM" : "DEFAULT" })}
+                                                    className="scale-75"
+                                                />
+                                                <span className={`text-[9px] font-bold ${approvalData.marketplaceRateType === "CUSTOM" ? "text-orange-600" : "text-muted-foreground"}`}>CUSTOM</span>
+                                            </div>
+                                        </div>
+                                        <div className="space-y-2 bg-slate-50 p-3 rounded-xl border border-slate-200">
+                                            {approvalData.marketplaceSlabs?.length > 0 ? (
+                                                approvalData.marketplaceSlabs.map((slab: any, index: number) => (
+                                                    <div key={index} className="grid grid-cols-2 gap-3 items-center pb-2 border-b border-slate-200 last:border-0 last:pb-0">
+                                                        <div className="text-[11px] font-semibold text-slate-600">
+                                                            ₹{slab.minAmount} - {slab.maxAmount ? `₹${slab.maxAmount}` : '∞'}
+                                                        </div>
+                                                        <div className="flex gap-2">
+                                                            <div className="relative flex-1">
+                                                                <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] text-slate-400">₹</span>
+                                                                <Input
+                                                                    type="number"
+                                                                    value={slab.platformFee}
+                                                                    onChange={(e) => {
+                                                                        const newSlabs = [...approvalData.marketplaceSlabs];
+                                                                        newSlabs[index].platformFee = e.target.value;
+                                                                        setApprovalData({ ...approvalData, marketplaceSlabs: newSlabs });
+                                                                    }}
+                                                                    className="pl-5 h-8 text-xs font-mono"
+                                                                    placeholder="Fee"
+                                                                    disabled={approvalData.marketplaceRateType === "DEFAULT"}
+                                                                />
+                                                            </div>
+                                                            <div className="relative flex-1">
+                                                                <Input
+                                                                    type="number"
+                                                                    step="0.01"
+                                                                    value={slab.percentage}
+                                                                    onChange={(e) => {
+                                                                        const newSlabs = [...approvalData.marketplaceSlabs];
+                                                                        newSlabs[index].percentage = e.target.value;
+                                                                        setApprovalData({ ...approvalData, marketplaceSlabs: newSlabs });
+                                                                    }}
+                                                                    className="pr-5 h-8 text-xs text-right font-mono"
+                                                                    placeholder="%"
+                                                                    disabled={approvalData.marketplaceRateType === "DEFAULT"}
+                                                                />
+                                                                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-slate-400 font-mono">%</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                ))
+                                            ) : (
+                                                <p className="text-[10px] text-center text-slate-400 py-2 italic font-mono">No Online Marketplace slabs defined.</p>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    {/* Online Donation */}
+                                    <div className="space-y-2">
+                                        <div className="flex items-center justify-between">
+                                            <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">💳 Online Donation Platform Fee Slabs</label>
+                                            <div className="flex items-center gap-2 bg-slate-100 p-1 rounded-lg">
+                                                <span className={`text-[9px] font-bold ${approvalData.donationRateType === "DEFAULT" ? "text-primary" : "text-muted-foreground"}`}>DEFAULT</span>
+                                                <Switch
+                                                    checked={approvalData.donationRateType === "CUSTOM"}
+                                                    onCheckedChange={(checked) => setApprovalData({ ...approvalData, donationRateType: checked ? "CUSTOM" : "DEFAULT" })}
+                                                    className="scale-75"
+                                                />
+                                                <span className={`text-[9px] font-bold ${approvalData.donationRateType === "CUSTOM" ? "text-orange-600" : "text-muted-foreground"}`}>CUSTOM</span>
+                                            </div>
+                                        </div>
+                                        <div className="space-y-2 bg-slate-50 p-3 rounded-xl border border-slate-200">
+                                            {approvalData.donationSlabs?.length > 0 ? (
+                                                approvalData.donationSlabs.map((slab: any, index: number) => (
+                                                    <div key={index} className="grid grid-cols-2 gap-3 items-center pb-2 border-b border-slate-200 last:border-0 last:pb-0">
+                                                        <div className="text-[11px] font-semibold text-slate-600">
+                                                            ₹{slab.minAmount} - {slab.maxAmount ? `₹${slab.maxAmount}` : '∞'}
+                                                        </div>
+                                                        <div className="flex gap-2">
+                                                            <div className="relative flex-1">
+                                                                <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] text-slate-400">₹</span>
+                                                                <Input
+                                                                    type="number"
+                                                                    value={slab.platformFee}
+                                                                    onChange={(e) => {
+                                                                        const newSlabs = [...approvalData.donationSlabs];
+                                                                        newSlabs[index].platformFee = e.target.value;
+                                                                        setApprovalData({ ...approvalData, donationSlabs: newSlabs });
+                                                                    }}
+                                                                    className="pl-5 h-8 text-xs font-mono"
+                                                                    placeholder="Fee"
+                                                                    disabled={approvalData.donationRateType === "DEFAULT"}
+                                                                />
+                                                            </div>
+                                                            <div className="relative flex-1">
+                                                                <Input
+                                                                    type="number"
+                                                                    step="0.01"
+                                                                    value={slab.percentage}
+                                                                    onChange={(e) => {
+                                                                        const newSlabs = [...approvalData.donationSlabs];
+                                                                        newSlabs[index].percentage = e.target.value;
+                                                                        setApprovalData({ ...approvalData, donationSlabs: newSlabs });
+                                                                    }}
+                                                                    className="pr-5 h-8 text-xs text-right font-mono"
+                                                                    placeholder="%"
+                                                                    disabled={approvalData.donationRateType === "DEFAULT"}
+                                                                />
+                                                                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-slate-400 font-mono">%</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                ))
+                                            ) : (
+                                                <p className="text-[10px] text-center text-slate-400 py-2 italic font-mono">No Online Donation slabs defined.</p>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* OFFLINE SLABS CONTENT */}
+                            {approvalData.activeSlabTab === 'offline' && (
+                                <div className="space-y-4">
+                                    {/* Offline Pooja */}
+                                    <div className="space-y-2">
+                                        <div className="flex items-center justify-between">
+                                            <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">🕉️ Offline Pooja Platform Fee Slabs</label>
+                                            <div className="flex items-center gap-2 bg-slate-100 p-1 rounded-lg">
+                                                <span className={`text-[9px] font-bold ${approvalData.offlinePoojaRateType === "DEFAULT" ? "text-primary" : "text-muted-foreground"}`}>DEFAULT</span>
+                                                <Switch
+                                                    checked={approvalData.offlinePoojaRateType === "CUSTOM"}
+                                                    onCheckedChange={(checked) => setApprovalData({ ...approvalData, offlinePoojaRateType: checked ? "CUSTOM" : "DEFAULT" })}
+                                                    className="scale-75"
+                                                />
+                                                <span className={`text-[9px] font-bold ${approvalData.offlinePoojaRateType === "CUSTOM" ? "text-orange-600" : "text-muted-foreground"}`}>CUSTOM</span>
+                                            </div>
+                                        </div>
+                                        <div className="space-y-2 bg-slate-50 p-3 rounded-xl border border-slate-200">
+                                            {approvalData.offlinePoojaSlabs?.length > 0 ? (
+                                                approvalData.offlinePoojaSlabs.map((slab: any, index: number) => (
+                                                    <div key={index} className="grid grid-cols-2 gap-3 items-center pb-2 border-b border-slate-200 last:border-0 last:pb-0">
+                                                        <div className="text-[11px] font-semibold text-slate-600">
+                                                            ₹{slab.minAmount} - {slab.maxAmount ? `₹${slab.maxAmount}` : '∞'}
+                                                        </div>
+                                                        <div className="flex gap-2">
+                                                            <div className="relative flex-1">
+                                                                <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] text-slate-400">₹</span>
+                                                                <Input
+                                                                    type="number"
+                                                                    value={slab.platformFee}
+                                                                    onChange={(e) => {
+                                                                        const newSlabs = [...approvalData.offlinePoojaSlabs];
+                                                                        newSlabs[index].platformFee = e.target.value;
+                                                                        setApprovalData({ ...approvalData, offlinePoojaSlabs: newSlabs });
+                                                                    }}
+                                                                    className="pl-5 h-8 text-xs font-mono"
+                                                                    placeholder="Fee"
+                                                                    disabled={approvalData.offlinePoojaRateType === "DEFAULT"}
+                                                                />
+                                                            </div>
+                                                            <div className="relative flex-1">
+                                                                <Input
+                                                                    type="number"
+                                                                    step="0.01"
+                                                                    value={slab.percentage}
+                                                                    onChange={(e) => {
+                                                                        const newSlabs = [...approvalData.offlinePoojaSlabs];
+                                                                        newSlabs[index].percentage = e.target.value;
+                                                                        setApprovalData({ ...approvalData, offlinePoojaSlabs: newSlabs });
+                                                                    }}
+                                                                    className="pr-5 h-8 text-xs text-right font-mono"
+                                                                    placeholder="%"
+                                                                    disabled={approvalData.offlinePoojaRateType === "DEFAULT"}
+                                                                />
+                                                                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-slate-400 font-mono">%</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                ))
+                                            ) : (
+                                                <p className="text-[10px] text-center text-slate-400 py-2 italic font-mono">No Offline Pooja slabs defined.</p>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    {/* Offline Marketplace */}
+                                    <div className="space-y-2">
+                                        <div className="flex items-center justify-between">
+                                            <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">🛍️ Offline Marketplace Platform Fee Slabs</label>
+                                            <div className="flex items-center gap-2 bg-slate-100 p-1 rounded-lg">
+                                                <span className={`text-[9px] font-bold ${approvalData.offlineMarketplaceRateType === "DEFAULT" ? "text-primary" : "text-muted-foreground"}`}>DEFAULT</span>
+                                                <Switch
+                                                    checked={approvalData.offlineMarketplaceRateType === "CUSTOM"}
+                                                    onCheckedChange={(checked) => setApprovalData({ ...approvalData, offlineMarketplaceRateType: checked ? "CUSTOM" : "DEFAULT" })}
+                                                    className="scale-75"
+                                                />
+                                                <span className={`text-[9px] font-bold ${approvalData.offlineMarketplaceRateType === "CUSTOM" ? "text-orange-600" : "text-muted-foreground"}`}>CUSTOM</span>
+                                            </div>
+                                        </div>
+                                        <div className="space-y-2 bg-slate-50 p-3 rounded-xl border border-slate-200">
+                                            {approvalData.offlineMarketplaceSlabs?.length > 0 ? (
+                                                approvalData.offlineMarketplaceSlabs.map((slab: any, index: number) => (
+                                                    <div key={index} className="grid grid-cols-2 gap-3 items-center pb-2 border-b border-slate-200 last:border-0 last:pb-0">
+                                                        <div className="text-[11px] font-semibold text-slate-600">
+                                                            ₹{slab.minAmount} - {slab.maxAmount ? `₹${slab.maxAmount}` : '∞'}
+                                                        </div>
+                                                        <div className="flex gap-2">
+                                                            <div className="relative flex-1">
+                                                                <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] text-slate-400">₹</span>
+                                                                <Input
+                                                                    type="number"
+                                                                    value={slab.platformFee}
+                                                                    onChange={(e) => {
+                                                                        const newSlabs = [...approvalData.offlineMarketplaceSlabs];
+                                                                        newSlabs[index].platformFee = e.target.value;
+                                                                        setApprovalData({ ...approvalData, offlineMarketplaceSlabs: newSlabs });
+                                                                    }}
+                                                                    className="pl-5 h-8 text-xs font-mono"
+                                                                    placeholder="Fee"
+                                                                    disabled={approvalData.offlineMarketplaceRateType === "DEFAULT"}
+                                                                />
+                                                            </div>
+                                                            <div className="relative flex-1">
+                                                                <Input
+                                                                    type="number"
+                                                                    step="0.01"
+                                                                    value={slab.percentage}
+                                                                    onChange={(e) => {
+                                                                        const newSlabs = [...approvalData.offlineMarketplaceSlabs];
+                                                                        newSlabs[index].percentage = e.target.value;
+                                                                        setApprovalData({ ...approvalData, offlineMarketplaceSlabs: newSlabs });
+                                                                    }}
+                                                                    className="pr-5 h-8 text-xs text-right font-mono"
+                                                                    placeholder="%"
+                                                                    disabled={approvalData.offlineMarketplaceRateType === "DEFAULT"}
+                                                                />
+                                                                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-slate-400 font-mono">%</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                ))
+                                            ) : (
+                                                <p className="text-[10px] text-center text-slate-400 py-2 italic font-mono">No Offline Marketplace slabs defined.</p>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    {/* Offline Donation */}
+                                    <div className="space-y-2">
+                                        <div className="flex items-center justify-between">
+                                            <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">💳 Offline Donation Platform Fee Slabs</label>
+                                            <div className="flex items-center gap-2 bg-slate-100 p-1 rounded-lg">
+                                                <span className={`text-[9px] font-bold ${approvalData.offlineDonationRateType === "DEFAULT" ? "text-primary" : "text-muted-foreground"}`}>DEFAULT</span>
+                                                <Switch
+                                                    checked={approvalData.offlineDonationRateType === "CUSTOM"}
+                                                    onCheckedChange={(checked) => setApprovalData({ ...approvalData, offlineDonationRateType: checked ? "CUSTOM" : "DEFAULT" })}
+                                                    className="scale-75"
+                                                />
+                                                <span className={`text-[9px] font-bold ${approvalData.offlineDonationRateType === "CUSTOM" ? "text-orange-600" : "text-muted-foreground"}`}>CUSTOM</span>
+                                            </div>
+                                        </div>
+                                        <div className="space-y-2 bg-slate-50 p-3 rounded-xl border border-slate-200">
+                                            {approvalData.offlineDonationSlabs?.length > 0 ? (
+                                                approvalData.offlineDonationSlabs.map((slab: any, index: number) => (
+                                                    <div key={index} className="grid grid-cols-2 gap-3 items-center pb-2 border-b border-slate-200 last:border-0 last:pb-0">
+                                                        <div className="text-[11px] font-semibold text-slate-600">
+                                                            ₹{slab.minAmount} - {slab.maxAmount ? `₹${slab.maxAmount}` : '∞'}
+                                                        </div>
+                                                        <div className="flex gap-2">
+                                                            <div className="relative flex-1">
+                                                                <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] text-slate-400">₹</span>
+                                                                <Input
+                                                                    type="number"
+                                                                    value={slab.platformFee}
+                                                                    onChange={(e) => {
+                                                                        const newSlabs = [...approvalData.offlineDonationSlabs];
+                                                                        newSlabs[index].platformFee = e.target.value;
+                                                                        setApprovalData({ ...approvalData, offlineDonationSlabs: newSlabs });
+                                                                    }}
+                                                                    className="pl-5 h-8 text-xs font-mono"
+                                                                    placeholder="Fee"
+                                                                    disabled={approvalData.offlineDonationRateType === "DEFAULT"}
+                                                                />
+                                                            </div>
+                                                            <div className="relative flex-1">
+                                                                <Input
+                                                                    type="number"
+                                                                    step="0.01"
+                                                                    value={slab.percentage}
+                                                                    onChange={(e) => {
+                                                                        const newSlabs = [...approvalData.offlineDonationSlabs];
+                                                                        newSlabs[index].percentage = e.target.value;
+                                                                        setApprovalData({ ...approvalData, offlineDonationSlabs: newSlabs });
+                                                                    }}
+                                                                    className="pr-5 h-8 text-xs text-right font-mono"
+                                                                    placeholder="%"
+                                                                    disabled={approvalData.offlineDonationRateType === "DEFAULT"}
+                                                                />
+                                                                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-slate-400 font-mono">%</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                ))
+                                            ) : (
+                                                <p className="text-[10px] text-center text-slate-400 py-2 italic font-mono">No Offline Donation slabs defined.</p>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
                         </div>
 
                         <div className="bg-emerald-50 text-emerald-800 text-xs p-3 rounded-lg flex gap-2 items-start">
                             <CheckCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
-                            <p>This will verify the temple account and save the configured settings. Active status remains controlled by the separate Active toggle.</p>
+                            <p>This will verify the temple account and save the configured online and offline settings. Active status remains controlled by the separate Active toggle.</p>
                         </div>
                     </div>
                     <div className="flex justify-end gap-3">

@@ -26,6 +26,7 @@ import { useToast } from "@/hooks/use-toast";
 import { fetchMandalDonations } from "@/api/mandalAdminController";
 import { generateReceiptHTML, downloadDonationReceiptPDF } from "@/utils/donationReceipt";
 import AddOfflineDonationPage from "./AddOfflineDonationPage";
+import * as XLSX from "xlsx";
 
 export default function MandalOfflineDonationPage() {
     const { toast } = useToast();
@@ -148,6 +149,28 @@ export default function MandalOfflineDonationPage() {
         downloadDonationReceiptPDF(receiptData as any);
     };
 
+    const handleExportExcel = () => {
+        if (filteredDonations.length === 0) {
+            toast({ title: "No Data", description: "There are no donations to export.", variant: "destructive" });
+            return;
+        }
+
+        const exportData = filteredDonations.map((d: any) => ({
+            "Receipt ID": d.displayId || d.id?.slice(-8) || "N/A",
+            "Donor Name": d.donorName || "Donor",
+            "Phone": d.donorPhone || "N/A",
+            "Purpose / Message": d.message || "General Donation",
+            "Date": d.createdAt ? new Date(d.createdAt).toLocaleDateString("en-IN") : "N/A",
+            "Amount (₹)": Number(d.amount || 0),
+            "Payment Method": d.paymentMethod || "CASH"
+        }));
+
+        const ws = XLSX.utils.json_to_sheet(exportData);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Offline Donations");
+        XLSX.writeFile(wb, `Mandal_Offline_Donations_${new Date().toISOString().slice(0,10)}.xlsx`);
+    };
+
     if (viewMode === "add") {
         return <AddOfflineDonationPage onBack={() => setViewMode("list")} />;
     }
@@ -164,9 +187,14 @@ export default function MandalOfflineDonationPage() {
                     <span>/</span>
                     <span className="font-semibold text-slate-800">Offline Donation Management</span>
                 </div>
-                <Button onClick={() => setViewMode("add")} className="bg-[#7b4623] hover:bg-[#5d351a] text-white shadow-md rounded-xl">
-                    <Plus className="w-4 h-4 mr-2" /> Record Offline Donation
-                </Button>
+                <div className="flex flex-wrap items-center gap-3">
+                    <Button onClick={handleExportExcel} variant="outline" className="border-[#7b4623]/20 hover:bg-[#7b4623]/5 text-[#7b4623] shadow-sm rounded-xl">
+                        <Download className="w-4 h-4 mr-2" /> Export Excel
+                    </Button>
+                    <Button onClick={() => setViewMode("add")} className="bg-[#7b4623] hover:bg-[#5d351a] text-white shadow-md rounded-xl">
+                        <Plus className="w-4 h-4 mr-2" /> Record Offline Donation
+                    </Button>
+                </div>
             </div>
 
             {/* Header Title */}

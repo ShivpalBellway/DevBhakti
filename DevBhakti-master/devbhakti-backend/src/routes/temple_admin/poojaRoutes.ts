@@ -20,6 +20,7 @@ const upload = multer({ storage });
 router.use(authenticate, injectTempleContext);
 
 router.get('/', checkPermission('poojas.view'), poojaController.getMyPoojas);
+router.post('/bulk', checkPermission('poojas.create'), poojaController.createBulkPoojas);
 router.post('/', checkPermission('poojas.create'), upload.single('image'), poojaController.createMyPooja);
 router.put('/:id', checkPermission('poojas.edit'), upload.single('image'), poojaController.updateMyPooja);
 router.delete('/:id', checkPermission('poojas.delete'), poojaController.deleteMyPooja);

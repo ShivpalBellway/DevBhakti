@@ -104,6 +104,7 @@
     "verified": "Verified",
     "explore_by_location": "Explore by Location",
     "view_all_locations": "View All Locations",
+    "mandal_count_one": "{{count}} Mandal",
     "mandal_count_many": "{{count}} Mandals",
     "festival_information": "Festival Information",
     "festival_dates_label": "Festival Dates",

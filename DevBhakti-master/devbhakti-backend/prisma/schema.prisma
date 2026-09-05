@@ -567,13 +567,14 @@ model CommissionSlab {
   platformFee Float              @default(0)
   percentage  Float              @default(0)
   slabType    SlabType           @default(GLOBAL)
+  isOffline   Boolean            @default(false)
   category    CommissionCategory @default(MARKETPLACE)
   targetId    String?
   isActive    Boolean            @default(true)
   createdAt   DateTime           @default(now())
   updatedAt   DateTime           @updatedAt
 
-  @@index([slabType, targetId, category])
+  @@index([slabType, targetId, category, isOffline])
 }
 
 model StaffMember {
@@ -765,6 +766,11 @@ model Mandal {
   instagramUrl       String?
   facebookUrl        String?
   youtubeUrl         String?
+  bankName           String?
+  accountNumber      String?
+  accountHolderName  String?
+  ifscCode           String?
+  upiId              String?
   createdAt          DateTime                  @default(now())
   updatedAt          DateTime                  @updatedAt
   documentUrl        String[]                  @default([])

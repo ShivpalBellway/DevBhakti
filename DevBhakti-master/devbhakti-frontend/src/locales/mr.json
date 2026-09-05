@@ -102,6 +102,7 @@
     "verified": "तपासलेले",
     "explore_by_location": "स्थान निवडून शोधा",
     "view_all_locations": "सर्व स्थाने पहा",
+    "mandal_count_one": "{{count}} मंडळ",
     "mandal_count_many": "{{count}} मंडळे",
     "festival_information": "उत्सवाची माहिती",
     "festival_dates_label": "उत्सवाच्या तारखा",

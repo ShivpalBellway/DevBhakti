@@ -8,7 +8,7 @@ const prisma = new PrismaClient();
  */
 export const getAllSlabs = async (req: Request, res: Response) => {
   try {
-    const { type, targetId, category } = req.query;
+    const { type, targetId, category, isOffline } = req.query;
 
     const where: any = { isActive: true };
 
@@ -22,6 +22,10 @@ export const getAllSlabs = async (req: Request, res: Response) => {
 
     if (category) {
       where.category = category as CommissionCategory;
+    }
+
+    if (isOffline !== undefined) {
+      where.isOffline = isOffline === 'true';
     }
 
     const slabs = await prisma.commissionSlab.findMany({
@@ -49,23 +53,24 @@ export const getAllSlabs = async (req: Request, res: Response) => {
  */
 export const createSlab = async (req: Request, res: Response) => {
   try {
-    const { minAmount, maxAmount, platformFee, percentage, slabType, targetId, category } = req.body;
+    const { minAmount, maxAmount, platformFee, percentage, slabType, targetId, category, isOffline } = req.body;
 
     // Validation
-    if (minAmount === undefined || platformFee === undefined || percentage === undefined) {
+    if (minAmount === undefined) {
       return res.status(400).json({
         success: false,
-        message: 'minAmount, platformFee, and percentage are required'
+        message: 'minAmount is required'
       });
     }
 
     const slab = await prisma.commissionSlab.create({
       data: {
-        minAmount: parseFloat(minAmount),
+        minAmount: parseFloat(minAmount) || 0,
         maxAmount: maxAmount ? parseFloat(maxAmount) : null,
-        platformFee: parseFloat(platformFee),
-        percentage: parseFloat(percentage),
+        platformFee: platformFee ? parseFloat(platformFee) : 0,
+        percentage: percentage ? parseFloat(percentage) : 0,
         slabType: slabType || SlabType.GLOBAL,
+        isOffline: isOffline === true || isOffline === 'true',
         targetId: targetId || null,
         category: category || CommissionCategory.MARKETPLACE
       }
@@ -92,7 +97,7 @@ export const createSlab = async (req: Request, res: Response) => {
 export const updateSlab = async (req: Request, res: Response) => {
   try {
     const id = req.params.id as string;
-    const { minAmount, maxAmount, platformFee, percentage, isActive } = req.body;
+    const { minAmount, maxAmount, platformFee, percentage, isActive, isOffline } = req.body;
 
     const updateData: any = {};
 
@@ -101,6 +106,7 @@ export const updateSlab = async (req: Request, res: Response) => {
     if (platformFee !== undefined) updateData.platformFee = parseFloat(platformFee);
     if (percentage !== undefined) updateData.percentage = parseFloat(percentage);
     if (isActive !== undefined) updateData.isActive = isActive;
+    if (isOffline !== undefined) updateData.isOffline = isOffline === true || isOffline === 'true';
 
     const slab = await prisma.commissionSlab.update({
       where: { id },
@@ -155,7 +161,7 @@ export const deleteSlab = async (req: Request, res: Response) => {
  */
 export const calculateCommission = async (req: Request, res: Response) => {
   try {
-    const { amount, vendorType, vendorId, category } = req.body;
+    const { amount, vendorType, vendorId, category, isOffline } = req.body;
 
     if (!amount || !vendorType) {
       return res.status(400).json({
@@ -168,7 +174,8 @@ export const calculateCommission = async (req: Request, res: Response) => {
       parseFloat(amount),
       vendorType as SlabType,
       vendorId,
-      category as CommissionCategory
+      category as CommissionCategory,
+      isOffline === true || isOffline === 'true'
     );
 
     res.json({
@@ -188,13 +195,14 @@ export const calculateCommission = async (req: Request, res: Response) => {
 
 /**
  * Helper function to get commission for a specific amount
- * First checks for vendor-specific slabs, then falls back to global slabs
+ * First checks for vendor-specific slabs (matching mode: online vs offline), then falls back to global slabs
  */
 export const getCommissionForAmount = async (
   amount: number,
   vendorType: SlabType,
   vendorId?: string,
-  category: CommissionCategory = CommissionCategory.MARKETPLACE
+  category: CommissionCategory = CommissionCategory.MARKETPLACE,
+  isOffline: boolean = false
 ): Promise<{
   platformFee: number;
   percentage: number;
@@ -203,13 +211,14 @@ export const getCommissionForAmount = async (
 }> => {
   let slab = null;
 
-  // First try to find vendor-specific slab
+  // First try to find vendor-specific slab with matching isOffline flag
   if (vendorId) {
     slab = await prisma.commissionSlab.findFirst({
       where: {
         slabType: vendorType,
         targetId: vendorId,
         category: category,
+        isOffline: isOffline,
         isActive: true,
         minAmount: { lte: amount },
         OR: [
@@ -221,12 +230,13 @@ export const getCommissionForAmount = async (
     });
   }
 
-  // If no vendor-specific slab found, use global slab
+  // If no vendor-specific slab found, fallback to global slab with matching isOffline flag
   if (!slab) {
     slab = await prisma.commissionSlab.findFirst({
       where: {
         slabType: SlabType.GLOBAL,
         category: category,
+        isOffline: isOffline,
         isActive: true,
         minAmount: { lte: amount },
         OR: [

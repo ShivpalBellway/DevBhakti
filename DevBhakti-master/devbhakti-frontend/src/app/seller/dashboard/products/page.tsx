@@ -326,15 +326,15 @@ export default function SellerProductsPage() {
                     </p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-                    {/* <Button
+                    <Button
                         onClick={downloadTemplate}
                         variant="outline"
-                        className="flex-1 md:flex-initial border-[#7b4623]/20 hover:bg-[#7b4623]/5"
+                        className="flex-1 md:flex-initial border-[#7b4623]/20 hover:bg-[#7b4623]/5 text-xs h-9"
                     >
                         <FileText className="w-4 h-4 mr-2" />
                         Template
-                    </Button> */}
-                    {/* <div className="relative flex-1 md:flex-initial">
+                    </Button>
+                    <div className="relative flex-1 md:flex-initial">
                         <input
                             type="file"
                             accept=".xlsx, .xls"
@@ -345,20 +345,20 @@ export default function SellerProductsPage() {
                         <Button
                             onClick={() => document.getElementById('import-excel')?.click()}
                             variant="outline"
-                            className="w-full border-[#7b4623]/20 hover:bg-[#7b4623]/5"
+                            className="w-full border-[#7b4623]/20 hover:bg-[#7b4623]/5 text-xs h-9"
                         >
                             <Upload className="w-4 h-4 mr-2" />
-                            Import
+                            Import Excel
                         </Button>
-                    </div> */}
-                    {/* <Button
+                    </div>
+                    <Button
                         onClick={handleExportExcel}
                         variant="outline"
-                        className="flex-1 md:flex-initial border-[#7b4623]/20 hover:bg-[#7b4623]/5"
+                        className="flex-1 md:flex-initial border-[#7b4623]/20 hover:bg-[#7b4623]/5 text-xs h-9"
                     >
                         <Download className="w-4 h-4 mr-2" />
-                        Export
-                    </Button> */}
+                        Export All
+                    </Button>
                     <Button
                         onClick={() => router.push('/seller/dashboard/products/create')}
                         className="bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98] rounded-xl px-6"

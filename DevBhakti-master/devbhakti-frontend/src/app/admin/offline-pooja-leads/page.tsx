@@ -17,8 +17,10 @@ import {
   Loader2,
   RefreshCw,
   Eye,
-  MapPin
+  MapPin,
+  Download
 } from "lucide-react";
+import * as XLSX from "xlsx";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -135,6 +137,39 @@ export default function AdminOfflineUsersPage() {
     }
   };
 
+  const handleExportExcel = () => {
+    try {
+      if (!leads || leads.length === 0) {
+        toast({ title: "No Data", description: "No offline users found to export.", variant: "destructive" });
+        return;
+      }
+
+      toast({ title: "Exporting...", description: "Generating Excel file. Please wait." });
+
+      const exportData = leads.map(lead => ({
+        "Name": lead.name || "N/A",
+        "Phone": lead.phone || "N/A",
+        "Email": lead.email || "N/A",
+        "Address": lead.address || "N/A",
+        "Total Donations": lead.totalDonations || 0,
+        "Total Pooja Bookings": lead.totalBookings || 0,
+        "Total Spent (INR)": lead.totalSpent || 0,
+        "Account Status": lead.userId ? `Synced (${lead.userDisplayId || 'Active'})` : "Auto Linked",
+        "Created On": lead.createdAt ? new Date(lead.createdAt).toLocaleDateString('en-IN') : "N/A"
+      }));
+
+      const ws = XLSX.utils.json_to_sheet(exportData);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Offline Users");
+      XLSX.writeFile(wb, `offline_users_export_${new Date().toISOString().split('T')[0]}.xlsx`);
+
+      toast({ title: "Success", description: "Export complete. File downloaded successfully." });
+    } catch (error) {
+      console.error(error);
+      toast({ title: "Failed", description: "Something went wrong during export.", variant: "destructive" });
+    }
+  };
+
   return (
     <div className="p-6 space-y-6 max-w-[1400px] mx-auto">
       {/* Header */}
@@ -148,11 +183,12 @@ export default function AdminOfflineUsersPage() {
             All offline devotees registered via manual donations or offline pooja bookings, auto-synced with user accounts.
           </p>
         </div>
-        <div className="flex items-center gap-3">
-          <Button variant="outline" onClick={loadLeads} disabled={loading} className="gap-2">
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-            Refresh
+        <div className="flex flex-wrap items-center gap-3">
+          <Button variant="outline" onClick={handleExportExcel} className="gap-2 border-slate-300">
+            <Download className="w-4 h-4" />
+            <span className="hidden sm:inline">Export</span>
           </Button>
+      
           <Link href="/admin/pooja-bookings/add-offline">
             <Button className="bg-[#794A05] hover:bg-[#794A05]/90 text-white gap-2">
               <Plus className="w-4 h-4" />

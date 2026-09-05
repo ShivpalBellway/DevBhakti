@@ -22,6 +22,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { submitMandalRegistration, fetchMandalRegistrationStatus } from "@/api/publicController";
+import { captureLead } from "@/api/leadApi";
 
 export default function MandalRegistrationForm({ onClose }: { onClose?: () => void }) {
     const { t } = useLanguage();
@@ -126,6 +127,13 @@ export default function MandalRegistrationForm({ onClose }: { onClose?: () => vo
             const res = await submitMandalRegistration(fd);
             if (res.success) {
                 setShowSuccess(true);
+                // Auto-capture lead for CRM
+                try {
+                    const phone = formData.contactNumber.startsWith('+91') ? formData.contactNumber : `+91${formData.contactNumber}`;
+                    await captureLead(phone, "TEMPLE_ONBOARDING", { mandalName: formData.name, mandalType: formData.mandalType }, formData.presidentName, formData.email);
+                } catch (leadErr) {
+                    console.error("Lead capture warning:", leadErr);
+                }
             } else {
                 setError(res.message || "Failed to submit registration.");
             }

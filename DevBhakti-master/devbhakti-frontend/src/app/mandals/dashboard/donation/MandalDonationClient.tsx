@@ -35,6 +35,7 @@ import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { useDebounce } from "@/hooks/use-debounce";
 import { fetchMandalDonations, fetchMandalDonationStats } from "@/api/mandalAdminController";
+import * as XLSX from "xlsx";
 
 export default function MandalDonationClient() {
     const searchParams = useSearchParams();
@@ -106,6 +107,49 @@ export default function MandalDonationClient() {
         fetchStatsData();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [debouncedSearch, dateRange]);
+
+    // Export full data
+    const handleExportExcel = async () => {
+        try {
+            const params: any = {
+                search: debouncedSearch,
+                limit: "5000",
+            };
+            if (dateRange?.from) params.startDate = dateRange.from.toISOString();
+            if (dateRange?.to) params.endDate = dateRange.to.toISOString();
+
+            toast({ title: "Exporting...", description: "Preparing data for export" });
+            const response = await fetchMandalDonations(params);
+            
+            if (response.success && response.data) {
+                if (response.data.length === 0) {
+                    toast({ title: "No Data", description: "There are no donations to export", variant: "destructive" });
+                    return;
+                }
+
+                const exportData = response.data.map((d: any) => ({
+                    "Donation ID": d.displayId || d.id,
+                    "Donor Name": d.donorName || "Anonymous",
+                    "Phone": d.donorPhone || "N/A",
+                    "Email": d.donorEmail || "N/A",
+                    "Amount (₹)": d.amount,
+                    "Date": format(new Date(d.createdAt), "dd MMM yyyy, hh:mm a"),
+                    "Payment Method": d.paymentMethod || "ONLINE",
+                    "Status": d.status || "SUCCESS",
+                    "Message": d.message || "N/A",
+                    "Address": d.address || "N/A"
+                }));
+
+                const ws = XLSX.utils.json_to_sheet(exportData);
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, "Donations");
+                XLSX.writeFile(wb, `Mandal_Donations_${new Date().toISOString().slice(0, 10)}.xlsx`);
+            }
+        } catch (error) {
+            console.error("Export Error:", error);
+            toast({ title: "Export Failed", description: "Failed to export donations data", variant: "destructive" });
+        }
+    };
 
     // Format currency
     const formatCurrency = (amount: number) =>
@@ -186,64 +230,74 @@ export default function MandalDonationClient() {
             </div>
 
             {/* Filters */}
-            <div className="flex flex-col sm:flex-row gap-3">
+            <div className="flex flex-col sm:flex-row gap-4">
                 <div className="relative flex-1">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
                     <Input
                         placeholder="Search by donor name or ID..."
-                        className="pl-10 border-slate-200 focus:border-[#7b4623] focus:ring-[#7b4623]/10"
+                        className="pl-12 h-12 rounded-xl border-slate-200 bg-white shadow-sm focus:border-[#7b4623] transition-all text-sm"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                     />
                 </div>
 
-                {/* Date Range Picker */}
-                <Popover>
-                    <PopoverTrigger asChild>
-                        <Button
-                            variant="outline"
-                            className={cn(
-                                "w-full sm:w-auto justify-start text-left font-normal border-slate-200",
-                                !dateRange && "text-muted-foreground"
-                            )}
-                        >
-                            <CalendarIcon className="mr-2 h-4 w-4" />
-                            {dateRange?.from ? (
-                                dateRange.to ? (
-                                    <>
-                                        {format(dateRange.from, "dd MMM")} –{" "}
-                                        {format(dateRange.to, "dd MMM, yyyy")}
-                                    </>
+                <div className="flex gap-3 shrink-0">
+                    <Popover>
+                        <PopoverTrigger asChild>
+                            <Button
+                                variant="outline"
+                                className={cn(
+                                    "w-full sm:w-[240px] justify-start text-left font-medium border-slate-200 h-12 rounded-xl shadow-sm hover:bg-slate-50 transition-colors",
+                                    !dateRange && "text-muted-foreground"
+                                )}
+                            >
+                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                {dateRange?.from ? (
+                                    dateRange.to ? (
+                                        <>
+                                            {format(dateRange.from, "MMM dd")} –{" "}
+                                            {format(dateRange.to, "MMM dd, yyyy")}
+                                        </>
+                                    ) : (
+                                        format(dateRange.from, "MMM dd, yyyy")
+                                    )
                                 ) : (
-                                    format(dateRange.from, "dd MMM, yyyy")
-                                )
-                            ) : (
-                                "Filter by date"
+                                    "Filter by date"
+                                )}
+                            </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="end">
+                            <Calendar
+                                initialFocus
+                                mode="range"
+                                defaultMonth={dateRange?.from}
+                                selected={dateRange}
+                                onSelect={setDateRange}
+                                numberOfMonths={2}
+                            />
+                            {dateRange && (
+                                <div className="p-3 border-t flex justify-end">
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => setDateRange(undefined)}
+                                    >
+                                        Clear
+                                    </Button>
+                                </div>
                             )}
-                        </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                            initialFocus
-                            mode="range"
-                            defaultMonth={dateRange?.from}
-                            selected={dateRange}
-                            onSelect={setDateRange}
-                            numberOfMonths={2}
-                        />
-                        {dateRange && (
-                            <div className="p-3 border-t flex justify-end">
-                                <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => setDateRange(undefined)}
-                                >
-                                    Clear
-                                </Button>
-                            </div>
-                        )}
-                    </PopoverContent>
-                </Popover>
+                        </PopoverContent>
+                    </Popover>
+
+                    <Button
+                        onClick={handleExportExcel}
+                        variant="outline"
+                        className="h-12 px-6 rounded-xl border-slate-200 shadow-sm hover:bg-[#7b4623]/5 text-[#7b4623] font-bold flex items-center gap-2 shrink-0 transition-all"
+                    >
+                        <Download className="w-4 h-4" />
+                        <span className="hidden sm:inline">Export All</span>
+                    </Button>
+                </div>
             </div>
 
             {/* Donations Table */}

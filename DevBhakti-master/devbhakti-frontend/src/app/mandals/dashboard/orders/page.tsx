@@ -187,11 +187,11 @@ function MandalOrdersClient() {
             return;
         }
 
-        const exportData = filteredOrders.map(o => ({
+        const exportData = orders.map(o => ({
             "Sub-Order ID": o.id,
             "Customer": o.order?.user?.name || "N/A",
             "Phone": o.order?.user?.phone || "N/A",
-            "Items": o.items.map((i: any) => `${parseLocalizedValue(i.product?.name)} (x${i.quantity})`).join(", "),
+            "Items": (o.items || []).map((i: any) => `${parseLocalizedValue(i.product?.name)} (x${i.quantity})`).join(", "),
             "Total Amount": o.totalAmount,
             "Date": format(new Date(o.createdAt), "dd MMM yyyy HH:mm"),
             "Status": o.status,
@@ -316,7 +316,7 @@ function MandalOrdersClient() {
                     className="h-12 px-6 rounded-xl border-slate-200 hover:bg-[#794A05]/5 text-[#794A05] font-bold flex items-center gap-2"
                 >
                     <Download className="w-4 h-4" />
-                    Export Orders
+                    Export All Orders
                 </Button>
             </div>
 

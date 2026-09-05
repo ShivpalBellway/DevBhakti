@@ -72,6 +72,7 @@ import {
 import {
     fetchMyEvents,
     createMyEvent,
+    createBulkMyEvents,
     updateMyEvent,
     deleteMyEvent,
     fetchMyPoojas,
@@ -365,53 +366,40 @@ export default function TempleEventsPage() {
 
                 toast({ title: "Import Started", description: `Importing ${data.length} events...`, variant: "success" });
 
-                let successCount = 0;
-                let failCount = 0;
-                const errors: string[] = [];
+                const mappedEvents = data.map((row: any) => ({
+                    name_en: String(row.Name_EN || "").trim(),
+                    name_hi: String(row.Name_HI || "").trim(),
+                    name_mr: String(row.Name_MR || "").trim(),
+                    date: String(row.Date || "").trim(),
+                    description_en: String(row.Description_EN || "").trim(),
+                    description_hi: String(row.Description_HI || "").trim(),
+                    description_mr: String(row.Description_MR || "").trim(),
+                    status: String(row.Status || "TRUE").toUpperCase() === "TRUE",
+                    recommendedPoojaIds: []
+                }));
 
-                for (let i = 0; i < data.length; i++) {
-                    const row = data[i];
-                    const rowNum = i + 2;
-                    try {
-                        if (!row.Name_EN) throw new Error("English name is required");
-                        if (!row.Date) throw new Error("Date is required");
+                try {
+                    const result = await createBulkMyEvents({ events: mappedEvents });
+                    const { successCount, failCount, errors } = result.data;
 
-                        const payload = {
-                            name_en: String(row.Name_EN || "").trim(),
-                            name_hi: String(row.Name_HI || "").trim(),
-                            name_mr: String(row.Name_MR || "").trim(),
-                            date: String(row.Date || "").trim(),
-                            // time: String(row.Time || "10:00 AM").trim(),
-                            description_en: String(row.Description_EN || "").trim(),
-                            description_hi: String(row.Description_HI || "").trim(),
-                            description_mr: String(row.Description_MR || "").trim(),
-                            status: String(row.Status || "TRUE").toUpperCase() === "TRUE",
-                            recommendedPoojaIds: []
-                        };
-
-                        await createMyEvent(payload);
-                        successCount++;
-                    } catch (err: any) {
-                        const errorMsg = err.response?.data?.message || err.message || "Unknown error";
-                        failCount++;
-                        errors.push(`Row ${rowNum}: ${errorMsg}`);
-                        console.error(`Import Error Row ${rowNum}:`, errorMsg);
+                    if (failCount > 0) {
+                        toast({
+                            title: "Import Partially Failed",
+                            description: `Success: ${successCount}, Failed: ${failCount}. Check console or fix these: ${errors.slice(0, 3).join(", ")}${errors.length > 3 ? "..." : ""}`,
+                            variant: "destructive"
+                        });
+                        console.error('Bulk Import Errors:', errors);
+                    } else {
+                        toast({
+                            title: "Import Successful",
+                            description: `Successfully imported ${successCount} events.`,
+                            variant: "success"
+                        });
                     }
+                    loadData();
+                } catch (bulkErr: any) {
+                    toast({ title: "Import Failed", description: bulkErr.response?.data?.message || "Failed to process bulk upload.", variant: "destructive" });
                 }
-
-                if (failCount > 0) {
-                    toast({
-                        title: "Import Partially Failed",
-                        description: `Success: ${successCount}, Failed: ${failCount}. Check console or fix these: ${errors.slice(0, 3).join(", ")}${errors.length > 3 ? "..." : ""}`,
-                        variant: "destructive"
-                    });
-                } else {
-                    toast({
-                        title: "Import Successful",
-                        description: `Successfully imported ${successCount} events.`
-                    });
-                }
-                loadData();
             } catch (error) {
                 toast({ title: "Import Failed", description: "Failed to process Excel file", variant: "destructive" });
             }
@@ -431,15 +419,15 @@ export default function TempleEventsPage() {
                     </p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2 sm:gap-3 w-full md:w-auto">
-                    {/* <Button
+                    <Button
                         onClick={downloadTemplate}
                         variant="outline"
-                        className="flex-1 md:flex-initial border-[#7b4623]/20 hover:bg-[#7b4623]/5"
+                        className="flex-1 md:flex-initial border-[#7b4623]/20 hover:bg-[#7b4623]/5 text-xs h-9"
                     >
                         <FileText className="w-4 h-4 mr-2" />
                         Template
-                    </Button> */}
-                    {/* <div className="relative flex-1 md:flex-initial">
+                    </Button>
+                    <div className="relative flex-1 md:flex-initial">
                         <input
                             type="file"
                             accept=".xlsx, .xls"
@@ -450,20 +438,20 @@ export default function TempleEventsPage() {
                         <Button
                             onClick={() => document.getElementById('import-excel')?.click()}
                             variant="outline"
-                            className="w-full border-[#7b4623]/20 hover:bg-[#7b4623]/5"
+                            className="w-full border-[#7b4623]/20 hover:bg-[#7b4623]/5 text-xs h-9"
                         >
                             <Upload className="w-4 h-4 mr-2" />
-                            Import
-                        </Button> */}
-                    {/* </div> */}
-                    {/* <Button
+                            Import Excel
+                        </Button>
+                    </div>
+                    <Button
                         onClick={handleExportExcel}
                         variant="outline"
-                        className="flex-1 md:flex-initial border-[#7b4623]/20 hover:bg-[#7b4623]/5"
+                        className="flex-1 md:flex-initial border-[#7b4623]/20 hover:bg-[#7b4623]/5 text-xs h-9"
                     >
                         <Download className="w-4 h-4 mr-2" />
-                        Export
-                    </Button> */}
+                        Export All
+                    </Button>
                     {(!canCreate || !canEdit || !canManage || !canDelete) && (
                         <Badge className="bg-slate-100 text-slate-500 border-slate-200 uppercase font-black tracking-widest px-4 py-2 rounded-xl">View Only Mode</Badge>
                     )}

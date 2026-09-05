@@ -26,7 +26,8 @@ import {
   ChevronRight,
   X,
   Calendar,
-  Clock
+  Clock,
+  Download
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { fetchMandalProfile, lookupDevoteeByPhoneMandal } from "@/api/mandalAdminController";
@@ -34,6 +35,7 @@ import { parseLocalizedValue, formatSlotTime } from "@/utils/textUtils";
 import { useRouter } from "next/navigation";
 import { printDarshanPassReceipt } from "@/utils/darshanReceipt";
 import Link from "next/link";
+import * as XLSX from "xlsx";
 
 export default function OfflineMandalTicketClient() {
   const { toast } = useToast();
@@ -84,7 +86,7 @@ export default function OfflineMandalTicketClient() {
     if (digits.length < 10) return;
     try {
       setIsLookupLoading(true);
-      const res = await lookupDevoteeByPhoneMandal(`+91${digits}`);
+      const res = await lookupDevoteeByPhoneMandal(`+${digits}`);
       if (res.success && res.exists && res.data) {
         if (res.data.name) setVisitorName(res.data.name);
         if (res.data.email) setVisitorEmail(res.data.email);
@@ -278,6 +280,29 @@ export default function OfflineMandalTicketClient() {
     });
   };
 
+  const handleExportExcel = () => {
+    if (filteredTickets.length === 0) {
+      toast({ title: "No Data", description: "There are no tickets to export.", variant: "destructive" });
+      return;
+    }
+
+    const exportData = filteredTickets.map((t: any) => ({
+      "Pass ID": t.displayId || t.id?.slice(-8) || "N/A",
+      "Devotee Name": t.visitorName || "Devotee",
+      "Phone": t.visitorPhone || "N/A",
+      "Visitors": t.visitorCount || 1,
+      "Pass Type": t.ticketType ? t.ticketType.replace(/_/g, " ") : "General Pass",
+      "Date": t.createdAt ? new Date(t.createdAt).toLocaleDateString("en-IN") : "N/A",
+      "Amount (₹)": Number(t.totalAmount || t.amount || 0),
+      "Payment": t.paymentMode || "CASH"
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(exportData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Offline Tickets");
+    XLSX.writeFile(wb, `Mandal_Offline_Tickets_${new Date().toISOString().slice(0,10)}.xlsx`);
+  };
+
   return (
     <div className="w-full max-w-7xl mx-auto space-y-6 pb-20 px-2 sm:px-0">
       {/* Top Breadcrumb Navigation */}
@@ -294,9 +319,14 @@ export default function OfflineMandalTicketClient() {
         </div>
 
         {viewMode === "list" ? (
-          <Button onClick={() => setViewMode("add")} className="bg-[#7b4623] hover:bg-[#5d351a] text-white shadow-md rounded-xl font-bold">
-            <Plus className="w-4 h-4 mr-2" /> Record Offline Ticket
-          </Button>
+          <div className="flex flex-wrap items-center gap-3">
+            <Button onClick={handleExportExcel} variant="outline" className="border-[#7b4623]/20 hover:bg-[#7b4623]/5 text-[#7b4623] shadow-sm rounded-xl font-bold">
+              <Download className="w-4 h-4 mr-2" /> Export Excel
+            </Button>
+            <Button onClick={() => setViewMode("add")} className="bg-[#7b4623] hover:bg-[#5d351a] text-white shadow-md rounded-xl font-bold">
+              <Plus className="w-4 h-4 mr-2" /> Record Offline Ticket
+            </Button>
+          </div>
         ) : (
           <Button onClick={() => setViewMode("list")} variant="outline" className="border-slate-300 rounded-xl font-medium">
             <ArrowLeft className="w-4 h-4 mr-2" /> Back to Tickets List

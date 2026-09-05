@@ -44,8 +44,22 @@ export default function ViewTemplePage() {
     const [currentHeroIndex, setCurrentHeroIndex] = useState(0);
     const [marketplaceSlabs, setMarketplaceSlabs] = useState<any[]>([]);
     const [poojaSlabs, setPoojaSlabs] = useState<any[]>([]);
+    const [donationSlabs, setDonationSlabs] = useState<any[]>([]);
+    
+    const [offlineMarketplaceSlabs, setOfflineMarketplaceSlabs] = useState<any[]>([]);
+    const [offlinePoojaSlabs, setOfflinePoojaSlabs] = useState<any[]>([]);
+    const [offlineDonationSlabs, setOfflineDonationSlabs] = useState<any[]>([]);
+
     const [isCustomMarketplace, setIsCustomMarketplace] = useState(false);
     const [isCustomPooja, setIsCustomPooja] = useState(false);
+    const [isCustomDonation, setIsCustomDonation] = useState(false);
+
+    const [isCustomOfflineMarketplace, setIsCustomOfflineMarketplace] = useState(false);
+    const [isCustomOfflinePooja, setIsCustomOfflinePooja] = useState(false);
+    const [isCustomOfflineDonation, setIsCustomOfflineDonation] = useState(false);
+
+    const [commTab, setCommTab] = useState<"online" | "offline">("online");
+
     const [products, setProducts] = useState<any[]>([]);
     const { language } = useLanguage();
     const [activeTab, setActiveTab] = useState<Language>("en");
@@ -93,8 +107,6 @@ export default function ViewTemplePage() {
             setInst(found);
 
             if (found) {
-                // Safe multilingual extractor (defined locally within loadData or accessed via scoped component)
-                // However, for simplicity and immediate fix, we use a robust version of the previous logic
                 const nameStr = found.temple?.name;
                 let displayName = "Temple Details";
                 
@@ -117,26 +129,72 @@ export default function ViewTemplePage() {
             }
 
             if (found?.temple?.id) {
-                // Load Marketplace Slabs
-                const mSlabsResponse = await fetchCommissionSlabsAdmin('TEMPLE', found.temple.id, 'MARKETPLACE');
+                const tId = found.temple.id;
+
+                // Load Online Marketplace Slabs
+                const mSlabsResponse = await fetchCommissionSlabsAdmin('TEMPLE', tId, 'MARKETPLACE', false);
                 if (mSlabsResponse.success && mSlabsResponse.data.length > 0) {
                     setMarketplaceSlabs(mSlabsResponse.data);
                     setIsCustomMarketplace(true);
                 } else {
-                    const globalM = await fetchCommissionSlabsAdmin('GLOBAL', undefined, 'MARKETPLACE');
+                    const globalM = await fetchCommissionSlabsAdmin('GLOBAL', undefined, 'MARKETPLACE', false);
                     if (globalM.success) setMarketplaceSlabs(globalM.data);
                     setIsCustomMarketplace(false);
                 }
 
-                // Load Pooja Slabs
-                const pSlabsResponse = await fetchCommissionSlabsAdmin('TEMPLE', found.temple.id, 'POOJA');
+                // Load Offline Marketplace Slabs
+                const omSlabsResponse = await fetchCommissionSlabsAdmin('TEMPLE', tId, 'MARKETPLACE', true);
+                if (omSlabsResponse.success && omSlabsResponse.data.length > 0) {
+                    setOfflineMarketplaceSlabs(omSlabsResponse.data);
+                    setIsCustomOfflineMarketplace(true);
+                } else {
+                    const globalOM = await fetchCommissionSlabsAdmin('GLOBAL', undefined, 'MARKETPLACE', true);
+                    if (globalOM.success) setOfflineMarketplaceSlabs(globalOM.data);
+                    setIsCustomOfflineMarketplace(false);
+                }
+
+                // Load Online Pooja Slabs
+                const pSlabsResponse = await fetchCommissionSlabsAdmin('TEMPLE', tId, 'POOJA', false);
                 if (pSlabsResponse.success && pSlabsResponse.data.length > 0) {
                     setPoojaSlabs(pSlabsResponse.data);
                     setIsCustomPooja(true);
                 } else {
-                    const globalP = await fetchCommissionSlabsAdmin('GLOBAL', undefined, 'POOJA');
+                    const globalP = await fetchCommissionSlabsAdmin('GLOBAL', undefined, 'POOJA', false);
                     if (globalP.success) setPoojaSlabs(globalP.data);
                     setIsCustomPooja(false);
+                }
+
+                // Load Offline Pooja Slabs
+                const opSlabsResponse = await fetchCommissionSlabsAdmin('TEMPLE', tId, 'POOJA', true);
+                if (opSlabsResponse.success && opSlabsResponse.data.length > 0) {
+                    setOfflinePoojaSlabs(opSlabsResponse.data);
+                    setIsCustomOfflinePooja(true);
+                } else {
+                    const globalOP = await fetchCommissionSlabsAdmin('GLOBAL', undefined, 'POOJA', true);
+                    if (globalOP.success) setOfflinePoojaSlabs(globalOP.data);
+                    setIsCustomOfflinePooja(false);
+                }
+
+                // Load Online Donation Slabs
+                const dSlabsResponse = await fetchCommissionSlabsAdmin('TEMPLE', tId, 'DONATION', false);
+                if (dSlabsResponse.success && dSlabsResponse.data.length > 0) {
+                    setDonationSlabs(dSlabsResponse.data);
+                    setIsCustomDonation(true);
+                } else {
+                    const globalD = await fetchCommissionSlabsAdmin('GLOBAL', undefined, 'DONATION', false);
+                    if (globalD.success) setDonationSlabs(globalD.data);
+                    setIsCustomDonation(false);
+                }
+
+                // Load Offline Donation Slabs
+                const odSlabsResponse = await fetchCommissionSlabsAdmin('TEMPLE', tId, 'DONATION', true);
+                if (odSlabsResponse.success && odSlabsResponse.data.length > 0) {
+                    setOfflineDonationSlabs(odSlabsResponse.data);
+                    setIsCustomOfflineDonation(true);
+                } else {
+                    const globalOD = await fetchCommissionSlabsAdmin('GLOBAL', undefined, 'DONATION', true);
+                    if (globalOD.success) setOfflineDonationSlabs(globalOD.data);
+                    setIsCustomOfflineDonation(false);
                 }
 
                 // Load Products
@@ -453,90 +511,290 @@ export default function ViewTemplePage() {
 
                     {/* Commission Slabs */}
                     <div className="space-y-6">
-                        <h2 className="text-2xl font-bold flex items-center gap-2 text-slate-800 px-4">
-                            <History className="w-6 h-6 text-primary" />
-                            Commission Slabs
-                        </h2>
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-4">
+                            <h2 className="text-2xl font-bold flex items-center gap-2 text-slate-800">
+                                <History className="w-6 h-6 text-primary" />
+                                Commission Slabs
+                            </h2>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            {/* Marketplace Slabs */}
-                            <Card className="border-none shadow-sm overflow-hidden">
-                                <CardContent className="p-6 space-y-4">
-                                    <h3 className="font-bold text-lg text-slate-800 flex items-center gap-2">
-                                        <Store className="w-5 h-5 text-blue-600" />
-                                        Marketplace Slabs
-                                        <Badge variant={isCustomMarketplace ? 'default' : 'outline'} className="text-[9px] uppercase">
-                                            {isCustomMarketplace ? 'Custom' : 'Global Default'}
-                                        </Badge>
-                                    </h3>
-                                    {marketplaceSlabs.length > 0 ? (
-                                        <div className="rounded-lg border overflow-hidden">
-                                            <Table>
-                                                <TableHeader className="bg-slate-50">
-                                                    <TableRow>
-                                                        <TableHead className="text-[10px] uppercase font-bold">Range (₹)</TableHead>
-                                                        <TableHead className="text-[10px] uppercase font-bold">Fee</TableHead>
-                                                        <TableHead className="text-[10px] uppercase font-bold">%</TableHead>
-                                                    </TableRow>
-                                                </TableHeader>
-                                                <TableBody>
-                                                    {marketplaceSlabs.sort((a, b) => a.minAmount - b.minAmount).map((slab, i) => (
-                                                        <TableRow key={i}>
-                                                            <TableCell className="text-sm font-medium">
-                                                                {slab.minAmount} - {slab.maxAmount || "∞"}
-                                                            </TableCell>
-                                                            <TableCell className="text-sm">₹{slab.platformFee}</TableCell>
-                                                            <TableCell className="text-sm">{slab.percentage}%</TableCell>
-                                                        </TableRow>
-                                                    ))}
-                                                </TableBody>
-                                            </Table>
-                                        </div>
-                                    ) : (
-                                        <p className="text-sm text-slate-500 italic">No custom marketplace slabs.</p>
-                                    )}
-                                </CardContent>
-                            </Card>
-
-                            {/* Pooja Slabs */}
-                            <Card className="border-none shadow-sm overflow-hidden">
-                                <CardContent className="p-6 space-y-4">
-                                    <h3 className="font-bold text-lg text-slate-800 flex items-center gap-2">
-                                        <Calendar className="w-5 h-5 text-orange-600" />
-                                        Pooja Booking Slabs
-                                        <Badge variant={isCustomPooja ? 'default' : 'outline'} className="text-[9px] uppercase">
-                                            {isCustomPooja ? 'Custom' : 'Global Default'}
-                                        </Badge>
-                                    </h3>
-                                    {poojaSlabs.length > 0 ? (
-                                        <div className="rounded-lg border overflow-hidden">
-                                            <Table>
-                                                <TableHeader className="bg-slate-50">
-                                                    <TableRow>
-                                                        <TableHead className="text-[10px] uppercase font-bold">Range (₹)</TableHead>
-                                                        <TableHead className="text-[10px] uppercase font-bold">Fee</TableHead>
-                                                        <TableHead className="text-[10px] uppercase font-bold">%</TableHead>
-                                                    </TableRow>
-                                                </TableHeader>
-                                                <TableBody>
-                                                    {poojaSlabs.sort((a, b) => a.minAmount - b.minAmount).map((slab, i) => (
-                                                        <TableRow key={i}>
-                                                            <TableCell className="text-sm font-medium">
-                                                                {slab.minAmount} - {slab.maxAmount || "∞"}
-                                                            </TableCell>
-                                                            <TableCell className="text-sm">₹{slab.platformFee}</TableCell>
-                                                            <TableCell className="text-sm">{slab.percentage}%</TableCell>
-                                                        </TableRow>
-                                                    ))}
-                                                </TableBody>
-                                            </Table>
-                                        </div>
-                                    ) : (
-                                        <p className="text-sm text-slate-500 italic">No custom pooja slabs.</p>
-                                    )}
-                                </CardContent>
-                            </Card>
+                            {/* Online / Offline Tab Selector */}
+                            <div className="inline-flex p-1 bg-slate-100 rounded-xl border border-slate-200">
+                                <button
+                                    type="button"
+                                    onClick={() => setCommTab("online")}
+                                    className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                                        commTab === "online" 
+                                            ? "bg-white text-slate-900 shadow-sm" 
+                                            : "text-slate-500 hover:text-slate-900"
+                                    }`}
+                                >
+                                    🌐 Online Commission
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setCommTab("offline")}
+                                    className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                                        commTab === "offline" 
+                                            ? "bg-white text-slate-900 shadow-sm" 
+                                            : "text-slate-500 hover:text-slate-900"
+                                    }`}
+                                >
+                                    🏢 Offline Commission
+                                </button>
+                            </div>
                         </div>
+
+                        {commTab === "online" ? (
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                {/* Online Pooja Slabs */}
+                                <Card className="border-none shadow-sm overflow-hidden">
+                                    <CardContent className="p-6 space-y-4">
+                                        <h3 className="font-bold text-base text-slate-800 flex items-center justify-between">
+                                            <span className="flex items-center gap-2">
+                                                <Calendar className="w-4 h-4 text-orange-600" />
+                                                Pooja Booking
+                                            </span>
+                                            <Badge variant={isCustomPooja ? 'default' : 'outline'} className="text-[9px] uppercase">
+                                                {isCustomPooja ? 'Custom' : 'Global Default'}
+                                            </Badge>
+                                        </h3>
+                                        {poojaSlabs.length > 0 ? (
+                                            <div className="rounded-lg border overflow-hidden">
+                                                <Table>
+                                                    <TableHeader className="bg-slate-50">
+                                                        <TableRow>
+                                                            <TableHead className="text-[10px] uppercase font-bold">Range (₹)</TableHead>
+                                                            <TableHead className="text-[10px] uppercase font-bold">Fee</TableHead>
+                                                            <TableHead className="text-[10px] uppercase font-bold">%</TableHead>
+                                                        </TableRow>
+                                                    </TableHeader>
+                                                    <TableBody>
+                                                        {poojaSlabs.sort((a, b) => a.minAmount - b.minAmount).map((slab, i) => (
+                                                            <TableRow key={i}>
+                                                                <TableCell className="text-xs font-medium">
+                                                                    ₹{slab.minAmount} - {slab.maxAmount ? `₹${slab.maxAmount}` : "∞"}
+                                                                </TableCell>
+                                                                <TableCell className="text-xs">₹{slab.platformFee ?? 0}</TableCell>
+                                                                <TableCell className="text-xs">{slab.percentage ?? 0}%</TableCell>
+                                                            </TableRow>
+                                                        ))}
+                                                    </TableBody>
+                                                </Table>
+                                            </div>
+                                        ) : (
+                                            <p className="text-xs text-slate-500 italic">No slabs configured.</p>
+                                        )}
+                                    </CardContent>
+                                </Card>
+
+                                {/* Online Marketplace Slabs */}
+                                <Card className="border-none shadow-sm overflow-hidden">
+                                    <CardContent className="p-6 space-y-4">
+                                        <h3 className="font-bold text-base text-slate-800 flex items-center justify-between">
+                                            <span className="flex items-center gap-2">
+                                                <Store className="w-4 h-4 text-blue-600" />
+                                                Marketplace
+                                            </span>
+                                            <Badge variant={isCustomMarketplace ? 'default' : 'outline'} className="text-[9px] uppercase">
+                                                {isCustomMarketplace ? 'Custom' : 'Global Default'}
+                                            </Badge>
+                                        </h3>
+                                        {marketplaceSlabs.length > 0 ? (
+                                            <div className="rounded-lg border overflow-hidden">
+                                                <Table>
+                                                    <TableHeader className="bg-slate-50">
+                                                        <TableRow>
+                                                            <TableHead className="text-[10px] uppercase font-bold">Range (₹)</TableHead>
+                                                            <TableHead className="text-[10px] uppercase font-bold">Fee</TableHead>
+                                                            <TableHead className="text-[10px] uppercase font-bold">%</TableHead>
+                                                        </TableRow>
+                                                    </TableHeader>
+                                                    <TableBody>
+                                                        {marketplaceSlabs.sort((a, b) => a.minAmount - b.minAmount).map((slab, i) => (
+                                                            <TableRow key={i}>
+                                                                <TableCell className="text-xs font-medium">
+                                                                    ₹{slab.minAmount} - {slab.maxAmount ? `₹${slab.maxAmount}` : "∞"}
+                                                                </TableCell>
+                                                                <TableCell className="text-xs">₹{slab.platformFee ?? 0}</TableCell>
+                                                                <TableCell className="text-xs">{slab.percentage ?? 0}%</TableCell>
+                                                            </TableRow>
+                                                        ))}
+                                                    </TableBody>
+                                                </Table>
+                                            </div>
+                                        ) : (
+                                            <p className="text-xs text-slate-500 italic">No slabs configured.</p>
+                                        )}
+                                    </CardContent>
+                                </Card>
+
+                                {/* Online Donation Slabs */}
+                                <Card className="border-none shadow-sm overflow-hidden">
+                                    <CardContent className="p-6 space-y-4">
+                                        <h3 className="font-bold text-base text-slate-800 flex items-center justify-between">
+                                            <span className="flex items-center gap-2">
+                                                <Building2 className="w-4 h-4 text-emerald-600" />
+                                                Donation
+                                            </span>
+                                            <Badge variant={isCustomDonation ? 'default' : 'outline'} className="text-[9px] uppercase">
+                                                {isCustomDonation ? 'Custom' : 'Global Default'}
+                                            </Badge>
+                                        </h3>
+                                        {donationSlabs.length > 0 ? (
+                                            <div className="rounded-lg border overflow-hidden">
+                                                <Table>
+                                                    <TableHeader className="bg-slate-50">
+                                                        <TableRow>
+                                                            <TableHead className="text-[10px] uppercase font-bold">Range (₹)</TableHead>
+                                                            <TableHead className="text-[10px] uppercase font-bold">Fee</TableHead>
+                                                            <TableHead className="text-[10px] uppercase font-bold">%</TableHead>
+                                                        </TableRow>
+                                                    </TableHeader>
+                                                    <TableBody>
+                                                        {donationSlabs.sort((a, b) => a.minAmount - b.minAmount).map((slab, i) => (
+                                                            <TableRow key={i}>
+                                                                <TableCell className="text-xs font-medium">
+                                                                    ₹{slab.minAmount} - {slab.maxAmount ? `₹${slab.maxAmount}` : "∞"}
+                                                                </TableCell>
+                                                                <TableCell className="text-xs">₹{slab.platformFee ?? 0}</TableCell>
+                                                                <TableCell className="text-xs">{slab.percentage ?? 0}%</TableCell>
+                                                            </TableRow>
+                                                        ))}
+                                                    </TableBody>
+                                                </Table>
+                                            </div>
+                                        ) : (
+                                            <p className="text-xs text-slate-500 italic">No slabs configured.</p>
+                                        )}
+                                    </CardContent>
+                                </Card>
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                {/* Offline Pooja Slabs */}
+                                <Card className="border-none shadow-sm overflow-hidden">
+                                    <CardContent className="p-6 space-y-4">
+                                        <h3 className="font-bold text-base text-slate-800 flex items-center justify-between">
+                                            <span className="flex items-center gap-2">
+                                                <Calendar className="w-4 h-4 text-orange-600" />
+                                                Offline Pooja Booking
+                                            </span>
+                                            <Badge variant={isCustomOfflinePooja ? 'default' : 'outline'} className="text-[9px] uppercase">
+                                                {isCustomOfflinePooja ? 'Custom' : 'Global Default'}
+                                            </Badge>
+                                        </h3>
+                                        {offlinePoojaSlabs.length > 0 ? (
+                                            <div className="rounded-lg border overflow-hidden">
+                                                <Table>
+                                                    <TableHeader className="bg-slate-50">
+                                                        <TableRow>
+                                                            <TableHead className="text-[10px] uppercase font-bold">Range (₹)</TableHead>
+                                                            <TableHead className="text-[10px] uppercase font-bold">Fee</TableHead>
+                                                            <TableHead className="text-[10px] uppercase font-bold">%</TableHead>
+                                                        </TableRow>
+                                                    </TableHeader>
+                                                    <TableBody>
+                                                        {offlinePoojaSlabs.sort((a, b) => a.minAmount - b.minAmount).map((slab, i) => (
+                                                            <TableRow key={i}>
+                                                                <TableCell className="text-xs font-medium">
+                                                                    ₹{slab.minAmount} - {slab.maxAmount ? `₹${slab.maxAmount}` : "∞"}
+                                                                </TableCell>
+                                                                <TableCell className="text-xs">₹{slab.platformFee ?? 0}</TableCell>
+                                                                <TableCell className="text-xs">{slab.percentage ?? 0}%</TableCell>
+                                                            </TableRow>
+                                                        ))}
+                                                    </TableBody>
+                                                </Table>
+                                            </div>
+                                        ) : (
+                                            <p className="text-xs text-slate-500 italic">No slabs configured.</p>
+                                        )}
+                                    </CardContent>
+                                </Card>
+
+                                {/* Offline Marketplace Slabs */}
+                                <Card className="border-none shadow-sm overflow-hidden">
+                                    <CardContent className="p-6 space-y-4">
+                                        <h3 className="font-bold text-base text-slate-800 flex items-center justify-between">
+                                            <span className="flex items-center gap-2">
+                                                <Store className="w-4 h-4 text-blue-600" />
+                                                Offline Marketplace
+                                            </span>
+                                            <Badge variant={isCustomOfflineMarketplace ? 'default' : 'outline'} className="text-[9px] uppercase">
+                                                {isCustomOfflineMarketplace ? 'Custom' : 'Global Default'}
+                                            </Badge>
+                                        </h3>
+                                        {offlineMarketplaceSlabs.length > 0 ? (
+                                            <div className="rounded-lg border overflow-hidden">
+                                                <Table>
+                                                    <TableHeader className="bg-slate-50">
+                                                        <TableRow>
+                                                            <TableHead className="text-[10px] uppercase font-bold">Range (₹)</TableHead>
+                                                            <TableHead className="text-[10px] uppercase font-bold">Fee</TableHead>
+                                                            <TableHead className="text-[10px] uppercase font-bold">%</TableHead>
+                                                        </TableRow>
+                                                    </TableHeader>
+                                                    <TableBody>
+                                                        {offlineMarketplaceSlabs.sort((a, b) => a.minAmount - b.minAmount).map((slab, i) => (
+                                                            <TableRow key={i}>
+                                                                <TableCell className="text-xs font-medium">
+                                                                    ₹{slab.minAmount} - {slab.maxAmount ? `₹${slab.maxAmount}` : "∞"}
+                                                                </TableCell>
+                                                                <TableCell className="text-xs">₹{slab.platformFee ?? 0}</TableCell>
+                                                                <TableCell className="text-xs">{slab.percentage ?? 0}%</TableCell>
+                                                            </TableRow>
+                                                        ))}
+                                                    </TableBody>
+                                                </Table>
+                                            </div>
+                                        ) : (
+                                            <p className="text-xs text-slate-500 italic">No slabs configured.</p>
+                                        )}
+                                    </CardContent>
+                                </Card>
+
+                                {/* Offline Donation Slabs */}
+                                <Card className="border-none shadow-sm overflow-hidden">
+                                    <CardContent className="p-6 space-y-4">
+                                        <h3 className="font-bold text-base text-slate-800 flex items-center justify-between">
+                                            <span className="flex items-center gap-2">
+                                                <Building2 className="w-4 h-4 text-emerald-600" />
+                                                Offline Donation
+                                            </span>
+                                            <Badge variant={isCustomOfflineDonation ? 'default' : 'outline'} className="text-[9px] uppercase">
+                                                {isCustomOfflineDonation ? 'Custom' : 'Global Default'}
+                                            </Badge>
+                                        </h3>
+                                        {offlineDonationSlabs.length > 0 ? (
+                                            <div className="rounded-lg border overflow-hidden">
+                                                <Table>
+                                                    <TableHeader className="bg-slate-50">
+                                                        <TableRow>
+                                                            <TableHead className="text-[10px] uppercase font-bold">Range (₹)</TableHead>
+                                                            <TableHead className="text-[10px] uppercase font-bold">Fee</TableHead>
+                                                            <TableHead className="text-[10px] uppercase font-bold">%</TableHead>
+                                                        </TableRow>
+                                                    </TableHeader>
+                                                    <TableBody>
+                                                        {offlineDonationSlabs.sort((a, b) => a.minAmount - b.minAmount).map((slab, i) => (
+                                                            <TableRow key={i}>
+                                                                <TableCell className="text-xs font-medium">
+                                                                    ₹{slab.minAmount} - {slab.maxAmount ? `₹${slab.maxAmount}` : "∞"}
+                                                                </TableCell>
+                                                                <TableCell className="text-xs">₹{slab.platformFee ?? 0}</TableCell>
+                                                                <TableCell className="text-xs">{slab.percentage ?? 0}%</TableCell>
+                                                            </TableRow>
+                                                        ))}
+                                                    </TableBody>
+                                                </Table>
+                                            </div>
+                                        ) : (
+                                            <p className="text-xs text-slate-500 italic">No slabs configured.</p>
+                                        )}
+                                    </CardContent>
+                                </Card>
+                            </div>
+                        )}
                     </div>
 
                     {/* Upcoming Festivals & Events */}

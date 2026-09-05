@@ -106,3 +106,56 @@ export const toggleEventStatus = async (req: Request, res: Response) => {
         res.status(500).json({ success: false, message: error.message });
     }
 };
+
+export const createBulkEvents = async (req: Request, res: Response) => {
+    try {
+        const mandalId = (req as any).owner.ownerId;
+        const { events } = req.body;
+
+        if (!Array.isArray(events) || events.length === 0) {
+            return res.status(400).json({ success: false, message: "Payload must be a non-empty 'events' array." });
+        }
+
+        let successCount = 0;
+        let failCount = 0;
+        const errors: string[] = [];
+
+        for (let i = 0; i < events.length; i++) {
+            const eventData = events[i];
+            try {
+                if (!eventData.name_en && !eventData.name) throw new Error("Name is required");
+                if (!eventData.date) throw new Error("Date is required");
+
+                const recommendedPoojaIds = eventData.recommendedPoojaIds;
+
+                await prisma.event.create({
+                    data: {
+                        name: buildLangJson(eventData.name_en || eventData.name, eventData.name_hi, eventData.name_mr),
+                        description: buildLangJson(eventData.description_en || eventData.description || '', eventData.description_hi, eventData.description_mr),
+                        date: eventData.date,
+                        time: eventData.time || null,
+                        mandalId,
+                        status: eventData.status === false ? false : true,
+                        // events don't have Pooja references mapped on Mandal level in exactly the same way, or maybe they do?
+                        ...(recommendedPoojaIds && recommendedPoojaIds.length > 0
+                            ? { Pooja: { connect: recommendedPoojaIds.map((id: string) => ({ id })) } }
+                            : {})
+                    }
+                });
+                successCount++;
+            } catch (err: any) {
+                failCount++;
+                errors.push(`Row ${i + 2}: ${err.message}`);
+            }
+        }
+
+        res.status(201).json({
+            success: true,
+            data: { successCount, failCount, errors }
+        });
+    } catch (error: any) {
+        console.error('Create Bulk Events Error:', error);
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+

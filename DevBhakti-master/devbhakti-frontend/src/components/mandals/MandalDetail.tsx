@@ -694,7 +694,7 @@ export function MandalDetail({ slug }: { slug: string }) {
                   <div className="flex items-center gap-2">
                     <h3 className="font-serif font-bold text-xl text-zinc-900 flex items-center gap-2">
                       <Camera className="w-5 h-5 text-warm-brown" />
-                      Gallery Showcase
+                      Gallery
                     </h3>
                     <Badge variant="outline" className="text-[10px] text-zinc-500 font-semibold border-zinc-200">
                       {allImages.length} {allImages.length === 1 ? 'Photo' : 'Photos'}

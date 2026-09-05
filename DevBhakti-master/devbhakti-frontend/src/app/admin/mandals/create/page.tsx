@@ -112,7 +112,7 @@ export default function MandalFormPage({ mandalId }: MandalFormProps) {
     contactNumber: "", email: "", presidentName: "",
     registrationNumber: "", verificationDocUrl: "", presidentIdDocUrl: "",
     slug: "", status: "PENDING", isActive: true, adminNotes: "",
-    liveUrl: "", isLive: false,
+    liveUrl: "", isLive: false, mapUrl: "",
   });
 
   // Load existing data if editing
@@ -150,6 +150,7 @@ export default function MandalFormPage({ mandalId }: MandalFormProps) {
             adminNotes: m.adminNotes || "",
             liveUrl: m.liveUrl || "",
             isLive: m.isLive ?? false,
+            mapUrl: m.mapUrl || "",
           });
           if (m.image) setExistingImage(m.image);
           if (m.bannerImages?.length) setExistingBanners(m.bannerImages);
@@ -282,6 +283,8 @@ export default function MandalFormPage({ mandalId }: MandalFormProps) {
     const fd = new FormData();
     Object.entries(form).forEach(([k, v]) => fd.append(k, String(v)));
     fd.set("isActive", String(form.isActive));
+    fd.append("mapUrl", form.mapUrl);
+    
     if (imageFile) fd.append("image", imageFile);
     bannerFiles.forEach(f => fd.append("bannerImages", f));
     fd.append("existingBannerImages", JSON.stringify(existingBanners));
@@ -545,6 +548,19 @@ export default function MandalFormPage({ mandalId }: MandalFormProps) {
                 placeholder="Pincode"
               />
             </div>
+          </div>
+
+          <div className="mt-4">
+            <label className={LabelClass}>Google Maps Embed URL</label>
+            <input
+              type="text"
+              name="mapUrl"
+              value={form.mapUrl}
+              onChange={handleChange}
+              className={InputClass}
+              placeholder="e.g. https://www.google.com/maps/embed?pb=..."
+            />
+            <p className="text-xs text-muted-foreground mt-1">Paste the full embed URL src attribute (starting with https) to display the map.</p>
           </div>
         </SectionWrapper>
 

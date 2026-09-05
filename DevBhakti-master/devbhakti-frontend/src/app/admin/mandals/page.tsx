@@ -5,9 +5,12 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
     Search, Plus, Trash2, Edit, Eye, ToggleLeft, ToggleRight,
-    ChevronLeft, ChevronRight, CheckCircle, XCircle, Clock, Filter
+    ChevronLeft, ChevronRight, CheckCircle, XCircle, Clock, Filter,
+    Download, Upload, FileSpreadsheet
 } from "lucide-react";
-import { fetchAllMandalsAdmin, deleteMandalAdmin, toggleMandalStatusAdmin } from "@/api/adminController";
+import * as XLSX from "xlsx";
+import { fetchAllMandalsAdmin, deleteMandalAdmin, toggleMandalStatusAdmin, createMandalAdmin } from "@/api/adminController";
+import { useToast } from "@/hooks/use-toast";
 
 const STATUS_COLORS: Record<string, string> = {
     PENDING: "bg-yellow-100 text-yellow-800",
@@ -81,6 +84,8 @@ export default function AdminMandalsPage() {
         }
     };
 
+    const { toast } = useToast();
+
     const handleToggleActive = async (mandal: any) => {
         try {
             await toggleMandalStatusAdmin(mandal.id, { isActive: !mandal.isActive });
@@ -99,6 +104,146 @@ export default function AdminMandalsPage() {
         }
     };
 
+    const downloadTemplate = () => {
+        const templateData = [{
+            "Name_EN": "Ganesh Mandal",
+            "Name_HI": "गणेश मंडल",
+            "Name_MR": "गणेश मंडळ",
+            "Mandal_Type": "Ganesh",
+            "Established_Year": "1990",
+            "Contact_Number": "9876543210",
+            "Email": "contact@mandal.com",
+            "Presiding_Deity": "Lord Ganesha",
+            "Festivals": "Ganesh Chaturthi",
+            "City": "Mumbai",
+            "State": "Maharashtra",
+            "Pincode": "400001",
+            "Address": "Mumbai central",
+            "President_Name": "Rahul Sharma",
+            "Registration_No": "REG123456",
+            "Status": "APPROVED",
+            "Is_Active": "YES"
+        }];
+        const ws = XLSX.utils.json_to_sheet(templateData);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Mandal Template");
+        XLSX.writeFile(wb, "admin_mandal_import_template.xlsx");
+    };
+
+    const handleExportExcel = async () => {
+        try {
+            toast({ title: "Exporting...", description: "Gathering mandal data. Please wait." });
+            const res = await fetchAllMandalsAdmin({ page: 1, limit: 10000 });
+            const data = (res.data || []) as any[];
+
+            if (!data.length) {
+                toast({ title: "No Data", description: "No mandals found to export.", variant: "destructive" });
+                return;
+            }
+
+            const exportData = data.map(m => ({
+                "ID": m.id,
+                "Name_EN": getName({ en: m.name?.en || m.name }),
+                "Mandal_Type": m.mandalType || "",
+                "City": m.city || "",
+                "State": m.state || "",
+                "Contact": m.contactNumber || "",
+                "Email": m.email || "",
+                "President": m.presidentName || "",
+                "Status": m.status,
+                "Is_Active": m.isActive ? "YES" : "NO",
+                "Registered_On": new Date(m.createdAt).toLocaleDateString("en-IN")
+            }));
+
+            const ws = XLSX.utils.json_to_sheet(exportData);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Mandals");
+            XLSX.writeFile(wb, `mandals_export_${new Date().toISOString().split('T')[0]}.xlsx`);
+            toast({ title: "Success", description: "Export successful" });
+        } catch (error) {
+            toast({ title: "Export Failed", variant: "destructive" });
+        }
+    };
+
+    const handleImportExcel = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = async (evt) => {
+            try {
+                const bstr = evt.target?.result;
+                const wb = XLSX.read(bstr, { type: 'binary' });
+                const wsname = wb.SheetNames[0];
+                const ws = wb.Sheets[wsname];
+                const data = XLSX.utils.sheet_to_json(ws) as any[];
+
+                if (data.length === 0) {
+                    toast({ title: "Empty File", variant: "destructive" });
+                    return;
+                }
+
+                toast({ title: "Import Started", description: `Importing ${data.length} mandals...`, variant: "success" });
+
+                let successCount = 0;
+                let failCount = 0;
+                const errors: string[] = [];
+
+                for (let i = 0; i < data.length; i++) {
+                    const row = data[i];
+                    try {
+                        if (!row.Name_EN) throw new Error("English name is required");
+                        if (!row.Contact_Number) throw new Error("Contact number is required");
+
+                        const formData = new FormData();
+                        formData.append('name_en', String(row.Name_EN || "").trim());
+                        formData.append('name_hi', String(row.Name_HI || "").trim());
+                        formData.append('name_mr', String(row.Name_MR || "").trim());
+                        formData.append('mandalType', String(row.Mandal_Type || "").trim());
+                        formData.append('establishedYear', String(row.Established_Year || "").trim());
+                        formData.append('contactNumber', String(row.Contact_Number).replace(/[^0-9]/g, ''));
+                        formData.append('email', String(row.Email || "").trim());
+                        formData.append('presiding_deity', String(row.Presiding_Deity || "").trim());
+                        formData.append('festivals', String(row.Festivals || "").trim());
+                        formData.append('city', String(row.City || "").trim());
+                        formData.append('state', String(row.State || "").trim());
+                        formData.append('pinCode', String(row.Pincode || "").trim());
+                        formData.append('address', String(row.Address || "").trim());
+                        formData.append('presidentName', String(row.President_Name || "").trim());
+                        formData.append('registrationNumber', String(row.Registration_No || "").trim());
+                        
+                        // Status & Active state
+                        const parsedStatus = String(row.Status || "").toUpperCase();
+                        formData.append('status', ['PENDING', 'APPROVED', 'REJECTED'].includes(parsedStatus) ? parsedStatus : 'APPROVED');
+                        formData.append('isActive', (String(row.Is_Active || "").toUpperCase() === "YES" || row.Is_Active === true) ? "true" : "false");
+
+                        await createMandalAdmin(formData);
+                        successCount++;
+                    } catch (err: any) {
+                        failCount++;
+                        const errorMsg = err.response?.data?.message || err.response?.data?.error || err.message || "Failed";
+                        errors.push(`Row ${i + 2}: ${errorMsg}`);
+                    }
+                }
+
+                if (failCount > 0) {
+                    toast({
+                        title: "Import Partially Failed",
+                        description: `Success: ${successCount}, Failed: ${failCount}. Errors: ${errors.slice(0, 3).join(", ")}${errors.length > 3 ? "..." : ""}`,
+                        variant: "destructive"
+                    });
+                } else {
+                    toast({ title: "Import Successful", description: `Successfully imported ${successCount} mandals.` });
+                }
+                fetchMandals();
+            } catch (error) {
+                toast({ title: "Import Failed", description: "Failed to parse Excel file", variant: "destructive" });
+            }
+        };
+        reader.readAsBinaryString(file);
+        e.target.value = '';
+    };
+
     return (
         <div className="space-y-6">
             {/* Header */}
@@ -109,12 +254,41 @@ export default function AdminMandalsPage() {
                         {pagination.total} mandal{pagination.total !== 1 ? "s" : ""} registered
                     </p>
                 </div>
-                <Link
-                    href="/admin/mandals/create"
-                    className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
-                >
-                    <Plus className="w-4 h-4" /> Add Mandal
-                </Link>
+                <div className="flex flex-wrap items-center gap-2">
+                    <button
+                        onClick={downloadTemplate}
+                        className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-border bg-background hover:bg-muted text-sm font-medium transition-colors"
+                    >
+                        <FileSpreadsheet className="w-4 h-4" /> Template
+                    </button>
+                    <div className="relative">
+                        <input
+                            type="file"
+                            accept=".xlsx, .xls"
+                            className="hidden"
+                            id="import-excel"
+                            onChange={handleImportExcel}
+                        />
+                        <button
+                            onClick={() => document.getElementById('import-excel')?.click()}
+                            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-border bg-background hover:bg-muted text-sm font-medium transition-colors"
+                        >
+                            <Upload className="w-4 h-4" /> Import
+                        </button>
+                    </div>
+                    <button
+                        onClick={handleExportExcel}
+                        className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-border bg-background hover:bg-muted text-sm font-medium transition-colors"
+                    >
+                        <Download className="w-4 h-4" /> Export
+                    </button>
+                    <Link
+                        href="/admin/mandals/create"
+                        className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
+                    >
+                        <Plus className="w-4 h-4" /> Add Mandal
+                    </Link>
+                </div>
             </div>
 
             {/* Filters */}
