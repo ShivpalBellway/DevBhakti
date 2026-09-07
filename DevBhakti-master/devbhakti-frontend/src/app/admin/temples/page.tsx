@@ -735,6 +735,17 @@ function TemplesContent() {
                     offlineSlabs = globalOfflineResponse.success ? globalOfflineResponse.data : [];
                 }
 
+                const hasTempleOnline = templeOnlineResponse.success && templeOnlineResponse.data && templeOnlineResponse.data.length > 0;
+                const hasTempleOffline = templeOfflineResponse.success && templeOfflineResponse.data && templeOfflineResponse.data.length > 0;
+
+                const hasOnlinePooja = hasTempleOnline && templeOnlineResponse.data.some((s: any) => s.category === 'POOJA');
+                const hasOnlineMarketplace = hasTempleOnline && templeOnlineResponse.data.some((s: any) => s.category === 'MARKETPLACE' || !s.category);
+                const hasOnlineDonation = hasTempleOnline && templeOnlineResponse.data.some((s: any) => s.category === 'DONATION');
+
+                const hasOfflinePooja = hasTempleOffline && templeOfflineResponse.data.some((s: any) => s.category === 'POOJA');
+                const hasOfflineMarketplace = hasTempleOffline && templeOfflineResponse.data.some((s: any) => s.category === 'MARKETPLACE' || !s.category);
+                const hasOfflineDonation = hasTempleOffline && templeOfflineResponse.data.some((s: any) => s.category === 'DONATION');
+
                 const generatedSlug = templeName ? templeName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') : "";
 
                 const filterSlabs = (slabsList: any[], cat: string) => {
@@ -761,12 +772,12 @@ function TemplesContent() {
                     offlinePoojaSlabs: filterSlabs(offlineSlabs, 'POOJA'),
                     offlineMarketplaceSlabs: filterSlabs(offlineSlabs, 'MARKETPLACE'),
                     offlineDonationSlabs: filterSlabs(offlineSlabs, 'DONATION'),
-                    poojaRateType: "DEFAULT",
-                    marketplaceRateType: "DEFAULT",
-                    donationRateType: "DEFAULT",
-                    offlinePoojaRateType: "DEFAULT",
-                    offlineMarketplaceRateType: "DEFAULT",
-                    offlineDonationRateType: "DEFAULT",
+                    poojaRateType: hasOnlinePooja ? "CUSTOM" : "DEFAULT",
+                    marketplaceRateType: hasOnlineMarketplace ? "CUSTOM" : "DEFAULT",
+                    donationRateType: hasOnlineDonation ? "CUSTOM" : "DEFAULT",
+                    offlinePoojaRateType: hasOfflinePooja ? "CUSTOM" : "DEFAULT",
+                    offlineMarketplaceRateType: hasOfflineMarketplace ? "CUSTOM" : "DEFAULT",
+                    offlineDonationRateType: hasOfflineDonation ? "CUSTOM" : "DEFAULT",
                     activeSlabTab: "online",
                     slabs: []
                 });

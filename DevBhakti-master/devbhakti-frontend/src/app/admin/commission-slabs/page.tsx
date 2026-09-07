@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2, Globe, Store } from 'lucide-react';
+import { Plus, Edit2, Trash2, Globe, Store, Building2, Flag } from 'lucide-react';
 import { API_URL } from '@/config/apiConfig';
 import { useToast } from '@/hooks/use-toast';
 
@@ -21,6 +21,7 @@ export default function CommissionSlabsPage() {
     const { toast } = useToast();
     const [slabs, setSlabs] = useState<CommissionSlab[]>([]);
     const [loading, setLoading] = useState(true);
+    const [activeSlabType, setActiveSlabType] = useState<'GLOBAL' | 'TEMPLE' | 'MANDAL'>('GLOBAL');
     const [activeMode, setActiveMode] = useState<'ONLINE' | 'OFFLINE'>('ONLINE');
     const [activeCategory, setActiveCategory] = useState<'MARKETPLACE' | 'POOJA' | 'DONATION'>('MARKETPLACE');
     const [editingId, setEditingId] = useState<string | null>(null);
@@ -34,14 +35,14 @@ export default function CommissionSlabsPage() {
 
     useEffect(() => {
         fetchSlabs();
-    }, [activeMode, activeCategory]);
+    }, [activeSlabType, activeMode, activeCategory]);
 
     const fetchSlabs = async () => {
         setLoading(true);
         try {
             const token = localStorage.getItem('admin_token');
             const isOfflineParam = activeMode === 'OFFLINE';
-            const response = await fetch(`${API_URL}/admin/commission-slabs?type=GLOBAL&category=${activeCategory}&isOffline=${isOfflineParam}`, {
+            const response = await fetch(`${API_URL}/admin/commission-slabs?type=${activeSlabType}&category=${activeCategory}&isOffline=${isOfflineParam}`, {
                 headers: {
                     'Authorization': `Bearer ${token}`,
                 },
@@ -62,7 +63,7 @@ export default function CommissionSlabsPage() {
             const token = localStorage.getItem('admin_token');
             const body = { 
                 ...formData, 
-                slabType: 'GLOBAL', 
+                slabType: activeSlabType, 
                 category: activeCategory,
                 isOffline: activeMode === 'OFFLINE'
             };
@@ -83,7 +84,7 @@ export default function CommissionSlabsPage() {
                 setFormData({ minAmount: '0', maxAmount: '', platformFee: '0', percentage: '' });
                 toast({
                     title: 'Success!',
-                    description: 'Commission Slab created successfully.',
+                    description: `${activeSlabType === 'GLOBAL' ? 'Global Default' : activeSlabType === 'TEMPLE' ? 'Temple' : 'Mandal'} Commission Slab created successfully.`,
                 });
             } else {
                 toast({
@@ -199,6 +200,76 @@ export default function CommissionSlabsPage() {
                     <Plus size={20} />
                     Add New {activeMode === 'ONLINE' ? 'Online' : 'Offline'} Slab
                 </button>
+            </div>
+
+
+
+            {/* Entity Selector (Global vs Temple Default vs Mandal Default Slabs) */}
+            <div className="mb-6 bg-white/70 backdrop-blur-md p-4 rounded-2xl border border-amber-200/80 shadow-sm">
+                <p className="text-xs font-bold uppercase tracking-wider text-amber-800/70 mb-3">Select Entity Scope:</p>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <button
+                        onClick={() => {
+                            setActiveSlabType('GLOBAL');
+                            setEditingId(null);
+                            setIsCreating(false);
+                        }}
+                        className={`flex flex-col items-start p-4 rounded-xl border text-left transition-all ${
+                            activeSlabType === 'GLOBAL'
+                                ? 'bg-amber-700 text-white border-amber-700 shadow-md ring-2 ring-amber-500/30'
+                                : 'bg-white text-slate-800 border-amber-200/60 hover:border-amber-400 hover:bg-amber-50/50'
+                        }`}
+                    >
+                        <span className="font-bold text-sm flex items-center gap-2">
+                            🌐 Global Default Slabs
+                        </span>
+                        <span className={`text-xs mt-1 font-medium ${activeSlabType === 'GLOBAL' ? 'text-amber-100' : 'text-slate-500'}`}>
+                            Applies platform-wide as base fallback
+                        </span>
+                    </button>
+
+                    <button
+                        onClick={() => {
+                            setActiveSlabType('TEMPLE');
+                            setEditingId(null);
+                            setIsCreating(false);
+                        }}
+                        className={`flex flex-col items-start p-4 rounded-xl border text-left transition-all ${
+                            activeSlabType === 'TEMPLE'
+                                ? 'bg-orange-600 text-white border-orange-600 shadow-md ring-2 ring-orange-400/30'
+                                : 'bg-white text-slate-800 border-amber-200/60 hover:border-orange-300 hover:bg-orange-50/50'
+                        }`}
+                    >
+                        <span className="font-bold text-sm flex items-center gap-2">
+                            <Building2 size={16} />
+                            🛕 Temple Slabs
+                        </span>
+                        <span className={`text-xs mt-1 font-medium ${activeSlabType === 'TEMPLE' ? 'text-orange-100' : 'text-slate-500'}`}>
+                            Default slabs specifically for Temples
+                        </span>
+                    </button>
+
+                    <button
+                        onClick={() => {
+                            setActiveSlabType('MANDAL');
+                            setEditingId(null);
+                            setIsCreating(false);
+                        }}
+                        className={`flex flex-col items-start p-4 rounded-xl border text-left transition-all ${
+                            activeSlabType === 'MANDAL'
+                                ? 'bg-amber-600 text-white border-amber-600 shadow-md ring-2 ring-amber-400/30'
+                                : 'bg-white text-slate-800 border-amber-200/60 hover:border-amber-400 hover:bg-amber-50/50'
+                        }`}
+                    >
+                        <span className="font-bold text-sm flex items-center gap-2">
+                            <Flag size={16} />
+                            🎪 Mandal Slabs
+                        </span>
+                        <span className={`text-xs mt-1 font-medium ${activeSlabType === 'MANDAL' ? 'text-amber-100' : 'text-slate-500'}`}>
+                            Default slabs specifically for Mandals
+                        </span>
+                    </button>
+                </div>
             </div>
 
             {/* Mode Selector (Online vs Offline Slabs) */}

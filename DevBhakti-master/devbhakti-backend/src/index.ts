@@ -59,6 +59,7 @@ import contactRoutes from './routes/contactRoutes';
 import leadRoutes from './routes/leadRoutes';
 import mandalRoutes from './routes/mandalRoutes';
 import templeAdminPhotoRoutes from './routes/temple_admin/photoRoutes';
+import templeAdminTellerCartRoutes from './routes/temple_admin/templeTellerCartRoutes';
 import publicPhotoRoutes from './routes/public/photoRoutes';
 import './services/firebaseService'; // Initialize Firebase Admin on startup
 
@@ -136,6 +137,7 @@ app.use('/api/temple-admin/devotees', templeAdminDevoteeRoutes);
 app.use('/api/temple-admin/team', templeAdminStaffManagementRoutes);
 app.use("/api/temple-admin/donations", templeDonationRoutes);
 app.use('/api/temple-admin/photography', templeAdminPhotoRoutes);
+app.use('/api/temple-admin/teller', templeAdminTellerCartRoutes);
 app.use('/api/temple-admin/darshan', templeAdminDarshanRoutes);
 // (Donations are mostly public/temple managed)
 app.use('/api/pooja-categories', poojaCategoryRoutes);

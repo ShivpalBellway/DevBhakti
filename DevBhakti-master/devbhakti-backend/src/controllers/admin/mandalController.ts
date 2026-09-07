@@ -42,13 +42,17 @@ export const getAllMandals = async (req: Request, res: Response): Promise<void> 
         }
 
         if (search) {
+            const searchStr = String(search).trim();
             where.OR = [
-                { name: { path: ['en'], string_contains: String(search) } },
-                { name: { path: ['hi'], string_contains: String(search) } },
-                { city: { contains: String(search), mode: 'insensitive' } },
-                { state: { contains: String(search), mode: 'insensitive' } },
-                { contactNumber: { contains: String(search), mode: 'insensitive' } },
-                { presidentName: { contains: String(search), mode: 'insensitive' } },
+                { name: { path: ['en'], string_contains: searchStr } },
+                { name: { path: ['hi'], string_contains: searchStr } },
+                { name: { path: ['mr'], string_contains: searchStr } },
+                { city: { contains: searchStr, mode: 'insensitive' } },
+                { state: { contains: searchStr, mode: 'insensitive' } },
+                { contactNumber: { contains: searchStr, mode: 'insensitive' } },
+                { presidentName: { contains: searchStr, mode: 'insensitive' } },
+                { email: { contains: searchStr, mode: 'insensitive' } },
+                { registrationNumber: { contains: searchStr, mode: 'insensitive' } },
             ];
         }
 
@@ -358,7 +362,7 @@ export const deleteMandal = async (req: Request, res: Response): Promise<void> =
 export const toggleMandalStatus = async (req: Request, res: Response): Promise<void> => {
     try {
         const id = String(req.params.id);
-        const { isActive, status, adminNotes } = req.body;
+        const { isActive, status, adminNotes, slug, subdomain, urlType, commissionSlabs } = req.body;
 
         const existing = await prisma.mandal.findUnique({ where: { id } });
         if (!existing) {
@@ -370,58 +374,89 @@ export const toggleMandalStatus = async (req: Request, res: Response): Promise<v
         if (isActive !== undefined) updateData.isActive = isActive === true || isActive === 'true';
         if (status !== undefined) updateData.status = status;
         if (adminNotes !== undefined) updateData.adminNotes = adminNotes;
+        if (slug !== undefined) updateData.slug = slug;
+        if (subdomain !== undefined) updateData.subdomain = subdomain;
+        if (urlType !== undefined) updateData.urlType = urlType;
 
-        // If status is APPROVED, create or update Mandal user login account
-        if (status === 'APPROVED') {
-            const normalizedPhone = normalizePhone(existing.contactNumber);
-            let user = await prisma.user.findFirst({
-                where: { phone: normalizedPhone, role: 'MANDAL' }
-            });
-
-            if (!user) {
-                let nameStr = 'Mandal Admin';
-                try {
-                    const nameObj = typeof existing.name === 'string' ? JSON.parse(existing.name) : existing.name;
-                    nameStr = existing.presidentName || (nameObj as any).en || (nameObj as any).hi || (nameObj as any).mr || 'Mandal Admin';
-                } catch (e) {
-                    if (typeof existing.name === 'string') nameStr = existing.name;
-                }
-
-                const displayId = await generateCustomId('MNID');
-                user = await prisma.user.create({
-                    data: {
-                        displayId,
-                        phone: normalizedPhone,
-                        name: nameStr,
-                        email: existing.email ? existing.email.toLowerCase().trim() : null,
-                        role: 'MANDAL',
-                        isVerified: true,
-                        isActive: true
+        const mandal = await prisma.$transaction(async (tx) => {
+            // Handle commission slabs update
+            if (commissionSlabs && Array.isArray(commissionSlabs)) {
+                await (tx as any).commissionSlab.deleteMany({
+                    where: {
+                        targetId: id,
+                        slabType: 'MANDAL'
                     }
                 });
-            } else {
-                // If user exists, ensure they are verified and active
-                await prisma.user.update({
-                    where: { id: user.id },
-                    data: { isVerified: true, isActive: true }
-                });
+
+                if (commissionSlabs.length > 0) {
+                    await (tx as any).commissionSlab.createMany({
+                        data: commissionSlabs.map((s: any) => ({
+                            minAmount: parseFloat(s.minAmount),
+                            maxAmount: s.maxAmount ? parseFloat(s.maxAmount) : null,
+                            platformFee: parseFloat(s.platformFee),
+                            percentage: parseFloat(s.percentage),
+                            slabType: 'MANDAL',
+                            targetId: id,
+                            category: s.category || 'MARKETPLACE',
+                            isOffline: s.isOffline === true || s.isOffline === 'true',
+                            isActive: true
+                        }))
+                    });
+                }
             }
 
-            updateData.userId = user.id;
-        }
-
-        // Sync isActive to the linked User's status
-        if (isActive !== undefined && (existing.userId || updateData.userId)) {
-            const finalUserId = existing.userId || updateData.userId;
-            if (finalUserId) {
-                await prisma.user.update({
-                    where: { id: finalUserId },
-                    data: { isActive: isActive === true || isActive === 'true' }
+            // If status is APPROVED, create or update Mandal user login account
+            if (status === 'APPROVED') {
+                const normalizedPhone = normalizePhone(existing.contactNumber);
+                let user = await tx.user.findFirst({
+                    where: { phone: normalizedPhone, role: 'MANDAL' }
                 });
-            }
-        }
 
-        const mandal = await prisma.mandal.update({ where: { id }, data: updateData });
+                if (!user) {
+                    let nameStr = 'Mandal Admin';
+                    try {
+                        const nameObj = typeof existing.name === 'string' ? JSON.parse(existing.name) : existing.name;
+                        nameStr = existing.presidentName || (nameObj as any).en || (nameObj as any).hi || (nameObj as any).mr || 'Mandal Admin';
+                    } catch (e) {
+                        if (typeof existing.name === 'string') nameStr = existing.name;
+                    }
+
+                    const displayId = await generateCustomId('MNID');
+                    user = await tx.user.create({
+                        data: {
+                            displayId,
+                            phone: normalizedPhone,
+                            name: nameStr,
+                            email: existing.email ? existing.email.toLowerCase().trim() : null,
+                            role: 'MANDAL',
+                            isVerified: true,
+                            isActive: true
+                        }
+                    });
+                } else {
+                    // If user exists, ensure they are verified and active
+                    await tx.user.update({
+                        where: { id: user.id },
+                        data: { isVerified: true, isActive: true }
+                    });
+                }
+
+                updateData.userId = user.id;
+            }
+
+            // Sync isActive to the linked User's status
+            if (isActive !== undefined && (existing.userId || updateData.userId)) {
+                const finalUserId = existing.userId || updateData.userId;
+                if (finalUserId) {
+                    await tx.user.update({
+                        where: { id: finalUserId },
+                        data: { isActive: isActive === true || isActive === 'true' }
+                    });
+                }
+            }
+
+            return await tx.mandal.update({ where: { id }, data: updateData });
+        });
 
         res.json({ success: true, message: 'Mandal status updated', data: mandal });
     } catch (error: any) {

@@ -1413,7 +1413,15 @@ export const deleteMandalAdmin = async (id: string) => {
 
 export const toggleMandalStatusAdmin = async (
     id: string,
-    data: { isActive?: boolean; status?: string; adminNotes?: string }
+    data: {
+        isActive?: boolean;
+        status?: string;
+        adminNotes?: string;
+        slug?: string;
+        subdomain?: string;
+        urlType?: string;
+        commissionSlabs?: any[];
+    }
 ) => {
     const token = getAdminToken();
     const response = await axios.patch(`${API_URL}/admin/mandals/${id}/status`, data, {

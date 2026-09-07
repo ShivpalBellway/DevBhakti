@@ -5,7 +5,10 @@ const prisma = new PrismaClient();
 
 export const getMandalDevotees = async (req: Request, res: Response) => {
   try {
-    const mandalId = (req as any).owner.ownerId;
+    const mandalId = (req as any).owner?.ownerId || (req as any).user?.ownerId;
+    if (!mandalId) {
+      return res.status(400).json({ success: false, message: "Mandal context not found" });
+    }
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 10;
     const search = ((req.query.search as string) || "").trim().toLowerCase();

@@ -85,6 +85,82 @@ export default function MandalReportsPage() {
     window.print();
   };
 
+  const handleDownload = () => {
+    if (!reportData) return;
+
+    const periodLabel = reportData?.dateRange?.formattedRange || period;
+    const lines: string[] = [];
+
+    lines.push(`"MANDAL FINANCIAL & COLLECTION REPORT"`);
+    lines.push(`"Period: ${periodLabel}"`);
+    lines.push(`"Generated Date: ${new Date().toLocaleString("en-IN")}"`);
+    lines.push("");
+
+    lines.push(`"OVERVIEW"`);
+    lines.push(`"Total Collection","Total Transactions","Avg Transaction Value"`);
+    lines.push(
+      `"${reportData?.overview?.totalCollection || 0}","${reportData?.overview?.totalTransactions || 0}","${reportData?.overview?.avgTransactionValue || 0}"`
+    );
+    lines.push("");
+
+    lines.push(`"COLLECTION CHANNEL BREAKDOWN"`);
+    lines.push(`"Channel","Amount (INR)","Transaction Count","Percentage"`);
+    lines.push(
+      `"Online","${reportData?.channelSummary?.online?.amount || 0}","${reportData?.channelSummary?.online?.count || 0}","${reportData?.channelSummary?.online?.percentage || 0}%"`
+    );
+    lines.push(
+      `"Offline","${reportData?.channelSummary?.offline?.amount || 0}","${reportData?.channelSummary?.offline?.count || 0}","${reportData?.channelSummary?.offline?.percentage || 0}%"`
+    );
+    lines.push(
+      `"Total","${reportData?.channelSummary?.total?.amount || 0}","${reportData?.channelSummary?.total?.count || 0}","100%"`
+    );
+    lines.push("");
+
+    lines.push(`"CATEGORY SUMMARY"`);
+    lines.push(`"Category Name","Amount (INR)","Percentage"`);
+    (reportData?.categorySummary || []).forEach((cat: any) => {
+      lines.push(`"${cat.name}","${cat.amount || 0}","${cat.percentage || 0}%"`);
+    });
+    lines.push("");
+
+    lines.push(`"TODAY PAYMENT MODE SUMMARY"`);
+    lines.push(`"Payment Mode","Amount (INR)"`);
+    (reportData?.paymentModeSummary || []).forEach((pm: any) => {
+      lines.push(`"${pm.label}","${pm.amount || 0}"`);
+    });
+    lines.push("");
+
+    lines.push(`"DETAILED TRANSACTIONS LIST"`);
+    lines.push(`"Date & Time","Receipt No","Devotee Name","Devotee Phone","Devotee Email","Service Title","Category","Channel","Payment Mode","Amount (INR)"`);
+    (reportData?.transactions?.list || []).forEach((tx: any) => {
+      const dateStr = new Date(tx.createdAt).toLocaleString("en-IN");
+      const receipt = `#${tx.receiptNo || tx.id.slice(-6)}`;
+      const name = tx.devotee?.name || "Devotee";
+      const phone = tx.devotee?.phone || "";
+      const email = tx.devotee?.email || "";
+      const title = tx.title || "";
+      const cat = tx.categoryName || "";
+      const ch = tx.channel || "";
+      const mode = tx.paymentMode || "";
+      const amt = tx.amount || 0;
+
+      lines.push(
+        `"${dateStr}","${receipt}","${name.replace(/"/g, '""')}","${phone}","${email}","${title.replace(/"/g, '""')}","${cat}","${ch}","${mode}","${amt}"`
+      );
+    });
+
+    const csvContent = lines.join("\n");
+    const blob = new Blob(["\ufeff" + csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", `mandal_financial_report_${period}_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
   const formatCurrency = (val?: number) => {
     return `₹ ${(val || 0).toLocaleString("en-IN")}`;
   };
@@ -413,7 +489,7 @@ export default function MandalReportsPage() {
                   </Button>
 
                   <Button
-                    onClick={handlePrint}
+                    onClick={handleDownload}
                     size="default"
                     className="bg-gradient-to-r from-amber-900 to-amber-950 hover:from-amber-800 hover:to-amber-900 text-white font-bold text-xs gap-2 px-6 h-11 rounded-xl shadow-md shadow-amber-900/20"
                   >

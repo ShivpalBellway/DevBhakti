@@ -220,8 +220,73 @@ export function MandalDetail({ slug }: { slug: string }) {
   };
 
   const isInternational = currentUser?.phone ? !isIndianUser(currentUser.phone) : false;
+  const [platformFee, setPlatformFee] = useState<number>(0);
+  const [fetchingFee, setFetchingFee] = useState<boolean>(false);
+
+  useEffect(() => {
+    const amount = selectedAmount || parseInt(customAmount) || 0;
+    if (amount > 0 && mandal?.id) {
+      setFetchingFee(true);
+      fetch(`${API_URL}/bookings/calculate-commission`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          amount,
+          vendorType: "MANDAL",
+          vendorId: mandal.id,
+          category: "DONATION",
+          isOffline: false
+        })
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (data.success && data.data) {
+            setPlatformFee(data.data.totalCommission || 0);
+          }
+        })
+        .catch(err => console.error("Error calculating fee:", err))
+        .finally(() => setFetchingFee(false));
+    } else {
+      setPlatformFee(0);
+    }
+  }, [selectedAmount, customAmount, mandal?.id]);
+
+  const handleOpenDonateModal = () => {
+    const savedToken = localStorage.getItem("token") || localStorage.getItem("user_token");
+    if (!savedToken && !currentUser) {
+      toast({
+        title: "Login Required",
+        description: "Please login to donate to mandals and receive your receipt.",
+        variant: "destructive",
+      });
+      router.push(`/auth?redirect=/mandals/${slug}`);
+      return;
+    }
+
+    if (isInternational) {
+      toast({
+        title: "FCRA Restriction",
+        description: "International donations are restricted by law (FCRA). Razorpay order creation disabled.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setShowDonateModal(true);
+  };
 
   const handleDonate = async () => {
+    const savedToken = localStorage.getItem("token") || localStorage.getItem("user_token");
+    if (!savedToken && !currentUser) {
+      toast({
+        title: "Login Required",
+        description: "Please login to proceed with donation.",
+        variant: "destructive",
+      });
+      router.push(`/auth?redirect=/mandals/${slug}`);
+      return;
+    }
+
     if (!canUseMandalTransactions) {
       toast({
         title: "Donations Disabled",
@@ -254,7 +319,10 @@ export function MandalDetail({ slug }: { slug: string }) {
     try {
       const response = await fetch(`${API_URL}/donations`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          ...(savedToken ? { "Authorization": `Bearer ${savedToken}` } : {})
+        },
         body: JSON.stringify({
           mandalId: mandal.id,
           amount,
@@ -268,9 +336,10 @@ export function MandalDetail({ slug }: { slug: string }) {
       });
       const data = await response.json();
       if (data.success && data.order && data.order.id) {
+        const totalAmountPayable = Math.round((amount + platformFee) * 100);
         const options = {
           key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
-          amount: Math.round(amount * 100),
+          amount: data.order.amount || totalAmountPayable,
           currency: "INR",
           name: mandal.name?.en || mandal.name || "Mandal",
           description: `Donation to ${mandal.name?.en || mandal.name || "Mandal"}`,
@@ -516,17 +585,7 @@ export function MandalDetail({ slug }: { slug: string }) {
 
                     {/* Donate Now Support Mandal */}
                     <Button
-                      onClick={() => {
-                          if (isInternational) {
-                              toast({
-                                  title: "FCRA Restriction",
-                                  description: "International donations are restricted by law (FCRA). Razorpay order creation disabled.",
-                                  variant: "destructive",
-                              });
-                              return;
-                          }
-                          setShowDonateModal(true);
-                      }}
+                      onClick={handleOpenDonateModal}
                       disabled={isInternational}
                       variant="outline"
                       className="bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border-amber-500/40 font-bold px-6 h-12 rounded-xl text-xs sm:text-sm flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -1012,7 +1071,7 @@ export function MandalDetail({ slug }: { slug: string }) {
                     </div>
 
                     <Button
-                      onClick={() => setShowDonateModal(true)}
+                      onClick={handleOpenDonateModal}
                       className="w-full bg-warm-brown hover:bg-warm-brown/90 text-white font-bold h-10 rounded-xl text-xs shadow-md shadow-amber-900/10"
                     >
                       <Gift className="w-4 h-4 mr-1.5" />
@@ -1281,6 +1340,35 @@ export function MandalDetail({ slug }: { slug: string }) {
                   />
                 </div>
               </div>
+
+              {/* Platform Support Fee Breakdown */}
+              {(() => {
+                const baseAmt = selectedAmount || parseInt(customAmount) || 0;
+                if (baseAmt > 0) {
+                  return (
+                    <div className="mt-3 p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl space-y-1.5 text-xs text-amber-950 font-medium">
+                      <div className="flex justify-between items-center">
+                        <span className="text-zinc-600">Donation Amount:</span>
+                        <span className="font-bold">₹{baseAmt.toLocaleString("en-IN")}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-zinc-600 flex items-center gap-1">
+                          Platform Support Fee
+                          {fetchingFee && <span className="text-[10px] text-amber-600 animate-pulse">(calculating...)</span>}
+                        </span>
+                        <span className="font-bold text-amber-800">
+                          + ₹{platformFee.toLocaleString("en-IN")}
+                        </span>
+                      </div>
+                      <div className="pt-1.5 border-t border-amber-500/20 flex justify-between items-center text-sm font-black text-[#6B0F1A]">
+                        <span>Total Payable:</span>
+                        <span>₹{(baseAmt + platformFee).toLocaleString("en-IN")}</span>
+                      </div>
+                    </div>
+                  );
+                }
+                return null;
+              })()}
             </div>
 
             <div className="space-y-3 pt-2 border-t border-amber-900/10">
@@ -1330,7 +1418,9 @@ export function MandalDetail({ slug }: { slug: string }) {
                 return hasExplicitPlus && !cleaned.startsWith('91');
               })()}
             >
-              {isDonating ? "Processing Donation..." : `Proceed to Donate ₹${(selectedAmount || parseInt(customAmount) || 0).toLocaleString("en-IN")}`}
+              {isDonating 
+                ? "Processing Donation..." 
+                : `Proceed to Donate ₹${((selectedAmount || parseInt(customAmount) || 0) + platformFee).toLocaleString("en-IN")}`}
             </Button>
           </div>
         </DialogContent>

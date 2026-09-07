@@ -23,7 +23,8 @@ export default function MandalDarshanSlotsPage() {
   const [filterDate, setFilterDate] = useState("");
 
   const [formData, setFormData] = useState({
-    date: "",
+    startDate: "",
+    endDate: "",
     title: "General Darshan Ticket",
     price: "0",
     startTime: "08:00",
@@ -53,7 +54,7 @@ export default function MandalDarshanSlotsPage() {
   useEffect(() => {
     const today = new Date().toISOString().split('T')[0];
     setFilterDate(today);
-    setFormData(prev => ({ ...prev, date: today }));
+    setFormData(prev => ({ ...prev, startDate: today, endDate: today }));
     fetchSlots(today);
   }, []);
 
@@ -68,8 +69,8 @@ export default function MandalDarshanSlotsPage() {
     try {
       const token = localStorage.getItem("token");
       const payload = {
-        startDate: formData.date,
-        endDate: formData.date,
+        startDate: formData.startDate,
+        endDate: formData.endDate,
         title: formData.title,
         price: parseFloat(formData.price || "0"),
         startTime: formData.startTime,
@@ -88,7 +89,7 @@ export default function MandalDarshanSlotsPage() {
 
       const json = await res.json();
       if (res.ok) {
-        toast({ title: "Success", description: json.message || "Slot created successfully", variant: "success" });
+        toast({ title: "Success", description: json.message || "Slots created successfully", variant: "success" });
         fetchSlots(filterDate);
       } else {
         toast({ title: "Error", description: json.error || "Failed to create slots", variant: "destructive" });
@@ -181,15 +182,27 @@ export default function MandalDarshanSlotsPage() {
                 </div>
               </div>
 
-              <div className="space-y-1">
-                <Label>Date</Label>
-                <Input 
-                  type="date" 
-                  value={formData.date} 
-                  onChange={(e) => setFormData({...formData, date: e.target.value})}
-                  className="rounded-xl"
-                  required
-                />
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label>Start Date</Label>
+                  <Input 
+                    type="date" 
+                    value={formData.startDate} 
+                    onChange={(e) => setFormData({...formData, startDate: e.target.value})}
+                    className="rounded-xl"
+                    required
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label>End Date</Label>
+                  <Input 
+                    type="date" 
+                    value={formData.endDate} 
+                    onChange={(e) => setFormData({...formData, endDate: e.target.value})}
+                    className="rounded-xl"
+                    required
+                  />
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">

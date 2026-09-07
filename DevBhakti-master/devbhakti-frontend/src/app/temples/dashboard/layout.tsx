@@ -51,8 +51,9 @@ const sidebarItems = [
     {
         label: "Teller Module",
         icon: Ticket,
-        href: "/temples/dashboard/bookings/add-offline",
+        href: "/temples/dashboard/teller/cart",
         subItems: [
+            { label: "Counter Cart", href: "/temples/dashboard/teller/cart" },
             { label: "Offline Pooja Booking", href: "/temples/dashboard/bookings/add-offline" },
             { label: "Offline Darshan Ticket", href: "/temples/dashboard/darshan/offline" },
             { label: "Offline Product Booking", href: "/temples/dashboard/teller/offline-product" },

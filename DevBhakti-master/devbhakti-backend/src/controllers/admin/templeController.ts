@@ -482,6 +482,7 @@ export const createTemple = async (req: Request, res: Response) => {
             slabType: SlabType.TEMPLE,
             targetId: templeId,
             category: s.category || CommissionCategory.MARKETPLACE,
+            isOffline: s.isOffline === true || s.isOffline === 'true',
             isActive: true
           }))
         });
@@ -809,6 +810,7 @@ export const updateTemple = async (req: Request, res: Response) => {
               slabType: SlabType.TEMPLE,
               targetId: templeId,
               category: s.category || CommissionCategory.MARKETPLACE,
+              isOffline: s.isOffline === true || s.isOffline === 'true',
               isActive: true
             }))
           });
@@ -937,6 +939,7 @@ export const toggleTempleStatus = async (req: Request, res: Response) => {
               slabType: 'TEMPLE',
               targetId: user.temple!.id,
               category: s.category || 'MARKETPLACE', // CRITICAL: Explicitly set category from frontend
+              isOffline: s.isOffline === true || s.isOffline === 'true',
               isActive: true
             }))
           });

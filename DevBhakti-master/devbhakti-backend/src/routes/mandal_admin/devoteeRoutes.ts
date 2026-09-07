@@ -1,9 +1,10 @@
 import { Router } from "express";
 import { getMandalDevotees } from "../../controllers/mandal_admin/devoteeController";
-import { authenticate, checkPermission } from "../../middleware/authMiddleware";
+import { authenticate, injectMandalContext } from "../../middleware/authMiddleware";
 
 const router = Router();
 
-router.get("/", authenticate, getMandalDevotees);
+router.use(authenticate, injectMandalContext);
+router.get("/", getMandalDevotees);
 
 export default router;
