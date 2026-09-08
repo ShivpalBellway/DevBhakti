@@ -375,8 +375,6 @@ export const toggleMandalStatus = async (req: Request, res: Response): Promise<v
         if (status !== undefined) updateData.status = status;
         if (adminNotes !== undefined) updateData.adminNotes = adminNotes;
         if (slug !== undefined) updateData.slug = slug;
-        if (subdomain !== undefined) updateData.subdomain = subdomain;
-        if (urlType !== undefined) updateData.urlType = urlType;
 
         const mandal = await prisma.$transaction(async (tx) => {
             // Handle commission slabs update
