@@ -164,35 +164,45 @@ export const createBooking = async (req: Request, res: Response) => {
 
 
         // --- PRICE VERIFICATION ---
+        // Ensure the price matches the database record or selected package price
+        let verifiedPrice = parseFloat(pooja.price || 0);
 
-        // Ensure the price matches the database record to prevent spoofing
-
-        let verifiedPrice = pooja.price;
-
-
-
-        // If packages exist, find the one provided in req.body
-
-        if (pooja.packages && Array.isArray(pooja.packages)) {
-
-            const pkg = (pooja.packages as any[]).find(p => p.name === packageName);
-
-            if (pkg) {
-
-                verifiedPrice = parseFloat(pkg.price);
-
-            } else {
-
-                return res.status(400).json({ success: false, message: `Package '${packageName}' not found in this pooja` });
-
+        let packagesList: any[] = [];
+        if (pooja.packages) {
+            if (typeof pooja.packages === 'string') {
+                try {
+                    packagesList = JSON.parse(pooja.packages);
+                } catch (e) {
+                    packagesList = [];
+                }
+            } else if (Array.isArray(pooja.packages)) {
+                packagesList = pooja.packages;
             }
-
         }
 
+        if (packagesList.length > 0) {
+            const pkg = packagesList.find((p: any) => {
+                if (!p) return false;
+                const nameInPkg = typeof p.name === 'object' ? (p.name?.en || p.name?.hi || '') : p.name;
+                return (
+                    nameInPkg === packageName ||
+                    p.name === packageName ||
+                    (typeof p.name === 'object' && Object.values(p.name).includes(packageName))
+                );
+            });
 
+            if (pkg && pkg.price !== undefined && pkg.price !== null) {
+                verifiedPrice = parseFloat(pkg.price);
+            } else if (packagePrice && !isNaN(Number(packagePrice))) {
+                verifiedPrice = parseFloat(packagePrice);
+            } else {
+                return res.status(400).json({ success: false, message: `Package '${packageName}' not found in this pooja` });
+            }
+        } else if (packagePrice && !isNaN(Number(packagePrice))) {
+            verifiedPrice = parseFloat(packagePrice);
+        }
 
-        // Use server-verified price, never trust client-sent price
-
+        // Use server-verified price
         const finalPrice = verifiedPrice;
 
 

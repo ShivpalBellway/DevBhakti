@@ -28,8 +28,34 @@ export const getMyMandalProfile = async (req: Request, res: Response) => {
       return res.status(404).json({ success: false, message: 'Mandal record not found.' });
     }
 
+    // Fetch commission slabs for mandal (Custom > Entity Default > Global)
+    let commissionSlabs = await prisma.commissionSlab.findMany({
+      where: { targetId: mandal.id, slabType: 'MANDAL', isActive: true },
+      orderBy: { minAmount: 'asc' }
+    });
+
+    if (commissionSlabs.length === 0) {
+      commissionSlabs = await prisma.commissionSlab.findMany({
+        where: { targetId: null, slabType: 'MANDAL', isActive: true },
+        orderBy: { minAmount: 'asc' }
+      });
+    }
+
+    if (commissionSlabs.length === 0) {
+      commissionSlabs = await prisma.commissionSlab.findMany({
+        where: { slabType: 'GLOBAL', isActive: true },
+        orderBy: { minAmount: 'asc' }
+      });
+    }
+
     const lang = getLang(req);
-    res.json({ success: true, data: localize(mandal, lang) });
+    res.json({
+      success: true,
+      data: {
+        ...localize(mandal, lang),
+        commissionSlabs
+      }
+    });
   } catch (error: any) {
     console.error('Fetch Mandal Profile Error:', error);
     res.status(500).json({ success: false, message: `Server error: ${error.message}` });

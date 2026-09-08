@@ -132,6 +132,13 @@
     overflow-x: hidden !important;
     max-width: 100%;
     width: 100%;
+    scroll-behavior: smooth;
+    scroll-snap-type: y proximity;
+  }
+
+  section {
+    scroll-snap-align: start;
+    scroll-snap-stop: normal;
   }
 
   h1,

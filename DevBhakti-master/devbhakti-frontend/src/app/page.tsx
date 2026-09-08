@@ -30,19 +30,19 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default function Home() {
   return (
-    <main className="min-h-screen overflow-x-hidden">
+    <main className="min-h-screen overflow-x-hidden scroll-smooth">
       <Navbar />
-      <HeroSection />
-      <BannerSection />
-      <TemplesSection />
-      <PoojasSection />
-      <LiveDarshanSection />
-      <MarketplaceSection />
-      <FeaturesSection />
-      <VideoTestimonialsSection />
-      <TrustSection />
+      <div className="snap-start"><HeroSection /></div>
+      <div className="snap-start"><BannerSection /></div>
+      <div className="snap-start"><TemplesSection /></div>
+      <div className="snap-start"><PoojasSection /></div>
+      <div className="snap-start"><LiveDarshanSection /></div>
+      <div className="snap-start"><MarketplaceSection /></div>
+      <div className="snap-start"><FeaturesSection /></div>
+      <div className="snap-start"><VideoTestimonialsSection /></div>
+      <div className="snap-start"><TrustSection /></div>
       {/* <ReviewsSection /> */}
-      <CTASection />
+      <div className="snap-start"><CTASection /></div>
       <Footer />
     </main>
   );

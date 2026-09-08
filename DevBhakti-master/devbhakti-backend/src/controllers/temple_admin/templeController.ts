@@ -249,9 +249,35 @@ export const getMyTempleProfile = async (req: Request, res: Response) => {
       return res.status(200).json({ success: false, message: 'Temple record not found for this account. Please register your temple.' });
     }
 
+    // Fetch commission slabs (Custom > Entity Default > Global)
+    let commissionSlabs = await prisma.commissionSlab.findMany({
+      where: { targetId: temple.id, slabType: 'TEMPLE', isActive: true },
+      orderBy: { minAmount: 'asc' }
+    });
+
+    if (commissionSlabs.length === 0) {
+      commissionSlabs = await prisma.commissionSlab.findMany({
+        where: { targetId: null, slabType: 'TEMPLE', isActive: true },
+        orderBy: { minAmount: 'asc' }
+      });
+    }
+
+    if (commissionSlabs.length === 0) {
+      commissionSlabs = await prisma.commissionSlab.findMany({
+        where: { slabType: 'GLOBAL', isActive: true },
+        orderBy: { minAmount: 'asc' }
+      });
+    }
+
     console.log("Temple profile fetched successfully");
     const lang = getLang(req);
-    res.json({ success: true, data: localize(temple, lang) });
+    res.json({
+      success: true,
+      data: {
+        ...localize(temple, lang),
+        commissionSlabs
+      }
+    });
   } catch (error: any) {
     console.error('Fetch Temple Profile Error:', error);
     res.status(500).json({ success: false, message: `Server error: ${error.message}` });

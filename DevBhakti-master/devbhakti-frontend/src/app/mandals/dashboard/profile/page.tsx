@@ -106,12 +106,15 @@ export default function EnhancedMandalProfilePage() {
         return `${baseUrl}${url.startsWith('/') ? '' : '/'}${url}`;
     };
 
+    const [mandalData, setMandalData] = useState<any>(null);
+
     const loadProfile = async () => {
         setIsLoading(true);
         try {
             const res = await fetchMandalProfile();
             if (res.success && res.data) {
                 const m = res.data;
+                setMandalData(m);
                 setForm({
                     name_en: getJsonVal(m.name, "en") || (typeof m.name === 'string' ? m.name : ''),
                     name_hi: getJsonVal(m.name, "hi"),
@@ -600,6 +603,65 @@ export default function EnhancedMandalProfilePage() {
                                         placeholder="https://youtube.com/@yourmandal"
                                     />
                                 </div>
+                            </div>
+                        </SectionWrapper>
+
+                        {/* ── Commission & Platform Rates ── */}
+                        <SectionWrapper>
+                            <SectionTitle icon={<ShieldCheck className="w-5 h-5 text-[#7b4623]" />}>
+                                Commission & Platform Fee Rates
+                            </SectionTitle>
+
+                            <div className="space-y-4">
+                                <p className="text-xs text-slate-500">
+                                    Below are the active transaction-based commission slabs and platform fees configured for your Mandal.
+                                </p>
+                                {(!mandalData?.commissionSlabs || mandalData.commissionSlabs.length === 0) ? (
+                                    <div className="p-4 bg-amber-50/70 border border-amber-200/80 rounded-xl text-xs text-amber-800 font-medium">
+                                        Standard platform commission slabs are active for your Mandal transactions.
+                                    </div>
+                                ) : (
+                                    <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
+                                        <table className="w-full text-left text-xs">
+                                            <thead className="bg-slate-50 text-slate-700 font-bold border-b border-slate-200">
+                                                <tr>
+                                                    <th className="p-3">Amount Range</th>
+                                                    <th className="p-3">Category</th>
+                                                    <th className="p-3">Commission %</th>
+                                                    <th className="p-3">Platform Fee</th>
+                                                    <th className="p-3">Type</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
+                                                {mandalData.commissionSlabs.map((slab: any, idx: number) => (
+                                                    <tr key={slab.id || idx} className="hover:bg-slate-50/50">
+                                                        <td className="p-3 font-semibold text-slate-900">
+                                                            ₹{slab.minAmount} {slab.maxAmount ? ` - ₹${slab.maxAmount}` : '+'}
+                                                        </td>
+                                                        <td className="p-3">
+                                                            <Badge variant="secondary" className="text-[10px] uppercase font-bold">
+                                                                {slab.category || 'DONATION'}
+                                                            </Badge>
+                                                        </td>
+                                                        <td className="p-3 font-bold text-[#7b4623]">
+                                                            {slab.percentage}%
+                                                        </td>
+                                                        <td className="p-3 font-bold text-slate-900">
+                                                            ₹{slab.platformFee || 0}
+                                                        </td>
+                                                        <td className="p-3">
+                                                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                                                                slab.isOffline ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'
+                                                            }`}>
+                                                                {slab.isOffline ? 'Offline' : 'Online'}
+                                                            </span>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                )}
                             </div>
                         </SectionWrapper>
 

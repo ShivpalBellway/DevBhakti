@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { IndianRupee, MapPin, ShieldCheck, ArrowLeft, Loader2 } from "lucide-react";
+import { IndianRupee, MapPin, ShieldCheck, ArrowLeft, Loader2, Globe } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import axios from "axios";
 import { API_URL, BASE_URL } from "@/config/apiConfig";
@@ -486,19 +486,33 @@ function CheckoutContent() {
                             </CardContent>
                         </Card>
 
-                        {/* Payment Mode Info */}
-                        {/* <div className="p-5 bg-[#794A05]/5 border border-[#794A05]/10 rounded-2xl flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm">
-                                    <ShieldCheck className="w-6 h-6 text-[#794A05]" />
+                        {/* Payment Mode Info & International Guard Notice */}
+                        <div className="space-y-3">
+                            <div className="p-4 bg-amber-50 border border-amber-200/80 rounded-2xl flex items-start gap-3 shadow-xs">
+                                <div className="w-8 h-8 rounded-full bg-amber-500/10 flex items-center justify-center shrink-0 mt-0.5">
+                                    <Globe className="w-4 h-4 text-amber-700" />
                                 </div>
-                                <div>
-                                    <p className="text-sm font-bold text-[#794A05]">Secure Online Payment</p>
-                                    <p className="text-xs text-slate-500">UPI, Cards, NetBanking available</p>
+                                <div className="text-xs text-amber-900">
+                                    <p className="font-bold text-amber-950">Domestic Payments Active (UPI, Cards, NetBanking)</p>
+                                    <p className="mt-0.5 text-amber-800/90 font-medium">
+                                        Notice: International payments for Product purchase  is not yet active. Please use an Indian payment method.
+                                    </p>
                                 </div>
                             </div>
-                            <img src="https://razorpay.com/favicon.png" alt="Razorpay" className="w-5 h-5 opacity-60" />
-                        </div> */}
+
+                            <div className="p-4 bg-[#794A05]/5 border border-[#794A05]/10 rounded-2xl flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm">
+                                        <ShieldCheck className="w-6 h-6 text-[#794A05]" />
+                                    </div>
+                                    <div>
+                                        <p className="text-sm font-bold text-[#794A05]">Secure Domestic Online Payment</p>
+                                        <p className="text-xs text-slate-500">UPI, Cards, NetBanking available</p>
+                                    </div>
+                                </div>
+                                <img src="https://razorpay.com/favicon.png" alt="Razorpay" className="w-5 h-5 opacity-60" />
+                            </div>
+                        </div>
                     </div>
 
                     {/* Right Column: Order Summary */}

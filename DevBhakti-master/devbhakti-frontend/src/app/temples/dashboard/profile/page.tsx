@@ -1114,6 +1114,100 @@ export default function TempleProfilePage() {
 
                             {/* Right Side: Detailed Sections */}
                             <div className="lg:col-span-2 space-y-8">
+                                {/* Commission & Platform Fee Rates Card */}
+                                <Card className="border-white/20 bg-white/60 backdrop-blur-sm shadow-xl rounded-[2.5rem] overflow-hidden">
+                                    <CardHeader className="bg-gradient-to-r from-amber-950/10 via-[#7b4623]/10 to-transparent p-6 md:p-8 border-b border-white/20">
+                                        <CardTitle className="text-xl md:text-2xl font-serif text-[#7b4623] flex items-center justify-between">
+                                            <span className="flex items-center gap-3">
+                                                <BadgeIcon className="w-6 h-6 text-[#7b4623]" /> Commission & Platform Fee Rates
+                                            </span>
+                                            <Badge variant="outline" className="bg-amber-50 text-[#7b4623] border-amber-200 text-xs px-3 py-1">
+                                                Active Rates
+                                            </Badge>
+                                        </CardTitle>
+                                        <CardDescription className="text-xs md:text-sm text-slate-500 mt-1">
+                                            Transparent breakdown of platform commission percentages, fixed rates, and price-based slabs for your temple.
+                                        </CardDescription>
+                                    </CardHeader>
+                                    <CardContent className="p-6 md:p-8 space-y-6">
+                                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                            <div className="bg-amber-50/70 border border-amber-200/80 p-4 rounded-2xl">
+                                                <span className="text-[10px] font-black uppercase tracking-wider text-amber-800 block">Pooja Commission</span>
+                                                <div className="flex items-baseline gap-1 mt-1">
+                                                    <span className="text-2xl font-black text-[#7b4623]">{profile?.poojaCommissionRate ?? 5.0}%</span>
+                                                    <span className="text-xs text-slate-500 font-medium">per booking</span>
+                                                </div>
+                                            </div>
+                                            <div className="bg-orange-50/70 border border-orange-200/80 p-4 rounded-2xl">
+                                                <span className="text-[10px] font-black uppercase tracking-wider text-orange-800 block">Marketplace Commission</span>
+                                                <div className="flex items-baseline gap-1 mt-1">
+                                                    <span className="text-2xl font-black text-orange-700">{profile?.productCommissionRate ?? 10.0}%</span>
+                                                    <span className="text-xs text-slate-500 font-medium">per item</span>
+                                                </div>
+                                            </div>
+                                            <div className="bg-emerald-50/70 border border-emerald-200/80 p-4 rounded-2xl">
+                                                <span className="text-[10px] font-black uppercase tracking-wider text-emerald-800 block">Prasad Fee / Price</span>
+                                                <div className="flex items-baseline gap-1 mt-1">
+                                                    <span className="text-2xl font-black text-emerald-700">₹{profile?.prasadPrice ?? 0}</span>
+                                                    <span className="text-xs text-slate-500 font-medium">base fee</span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-3 pt-2">
+                                            <h4 className="text-xs font-black uppercase tracking-widest text-slate-400">
+                                                Transaction Volume Commission Slabs
+                                            </h4>
+                                            {(!profile?.commissionSlabs || profile.commissionSlabs.length === 0) ? (
+                                                <div className="p-4 bg-slate-50 border border-slate-200/60 rounded-2xl text-xs text-slate-500 italic">
+                                                    Standard platform commission slabs apply.
+                                                </div>
+                                            ) : (
+                                                <div className="overflow-x-auto rounded-2xl border border-slate-200/80 bg-white">
+                                                    <table className="w-full text-left text-xs">
+                                                        <thead className="bg-slate-50 text-slate-600 font-bold border-b border-slate-200">
+                                                            <tr>
+                                                                <th className="p-3">Amount Range</th>
+                                                                <th className="p-3">Category</th>
+                                                                <th className="p-3">Commission %</th>
+                                                                <th className="p-3">Platform Fee</th>
+                                                                <th className="p-3">Mode</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
+                                                            {profile.commissionSlabs.map((slab: any, idx: number) => (
+                                                                <tr key={slab.id || idx} className="hover:bg-slate-50/50">
+                                                                    <td className="p-3 font-semibold text-slate-900">
+                                                                        ₹{slab.minAmount} {slab.maxAmount ? ` - ₹${slab.maxAmount}` : '+'}
+                                                                    </td>
+                                                                    <td className="p-3">
+                                                                        <Badge variant="secondary" className="text-[10px] uppercase font-bold">
+                                                                            {slab.category || 'ALL'}
+                                                                        </Badge>
+                                                                    </td>
+                                                                    <td className="p-3 font-bold text-[#7b4623]">
+                                                                        {slab.percentage}%
+                                                                    </td>
+                                                                    <td className="p-3 font-bold text-slate-900">
+                                                                        ₹{slab.platformFee || 0}
+                                                                    </td>
+                                                                    <td className="p-3">
+                                                                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                                                                            slab.isOffline ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'
+                                                                        }`}>
+                                                                            {slab.isOffline ? 'Offline' : 'Online'}
+                                                                        </span>
+                                                                    </td>
+                                                                </tr>
+                                                            ))}
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </CardContent>
+                                </Card>
+
                                 {/* Sacred Knowledge View */}
                                 <Card className="border-white/20 bg-white/60 backdrop-blur-sm shadow-xl rounded-[2.5rem] overflow-hidden">
                                     <CardHeader className="bg-gradient-to-r from-[#7b4623]/10 to-transparent p-8 border-b border-white/20">
