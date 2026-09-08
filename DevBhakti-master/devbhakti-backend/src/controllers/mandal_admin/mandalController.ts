@@ -130,7 +130,9 @@ export const updateMyMandalProfile = async (req: Request, res: Response) => {
         // Social links
         instagramUrl: data.instagramUrl !== undefined ? data.instagramUrl : undefined,
         facebookUrl: data.facebookUrl !== undefined ? data.facebookUrl : undefined,
-        youtubeUrl: data.youtubeUrl !== undefined ? data.youtubeUrl : undefined
+        youtubeUrl: data.youtubeUrl !== undefined ? data.youtubeUrl : undefined,
+        // Aarti Timings
+        aartiTimings: data.aartiTimings !== undefined ? parseJson(data.aartiTimings) : undefined
       }
     });
 

@@ -962,13 +962,14 @@ export const toggleSellerStatusAdmin = async (id: string, status: string) => {
     return response.data;
 };
 
-export const fetchAllTransactionsAdmin = async (params?: { page?: number, limit?: number, templeId?: string, sellerId?: string }) => {
+export const fetchAllTransactionsAdmin = async (params?: { page?: number, limit?: number, templeId?: string, sellerId?: string, mandalId?: string }) => {
     const token = getAdminToken();
     const query = new URLSearchParams();
     if (params?.page) query.append('page', params.page.toString());
     if (params?.limit) query.append('limit', params.limit.toString());
     if (params?.templeId) query.append('templeId', params.templeId);
     if (params?.sellerId) query.append('sellerId', params.sellerId);
+    if (params?.mandalId) query.append('mandalId', params.mandalId);
 
     const url = `${API_URL}/admin/finance/transactions?${query.toString()}`;
     console.log(`GET: ${url}`);
@@ -978,11 +979,12 @@ export const fetchAllTransactionsAdmin = async (params?: { page?: number, limit?
     return response.data;
 };
 
-export const exportTransactionsExcelAdmin = async (params?: { templeId?: string, sellerId?: string }) => {
+export const exportTransactionsExcelAdmin = async (params?: { templeId?: string, sellerId?: string, mandalId?: string }) => {
     const token = getAdminToken();
     const query = new URLSearchParams();
     if (params?.templeId) query.append('templeId', params.templeId);
     if (params?.sellerId) query.append('sellerId', params.sellerId);
+    if (params?.mandalId) query.append('mandalId', params.mandalId);
 
     const response = await axios.get(`${API_URL}/admin/finance/export-excel?${query.toString()}`, {
         headers: { Authorization: `Bearer ${token}` },

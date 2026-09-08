@@ -30,6 +30,13 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { parseLocalizedValue } from "@/utils/textUtils";
+import { API_URL } from "@/config/apiConfig";
+
+const getImageUrl = (path: string) => {
+  if (!path) return "";
+  if (path.startsWith("http")) return path;
+  return `${API_URL.replace("/api", "")}${path}`;
+};
 
 export default function TempleUnifiedTellerCartPage() {
   const [activeTab, setActiveTab] = useState("pooja");
@@ -340,7 +347,7 @@ export default function TempleUnifiedTellerCartPage() {
                               <div>
                                 <div className="flex gap-3 items-start">
                                   {pooja.image ? (
-                                    <img src={pooja.image} alt={parseLocalizedValue(pooja.name)} className="w-14 h-14 object-cover rounded-lg border border-slate-100 shrink-0" />
+                                    <img src={getImageUrl(pooja.image)} alt={parseLocalizedValue(pooja.name)} className="w-14 h-14 object-cover rounded-lg border border-slate-100 shrink-0" />
                                   ) : (
                                     <div className="w-14 h-14 bg-amber-100/70 rounded-lg flex items-center justify-center text-amber-900 shrink-0 font-bold text-lg">
                                       🪔
@@ -513,7 +520,7 @@ export default function TempleUnifiedTellerCartPage() {
                                 <div>
                                   <div className="flex gap-3 items-start">
                                     {prod.image ? (
-                                      <img src={prod.image} alt={parseLocalizedValue(prod.name)} className="w-14 h-14 object-cover rounded-lg border border-slate-100 shrink-0" />
+                                      <img src={getImageUrl(prod.image)} alt={parseLocalizedValue(prod.name)} className="w-14 h-14 object-cover rounded-lg border border-slate-100 shrink-0" />
                                     ) : (
                                       <div className="w-14 h-14 bg-amber-100/70 rounded-lg flex items-center justify-center text-amber-900 shrink-0 font-bold text-lg">
                                         🎁

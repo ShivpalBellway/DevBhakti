@@ -331,9 +331,9 @@ export default function MandalSettingsPage() {
             setShowCropper(false);
             setTempImage(null);
           }}
-          initialAspect={1920 / 600}
+          initialAspect={1}
           lockAspect={true}
-          title="Adjust Festival Banner Image"
+          title="Adjust Festival Banner Image (1:1 Ratio)"
         />
       )}
 
@@ -446,10 +446,10 @@ export default function MandalSettingsPage() {
                       <img
                         src={fest.image.startsWith("http") ? fest.image : `${BASE_URL}${fest.image}`}
                         alt={fest.name}
-                        className="w-20 h-14 object-cover rounded-xl border shrink-0 bg-muted"
+                        className="w-14 h-14 aspect-square object-cover rounded-xl border shrink-0 bg-muted"
                       />
                     ) : (
-                      <div className="w-20 h-14 bg-muted rounded-xl border flex items-center justify-center shrink-0">
+                      <div className="w-14 h-14 aspect-square bg-muted rounded-xl border flex items-center justify-center shrink-0">
                         <ImageIcon className="w-6 h-6 text-muted-foreground" />
                       </div>
                     )}
@@ -542,9 +542,9 @@ export default function MandalSettingsPage() {
 
           {viewingFestival && (
             <div className="space-y-6 pt-2">
-              {/* Banner Image */}
+              {/* Banner Image (1:1 Ratio) */}
               {viewingFestival.image ? (
-                <div className="w-full h-44 bg-muted rounded-xl overflow-hidden border">
+                <div className="w-full max-w-[260px] aspect-square mx-auto bg-muted rounded-2xl overflow-hidden border border-border shadow-sm">
                   <img
                     src={
                       viewingFestival.image.startsWith("http")
@@ -556,7 +556,7 @@ export default function MandalSettingsPage() {
                   />
                 </div>
               ) : (
-                <div className="w-full h-28 bg-muted rounded-xl border flex items-center justify-center text-muted-foreground text-sm">
+                <div className="w-full max-w-[260px] aspect-square mx-auto bg-muted rounded-2xl border flex items-center justify-center text-muted-foreground text-sm">
                   No Banner Uploaded
                 </div>
               )}
@@ -727,30 +727,31 @@ export default function MandalSettingsPage() {
             <div className="space-y-2 border rounded-xl p-4 bg-muted/20">
               <Label className="text-sm font-bold flex items-center gap-2">
                 <ImageIcon className="w-4 h-4 text-primary" />
-                Festival Banner Graphic (1920x600 px)
+                Festival Banner Graphic (4:3 Landscape Ratio)
               </Label>
 
-              <div className="border-2 border-dashed rounded-xl p-4 flex flex-col items-center justify-center gap-2 hover:bg-muted/40 cursor-pointer relative">
-                <Upload className="w-5 h-5 text-primary" />
-                <span className="text-xs font-medium">Click to upload banner image</span>
-                <Input
-                  type="file"
-                  accept="image/*"
-                  className="absolute inset-0 opacity-0 cursor-pointer"
-                  onChange={handleFileChange}
-                />
-              </div>
-
-              {imagePreview && (
-                <div className="relative w-full h-32 bg-muted rounded-xl overflow-hidden border">
-                  <img src={imagePreview} className="w-full h-full object-cover" alt="Preview" />
+              {!imagePreview ? (
+                <div className="border-2 border-dashed rounded-xl p-6 flex flex-col items-center justify-center gap-2 hover:bg-muted/40 cursor-pointer relative transition-colors">
+                  <Upload className="w-6 h-6 text-primary" />
+                  <span className="text-xs font-medium text-foreground">Click to upload banner image</span>
+                  <Input
+                    type="file"
+                    accept="image/*"
+                    className="absolute inset-0 opacity-0 cursor-pointer"
+                    onChange={handleFileChange}
+                  />
+                </div>
+              ) : (
+                <div className="relative w-full aspect-[4/3] max-w-[320px] mx-auto bg-muted rounded-2xl overflow-hidden border border-border shadow-sm group">
+                  <img src={imagePreview} className="w-full h-full object-cover" alt="Banner Preview" />
                   <button
                     type="button"
                     onClick={() => {
                       setImagePreview("");
                       setImageFile(null);
                     }}
-                    className="absolute top-2 right-2 p-1 bg-background/80 rounded-full text-foreground hover:text-red-600"
+                    className="absolute top-2 right-2 p-1.5 bg-black/70 hover:bg-red-600 text-white rounded-full transition-all shadow-md"
+                    title="Remove Image"
                   >
                     <X className="w-4 h-4" />
                   </button>
@@ -783,6 +784,20 @@ export default function MandalSettingsPage() {
           </form>
         </DialogContent>
       </Dialog>
+
+      {showCropper && tempImage && (
+        <ImageCropper
+          image={tempImage}
+          initialAspect={4 / 3}
+          lockAspect={true}
+          title="Crop Festival Banner Graphic (4:3 Landscape Ratio)"
+          onCropComplete={handleCropComplete}
+          onCancel={() => {
+            setShowCropper(false);
+            setTempImage(null);
+          }}
+        />
+      )}
     </div>
   );
 }

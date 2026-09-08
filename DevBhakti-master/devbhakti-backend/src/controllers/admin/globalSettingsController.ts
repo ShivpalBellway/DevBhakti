@@ -123,8 +123,8 @@ export const getMandalRegistrationStatus = async (req: Request, res: Response) =
         const globalEnabled = val.globalEnabled !== undefined ? Boolean(val.globalEnabled) : (val.enabled === true);
         const festivals: any[] = Array.isArray(val.festivals) ? val.festivals : [];
 
-        // If legacy single festival format exists and festivals array is empty, convert legacy format
-        if (festivals.length === 0 && (val.title || val.image || val.startDate)) {
+        // If legacy single festival format exists and festivals key was never set as an array
+        if (val.festivals === undefined && (val.title?.en || val.image || val.startDate)) {
             festivals.push({
                 id: 'fest_default',
                 name: val.title?.en || 'Ganesh Utsav Registration',
@@ -171,7 +171,7 @@ export const updateMandalRegistrationStatus = async (req: Request, res: Response
         }
 
         let festivals: any[] = Array.isArray(prevVal.festivals) ? [...prevVal.festivals] : [];
-        if (festivals.length === 0 && (prevVal.title || prevVal.image || prevVal.startDate)) {
+        if (prevVal.festivals === undefined && (prevVal.title?.en || prevVal.image || prevVal.startDate)) {
             festivals.push({
                 id: 'fest_default',
                 name: prevVal.title?.en || 'Ganesh Utsav Registration',

@@ -1,14 +1,17 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
-import { CalendarDays, Download, Filter, Loader2, Search, Phone, Mail, Eye, Trash2, X } from "lucide-react";
+import { CalendarDays, Download, Filter, Loader2, Search, Phone, Mail, Eye, Trash2, X, Calendar as CalendarIcon, Ban, PlayCircle } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
+import MandalAvailabilityManager from "@/components/mandal/MandalAvailabilityManager";
 import { parseLocalizedValue } from "@/utils/textUtils";
-import { fetchMyMandalBookings, deleteMandalBooking, fetchMandalBookingById } from "@/api/mandalAdminController";
+import { fetchMyMandalBookings, deleteMandalBooking, fetchMandalBookingById, getMandalAvailability, setMandalAvailability } from "@/api/mandalAdminController";
 import { useToast } from "@/hooks/use-toast";
+import { format } from "date-fns";
 
 const statusColors: Record<string, string> = {
   BOOKED: "bg-blue-100 text-blue-700 border-blue-200",
@@ -29,6 +32,57 @@ export default function MandalBookingsPage() {
   const [viewLoading, setViewLoading] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [isTodayClosed, setIsTodayClosed] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  const checkTodayAvailability = async () => {
+    try {
+      const todayStr = format(new Date(), 'yyyy-MM-dd');
+      const res = await getMandalAvailability({
+        month: todayStr.split('-')[1],
+        year: todayStr.split('-')[0]
+      });
+      if (res.success && res.data) {
+        const todayRule = res.data.find((r: any) => r.date === todayStr && r.poojaId === null);
+        if (todayRule && todayRule.isClosed) {
+          setIsTodayClosed(true);
+        } else {
+          setIsTodayClosed(false);
+        }
+      }
+    } catch (error) {
+      console.error("Failed to check mandal availability", error);
+    }
+  };
+
+  const handleToggleToday = async () => {
+    setIsProcessing(true);
+    try {
+      const todayStr = format(new Date(), 'yyyy-MM-dd');
+      const newStatus = !isTodayClosed;
+
+      const res = await setMandalAvailability({
+        date: todayStr,
+        isClosed: newStatus,
+        poojaId: undefined
+      });
+
+      if (res.success) {
+        setIsTodayClosed(newStatus);
+        toast({
+          title: newStatus ? "Bookings Stopped" : "Bookings Resumed",
+          description: newStatus
+            ? "No new bookings will be accepted for today."
+            : "You are now accepting bookings for today.",
+          variant: newStatus ? "destructive" : "success"
+        });
+      }
+    } catch (error) {
+      toast({ title: "Error", description: "Failed to update availability", variant: "destructive" });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
 
   const fetchBookings = async () => {
     setLoading(true);
@@ -49,6 +103,7 @@ export default function MandalBookingsPage() {
 
   useEffect(() => {
     fetchBookings();
+    checkTodayAvailability();
   }, []);
 
   const filteredBookings = useMemo(() => {
@@ -153,10 +208,43 @@ export default function MandalBookingsPage() {
           <h1 className="text-2xl md:text-3xl font-serif font-bold text-slate-900">Mandal Bookings</h1>
           <p className="text-slate-500 text-sm">Users who booked poojas for this mandal</p>
         </div>
-        <Button variant="outline" onClick={exportCSV} className="gap-2">
-          <Download className="h-4 w-4" />
-          Export CSV
-        </Button>
+        <div className="flex gap-2 flex-wrap items-center">
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="gap-2 border-amber-300 text-amber-900 hover:bg-amber-50">
+                <CalendarIcon className="w-4 h-4 text-amber-700" />
+                Manage Calendar
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+              <MandalAvailabilityManager />
+            </DialogContent>
+          </Dialog>
+
+          <Button
+            variant={isTodayClosed ? "destructive" : "outline"}
+            onClick={handleToggleToday}
+            disabled={isProcessing}
+            className={isTodayClosed ? "bg-red-50 text-red-600 hover:bg-red-100 border-red-200" : "text-amber-700 border-amber-300 hover:bg-amber-50"}
+          >
+            {isTodayClosed ? (
+              <>
+                <PlayCircle className="w-4 h-4 mr-2" />
+                Resume Today
+              </>
+            ) : (
+              <>
+                <Ban className="w-4 h-4 mr-2" />
+                Stop Today
+              </>
+            )}
+          </Button>
+
+          <Button variant="outline" onClick={exportCSV} className="gap-2">
+            <Download className="h-4 w-4" />
+            Export CSV
+          </Button>
+        </div>
       </div>
 
       {/* Booking Type Tabs */}

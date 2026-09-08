@@ -21,7 +21,7 @@ export function ImageCropper({
     image,
     onCrop,
     onClose,
-    aspectRatio = 1,
+    aspectRatio = 4 / 3,
     title,
     lockAspect = true
 }: ImageCropperProps) {
@@ -37,9 +37,17 @@ export function ImageCropper({
     ];
 
     const displayTitle = title || "Adjust Your Image";
-    const [aspect, setAspect] = useState<number>(aspectRatio || 1);
+    const [aspect, setAspect] = useState<number>(aspectRatio ?? (4 / 3));
     const [isLoading, setIsLoading] = useState(false);
     const [dragMode, setDragMode] = useState<'crop' | 'move'>('crop');
+
+    const handleReady = useCallback(() => {
+        const cropper = cropperRef.current?.cropper;
+        if (cropper) {
+            const currentAspect = aspect ?? (4 / 3);
+            cropper.setAspectRatio(currentAspect === 0 ? NaN : currentAspect);
+        }
+    }, [aspect]);
 
     // Update aspect ratio and drag mode of the active cropper
     useEffect(() => {
@@ -117,6 +125,7 @@ export function ImageCropper({
                             aspectRatio={aspect === 0 ? NaN : aspect}
                             guides={true}
                             ref={cropperRef}
+                            ready={handleReady}
                             viewMode={1}
                             dragMode={dragMode}
                             scalable={true}

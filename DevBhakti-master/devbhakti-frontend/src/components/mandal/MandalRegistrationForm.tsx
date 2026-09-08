@@ -23,6 +23,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { submitMandalRegistration, fetchMandalRegistrationStatus } from "@/api/publicController";
 import { captureLead } from "@/api/leadApi";
+import { ImageCropper } from "@/components/admin/ImageCropper";
 
 export default function MandalRegistrationForm({ onClose }: { onClose?: () => void }) {
     const { t } = useLanguage();
@@ -74,6 +75,24 @@ export default function MandalRegistrationForm({ onClose }: { onClose?: () => vo
     const [heroImages, setHeroImages] = useState<File[]>([]);
     const [heroPreviews, setHeroPreviews] = useState<string[]>([]);
 
+    // Cropper states
+    const [showCropper, setShowCropper] = useState(false);
+    const [tempImage, setTempImage] = useState<string | null>(null);
+    const [cropTarget, setCropTarget] = useState<"main" | "banner">("main");
+    const [cropperTitle, setCropperTitle] = useState("Crop Image");
+    const [pendingHeroFiles, setPendingHeroFiles] = useState<File[]>([]);
+
+    const openCropper = (file: File, target: "main" | "banner", title: string) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+            setTempImage(reader.result as string);
+            setCropTarget(target);
+            setCropperTitle(title);
+            setShowCropper(true);
+        };
+        reader.readAsDataURL(file);
+    };
+
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
@@ -82,22 +101,44 @@ export default function MandalRegistrationForm({ onClose }: { onClose?: () => vo
     const handleMainImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
-            setMainImage(file);
-            setMainImagePreview(URL.createObjectURL(file));
+            openCropper(file, "main", "Crop Mandal Main Image (4:3 Landscape Ratio)");
+            e.target.value = "";
         }
     };
 
     const handleHeroImagesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const files = Array.from(e.target.files || []);
-        if (files.length > 0) {
-            const currentCount = heroImages.length;
-            const remaining = 5 - currentCount;
-            const validFiles = files.slice(0, remaining);
-            if (validFiles.length > 0) {
-                setHeroImages(prev => [...prev, ...validFiles]);
-                setHeroPreviews(prev => [...prev, ...validFiles.map(file => URL.createObjectURL(file))]);
+        const files = Array.from(e.target.files || []).filter(file => file.type.startsWith("image/"));
+        if (!files.length) return;
+
+        const currentCount = heroImages.length;
+        const remaining = 5 - currentCount;
+        const validFiles = files.slice(0, remaining);
+        if (!validFiles.length) return;
+
+        const [first, ...rest] = validFiles;
+        setPendingHeroFiles(rest);
+        openCropper(first, "banner", "Crop Banner Image (4:3 Landscape Ratio)");
+        e.target.value = "";
+    };
+
+    const handleCropComplete = (croppedFile: File) => {
+        if (cropTarget === "main") {
+            setMainImage(croppedFile);
+            setMainImagePreview(URL.createObjectURL(croppedFile));
+        } else if (cropTarget === "banner") {
+            setHeroImages(prev => [...prev, croppedFile]);
+            setHeroPreviews(prev => [...prev, URL.createObjectURL(croppedFile)]);
+            if (pendingHeroFiles.length > 0) {
+                const [next, ...remaining] = pendingHeroFiles;
+                setPendingHeroFiles(remaining);
+                setTimeout(() => {
+                    openCropper(next, "banner", "Crop Banner Image (4:3 Landscape Ratio)");
+                }, 100);
+                return;
             }
         }
+        setShowCropper(false);
+        setTempImage(null);
     };
 
     const removeHeroImage = (index: number) => {
@@ -569,6 +610,21 @@ export default function MandalRegistrationForm({ onClose }: { onClose?: () => vo
                     )}
                 </Button>
             </div>
+
+            {showCropper && tempImage && (
+                <ImageCropper
+                    image={tempImage}
+                    initialAspect={4 / 3}
+                    lockAspect={true}
+                    title={cropperTitle}
+                    onCropComplete={handleCropComplete}
+                    onCancel={() => {
+                        setShowCropper(false);
+                        setTempImage(null);
+                        setPendingHeroFiles([]);
+                    }}
+                />
+            )}
         </div>
     );
 }

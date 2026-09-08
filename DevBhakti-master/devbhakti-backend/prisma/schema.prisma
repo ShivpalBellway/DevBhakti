@@ -144,7 +144,8 @@ model Temple {
 
 model BookingAvailability {
   id          String   @id @default(cuid())
-  templeId    String
+  templeId    String?
+  mandalId    String?
   poojaId     String?
   date        String
   maxBookings Int      @default(20)
@@ -152,9 +153,11 @@ model BookingAvailability {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   pooja       Pooja?   @relation(fields: [poojaId], references: [id], onDelete: Cascade)
-  temple      Temple   @relation(fields: [templeId], references: [id], onDelete: Cascade)
+  temple      Temple?  @relation(fields: [templeId], references: [id], onDelete: Cascade)
+  mandal      Mandal?  @relation(fields: [mandalId], references: [id], onDelete: Cascade)
 
   @@unique([templeId, poojaId, date])
+  @@unique([mandalId, poojaId, date])
 }
 
 model SellerProfile {
@@ -771,6 +774,7 @@ model Mandal {
   accountHolderName  String?
   ifscCode           String?
   upiId              String?
+  aartiTimings       Json?
   createdAt          DateTime                  @default(now())
   updatedAt          DateTime                  @updatedAt
   documentUrl        String[]                  @default([])
@@ -786,6 +790,7 @@ model Mandal {
   mandalDarshanSlots MandalDarshanSlot[]
   mandalDarshanTickets MandalDarshanTicket[]
   tellerOrders       TellerOrder[]
+  availability       BookingAvailability[]
 }
 
 model Lead {

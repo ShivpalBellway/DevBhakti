@@ -125,14 +125,20 @@ export const createMandal = async (req: Request, res: Response): Promise<void> =
         let cleanedContact = data.contactNumber.replace(/\D/g, '');
         if (cleanedContact.length > 10 && cleanedContact.startsWith('91')) {
             cleanedContact = cleanedContact.substring(2);
+        } else if (cleanedContact.length > 10 && cleanedContact.startsWith('0')) {
+            cleanedContact = cleanedContact.substring(1);
         }
 
+        const normalizedPhone = normalizePhone(cleanedContact);
+        const digits = normalizedPhone.replace(/\D/g, '');
+        const phoneVariants = [normalizedPhone, digits, cleanedContact, '91' + cleanedContact, '0' + cleanedContact, '+91' + cleanedContact];
+
         const existingMandal = await prisma.mandal.findFirst({
-            where: { contactNumber: cleanedContact }
+            where: { contactNumber: { in: phoneVariants } }
         });
 
         if (existingMandal) {
-            res.status(400).json({ success: false, message: 'This number is already with us in mandal register form' });
+            res.status(400).json({ success: false, message: 'This number is already registered with an existing mandal.' });
             return;
         }
 
@@ -154,9 +160,8 @@ export const createMandal = async (req: Request, res: Response): Promise<void> =
             : [];
 
         // Create linked User account for MANDAL role login
-        const normalizedPhone = normalizePhone(cleanedContact);
         let user = await prisma.user.findFirst({
-            where: { phone: normalizedPhone, role: 'MANDAL' }
+            where: { phone: { in: phoneVariants }, role: 'MANDAL' }
         });
 
         if (!user) {
@@ -188,7 +193,7 @@ export const createMandal = async (req: Request, res: Response): Promise<void> =
                 city: data.city || undefined,
                 state: data.state || undefined,
                 pinCode: data.pinCode || undefined,
-                contactNumber: cleanedContact,
+                contactNumber: normalizedPhone,
                 userId: user.id,
                 email: data.email || undefined,
                 presidentName: data.presidentName || undefined,
@@ -406,8 +411,11 @@ export const toggleMandalStatus = async (req: Request, res: Response): Promise<v
             // If status is APPROVED, create or update Mandal user login account
             if (status === 'APPROVED') {
                 const normalizedPhone = normalizePhone(existing.contactNumber);
+                const digits = normalizedPhone.replace(/\D/g, '');
+                const phoneVariants = [normalizedPhone, digits, existing.contactNumber, '91' + existing.contactNumber, '0' + existing.contactNumber, '+91' + existing.contactNumber];
+
                 let user = await tx.user.findFirst({
-                    where: { phone: normalizedPhone, role: 'MANDAL' }
+                    where: { phone: { in: phoneVariants }, role: 'MANDAL' }
                 });
 
                 if (!user) {
@@ -432,14 +440,15 @@ export const toggleMandalStatus = async (req: Request, res: Response): Promise<v
                         }
                     });
                 } else {
-                    // If user exists, ensure they are verified and active
+                    // If user exists, ensure they are verified and active, and phone is normalized with +91
                     await tx.user.update({
                         where: { id: user.id },
-                        data: { isVerified: true, isActive: true }
+                        data: { isVerified: true, isActive: true, phone: normalizedPhone }
                     });
                 }
 
                 updateData.userId = user.id;
+                updateData.contactNumber = normalizedPhone;
             }
 
             // Sync isActive to the linked User's status

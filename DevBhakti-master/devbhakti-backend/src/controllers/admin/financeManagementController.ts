@@ -94,49 +94,59 @@ export const updateWithdrawalStatus = async (req: Request, res: Response) => {
 
 export const getPlatformFinanceSummary = async (req: Request, res: Response) => {
   try {
-    // Ledger se Pooja, Product, aur Donation earnings (only COMPLETED)
-    const ledger = await prisma.templeLedger.findMany({
-      where: { 
-        status: "COMPLETED",
-        type: { in: ["POOJA_EARNING", "MARKETPLACE_EARNING", "DONATION_EARNING"] }
-      }
-    });
+    // Temple & Mandal Ledger for Pooja, Product, and Donation earnings (only COMPLETED)
+    const [templeLedger, mandalLedger] = await Promise.all([
+      prisma.templeLedger.findMany({
+        where: { 
+          status: "COMPLETED",
+          type: { in: ["POOJA_EARNING", "MARKETPLACE_EARNING", "DONATION_EARNING"] }
+        }
+      }),
+      prisma.mandalLedger.findMany({
+        where: { 
+          status: "COMPLETED",
+          type: { in: ["POOJA_EARNING", "MARKETPLACE_EARNING", "DONATION_EARNING"] }
+        }
+      })
+    ]);
 
-    const totalPlatformGross = ledger.reduce((sum, e) => sum + (Number(e.grossAmount) || 0), 0);
-    const totalPlatformCommission = ledger.reduce((sum, e) => sum + (Number(e.commission) || 0), 0);
+    const combinedLedger = [...templeLedger, ...mandalLedger];
+
+    const totalPlatformGross = combinedLedger.reduce((sum, e) => sum + (Number(e.grossAmount) || 0), 0);
+    const totalPlatformCommission = combinedLedger.reduce((sum, e) => sum + (Number(e.commission) || 0), 0);
 
     // Breakdown
-    const totalPoojaBookings = ledger
+    const totalPoojaBookings = combinedLedger
       .filter(e => e.type === "POOJA_EARNING")
       .reduce((sum, e) => sum + (Number(e.grossAmount) || 0), 0);
 
-    const totalProductSales = ledger
+    const totalProductSales = combinedLedger
       .filter(e => e.type === "MARKETPLACE_EARNING")
       .reduce((sum, e) => sum + (Number(e.grossAmount) || 0), 0);
 
-    const totalDonations = ledger
+    const totalDonations = combinedLedger
       .filter(e => e.type === "DONATION_EARNING")
-      .reduce((sum, e) => sum + (Number(e.grossAmount) || 0), 0); // Gross devotee paid
+      .reduce((sum, e) => sum + (Number(e.grossAmount) || 0), 0);
 
-    const pendingRequests = await prisma.withdrawalRequest.count({
-      where: { status: "PENDING" }
-    });
+    const [pendingTempleRequests, pendingMandalRequests, totalTemplePayouts, totalMandalPayouts] = await Promise.all([
+      prisma.withdrawalRequest.count({ where: { status: "PENDING" } }),
+      prisma.mandalWithdrawalRequest.count({ where: { status: "PENDING" } }),
+      prisma.withdrawalRequest.aggregate({ where: { status: "PAID" }, _sum: { amount: true } }),
+      prisma.mandalWithdrawalRequest.aggregate({ where: { status: "PAID" }, _sum: { amount: true } })
+    ]);
 
-    const totalPayouts = await prisma.withdrawalRequest.aggregate({
-      where: { status: "PAID" },
-      _sum: { amount: true }
-    });
+    const totalPaidOut = (totalTemplePayouts._sum.amount || 0) + (totalMandalPayouts._sum.amount || 0);
 
     return res.status(200).json({
       success: true,
       data: {
         totalPlatformGross,              // Devotee total paid
         totalPlatformCommission,         // Platform earns
-        activePayouts: pendingRequests,
-        totalPaidOut: totalPayouts._sum.amount || 0,
+        activePayouts: pendingTempleRequests + pendingMandalRequests,
+        totalPaidOut,
         totalPoojaBookings,
         totalProductSales,
-        totalDonations                   // Temple gets
+        totalDonations                   // Merchant gets
       }
     });
   } catch (error: any) {
@@ -144,42 +154,101 @@ export const getPlatformFinanceSummary = async (req: Request, res: Response) => 
     return res.status(500).json({ success: false, message: error.message });
   }
 };
+
 // Get all ledger entries for platform-wide monitoring with pagination and filtering
 export const getAllPlatformTransactions = async (req: Request, res: Response) => {
   try {
-    const { page = 1, limit = 10, templeId, sellerId } = req.query;
+    const { page = 1, limit = 10, templeId, sellerId, mandalId } = req.query;
     const skip = (Number(page) - 1) * Number(limit);
 
-    const where: any = { status: "COMPLETED" };
-    if (templeId) where.templeId = String(templeId);
-    if (sellerId) where.sellerId = String(sellerId);
+    const lang = getLang(req);
 
-    const [transactions, total] = await Promise.all([
-      prisma.templeLedger.findMany({
-        where,
-        include: {
-          temple: {
-            select: {
-              name: true,
-            }
+    // If specific filter is applied
+    if (mandalId) {
+      const where: any = { status: "COMPLETED", mandalId: String(mandalId) };
+      const [transactions, total] = await Promise.all([
+        prisma.mandalLedger.findMany({
+          where,
+          include: {
+            mandal: { select: { name: true } }
           },
-          seller: {
-            select: {
-              name: true,
-            }
-          }
+          orderBy: { createdAt: "desc" },
+          skip,
+          take: Number(limit)
+        }),
+        prisma.mandalLedger.count({ where })
+      ]);
+      return res.status(200).json({
+        success: true,
+        data: localize(transactions, lang),
+        pagination: {
+          total,
+          page: Number(page),
+          limit: Number(limit),
+          totalPages: Math.ceil(total / Number(limit))
+        }
+      });
+    }
+
+    if (templeId || sellerId) {
+      const where: any = { status: "COMPLETED" };
+      if (templeId) where.templeId = String(templeId);
+      if (sellerId) where.sellerId = String(sellerId);
+
+      const [transactions, total] = await Promise.all([
+        prisma.templeLedger.findMany({
+          where,
+          include: {
+            temple: { select: { name: true } },
+            seller: { select: { name: true } }
+          },
+          orderBy: { createdAt: "desc" },
+          skip,
+          take: Number(limit)
+        }),
+        prisma.templeLedger.count({ where })
+      ]);
+
+      return res.status(200).json({
+        success: true,
+        data: localize(transactions, lang),
+        pagination: {
+          total,
+          page: Number(page),
+          limit: Number(limit),
+          totalPages: Math.ceil(total / Number(limit))
+        }
+      });
+    }
+
+    // Overall Admin View - Combine Temple & Mandal Ledgers
+    const [templeTxs, mandalTxs] = await Promise.all([
+      prisma.templeLedger.findMany({
+        where: { status: "COMPLETED" },
+        include: {
+          temple: { select: { name: true } },
+          seller: { select: { name: true } }
         },
         orderBy: { createdAt: "desc" },
-        skip,
-        take: Number(limit)
+        take: 500
       }),
-      prisma.templeLedger.count({ where })
+      prisma.mandalLedger.findMany({
+        where: { status: "COMPLETED" },
+        include: {
+          mandal: { select: { name: true } }
+        },
+        orderBy: { createdAt: "desc" },
+        take: 500
+      })
     ]);
 
-    const lang = getLang(req);
+    const combined = [...templeTxs, ...mandalTxs].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    const total = combined.length;
+    const paginated = combined.slice(skip, skip + Number(limit));
+
     return res.status(200).json({
       success: true,
-      data: localize(transactions, lang),
+      data: localize(paginated, lang),
       pagination: {
         total,
         page: Number(page),
@@ -195,19 +264,43 @@ export const getAllPlatformTransactions = async (req: Request, res: Response) =>
 
 export const downloadTransactionsExcel = async (req: Request, res: Response) => {
   try {
-    const { templeId, sellerId } = req.query;
-    const where: any = { status: "COMPLETED" };
-    if (templeId) where.templeId = String(templeId);
-    if (sellerId) where.sellerId = String(sellerId);
+    const { templeId, sellerId, mandalId } = req.query;
 
-    const transactions = await prisma.templeLedger.findMany({
-      where,
-      include: {
-        temple: { select: { name: true } },
-        seller: { select: { name: true } }
-      },
-      orderBy: { createdAt: "desc" }
-    });
+    let transactions: any[] = [];
+
+    if (mandalId) {
+      transactions = await prisma.mandalLedger.findMany({
+        where: { status: "COMPLETED", mandalId: String(mandalId) },
+        include: { mandal: { select: { name: true } } },
+        orderBy: { createdAt: "desc" }
+      });
+    } else if (templeId || sellerId) {
+      const where: any = { status: "COMPLETED" };
+      if (templeId) where.templeId = String(templeId);
+      if (sellerId) where.sellerId = String(sellerId);
+      transactions = await prisma.templeLedger.findMany({
+        where,
+        include: {
+          temple: { select: { name: true } },
+          seller: { select: { name: true } }
+        },
+        orderBy: { createdAt: "desc" }
+      });
+    } else {
+      const [tTxs, mTxs] = await Promise.all([
+        prisma.templeLedger.findMany({
+          where: { status: "COMPLETED" },
+          include: { temple: { select: { name: true } }, seller: { select: { name: true } } },
+          orderBy: { createdAt: "desc" }
+        }),
+        prisma.mandalLedger.findMany({
+          where: { status: "COMPLETED" },
+          include: { mandal: { select: { name: true } } },
+          orderBy: { createdAt: "desc" }
+        })
+      ]);
+      transactions = [...tTxs, ...mTxs].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    }
 
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet('Transactions Report');
@@ -240,10 +333,11 @@ export const downloadTransactionsExcel = async (req: Request, res: Response) => 
     });
 
     transactions.forEach((tx: any) => {
+      const merchantName = tx.mandal ? getEnglish(tx.mandal.name) : tx.temple ? getEnglish(tx.temple.name) : (tx.seller?.name || 'DevBhakti');
       worksheet.addRow({
         id: tx.id,
         date: tx.createdAt.toISOString().replace('T', ' ').slice(0, 19),
-        merchant: tx.temple ? getEnglish(tx.temple.name) : (tx.seller?.name || 'Platform'),
+        merchant: merchantName,
         description: tx.description,
         type: tx.type,
         status: tx.status,

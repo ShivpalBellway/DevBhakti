@@ -23,7 +23,7 @@ export function ImageCropper({
     image,
     onCropComplete,
     onCancel,
-    initialAspect = 1,
+    initialAspect = 4 / 3,
     title,
     lockAspect = false
 }: ImageCropperProps) {
@@ -39,13 +39,22 @@ export function ImageCropper({
         { label: "2:3", value: 2 / 3 },
         { label: "16:9", value: 16 / 9 },
         { label: "9:16", value: 9 / 16 },
-        { label: t("image_cropper.ratios.banner"), value: 1920 / 800 },
+        /* Banner aspect ratio matching 1920x600 px banner spec */
+        { label: t("image_cropper.ratios.banner"), value: 1920 / 600 },
     ];
 
     const displayTitle = title || t("image_cropper.default_title");
-    const [aspect, setAspect] = useState<number>(initialAspect || 0);
+    const [aspect, setAspect] = useState<number>(initialAspect ?? (4 / 3));
     const [isLoading, setIsLoading] = useState(false);
     const [dragMode, setDragMode] = useState<'crop' | 'move'>('crop');
+
+    const handleReady = useCallback(() => {
+        const cropper = cropperRef.current?.cropper;
+        if (cropper) {
+            const currentAspect = aspect ?? (4 / 3);
+            cropper.setAspectRatio(currentAspect === 0 ? NaN : currentAspect);
+        }
+    }, [aspect]);
 
     // Update aspect ratio and drag mode of the active cropper
     useEffect(() => {
@@ -123,6 +132,7 @@ export function ImageCropper({
                             aspectRatio={aspect === 0 ? NaN : aspect}
                             guides={true}
                             ref={cropperRef}
+                            ready={handleReady}
                             viewMode={1}
                             dragMode={dragMode}
                             scalable={true}

@@ -22,6 +22,7 @@ import {
     ChevronDown,
     ChevronUp,
     ShieldCheck,
+    Flame,
     X
 } from "lucide-react";
 import { useSearchParams } from "next/navigation";
@@ -142,6 +143,12 @@ const sidebarItems = [
         icon: CreditCard,
         href: "/mandals/dashboard/finance",
         permission: "finance.menu"
+    },
+    {
+        label: "Aarti Timings",
+        icon: Flame,
+        href: "/mandals/dashboard/aarti",
+        permission: "mandal.profile.manage"
     },
     {
         label: "Profile",

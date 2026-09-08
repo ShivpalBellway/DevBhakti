@@ -49,26 +49,11 @@ export function FloatingDownloadApp() {
             <button
                 onClick={handleClick}
                 aria-label="Download DevBhakti App"
-                className="flex items-center gap-2 bg-gradient-to-l from-[#7b4623] via-[#94552c] to-[#7b4623] text-white pl-3 pr-2.5 py-3 rounded-l-2xl shadow-2xl border-l border-y border-amber-300/30 hover:pr-4 transition-all duration-300 transform group-hover:-translate-x-1"
+                className="flex items-center gap-2 bg-gradient-to-l from-[#7b4623] via-[#94552c] to-[#7b4623] text-white px-3 py-2.5 rounded-l-2xl shadow-2xl border-l border-y border-amber-300/30 hover:pr-4 transition-all duration-300 transform group-hover:-translate-x-1"
             >
-                {/* Logo / Badge */}
-                <div className="w-8 h-8 rounded-full bg-white p-0.5 shadow-md flex items-center justify-center shrink-0 animate-pulse group-hover:animate-none">
-                    <img
-                        src={typeof logo2 === "string" ? logo2 : logo2.src}
-                        alt="DevBhakti Logo"
-                        className="w-full h-full object-contain rounded-full"
-                    />
-                </div>
-
-                {/* Vertical / Hover Text */}
-                <div className="flex flex-col text-left leading-tight">
-                    <span className="text-[10px] uppercase font-bold tracking-widest text-amber-200">
-                        Get DevBhakti
-                    </span>
-                    <span className="text-xs font-black tracking-wide flex items-center gap-1">
-                        <Smartphone className="w-3.5 h-3.5 text-amber-200" />
-                        <span>Download {platformName}</span>
-                    </span>
+                <div className="flex items-center gap-1.5 font-black text-xs tracking-wide">
+                    <Smartphone className="w-4 h-4 text-amber-200" />
+                    <span>Download App</span>
                 </div>
             </button>
         </div>

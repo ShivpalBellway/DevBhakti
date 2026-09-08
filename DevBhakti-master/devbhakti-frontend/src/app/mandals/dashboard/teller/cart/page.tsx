@@ -30,6 +30,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { toast } from "sonner";
 import { parseLocalizedValue } from "@/utils/textUtils";
 import { lookupDevoteeByPhoneMandal } from "@/api/mandalAdminController";
+import { API_URL } from "@/config/apiConfig";
+
+const getImageUrl = (path: string) => {
+  if (!path) return "";
+  if (path.startsWith("http")) return path;
+  return `${API_URL.replace("/api", "")}${path}`;
+};
 
 export default function UnifiedTellerCartPage() {
   const [activeTab, setActiveTab] = useState("pooja");
@@ -319,7 +326,7 @@ export default function UnifiedTellerCartPage() {
                               <div>
                                 <div className="flex gap-3 items-start">
                                   {pooja.image ? (
-                                    <img src={pooja.image} alt={parseLocalizedValue(pooja.name)} className="w-14 h-14 object-cover rounded-lg border border-slate-100 shrink-0" />
+                                    <img src={getImageUrl(pooja.image)} alt={parseLocalizedValue(pooja.name)} className="w-14 h-14 object-cover rounded-lg border border-slate-100 shrink-0" />
                                   ) : (
                                     <div className="w-14 h-14 bg-amber-100/70 rounded-lg flex items-center justify-center text-[#7b4623] shrink-0 font-bold text-lg">
                                       🪔
@@ -487,7 +494,7 @@ export default function UnifiedTellerCartPage() {
                                 <div>
                                   <div className="flex gap-3 items-start">
                                     {prod.image ? (
-                                      <img src={prod.image} alt={parseLocalizedValue(prod.name)} className="w-14 h-14 object-cover rounded-lg border border-slate-100 shrink-0" />
+                                      <img src={getImageUrl(prod.image)} alt={parseLocalizedValue(prod.name)} className="w-14 h-14 object-cover rounded-lg border border-slate-100 shrink-0" />
                                     ) : (
                                       <div className="w-14 h-14 bg-amber-100/70 rounded-lg flex items-center justify-center text-[#7b4623] shrink-0 font-bold text-lg">
                                         🎁

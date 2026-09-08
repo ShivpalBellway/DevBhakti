@@ -94,7 +94,8 @@ export default function MandalFormPage({ mandalId }: MandalFormProps) {
   const [docFile, setDocFile] = useState<File | null>(null);
   const [tempImage, setTempImage] = useState<string | null>(null);
   const [showCropper, setShowCropper] = useState(false);
-  const [cropTarget, setCropTarget] = useState<"main" | "document" | null>(null);
+  const [cropTarget, setCropTarget] = useState<"main" | "document" | "banner" | null>(null);
+  const [pendingBannerFiles, setPendingBannerFiles] = useState<File[]>([]);
   const [cropTitle, setCropTitle] = useState("Crop Image");
   const [initialAspect, setInitialAspect] = useState(4 / 3);
   const [lockAspect, setLockAspect] = useState(false);
@@ -184,7 +185,7 @@ export default function MandalFormPage({ mandalId }: MandalFormProps) {
 
   const openCropper = (
     file: File,
-    target: "main" | "document",
+    target: "main" | "document" | "banner",
     title: string,
     aspect: number,
     shouldLockAspect = false
@@ -204,7 +205,7 @@ export default function MandalFormPage({ mandalId }: MandalFormProps) {
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    openCropper(file, "main", "Crop Mandal Main Image", 4 / 3);
+    openCropper(file, "main", "Crop Mandal Main Image (4:3 Landscape Ratio)", 4 / 3, true);
     e.target.value = "";
   };
 
@@ -212,7 +213,9 @@ export default function MandalFormPage({ mandalId }: MandalFormProps) {
     const files = Array.from(e.target.files || []).filter(file => file.type.startsWith("image/"));
     if (!files.length) return;
 
-    setBannerFiles(prev => [...prev, ...files]);
+    const [first, ...rest] = files;
+    setPendingBannerFiles(rest);
+    openCropper(first, "banner", "Crop Banner Image (4:3 Landscape Ratio)", 4 / 3, true);
     e.target.value = "";
   };
 
@@ -234,6 +237,16 @@ export default function MandalFormPage({ mandalId }: MandalFormProps) {
       setImagePreview(URL.createObjectURL(croppedFile));
     } else if (cropTarget === "document") {
       setDocFile(croppedFile);
+    } else if (cropTarget === "banner") {
+      setBannerFiles(prev => [...prev, croppedFile]);
+      if (pendingBannerFiles.length > 0) {
+        const [next, ...remaining] = pendingBannerFiles;
+        setPendingBannerFiles(remaining);
+        setTimeout(() => {
+          openCropper(next, "banner", "Crop Banner Image (4:3 Landscape Ratio)", 4 / 3, true);
+        }, 100);
+        return;
+      }
     }
 
     setShowCropper(false);
@@ -245,6 +258,7 @@ export default function MandalFormPage({ mandalId }: MandalFormProps) {
     setShowCropper(false);
     setTempImage(null);
     setCropTarget(null);
+    setPendingBannerFiles([]);
   };
 
   const removeBanner = (idx: number, existing: boolean) => {
@@ -574,18 +588,24 @@ export default function MandalFormPage({ mandalId }: MandalFormProps) {
                 Contact Number *
                 <span className="ml-2 text-xs font-normal text-muted-foreground">(10 digits only)</span>
               </label>
-              <input
-                required
-                type="text"
-                name="contactNumber"
-                value={form.contactNumber}
-                onChange={handleChange}
-                onKeyDown={handleContactKeyDown}
-                maxLength={10}
-                inputMode="numeric"
-                className={`${InputClass} ${contactError ? "border-red-500 focus:ring-red-500/30" : ""}`}
-                placeholder="10-digit mobile number"
-              />
+              <div className="relative">
+                <div className="absolute left-3 top-1/2 -translate-y-1/2 flex items-center gap-1 text-foreground font-semibold text-sm select-none border-r border-border pr-2.5 z-10 pointer-events-none">
+                  <Phone className="w-3.5 h-3.5 text-primary" />
+                  <span>+91</span>
+                </div>
+                <input
+                  required
+                  type="text"
+                  name="contactNumber"
+                  value={form.contactNumber}
+                  onChange={handleChange}
+                  onKeyDown={handleContactKeyDown}
+                  maxLength={10}
+                  inputMode="numeric"
+                  className={`${InputClass} pl-16 ${contactError ? "border-red-500 focus:ring-red-500/30" : ""}`}
+                  placeholder="10-digit mobile number"
+                />
+              </div>
               <div className="flex items-center justify-between mt-1">
                 {contactError ? (
                   <p className="text-xs text-red-600 flex items-center gap-1">
@@ -704,7 +724,7 @@ export default function MandalFormPage({ mandalId }: MandalFormProps) {
 
           {/* Banner Images */}
           <div>
-            <label className={LabelClass}>Banner Images (max 10)</label>
+            <label className={LabelClass}>Banner Images (max 10 - 4:3 Landscape Ratio)</label>
             <input ref={bannerInputRef} type="file" accept="image/*" multiple onChange={handleBannersChange} className="hidden" />
             <div className="flex flex-wrap gap-3 mb-3">
               {existingBanners.map((url, i) => (

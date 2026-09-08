@@ -21,6 +21,10 @@ import {
     Eye,
     ShieldCheck,
     Video,
+    Clock,
+    Plus,
+    Trash2,
+    Edit3
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -31,6 +35,7 @@ import { useToast } from "@/hooks/use-toast";
 import { fetchMandalProfile, updateMandalProfile } from "@/api/mandalAdminController";
 import { RichTextEditor } from "@/components/ui/rich-text-editor";
 import { API_URL } from "@/config/apiConfig";
+import { ImageCropper } from "@/components/admin/ImageCropper";
 
 function getJsonVal(val: any, lang: string) {
     if (!val) return "";
@@ -108,6 +113,52 @@ export default function EnhancedMandalProfilePage() {
 
     const [mandalData, setMandalData] = useState<any>(null);
 
+    const [aartiTimings, setAartiTimings] = useState<Array<{ id: string; name: string; time: string }>>([]);
+    const [newAartiName, setNewAartiName] = useState("");
+    const [newAartiTime, setNewAartiTime] = useState("");
+    const [editingAartiId, setEditingAartiId] = useState<string | null>(null);
+    const [editAartiName, setEditAartiName] = useState("");
+    const [editAartiTime, setEditAartiTime] = useState("");
+
+    const handleAddAarti = () => {
+        if (!newAartiName.trim() || !newAartiTime.trim()) {
+            toast({ title: "Validation Error", description: "Please provide both Aarti Name and Aarti Time.", variant: "destructive" });
+            return;
+        }
+        const newEntry = {
+            id: Date.now().toString(),
+            name: newAartiName.trim(),
+            time: newAartiTime.trim()
+        };
+        setAartiTimings(prev => [...prev, newEntry]);
+        setNewAartiName("");
+        setNewAartiTime("");
+        toast({ title: "Added", description: "Aarti timing added to list." });
+    };
+
+    const handleStartEditAarti = (item: { id: string; name: string; time: string }) => {
+        setEditingAartiId(item.id);
+        setEditAartiName(item.name);
+        setEditAartiTime(item.time);
+    };
+
+    const handleSaveEditAarti = () => {
+        if (!editAartiName.trim() || !editAartiTime.trim()) {
+            toast({ title: "Validation Error", description: "Please provide both Aarti Name and Aarti Time.", variant: "destructive" });
+            return;
+        }
+        setAartiTimings(prev => prev.map(item => item.id === editingAartiId ? { ...item, name: editAartiName.trim(), time: editAartiTime.trim() } : item));
+        setEditingAartiId(null);
+        setEditAartiName("");
+        setEditAartiTime("");
+        toast({ title: "Updated", description: "Aarti timing updated." });
+    };
+
+    const handleDeleteAarti = (id: string) => {
+        setAartiTimings(prev => prev.filter(item => item.id !== id));
+        toast({ title: "Deleted", description: "Aarti timing removed." });
+    };
+
     const loadProfile = async () => {
         setIsLoading(true);
         try {
@@ -130,7 +181,7 @@ export default function EnhancedMandalProfilePage() {
                     city: m.city || "",
                     state: m.state || "",
                     pinCode: m.pinCode || m.pincode || "",
-                    contactNumber: m.contactNumber || m.phone || "",
+                    contactNumber: (m.contactNumber || m.phone || "").replace(/\D/g, "").slice(-10),
                     email: m.email || "",
                     presidentName: m.presidentName || "",
                     registrationNumber: m.registrationNumber || "",
@@ -144,6 +195,9 @@ export default function EnhancedMandalProfilePage() {
                 if (m.image) setExistingImage(m.image);
                 if (m.bannerImages && Array.isArray(m.bannerImages)) {
                     setExistingBanners(m.bannerImages);
+                }
+                if (m.aartiTimings && Array.isArray(m.aartiTimings)) {
+                    setAartiTimings(m.aartiTimings);
                 }
             }
         } catch (error) {
@@ -177,16 +231,58 @@ export default function EnhancedMandalProfilePage() {
         if (!/^\d$/.test(e.key)) e.preventDefault();
     };
 
+    // Cropper states
+    const [showCropper, setShowCropper] = useState(false);
+    const [tempImage, setTempImage] = useState<string | null>(null);
+    const [cropTarget, setCropTarget] = useState<"main" | "banner">("main");
+    const [cropperTitle, setCropperTitle] = useState("Crop Image");
+    const [pendingHeroFiles, setPendingHeroFiles] = useState<File[]>([]);
+
+    const openCropper = (file: File, target: "main" | "banner", title: string) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+            setTempImage(reader.result as string);
+            setCropTarget(target);
+            setCropperTitle(title);
+            setShowCropper(true);
+        };
+        reader.readAsDataURL(file);
+    };
+
     const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
-        setImageFile(file);
-        setImagePreview(URL.createObjectURL(file));
+        openCropper(file, "main", "Crop Mandal Main Image (4:3 Landscape Ratio)");
+        e.target.value = "";
     };
 
     const handleHeroesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const files = Array.from(e.target.files || []);
-        setHeroFiles(prev => [...prev, ...files]);
+        const files = Array.from(e.target.files || []).filter(file => file.type.startsWith("image/"));
+        if (!files.length) return;
+
+        const [first, ...rest] = files;
+        setPendingHeroFiles(rest);
+        openCropper(first, "banner", "Crop Banner Image (4:3 Landscape Ratio)");
+        e.target.value = "";
+    };
+
+    const handleCropComplete = (croppedFile: File) => {
+        if (cropTarget === "main") {
+            setImageFile(croppedFile);
+            setImagePreview(URL.createObjectURL(croppedFile));
+        } else if (cropTarget === "banner") {
+            setHeroFiles(prev => [...prev, croppedFile]);
+            if (pendingHeroFiles.length > 0) {
+                const [next, ...remaining] = pendingHeroFiles;
+                setPendingHeroFiles(remaining);
+                setTimeout(() => {
+                    openCropper(next, "banner", "Crop Banner Image (4:3 Landscape Ratio)");
+                }, 100);
+                return;
+            }
+        }
+        setShowCropper(false);
+        setTempImage(null);
     };
 
     const removeBanner = (idx: number, isExisting: boolean) => {
@@ -218,6 +314,7 @@ export default function EnhancedMandalProfilePage() {
             }
             heroFiles.forEach(f => fd.append("heroImages", f));
             fd.append("existingBannerImages", JSON.stringify(existingBanners));
+            fd.append("aartiTimings", JSON.stringify(aartiTimings));
 
             const res = await updateMandalProfile(fd);
             if (res.success) {
@@ -502,17 +599,22 @@ export default function EnhancedMandalProfilePage() {
                                         Contact Mobile Number *
                                         <span className="ml-1 text-xs font-normal text-slate-400">(10 digits)</span>
                                     </Label>
-                                    <Input
-                                        type="text"
-                                        name="contactNumber"
-                                        value={form.contactNumber}
-                                        onChange={handleChange}
-                                        onKeyDown={handleContactKeyDown}
-                                        maxLength={10}
-                                        inputMode="numeric"
-                                        className={`${InputClass} ${contactError ? "border-red-500 focus:ring-red-500/20" : ""}`}
-                                        placeholder="10-digit mobile number"
-                                    />
+                                    <div className="flex items-center">
+                                        <span className="inline-flex items-center px-3.5 py-2.5 rounded-l-xl border border-r-0 border-slate-200 bg-slate-100 text-slate-700 text-sm font-semibold select-none">
+                                            +91
+                                        </span>
+                                        <Input
+                                            type="text"
+                                            name="contactNumber"
+                                            value={form.contactNumber}
+                                            onChange={handleChange}
+                                            onKeyDown={handleContactKeyDown}
+                                            maxLength={10}
+                                            inputMode="numeric"
+                                            className={`${InputClass} rounded-l-none ${contactError ? "border-red-500 focus:ring-red-500/20" : ""}`}
+                                            placeholder="9999999999"
+                                        />
+                                    </div>
                                     <div className="flex items-center justify-between mt-1">
                                         {contactError ? (
                                             <p className="text-xs text-red-600 flex items-center gap-1">
@@ -1006,6 +1108,21 @@ export default function EnhancedMandalProfilePage() {
                     </div>
                 </div>
             </div>
+
+            {showCropper && tempImage && (
+                <ImageCropper
+                    image={tempImage}
+                    initialAspect={4 / 3}
+                    lockAspect={true}
+                    title={cropperTitle}
+                    onCropComplete={handleCropComplete}
+                    onCancel={() => {
+                        setShowCropper(false);
+                        setTempImage(null);
+                        setPendingHeroFiles([]);
+                    }}
+                />
+            )}
         </div>
     );
 }

@@ -342,10 +342,83 @@ export const sendOTP = async (req: Request, res: Response) => {
 
         const isRegisterFlow = effectiveMode === 'register';
 
-        // 1. Check if user exists WITH THE SAME ROLE only (not across all roles)
+        const phoneVariants = getPhoneVariants(normalizedPhone);
+
+        // 1. Check if user exists WITH THE SAME ROLE (matching any phone variant)
         let existingUser = await prisma.user.findFirst({
-            where: { phone: normalizedPhone, role: checkRole as any }
+            where: { phone: { in: phoneVariants }, role: checkRole as any }
         });
+
+        // 2. Fallback: If no User record exists, check if an approved Mandal exists for this phone
+        if (!existingUser && checkRole === 'MANDAL') {
+            const approvedMandal = await prisma.mandal.findFirst({
+                where: {
+                    contactNumber: { in: phoneVariants },
+                    status: 'APPROVED'
+                }
+            });
+
+            if (approvedMandal) {
+                let nameStr = approvedMandal.presidentName || 'Mandal Admin';
+                try {
+                    const nameObj = typeof approvedMandal.name === 'string' ? JSON.parse(approvedMandal.name) : approvedMandal.name;
+                    nameStr = (nameObj as any)?.en || (nameObj as any)?.hi || (nameObj as any)?.mr || nameStr;
+                } catch (e) {}
+
+                const displayId = await generateCustomId('MNID');
+                existingUser = await prisma.user.create({
+                    data: {
+                        displayId,
+                        phone: normalizedPhone,
+                        name: nameStr,
+                        email: approvedMandal.email ? approvedMandal.email.toLowerCase().trim() : null,
+                        role: 'MANDAL',
+                        isVerified: true,
+                        isActive: true
+                    }
+                });
+
+                await prisma.mandal.update({
+                    where: { id: approvedMandal.id },
+                    data: { userId: existingUser.id, contactNumber: normalizedPhone }
+                });
+            }
+        }
+
+        // 3. Fallback: If no User record exists, check if an active Temple exists for this phone
+        if (!existingUser && checkRole === 'INSTITUTION') {
+            const existingTemple = await prisma.temple.findFirst({
+                where: {
+                    phone: { in: phoneVariants },
+                    isActive: true
+                }
+            });
+
+            if (existingTemple) {
+                let nameStr = 'Temple Admin';
+                try {
+                    const nameObj = typeof existingTemple.name === 'string' ? JSON.parse(existingTemple.name) : existingTemple.name;
+                    nameStr = (nameObj as any)?.en || (nameObj as any)?.hi || (nameObj as any)?.mr || nameStr;
+                } catch (e) {}
+
+                const displayId = await generateCustomId('TAID');
+                existingUser = await prisma.user.create({
+                    data: {
+                        displayId,
+                        phone: normalizedPhone,
+                        name: nameStr,
+                        role: 'INSTITUTION',
+                        isVerified: true,
+                        isActive: true
+                    }
+                });
+
+                await prisma.temple.update({
+                    where: { id: existingTemple.id },
+                    data: { userId: existingUser.id, phone: normalizedPhone }
+                });
+            }
+        }
 
         if (existingUser) {
             // Same role found — if registering and already verified → tell them to login
@@ -356,31 +429,34 @@ export const sendOTP = async (req: Request, res: Response) => {
                 });
             }
 
-            // Proceed — update OTP on the existing user for backward compatibility
+            // Ensure phone is stored in normalized +91 format
             await prisma.user.update({
                 where: { id: existingUser.id },
-                data: { otp, otpExpires }
+                data: { otp, otpExpires, phone: normalizedPhone }
             });
         } else {
             // No user with this phone + role found
             if (!isRegisterFlow) {
                 // Check if this number exists in the Lead table
-                const phoneVariants = getPhoneVariants(normalizedPhone);
                 const existingLead = await prisma.lead.findFirst({
                     where: { phone: { in: phoneVariants } }
                 });
+
+                const roleLabel = checkRole === 'MANDAL' ? 'mandal' : 'temple';
 
                 if (existingLead) {
                     return res.status(404).json({
                         success: false,
                         isLead: true,
-                        message: 'Registration incomplete. Please complete your temple registration.'
+                        message: `Registration incomplete. Please complete your ${roleLabel} registration.`
                     });
                 } else {
                     return res.status(404).json({
                         success: false,
                         isLead: false,
-                        message: 'This number is not registered with us. Please register to continue.'
+                        message: checkRole === 'MANDAL'
+                            ? 'This number is not registered with us. Please register your mandal to continue.'
+                            : 'This number is not registered with us. Please register to continue.'
                     });
                 }
             }
@@ -510,9 +586,11 @@ export const verifyOTP = async (req: Request, res: Response) => {
             orderBy: { createdAt: 'desc' }
         });
 
+        const phoneVariants = getPhoneVariants(normalizedPhone);
+
         let user = await prisma.user.findFirst({
             where: {
-                phone: normalizedPhone,
+                phone: { in: phoneVariants },
                 role: checkRole as any
             }
         });

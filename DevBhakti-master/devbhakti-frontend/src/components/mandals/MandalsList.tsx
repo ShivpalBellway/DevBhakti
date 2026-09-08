@@ -409,7 +409,7 @@ export function MandalsList() {
 
   const adminBannerImage = activeFestival?.image
     ? getFullImageUrl(activeFestival.image)
-    : "https://images.unsplash.com/photo-1620766182966-c6eb5ed2b788?auto=format&fit=crop&q=80&w=1200";
+    : null;
 
   return (
     <div className="min-h-screen bg-[#FDFBF7] text-zinc-900 flex flex-col justify-between">
@@ -423,10 +423,10 @@ export function MandalsList() {
         <div className="absolute bottom-0 left-10 w-[500px] h-[500px] bg-amber-500/10 rounded-full blur-[120px] pointer-events-none" />
 
         <div className="w-full max-w-[1700px] mx-auto relative z-10">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-14 items-center">
+          <div className={cn("grid grid-cols-1 items-center gap-8 lg:gap-14", adminBannerImage ? "lg:grid-cols-2" : "max-w-4xl")}>
             
-            {/* LEFT HALF (50% ON DESKTOP, BELOW ON MOBILE/TABLET): CONTENT */}
-            <div className="order-2 lg:order-1 space-y-6 flex flex-col justify-center pr-0 lg:pr-4">
+            {/* LEFT HALF (50% ON DESKTOP IF IMAGE EXISTS, FULL WIDTH OTHERWISE): CONTENT */}
+            <div className={cn("space-y-6 flex flex-col justify-center", adminBannerImage ? "order-2 lg:order-1 pr-0 lg:pr-4" : "order-1")}>
               {/* Top Divine Mantra */}
               <div className="inline-flex items-center gap-2 text-amber-400 font-serif text-base tracking-wider font-semibold">
                 <span>|| गणपति बाप्पा मोरया ||</span>
@@ -443,47 +443,47 @@ export function MandalsList() {
               </p>
 
               {/* Dynamic Feature Badges */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-2">
                 {/* 1. Festival Dates */}
-                <div className="flex items-center gap-3 bg-white/5 backdrop-blur-md border border-white/10 p-3.5 rounded-2xl">
-                  <div className="p-2.5 bg-amber-500/20 rounded-xl text-amber-300 shrink-0">
-                    <Calendar className="w-5 h-5" />
+                <div className="flex items-center gap-2.5 bg-white/5 backdrop-blur-md border border-white/10 p-2.5 sm:p-3 rounded-2xl min-w-0">
+                  <div className="p-2 bg-amber-500/20 rounded-xl text-amber-300 shrink-0">
+                    <Calendar className="w-4 h-4 sm:w-5 sm:h-5" />
                   </div>
-                  <div className="min-w-0">
-                    <div className="text-[10px] uppercase font-bold tracking-wider text-amber-200/70 truncate">
+                  <div className="min-w-0 flex-1">
+                    <div className="text-[9px] sm:text-[10px] uppercase font-bold tracking-wider text-amber-200/70 leading-tight">
                       {t("mandal_list.festival_dates")}
                     </div>
-                    <div className="text-xs font-bold text-white truncate mt-0.5">
+                    <div className="text-[11px] sm:text-xs font-bold text-white leading-tight mt-0.5 break-words">
                       {festivalDateDisplay}
                     </div>
                   </div>
                 </div>
 
                 {/* 2. Location Info */}
-                <div className="flex items-center gap-3 bg-white/5 backdrop-blur-md border border-white/10 p-3.5 rounded-2xl">
-                  <div className="p-2.5 bg-amber-500/20 rounded-xl text-amber-300 shrink-0">
-                    <MapPin className="w-5 h-5" />
+                <div className="flex items-center gap-2.5 bg-white/5 backdrop-blur-md border border-white/10 p-2.5 sm:p-3 rounded-2xl min-w-0">
+                  <div className="p-2 bg-amber-500/20 rounded-xl text-amber-300 shrink-0">
+                    <MapPin className="w-4 h-4 sm:w-5 sm:h-5" />
                   </div>
-                  <div className="min-w-0">
-                    <div className="text-[10px] uppercase font-bold tracking-wider text-amber-200/70 truncate">
+                  <div className="min-w-0 flex-1">
+                    <div className="text-[9px] sm:text-[10px] uppercase font-bold tracking-wider text-amber-200/70 leading-tight">
                       {t("mandal_list.celebrated_across")}
                     </div>
-                    <div className="text-xs font-bold text-white truncate mt-0.5">
+                    <div className="text-[11px] sm:text-xs font-bold text-white leading-tight mt-0.5 break-words">
                       {t("mandal_list.maharashtra_beyond")}
                     </div>
                   </div>
                 </div>
 
                 {/* 3. Mandal Info */}
-                <div className="flex items-center gap-3 bg-white/5 backdrop-blur-md border border-white/10 p-3.5 rounded-2xl">
-                  <div className="p-2.5 bg-amber-500/20 rounded-xl text-amber-300 shrink-0">
-                    <Building2 className="w-5 h-5" />
+                <div className="flex items-center gap-2.5 bg-white/5 backdrop-blur-md border border-white/10 p-2.5 sm:p-3 rounded-2xl min-w-0">
+                  <div className="p-2 bg-amber-500/20 rounded-xl text-amber-300 shrink-0">
+                    <Building2 className="w-4 h-4 sm:w-5 sm:h-5" />
                   </div>
-                  <div className="min-w-0">
-                    <div className="text-[10px] uppercase font-bold tracking-wider text-amber-200/70 truncate">
+                  <div className="min-w-0 flex-1">
+                    <div className="text-[9px] sm:text-[10px] uppercase font-bold tracking-wider text-amber-200/70 leading-tight">
                       {t("mandal_list.thousands_of_mandals")}
                     </div>
-                    <div className="text-xs font-bold text-white truncate mt-0.5">
+                    <div className="text-[11px] sm:text-xs font-bold text-white leading-tight mt-0.5 break-words">
                       {t("mandal_list.one_divine_celebration")}
                     </div>
                   </div>
@@ -505,25 +505,22 @@ export function MandalsList() {
               </div>
             </div>
 
-            {/* RIGHT HALF (50% ON DESKTOP, TOP ON MOBILE/TABLET): FULL IMAGE */}
-            <div className="order-1 lg:order-2 relative w-full h-[280px] sm:h-[380px] md:h-[420px] lg:h-[480px] xl:h-[520px] rounded-3xl overflow-hidden shadow-2xl border border-amber-500/20 group">
-              <img
-                src={adminBannerImage}
-                alt={heroTitle}
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-                onError={(e) => {
-                  (e.target as any).src =
-                    "https://images.unsplash.com/photo-1620766182966-c6eb5ed2b788?auto=format&fit=crop&q=80&w=1200";
-                }}
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent" />
-              <div className="absolute bottom-6 left-6 right-6 text-white">
-                <Badge className="bg-amber-500 text-slate-950 font-bold text-xs mb-1.5">
-                  {t("mandal_list.ganeshotsav_special")}
-                </Badge>
-                <div className="text-lg font-bold truncate">{heroTitle}</div>
+            {/* RIGHT HALF (ONLY SHOWN IF CUSTOM BANNER IMAGE IS CONFIGURED) */}
+            {adminBannerImage && (
+              <div className="order-1 lg:order-2 relative w-full aspect-[4/3] max-w-[640px] mx-auto rounded-3xl overflow-hidden shadow-2xl border border-amber-500/20 group">
+                <img
+                  src={adminBannerImage}
+                  alt={heroTitle}
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent" />
+                <div className="absolute bottom-6 left-6 right-6 text-white">
+                  <Badge className="bg-amber-500 text-slate-950 font-bold text-xs">
+                    {heroTitle}
+                  </Badge>
+                </div>
               </div>
-            </div>
+            )}
 
           </div>
         </div>
@@ -534,8 +531,8 @@ export function MandalsList() {
         <div className="bg-white dark:bg-card rounded-3xl p-5 md:p-7 shadow-2xl border border-zinc-200/80 dark:border-zinc-800 space-y-4">
           {/* Main Controls Grid matching design screenshot */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-3 items-center">
-            {/* Search Input (3 cols) */}
-            <div className="lg:col-span-3 relative">
+            {/* Search Input (6 cols - Spacious Search Bar) */}
+            <div className="lg:col-span-6 relative">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-zinc-400" />
               <input
                 type="text"
@@ -581,8 +578,8 @@ export function MandalsList() {
               )}
             </div>
 
-            {/* Dropdown 1: Locations (2 cols) */}
-            <div className="lg:col-span-2">
+            {/* Dropdown: Locations (3 cols) */}
+            <div className="lg:col-span-3">
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
@@ -620,102 +617,6 @@ export function MandalsList() {
                               )}
                             />
                             {loc === "All" ? t("mandal_list.all_locations") : loc}
-                          </CommandItem>
-                        ))}
-                      </CommandGroup>
-                    </CommandList>
-                  </Command>
-                </PopoverContent>
-              </Popover>
-            </div>
-
-            {/* Dropdown 2: Areas (2 cols) */}
-            <div className="lg:col-span-2">
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className="w-full h-12 justify-between bg-zinc-50 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 text-xs font-semibold px-3 rounded-xl"
-                  >
-                    <div className="flex items-center gap-2 truncate">
-                      <Filter className="h-4 w-4 text-amber-600 shrink-0" />
-                      <span className="truncate">
-                        {selectedArea === "All" ? t("mandal_list.all_areas") : selectedArea}
-                      </span>
-                    </div>
-                    <ChevronsUpDown className="h-3 w-3 shrink-0 text-zinc-400" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-[220px] p-0 rounded-xl">
-                  <Command>
-                    <CommandInput placeholder="Search area..." className="h-9 text-xs" />
-                    <CommandList>
-                      <CommandEmpty className="py-2 text-xs text-center text-zinc-500">
-                        No area found
-                      </CommandEmpty>
-                      <CommandGroup>
-                        {areas.map((area) => (
-                          <CommandItem
-                            key={area}
-                            value={area}
-                            onSelect={() => setSelectedArea(area)}
-                            className="py-2 text-xs cursor-pointer"
-                          >
-                            <Check
-                              className={cn(
-                                "mr-2 h-3.5 w-3.5 text-primary",
-                                selectedArea === area ? "opacity-100" : "opacity-0"
-                              )}
-                            />
-                            {area === "All" ? t("mandal_list.all_areas") : area}
-                          </CommandItem>
-                        ))}
-                      </CommandGroup>
-                    </CommandList>
-                  </Command>
-                </PopoverContent>
-              </Popover>
-            </div>
-
-            {/* Dropdown 3: Mandal Type (2 cols) */}
-            <div className="lg:col-span-2">
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className="w-full h-12 justify-between bg-zinc-50 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 text-xs font-semibold px-3 rounded-xl"
-                  >
-                    <div className="flex items-center gap-2 truncate">
-                      <Star className="h-4 w-4 text-amber-600 shrink-0" />
-                      <span className="truncate">
-                        {selectedCategory === "All" ? t("mandal_list.all_mandals") : selectedCategory}
-                      </span>
-                    </div>
-                    <ChevronsUpDown className="h-3 w-3 shrink-0 text-zinc-400" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-[220px] p-0 rounded-xl">
-                  <Command>
-                    <CommandInput placeholder="Search type..." className="h-9 text-xs" />
-                    <CommandList>
-                      <CommandEmpty className="py-2 text-xs text-center text-zinc-500">
-                        No type found
-                      </CommandEmpty>
-                      <CommandGroup>
-                        {categories.map((cat) => (
-                          <CommandItem
-                            key={cat}
-                            value={cat}
-                            onSelect={() => setSelectedCategory(cat)}
-                            className="py-2 text-xs cursor-pointer"
-                          >
-                            <Check
-                              className={cn(
-                                "mr-2 h-3.5 w-3.5 text-primary",
-                                selectedCategory === cat ? "opacity-100" : "opacity-0"
-                              )}
-                            />
-                            {cat === "All" ? t("mandal_list.all_mandals") : cat}
                           </CommandItem>
                         ))}
                       </CommandGroup>
@@ -844,8 +745,8 @@ export function MandalsList() {
                     onClick={() => router.push(`/mandals/${mandal.slug || mandal.id}`)}
                     className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200/80 dark:border-zinc-800 overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col group cursor-pointer w-[260px] sm:w-[280px] md:w-[300px] shrink-0 snap-start select-none"
                   >
-                    {/* Image Container */}
-                    <div className="relative aspect-square overflow-hidden bg-zinc-100">
+                    {/* Standardized 4:3 Landscape Image Container */}
+                    <div className="relative aspect-[4/3] w-full overflow-hidden bg-zinc-100">
                       <img
                         src={getFullImageUrl(mandal.image)}
                         alt={localizedName}
@@ -1212,17 +1113,10 @@ export function MandalsList() {
                     {t("mandal_list.news_updates")}
                   </h3>
                 </div>
-                <Link
-                  href="/mandals/news"
-                  className="text-xs md:text-sm font-bold text-red-700 dark:text-amber-400 hover:underline flex items-center gap-1 shrink-0"
-                >
-                  {t("mandal_list.view_all_news")}
-                  <ArrowRight className="w-4 h-4" />
-                </Link>
               </div>
 
-              {/* News List */}
-              <div className="space-y-3 md:space-y-4">
+              {/* News List Container with Auto Scrollbar */}
+              <div className="max-h-[300px] overflow-y-auto space-y-3 md:space-y-4 pr-2 custom-scrollbar">
                 {(() => {
                   const staticNewsItems = [
                     {
@@ -1253,7 +1147,7 @@ export function MandalsList() {
                   ];
 
                   const displayNews = mandalNews.length > 0
-                    ? mandalNews.slice(0, 5).map((item, idx) => ({
+                    ? mandalNews.map((item, idx) => ({
                         id: item.id,
                         title: parseLocalizedValue(item.title, language),
                         date: formatNewsDate(item.publishedAt || item.createdAt) || staticNewsItems[idx]?.date || "20 May 2026",

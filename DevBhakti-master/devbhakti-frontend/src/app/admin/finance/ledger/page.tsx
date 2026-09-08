@@ -77,6 +77,7 @@ function LedgerContent() {
     // Merchant Filter from URL
     const templeId = searchParams.get('templeId');
     const sellerId = searchParams.get('sellerId');
+    const mandalId = searchParams.get('mandalId');
     const [merchantName, setMerchantName] = useState<string | null>(null);
 
     const [searchTerm, setSearchTerm] = useState("");
@@ -99,7 +100,8 @@ function LedgerContent() {
                 page: pageNum,
                 limit: 20,
                 templeId: templeId || undefined,
-                sellerId: sellerId || undefined
+                sellerId: sellerId || undefined,
+                mandalId: mandalId || undefined
             };
 
             const transRes = await fetchAllTransactionsAdmin(params);
@@ -114,10 +116,10 @@ function LedgerContent() {
                 setTotalTransactions(transRes.pagination.total);
                 setHasMore(transRes.pagination.page < transRes.pagination.totalPages);
 
-                if (templeId || sellerId) {
+                if (templeId || sellerId || mandalId) {
                     const firstTx = transRes.data[0];
                     if (firstTx) {
-                        setMerchantName(parseLocalizedValue(firstTx.temple?.name) || parseLocalizedValue(firstTx.seller?.name) || "Merchant");
+                        setMerchantName(parseLocalizedValue(firstTx.mandal?.name) || parseLocalizedValue(firstTx.temple?.name) || parseLocalizedValue(firstTx.seller?.name) || "Merchant");
                     }
                 } else {
                     setMerchantName(null);
@@ -142,7 +144,7 @@ function LedgerContent() {
         setTransactions([]);
         loadTransactions(1, true);
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [templeId, sellerId]);
+    }, [templeId, sellerId, mandalId]);
 
     const resetFilters = () => {
         setSearchTerm("");
@@ -152,7 +154,7 @@ function LedgerContent() {
         setSortBy("date");
         setSortOrder("desc");
         setPage(1);
-        if (templeId || sellerId) {
+        if (templeId || sellerId || mandalId) {
             router.push('/admin/finance/ledger');
         }
     };
@@ -170,7 +172,8 @@ function LedgerContent() {
             toast({ title: "Processing", description: "Preparing your Excel report..." });
             const data = await exportTransactionsExcelAdmin({
                 templeId: templeId || undefined,
-                sellerId: sellerId || undefined
+                sellerId: sellerId || undefined,
+                mandalId: mandalId || undefined
             });
 
             const url = window.URL.createObjectURL(new Blob([data]));
@@ -189,7 +192,7 @@ function LedgerContent() {
     };
 
     const filteredTransactions = transactions.filter(tx => {
-        const matchesSearch = (parseLocalizedValue(tx.temple?.name) || parseLocalizedValue(tx.seller?.name) || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+        const matchesSearch = (parseLocalizedValue(tx.mandal?.name) || parseLocalizedValue(tx.temple?.name) || parseLocalizedValue(tx.seller?.name) || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
             tx.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
             tx.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
             tx.type?.toLowerCase().includes(searchTerm.toLowerCase());
@@ -398,7 +401,7 @@ function LedgerContent() {
                             <TooltipProvider>
                             <tr>
                                 <th className="py-5 pl-8 text-left text-[11px] font-extrabold text-slate-900 uppercase tracking-widest">Transaction Date / Record</th>
-                                <th className="py-5 text-left text-[11px] font-extrabold text-slate-900 uppercase tracking-widest">Merchant (Temple/Seller)</th>
+                                <th className="py-5 text-left text-[11px] font-extrabold text-slate-900 uppercase tracking-widest">Merchant (Temple/Mandal/Seller)</th>
                                 <th className="py-5 text-left text-[11px] font-extrabold text-slate-900 uppercase tracking-widest">Type</th>
                                 <th className="py-5 text-center text-[11px] font-extrabold text-slate-900 uppercase tracking-widest">Status</th>
                                 <th className="py-5 text-left text-[11px] font-extrabold text-slate-900 uppercase tracking-widest">Payment ID / Method</th>
@@ -428,7 +431,7 @@ function LedgerContent() {
                                             <span className="inline-flex items-center gap-1 cursor-help">Net (Merchant) <Info className="w-3.5 h-3.5 text-slate-400" /></span>
                                         </TooltipTrigger>
                                         <TooltipContent side="top" className="bg-slate-800 text-white text-xs max-w-[220px]">
-                                            Net amount credited to the temple or seller after commission deduction (Gross − Commission).
+                                            Net amount credited to the temple, mandal, or seller after commission deduction (Gross − Commission).
                                         </TooltipContent>
                                     </Tooltip>
                                 </th>
@@ -450,14 +453,14 @@ function LedgerContent() {
                                             </div>
                                         </td>
                                         <td className="py-6">
-                                            {tx.templeId || tx.sellerId ? (
+                                            {tx.mandalId || tx.templeId || tx.sellerId ? (
                                                 <button
-                                                    onClick={() => router.push(`/admin/finance/merchant/${tx.templeId || tx.sellerId}`)}
+                                                    onClick={() => router.push(tx.mandalId ? `/admin/mandals/detail/${tx.mandalId}` : `/admin/finance/merchant/${tx.templeId || tx.sellerId}`)}
                                                     className="flex items-center gap-2 hover:text-primary transition-colors group/merchant text-left"
                                                 >
                                                     <Building2 className="w-3.5 h-3.5 text-slate-400 group-hover/merchant:text-primary" />
                                                     <span className="text-sm font-bold text-slate-600 group-hover/merchant:text-primary underline decoration-slate-200 underline-offset-4 decoration-dashed">
-                                                        {parseLocalizedValue(tx.temple?.name) || parseLocalizedValue(tx.seller?.name) || "DevBhakti"}
+                                                        {parseLocalizedValue(tx.mandal?.name) || parseLocalizedValue(tx.temple?.name) || parseLocalizedValue(tx.seller?.name) || "DevBhakti"}
                                                     </span>
                                                     <ArrowUpRight className="w-3 h-3 opacity-0 group-hover/merchant:opacity-100 transition-opacity" />
                                                 </button>

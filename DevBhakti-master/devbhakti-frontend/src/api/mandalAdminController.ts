@@ -295,6 +295,23 @@ export const deleteMandalBooking = async (id: string) => {
     return response.data;
 };
 
+export const getMandalAvailability = async (params?: { month?: string; year?: string; poojaId?: string }) => {
+    const token = localStorage.getItem("token");
+    const response = await axios.get(`${API_URL}/mandal-admin/bookings/availability`, {
+        headers: { Authorization: `Bearer ${token}` },
+        params
+    });
+    return response.data;
+};
+
+export const setMandalAvailability = async (data: { date: string; isClosed?: boolean; maxBookings?: number; poojaId?: string }) => {
+    const token = localStorage.getItem("token");
+    const response = await axios.post(`${API_URL}/mandal-admin/bookings/availability`, data, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+
 export const fetchMandalBookingById = async (id: string) => {
     const token = localStorage.getItem("token");
     const response = await axios.get(`${API_URL}/mandal-admin/bookings/${id}`, {

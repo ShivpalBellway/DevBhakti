@@ -9,6 +9,13 @@ async function main() {
   // 1. Clear existing data (in reverse order of dependencies)
   await prisma.withdrawalRequest.deleteMany();
   await prisma.templeLedger.deleteMany();
+  await prisma.mandalWithdrawalRequest.deleteMany();
+  await prisma.mandalLedger.deleteMany();
+  await prisma.darshanTicket.deleteMany();
+  await prisma.darshanSlot.deleteMany();
+  await prisma.mandalDarshanTicket.deleteMany();
+  await prisma.mandalDarshanSlot.deleteMany();
+  await prisma.bookingAvailability.deleteMany();
   await prisma.templeUpdateRequest.deleteMany();
   await prisma.favorite.deleteMany();
   await prisma.poojaBooking.deleteMany();
@@ -23,7 +30,9 @@ async function main() {
   await prisma.event.deleteMany();
   await prisma.pooja.deleteMany();
   await prisma.banner.deleteMany();
+  await prisma.mandal.deleteMany();
   await prisma.temple.deleteMany();
+  await prisma.sellerProfile.deleteMany();
   await prisma.user.deleteMany();
 
   console.log('🗑️  Cleaned up existing data');
@@ -79,6 +88,16 @@ async function main() {
     data: {
       name: 'Kedarnath Temple Admin',
       email: 'kedarnath@temple.com',
+      password: hashedPassword,
+      role: UserRole.INSTITUTION,
+      isVerified: true,
+    },
+  });
+
+  const mandalUser1 = await prisma.user.create({
+    data: {
+      name: 'Lalbaugcha Raja Mandal Admin',
+      email: 'mandal@devbhakti.com',
       password: hashedPassword,
       role: UserRole.INSTITUTION,
       isVerified: true,
@@ -180,6 +199,26 @@ async function main() {
   });
 
   console.log('🛕 Temples created');
+
+  // 3.1 Create Mandal
+  const mandal1 = await prisma.mandal.create({
+    data: {
+      name: { en: 'Lalbaugcha Raja Sarvajanik Ganeshotsav Mandal', hi: 'लालबागचा राजा सार्वजनिक गणेशोत्सव मंडल' },
+      city: 'Mumbai',
+      state: 'Maharashtra',
+      address: 'Lalbaug Market, GD Ambekar Marg, Mumbai, Maharashtra 400012',
+      contactNumber: '9876543210',
+      description: { en: 'Famous Ganesh Mandal in Mumbai hosting thousands of devotees every day.', hi: 'मुंबई का प्रसिद्ध गणेश मंडल जहां रोजाना हजारों भक्त आते हैं।' },
+      userId: mandalUser1.id,
+      image: 'https://images.unsplash.com/photo-1567684014761-b65e2e59b9eb?w=800&q=80',
+      bannerImages: [
+        'https://images.unsplash.com/photo-1567684014761-b65e2e59b9eb?w=1200'
+      ],
+      status: 'APPROVED'
+    }
+  });
+
+  console.log('🚩 Mandal created');
 
   // 4. Create Events
   await prisma.event.createMany({

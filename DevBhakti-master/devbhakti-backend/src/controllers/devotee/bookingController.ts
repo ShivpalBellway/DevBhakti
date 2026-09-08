@@ -256,7 +256,7 @@ export const createBooking = async (req: Request, res: Response) => {
             const globalAvailability = await prisma.bookingAvailability.findFirst({
                 where: {
                     templeId: pooja.templeId as string,
-                    poojaId: undefined,
+                    poojaId: null,
                     date: bookingDate as string
                 }
             });
@@ -298,6 +298,56 @@ export const createBooking = async (req: Request, res: Response) => {
                     }
                 });
                 if (totalPoojaBookings >= poojaAvailability.maxBookings) {
+                    return res.status(400).json({ success: false, message: 'Daily limit reached for this ritual.' });
+                }
+            }
+        } else if (pooja.mandalId) {
+            // 1. Global Mandal Availability
+            const globalMandalAvailability = await prisma.bookingAvailability.findFirst({
+                where: {
+                    mandalId: pooja.mandalId as string,
+                    poojaId: null,
+                    date: bookingDate as string
+                }
+            });
+
+            if (globalMandalAvailability) {
+                if (globalMandalAvailability.isClosed) {
+                    return res.status(400).json({ success: false, message: 'Bookings are closed for this date.' });
+                }
+                const totalMandalBookings = await prisma.poojaBooking.count({
+                    where: {
+                        mandalId: pooja.mandalId as string,
+                        bookingDate: bookingDate,
+                        status: { not: 'CANCELLED' }
+                    }
+                });
+                if (totalMandalBookings >= globalMandalAvailability.maxBookings) {
+                    return res.status(400).json({ success: false, message: 'Mandal is fully booked for this date.' });
+                }
+            }
+
+            // 2. Specific Mandal Pooja Availability
+            const mandalPoojaAvailability = await prisma.bookingAvailability.findFirst({
+                where: {
+                    mandalId: pooja.mandalId as string,
+                    poojaId: pooja.id,
+                    date: bookingDate as string
+                }
+            });
+
+            if (mandalPoojaAvailability) {
+                if (mandalPoojaAvailability.isClosed) {
+                    return res.status(400).json({ success: false, message: 'This ritual is unavailable on this date.' });
+                }
+                const totalPoojaBookings = await prisma.poojaBooking.count({
+                    where: {
+                        poojaId: pooja.id,
+                        bookingDate: bookingDate,
+                        status: { not: 'CANCELLED' }
+                    }
+                });
+                if (totalPoojaBookings >= mandalPoojaAvailability.maxBookings) {
                     return res.status(400).json({ success: false, message: 'Daily limit reached for this ritual.' });
                 }
             }
@@ -596,18 +646,15 @@ export const getPrasadTracking = async (req: Request, res: Response) => {
 
 
 export const checkAvailability = async (req: Request, res: Response) => {
-
     try {
-
-        const { templeId, poojaId, date } = req.query;
-
-
+        const { templeId, mandalId, poojaId, date } = req.query;
 
         if (!date) {
             return res.status(400).json({ success: false, message: 'Date is required' });
         }
 
         let resolvedTempleId = templeId as string;
+        let resolvedMandalId = mandalId as string;
         let resolvedPoojaId = poojaId as string;
 
         // Resolve Temple ID if it's a slug
@@ -624,6 +671,20 @@ export const checkAvailability = async (req: Request, res: Response) => {
             if (temple) resolvedTempleId = temple.id;
         }
 
+        // Resolve Mandal ID if it's a slug
+        if (mandalId) {
+            const mandal = await prisma.mandal.findFirst({
+                where: {
+                    OR: [
+                        { id: mandalId as string },
+                        { slug: mandalId as string }
+                    ]
+                },
+                select: { id: true }
+            });
+            if (mandal) resolvedMandalId = mandal.id;
+        }
+
         // Resolve Pooja ID if it's a slug
         if (poojaId) {
             const pooja = await prisma.pooja.findFirst({
@@ -633,12 +694,16 @@ export const checkAvailability = async (req: Request, res: Response) => {
                         { slug: poojaId as string }
                     ]
                 },
-                select: { id: true }
+                select: { id: true, templeId: true, mandalId: true }
             });
-            if (pooja) resolvedPoojaId = pooja.id;
+            if (pooja) {
+                resolvedPoojaId = pooja.id;
+                if (!resolvedTempleId && pooja.templeId) resolvedTempleId = pooja.templeId;
+                if (!resolvedMandalId && pooja.mandalId) resolvedMandalId = pooja.mandalId;
+            }
         }
 
-        if (!resolvedTempleId) {
+        if (!resolvedTempleId && !resolvedMandalId) {
             return res.json({
                 success: true,
                 available: true,
@@ -646,161 +711,156 @@ export const checkAvailability = async (req: Request, res: Response) => {
             });
         }
 
-
-
-
-        // 1. Global Availability Check
-
-        const globalAvailability = await prisma.bookingAvailability.findFirst({
-
-            where: {
-
-                templeId: resolvedTempleId,
-
-                poojaId: undefined,
-
-                date: date as string
-
-            }
-
-        });
-
-
-
-        if (globalAvailability) {
-
-            if (globalAvailability.isClosed) {
-
-                return res.json({
-
-                    success: true,
-
-                    available: false,
-
-                    message: "Bookings are stopped for this date. Please try the next available date."
-
-                });
-
-            }
-
-
-
-            const totalTempleBookings = await prisma.poojaBooking.count({
-
+        if (resolvedTempleId) {
+            // 1. Global Temple Availability Check
+            const globalAvailability = await prisma.bookingAvailability.findFirst({
                 where: {
-
                     templeId: resolvedTempleId,
-
-                    bookingDate: date as string,
-
-                    status: { not: 'CANCELLED' }
-
-                }
-
-            });
-
-
-
-            if (totalTempleBookings >= globalAvailability.maxBookings) {
-
-                return res.json({
-
-                    success: true,
-
-                    available: false,
-
-                    message: "Daily booking limit reached. Please choose another date."
-
-                });
-
-            }
-
-        }
-
-
-
-        // 2. Specific Pooja Availability Check (if poojaId provided)
-
-        if (resolvedPoojaId) {
-
-            const poojaAvailability = await prisma.bookingAvailability.findFirst({
-
-                where: {
-
-                    templeId: resolvedTempleId,
-
-                    poojaId: resolvedPoojaId,
-
+                    poojaId: null,
                     date: date as string
-
                 }
-
             });
 
-
-
-            if (poojaAvailability) {
-
-                if (poojaAvailability.isClosed) {
-
+            if (globalAvailability) {
+                if (globalAvailability.isClosed) {
                     return res.json({
-
                         success: true,
-
                         available: false,
-
-                        message: "This ritual is unavailable on this date. Please try another day."
-
+                        message: "Bookings are stopped for this date. Please try the next available date."
                     });
-
                 }
 
-
-
-                const totalPoojaBookings = await prisma.poojaBooking.count({
-
+                const totalTempleBookings = await prisma.poojaBooking.count({
                     where: {
-
-                        poojaId: resolvedPoojaId,
-
+                        templeId: resolvedTempleId,
                         bookingDate: date as string,
-
                         status: { not: 'CANCELLED' }
+                    }
+                });
 
+                if (totalTempleBookings >= globalAvailability.maxBookings) {
+                    return res.json({
+                        success: true,
+                        available: false,
+                        message: "Daily booking limit reached. Please choose another date."
+                    });
+                }
+            }
+
+            // 2. Specific Temple Pooja Availability Check
+            if (resolvedPoojaId) {
+                const poojaAvailability = await prisma.bookingAvailability.findFirst({
+                    where: {
+                        templeId: resolvedTempleId,
+                        poojaId: resolvedPoojaId,
+                        date: date as string
+                    }
+                });
+
+                if (poojaAvailability) {
+                    if (poojaAvailability.isClosed) {
+                        return res.json({
+                            success: true,
+                            available: false,
+                            message: "This ritual is unavailable on this date. Please try another day."
+                        });
                     }
 
-                });
-
-
-
-                if (totalPoojaBookings >= poojaAvailability.maxBookings) {
-
-                    return res.json({
-
-                        success: true,
-
-                        available: false,
-
-                        message: "Slots full for this ritual on selected date. Please choose another date."
-
+                    const totalPoojaBookings = await prisma.poojaBooking.count({
+                        where: {
+                            poojaId: resolvedPoojaId,
+                            bookingDate: date as string,
+                            status: { not: 'CANCELLED' }
+                        }
                     });
 
+                    if (totalPoojaBookings >= poojaAvailability.maxBookings) {
+                        return res.json({
+                            success: true,
+                            available: false,
+                            message: "Slots full for this ritual on selected date. Please choose another date."
+                        });
+                    }
+                }
+            }
+        } else if (resolvedMandalId) {
+            // 1. Global Mandal Availability Check
+            const globalMandalAvailability = await prisma.bookingAvailability.findFirst({
+                where: {
+                    mandalId: resolvedMandalId,
+                    poojaId: null,
+                    date: date as string
+                }
+            });
+
+            if (globalMandalAvailability) {
+                if (globalMandalAvailability.isClosed) {
+                    return res.json({
+                        success: true,
+                        available: false,
+                        message: "Bookings are stopped for this date. Please try the next available date."
+                    });
                 }
 
+                const totalMandalBookings = await prisma.poojaBooking.count({
+                    where: {
+                        mandalId: resolvedMandalId,
+                        bookingDate: date as string,
+                        status: { not: 'CANCELLED' }
+                    }
+                });
+
+                if (totalMandalBookings >= globalMandalAvailability.maxBookings) {
+                    return res.json({
+                        success: true,
+                        available: false,
+                        message: "Daily booking limit reached. Please choose another date."
+                    });
+                }
             }
 
+            // 2. Specific Mandal Pooja Availability Check
+            if (resolvedPoojaId) {
+                const mandalPoojaAvailability = await prisma.bookingAvailability.findFirst({
+                    where: {
+                        mandalId: resolvedMandalId,
+                        poojaId: resolvedPoojaId,
+                        date: date as string
+                    }
+                });
+
+                if (mandalPoojaAvailability) {
+                    if (mandalPoojaAvailability.isClosed) {
+                        return res.json({
+                            success: true,
+                            available: false,
+                            message: "This ritual is unavailable on this date. Please try another day."
+                        });
+                    }
+
+                    const totalPoojaBookings = await prisma.poojaBooking.count({
+                        where: {
+                            poojaId: resolvedPoojaId,
+                            bookingDate: date as string,
+                            status: { not: 'CANCELLED' }
+                        }
+                    });
+
+                    if (totalPoojaBookings >= mandalPoojaAvailability.maxBookings) {
+                        return res.json({
+                            success: true,
+                            available: false,
+                            message: "Slots full for this ritual on selected date. Please choose another date."
+                        });
+                    }
+                }
+            }
         }
 
-
-
         return res.json({
-
             success: true,
-
             available: true,
-
             message: "Slot available"
-
         });
 
 
