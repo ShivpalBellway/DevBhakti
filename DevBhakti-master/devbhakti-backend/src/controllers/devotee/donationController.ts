@@ -108,11 +108,14 @@ export const initiateDonation = async (req: Request, res: Response) => {
 
         const templeName = temple ? getEnglish(temple.name) : mandal ? getEnglish(mandal.name) : "Dev Bhakti";
 
-        // Calculate Commission
+        // Calculate Commission using vendor-specific slab fallback
+        const vendorType = templeId ? SlabType.TEMPLE : mandalId ? SlabType.MANDAL : SlabType.GLOBAL;
+        const vendorId = templeId || mandalId || undefined;
+
         const commissionData = await getCommissionForAmount(
             amount,
-            SlabType.GLOBAL,
-            undefined,
+            vendorType,
+            vendorId,
             CommissionCategory.DONATION
         );
 

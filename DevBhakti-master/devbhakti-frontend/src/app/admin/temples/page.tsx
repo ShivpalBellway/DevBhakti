@@ -724,15 +724,15 @@ function TemplesContent() {
                 if (templeOnlineResponse.success && templeOnlineResponse.data && templeOnlineResponse.data.length > 0) {
                     onlineSlabs = templeOnlineResponse.data;
                 } else {
-                    const globalResponse = await fetchCommissionSlabsAdmin('GLOBAL', undefined, undefined, false);
-                    onlineSlabs = globalResponse.success ? globalResponse.data : [];
+                    const templeDefaultResponse = await fetchCommissionSlabsAdmin('TEMPLE', undefined, undefined, false);
+                    onlineSlabs = templeDefaultResponse.success ? templeDefaultResponse.data : [];
                 }
 
                 if (templeOfflineResponse.success && templeOfflineResponse.data && templeOfflineResponse.data.length > 0) {
                     offlineSlabs = templeOfflineResponse.data;
                 } else {
-                    const globalOfflineResponse = await fetchCommissionSlabsAdmin('GLOBAL', undefined, undefined, true);
-                    offlineSlabs = globalOfflineResponse.success ? globalOfflineResponse.data : [];
+                    const templeDefaultOfflineResponse = await fetchCommissionSlabsAdmin('TEMPLE', undefined, undefined, true);
+                    offlineSlabs = templeDefaultOfflineResponse.success ? templeDefaultOfflineResponse.data : [];
                 }
 
                 const hasTempleOnline = templeOnlineResponse.success && templeOnlineResponse.data && templeOnlineResponse.data.length > 0;

@@ -94,11 +94,18 @@ export const isSequentialOrRepetitive = (num: string) => {
 };
 
 /**
- * Formats a 24-hour time string like "00:00", "08:30", "12:00", "17:00"
- * into a user-friendly 12-hour string like "12:00 AM", "08:30 AM", "12:00 PM", "05:00 PM".
+ * Formats a 24-hour time string like "00:00", "08:30", "12:00", "17:00", or a range like "10:00 - 15:00"
+ * into a user-friendly 12-hour string like "10:00 AM - 03:00 PM".
  */
 export const formatSlotTime = (timeStr: string): string => {
     if (!timeStr) return "";
+
+    // If string has a dash or range, format each part
+    if (timeStr.includes("-")) {
+        const parts = timeStr.split("-").map(p => p.trim());
+        return parts.map(p => formatSlotTime(p)).join(" - ");
+    }
+
     if (timeStr.includes("AM") || timeStr.includes("PM") || timeStr.includes("am") || timeStr.includes("pm")) {
         return timeStr;
     }

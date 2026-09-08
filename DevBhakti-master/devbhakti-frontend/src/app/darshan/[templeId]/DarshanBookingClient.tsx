@@ -25,7 +25,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/context/LanguageContext";
 import { fetchPublicTempleById } from "@/api/publicController";
-import { parseLocalizedValue } from '@/utils/textUtils';
+import { parseLocalizedValue, formatSlotTime } from '@/utils/textUtils';
 
 function DarshanBookingFlow() {
   const params = useParams();
@@ -388,7 +388,7 @@ function DarshanBookingFlow() {
                                       : "border-gray-200 hover:border-primary/50"
                                   )}
                                 >
-                                  <div className="text-sm font-semibold">{slot.startTime} - {slot.endTime}</div>
+                                  <div className="text-sm font-semibold">{formatSlotTime(slot.startTime)} - {formatSlotTime(slot.endTime)}</div>
                                   {/* <div className="text-xs mt-1 text-muted-foreground">{isAvailable ? `${slot.remainingCapacity} available` : "Full"}</div> */}
                                 </button>
                              );
@@ -539,7 +539,7 @@ function DarshanBookingFlow() {
                           <Clock className="w-5 h-5 text-muted-foreground shrink-0 mt-0.5" />
                           <div>
                             <p className="text-sm text-muted-foreground font-semibold">Time Slot</p>
-                            <p className="font-medium mt-0.5">{selectedSlot.startTime} - {selectedSlot.endTime}</p>
+                            <p className="font-medium mt-0.5">{formatSlotTime(selectedSlot.startTime)} - {formatSlotTime(selectedSlot.endTime)}</p>
                           </div>
                        </div>
                      )}

@@ -45,6 +45,8 @@ export default function TempleOfflineProductPage() {
     const [templeId, setTempleId] = useState<string | null>(null);
     const [templeName, setTempleName] = useState<string>("");
     const [products, setProducts] = useState<any[]>([]);
+    const [orders, setOrders] = useState<any[]>([]);
+    const [viewMode, setViewMode] = useState<"list" | "add">("list");
     const [isLoading, setIsLoading] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isComplete, setIsComplete] = useState(false);
@@ -65,6 +67,19 @@ export default function TempleOfflineProductPage() {
 
     const sanitizePhone = (phone: string) => phone.replace(/\D/g, "").slice(0, 11);
 
+    const loadOrders = async (tid: string) => {
+        try {
+            const res = await fetchTempleOrders(tid);
+            if (res.success && res.data) {
+                // Filter offline product orders
+                const offlineOrders = res.data.filter((o: any) => o.isOffline || o.orderType === "OFFLINE");
+                setOrders(offlineOrders);
+            }
+        } catch (err) {
+            console.error("Fetch orders error:", err);
+        }
+    };
+
     useEffect(() => {
         const load = async () => {
             try {
@@ -72,6 +87,7 @@ export default function TempleOfflineProductPage() {
                 if (profile.success && profile.data?.id) {
                     setTempleId(profile.data.id);
                     setTempleName(parseLocalizedValue(profile.data.name, "en") || "Sacred Temple");
+                    loadOrders(profile.data.id);
                 }
                 const data = await fetchMyProducts({});
                 if (data.success) {
@@ -169,6 +185,7 @@ export default function TempleOfflineProductPage() {
             if (response.success) {
                 setCreatedOrder(response.data);
                 setIsComplete(true);
+                if (templeId) loadOrders(templeId);
                 toast({ title: "Order Created", description: "Offline product order recorded successfully." });
             } else {
                 toast({ title: "Error", description: response.message || "Could not create order.", variant: "destructive" });
@@ -192,6 +209,7 @@ export default function TempleOfflineProductPage() {
         setIsComplete(false);
         setCreatedOrder(null);
         setStep(1);
+        setViewMode("list");
     };
 
     const generateReceiptHTML = () => {
@@ -355,267 +373,378 @@ export default function TempleOfflineProductPage() {
     }
 
     return (
-        <div className="max-w-5xl mx-auto p-4 md:p-6 space-y-6 pb-32">
-            {/* Header */}
-            <div className="flex items-center gap-3">
-                <Button variant="ghost" size="icon" className="rounded-full" onClick={() => router.back()}>
-                    <ArrowLeft className="w-5 h-5" />
-                </Button>
-                <div>
-                    <h1 className="text-2xl font-bold font-serif text-slate-900">Offline Product Booking</h1>
-                    <p className="text-sm text-muted-foreground">
-                        Create an offline product sale for {templeName}
-                    </p>
+        <div className="max-w-6xl mx-auto p-4 md:p-6 space-y-6 pb-32">
+            {/* Top Breadcrumb & Actions Bar */}
+            <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center gap-2 text-sm text-slate-500">
+                    <Button variant="ghost" size="sm" className="p-0 hover:bg-transparent text-slate-500 hover:text-amber-800" onClick={() => router.back()}>
+                        <ArrowLeft className="w-4 h-4 mr-1" /> Teller Module
+                    </Button>
+                    <span>/</span>
+                    <span className="font-semibold text-slate-800">Offline Product Sales</span>
                 </div>
-            </div>
-
-            {/* Step Indicator */}
-            <div className="flex items-center justify-center gap-2">
-                {[
-                    { num: 1, label: "Select Products" },
-                    { num: 2, label: "Customer Details" },
-                    { num: 3, label: "Confirm Order" },
-                ].map((s, idx) => (
-                    <React.Fragment key={s.num}>
-                        <button
-                            onClick={() => { if (s.num < step || (s.num === 2 && cart.length > 0)) setStep(s.num); }}
-                            className={cn(
-                                "flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold transition-all",
-                                step >= s.num
-                                    ? "bg-[#7b4623] text-white"
-                                    : "bg-slate-100 text-slate-500"
-                            )}
-                        >
-                            {step > s.num ? <CheckCircle2 className="w-4 h-4" /> : <span>{s.num}</span>}
-                            <span className="hidden sm:inline">{s.label}</span>
-                        </button>
-                        {idx < 2 && <div className={cn("w-8 h-0.5 rounded", step > s.num ? "bg-[#7b4623]" : "bg-slate-200")} />}
-                    </React.Fragment>
-                ))}
-            </div>
-
-            {/* Step 1: Products */}
-            {step === 1 && (
-                <div className="space-y-4">
-                    <div className="relative">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                        <Input
-                            placeholder="Search products..."
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            className="pl-10 rounded-xl"
-                        />
-                    </div>
-
-                    {filteredProducts.length === 0 ? (
-                        <div className="text-center py-16">
-                            <Package className="w-12 h-12 mx-auto text-slate-300 mb-3" />
-                            <p className="text-muted-foreground">No products available</p>
-                        </div>
+                <div>
+                    {viewMode === "list" ? (
+                        <Button onClick={() => { setStep(1); setViewMode("add"); }} className="bg-[#7b4623] hover:bg-[#5d351a] text-white rounded-xl shadow-sm">
+                            <Plus className="w-4 h-4 mr-2" /> Add Offline Product Order
+                        </Button>
                     ) : (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                            {filteredProducts.map((product) => {
-                                const variants = product.variants || [];
-                                return (
-                                    <Card key={product.id} className="overflow-hidden border-slate-100 shadow-sm">
-                                        <div className="aspect-video bg-slate-50 overflow-hidden">
-                                            {product.image ? (
-                                                <img src={`${BASE_URL}${product.image}`} alt={parseLocalizedValue(product.name)} className="w-full h-full object-contain p-3" />
-                                            ) : (
-                                                <div className="w-full h-full flex items-center justify-center">
-                                                    <Package className="w-10 h-10 text-slate-300" />
-                                                </div>
-                                            )}
-                                        </div>
-                                        <CardContent className="p-4 space-y-3">
-                                            <h3 className="font-bold text-sm line-clamp-1">{parseLocalizedValue(product.name)}</h3>
-                                            <div className="space-y-2">
-                                                {variants.map((v: any) => {
-                                                    const inCart = cart.find((c) => c.variantId === v.id);
-                                                    return (
-                                                        <div key={v.id} className="flex items-center justify-between gap-2 p-2 bg-slate-50 rounded-lg">
-                                                            <div>
-                                                                <p className="text-xs font-semibold">{parseLocalizedValue(v.name) || "Default"}</p>
-                                                                <p className="text-xs text-slate-500">₹{v.price} · Stock: {v.stock}</p>
-                                                            </div>
-                                                            {inCart ? (
-                                                                <div className="flex items-center gap-1">
-                                                                    <button onClick={() => updateCartQty(v.id, -1)} className="w-7 h-7 rounded-full bg-slate-200 flex items-center justify-center hover:bg-slate-300">
-                                                                        <Minus className="w-3 h-3" />
-                                                                    </button>
-                                                                    <span className="w-8 text-center text-sm font-bold">{inCart.quantity}</span>
-                                                                    <button onClick={() => updateCartQty(v.id, 1)} className="w-7 h-7 rounded-full bg-[#7b4623] text-white flex items-center justify-center hover:bg-[#5d351a]">
-                                                                        <Plus className="w-3 h-3" />
-                                                                    </button>
-                                                                </div>
-                                                            ) : (
-                                                                <Button size="sm" variant="outline" className="text-xs h-7 rounded-lg" onClick={() => addToCart(product, v)} disabled={v.stock <= 0}>
-                                                                    {v.stock > 0 ? "Add" : "Out"}
-                                                                </Button>
-                                                            )}
-                                                        </div>
-                                                    );
-                                                })}
-                                            </div>
-                                        </CardContent>
-                                    </Card>
-                                );
-                            })}
-                        </div>
+                        <Button onClick={() => setViewMode("list")} variant="outline" className="border-slate-300 rounded-xl">
+                            <ArrowLeft className="w-4 h-4 mr-2" /> Back to Orders List
+                        </Button>
                     )}
                 </div>
-            )}
+            </div>
 
-            {/* Step 2: Customer */}
-            {step === 2 && (
+            {/* Header */}
+            <div>
+                <h1 className="text-2xl md:text-3xl font-bold font-serif text-slate-900">
+                    {viewMode === "add" ? "Offline Product Booking" : "Offline Product Orders"}
+                </h1>
+                <p className="text-sm text-muted-foreground">
+                    {viewMode === "add"
+                        ? `Create an offline product sale for ${templeName}`
+                        : `View and manage counter product sales recorded for ${templeName}`}
+                </p>
+            </div>
+
+            {viewMode === "list" ? (
+                /* History / Product List Overview Table */
                 <Card className="border-none shadow-sm rounded-2xl overflow-hidden">
-                    <CardHeader className="bg-slate-50/50 border-b">
-                        <CardTitle className="text-sm font-bold uppercase tracking-widest text-slate-500 flex items-center gap-2">
-                            <User className="w-4 h-4" /> Customer Information
+                    <CardHeader className="bg-slate-50/50 border-b flex flex-row items-center justify-between">
+                        <CardTitle className="text-base font-bold text-slate-800 flex items-center gap-2">
+                            <ShoppingBag className="w-5 h-5 text-[#7b4623]" /> Offline Product Sales History
                         </CardTitle>
+                        <Button size="sm" onClick={() => { setStep(1); setViewMode("add"); }} className="bg-[#7b4623] hover:bg-[#5d351a] text-white rounded-xl">
+                            <Plus className="w-4 h-4 mr-1" /> New Order
+                        </Button>
                     </CardHeader>
-                    <CardContent className="p-6 space-y-4">
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div>
-                                <label className="text-xs font-semibold text-slate-500 uppercase mb-1 block">Full Name *</label>
-                                <Input placeholder="Customer name" value={customerName} onChange={(e) => setCustomerName(e.target.value)} className="rounded-xl" />
+                    <CardContent className="p-0">
+                        {orders.length === 0 ? (
+                            <div className="text-center py-12 space-y-3">
+                                <div className="w-16 h-16 rounded-full bg-amber-50 mx-auto flex items-center justify-center text-[#7b4623]">
+                                    <ShoppingBag className="w-8 h-8" />
+                                </div>
+                                <h3 className="text-lg font-bold text-slate-800">No offline sales recorded yet</h3>
+                                <p className="text-sm text-slate-500 max-w-md mx-auto">
+                                    Click on "+ Add Offline Product Order" to create counter sales receipts for items available in your temple inventory.
+                                </p>
+                                <Button onClick={() => { setStep(1); setViewMode("add"); }} className="bg-[#7b4623] hover:bg-[#5d351a] text-white rounded-xl mt-2">
+                                    <Plus className="w-4 h-4 mr-2" /> Add Offline Product Order
+                                </Button>
                             </div>
-                            <div>
-                                <label className="text-xs font-semibold text-slate-500 uppercase mb-1 block">Phone *</label>
-                                <Input placeholder="10-digit phone" value={customerPhone} onChange={(e) => setCustomerPhone(sanitizePhone(e.target.value))} className="rounded-xl" />
+                        ) : (
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-sm text-left">
+                                    <thead className="bg-slate-50 text-slate-500 uppercase text-[11px] font-semibold border-b border-slate-100">
+                                        <tr>
+                                            <th className="px-6 py-3">Order ID</th>
+                                            <th className="px-6 py-3">Customer</th>
+                                            <th className="px-6 py-3">Items</th>
+                                            <th className="px-6 py-3">Total Amount</th>
+                                            <th className="px-6 py-3">Payment</th>
+                                            <th className="px-6 py-3">Date</th>
+                                            <th className="px-6 py-3 text-right">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-100">
+                                        {orders.map((o: any) => {
+                                            const displayId = o.displayId || o.id?.slice(-8).toUpperCase() || "ORD-OFF";
+                                            const itemsCount = o.items?.length || o.subOrders?.flatMap((so: any) => so.items)?.length || 1;
+                                            const dateStr = o.createdAt ? new Date(o.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "N/A";
+                                            return (
+                                                <tr key={o.id} className="hover:bg-slate-50/60 transition-colors">
+                                                    <td className="px-6 py-4 font-bold text-slate-800">{displayId}</td>
+                                                    <td className="px-6 py-4">
+                                                        <p className="font-semibold text-slate-800">{o.customerName || o.user?.name || "Counter Customer"}</p>
+                                                        <p className="text-xs text-slate-400">{o.customerPhone || o.user?.phone || "-"}</p>
+                                                    </td>
+                                                    <td className="px-6 py-4">
+                                                        <Badge variant="secondary" className="bg-slate-100 text-slate-700 font-normal">
+                                                            {itemsCount} {itemsCount === 1 ? "Item" : "Items"}
+                                                        </Badge>
+                                                    </td>
+                                                    <td className="px-6 py-4 font-bold text-emerald-700">₹{Number(o.totalAmount || o.finalAmount || 0).toLocaleString()}</td>
+                                                    <td className="px-6 py-4">
+                                                        <Badge variant="outline" className="uppercase text-[10px]">
+                                                            {o.paymentMethod || "CASH"}
+                                                        </Badge>
+                                                    </td>
+                                                    <td className="px-6 py-4 text-xs text-slate-500">{dateStr}</td>
+                                                    <td className="px-6 py-4 text-right">
+                                                        <Button
+                                                            size="sm"
+                                                            variant="ghost"
+                                                            className="h-8 text-slate-600 hover:text-amber-800"
+                                                            onClick={() => {
+                                                                setCreatedOrder(o);
+                                                                handlePrintReceipt();
+                                                            }}
+                                                        >
+                                                            <Printer className="w-3.5 h-3.5 mr-1" /> Receipt
+                                                        </Button>
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })}
+                                    </tbody>
+                                </table>
                             </div>
-                        </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div>
-                                <label className="text-xs font-semibold text-slate-500 uppercase mb-1 block">Email</label>
-                                <Input placeholder="Email (optional)" value={customerEmail} onChange={(e) => setCustomerEmail(e.target.value)} className="rounded-xl" />
-                            </div>
-                            <div>
-                                <label className="text-xs font-semibold text-slate-500 uppercase mb-1 block">Payment Method</label>
-                                <select
-                                    value={paymentMethod}
-                                    onChange={(e) => setPaymentMethod(e.target.value)}
-                                    className="w-full rounded-xl border border-slate-200 bg-white p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#7b4623]/20"
-                                >
-                                    <option value="CASH">Cash</option>
-                                    <option value="UPI">UPI</option>
-                                    <option value="CARD">Card</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div>
-                            <label className="text-xs font-semibold text-slate-500 uppercase mb-1 block">Address</label>
-                            <Input placeholder="Address (optional)" value={customerAddress} onChange={(e) => setCustomerAddress(e.target.value)} className="rounded-xl" />
-                        </div>
-                        <div>
-                            <label className="text-xs font-semibold text-slate-500 uppercase mb-1 block">Admin Notes</label>
-                            <Textarea placeholder="Internal notes (optional)" value={adminNotes} onChange={(e) => setAdminNotes(e.target.value)} className="rounded-xl min-h-[60px]" />
-                        </div>
+                        )}
                     </CardContent>
                 </Card>
-            )}
+            ) : (
+                /* Add Product Order Stepper & Form */
+                <>
+                    {/* Step Indicator */}
+                    <div className="flex items-center justify-center gap-2">
+                        {[
+                            { num: 1, label: "Select Products" },
+                            { num: 2, label: "Customer Details" },
+                            { num: 3, label: "Confirm Order" },
+                        ].map((s, idx) => (
+                            <React.Fragment key={s.num}>
+                                <button
+                                    onClick={() => { if (s.num < step || (s.num === 2 && cart.length > 0)) setStep(s.num); }}
+                                    className={cn(
+                                        "flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold transition-all",
+                                        step >= s.num
+                                            ? "bg-[#7b4623] text-white"
+                                            : "bg-slate-100 text-slate-500"
+                                    )}
+                                >
+                                    {step > s.num ? <CheckCircle2 className="w-4 h-4" /> : <span>{s.num}</span>}
+                                    <span className="hidden sm:inline">{s.label}</span>
+                                </button>
+                                {idx < 2 && <div className={cn("w-8 h-0.5 rounded", step > s.num ? "bg-[#7b4623]" : "bg-slate-200")} />}
+                            </React.Fragment>
+                        ))}
+                    </div>
 
-            {/* Step 3: Confirm */}
-            {step === 3 && (
-                <div className="space-y-4">
-                    <Card className="border-none shadow-sm rounded-2xl">
-                        <CardHeader className="bg-slate-50/50 border-b">
-                            <CardTitle className="text-sm font-bold uppercase tracking-widest text-slate-500">
-                                Order Summary
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="p-6 space-y-4">
-                            {cart.map((item) => (
-                                <div key={item.variantId} className="flex items-center justify-between gap-3 py-2 border-b border-slate-100 last:border-0">
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center overflow-hidden">
-                                            {item.productImage ? (
-                                                <img src={`${BASE_URL}${item.productImage}`} className="w-full h-full object-cover" />
-                                            ) : (
-                                                <Package className="w-5 h-5 text-slate-400" />
-                                            )}
-                                        </div>
-                                        <div>
-                                            <p className="text-sm font-semibold">{item.productName}</p>
-                                            <p className="text-xs text-slate-500">{item.variantName} × {item.quantity}</p>
-                                        </div>
-                                    </div>
-                                    <p className="font-bold">₹{(item.price * item.quantity).toLocaleString()}</p>
+                    {/* Step 1: Products */}
+                    {step === 1 && (
+                        <div className="space-y-4">
+                            <div className="relative">
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                                <Input
+                                    placeholder="Search products..."
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    className="pl-10 rounded-xl"
+                                />
+                            </div>
+
+                            {filteredProducts.length === 0 ? (
+                                <div className="text-center py-16">
+                                    <Package className="w-12 h-12 mx-auto text-slate-300 mb-3" />
+                                    <p className="text-muted-foreground">No products available</p>
                                 </div>
-                            ))}
-                            <div className="pt-3 border-t flex justify-between text-lg font-bold">
-                                <span>Total</span>
-                                <span className="text-[#7b4623]">₹{cartTotal.toLocaleString()}</span>
-                            </div>
-                        </CardContent>
-                    </Card>
-
-                    <Card className="border-none shadow-sm rounded-2xl">
-                        <CardContent className="p-6 grid grid-cols-2 gap-4 text-sm">
-                            <div>
-                                <p className="text-xs text-slate-500 uppercase">Customer</p>
-                                <p className="font-semibold">{customerName}</p>
-                            </div>
-                            <div>
-                                <p className="text-xs text-slate-500 uppercase">Phone</p>
-                                <p className="font-semibold">{customerPhone}</p>
-                            </div>
-                            <div>
-                                <p className="text-xs text-slate-500 uppercase">Payment</p>
-                                <Badge variant="outline" className="capitalize">{paymentMethod.toLowerCase()}</Badge>
-                            </div>
-                            {customerAddress && (
-                                <div>
-                                    <p className="text-xs text-slate-500 uppercase">Address</p>
-                                    <p className="font-semibold">{customerAddress}</p>
+                            ) : (
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                                    {filteredProducts.map((product) => {
+                                        const variants = product.variants || [];
+                                        return (
+                                            <Card key={product.id} className="overflow-hidden border-slate-100 shadow-sm">
+                                                <div className="aspect-video bg-slate-50 overflow-hidden">
+                                                    {product.image ? (
+                                                        <img src={`${BASE_URL}${product.image}`} alt={parseLocalizedValue(product.name)} className="w-full h-full object-contain p-3" />
+                                                    ) : (
+                                                        <div className="w-full h-full flex items-center justify-center">
+                                                            <Package className="w-10 h-10 text-slate-300" />
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                <CardContent className="p-4 space-y-3">
+                                                    <h3 className="font-bold text-sm line-clamp-1">{parseLocalizedValue(product.name)}</h3>
+                                                    <div className="space-y-2">
+                                                        {variants.map((v: any) => {
+                                                            const inCart = cart.find((c) => c.variantId === v.id);
+                                                            return (
+                                                                <div key={v.id} className="flex items-center justify-between gap-2 p-2 bg-slate-50 rounded-lg">
+                                                                    <div>
+                                                                        <p className="text-xs font-semibold">{parseLocalizedValue(v.name) || "Default"}</p>
+                                                                        <p className="text-xs text-slate-500">₹{v.price} · Stock: {v.stock}</p>
+                                                                    </div>
+                                                                    {inCart ? (
+                                                                        <div className="flex items-center gap-1">
+                                                                            <button onClick={() => updateCartQty(v.id, -1)} className="w-7 h-7 rounded-full bg-slate-200 flex items-center justify-center hover:bg-slate-300">
+                                                                                <Minus className="w-3 h-3" />
+                                                                            </button>
+                                                                            <span className="w-8 text-center text-sm font-bold">{inCart.quantity}</span>
+                                                                            <button onClick={() => updateCartQty(v.id, 1)} className="w-7 h-7 rounded-full bg-[#7b4623] text-white flex items-center justify-center hover:bg-[#5d351a]">
+                                                                                <Plus className="w-3 h-3" />
+                                                                            </button>
+                                                                        </div>
+                                                                    ) : (
+                                                                        <Button size="sm" variant="outline" className="text-xs h-7 rounded-lg" onClick={() => addToCart(product, v)} disabled={v.stock <= 0}>
+                                                                            {v.stock > 0 ? "Add" : "Out"}
+                                                                        </Button>
+                                                                    )}
+                                                                </div>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                </CardContent>
+                                            </Card>
+                                        );
+                                    })}
                                 </div>
                             )}
-                        </CardContent>
-                    </Card>
-                </div>
-            )}
+                        </div>
+                    )}
 
-            {/* Sticky Bottom Bar */}
-            <div className="fixed bottom-0 left-0 md:left-64 right-0 bg-white/95 backdrop-blur-md border-t border-slate-200 shadow-lg p-3 z-40">
-                <div className="max-w-4xl mx-auto flex items-center justify-between gap-4">
-                    <div className="flex items-center gap-3">
-                        <div className="bg-[#7b4623]/10 p-2 rounded-xl text-[#7b4623]">
-                            <ShoppingBag className="w-5 h-5" />
+                    {/* Step 2: Customer */}
+                    {step === 2 && (
+                        <Card className="border-none shadow-sm rounded-2xl overflow-hidden">
+                            <CardHeader className="bg-slate-50/50 border-b">
+                                <CardTitle className="text-sm font-bold uppercase tracking-widest text-slate-500 flex items-center gap-2">
+                                    <User className="w-4 h-4" /> Customer Information
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent className="p-6 space-y-4">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="text-xs font-semibold text-slate-500 uppercase mb-1 block">Full Name *</label>
+                                        <Input placeholder="Customer name" value={customerName} onChange={(e) => setCustomerName(e.target.value)} className="rounded-xl" />
+                                    </div>
+                                    <div>
+                                        <label className="text-xs font-semibold text-slate-500 uppercase mb-1 block">Phone *</label>
+                                        <Input placeholder="10-digit phone" value={customerPhone} onChange={(e) => setCustomerPhone(sanitizePhone(e.target.value))} className="rounded-xl" />
+                                    </div>
+                                </div>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="text-xs font-semibold text-slate-500 uppercase mb-1 block">Email</label>
+                                        <Input placeholder="Email (optional)" value={customerEmail} onChange={(e) => setCustomerEmail(e.target.value)} className="rounded-xl" />
+                                    </div>
+                                    <div>
+                                        <label className="text-xs font-semibold text-slate-500 uppercase mb-1 block">Payment Method</label>
+                                        <select
+                                            value={paymentMethod}
+                                            onChange={(e) => setPaymentMethod(e.target.value)}
+                                            className="w-full rounded-xl border border-slate-200 bg-white p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#7b4623]/20"
+                                        >
+                                            <option value="CASH">Cash</option>
+                                            <option value="UPI">UPI</option>
+                                            <option value="CARD">Card</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="text-xs font-semibold text-slate-500 uppercase mb-1 block">Address</label>
+                                    <Input placeholder="Address (optional)" value={customerAddress} onChange={(e) => setCustomerAddress(e.target.value)} className="rounded-xl" />
+                                </div>
+                                <div>
+                                    <label className="text-xs font-semibold text-slate-500 uppercase mb-1 block">Admin Notes</label>
+                                    <Textarea placeholder="Internal notes (optional)" value={adminNotes} onChange={(e) => setAdminNotes(e.target.value)} className="rounded-xl min-h-[60px]" />
+                                </div>
+                            </CardContent>
+                        </Card>
+                    )}
+
+                    {/* Step 3: Confirm */}
+                    {step === 3 && (
+                        <div className="space-y-4">
+                            <Card className="border-none shadow-sm rounded-2xl">
+                                <CardHeader className="bg-slate-50/50 border-b">
+                                    <CardTitle className="text-sm font-bold uppercase tracking-widest text-slate-500">
+                                        Order Summary
+                                    </CardTitle>
+                                </CardHeader>
+                                <CardContent className="p-6 space-y-4">
+                                    {cart.map((item) => (
+                                        <div key={item.variantId} className="flex items-center justify-between gap-3 py-2 border-b border-slate-100 last:border-0">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center overflow-hidden">
+                                                    {item.productImage ? (
+                                                        <img src={`${BASE_URL}${item.productImage}`} className="w-full h-full object-cover" />
+                                                    ) : (
+                                                        <Package className="w-5 h-5 text-slate-400" />
+                                                    )}
+                                                </div>
+                                                <div>
+                                                    <p className="text-sm font-semibold">{item.productName}</p>
+                                                    <p className="text-xs text-slate-500">{item.variantName} × {item.quantity}</p>
+                                                </div>
+                                            </div>
+                                            <p className="font-bold">₹{(item.price * item.quantity).toLocaleString()}</p>
+                                        </div>
+                                    ))}
+                                    <div className="pt-3 border-t flex justify-between text-lg font-bold">
+                                        <span>Total</span>
+                                        <span className="text-[#7b4623]">₹{cartTotal.toLocaleString()}</span>
+                                    </div>
+                                </CardContent>
+                            </Card>
+
+                            <Card className="border-none shadow-sm rounded-2xl">
+                                <CardContent className="p-6 grid grid-cols-2 gap-4 text-sm">
+                                    <div>
+                                        <p className="text-xs text-slate-500 uppercase">Customer</p>
+                                        <p className="font-semibold">{customerName}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-xs text-slate-500 uppercase">Phone</p>
+                                        <p className="font-semibold">{customerPhone}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-xs text-slate-500 uppercase">Payment</p>
+                                        <Badge variant="outline" className="capitalize">{paymentMethod.toLowerCase()}</Badge>
+                                    </div>
+                                    {customerAddress && (
+                                        <div>
+                                            <p className="text-xs text-slate-500 uppercase">Address</p>
+                                            <p className="font-semibold">{customerAddress}</p>
+                                        </div>
+                                    )}
+                                </CardContent>
+                            </Card>
                         </div>
-                        <div>
-                            <p className="text-xs font-semibold text-slate-500">Total ({cartItemCount} items)</p>
-                            <p className="text-base font-bold text-[#7b4623]">₹{cartTotal.toLocaleString()}</p>
+                    )}
+
+                    {/* Sticky Bottom Bar */}
+                    <div className="fixed bottom-0 left-0 md:left-64 right-0 bg-white/95 backdrop-blur-md border-t border-slate-200 shadow-lg p-3 z-40">
+                        <div className="max-w-4xl mx-auto flex items-center justify-between gap-4">
+                            <div className="flex items-center gap-3">
+                                <div className="bg-[#7b4623]/10 p-2 rounded-xl text-[#7b4623]">
+                                    <ShoppingBag className="w-5 h-5" />
+                                </div>
+                                <div>
+                                    <p className="text-xs font-semibold text-slate-500">Total ({cartItemCount} items)</p>
+                                    <p className="text-base font-bold text-[#7b4623]">₹{cartTotal.toLocaleString()}</p>
+                                </div>
+                            </div>
+                            <div className="flex gap-2">
+                                {step > 1 && (
+                                    <Button variant="outline" size="sm" className="rounded-xl h-9" onClick={() => setStep(step - 1)}>
+                                        Back
+                                    </Button>
+                                )}
+                                {step < 3 ? (
+                                    <Button
+                                        size="sm"
+                                        className="bg-[#7b4623] hover:bg-[#5d351a] text-white rounded-xl px-6 h-9"
+                                        disabled={step === 1 && cart.length === 0}
+                                        onClick={() => setStep(step + 1)}
+                                    >
+                                        Next
+                                    </Button>
+                                ) : (
+                                    <Button
+                                        size="sm"
+                                        className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl px-6 h-9"
+                                        disabled={isSubmitting}
+                                        onClick={handleSubmit}
+                                    >
+                                        {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <CheckCircle2 className="w-4 h-4 mr-2" />}
+                                        Confirm Order
+                                    </Button>
+                                )}
+                            </div>
                         </div>
                     </div>
-                    <div className="flex gap-2">
-                        {step > 1 && (
-                            <Button variant="outline" size="sm" className="rounded-xl h-9" onClick={() => setStep(step - 1)}>
-                                Back
-                            </Button>
-                        )}
-                        {step < 3 ? (
-                            <Button
-                                size="sm"
-                                className="bg-[#7b4623] hover:bg-[#5d351a] text-white rounded-xl px-6 h-9"
-                                disabled={step === 1 && cart.length === 0}
-                                onClick={() => setStep(step + 1)}
-                            >
-                                Next
-                            </Button>
-                        ) : (
-                            <Button
-                                size="sm"
-                                className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl px-6 h-9"
-                                disabled={isSubmitting}
-                                onClick={handleSubmit}
-                            >
-                                {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <CheckCircle2 className="w-4 h-4 mr-2" />}
-                                Confirm Order
-                            </Button>
-                        )}
-                    </div>
-                </div>
-            </div>
+                </>
+            )}
         </div>
     );
 }

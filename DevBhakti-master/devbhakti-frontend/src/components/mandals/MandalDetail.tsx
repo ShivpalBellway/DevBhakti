@@ -990,34 +990,71 @@ export function MandalDetail({ slug }: { slug: string }) {
                       </button>
                     </div>
 
-                    <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 mt-4">
-                      {mandal.poojas.map((p: any, idx: number) => {
-                        const pName = getLocalized(p, "name", language) || p.name || p.title;
-                        const pDesc = getLocalized(p, "description", language) || p.description || p.desc || "Receive divine blessings";
-                        const pImg = p.image ? getFullImageUrl(p.image) : "https://images.unsplash.com/photo-1609710228159-0fa9bd7c0827?auto=format&fit=crop&q=80&w=500";
-                        const pPrice = p.price || 501;
+                    <div className="relative group/carousel mt-4">
+                      {/* Left Scroll Arrow */}
+                      <button
+                        onClick={() => {
+                          const container = document.getElementById("poojas-scroll-container");
+                          if (container) container.scrollBy({ left: -280, behavior: "smooth" });
+                        }}
+                        className="absolute -left-3 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full bg-white border border-zinc-200 shadow-md flex items-center justify-center text-zinc-700 hover:bg-amber-50 hover:text-amber-900 transition-all opacity-90 group-hover/carousel:opacity-100"
+                        aria-label="Scroll Left"
+                      >
+                        <ChevronLeft className="w-4 h-4" />
+                      </button>
 
-                        return (
-                          <div key={p.id || idx} className="rounded-2xl border border-zinc-200/80 p-3 bg-white hover:shadow-md transition-all flex flex-col justify-between overflow-hidden group">
-                            <div>
-                              <div className="relative aspect-[16/9] w-full rounded-xl overflow-hidden mb-2 bg-zinc-100">
-                                <img src={pImg} alt={pName} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-                              </div>
-                              <h4 className="font-bold text-xs sm:text-sm text-zinc-900 truncate mb-0.5">{pName}</h4>
-                              <p className="text-[10px] sm:text-xs text-zinc-500 truncate mb-2">{pDesc}</p>
-                              <div className="font-extrabold text-xs sm:text-sm text-zinc-900 mb-2.5">
-                                ₹{typeof pPrice === "number" ? pPrice.toLocaleString("en-IN") : pPrice}
-                              </div>
-                            </div>
-                            <Button
+                      {/* Right Scroll Arrow */}
+                      <button
+                        onClick={() => {
+                          const container = document.getElementById("poojas-scroll-container");
+                          if (container) container.scrollBy({ left: 280, behavior: "smooth" });
+                        }}
+                        className="absolute -right-3 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full bg-white border border-zinc-200 shadow-md flex items-center justify-center text-zinc-700 hover:bg-amber-50 hover:text-amber-900 transition-all opacity-90 group-hover/carousel:opacity-100"
+                        aria-label="Scroll Right"
+                      >
+                        <ChevronRight className="w-4 h-4" />
+                      </button>
+
+                      {/* Single Row Horizontal Scroll Container */}
+                      <div 
+                        id="poojas-scroll-container"
+                        className="flex items-stretch gap-3.5 overflow-x-auto thin-scrollbar pb-2 pt-1 px-1 scroll-smooth"
+                      >
+                        {mandal.poojas.map((p: any, idx: number) => {
+                          const pName = getLocalized(p, "name", language) || p.name || p.title;
+                          const pDesc = getLocalized(p, "description", language) || p.description || p.desc || "Receive divine blessings";
+                          const pImg = p.image ? getFullImageUrl(p.image) : "https://images.unsplash.com/photo-1620766182966-c6eb5ed2b788?auto=format&fit=crop&q=80&w=600";
+                          const pPrice = p.price || 501;
+
+                          return (
+                            <div 
+                              key={p.id || idx} 
                               onClick={() => router.push(`/mandals/${slug}/booking`)}
-                              className="w-full bg-[#6B0F1A] hover:bg-[#520B14] text-white font-bold h-8 text-[11px] rounded-xl transition-all shadow-sm"
+                              className="w-[200px] sm:w-[220px] shrink-0 rounded-2xl border border-zinc-200/80 p-3 bg-white hover:shadow-md transition-all flex flex-col justify-between overflow-hidden group cursor-pointer"
                             >
-                              Book Now
-                            </Button>
-                          </div>
-                        );
-                      })}
+                              <div>
+                                <div className="relative aspect-[16/9] w-full rounded-xl overflow-hidden mb-2 bg-zinc-100">
+                                  <img src={pImg} alt={pName} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                                </div>
+                                <h4 className="font-bold text-xs sm:text-sm text-zinc-900 truncate mb-0.5">{pName}</h4>
+                                <p className="text-[10px] sm:text-xs text-zinc-500 truncate mb-2">{pDesc}</p>
+                                <div className="font-extrabold text-xs sm:text-sm text-zinc-900 mb-2.5">
+                                  ₹{typeof pPrice === "number" ? pPrice.toLocaleString("en-IN") : pPrice}
+                                </div>
+                              </div>
+                              <Button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  router.push(`/mandals/${slug}/booking`);
+                                }}
+                                className="w-full bg-[#6B0F1A] hover:bg-[#520B14] text-white font-bold h-8 text-[11px] rounded-xl transition-all shadow-sm"
+                              >
+                                Book Now
+                              </Button>
+                            </div>
+                          );
+                        })}
+                      </div>
                     </div>
                   </div>
                 </Card>
@@ -1112,37 +1149,67 @@ export function MandalDetail({ slug }: { slug: string }) {
                 </button>
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
-                {products.slice(0, 5).map((item: any, idx: number) => {
-                  const price = item.price ?? item.variants?.[0]?.price ?? 251;
-                  const itemName = getLocalized(item, "name", language) || item.name || "Sacred Item";
-                  const itemImg = item.image ? getFullImageUrl(item.image) : "https://images.unsplash.com/photo-1600093463592-8e36ae95ef56?auto=format&fit=crop&q=80&w=400";
+              <div className="relative group/carousel mt-4">
+                {/* Left Scroll Arrow */}
+                <button
+                  onClick={() => {
+                    const container = document.getElementById("products-scroll-container");
+                    if (container) container.scrollBy({ left: -280, behavior: "smooth" });
+                  }}
+                  className="absolute -left-3 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full bg-white border border-zinc-200 shadow-md flex items-center justify-center text-zinc-700 hover:bg-amber-50 hover:text-amber-900 transition-all opacity-90 group-hover/carousel:opacity-100"
+                  aria-label="Scroll Left"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
 
-                  return (
-                    <Card
-                      key={item.id || idx}
-                      onClick={() => router.push(`/marketplace/product/${item.id}`)}
-                      className="rounded-2xl border border-zinc-200/80 p-3 bg-white hover:shadow-md transition-all flex flex-col justify-between overflow-hidden group cursor-pointer"
-                    >
-                      <div>
-                        <div className="relative aspect-square rounded-xl overflow-hidden mb-2 bg-zinc-100">
-                          <img src={itemImg} alt={itemName} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-                        </div>
-                        <h4 className="font-bold text-xs text-zinc-900 truncate">{itemName}</h4>
-                        <div className="font-extrabold text-xs text-warm-brown mt-1">₹{typeof price === "number" ? price.toLocaleString("en-IN") : price}</div>
-                      </div>
-                      <Button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          router.push(`/marketplace/product/${item.id}`);
-                        }}
-                        className="w-full mt-2 bg-[#6B0F1A] hover:bg-[#520B14] text-white font-bold h-8 text-[11px] rounded-xl transition-all shadow-sm"
+                {/* Right Scroll Arrow */}
+                <button
+                  onClick={() => {
+                    const container = document.getElementById("products-scroll-container");
+                    if (container) container.scrollBy({ left: 280, behavior: "smooth" });
+                  }}
+                  className="absolute -right-3 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full bg-white border border-zinc-200 shadow-md flex items-center justify-center text-zinc-700 hover:bg-amber-50 hover:text-amber-900 transition-all opacity-90 group-hover/carousel:opacity-100"
+                  aria-label="Scroll Right"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+
+                {/* Single Row Horizontal Scroll Container */}
+                <div 
+                  id="products-scroll-container"
+                  className="flex items-stretch gap-4 overflow-x-auto thin-scrollbar pb-2 pt-1 px-1 scroll-smooth"
+                >
+                  {products.map((item: any, idx: number) => {
+                    const price = item.price ?? item.variants?.[0]?.price ?? 251;
+                    const itemName = getLocalized(item, "name", language) || item.name || "Sacred Item";
+                    const itemImg = item.image ? getFullImageUrl(item.image) : "https://images.unsplash.com/photo-1600093463592-8e36ae95ef56?auto=format&fit=crop&q=80&w=400";
+
+                    return (
+                      <Card
+                        key={item.id || idx}
+                        onClick={() => router.push(`/marketplace/product/${item.id}`)}
+                        className="w-[180px] sm:w-[200px] shrink-0 rounded-2xl border border-zinc-200/80 p-3 bg-white hover:shadow-md transition-all flex flex-col justify-between overflow-hidden group cursor-pointer"
                       >
-                        Buy Now
-                      </Button>
-                    </Card>
-                  );
-                })}
+                        <div>
+                          <div className="relative aspect-square rounded-xl overflow-hidden mb-2 bg-zinc-100">
+                            <img src={itemImg} alt={itemName} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                          </div>
+                          <h4 className="font-bold text-xs text-zinc-900 truncate">{itemName}</h4>
+                          <div className="font-extrabold text-xs text-warm-brown mt-1">₹{typeof price === "number" ? price.toLocaleString("en-IN") : price}</div>
+                        </div>
+                        <Button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            router.push(`/marketplace/product/${item.id}`);
+                          }}
+                          className="w-full mt-2 bg-[#6B0F1A] hover:bg-[#520B14] text-white font-bold h-8 text-[11px] rounded-xl transition-all shadow-sm"
+                        >
+                          Buy Now
+                        </Button>
+                      </Card>
+                    );
+                  })}
+                </div>
               </div>
             </Card>
           </div>

@@ -24,9 +24,22 @@ export const calculateFees = async (req: Request, res: Response) => {
     // Group items by vendor
     const groups: Record<string, { amount: number, type: SlabType, id: string | null }> = {};
 
+    // Fetch product details for items missing vendor info
+    const productIds = items.map((i: any) => i.productId).filter(Boolean);
+    const dbProducts = await prisma.product.findMany({
+      where: { id: { in: productIds } },
+      select: { id: true, templeId: true, mandalId: true, sellerId: true }
+    });
+    const productVendorMap = new Map(dbProducts.map(p => [p.id, p]));
+
     for (const item of items) {
-      let vendorId = item.templeId || item.sellerId || "admin";
-      let vendorType = item.templeId ? SlabType.TEMPLE : (item.sellerId ? SlabType.SELLER : SlabType.GLOBAL);
+      const dbProd = productVendorMap.get(item.productId);
+      const templeId = item.templeId || dbProd?.templeId;
+      const mandalId = item.mandalId || (dbProd as any)?.mandalId;
+      const sellerId = item.sellerId || dbProd?.sellerId;
+
+      let vendorId = templeId || mandalId || sellerId || "admin";
+      let vendorType = templeId ? SlabType.TEMPLE : (mandalId ? SlabType.MANDAL : (sellerId ? SlabType.SELLER : SlabType.GLOBAL));
 
       const key = `${vendorType}_${vendorId}`;
       if (!groups[key]) {

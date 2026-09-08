@@ -23,6 +23,7 @@ import Footer from "@/components/landing/Footer";
 import { BASE_URL } from "@/config/apiConfig";
 import { useToast } from "@/hooks/use-toast";
 import { getLocalized, getLocalizedArray } from "@/utils/localization";
+import { formatSlotTime } from "@/utils/textUtils";
 import { useLanguage } from "@/context/LanguageContext";
 import QRCode from "qrcode";
 
@@ -393,7 +394,7 @@ export default function PhotographyBookingPage() {
                                                     onClick={() => setSelectedPhotoSlot(slot)}
                                                     className={`p-3.5 rounded-2xl border text-center font-bold text-xs transition-all disabled:opacity-30 disabled:cursor-not-allowed ${selectedPhotoSlot?.id === slot.id ? "bg-[#7c4624] text-white border-transparent shadow-sm" : "bg-white border-gray-200 hover:bg-gray-50 text-[#3c2a21]"}`}
                                                 >
-                                                    {slot.slotName}
+                                                    {formatSlotTime(slot.slotName)}
                                                 </button>
                                             ))}
                                         </div>
@@ -465,7 +466,7 @@ export default function PhotographyBookingPage() {
                                 </div>
                                 <div className="flex justify-between py-1 border-b border-orange-100">
                                     <span className="font-bold">Date & Slot:</span>
-                                    <span className="text-slate-700">{selectedPhotoDate} ({selectedPhotoSlot?.slotName})</span>
+                                    <span className="text-slate-700">{selectedPhotoDate} ({selectedPhotoSlot?.slotName ? formatSlotTime(selectedPhotoSlot.slotName) : ''})</span>
                                 </div>
                                 <div className="flex justify-between py-1 border-b border-orange-100">
                                     <span className="font-bold">Permitted Area:</span>
@@ -523,7 +524,7 @@ export default function PhotographyBookingPage() {
                                 <div className="text-left text-xs space-y-1 bg-orange-50/60 p-3 rounded-xl border border-orange-100">
                                     <p><span className="font-bold text-[#5c3a21]">Package:</span> {bookingDetails.packageName}</p>
                                     <p><span className="font-bold text-[#5c3a21]">Date:</span> {bookingDetails.bookingDate}</p>
-                                    <p><span className="font-bold text-[#5c3a21]">Slot:</span> {bookingDetails.timeSlot}</p>
+                                    <p><span className="font-bold text-[#5c3a21]">Slot:</span> {formatSlotTime(bookingDetails.timeSlot)}</p>
                                     <p><span className="font-bold text-[#5c3a21]">Area:</span> {selectedPhotoArea}</p>
                                 </div>
                             </div>

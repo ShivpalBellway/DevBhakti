@@ -104,7 +104,10 @@ export const updateSlab = async (req: Request, res: Response) => {
     if (minAmount !== undefined) updateData.minAmount = parseFloat(minAmount);
     if (maxAmount !== undefined) updateData.maxAmount = maxAmount ? parseFloat(maxAmount) : null;
     if (platformFee !== undefined) updateData.platformFee = parseFloat(platformFee);
-    if (percentage !== undefined) updateData.percentage = parseFloat(percentage);
+    if (percentage !== undefined && percentage !== null && percentage !== "") {
+      const parsedPercentage = parseFloat(percentage);
+      updateData.percentage = isNaN(parsedPercentage) ? 0 : parsedPercentage;
+    }
     if (isActive !== undefined) updateData.isActive = isActive;
     if (isOffline !== undefined) updateData.isOffline = isOffline === true || isOffline === 'true';
 
@@ -211,7 +214,7 @@ export const getCommissionForAmount = async (
 }> => {
   let slab = null;
 
-  // First try to find vendor-specific slab with matching isOffline flag
+  // First try to find vendor-specific slab with targetId and matching isOffline flag
   if (vendorId) {
     slab = await prisma.commissionSlab.findFirst({
       where: {
@@ -230,7 +233,26 @@ export const getCommissionForAmount = async (
     });
   }
 
-  // If no vendor-specific slab found, fallback to global slab with matching isOffline flag
+  // Second try to find generic MANDAL/TEMPLE slab (where targetId is null/all mandals)
+  if (!slab && vendorType !== SlabType.GLOBAL) {
+    slab = await prisma.commissionSlab.findFirst({
+      where: {
+        slabType: vendorType,
+        targetId: null,
+        category: category,
+        isOffline: isOffline,
+        isActive: true,
+        minAmount: { lte: amount },
+        OR: [
+          { maxAmount: { gte: amount } },
+          { maxAmount: null }
+        ]
+      },
+      orderBy: { minAmount: 'desc' }
+    });
+  }
+
+  // Third fallback to global slab with matching isOffline flag
   if (!slab) {
     slab = await prisma.commissionSlab.findFirst({
       where: {

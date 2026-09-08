@@ -98,6 +98,7 @@ function CheckoutContent() {
                         price: item.price,
                         quantity: item.quantity,
                         templeId: item.templeId,
+                        mandalId: (item as any).mandalId,
                         sellerId: (item as any).sellerId
                     }))
                 };

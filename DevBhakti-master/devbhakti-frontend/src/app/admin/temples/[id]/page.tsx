@@ -137,8 +137,8 @@ export default function ViewTemplePage() {
                     setMarketplaceSlabs(mSlabsResponse.data);
                     setIsCustomMarketplace(true);
                 } else {
-                    const globalM = await fetchCommissionSlabsAdmin('GLOBAL', undefined, 'MARKETPLACE', false);
-                    if (globalM.success) setMarketplaceSlabs(globalM.data);
+                    const defaultM = await fetchCommissionSlabsAdmin('TEMPLE', undefined, 'MARKETPLACE', false);
+                    if (defaultM.success) setMarketplaceSlabs(defaultM.data);
                     setIsCustomMarketplace(false);
                 }
 
@@ -148,8 +148,8 @@ export default function ViewTemplePage() {
                     setOfflineMarketplaceSlabs(omSlabsResponse.data);
                     setIsCustomOfflineMarketplace(true);
                 } else {
-                    const globalOM = await fetchCommissionSlabsAdmin('GLOBAL', undefined, 'MARKETPLACE', true);
-                    if (globalOM.success) setOfflineMarketplaceSlabs(globalOM.data);
+                    const defaultOM = await fetchCommissionSlabsAdmin('TEMPLE', undefined, 'MARKETPLACE', true);
+                    if (defaultOM.success) setOfflineMarketplaceSlabs(defaultOM.data);
                     setIsCustomOfflineMarketplace(false);
                 }
 
@@ -159,8 +159,8 @@ export default function ViewTemplePage() {
                     setPoojaSlabs(pSlabsResponse.data);
                     setIsCustomPooja(true);
                 } else {
-                    const globalP = await fetchCommissionSlabsAdmin('GLOBAL', undefined, 'POOJA', false);
-                    if (globalP.success) setPoojaSlabs(globalP.data);
+                    const defaultP = await fetchCommissionSlabsAdmin('TEMPLE', undefined, 'POOJA', false);
+                    if (defaultP.success) setPoojaSlabs(defaultP.data);
                     setIsCustomPooja(false);
                 }
 
@@ -170,8 +170,8 @@ export default function ViewTemplePage() {
                     setOfflinePoojaSlabs(opSlabsResponse.data);
                     setIsCustomOfflinePooja(true);
                 } else {
-                    const globalOP = await fetchCommissionSlabsAdmin('GLOBAL', undefined, 'POOJA', true);
-                    if (globalOP.success) setOfflinePoojaSlabs(globalOP.data);
+                    const defaultOP = await fetchCommissionSlabsAdmin('TEMPLE', undefined, 'POOJA', true);
+                    if (defaultOP.success) setOfflinePoojaSlabs(defaultOP.data);
                     setIsCustomOfflinePooja(false);
                 }
 
@@ -181,8 +181,8 @@ export default function ViewTemplePage() {
                     setDonationSlabs(dSlabsResponse.data);
                     setIsCustomDonation(true);
                 } else {
-                    const globalD = await fetchCommissionSlabsAdmin('GLOBAL', undefined, 'DONATION', false);
-                    if (globalD.success) setDonationSlabs(globalD.data);
+                    const defaultD = await fetchCommissionSlabsAdmin('TEMPLE', undefined, 'DONATION', false);
+                    if (defaultD.success) setDonationSlabs(defaultD.data);
                     setIsCustomDonation(false);
                 }
 
@@ -192,8 +192,8 @@ export default function ViewTemplePage() {
                     setOfflineDonationSlabs(odSlabsResponse.data);
                     setIsCustomOfflineDonation(true);
                 } else {
-                    const globalOD = await fetchCommissionSlabsAdmin('GLOBAL', undefined, 'DONATION', true);
-                    if (globalOD.success) setOfflineDonationSlabs(globalOD.data);
+                    const defaultOD = await fetchCommissionSlabsAdmin('TEMPLE', undefined, 'DONATION', true);
+                    if (defaultOD.success) setOfflineDonationSlabs(defaultOD.data);
                     setIsCustomOfflineDonation(false);
                 }
 

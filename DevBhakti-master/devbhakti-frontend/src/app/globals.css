@@ -281,4 +281,24 @@
     scrollbar-width: thin;
     scrollbar-color: hsl(var(--muted-foreground) / 0.3) transparent;
   }
+
+  /* Ultra-thin sleek scrollbar for carousels */
+  .thin-scrollbar::-webkit-scrollbar {
+    height: 3px;
+  }
+  .thin-scrollbar::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.03);
+    border-radius: 9999px;
+  }
+  .thin-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(121, 74, 5, 0.25);
+    border-radius: 9999px;
+  }
+  .thin-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(121, 74, 5, 0.5);
+  }
+  .thin-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(121, 74, 5, 0.25) transparent;
+  }
 }

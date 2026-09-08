@@ -629,7 +629,7 @@ export default function TempleUnifiedTellerCartPage() {
                   <p className="text-[11px] text-amber-700/60">Select items from the catalog on left.</p>
                 </div>
               ) : (
-                <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1 custom-scrollbar">
+                <div className="space-y-2">
                   {cartItems.map((item, idx) => (
                     <div key={idx} className="flex items-center justify-between p-2.5 bg-amber-50/50 border border-amber-200/60 rounded-xl text-xs">
                       <div className="flex-1 min-w-0 pr-2">

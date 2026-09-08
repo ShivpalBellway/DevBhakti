@@ -159,13 +159,24 @@ export const getAllTemples = async (req: Request, res: Response) => {
       };
     }
 
-    // Pooja filtering by ID
+    // Pooja filtering by ID (Compatible Temples for a specific Pooja)
     if (poojaId) {
+      // Find the pooja record first to resolve its masterPoojaId if any
+      const targetPooja = await prisma.pooja.findUnique({
+        where: { id: String(poojaId) },
+        select: { id: true, masterPoojaId: true, isMaster: true }
+      });
+
+      const masterId = targetPooja
+        ? (targetPooja.isMaster ? targetPooja.id : targetPooja.masterPoojaId || targetPooja.id)
+        : String(poojaId);
+
       whereClause.poojas = {
         some: {
           OR: [
             { id: String(poojaId) },
-            { masterPoojaId: String(poojaId) }
+            { masterPoojaId: masterId },
+            { id: masterId }
           ],
           status: true
         }

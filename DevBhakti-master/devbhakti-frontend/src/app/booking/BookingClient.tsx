@@ -326,10 +326,22 @@ function BookingForm() {
     ? allPoojas.filter(p => String(p.templeId) === String(selectedTemple))
     : allPoojas.filter(p => p.isMaster);
 
+  // Computed list of temples compatible with currently selected pooja
   const selectedPoojaData = allPoojas.find(p => p.id === selectedPooja || p.slug === selectedPooja);
   const poojaFamilyId = selectedPoojaData?.isMaster
     ? selectedPoojaData.id
     : selectedPoojaData?.masterPoojaId || null;
+
+  const compatibleTemples = React.useMemo(() => {
+    if (!selectedPoojaData || !poojaFamilyId) return allTemples;
+    return allTemples.filter((temple: any) => {
+      return allPoojas.some((p: any) => {
+        if (String(p.templeId) !== String(temple.id)) return false;
+        return String(p.masterPoojaId) === String(poojaFamilyId) || String(p.id) === String(poojaFamilyId);
+      });
+    });
+  }, [allTemples, allPoojas, selectedPoojaData, poojaFamilyId]);
+
   const platformPoojaOption = React.useMemo(() => {
     if (!poojaFamilyId) return null;
     // 1. Search for platform copy
@@ -361,7 +373,7 @@ function BookingForm() {
       });
     }
 
-    allTemples.forEach((temple: any) => {
+    compatibleTemples.forEach((temple: any) => {
       const templeSpecificPooja = allPoojas.find((p: any) => {
         if (p.templeId !== temple.id) return false;
         if (poojaFamilyId) {
@@ -381,7 +393,7 @@ function BookingForm() {
     });
 
     return options;
-  }, [allPoojas, allTemples, language, platformPoojaOption, poojaFamilyId, requestedPoojaParam, selectedPoojaData]);
+  }, [allPoojas, compatibleTemples, language, platformPoojaOption, poojaFamilyId, requestedPoojaParam, selectedPoojaData]);
   const selectedSourceKey = selectedTemple || (selectedPoojaData && (selectedPoojaData.isMaster || selectedPoojaData.templeId === null || selectedPoojaData.mandalId) ? "platform" : "");
 
   // If selected pooja is a Master Pooja, Mandal pooja, or Platform copy, show DevBhakti as the platform instead of temple dropdown

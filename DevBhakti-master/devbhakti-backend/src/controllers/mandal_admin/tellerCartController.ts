@@ -1,7 +1,8 @@
 import { Request, Response } from 'express';
 import { prisma } from '../../lib/prisma';
 import { generateCustomId } from '../../utils/idGenerator';
-import { LedgerType, LedgerStatus } from '@prisma/client';
+import { LedgerType, LedgerStatus, SlabType, CommissionCategory } from '@prisma/client';
+import { getCommissionForAmount } from '../admin/commissionSlabController';
 
 /**
  * Get catalog (Poojas, Product Categories / Products, Darshan Slots) for Teller Counter UI
@@ -280,13 +281,32 @@ export const processTellerCheckout = async (req: Request, res: Response) => {
         }
       }
 
-      // Add entry into MandalLedger for total counter collection
+      // Calculate offline commission for ledger breakdown
+      let totalCommission = 0;
+      for (const item of items) {
+        const type = (item.itemType || item.type || '').toUpperCase();
+        let category: CommissionCategory = CommissionCategory.POOJA;
+        if (type === 'MARKETPLACE' || type === 'PRODUCT') category = CommissionCategory.MARKETPLACE;
+        if (type === 'DONATION') category = CommissionCategory.DONATION;
+
+        const itemTotal = Number(item.price || item.unitPrice || 0) * Number(item.quantity || 1);
+        try {
+          const commResult = await getCommissionForAmount(itemTotal, SlabType.MANDAL, mandalId, category, true);
+          if (commResult && commResult.totalCommission) {
+            totalCommission += commResult.totalCommission;
+          }
+        } catch (e) {
+          console.error("Error calculating offline commission:", e);
+        }
+      }
+
+      // Add entry into MandalLedger for total counter collection with calculated commission
       await tx.mandalLedger.create({
         data: {
           mandalId,
-          amount: totalAmount,
+          amount: totalAmount - totalCommission,
           grossAmount: totalAmount,
-          commission: 0,
+          commission: totalCommission,
           type: LedgerType.POOJA_EARNING,
           sourceId: tellerOrder.id,
           description: `Counter Checkout Receipt #${displayId} (${payment?.method || 'CASH'})`,

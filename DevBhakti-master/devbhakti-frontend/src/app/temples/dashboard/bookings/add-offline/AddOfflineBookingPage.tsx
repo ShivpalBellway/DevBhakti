@@ -657,28 +657,24 @@ export default function AddOfflineBookingPage() {
         </div>
       )}
 
-      {/* Admin Header */}
-      <div className="flex items-center gap-3 px-4 py-4 border-b mb-6">
-        <button onClick={() => router.push('/admin/pooja-bookings')} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
+      {/* Top Breadcrumb */}
+      <div className="flex items-center gap-2 px-6 py-3 border-b bg-slate-50/50 text-sm">
+        <Link href="/temples/dashboard/teller" className="flex items-center gap-1.5 text-slate-600 hover:text-amber-800 transition-colors font-medium">
           <ArrowLeft className="w-4 h-4" />
-          Back to Bookings
-        </button>
-        <span className="text-muted-foreground">/</span>
-        <span className="text-sm font-medium">Add Offline Booking</span>
+          Back to Teller Module
+        </Link>
+        <span className="text-slate-400">/</span>
+        <span className="font-semibold text-slate-800">Add Offline Pooja Booking</span>
       </div>
 
-      {/* Header */}
-      <section className="bg-gradient-to-br from-primary/10 via-secondary/20 to-background pt-24 pb-12">
-        <div className="w-full max-w-7xl mx-auto px-4">
-          <Link href={searchParams.get("pooja") ? "/poojas" : "/temples"} className="inline-flex items-center text-muted-foreground hover:text-foreground mb-4 transition-colors">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            {searchParams.get("pooja") ? t("booking_client.back_to_poojas") : t("booking_client.back_to_temples")}
-          </Link>
-          <h1 className="text-3xl md:text-4xl font-display font-bold text-foreground">
+      {/* Header Banner */}
+      <section className="bg-gradient-to-br from-amber-100/60 via-orange-50/40 to-background py-8 border-b">
+        <div className="w-full max-w-7xl mx-auto px-4 md:px-6">
+          <h1 className="text-2xl md:text-3xl font-serif font-bold text-slate-900">
             {selectedPoojaData ? `Book ${parseLocalizedValue(selectedPoojaData.name, language)}` : "Book Offline Pooja"}
           </h1>
-          <p className="text-muted-foreground mt-2">
-            {selectedPoojaData ? `Complete your booking for ${parseLocalizedValue(selectedPoojaData.name, language)}` : "Complete offline pooja booking details"}
+          <p className="text-slate-600 text-sm mt-1">
+            {selectedPoojaData ? `Complete offline pooja booking for ${parseLocalizedValue(selectedPoojaData.name, language)}` : "Complete offline pooja booking details for devotee"}
           </p>
         </div>
       </section>
@@ -722,36 +718,36 @@ export default function AddOfflineBookingPage() {
               className="space-y-6"
             >
               <div>
-                <h2 className="text-2xl font-serif text-[#794A05] mb-2">Select Pooja</h2>
+                <h2 className="text-xl font-serif font-bold text-slate-800 mb-1">Select Pooja Service</h2>
                 <p className="text-muted-foreground text-sm">Choose the ritual to book for the devotee.</p>
               </div>
 
               {searchParams.get("pooja") && selectedPoojaData && (
                 <Card className="border-border/50">
                   <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Calendar className="h-5 w-5 text-primary" />
-                      {t("booking_client.select_pooja_service")}
+                    <CardTitle className="flex items-center gap-2 text-base">
+                      <Calendar className="h-5 w-5 text-amber-800" />
+                      Selected Pooja Ritual
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div
-                      className="flex items-center justify-between p-4 rounded-lg border transition-colors border-primary bg-primary/5"
+                      className="flex items-center justify-between p-4 rounded-xl border border-amber-800 bg-amber-50/40"
                     >
                       <div className="flex items-center gap-3">
-                        <div className="h-4 w-4 rounded-full border border-primary flex items-center justify-center">
-                          <div className="h-2 w-2 rounded-full bg-primary" />
+                        <div className="h-4 w-4 rounded-full border border-amber-800 flex items-center justify-center">
+                          <div className="h-2 w-2 rounded-full bg-amber-800" />
                         </div>
                         <div>
-                          <Label className="font-semibold">
+                          <Label className="font-semibold text-slate-900">
                             {parseLocalizedValue(selectedPoojaData.name, language)}
                           </Label>
-                          <p className="text-sm text-muted-foreground line-clamp-1">
-                            {parseLocalizedValue(selectedPoojaData.description?.[0] || selectedPoojaData.about, language)}
+                          <p className="text-sm text-slate-500 line-clamp-1">
+                            {(parseLocalizedValue(selectedPoojaData.description?.[0] || selectedPoojaData.about, language) || "").replace(/<[^>]*>?/gm, '').trim()}
                           </p>
                         </div>
                       </div>
-                      <div className="flex items-center text-primary font-bold text-lg">
+                      <div className="flex items-center text-amber-800 font-bold text-lg">
                         <IndianRupee className="h-4 w-4" />
                         {selectedPoojaData.price}
                       </div>
@@ -763,9 +759,9 @@ export default function AddOfflineBookingPage() {
               {!searchParams.get("pooja") && (
                 <Card className="border-border/50">
                   <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Calendar className="h-5 w-5 text-primary" />
-                      {t("booking_client.select_pooja_service")}
+                    <CardTitle className="flex items-center gap-2 text-base">
+                      <Calendar className="h-5 w-5 text-amber-800" />
+                      Select Pooja Ritual
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
@@ -773,22 +769,24 @@ export default function AddOfflineBookingPage() {
                       {availablePoojas.map((pooja) => (
                         <div
                           key={pooja.id}
-                          className={`flex items-center justify-between p-4 rounded-lg border transition-colors cursor-pointer ${selectedPooja === pooja.id
-                            ? "border-primary bg-primary/5"
-                            : "border-border hover:border-primary/50"
+                          className={`flex items-center justify-between p-4 rounded-xl border transition-colors cursor-pointer ${selectedPooja === pooja.id
+                            ? "border-amber-800 bg-amber-50/40 shadow-sm"
+                            : "border-border hover:border-amber-800/50"
                             }`}
                           onClick={() => setSelectedPooja(pooja.id)}
                         >
                           <div className="flex items-center gap-3">
                             <RadioGroupItem value={pooja.id} id={pooja.id} />
                             <div>
-                              <Label htmlFor={pooja.id} className="font-semibold cursor-pointer">
+                              <Label htmlFor={pooja.id} className="font-semibold text-slate-900 cursor-pointer">
                                 {parseLocalizedValue(pooja.name, language)}
                               </Label>
-                              <p className="text-sm text-muted-foreground line-clamp-1">{parseLocalizedValue(pooja.description?.[0] || pooja.about, language)}</p>
+                              <p className="text-sm text-slate-500 line-clamp-1">
+                                {(parseLocalizedValue(pooja.description?.[0] || pooja.about, language) || "").replace(/<[^>]*>?/gm, '').trim()}
+                              </p>
                             </div>
                           </div>
-                          <div className="flex items-center text-primary font-bold text-lg">
+                          <div className="flex items-center text-amber-800 font-bold text-lg">
                             <IndianRupee className="h-4 w-4" />
                             {pooja.price}
                           </div>
@@ -796,7 +794,7 @@ export default function AddOfflineBookingPage() {
                       ))}
                       {availablePoojas.length === 0 && (
                         <div className="text-center py-8 text-muted-foreground italic">
-                          {t("booking_client.no_poojas_available")}
+                          No poojas available for selection
                         </div>
                       )}
                     </RadioGroup>

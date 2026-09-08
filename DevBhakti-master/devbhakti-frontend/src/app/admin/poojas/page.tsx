@@ -56,20 +56,23 @@ function PoojasContent() {
     const [poojas, setPoojas] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState("");
-    // CHANGED: Updated tab names
-    const [activeTab, setActiveTab] = useState<'templates' | 'platform' | 'temple'>('templates');
+    // CHANGED: Added 'mandal' tab option
+    const [activeTab, setActiveTab] = useState<'templates' | 'platform' | 'temple' | 'mandal'>('templates');
     const { toast } = useToast();
     const { hasPermission } = useAdminAuth();
 
     // New states for Filter & Import/Export
     const [temples, setTemples] = useState<any[]>([]);
     const [selectedTempleId, setSelectedTempleId] = useState<string>("all");
+    const [mandals, setMandals] = useState<any[]>([]);
+    const [selectedMandalId, setSelectedMandalId] = useState<string>("all");
     const [isImporting, setIsImporting] = useState(false);
     const [importProgress, setImportProgress] = useState({ total: 0, current: 0, success: 0, failed: 0 });
 
 
     useEffect(() => {
         loadTemples();
+        loadMandals();
     }, []);
 
     useEffect(() => {
@@ -79,7 +82,7 @@ function PoojasContent() {
 
     useEffect(() => {
         loadPoojas();
-    }, [activeTab, searchTerm, selectedTempleId]);
+    }, [activeTab, searchTerm, selectedTempleId, selectedMandalId]);
 
     const loadTemples = async () => {
         try {
@@ -90,6 +93,22 @@ function PoojasContent() {
             setTemples(actualTemples);
         } catch (error) {
             console.error("Failed to load temples", error);
+        }
+    };
+
+    const loadMandals = async () => {
+        try {
+            const res = await fetch(`${API_URL}/admin/mandals`, {
+                headers: { 'Authorization': `Bearer ${localStorage.getItem('adminToken')}` }
+            });
+            const data = await res.json();
+            if (Array.isArray(data)) {
+                setMandals(data);
+            } else if (data.data && Array.isArray(data.data)) {
+                setMandals(data.data);
+            }
+        } catch (error) {
+            console.error("Failed to load mandals", error);
         }
     };
 
@@ -107,19 +126,32 @@ function PoojasContent() {
                 // Only master templates (blueprints)
                 params.isMaster = true;
                 params.templeId = 'null';
+                params.mandalId = 'null';
             }
             else if (activeTab === 'platform') {
-                // Platform poojas: isMaster = false, templeId = null
+                // Platform poojas: isMaster = false, templeId = null, mandalId = null
                 params.isMaster = false;
                 params.templeId = 'null';
+                params.mandalId = 'null';
             }
             else if (activeTab === 'temple') {
                 // Temple poojas: isMaster = false, templeId != null
                 params.isMaster = false;
+                params.mandalId = 'null';
                 if (selectedTempleId !== "all") {
                     params.templeId = selectedTempleId;
                 } else {
                     params.templeId = 'not_null';
+                }
+            }
+            else if (activeTab === 'mandal') {
+                // Mandal poojas: isMaster = false, mandalId != null
+                params.isMaster = false;
+                params.templeId = 'null';
+                if (selectedMandalId !== "all") {
+                    params.mandalId = selectedMandalId;
+                } else {
+                    params.mandalId = 'not_null';
                 }
             }
 
@@ -525,6 +557,19 @@ function PoojasContent() {
                     <span className="hidden sm:inline">Temple Poojas</span>
                     <span className="sm:hidden">Temple</span>
                 </button>
+
+                <button
+                    onClick={() => setActiveTab('mandal')}
+                    className={`px-3 md:px-4 py-2 md:py-3 text-xs md:text-sm font-medium transition-colors border-b-2 flex items-center gap-2 ${
+                        activeTab === 'mandal'
+                            ? 'border-primary text-primary'
+                            : 'border-transparent text-slate-500 hover:text-slate-700'
+                    }`}
+                >
+                    <Building2 className="w-4 h-4" />
+                    <span className="hidden sm:inline">Mandal Poojas</span>
+                    <span className="sm:hidden">Mandal</span>
+                </button>
             </div>
 
             {/* Search & Filter */}
@@ -539,7 +584,7 @@ function PoojasContent() {
                     />
                 </div>
 
-                {/* CHANGED: Show temple filter only for temple poojas tab */}
+                {/* Show temple filter for temple poojas tab */}
                 {activeTab === 'temple' && (
                     <div className="flex items-center gap-2">
                         <div className="relative w-full lg:w-64">
@@ -559,13 +604,34 @@ function PoojasContent() {
                         </div>
                     </div>
                 )}
+
+                {/* Show mandal filter for mandal poojas tab */}
+                {activeTab === 'mandal' && (
+                    <div className="flex items-center gap-2">
+                        <div className="relative w-full lg:w-64">
+                            <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                            <select
+                                className="w-full pl-10 pr-4 h-10 md:h-11 bg-white border border-slate-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all font-medium appearance-none"
+                                value={selectedMandalId}
+                                onChange={(e) => setSelectedMandalId(e.target.value)}
+                            >
+                                <option value="all">All Mandals</option>
+                                {mandals.map(m => (
+                                    <option key={m.id} value={m.id}>
+                                        {parseLocalizedValue(m.name)}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                    </div>
+                )}
             </div>
 
-            {/* NEW: Info Card for each tab */}
+            {/* Info Card for each tab */}
             <div className="bg-slate-50 border border-slate-200 rounded-lg p-3">
                 {activeTab === 'templates' && (
                     <p className="text-sm text-slate-600">
-                        📋 <strong>Master Templates:</strong> These are blueprints that can be used to create Platform and Temple poojas. 
+                        📋 <strong>Master Templates:</strong> These are blueprints that can be used to create Platform, Temple, and Mandal poojas. 
                         Templates are not directly bookable by users.
                     </p>
                 )}
@@ -581,6 +647,12 @@ function PoojasContent() {
                         Each temple has its own customized poojas.
                     </p>
                 )}
+                {activeTab === 'mandal' && (
+                    <p className="text-sm text-slate-600">
+                        🚩 <strong>Mandal Poojas:</strong> These are mandal-specific poojas created for mandals/pandals. 
+                        Each mandal has its own customized poojas.
+                    </p>
+                )}
             </div>
 
             {/* Poojas Table */}
@@ -594,7 +666,7 @@ function PoojasContent() {
                                 <TableHead>English Name</TableHead>
                                 <TableHead>हिंदी</TableHead>
                                 <TableHead>मराठी</TableHead>
-                                <TableHead>Temple</TableHead>
+                                <TableHead>{activeTab === 'mandal' ? 'Mandal' : 'Temple'}</TableHead>
                                 <TableHead>Category/Purpose</TableHead>
                                 <TableHead>Single Person Price</TableHead>
                                 <TableHead>Status</TableHead>
@@ -613,6 +685,7 @@ function PoojasContent() {
                                         {activeTab === 'templates' && 'No templates found. Create your first template by clicking "Add New".'}
                                         {activeTab === 'platform' && 'No platform poojas found. Create from templates.'}
                                         {activeTab === 'temple' && 'No temple poojas found.'}
+                                        {activeTab === 'mandal' && 'No mandal poojas found.'}
                                     </TableCell>
                                 </TableRow>
                             ) : (
@@ -634,6 +707,10 @@ function PoojasContent() {
                                                 {pooja.isMaster ? (
                                                     <Badge variant="secondary" className="bg-purple-50 text-purple-700 border-purple-200 text-[10px] scale-90">
                                                         📋 TEMPLATE
+                                                    </Badge>
+                                                ) : pooja.mandalId ? (
+                                                    <Badge variant="secondary" className="bg-amber-50 text-amber-700 border-amber-200 text-[10px] scale-90">
+                                                        🚩 MANDAL
                                                     </Badge>
                                                 ) : pooja.templeId === null ? (
                                                     <Badge variant="secondary" className="bg-blue-50 text-blue-700 border-blue-200 text-[10px] scale-90">
@@ -664,7 +741,7 @@ function PoojasContent() {
                                         </TableCell>
                                         <TableCell>
                                             <div className="text-[14px] font-medium text-slate-600">
-                                                {pooja.isMaster ? '—' : (parseLocalizedValue(pooja.temple?.name) || '-')}
+                                                {pooja.isMaster ? '—' : (parseLocalizedValue(pooja.mandal?.name || pooja.temple?.name) || '-')}
                                             </div>
                                         </TableCell>
                                         <TableCell>

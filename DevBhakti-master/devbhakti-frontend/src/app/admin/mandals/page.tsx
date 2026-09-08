@@ -145,15 +145,15 @@ export default function AdminMandalsPage() {
             if (mandalOnlineResponse.success && mandalOnlineResponse.data && mandalOnlineResponse.data.length > 0) {
                 onlineSlabs = mandalOnlineResponse.data;
             } else {
-                const globalResponse = await fetchCommissionSlabsAdmin('GLOBAL', undefined, undefined, false);
-                onlineSlabs = globalResponse.success ? globalResponse.data : [];
+                const mandalDefaultResponse = await fetchCommissionSlabsAdmin('MANDAL', undefined, undefined, false);
+                onlineSlabs = mandalDefaultResponse.success ? mandalDefaultResponse.data : [];
             }
 
             if (mandalOfflineResponse.success && mandalOfflineResponse.data && mandalOfflineResponse.data.length > 0) {
                 offlineSlabs = mandalOfflineResponse.data;
             } else {
-                const globalOfflineResponse = await fetchCommissionSlabsAdmin('GLOBAL', undefined, undefined, true);
-                offlineSlabs = globalOfflineResponse.success ? globalOfflineResponse.data : [];
+                const mandalDefaultOfflineResponse = await fetchCommissionSlabsAdmin('MANDAL', undefined, undefined, true);
+                offlineSlabs = mandalDefaultOfflineResponse.success ? mandalDefaultOfflineResponse.data : [];
             }
 
             const hasMandalOnline = mandalOnlineResponse.success && mandalOnlineResponse.data && mandalOnlineResponse.data.length > 0;

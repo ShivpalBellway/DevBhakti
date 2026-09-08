@@ -218,10 +218,13 @@ export const createBooking = async (req: Request, res: Response) => {
         }
 
         // Calculate commission via Slab System using verified price
+        const vendorType = pooja.mandalId ? SlabType.MANDAL : SlabType.TEMPLE;
+        const vendorId = pooja.mandalId || effectiveTempleId || undefined;
+
         const commissionData = await getCommissionForAmount(
             finalPrice,
-            SlabType.TEMPLE,
-            effectiveTempleId || undefined,
+            vendorType,
+            vendorId,
             CommissionCategory.POOJA
         );
 

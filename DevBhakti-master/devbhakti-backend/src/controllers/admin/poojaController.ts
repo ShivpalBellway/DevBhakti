@@ -33,7 +33,7 @@ const generateUniqueSlug = async (baseSlug: string, model: any, excludeId?: stri
 
 export const getAllPoojas = async (req: Request, res: Response) => {
     try {
-        const { isMaster, templeId, search, poojaId } = req.query;
+        const { isMaster, templeId, mandalId, search, poojaId } = req.query;
 
         const where: any = {};
         if (poojaId) where.id = String(poojaId);
@@ -45,6 +45,15 @@ export const getAllPoojas = async (req: Request, res: Response) => {
                 where.templeId = { not: null };
             } else {
                 where.templeId = String(templeId);
+            }
+        }
+        if (mandalId) {
+            if (mandalId === 'null') {
+                where.mandalId = null;
+            } else if (mandalId === 'not_null') {
+                where.mandalId = { not: null };
+            } else {
+                where.mandalId = String(mandalId);
             }
         }
         if (search) {
@@ -60,6 +69,9 @@ export const getAllPoojas = async (req: Request, res: Response) => {
             include: {
                 temple: {
                     select: { name: true }   // Json field — frontend handles display
+                },
+                mandal: {
+                    select: { name: true }
                 },
                 masterPooja: {
                     select: { name: true }
