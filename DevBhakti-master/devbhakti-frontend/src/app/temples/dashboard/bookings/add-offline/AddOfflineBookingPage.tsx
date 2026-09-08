@@ -50,7 +50,7 @@ import { fetchMyPoojas, createOfflineBookingTemple, lookupDevoteeByPhoneTemple }
 import { parseLocalizedValue } from '@/utils/textUtils';
 
 
-export default function AddOfflineBookingPage() {
+export default function AddOfflineBookingPage({ onBack }: { onBack?: () => void }) {
   const searchParams = useSearchParams();
   const { toast } = useToast();
   const router = useRouter();
@@ -659,10 +659,17 @@ export default function AddOfflineBookingPage() {
 
       {/* Top Breadcrumb */}
       <div className="flex items-center gap-2 px-6 py-3 border-b bg-slate-50/50 text-sm">
-        <Link href="/temples/dashboard/teller" className="flex items-center gap-1.5 text-slate-600 hover:text-amber-800 transition-colors font-medium">
-          <ArrowLeft className="w-4 h-4" />
-          Back to Teller Module
-        </Link>
+        {onBack ? (
+          <button onClick={onBack} className="flex items-center gap-1.5 text-slate-600 hover:text-amber-800 transition-colors font-medium">
+            <ArrowLeft className="w-4 h-4" />
+            Back to Offline Bookings List
+          </button>
+        ) : (
+          <Link href="/temples/dashboard/teller" className="flex items-center gap-1.5 text-slate-600 hover:text-amber-800 transition-colors font-medium">
+            <ArrowLeft className="w-4 h-4" />
+            Back to Teller Module
+          </Link>
+        )}
         <span className="text-slate-400">/</span>
         <span className="font-semibold text-slate-800">Add Offline Pooja Booking</span>
       </div>

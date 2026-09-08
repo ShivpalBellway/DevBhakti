@@ -23,7 +23,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
-import { fetchMyProducts, fetchMyTempleProfile, createOfflineTempleOrder } from "@/api/templeAdminController";
+import { fetchMyProducts, fetchMyTempleProfile, createOfflineTempleOrder, fetchTempleOrders } from "@/api/templeAdminController";
 import { parseLocalizedValue } from "@/utils/textUtils";
 import { BASE_URL } from "@/config/apiConfig";
 
