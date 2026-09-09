@@ -159,6 +159,39 @@ export default function UnifiedTellerCartPage() {
     setCartItems([]);
   };
 
+  const [commissionData, setCommissionData] = useState<{ totalPlatformFee: number; itemsBreakdown: any[] }>({
+    totalPlatformFee: 0,
+    itemsBreakdown: []
+  });
+
+  const fetchCommissionBreakdown = async (items: any[]) => {
+    if (!items || items.length === 0) {
+      setCommissionData({ totalPlatformFee: 0, itemsBreakdown: [] });
+      return;
+    }
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/mandal-admin/teller/calculate-commission`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ items })
+      });
+      const json = await res.json();
+      if (json.success && json.data) {
+        setCommissionData(json.data);
+      }
+    } catch (err) {
+      console.error("Error fetching commission breakdown:", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchCommissionBreakdown(cartItems);
+  }, [cartItems]);
+
   const totalCartAmount = cartItems.reduce((sum, item) => sum + (item.unitPrice * item.quantity), 0);
 
   // Add Custom Donation
@@ -565,36 +598,57 @@ export default function UnifiedTellerCartPage() {
                 </div>
               ) : (
                 <div className="space-y-2">
-                  {cartItems.map((item, idx) => (
-                    <div key={idx} className="flex items-center justify-between p-2.5 bg-amber-50/50 border border-amber-200/60 rounded-xl text-xs">
-                      <div className="flex-1 min-w-0 pr-2">
-                        <p className="font-bold truncate text-foreground">{item.itemName}</p>
-                        <p className="text-[10px] text-muted-foreground">₹{item.unitPrice} × {item.quantity}</p>
-                      </div>
+                  {cartItems.map((item, idx) => {
+                    const itemBreakdown = commissionData.itemsBreakdown?.find(b => b.id === (item.id || item.itemId));
+                    const fee = itemBreakdown ? itemBreakdown.platformFee : 0;
+                    return (
+                      <div key={idx} className="flex items-center justify-between p-2.5 bg-amber-50/50 border border-amber-200/60 rounded-xl text-xs">
+                        <div className="flex-1 min-w-0 pr-2">
+                          <p className="font-bold truncate text-foreground">{item.itemName}</p>
+                          <div className="flex items-center gap-2 mt-0.5">
+                            <span className="text-[10px] text-muted-foreground">₹{item.unitPrice} × {item.quantity}</span>
+                            {fee > 0 && (
+                              <Badge variant="outline" className="text-[9px] bg-amber-100/80 text-[#7b4623] border-amber-300 py-0 h-4">
+                                Platform Fee: ₹{fee}
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
 
-                      <div className="flex items-center gap-1.5">
-                        <div className="flex items-center border border-amber-300 rounded-lg bg-white">
-                          <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); updateQuantity(idx, -1); }} className="p-1 hover:bg-amber-100 text-amber-900 rounded-l-lg">
-                            <Minus className="w-3 h-3" />
-                          </button>
-                          <span className="px-2 font-bold text-xs">{item.quantity}</span>
-                          <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); updateQuantity(idx, 1); }} className="p-1 hover:bg-amber-100 text-amber-900 rounded-r-lg">
-                            <Plus className="w-3 h-3" />
+                        <div className="flex items-center gap-1.5">
+                          <div className="flex items-center border border-amber-300 rounded-lg bg-white">
+                            <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); updateQuantity(idx, -1); }} className="p-1 hover:bg-amber-100 text-amber-900 rounded-l-lg">
+                              <Minus className="w-3 h-3" />
+                            </button>
+                            <span className="px-2 font-bold text-xs">{item.quantity}</span>
+                            <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); updateQuantity(idx, 1); }} className="p-1 hover:bg-amber-100 text-amber-900 rounded-r-lg">
+                              <Plus className="w-3 h-3" />
+                            </button>
+                          </div>
+                          <button onClick={() => removeFromCart(idx)} className="p-1 text-red-500 hover:bg-red-50 rounded-lg">
+                            <Trash2 className="w-3.5 h-3.5" />
                           </button>
                         </div>
-                        <button onClick={() => removeFromCart(idx)} className="p-1 text-red-500 hover:bg-red-50 rounded-lg">
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
 
-              {/* Total Amount Summary */}
-              <div className="p-3 bg-gradient-to-r from-amber-100 to-amber-50 rounded-xl flex justify-between items-center font-bold text-[#7b4623]">
-                <span>Total Amount:</span>
-                <span className="text-lg">₹{totalCartAmount}</span>
+              {/* Total Amount & Platform Fee Summary */}
+              <div className="p-3 bg-gradient-to-r from-amber-100 to-amber-50 rounded-xl space-y-1.5 text-[#7b4623]">
+                <div className="flex justify-between items-center font-bold">
+                  <span>Total Counter Amount:</span>
+                  <span className="text-lg">₹{totalCartAmount}</span>
+                </div>
+                <div className="flex justify-between items-center text-xs border-t border-amber-200/60 pt-1.5 text-amber-900/80">
+                  <span>Est. Platform Fee (Offline Slab):</span>
+                  <span className="font-semibold text-amber-900">₹{commissionData.totalPlatformFee || 0}</span>
+                </div>
+                <div className="flex justify-between items-center text-xs text-emerald-800">
+                  <span>Net Mandal Earning:</span>
+                  <span className="font-bold text-emerald-900">₹{Math.max(0, totalCartAmount - (commissionData.totalPlatformFee || 0))}</span>
+                </div>
               </div>
 
               {/* Devotee Input Fields */}

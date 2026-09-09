@@ -71,6 +71,69 @@ export const getTellerCatalog = async (req: Request, res: Response) => {
 };
 
 /**
+ * Calculate live cart platform fees based on offline Mandal commission slabs
+ */
+export const calculateCartCommission = async (req: Request, res: Response) => {
+  try {
+    const mandalId = (req as any).owner?.ownerId;
+    const { items } = req.body;
+
+    if (!mandalId) {
+      return res.status(400).json({ success: false, message: 'Mandal context required' });
+    }
+
+    if (!items || !Array.isArray(items)) {
+      return res.json({ success: true, data: { itemsBreakdown: [], totalPlatformFee: 0 } });
+    }
+
+    let totalPlatformFee = 0;
+    const itemsBreakdown: any[] = [];
+
+    for (const item of items) {
+      const type = (item.itemType || item.type || '').toUpperCase();
+      let category: CommissionCategory = CommissionCategory.POOJA;
+      if (type === 'MARKETPLACE' || type === 'PRODUCT') category = CommissionCategory.MARKETPLACE;
+      if (type === 'DONATION') category = CommissionCategory.DONATION;
+
+      const itemTotal = Number(item.price || item.unitPrice || 0) * Number(item.quantity || 1);
+      let itemPlatformFee = 0;
+      let percentage = 0;
+
+      try {
+        const commResult = await getCommissionForAmount(itemTotal, SlabType.MANDAL, mandalId, category, true);
+        if (commResult) {
+          itemPlatformFee = commResult.totalCommission || 0;
+          percentage = commResult.percentage || 0;
+        }
+      } catch (e) {
+        console.error('Error calculating offline slab fee:', e);
+      }
+
+      totalPlatformFee += itemPlatformFee;
+      itemsBreakdown.push({
+        id: item.id || item.itemId,
+        itemName: item.itemName || item.name,
+        itemType: type,
+        itemTotal,
+        platformFee: itemPlatformFee,
+        percentage,
+      });
+    }
+
+    res.json({
+      success: true,
+      data: {
+        itemsBreakdown,
+        totalPlatformFee,
+      },
+    });
+  } catch (error: any) {
+    console.error('Calculate Cart Commission Error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+/**
  * Process Unified Teller Checkout (Multi-item Cart)
  */
 export const processTellerCheckout = async (req: Request, res: Response) => {

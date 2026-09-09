@@ -1,7 +1,8 @@
 import { Request, Response } from 'express';
 import { prisma } from '../../lib/prisma';
 import { generateCustomId } from '../../utils/idGenerator';
-import { LedgerType, LedgerStatus } from '@prisma/client';
+import { LedgerType, LedgerStatus, SlabType, CommissionCategory } from '@prisma/client';
+import { getCommissionForAmount } from '../admin/commissionSlabController';
 import { getLang, localize } from '../../utils/localization';
 
 /**
@@ -99,6 +100,69 @@ export const getTempleTellerCatalog = async (req: Request, res: Response) => {
     });
   } catch (error: any) {
     console.error('Error fetching temple teller catalog:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+/**
+ * Calculate live cart platform fees based on offline Temple commission slabs
+ */
+export const calculateTempleCartCommission = async (req: Request, res: Response) => {
+  try {
+    const templeId = (req as any).owner?.ownerId || (req as any).templeId;
+    const { items } = req.body;
+
+    if (!templeId) {
+      return res.status(400).json({ success: false, message: 'Temple context required' });
+    }
+
+    if (!items || !Array.isArray(items)) {
+      return res.json({ success: true, data: { itemsBreakdown: [], totalPlatformFee: 0 } });
+    }
+
+    let totalPlatformFee = 0;
+    const itemsBreakdown: any[] = [];
+
+    for (const item of items) {
+      const type = (item.itemType || item.type || '').toUpperCase();
+      let category: CommissionCategory = CommissionCategory.POOJA;
+      if (type === 'MARKETPLACE' || type === 'PRODUCT') category = CommissionCategory.MARKETPLACE;
+      if (type === 'DONATION') category = CommissionCategory.DONATION;
+
+      const itemTotal = Number(item.price || item.unitPrice || 0) * Number(item.quantity || 1);
+      let itemPlatformFee = 0;
+      let percentage = 0;
+
+      try {
+        const commResult = await getCommissionForAmount(itemTotal, SlabType.TEMPLE, templeId, category, true);
+        if (commResult) {
+          itemPlatformFee = commResult.totalCommission || 0;
+          percentage = commResult.percentage || 0;
+        }
+      } catch (e) {
+        console.error('Error calculating offline temple slab fee:', e);
+      }
+
+      totalPlatformFee += itemPlatformFee;
+      itemsBreakdown.push({
+        id: item.id || item.itemId,
+        itemName: item.itemName || item.name,
+        itemType: type,
+        itemTotal,
+        platformFee: itemPlatformFee,
+        percentage,
+      });
+    }
+
+    res.json({
+      success: true,
+      data: {
+        itemsBreakdown,
+        totalPlatformFee,
+      },
+    });
+  } catch (error: any) {
+    console.error('Calculate Temple Cart Commission Error:', error);
     res.status(500).json({ success: false, message: error.message });
   }
 };
