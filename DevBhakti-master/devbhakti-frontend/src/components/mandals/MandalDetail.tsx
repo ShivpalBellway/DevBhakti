@@ -569,7 +569,10 @@ export function MandalDetail({ slug }: { slug: string }) {
   const row1Sections = [true, hasLiveDarshan, hasEvents].filter(Boolean).length; // gallery always shows
   const liveColSpan = hasEvents ? 2 : 3; // Live Darshan expands if no Events
 
-  const hasAartis = !!(mandal?.aartiTimings && Array.isArray(mandal.aartiTimings) && mandal.aartiTimings.length > 0);
+  const activeAartis = Array.isArray(mandal?.aartiTimings)
+    ? mandal.aartiTimings.filter((item: any) => item.isActive !== false)
+    : [];
+  const hasAartis = activeAartis.length > 0;
 
   const tabsList = [
     { id: "gallery", label: t("mandal_detail.tab_gallery"), icon: Camera },
@@ -967,13 +970,13 @@ export function MandalDetail({ slug }: { slug: string }) {
                     </div>
                   </div>
                   <Badge className="bg-amber-100 text-amber-900 font-bold text-[10px] border border-amber-200">
-                    {hasAartis ? `${mandal.aartiTimings.length} Scheduled` : 'Daily'}
+                    {hasAartis ? `${activeAartis.length} Scheduled` : 'Daily'}
                   </Badge>
                 </div>
 
                 {hasAartis ? (
                   <div className="space-y-2 max-h-[280px] overflow-y-auto pr-1">
-                    {mandal.aartiTimings.map((item: any, idx: number) => (
+                    {activeAartis.map((item: any, idx: number) => (
                       <div
                         key={item.id || idx}
                         className="p-2.5 bg-white rounded-xl border border-amber-100 shadow-sm flex items-center justify-between gap-2 hover:border-amber-300 transition-all"

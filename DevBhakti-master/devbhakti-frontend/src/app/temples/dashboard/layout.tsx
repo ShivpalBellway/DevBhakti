@@ -22,6 +22,7 @@ import {
     ChevronDown,
     ChevronUp,
     ShieldCheck,
+    ShieldAlert,
     X,
     Camera,
     Ticket,
@@ -52,13 +53,14 @@ const sidebarItems = [
         label: "Teller Module",
         icon: Ticket,
         href: "/temples/dashboard/teller/cart",
+        permission: "teller.menu",
         subItems: [
-            { label: "Counter Cart", href: "/temples/dashboard/teller/cart" },
-            { label: "Offline Pooja Booking", href: "/temples/dashboard/bookings/add-offline" },
-            { label: "Offline Darshan Ticket", href: "/temples/dashboard/darshan/offline" },
-            { label: "Offline Product Booking", href: "/temples/dashboard/teller/offline-product" },
-            { label: "Offline Donation", href: "/temples/dashboard/donation?type=offline" },
-            { label: "Offline Devotees & Leads", href: "/temples/dashboard/offline-pooja-leads" },
+            { label: "Counter Cart", href: "/temples/dashboard/teller/cart", permission: "teller.view" },
+            { label: "Offline Pooja Booking", href: "/temples/dashboard/bookings/add-offline", permission: "teller.create" },
+            { label: "Offline Darshan Ticket", href: "/temples/dashboard/darshan/offline", permission: "teller.create" },
+            { label: "Offline Product Booking", href: "/temples/dashboard/teller/offline-product", permission: "teller.create" },
+            { label: "Offline Donation", href: "/temples/dashboard/donation?type=offline", permission: "teller.create" },
+            { label: "Offline Devotees & Leads", href: "/temples/dashboard/offline-pooja-leads", permission: "teller.view" },
         ]
     },
     {
@@ -77,7 +79,7 @@ const sidebarItems = [
         label: "Devotee Management",
         icon: Users,
         href: "/temples/dashboard/users",
-        permission: "users.view"
+        permission: "users.menu"
     },
     {
         label: "Team Management",
@@ -85,8 +87,8 @@ const sidebarItems = [
         href: "/temples/dashboard/team/staff",
         permission: "team.menu",
         subItems: [
-            { label: "Staff Members", href: "/temples/dashboard/team/staff" },
-            { label: "Roles & Permissions", href: "/temples/dashboard/team/roles" },
+            { label: "Staff Members", href: "/temples/dashboard/team/staff", permission: "team.staff.view" },
+            { label: "Roles & Permissions", href: "/temples/dashboard/team/roles", permission: "team.roles.manage" },
         ]
     },
     {
@@ -105,14 +107,14 @@ const sidebarItems = [
         label: "Order Management",
         icon: ShoppingBag,
         href: "/temples/dashboard/orders",
-        permission: "products.orders.view",
+        permission: "orders.menu",
         subItems: [
-            { label: "All Orders", href: "/temples/dashboard/orders" },
-            { label: "Pending", href: "/temples/dashboard/orders?status=PENDING" },
-            { label: "Accepted", href: "/temples/dashboard/orders?status=ACCEPTED" },
-            { label: "Shipped", href: "/temples/dashboard/orders?status=SHIPPED" },
-            { label: "Delivered", href: "/temples/dashboard/orders?status=DELIVERED" },
-            { label: "Cancelled", href: "/temples/dashboard/orders?status=CANCELLED" },
+            { label: "All Orders", href: "/temples/dashboard/orders", permission: "orders.view" },
+            { label: "Pending", href: "/temples/dashboard/orders?status=PENDING", permission: "orders.view" },
+            { label: "Accepted", href: "/temples/dashboard/orders?status=ACCEPTED", permission: "orders.view" },
+            { label: "Shipped", href: "/temples/dashboard/orders?status=SHIPPED", permission: "orders.view" },
+            { label: "Delivered", href: "/temples/dashboard/orders?status=DELIVERED", permission: "orders.view" },
+            { label: "Cancelled", href: "/temples/dashboard/orders?status=CANCELLED", permission: "orders.view" },
         ]
     },
     {
@@ -130,20 +132,22 @@ const sidebarItems = [
         label: "Photography",
         icon: Camera,
         href: "/temples/dashboard/photography",
+        permission: "photography.menu",
         subItems: [
-            { label: "Settings & Packages", href: "/temples/dashboard/photography" },
-            { label: "Photo Bookings", href: "/temples/dashboard/photography/bookings" },
+            { label: "Settings & Packages", href: "/temples/dashboard/photography", permission: "photography.view" },
+            { label: "Photo Bookings", href: "/temples/dashboard/photography/bookings", permission: "photography.bookings" },
         ]
     },
     {
         label: "Darshan Ticket",
         icon: Ticket,
         href: "/temples/dashboard/darshan",
+        permission: "darshan.menu",
         subItems: [
-            { label: "Settings & Overview", href: "/temples/dashboard/darshan" },
-            { label: "Manage Slots", href: "/temples/dashboard/darshan/slots" },
-            { label: "Booked Tickets", href: "/temples/dashboard/darshan/tickets" },
-            { label: "Scan QR at Gate", href: "/temples/dashboard/darshan/scan" },
+            { label: "Settings & Overview", href: "/temples/dashboard/darshan", permission: "darshan.view" },
+            { label: "Manage Slots", href: "/temples/dashboard/darshan/slots", permission: "darshan.slots" },
+            { label: "Booked Tickets", href: "/temples/dashboard/darshan/tickets", permission: "darshan.view" },
+            { label: "Scan QR at Gate", href: "/temples/dashboard/darshan/scan", permission: "darshan.scan" },
         ]
     },
     {
@@ -156,13 +160,13 @@ const sidebarItems = [
         label: "Bank Details",
         icon: Building2,
         href: "/temples/dashboard/bank",
-        permission: "temple.bank.manage"
+        permission: "bank.view"
     },
     {
         label: "Paid Prasad",
         icon: Gift,
         href: "/temples/dashboard/paid-prasad",
-        permission: "temple.profile.manage"
+        permission: "prasad.menu"
     },
     {
         label: "Profile",
@@ -669,9 +673,49 @@ export default function TempleAdminLayout({ children }: { children: React.ReactN
                     </div>
                 </header>
 
-                {/* Page content */}
+                {/* Direct Page Access Authorization & Content */}
                 <main className="p-3 md:p-6 pb-20 md:pb-6 print:p-0">
-                    {children}
+                    {(() => {
+                        const isAuthorized = () => {
+                            if (!user || !user.isStaff) return true; // Super Admin has full access
+                            if (pathname === "/temples/dashboard" || pathname === "/temples/dashboard/staff-login") return true;
+
+                            const findItem = (items: any[]): any => {
+                                for (const item of items) {
+                                    if (item.href === pathname) return item;
+                                    if (item.subItems) {
+                                        const found = findItem(item.subItems);
+                                        if (found) return found;
+                                    }
+                                }
+                                return null;
+                            };
+
+                            const currentItem = findItem(sidebarItems);
+                            if (!currentItem || !currentItem.permission) return true;
+
+                            return hasPermission(currentItem.permission);
+                        };
+
+                        if (!isAuthorized()) {
+                            return (
+                                <div className="min-h-[60vh] flex flex-col items-center justify-center text-center p-6 bg-card rounded-2xl border border-border shadow-sm">
+                                    <div className="w-16 h-16 rounded-full bg-destructive/10 flex items-center justify-center mb-4 text-destructive animate-pulse">
+                                        <ShieldAlert className="w-8 h-8" />
+                                    </div>
+                                    <h2 className="text-2xl font-bold text-foreground mb-2">Access Denied</h2>
+                                    <p className="text-muted-foreground max-w-md mb-6 text-sm">
+                                        You do not have the required staff permission to access this page (<code className="bg-muted px-1.5 py-0.5 rounded text-xs">{pathname}</code>). Please contact your Temple Administrator to request access.
+                                    </p>
+                                    <Button onClick={() => router.push('/temples/dashboard')} variant="default" className="bg-amber-600 hover:bg-amber-700 text-white">
+                                        Return to Dashboard
+                                    </Button>
+                                </div>
+                            );
+                        }
+
+                        return children;
+                    })()}
                 </main>
             </div>
         </div>

@@ -22,6 +22,7 @@ import {
     ChevronDown,
     ChevronUp,
     ShieldCheck,
+    ShieldAlert,
     Flame,
     X
 } from "lucide-react";
@@ -61,15 +62,15 @@ const sidebarItems = [
         label: "Teller Module",
         icon: CreditCard,
         href: "/mandals/dashboard/teller",
-        permission: "finance.menu",
+        permission: "teller.menu",
         subItems: [
-            { label: "Teller Counter Cart", href: "/mandals/dashboard/teller/cart", permission: "finance.menu" },
-            { label: "Offline Pooja Booking", href: "/mandals/dashboard/teller/offline-pooja", permission: "finance.menu" },
-            { label: "Offline Donation", href: "/mandals/dashboard/teller/offline-donation", permission: "finance.menu" },
-            { label: "Offline Ticket Booking", href: "/mandals/dashboard/teller/offline-ticket", permission: "finance.menu" },
-            { label: "Offline Product Booking", href: "/mandals/dashboard/teller/offline-product", permission: "finance.menu" },
-            { label: "Offline Users / Devotees", href: "/mandals/dashboard/teller/offline-users", permission: "finance.menu" },
-            { label: " Darshan Ticket Slots", href: "/mandals/dashboard/darshan/slots", permission: "finance.menu" },
+            { label: "Teller Counter Cart", href: "/mandals/dashboard/teller/cart", permission: "teller.view" },
+            { label: "Offline Pooja Booking", href: "/mandals/dashboard/teller/offline-pooja", permission: "teller.create" },
+            { label: "Offline Donation", href: "/mandals/dashboard/teller/offline-donation", permission: "teller.create" },
+            { label: "Offline Ticket Booking", href: "/mandals/dashboard/teller/offline-ticket", permission: "teller.create" },
+            { label: "Offline Product Booking", href: "/mandals/dashboard/teller/offline-product", permission: "teller.create" },
+            { label: "Offline Users / Devotees", href: "/mandals/dashboard/teller/offline-users", permission: "teller.view" },
+            { label: " Darshan Ticket Slots", href: "/mandals/dashboard/darshan/slots", permission: "darshan.slots" },
         ]
     },
     {
@@ -84,7 +85,7 @@ const sidebarItems = [
         href: "/mandals/dashboard/donation",
         permission: "donations.menu",
         subItems: [
-          { label: "💳 Online Donations", href: "/mandals/dashboard/donation?type=online", permission: "donations.menu" },
+          { label: "💳 Online Donations", href: "/mandals/dashboard/donation?type=online", permission: "donations.view" },
         ]
     },
     {
@@ -97,21 +98,21 @@ const sidebarItems = [
         label: "Order Management",
         icon: ShoppingBag,
         href: "/mandals/dashboard/orders",
-        permission: "products.orders.view",
+        permission: "orders.menu",
         subItems: [
-            { label: "All Orders", href: "/mandals/dashboard/orders" },
-            { label: "Pending", href: "/mandals/dashboard/orders?status=PENDING" },
-            { label: "Accepted", href: "/mandals/dashboard/orders?status=ACCEPTED" },
-            { label: "Shipped", href: "/mandals/dashboard/orders?status=SHIPPED" },
-            { label: "Delivered", href: "/mandals/dashboard/orders?status=DELIVERED" },
-            { label: "Cancelled", href: "/mandals/dashboard/orders?status=CANCELLED" },
+            { label: "All Orders", href: "/mandals/dashboard/orders", permission: "orders.view" },
+            { label: "Pending", href: "/mandals/dashboard/orders?status=PENDING", permission: "orders.view" },
+            { label: "Accepted", href: "/mandals/dashboard/orders?status=ACCEPTED", permission: "orders.view" },
+            { label: "Shipped", href: "/mandals/dashboard/orders?status=SHIPPED", permission: "orders.view" },
+            { label: "Delivered", href: "/mandals/dashboard/orders?status=DELIVERED", permission: "orders.view" },
+            { label: "Cancelled", href: "/mandals/dashboard/orders?status=CANCELLED", permission: "orders.view" },
         ]
     },    
     {
         label: "Devotee Management",
         icon: Users,
         href: "/mandals/dashboard/users",
-        permission: "users.view"
+        permission: "users.menu"
     },
     {
         label: "Team Management",
@@ -127,16 +128,13 @@ const sidebarItems = [
         label: "Bank Details add",
         icon: CreditCard,
         href: "/mandals/dashboard/bank",
-        permission: "finance.menu"
+        permission: "bank.view"
     }, 
-
-
-
     {
         label: "Collection Reports",
         icon: CreditCard,
         href: "/mandals/dashboard/reports",
-        permission: "finance.menu"
+        permission: "reports.view"
     },
     {
         label: "Earnings & Settlement",
@@ -148,7 +146,7 @@ const sidebarItems = [
         label: "Aarti Timings",
         icon: Flame,
         href: "/mandals/dashboard/aarti",
-        permission: "mandal.profile.manage"
+        permission: "aarti.view"
     },
     {
         label: "Profile",
@@ -654,9 +652,49 @@ export default function MandalAdminLayout({ children }: { children: React.ReactN
                     </div>
                 </header>
 
-                {/* Page content */}
+                {/* Direct Page Access Authorization & Content */}
                 <main className="p-3 md:p-6 pb-20 md:pb-6 print:p-0">
-                    {children}
+                    {(() => {
+                        const isAuthorized = () => {
+                            if (!user || !user.isStaff) return true; // Super Admin has full access
+                            if (pathname === "/mandals/dashboard" || pathname === "/mandals/dashboard/staff-login") return true;
+
+                            const findItem = (items: any[]): any => {
+                                for (const item of items) {
+                                    if (item.href === pathname) return item;
+                                    if (item.subItems) {
+                                        const found = findItem(item.subItems);
+                                        if (found) return found;
+                                    }
+                                }
+                                return null;
+                            };
+
+                            const currentItem = findItem(sidebarItems);
+                            if (!currentItem || !currentItem.permission) return true;
+
+                            return hasPermission(currentItem.permission);
+                        };
+
+                        if (!isAuthorized()) {
+                            return (
+                                <div className="min-h-[60vh] flex flex-col items-center justify-center text-center p-6 bg-card rounded-2xl border border-border shadow-sm">
+                                    <div className="w-16 h-16 rounded-full bg-destructive/10 flex items-center justify-center mb-4 text-destructive animate-pulse">
+                                        <ShieldAlert className="w-8 h-8" />
+                                    </div>
+                                    <h2 className="text-2xl font-bold text-foreground mb-2">Access Denied</h2>
+                                    <p className="text-muted-foreground max-w-md mb-6 text-sm">
+                                        You do not have the required staff permission to access this page (<code className="bg-muted px-1.5 py-0.5 rounded text-xs">{pathname}</code>). Please contact your Mandal Administrator to request access.
+                                    </p>
+                                    <Button onClick={() => router.push('/mandals/dashboard')} variant="default" className="bg-amber-600 hover:bg-amber-700 text-white">
+                                        Return to Dashboard
+                                    </Button>
+                                </div>
+                            );
+                        }
+
+                        return children;
+                    })()}
                 </main>
             </div>
         </div>

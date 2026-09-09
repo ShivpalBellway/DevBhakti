@@ -25,7 +25,7 @@ const PERIODS = ["PM", "AM"]; // PM first since most evening/dusk Aartis are com
 export default function DedicatedMandalAartiPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [aartiTimings, setAartiTimings] = useState<Array<{ id: string; name: string; time: string }>>([]);
+  const [aartiTimings, setAartiTimings] = useState<Array<{ id: string; name: string; time: string; isActive?: boolean }>>([]);
 
   // Form states for Add
   const [aartiNameInput, setAartiNameInput] = useState("");
@@ -52,7 +52,11 @@ export default function DedicatedMandalAartiPage() {
       const res = await fetchMandalProfile();
       if (res.success && res.data) {
         if (res.data.aartiTimings && Array.isArray(res.data.aartiTimings)) {
-          setAartiTimings(res.data.aartiTimings);
+          const sanitized = res.data.aartiTimings.map((item: any) => ({
+            ...item,
+            isActive: item.isActive !== false,
+          }));
+          setAartiTimings(sanitized);
         }
       }
     } catch (error) {
@@ -101,11 +105,21 @@ export default function DedicatedMandalAartiPage() {
       id: Date.now().toString(),
       name: trimmedName,
       time: formattedTime,
+      isActive: true,
     };
 
     setAartiTimings((prev) => [...prev, newEntry]);
     setAartiNameInput("");
     toast({ title: "Added to Schedule", description: `${trimmedName} at ${formattedTime} added.` });
+  };
+
+  const handleToggleActive = (id: string) => {
+    setAartiTimings((prev) =>
+      prev.map((item) =>
+        item.id === id ? { ...item, isActive: item.isActive === false ? true : false } : item
+      )
+    );
+    toast({ title: "Status Updated", description: "Aarti status updated." });
   };
 
   const handleStartEdit = (item: { id: string; name: string; time: string }) => {
@@ -330,9 +344,11 @@ export default function DedicatedMandalAartiPage() {
             <Clock className="w-5 h-5 text-amber-600" />
             <span>Configured Aarti Schedule ({aartiTimings.length})</span>
           </div>
-          <Badge className="bg-amber-100 text-amber-900 font-bold text-xs border border-amber-200">
-            {aartiTimings.length} Active Timings
-          </Badge>
+          <div className="flex items-center gap-2">
+            <Badge className="bg-amber-100 text-amber-900 font-bold text-xs border border-amber-200">
+              {aartiTimings.filter((a) => a.isActive !== false).length} Active / {aartiTimings.length} Total
+            </Badge>
+          </div>
         </div>
 
         {aartiTimings.length === 0 ? (
@@ -440,6 +456,20 @@ export default function DedicatedMandalAartiPage() {
                     </div>
 
                     <div className="flex items-center gap-2 shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => handleToggleActive(item.id)}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 border ${
+                          item.isActive !== false
+                            ? "bg-emerald-50 text-emerald-700 border-emerald-300 hover:bg-emerald-100"
+                            : "bg-slate-100 text-slate-500 border-slate-300 hover:bg-slate-200 opacity-75"
+                        }`}
+                        title={item.isActive !== false ? "Click to Deactivate" : "Click to Activate"}
+                      >
+                        <span className={`w-2 h-2 rounded-full ${item.isActive !== false ? "bg-emerald-500 animate-pulse" : "bg-slate-400"}`} />
+                        {item.isActive !== false ? "Active" : "Inactive"}
+                      </button>
+
                       <Button
                         type="button"
                         onClick={() => handleStartEdit(item)}

@@ -102,7 +102,7 @@ const sidebarItems = [
     label: "Product Order",
     icon: ShoppingBag,
     href: "/admin/products/orders",
-    permission: "products.orders.view",
+    permission: "orders.menu",
   },
 
 
@@ -149,7 +149,7 @@ const sidebarItems = [
     label: "Darshan",
     icon: Ticket,
     href: "/admin/darshan",
-    permission: "bookings.menu", // Reuse bookings permission or a generic admin one
+    permission: "darshan.menu",
   },
   {
     label: "CMS",

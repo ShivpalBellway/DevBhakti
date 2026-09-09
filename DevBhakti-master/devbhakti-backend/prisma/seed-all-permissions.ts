@@ -41,6 +41,22 @@ const permissions = [
   { key: 'darshan.edit',   module: 'darshan', label: 'Edit Darshan Slot/Ticket', applicableTo: [OwnerType.ADMIN, OwnerType.TEMPLE, OwnerType.MANDAL] },
   { key: 'darshan.delete', module: 'darshan', label: 'Cancel Darshan Ticket', applicableTo: [OwnerType.ADMIN, OwnerType.TEMPLE, OwnerType.MANDAL] },
   { key: 'darshan.slots',  module: 'darshan', label: 'Manage Darshan Timings/Slots', applicableTo: [OwnerType.ADMIN, OwnerType.TEMPLE, OwnerType.MANDAL] },
+  { key: 'darshan.scan',   module: 'darshan', label: 'Scan QR at Gate for Entry', applicableTo: [OwnerType.ADMIN, OwnerType.TEMPLE, OwnerType.MANDAL] },
+
+  // ── PHOTOGRAPHY SERVICES (TEMPLE) ────────────────────────
+  { key: 'photography.menu',     module: 'photography', label: 'Show Photography Menu', applicableTo: [OwnerType.ADMIN, OwnerType.TEMPLE] },
+  { key: 'photography.view',     module: 'photography', label: 'View Photography Packages', applicableTo: [OwnerType.ADMIN, OwnerType.TEMPLE] },
+  { key: 'photography.create',   module: 'photography', label: 'Add Photography Package', applicableTo: [OwnerType.ADMIN, OwnerType.TEMPLE] },
+  { key: 'photography.edit',     module: 'photography', label: 'Edit Photography Package', applicableTo: [OwnerType.ADMIN, OwnerType.TEMPLE] },
+  { key: 'photography.delete',   module: 'photography', label: 'Delete Photography Package', applicableTo: [OwnerType.ADMIN, OwnerType.TEMPLE] },
+  { key: 'photography.bookings', module: 'photography', label: 'View & Manage Photo Bookings', applicableTo: [OwnerType.ADMIN, OwnerType.TEMPLE] },
+
+  // ── PAID PRASAD SERVICES (TEMPLE) ───────────────────────
+  { key: 'prasad.menu',   module: 'prasad', label: 'Show Paid Prasad Menu', applicableTo: [OwnerType.ADMIN, OwnerType.TEMPLE] },
+  { key: 'prasad.view',   module: 'prasad', label: 'View Paid Prasad List', applicableTo: [OwnerType.ADMIN, OwnerType.TEMPLE] },
+  { key: 'prasad.create', module: 'prasad', label: 'Add New Paid Prasad Item', applicableTo: [OwnerType.ADMIN, OwnerType.TEMPLE] },
+  { key: 'prasad.edit',   module: 'prasad', label: 'Edit Paid Prasad Item', applicableTo: [OwnerType.ADMIN, OwnerType.TEMPLE] },
+  { key: 'prasad.delete', module: 'prasad', label: 'Delete Paid Prasad Item', applicableTo: [OwnerType.ADMIN, OwnerType.TEMPLE] },
 
   // ── MANDAL SPECIFIC (OWNER SIDE) ────────────────────────
   { key: 'mandal.profile.manage', module: 'mandals', label: 'Manage Mandal Profile', applicableTo: [OwnerType.MANDAL] },
@@ -58,9 +74,37 @@ const permissions = [
   { key: 'seller.profile.manage', module: 'sellers', label: 'Manage Seller Profile', applicableTo: [OwnerType.SELLER] },
   { key: 'seller.bank.manage',    module: 'sellers', label: 'Manage Bank Details',   applicableTo: [OwnerType.SELLER] },
 
+  // ── TELLER MODULE (POS) ──────────────────────────────────
+  { key: 'teller.menu',   module: 'teller', label: 'Show Teller Module Menu',   applicableTo: [OwnerType.ADMIN, OwnerType.TEMPLE, OwnerType.MANDAL] },
+  { key: 'teller.view',   module: 'teller', label: 'View Teller Counter & Cart',applicableTo: [OwnerType.ADMIN, OwnerType.TEMPLE, OwnerType.MANDAL] },
+  { key: 'teller.create', module: 'teller', label: 'Create Offline POS Bookings',applicableTo: [OwnerType.ADMIN, OwnerType.TEMPLE, OwnerType.MANDAL] },
+  { key: 'teller.edit',   module: 'teller', label: 'Edit Teller Transactions',  applicableTo: [OwnerType.ADMIN, OwnerType.TEMPLE, OwnerType.MANDAL] },
+  { key: 'teller.delete', module: 'teller', label: 'Delete Teller Transactions',applicableTo: [OwnerType.ADMIN, OwnerType.TEMPLE, OwnerType.MANDAL] },
+
+  // ── ORDER MANAGEMENT ─────────────────────────────────────
+  { key: 'orders.menu',   module: 'orders', label: 'Show Order Management Menu', applicableTo: [OwnerType.ADMIN, OwnerType.TEMPLE, OwnerType.SELLER, OwnerType.MANDAL] },
+  { key: 'orders.view',   module: 'orders', label: 'View Product Orders List',   applicableTo: [OwnerType.ADMIN, OwnerType.TEMPLE, OwnerType.SELLER, OwnerType.MANDAL] },
+  { key: 'orders.create', module: 'orders', label: 'Create Manual / Store Order', applicableTo: [OwnerType.ADMIN, OwnerType.TEMPLE, OwnerType.SELLER, OwnerType.MANDAL] },
+  { key: 'orders.edit',   module: 'orders', label: 'Update Order Fulfillment Status', applicableTo: [OwnerType.ADMIN, OwnerType.TEMPLE, OwnerType.SELLER, OwnerType.MANDAL] },
+  { key: 'orders.delete', module: 'orders', label: 'Cancel / Delete Product Order', applicableTo: [OwnerType.ADMIN, OwnerType.TEMPLE, OwnerType.SELLER, OwnerType.MANDAL] },
+
+  // ── BANK DETAILS ─────────────────────────────────────────
+  { key: 'bank.view',   module: 'bank', label: 'View Bank Account Details', applicableTo: [OwnerType.ADMIN, OwnerType.TEMPLE, OwnerType.SELLER, OwnerType.MANDAL] },
+  { key: 'bank.manage', module: 'bank', label: 'Add / Edit Bank Account Details', applicableTo: [OwnerType.ADMIN, OwnerType.TEMPLE, OwnerType.SELLER, OwnerType.MANDAL] },
+
+  // ── COLLECTION REPORTS ──────────────────────────────────
+  { key: 'reports.view', module: 'reports', label: 'View Collection Reports & Daily Summary', applicableTo: [OwnerType.ADMIN, OwnerType.TEMPLE, OwnerType.MANDAL] },
+
+  // ── AARTI TIMINGS ───────────────────────────────────────
+  { key: 'aarti.view',   module: 'aarti', label: 'View Aarti Schedule', applicableTo: [OwnerType.ADMIN, OwnerType.TEMPLE, OwnerType.MANDAL] },
+  { key: 'aarti.manage', module: 'aarti', label: 'Add, Edit & Toggle Active Aarti Timings', applicableTo: [OwnerType.ADMIN, OwnerType.TEMPLE, OwnerType.MANDAL] },
+
   // ── USERS (DEVOTEES) ───────────────────────────────────
-  { key: 'users.menu',   module: 'users', label: 'Show Users Menu',    applicableTo: [OwnerType.ADMIN] },
-  { key: 'users.view',   module: 'users', label: 'View Users List',    applicableTo: [OwnerType.ADMIN, OwnerType.TEMPLE, OwnerType.MANDAL] },
+  { key: 'users.menu',   module: 'users', label: 'Show Devotees Menu',    applicableTo: [OwnerType.ADMIN, OwnerType.TEMPLE, OwnerType.MANDAL] },
+  { key: 'users.view',   module: 'users', label: 'View Devotees List',    applicableTo: [OwnerType.ADMIN, OwnerType.TEMPLE, OwnerType.MANDAL] },
+  { key: 'users.create', module: 'users', label: 'Add New Devotee Profile', applicableTo: [OwnerType.ADMIN, OwnerType.TEMPLE, OwnerType.MANDAL] },
+  { key: 'users.edit',   module: 'users', label: 'Edit Devotee Details', applicableTo: [OwnerType.ADMIN, OwnerType.TEMPLE, OwnerType.MANDAL] },
+  { key: 'users.delete', module: 'users', label: 'Delete / Remove Devotee', applicableTo: [OwnerType.ADMIN, OwnerType.TEMPLE, OwnerType.MANDAL] },
   { key: 'users.manage', module: 'users', label: 'Manage Users Status', applicableTo: [OwnerType.ADMIN] },
 
   // ── POOJA BOOKINGS ──────────────────────────────────────

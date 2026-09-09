@@ -128,7 +128,8 @@ export default function EnhancedMandalProfilePage() {
         const newEntry = {
             id: Date.now().toString(),
             name: newAartiName.trim(),
-            time: newAartiTime.trim()
+            time: newAartiTime.trim(),
+            isActive: true
         };
         setAartiTimings(prev => [...prev, newEntry]);
         setNewAartiName("");

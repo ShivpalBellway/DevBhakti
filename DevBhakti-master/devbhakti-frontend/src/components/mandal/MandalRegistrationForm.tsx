@@ -23,6 +23,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { submitMandalRegistration, fetchMandalRegistrationStatus } from "@/api/publicController";
 import { captureLead } from "@/api/leadApi";
+import { checkInstitutionPhone } from "@/api/authController";
 import { ImageCropper } from "@/components/admin/ImageCropper";
 
 export default function MandalRegistrationForm({ onClose }: { onClose?: () => void }) {
@@ -30,6 +31,7 @@ export default function MandalRegistrationForm({ onClose }: { onClose?: () => vo
     const [isLoading, setIsLoading] = useState(false);
     const [showSuccess, setShowSuccess] = useState(false);
     const [error, setError] = useState("");
+    const [phoneError, setPhoneError] = useState<string | null>(null);
     const [festivalsList, setFestivalsList] = useState<any[]>([]);
 
     useEffect(() => {
@@ -69,6 +71,58 @@ export default function MandalRegistrationForm({ onClose }: { onClose?: () => vo
         presidentIdDocUrl: "",
         mapUrl: ""
     });
+
+    useEffect(() => {
+        const phoneDigits = formData.contactNumber.replace(/\D/g, '');
+        if (phoneDigits.length === 10) {
+            validatePhone(phoneDigits);
+        } else {
+            setPhoneError(null);
+        }
+    }, [formData.contactNumber]);
+
+    const validatePhone = async (phone: string) => {
+        try {
+            const response = await checkInstitutionPhone(phone);
+            if (response.isInstitutionRegistered) {
+                setPhoneError("This contact number is already registered for an institution.");
+            } else {
+                setPhoneError(null);
+                try {
+                    const formattedPhone = `+91${phone}`;
+                    await captureLead(
+                        formattedPhone,
+                        "MANDAL_ONBOARDING",
+                        { mandalName: formData.name, mandalType: formData.mandalType, city: formData.city, state: formData.state },
+                        formData.presidentName,
+                        formData.email
+                    );
+                } catch (leadError) {
+                    console.error("Failed to capture mandal lead silently:", leadError);
+                }
+            }
+        } catch (err) {
+            console.error("Error validating phone:", err);
+        }
+    };
+
+    // Sync lead data periodically when user types more details
+    useEffect(() => {
+        const phoneDigits = formData.contactNumber.replace(/\D/g, '');
+        if (phoneDigits.length !== 10 || !formData.presidentName.trim() || phoneError) return;
+
+        const timeout = setTimeout(() => {
+            const formattedPhone = `+91${phoneDigits}`;
+            captureLead(
+                formattedPhone,
+                "MANDAL_ONBOARDING",
+                { mandalName: formData.name, mandalType: formData.mandalType, city: formData.city, state: formData.state },
+                formData.presidentName.trim(),
+                formData.email
+            ).catch(e => console.error("Failed silent mandal lead update", e));
+        }, 1200);
+        return () => clearTimeout(timeout);
+    }, [formData.presidentName, formData.email, formData.name, formData.mandalType, formData.city, formData.state, formData.contactNumber, phoneError]);
 
     const [mainImage, setMainImage] = useState<File | null>(null);
     const [mainImagePreview, setMainImagePreview] = useState<string>("");
@@ -170,10 +224,17 @@ export default function MandalRegistrationForm({ onClose }: { onClose?: () => vo
                 setShowSuccess(true);
                 // Auto-capture lead for CRM
                 try {
-                    const phone = formData.contactNumber.startsWith('+91') ? formData.contactNumber : `+91${formData.contactNumber}`;
-                    await captureLead(phone, "TEMPLE_ONBOARDING", { mandalName: formData.name, mandalType: formData.mandalType }, formData.presidentName, formData.email);
+                    const phoneDigits = formData.contactNumber.replace(/\D/g, '');
+                    const phone = phoneDigits.startsWith('91') && phoneDigits.length === 12 ? `+${phoneDigits}` : `+91${phoneDigits.slice(-10)}`;
+                    await captureLead(
+                        phone,
+                        "MANDAL_ONBOARDING",
+                        { mandalName: formData.name, mandalType: formData.mandalType, city: formData.city, state: formData.state },
+                        formData.presidentName,
+                        formData.email
+                    );
                 } catch (leadErr) {
-                    console.error("Lead capture warning:", leadErr);
+                    console.error("Mandal Lead capture warning:", leadErr);
                 }
             } else {
                 setError(res.message || "Failed to submit registration.");
@@ -267,6 +328,11 @@ export default function MandalRegistrationForm({ onClose }: { onClose?: () => vo
                                     required
                                 />
                             </div>
+                            {phoneError && (
+                                <p className="text-[10px] text-red-500 font-bold mt-1 ml-1 animate-pulse">
+                                    {phoneError}
+                                </p>
+                            )}
                         </div>
                         <div className="space-y-2">
                             <label className="text-sm font-bold text-slate-600 ml-1">{t("registerMandal.email")}</label>

@@ -329,14 +329,28 @@ export default function AdminLeadsPage() {
                                                         {lead.email}
                                                     </div>
                                                 )}
+                                                {lead.metadata?.mandalName && (
+                                                    <div className="text-xs font-semibold text-amber-800 mt-0.5">
+                                                        Mandal: {lead.metadata.mandalName} {lead.metadata?.mandalType ? `(${lead.metadata.mandalType})` : ''}
+                                                    </div>
+                                                )}
                                                 {lead.metadata?.templeName && (
-                                                    <div className="text-xs text-muted-foreground mt-0.5">
+                                                    <div className="text-xs font-semibold text-orange-800 mt-0.5">
                                                         Temple: {lead.metadata.templeName}
                                                     </div>
                                                 )}
                                             </td>
                                             <td className="p-4">
-                                                <Badge variant="outline" className="bg-slate-50 font-bold text-[10px]">
+                                                <Badge
+                                                    variant="outline"
+                                                    className={`font-bold text-[10px] ${
+                                                        lead.source === 'MANDAL_ONBOARDING'
+                                                            ? 'bg-amber-100 text-amber-900 border-amber-300'
+                                                            : lead.source === 'TEMPLE_ONBOARDING'
+                                                            ? 'bg-orange-100 text-orange-900 border-orange-300'
+                                                            : 'bg-slate-50 text-slate-700'
+                                                    }`}
+                                                >
                                                     {lead.source.replace('_', ' ')}
                                                 </Badge>
                                             </td>
