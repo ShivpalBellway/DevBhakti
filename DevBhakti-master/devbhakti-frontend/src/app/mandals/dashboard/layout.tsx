@@ -56,7 +56,13 @@ const sidebarItems = [
     {
         label: "Bookings",
         icon: Calendar,
-        href: "/mandals/dashboard/bookings"
+        href: "/mandals/dashboard/bookings",
+        permission: "bookings.menu",
+        subItems: [
+            { label: "All Bookings", href: "/mandals/dashboard/bookings", permission: "bookings.view" },
+            { label: "Booked Poojas", href: "/mandals/dashboard/bookings?status=BOOKED", permission: "bookings.view" },
+            { label: "Completed", href: "/mandals/dashboard/bookings?status=COMPLETED", permission: "bookings.view" },
+        ]
     },
     {
         label: "Teller Module",

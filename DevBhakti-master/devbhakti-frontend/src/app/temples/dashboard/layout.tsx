@@ -123,9 +123,9 @@ const sidebarItems = [
         href: "/temples/dashboard/bookings",
         permission: "bookings.menu",
         subItems: [
-            { label: "All Bookings", href: "/temples/dashboard/bookings" },
-            { label: "Booked Poojas", href: "/temples/dashboard/bookings?status=BOOKED" },
-            { label: "Completed", href: "/temples/dashboard/bookings?status=COMPLETED" },
+            { label: "All Bookings", href: "/temples/dashboard/bookings", permission: "bookings.view" },
+            { label: "Booked Poojas", href: "/temples/dashboard/bookings?status=BOOKED", permission: "bookings.view" },
+            { label: "Completed", href: "/temples/dashboard/bookings?status=COMPLETED", permission: "bookings.view" },
         ]
     },
     {
