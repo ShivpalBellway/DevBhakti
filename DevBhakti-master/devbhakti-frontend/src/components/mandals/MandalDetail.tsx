@@ -23,7 +23,6 @@ import {
   Link,
   User,
   X,
-  Check,
   Flower2,
   ShoppingBag,
   IndianRupee,
@@ -257,8 +256,6 @@ export function MandalDetail({ slug }: { slug: string }) {
   const [isSendingDonationOtp, setIsSendingDonationOtp] = useState(false);
   const [isVerifyingDonationOtp, setIsVerifyingDonationOtp] = useState(false);
   const [donationOtpSent, setDonationOtpSent] = useState(false);
-  const [showReceiptModal, setShowReceiptModal] = useState(false);
-  const [donationReceipt, setDonationReceipt] = useState<any>(null);
 
   const handleOpenDonateModal = () => {
     if (isInternational) {
@@ -291,8 +288,6 @@ export function MandalDetail({ slug }: { slug: string }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           phone: normalizedPhone,
-          name: donorName ? donorName.trim() : undefined,
-          email: donorEmail ? donorEmail.trim() : undefined,
           role: "DEVOTEE",
           mode: "login"
         })
@@ -347,12 +342,10 @@ export function MandalDetail({ slug }: { slug: string }) {
         })
       });
       const data = await res.json();
-      const authData = data.data || data;
-      if (data.success && authData.token) {
-        localStorage.setItem("token", authData.token);
-        localStorage.setItem("user", JSON.stringify(authData.user));
-        setCurrentUser(authData.user);
-        window.dispatchEvent(new Event("user-auth-changed"));
+      if (data.success && data.token) {
+        localStorage.setItem("token", data.token);
+        localStorage.setItem("user", JSON.stringify(data.user));
+        setCurrentUser(data.user);
         setShowDonationOtpInput(false);
         setDonationOtpSent(false);
         toast({
@@ -465,19 +458,9 @@ export function MandalDetail({ slug }: { slug: string }) {
               if (verifyData.success) {
                 toast({
                   title: "Donation Successful! 🙏",
-                  description: "Thank you for your contribution.",
+                  description: "Thank you for your contribution. A receipt has been sent to your email.",
                 });
                 setShowDonateModal(false);
-                setDonationReceipt({
-                  paymentId: response.razorpay_payment_id,
-                  orderId: response.razorpay_order_id,
-                  amount: totalAmountPayable,
-                  donorName: isAnonymous ? "Anonymous" : (donorName || currentUser?.name || "Devotee"),
-                  donorPhone: donorPhone || currentUser?.phone || "",
-                  mandalName: mandal.name?.en || mandal.name || "Mandal",
-                  date: new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
-                });
-                setShowReceiptModal(true);
                 loadMandal();
               } else {
                 toast({
@@ -598,7 +581,7 @@ export function MandalDetail({ slug }: { slug: string }) {
     ...(hasProducts ? [{ id: "sacred", label: t("common.sacred_items"), icon: ShoppingBag }] : []),
     ...(hasDescription ? [{ id: "about", label: t("mandal_detail.tab_about"), icon: Info }] : []),
     ...(hasLocation ? [{ id: "location", label: t("mandal_list.location"), icon: MapPin }] : []),
-    ...(hasContactOrSocial ? [{ id: "contact", label: t("mandal_detail.contact_info"), icon: Phone }] : []),
+    ...(hasContactOrSocial ? [{ id: "contact", label: t("mandal_detail.contact_info") }] : []),
   ].filter((tab) => canUseMandalTransactions || !TRANSACTION_TABS.includes(tab.id as MandalTab));
 
   return (
@@ -607,11 +590,11 @@ export function MandalDetail({ slug }: { slug: string }) {
       <Navbar isSolid={true} />
 
       {/* ─── HERO BANNER SECTION (MATCHING TEMPLE DETAIL HERO HEIGHT) ───────────────── */}
-      <section className="relative bg-gradient-to-r from-[#160403] via-[#2A0A06] to-[#120302] text-white pt-28 pb-12 px-4 md:px-8 lg:px-12 border-b border-amber-900/20 overflow-hidden min-h-[520px] lg:min-h-[580px] flex flex-col justify-center">
+      <section className="relative bg-gradient-to-r from-[#160403] via-[#2A0A06] to-[#120302] text-white pt-28 pb-12 border-b border-amber-900/20 overflow-hidden min-h-[520px] lg:min-h-[580px] flex flex-col justify-center">
         {/* Glow backdrop */}
         <div className="absolute top-0 right-1/3 w-[500px] h-[500px] bg-orange-600/10 rounded-full blur-[130px] pointer-events-none" />
 
-        <div className="w-full max-w-[1700px] mx-auto relative z-10">
+        <div className="container mx-auto px-4 relative z-10">
           
           {/* Breadcrumb Back Button */}
           <div className="mb-4">
@@ -748,7 +731,7 @@ export function MandalDetail({ slug }: { slug: string }) {
               </div>
 
               {/* Bottom 4-Stat Box (Matching Screenshot) */}
-              <div className="bg-black/40 backdrop-blur-md border border-amber-500/20 rounded-2xl p-3 grid grid-cols-2 sm:grid-cols-4 gap-3 mt-2">
+              <div className="w-fit max-w-full bg-black/40 backdrop-blur-md border border-amber-500/20 rounded-2xl p-3 grid grid-cols-2 sm:grid-cols-4 gap-3 mt-2">
                 {/* Stat 1: Established */}
                 <div className="flex items-center gap-2.5">
                   <div className="p-1.5 bg-amber-500/10 rounded-lg text-amber-400 shrink-0">
@@ -830,7 +813,7 @@ export function MandalDetail({ slug }: { slug: string }) {
 
       {/* ─── HORIZONTAL TAB NAVIGATION BAR (MATCHING SCREENSHOT) ─────────────── */}
       <div id="mandal-tabs-section" className="bg-white dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800 sticky top-16 z-30 shadow-sm">
-        <div className="w-full max-w-[1700px] mx-auto px-4 md:px-8 lg:px-12">
+        <div className="container mx-auto px-4">
           <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-3">
             {tabsList.map((tab, idx) => {
               const Icon = tab.icon;
@@ -845,7 +828,7 @@ export function MandalDetail({ slug }: { slug: string }) {
                       : "text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
                   }`}
                 >
-                  <Icon className={`w-4 h-4 ${isActive ? "text-amber-300" : "text-zinc-500"}`} />
+                  {Icon && <Icon className={`w-4 h-4 ${isActive ? "text-amber-300" : "text-zinc-500"}`} />}
                   <span>{tab.label}</span>
                 </button>
               );
@@ -855,7 +838,7 @@ export function MandalDetail({ slug }: { slug: string }) {
       </div>
 
       {/* ─── UNIFIED SINGLE PAGE CONTENT (ORDER MATCHING HANDWRITTEN DIAGRAM) ─── */}
-      <main className="w-full max-w-[1700px] mx-auto px-4 md:px-8 lg:px-12 py-8 space-y-10">
+      <main className="container mx-auto px-4 py-8 space-y-10">
 
         {/* ─── ROW 1: TOP MEDIA GRID (1: GALLERY, 2: LIVE DARSHAN, 3: TODAY'S AARTI) ─── */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-6">
@@ -1023,7 +1006,7 @@ export function MandalDetail({ slug }: { slug: string }) {
 
           {/* ─── SECTION 4: POOJAS & SEVAS ─── */}
           {canUseMandalTransactions && mandal.poojas && mandal.poojas.length > 0 ? (
-            <div id="section-poojas" className="scroll-mt-28 lg:col-span-7 flex flex-col">
+            <div id="section-poojas" className="scroll-mt-28 lg:col-span-8 flex flex-col">
               <Card className="rounded-3xl border-zinc-200/80 p-6 bg-white shadow-sm hover:shadow-md transition-all flex flex-col justify-between h-full space-y-5">
                 <div className="flex items-center justify-between border-b border-zinc-100 pb-3">
                   <div>
@@ -1107,7 +1090,7 @@ export function MandalDetail({ slug }: { slug: string }) {
               </Card>
             </div>
           ) : (
-            <div className="lg:col-span-7 flex flex-col">
+            <div className="lg:col-span-8 flex flex-col">
               <Card className="rounded-3xl border-zinc-200/80 p-6 bg-white shadow-sm flex flex-col items-center justify-center text-center text-xs text-zinc-400 h-full">
                 <Gift className="w-8 h-8 text-zinc-300 mb-2" />
                 No online poojas configured yet.
@@ -1116,7 +1099,7 @@ export function MandalDetail({ slug }: { slug: string }) {
           )}
 
           {/* ─── SECTION 5: UPCOMING EVENTS (RIGHT SIDE) ─── */}
-          <div id="section-events" className="scroll-mt-28 lg:col-span-5 flex flex-col">
+          <div id="section-events" className="scroll-mt-28 lg:col-span-4 flex flex-col">
             <Card className="rounded-3xl border-zinc-200/80 p-6 bg-white shadow-sm hover:shadow-md transition-all flex flex-col justify-start h-full space-y-4">
               <div className="flex items-center justify-between border-b border-zinc-100 pb-3">
                 <div>
@@ -1188,7 +1171,7 @@ export function MandalDetail({ slug }: { slug: string }) {
 
           {/* ─── SECTION 6: SACRED ITEMS & OFFERINGS (LEFT SIDE) ─── */}
           {canUseMandalTransactions && products && products.length > 0 ? (
-            <div id="section-sacred" className="scroll-mt-28 lg:col-span-7 flex flex-col">
+            <div id="section-sacred" className="scroll-mt-28 lg:col-span-8 flex flex-col">
               <Card className="rounded-3xl border-zinc-200/80 p-6 bg-white shadow-sm hover:shadow-md transition-all flex flex-col justify-between h-full space-y-5">
                 <div className="flex items-center justify-between border-b border-zinc-100 pb-3">
                   <div>
@@ -1269,7 +1252,7 @@ export function MandalDetail({ slug }: { slug: string }) {
               </Card>
             </div>
           ) : (
-            <div className="lg:col-span-7 flex flex-col">
+            <div className="lg:col-span-8 flex flex-col">
               <Card className="rounded-3xl border-zinc-200/80 p-6 bg-white shadow-sm flex flex-col items-center justify-center text-center text-xs text-zinc-400 h-full">
                 <ShoppingBag className="w-8 h-8 text-zinc-300 mb-2" />
                 No sacred items available right now.
@@ -1279,7 +1262,7 @@ export function MandalDetail({ slug }: { slug: string }) {
 
           {/* ─── SECTION 7: SUPPORT THIS MANDAL (DONATION) (RIGHT SIDE) ─── */}
           {canUseMandalTransactions && (
-            <div id="section-donate" className="scroll-mt-28 lg:col-span-5 flex flex-col">
+            <div id="section-donate" className="scroll-mt-28 lg:col-span-4 flex flex-col">
               <Card className="rounded-3xl border-amber-200/80 p-6 bg-gradient-to-b from-amber-50/70 via-white to-amber-50/30 shadow-sm hover:shadow-md transition-all flex flex-col justify-between h-full space-y-4">
                 <div className="flex items-center justify-between border-b border-amber-200/50 pb-3">
                   <div>
@@ -1341,20 +1324,20 @@ export function MandalDetail({ slug }: { slug: string }) {
 
         </div>
 
-        {/* ─── ROW 4: BOTTOM CARDS (ABOUT, LOCATION, CONTACT) — Only shown if data exists ─── */}
+        {/* ─── ROW 4: BOTTOM CARDS (ABOUT - 8 COLS, LOCATION - 2 COLS, CONTACT - 2 COLS) ─── */}
         {(hasDescription || hasLocation || hasContactOrSocial) && (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
 
-            {/* ABOUT — only if mandal has a description */}
+            {/* ABOUT (8 COLS) — only if mandal has a description */}
             {hasDescription && (
-              <div id="section-about" className={`scroll-mt-28 ${hasLocation || hasContactOrSocial ? 'lg:col-span-6' : 'lg:col-span-12'}`}>
+              <div id="section-about" className={`scroll-mt-28 ${hasLocation || hasContactOrSocial ? 'lg:col-span-8' : 'lg:col-span-12'}`}>
                 <Card className="rounded-3xl border-zinc-200/80 p-5 bg-white shadow-sm space-y-3 h-full flex flex-col justify-between">
                   <div>
                     <div className="flex items-center gap-2.5 border-b border-zinc-100 pb-3 mb-3">
                       <h3 className="text-xl font-serif font-bold text-zinc-900">About {name}</h3>
                     </div>
 
-                    <div className="text-xs sm:text-sm text-zinc-700 leading-relaxed whitespace-pre-line">
+                    <div className="max-h-[260px] overflow-y-auto pr-2 custom-scrollbar text-xs sm:text-sm text-zinc-700 leading-relaxed whitespace-pre-line">
                       {typeof description === "string" && description.includes("<") ? (
                         <span dangerouslySetInnerHTML={{ __html: description }} />
                       ) : (
@@ -1366,9 +1349,9 @@ export function MandalDetail({ slug }: { slug: string }) {
               </div>
             )}
 
-            {/* LOCATION — only if mandal has address/city/state/mapUrl */}
+            {/* LOCATION (2 COLS) — only if mandal has address/city/state/mapUrl */}
             {hasLocation && (
-              <div id="section-location" className={`scroll-mt-28 ${hasDescription ? 'lg:col-span-3' : 'lg:col-span-6'}`}>
+              <div id="section-location" className={`scroll-mt-28 ${hasDescription ? 'lg:col-span-2' : 'lg:col-span-6'}`}>
                 <Card className="rounded-3xl border-zinc-200/80 p-5 bg-white shadow-sm space-y-3 h-full flex flex-col justify-between">
                   <div>
                     <div className="flex items-center gap-2.5 border-b border-zinc-100 pb-3 mb-3">
@@ -1450,9 +1433,9 @@ export function MandalDetail({ slug }: { slug: string }) {
               </div>
             )}
 
-            {/* CONTACT US — only if mandal has phone/email/website or social links */}
+            {/* CONTACT US (2 COLS) — only if mandal has phone/email/website or social links */}
             {hasContactOrSocial && (
-              <div id="section-contact" className={`scroll-mt-28 ${hasDescription ? 'lg:col-span-3' : 'lg:col-span-6'}`}>
+              <div id="section-contact" className={`scroll-mt-28 ${hasDescription ? 'lg:col-span-2' : 'lg:col-span-6'}`}>
                 <Card className="rounded-3xl border-zinc-200/80 p-5 bg-white shadow-sm space-y-3 h-full flex flex-col justify-between">
                   <div>
                     <div className="flex items-center gap-2.5 border-b border-zinc-100 pb-3 mb-3">
@@ -1717,70 +1700,6 @@ export function MandalDetail({ slug }: { slug: string }) {
               {isDonating 
                 ? "Processing Donation..." 
                 : `Proceed to Donate ₹${((selectedAmount || parseInt(customAmount) || 0) + platformFee).toLocaleString("en-IN")}`}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* ─── DONATION RECEIPT SUCCESS MODAL ───────────────────────────────────── */}
-      <Dialog open={showReceiptModal} onOpenChange={setShowReceiptModal}>
-        <DialogContent className="sm:max-w-md bg-white rounded-3xl p-6 shadow-2xl border border-orange-100">
-          <DialogHeader className="text-center">
-            <div className="mx-auto w-14 h-14 bg-emerald-100 rounded-full flex items-center justify-center mb-3">
-              <Check className="w-8 h-8 text-emerald-600" />
-            </div>
-            <DialogTitle className="text-2xl font-serif font-bold text-slate-900">
-              Donation Successful! 🙏
-            </DialogTitle>
-            <DialogDescription className="text-sm text-slate-500 font-medium">
-              Thank you for your sacred contribution. Here is your official donation receipt.
-            </DialogDescription>
-          </DialogHeader>
-
-          {donationReceipt && (
-            <div id="donation-receipt-print" className="my-4 p-5 bg-orange-50/60 rounded-2xl border border-orange-100 space-y-3 text-sm">
-              <div className="flex justify-between items-center pb-3 border-b border-orange-200/60">
-                <span className="text-xs uppercase font-bold text-orange-900 tracking-wider">DevBhakti Receipt</span>
-                <span className="text-xs text-slate-500">{donationReceipt.date}</span>
-              </div>
-              <div className="flex justify-between py-1">
-                <span className="text-slate-500">Mandal:</span>
-                <span className="font-bold text-slate-900 text-right">{donationReceipt.mandalName}</span>
-              </div>
-              <div className="flex justify-between py-1">
-                <span className="text-slate-500">Devotee Name:</span>
-                <span className="font-bold text-slate-900">{donationReceipt.donorName}</span>
-              </div>
-              <div className="flex justify-between py-1">
-                <span className="text-slate-500">Phone:</span>
-                <span className="font-medium text-slate-700">{donationReceipt.donorPhone}</span>
-              </div>
-              <div className="flex justify-between py-1">
-                <span className="text-slate-500">Payment ID:</span>
-                <span className="font-mono text-xs text-slate-600">{donationReceipt.paymentId}</span>
-              </div>
-              <div className="flex justify-between py-2 border-t border-orange-200/60 text-base font-bold">
-                <span className="text-slate-900">Total Paid:</span>
-                <span className="text-[#6B0F1A]">₹{donationReceipt.amount?.toLocaleString("en-IN")}</span>
-              </div>
-            </div>
-          )}
-
-          <div className="flex gap-3 mt-2">
-            <Button
-              variant="outline"
-              className="flex-1 rounded-xl font-bold border-slate-300"
-              onClick={() => {
-                window.print();
-              }}
-            >
-              🖨️ Print / Save PDF
-            </Button>
-            <Button
-              className="flex-1 bg-[#6B0F1A] hover:bg-[#520B14] text-white rounded-xl font-bold"
-              onClick={() => setShowReceiptModal(false)}
-            >
-              Done
             </Button>
           </div>
         </DialogContent>

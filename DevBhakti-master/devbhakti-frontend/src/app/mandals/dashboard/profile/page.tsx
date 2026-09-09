@@ -252,7 +252,7 @@ export default function EnhancedMandalProfilePage() {
     const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
-        openCropper(file, "main", "Crop Mandal Main Image (4:3 Landscape Ratio)");
+        openCropper(file, "main", "Crop Mandal Main Image (4:3 Aspect Ratio)");
         e.target.value = "";
     };
 
@@ -262,7 +262,7 @@ export default function EnhancedMandalProfilePage() {
 
         const [first, ...rest] = files;
         setPendingHeroFiles(rest);
-        openCropper(first, "banner", "Crop Banner Image (4:3 Landscape Ratio)");
+        openCropper(first, "banner", "Crop Banner Image (4:3 Aspect Ratio)");
         e.target.value = "";
     };
 
@@ -807,7 +807,7 @@ export default function EnhancedMandalProfilePage() {
                                     <div className="text-xs text-slate-500 space-y-1">
                                         <p className="font-semibold text-slate-700">Mandal Avatar / Badge</p>
                                         <p>Displayed on search cards, event lists & booking pages.</p>
-                                        <p>Recommended size: 500x500px (PNG, JPG, WebP)</p>
+                                        <p>Recommended size: 4:3 Aspect Ratio / 500x500px (PNG, JPG, WebP)</p>
                                     </div>
                                 </div>
                             </div>

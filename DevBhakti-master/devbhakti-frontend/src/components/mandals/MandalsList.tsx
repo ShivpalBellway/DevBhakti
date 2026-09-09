@@ -352,13 +352,13 @@ export function MandalsList() {
 
   const heroTitle =
     getLocalizedSettingText("title") ||
-    (mounted ? t("mandal_list.title") : "Ganeshotsav 2026");
+    (mounted ? t("mandal_list.title") : "");
 
   const heroSubtitle =
     getLocalizedSettingText("subtitle") ||
     (mounted
       ? t("mandal_list.subtitle")
-      : "Celebrate Devotion. Experience Divinity.");
+      : "");
 
   // Date range formatting
   const formatDateStr = (dateStr: string) => {
@@ -417,12 +417,12 @@ export function MandalsList() {
       <Navbar isSolid={true} />
 
       {/* ─── HERO BANNER SECTION (WIDE FULL WIDTH 50-50 SPLIT) ──────────────── */}
-      <section className="relative bg-gradient-to-r from-[#1A0502] via-[#2A0C06] to-[#140402] text-white pt-32 pb-24 px-4 md:px-8 lg:px-12 overflow-hidden">
+      <section className="relative bg-gradient-to-r from-[#1A0502] via-[#2A0C06] to-[#140402] text-white pt-32 pb-24 overflow-hidden">
         {/* Ambient Glow Effects */}
         <div className="absolute top-0 right-1/4 w-[600px] h-[600px] bg-orange-600/15 rounded-full blur-[140px] pointer-events-none" />
         <div className="absolute bottom-0 left-10 w-[500px] h-[500px] bg-amber-500/10 rounded-full blur-[120px] pointer-events-none" />
 
-        <div className="w-full max-w-[1700px] mx-auto relative z-10">
+        <div className="container mx-auto px-4 relative z-10">
           <div className={cn("grid grid-cols-1 items-center gap-8 lg:gap-14", adminBannerImage ? "lg:grid-cols-2" : "max-w-4xl")}>
             
             {/* LEFT HALF (50% ON DESKTOP IF IMAGE EXISTS, FULL WIDTH OTHERWISE): CONTENT */}
@@ -527,7 +527,7 @@ export function MandalsList() {
       </section>
 
       {/* ─── FLOATING SEARCH & FILTER BAR ─────────────────────────────────── */}
-      <div id="mandals-search-section" className="w-full max-w-[1700px] mx-auto px-4 md:px-8 lg:px-12 -mt-10 md:-mt-14 relative z-30">
+      <div id="mandals-search-section" className="container mx-auto px-4 -mt-10 md:-mt-14 relative z-30">
         <div className="bg-white dark:bg-card rounded-3xl p-5 md:p-7 shadow-2xl border border-zinc-200/80 dark:border-zinc-800 space-y-4">
           {/* Main Controls Grid matching design screenshot */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-3 items-center">
@@ -700,7 +700,7 @@ export function MandalsList() {
       </div>
 
       {/* ─── FEATURED MANDALS SECTION ───────────────────────────────────────── */}
-      <section className="py-12 px-4 md:px-8 lg:px-12 w-full max-w-[1700px] mx-auto space-y-6">
+      <section className="py-12 container mx-auto px-4 space-y-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Star className="w-6 h-6 text-amber-500 fill-amber-500" />
@@ -891,7 +891,7 @@ export function MandalsList() {
       </section>
 
       {/* ─── EXPLORE BY LOCATION SECTION ───────────────────────────────────── */}
-      <section className="pt-2 pb-4 px-4 md:px-8 lg:px-12 w-full max-w-[1700px] mx-auto space-y-6">
+      <section className="pt-2 pb-4 container mx-auto px-4 space-y-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-full bg-amber-100 dark:bg-amber-950/60 border border-amber-300 dark:border-amber-700 flex items-center justify-center text-amber-800 dark:text-amber-300">
@@ -1098,7 +1098,7 @@ export function MandalsList() {
 
 
       {/* ─── NEWS & FESTIVAL INFORMATION CARDS SECTION ─────────────────────── */}
-      <section className="pt-2 pb-8 px-4 md:px-8 lg:px-12 w-full max-w-[1700px] mx-auto">
+      <section className="pt-2 pb-8 container mx-auto px-4">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Card 1: News Updates */}
           <div className="bg-[#FAF7F2] dark:bg-zinc-900/90 border border-[#F0E6D8] dark:border-zinc-800 rounded-2xl md:rounded-3xl p-6 md:p-7 shadow-sm flex flex-col justify-between">
@@ -1119,31 +1119,31 @@ export function MandalsList() {
               <div className="max-h-[300px] overflow-y-auto space-y-3 md:space-y-4 pr-2 custom-scrollbar">
                 {(() => {
                   const staticNewsItems = [
-                    {
-                      id: "news-1",
-                      title: "Mandal Registration for Ganeshotsav 2026 is now open",
-                      date: "20 May 2026",
-                    },
-                    {
-                      id: "news-2",
-                      title: "Traffic Advisory for Lalbaugcha Raja Visarjan Route",
-                      date: "18 May 2026",
-                    },
-                    {
-                      id: "news-3",
-                      title: "BMC Guidelines for Eco-friendly Ganeshotsav 2026",
-                      date: "16 May 2026",
-                    },
-                    {
-                      id: "news-4",
-                      title: "Best Decorated Mandal Competition - Registrations Open",
-                      date: "14 May 2026",
-                    },
-                    {
-                      id: "news-5",
-                      title: "Volunteer Registration for Festival Support Open Now",
-                      date: "12 May 2026",
-                    },
+                    // {
+                    //   id: "news-1",
+                    //   title: "Mandal Registration for Ganeshotsav 2026 is now open",
+                    //   date: "20 May 2026",
+                    // },
+                    // {
+                    //   id: "news-2",
+                    //   title: "Traffic Advisory for Lalbaugcha Raja Visarjan Route",
+                    //   date: "18 May 2026",
+                    // },
+                    // {
+                    //   id: "news-3",
+                    //   title: "BMC Guidelines for Eco-friendly Ganeshotsav 2026",
+                    //   date: "16 May 2026",
+                    // },
+                    // {
+                    //   id: "news-4",
+                    //   title: "Best Decorated Mandal Competition - Registrations Open",
+                    //   date: "14 May 2026",
+                    // },
+                    // {
+                    //   id: "news-5",
+                    //   title: "Volunteer Registration for Festival Support Open Now",
+                    //   date: "12 May 2026",
+                    // },
                   ];
 
                   const displayNews = mandalNews.length > 0
@@ -1216,7 +1216,7 @@ export function MandalsList() {
                       {t("mandal_list.main_festival_day")}
                     </span>
                     <span className="text-xs md:text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                      {mainFestivalDay || "Ganesh Chaturthi, 27 Aug 2026"}
+                      {mainFestivalDay || ""}
                     </span>
                   </div>
                 </div>
@@ -1271,7 +1271,7 @@ export function MandalsList() {
         </div>
       </section>
 
-      <section className="py-8 px-4 md:px-8 lg:px-12 w-full max-w-[1700px] mx-auto">
+      <section className="py-8 container mx-auto px-4">
         <div className="bg-gradient-to-r from-[#24080A] via-[#3B0E12] to-[#200608] rounded-3xl p-6 md:p-8 border border-amber-500/25 shadow-2xl relative overflow-hidden text-white">
           {/* Ambient background glow */}
           <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-amber-500/10 rounded-full blur-[100px] pointer-events-none" />
