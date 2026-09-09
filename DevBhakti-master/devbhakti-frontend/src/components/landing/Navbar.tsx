@@ -75,7 +75,24 @@ const Navbar: React.FC<NavbarProps> = ({ variant = "default", isSolid = false })
     };
     checkMandalStatus();
     
-    return () => window.removeEventListener("scroll", handleScroll);
+    const handleAuthChange = () => {
+      const updatedUser = localStorage.getItem("user");
+      if (updatedUser) {
+        try {
+          setUser(JSON.parse(updatedUser));
+        } catch (e) {}
+      } else {
+        setUser(null);
+      }
+    };
+    window.addEventListener("user-auth-changed", handleAuthChange);
+    window.addEventListener("storage", handleAuthChange);
+
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      window.removeEventListener("user-auth-changed", handleAuthChange);
+      window.removeEventListener("storage", handleAuthChange);
+    };
   }, []);
 
   const handleLogout = () => {

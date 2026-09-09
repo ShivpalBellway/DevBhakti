@@ -141,6 +141,15 @@ export const initiateDonation = async (req: Request, res: Response) => {
         // Generate Custom Display ID
         const displayId = await generateDonationDisplayId();
 
+        // Validate userId if provided to prevent Foreign Key constraint error (P2003)
+        let validUserId = null;
+        if (userId) {
+            const existingUser = await prisma.user.findUnique({ where: { id: userId } });
+            if (existingUser) {
+                validUserId = userId;
+            }
+        }
+
         // Save Pending Donation Record
         const donation = await prisma.donation.create({
             data: {
@@ -158,7 +167,7 @@ export const initiateDonation = async (req: Request, res: Response) => {
                 panNumber,
                 address,
                 message,
-                userId: userId || null,
+                userId: validUserId,
                 status: "PENDING",
                 razorpayOrderId: razorpayOrder.id,
             }

@@ -69,24 +69,24 @@ export const getCart = async (req: Request, res: Response) => {
         const lang = getLang(req);
         // Transform data to match frontend structure and localize
         const formattedItems = (cart as any).items
-            ?.filter((item: any) => item.product && item.variant)
+            ?.filter((item: any) => item && item.product && item.variant)
             .map((item: any) => {
-            const localizedProduct = localize(item.product, lang);
-            const localizedVariant = localize(item.variant, lang);
+            const localizedProduct = item.product ? localize(item.product, lang) : { name: '' };
+            const localizedVariant = item.variant ? localize(item.variant, lang) : { name: '' };
             
             return {
                 id: item.id,
                 productId: item.productId,
                 variantId: item.variantId,
-                name: localizedProduct.name,
-                variantName: localizedVariant.name,
-                price: item.variant.price,
-                image: item.product.image,
+                name: localizedProduct?.name || 'Product',
+                variantName: localizedVariant?.name || 'Variant',
+                price: item.variant?.price || 0,
+                image: item.product?.image || '',
                 quantity: item.quantity,
-                templeId: item.product.templeId,
-                sellerId: item.product.sellerId,
-                stock: item.variant.stock,
-                isActive: item.variant.isActive
+                templeId: item.product?.templeId,
+                sellerId: item.product?.sellerId,
+                stock: item.variant?.stock || 0,
+                isActive: item.variant?.isActive ?? true
             };
         }) || [];
 

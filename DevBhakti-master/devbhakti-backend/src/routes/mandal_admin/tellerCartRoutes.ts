@@ -8,6 +8,7 @@ router.use(authenticate);
 router.use(injectMandalContext);
 
 router.get('/catalog', getTellerCatalog);
+router.get('/calculate-commission', calculateCartCommission);
 router.post('/calculate-commission', calculateCartCommission);
 router.post('/checkout', processTellerCheckout);
 router.get('/summary', getTellerSummary);

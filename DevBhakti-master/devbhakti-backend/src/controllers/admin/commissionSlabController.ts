@@ -164,7 +164,11 @@ export const deleteSlab = async (req: Request, res: Response) => {
  */
 export const calculateCommission = async (req: Request, res: Response) => {
   try {
-    const { amount, vendorType, vendorId, category, isOffline } = req.body;
+    const amount = req.body?.amount || req.query?.amount;
+    const vendorType = req.body?.vendorType || req.query?.vendorType;
+    const vendorId = req.body?.vendorId || req.query?.vendorId;
+    const category = req.body?.category || req.query?.category;
+    const isOfflineParam = req.body?.isOffline !== undefined ? req.body?.isOffline : req.query?.isOffline;
 
     if (!amount || !vendorType) {
       return res.status(400).json({
@@ -173,12 +177,14 @@ export const calculateCommission = async (req: Request, res: Response) => {
       });
     }
 
+    const isOffline = isOfflineParam === true || isOfflineParam === 'true';
+
     const commission = await getCommissionForAmount(
-      parseFloat(amount),
+      parseFloat(amount as string),
       vendorType as SlabType,
-      vendorId,
+      vendorId as string | undefined,
       category as CommissionCategory,
-      isOffline === true || isOffline === 'true'
+      isOffline
     );
 
     res.json({

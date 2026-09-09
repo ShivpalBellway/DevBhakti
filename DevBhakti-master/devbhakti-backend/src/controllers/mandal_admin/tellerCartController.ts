@@ -76,7 +76,33 @@ export const getTellerCatalog = async (req: Request, res: Response) => {
 export const calculateCartCommission = async (req: Request, res: Response) => {
   try {
     const mandalId = (req as any).owner?.ownerId;
-    const { items } = req.body;
+    
+    let items: any[] = [];
+    if (req.method === 'GET') {
+      const { amount, itemType, type, price, quantity } = req.query;
+      if (amount || price) {
+        items = [{
+          price: Number(amount || price),
+          quantity: Number(quantity || 1),
+          itemType: itemType || type || 'POOJA'
+        }];
+      } else if (req.query.items) {
+        try {
+          items = JSON.parse(req.query.items as string);
+        } catch (e) {}
+      } else {
+        // Default: If no params given, return breakdown for ALL standard categories with sample/test amount = 100 or 0
+        const testAmt = Number(req.query.sampleAmount || 100);
+        items = [
+          { itemType: 'POOJA', price: testAmt, quantity: 1, name: 'Pooja Platform Fee' },
+          { itemType: 'DONATION', price: testAmt, quantity: 1, name: 'Donation Platform Fee' },
+          { itemType: 'PRODUCT', price: testAmt, quantity: 1, name: 'Product / Marketplace Platform Fee' },
+          { itemType: 'TICKET', price: testAmt, quantity: 1, name: 'Darshan Ticket Platform Fee' }
+        ];
+      }
+    } else {
+      items = req.body?.items || [];
+    }
 
     if (!mandalId) {
       return res.status(400).json({ success: false, message: 'Mandal context required' });
@@ -111,8 +137,8 @@ export const calculateCartCommission = async (req: Request, res: Response) => {
 
       totalPlatformFee += itemPlatformFee;
       itemsBreakdown.push({
-        id: item.id || item.itemId,
-        itemName: item.itemName || item.name,
+        id: item.id || item.itemId || null,
+        itemName: item.itemName || item.name || type,
         itemType: type,
         itemTotal,
         platformFee: itemPlatformFee,
@@ -120,11 +146,36 @@ export const calculateCartCommission = async (req: Request, res: Response) => {
       });
     }
 
+    // Fetch all active offline slabs for this Mandal (Custom -> Mandal Default -> Global Fallback)
+    const slabsConfigRaw = await prisma.commissionSlab.findMany({
+      where: {
+        isOffline: true,
+        isActive: true,
+        OR: [
+          { slabType: SlabType.MANDAL, targetId: mandalId },
+          { slabType: SlabType.MANDAL, targetId: null },
+          { slabType: SlabType.GLOBAL }
+        ]
+      },
+      orderBy: { minAmount: 'asc' }
+    });
+
+    const slabsConfig = slabsConfigRaw.map(slab => ({
+      id: slab.id,
+      category: slab.category,
+      slabType: slab.slabType,
+      minAmount: slab.minAmount,
+      maxAmount: slab.maxAmount,
+      platformFee: slab.platformFee,
+      percentage: slab.percentage
+    }));
+
     res.json({
       success: true,
       data: {
         itemsBreakdown,
         totalPlatformFee,
+        slabsConfig
       },
     });
   } catch (error: any) {

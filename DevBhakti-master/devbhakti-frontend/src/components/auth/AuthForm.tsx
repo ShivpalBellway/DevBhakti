@@ -281,6 +281,7 @@ const AuthForm: React.FC = () => {
 
       localStorage.setItem("token", response.data.token);
       localStorage.setItem("user", JSON.stringify(response.data.user));
+      window.dispatchEvent(new Event("user-auth-changed"));
 
 
       // If there's a profile image, upload it now

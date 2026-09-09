@@ -23,6 +23,7 @@ import {
   Link,
   User,
   X,
+  Check,
   Flower2,
   ShoppingBag,
   IndianRupee,
@@ -251,18 +252,15 @@ export function MandalDetail({ slug }: { slug: string }) {
     }
   }, [selectedAmount, customAmount, mandal?.id]);
 
-  const handleOpenDonateModal = () => {
-    const savedToken = localStorage.getItem("token") || localStorage.getItem("user_token");
-    if (!savedToken && !currentUser) {
-      toast({
-        title: "Login Required",
-        description: "Please login to donate to mandals and receive your receipt.",
-        variant: "destructive",
-      });
-      router.push(`/auth?redirect=/mandals/${slug}`);
-      return;
-    }
+  const [showDonationOtpInput, setShowDonationOtpInput] = useState(false);
+  const [donationOtp, setDonationOtp] = useState("");
+  const [isSendingDonationOtp, setIsSendingDonationOtp] = useState(false);
+  const [isVerifyingDonationOtp, setIsVerifyingDonationOtp] = useState(false);
+  const [donationOtpSent, setDonationOtpSent] = useState(false);
+  const [showReceiptModal, setShowReceiptModal] = useState(false);
+  const [donationReceipt, setDonationReceipt] = useState<any>(null);
 
+  const handleOpenDonateModal = () => {
     if (isInternational) {
       toast({
         title: "FCRA Restriction",
@@ -275,15 +273,119 @@ export function MandalDetail({ slug }: { slug: string }) {
     setShowDonateModal(true);
   };
 
+  const handleSendDonationOtp = async () => {
+    if (!donorPhone || donorPhone.replace(/\D/g, '').length < 10) {
+      toast({
+        title: "Invalid Phone",
+        description: "Please enter a valid 10-digit mobile number.",
+        variant: "destructive"
+      });
+      return;
+    }
+    setIsSendingDonationOtp(true);
+    try {
+      const rawDigits = donorPhone.replace(/\D/g, '').slice(-10);
+      const normalizedPhone = "+91" + rawDigits;
+      const res = await fetch(`${API_URL}/auth/send-otp`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          phone: normalizedPhone,
+          name: donorName ? donorName.trim() : undefined,
+          email: donorEmail ? donorEmail.trim() : undefined,
+          role: "DEVOTEE",
+          mode: "login"
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setDonationOtpSent(true);
+        setShowDonationOtpInput(true);
+        toast({
+          title: "OTP Sent! 📲",
+          description: `An OTP has been sent to ${normalizedPhone}`,
+        });
+      } else {
+        toast({
+          title: "Failed to send OTP",
+          description: data.message || "Please check phone number and try again.",
+          variant: "destructive"
+        });
+      }
+    } catch (err) {
+      console.error("Error sending donation OTP:", err);
+      toast({
+        title: "Error",
+        description: "Could not send OTP. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSendingDonationOtp(false);
+    }
+  };
+
+  const handleVerifyDonationOtp = async () => {
+    if (!donationOtp || donationOtp.length < 4) {
+      toast({
+        title: "Invalid OTP",
+        description: "Please enter the complete OTP.",
+        variant: "destructive"
+      });
+      return;
+    }
+    setIsVerifyingDonationOtp(true);
+    try {
+      const rawDigits = donorPhone.replace(/\D/g, '').slice(-10);
+      const normalizedPhone = "+91" + rawDigits;
+      const res = await fetch(`${API_URL}/auth/verify-otp`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          phone: normalizedPhone,
+          otp: donationOtp,
+          role: "DEVOTEE"
+        })
+      });
+      const data = await res.json();
+      const authData = data.data || data;
+      if (data.success && authData.token) {
+        localStorage.setItem("token", authData.token);
+        localStorage.setItem("user", JSON.stringify(authData.user));
+        setCurrentUser(authData.user);
+        window.dispatchEvent(new Event("user-auth-changed"));
+        setShowDonationOtpInput(false);
+        setDonationOtpSent(false);
+        toast({
+          title: "Verified & Logged In! 🙏",
+          description: "Mobile number verified successfully.",
+        });
+      } else {
+        toast({
+          title: "Invalid OTP",
+          description: data.message || "Incorrect OTP entered.",
+          variant: "destructive"
+        });
+      }
+    } catch (err) {
+      console.error("Error verifying donation OTP:", err);
+      toast({
+        title: "Error",
+        description: "Could not verify OTP. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsVerifyingDonationOtp(false);
+    }
+  };
+
   const handleDonate = async () => {
     const savedToken = localStorage.getItem("token") || localStorage.getItem("user_token");
     if (!savedToken && !currentUser) {
       toast({
-        title: "Login Required",
-        description: "Please login to proceed with donation.",
+        title: "Verification Required",
+        description: "Please verify your mobile number with OTP first.",
         variant: "destructive",
       });
-      router.push(`/auth?redirect=/mandals/${slug}`);
       return;
     }
 
@@ -363,9 +465,19 @@ export function MandalDetail({ slug }: { slug: string }) {
               if (verifyData.success) {
                 toast({
                   title: "Donation Successful! 🙏",
-                  description: "Thank you for your contribution. A receipt has been sent to your email.",
+                  description: "Thank you for your contribution.",
                 });
                 setShowDonateModal(false);
+                setDonationReceipt({
+                  paymentId: response.razorpay_payment_id,
+                  orderId: response.razorpay_order_id,
+                  amount: totalAmountPayable,
+                  donorName: isAnonymous ? "Anonymous" : (donorName || currentUser?.name || "Devotee"),
+                  donorPhone: donorPhone || currentUser?.phone || "",
+                  mandalName: mandal.name?.en || mandal.name || "Mandal",
+                  date: new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+                });
+                setShowReceiptModal(true);
                 loadMandal();
               } else {
                 toast({
@@ -1516,11 +1628,63 @@ export function MandalDetail({ slug }: { slug: string }) {
                   <input type="email" placeholder="Email Address *" value={donorEmail} onChange={(e) => setDonorEmail(e.target.value)}
                     className="w-full pl-10 pr-4 py-2.5 bg-white border border-amber-900/15 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#6B0F1A]/20 focus:border-[#6B0F1A]" required />
                 </div>
-                <div className="relative">
+
+                {/* Mobile Input & Send OTP Button */}
+                <div className="relative flex items-center">
                   <Phone className="w-4 h-4 text-zinc-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                  <input type="tel" placeholder="Mobile Number (e.g. +91 9999999999) *" value={donorPhone} onChange={(e) => setDonorPhone(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2.5 bg-white border border-amber-900/15 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#6B0F1A]/20 focus:border-[#6B0F1A]" required />
+                  <input
+                    type="tel"
+                    placeholder="Mobile Number (10 digits) *"
+                    value={donorPhone}
+                    onChange={(e) => {
+                      const clean = e.target.value.replace(/\D/g, '').slice(0, 10);
+                      setDonorPhone(clean);
+                    }}
+                    className="w-full pl-10 pr-24 py-2.5 bg-white border border-amber-900/15 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#6B0F1A]/20 focus:border-[#6B0F1A]"
+                    required
+                  />
+                  {currentUser || localStorage.getItem("token") ? (
+                    <span className="absolute right-3 text-xs font-bold text-emerald-600 flex items-center gap-1 bg-emerald-50 px-2 py-1 rounded-lg">
+                      <CheckCircle className="w-3.5 h-3.5" /> Verified
+                    </span>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={handleSendDonationOtp}
+                      disabled={isSendingDonationOtp || donorPhone.replace(/\D/g, '').length < 10}
+                      className="absolute right-2 text-xs font-bold bg-[#6B0F1A] text-white px-3 py-1.5 rounded-lg hover:bg-[#520B14] transition-all disabled:opacity-40"
+                    >
+                      {isSendingDonationOtp ? "Sending..." : (donationOtpSent ? "Resend OTP" : "Send OTP")}
+                    </button>
+                  )}
                 </div>
+
+                {/* In-Modal OTP Input Box */}
+                {!currentUser && !localStorage.getItem("token") && showDonationOtpInput && (
+                  <div className="p-3 bg-amber-50/80 border border-amber-200 rounded-xl space-y-2 animate-in fade-in">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-amber-900">Enter OTP sent to +91 {donorPhone}</span>
+                    </div>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        maxLength={6}
+                        placeholder="6-digit OTP"
+                        value={donationOtp}
+                        onChange={(e) => setDonationOtp(e.target.value)}
+                        className="w-full px-3 py-2 bg-white border border-amber-300 rounded-lg text-center font-bold text-base tracking-widest text-zinc-900 focus:outline-none focus:ring-2 focus:ring-[#6B0F1A]"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleVerifyDonationOtp}
+                        disabled={isVerifyingDonationOtp || donationOtp.length < 4}
+                        className="px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs rounded-lg shadow-sm transition-all disabled:opacity-40 shrink-0"
+                      >
+                        {isVerifyingDonationOtp ? "Verifying..." : "Verify OTP"}
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -1553,6 +1717,70 @@ export function MandalDetail({ slug }: { slug: string }) {
               {isDonating 
                 ? "Processing Donation..." 
                 : `Proceed to Donate ₹${((selectedAmount || parseInt(customAmount) || 0) + platformFee).toLocaleString("en-IN")}`}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* ─── DONATION RECEIPT SUCCESS MODAL ───────────────────────────────────── */}
+      <Dialog open={showReceiptModal} onOpenChange={setShowReceiptModal}>
+        <DialogContent className="sm:max-w-md bg-white rounded-3xl p-6 shadow-2xl border border-orange-100">
+          <DialogHeader className="text-center">
+            <div className="mx-auto w-14 h-14 bg-emerald-100 rounded-full flex items-center justify-center mb-3">
+              <Check className="w-8 h-8 text-emerald-600" />
+            </div>
+            <DialogTitle className="text-2xl font-serif font-bold text-slate-900">
+              Donation Successful! 🙏
+            </DialogTitle>
+            <DialogDescription className="text-sm text-slate-500 font-medium">
+              Thank you for your sacred contribution. Here is your official donation receipt.
+            </DialogDescription>
+          </DialogHeader>
+
+          {donationReceipt && (
+            <div id="donation-receipt-print" className="my-4 p-5 bg-orange-50/60 rounded-2xl border border-orange-100 space-y-3 text-sm">
+              <div className="flex justify-between items-center pb-3 border-b border-orange-200/60">
+                <span className="text-xs uppercase font-bold text-orange-900 tracking-wider">DevBhakti Receipt</span>
+                <span className="text-xs text-slate-500">{donationReceipt.date}</span>
+              </div>
+              <div className="flex justify-between py-1">
+                <span className="text-slate-500">Mandal:</span>
+                <span className="font-bold text-slate-900 text-right">{donationReceipt.mandalName}</span>
+              </div>
+              <div className="flex justify-between py-1">
+                <span className="text-slate-500">Devotee Name:</span>
+                <span className="font-bold text-slate-900">{donationReceipt.donorName}</span>
+              </div>
+              <div className="flex justify-between py-1">
+                <span className="text-slate-500">Phone:</span>
+                <span className="font-medium text-slate-700">{donationReceipt.donorPhone}</span>
+              </div>
+              <div className="flex justify-between py-1">
+                <span className="text-slate-500">Payment ID:</span>
+                <span className="font-mono text-xs text-slate-600">{donationReceipt.paymentId}</span>
+              </div>
+              <div className="flex justify-between py-2 border-t border-orange-200/60 text-base font-bold">
+                <span className="text-slate-900">Total Paid:</span>
+                <span className="text-[#6B0F1A]">₹{donationReceipt.amount?.toLocaleString("en-IN")}</span>
+              </div>
+            </div>
+          )}
+
+          <div className="flex gap-3 mt-2">
+            <Button
+              variant="outline"
+              className="flex-1 rounded-xl font-bold border-slate-300"
+              onClick={() => {
+                window.print();
+              }}
+            >
+              🖨️ Print / Save PDF
+            </Button>
+            <Button
+              className="flex-1 bg-[#6B0F1A] hover:bg-[#520B14] text-white rounded-xl font-bold"
+              onClick={() => setShowReceiptModal(false)}
+            >
+              Done
             </Button>
           </div>
         </DialogContent>

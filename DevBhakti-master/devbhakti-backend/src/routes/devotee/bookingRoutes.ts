@@ -8,6 +8,7 @@ const router = Router();
 // Public Routes
 router.get('/check-availability', checkAvailability);
 router.post('/calculate-commission', calculateCommission);
+router.get('/calculate-commission', calculateCommission);
 router.get('/unavailable-dates', getUnavailableDates);
 router.get('/track-awb', trackByAwb); // Public: track by AWB code (no login needed)
 

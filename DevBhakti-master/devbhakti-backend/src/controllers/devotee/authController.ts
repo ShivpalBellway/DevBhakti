@@ -436,8 +436,8 @@ export const sendOTP = async (req: Request, res: Response) => {
             });
         } else {
             // No user with this phone + role found
-            if (!isRegisterFlow) {
-                // Check if this number exists in the Lead table
+            if (!isRegisterFlow && checkRole !== 'DEVOTEE') {
+                // Check if this number exists in the Lead table (only for MANDAL/INSTITUTION)
                 const existingLead = await prisma.lead.findFirst({
                     where: { phone: { in: phoneVariants } }
                 });
@@ -610,11 +610,11 @@ export const verifyOTP = async (req: Request, res: Response) => {
 
         const isRegisterFlow = otpVerification ? otpVerification.isRegisterFlow : false;
 
-        if (!user && !isRegisterFlow) {
+        if (!user && !isRegisterFlow && checkRole !== 'DEVOTEE') {
             return res.status(404).json({ success: false, message: 'User not found' });
         }
 
-        if (!user && isRegisterFlow) {
+        if (!user && (isRegisterFlow || checkRole === 'DEVOTEE')) {
             user = await prisma.user.create({
                 data: {
                     displayId: await generateCustomId(checkRole === 'INSTITUTION' ? 'TAID' : 'UID'),
@@ -646,6 +646,9 @@ export const verifyOTP = async (req: Request, res: Response) => {
 
             if (user.role === 'DEVOTEE') {
                 updateData.isVerified = true;
+            }
+            if (otpVerification?.name && (user.name === 'Devotee' || !user.name)) {
+                updateData.name = otpVerification.name;
             }
 
             const updatedUser = await prisma.user.update({
