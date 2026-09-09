@@ -426,11 +426,10 @@ export const createBulkMandalPoojas = async (data: any) => {
     return response.data;
 };
 
-export const createBulkMandalEvents = async (data: any) => {
-    const token = localStorage.getItem("token");
-    const response = await axios.post(`${API_URL}/mandal-admin/events/bulk`, data, {
-        headers: { Authorization: `Bearer ${token}` }
-    });
+// Mandal Staff Login
+export const staffLoginMandal = async (data: any) => {
+    const response = await axios.post(`${API_URL}/mandal-admin/team/login`, data);
     return response.data;
 };
+
 
