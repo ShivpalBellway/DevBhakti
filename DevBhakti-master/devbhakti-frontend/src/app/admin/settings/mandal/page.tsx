@@ -126,7 +126,7 @@ export default function MandalSettingsPage() {
           description: checked
             ? "Mandal registration is now LIVE across the website."
             : "Mandal registration is now OFF for users.",
-          variant: checked ? "success" : "default",
+          variant: "success",
         });
         loadSettings();
       }

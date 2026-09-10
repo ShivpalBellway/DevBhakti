@@ -2501,5 +2501,43 @@
     "select_photo": "फोटो चुनें",
     "add_banner": "बैनर जोड़ें",
     "map_url": "गूगल मैप लिंक"
+  },
+  "temple_login_modal": {
+    "header": {
+      "title": "मंदिर लॉगिन",
+      "title_mandal": "मंडल लॉगिन",
+      "subtitle": "अपनी मंदिर प्रोफाइल और सेवाओं का प्रबंधन करें",
+      "subtitle_mandal": "अपने मंडल और कार्यक्रमों का प्रबंधन करें"
+    },
+    "labels": {
+      "phone": "मंदिर मालिक/प्राधिकारी का मोबाइल नंबर",
+      "otp": "सत्यापन कोड"
+    },
+    "placeholders": {
+      "phone": "XXXXX XXXXX",
+      "otp": "6-अंकों का ओटीपी दर्ज करें"
+    },
+    "buttons": {
+      "continue": "डैशबोर्ड पर आगे बढ़ें",
+      "requesting": "ओटीपी भेजा जा रहा है...",
+      "verify": "सत्यापित करें और आगे बढ़ें",
+      "verifying": "सत्यापित किया जा रहा है...",
+      "change_number": "नंबर बदलें"
+    },
+    "footer": {
+      "staff_login": "मंदिर कर्मचारी लॉगिन",
+      "mandal_staff_login": "मंडल कर्मचारी लॉगिन",
+      "new_admin": "क्या पंजीकृत मंदिर नहीं है?",
+      "no_account_mandal": "क्या पंजीकृत मंडल नहीं है?",
+      "register": "मंदिर पंजीकृत करें",
+      "register_now_mandal": "मंडल पंजीकृत करें"
+    },
+    "messages": {
+      "send_failed": "ओटीपी भेजने में विफल",
+      "invalid_otp": "अमान्य ओटीपी",
+      "welcome_back": "वापसी पर स्वागत है",
+      "success": "लॉगिन सफल"
+    },
+    "dev_otp": "डेव ओटीपी (परीक्षण):"
   }
 }

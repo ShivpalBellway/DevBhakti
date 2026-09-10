@@ -2556,5 +2556,43 @@
     "select_photo": "SELECT PHOTO",
     "add_banner": "Add Banner",
     "map_url": "Google Maps Location URL"
+  },
+  "temple_login_modal": {
+    "header": {
+      "title": "Temple Login",
+      "title_mandal": "Mandal Login",
+      "subtitle": "Manage your temple profile and services",
+      "subtitle_mandal": "Manage your mandal and events"
+    },
+    "labels": {
+      "phone": "Temple Owner/Authority's Mobile Number",
+      "otp": "Verification Code"
+    },
+    "placeholders": {
+      "phone": "XXXXX XXXXX",
+      "otp": "Enter 6-digit OTP"
+    },
+    "buttons": {
+      "continue": "Continue to Dashboard",
+      "requesting": "Sending OTP...",
+      "verify": "Verify & Continue",
+      "verifying": "Verifying...",
+      "change_number": "Change Number"
+    },
+    "footer": {
+      "staff_login": "Temple Staff Login",
+      "mandal_staff_login": "Mandal Staff Login",
+      "new_admin": "Don't have a registered temple?",
+      "no_account_mandal": "Don't have a registered mandal?",
+      "register": "Register Temple",
+      "register_now_mandal": "Register Mandal"
+    },
+    "messages": {
+      "send_failed": "Failed to send OTP",
+      "invalid_otp": "Invalid OTP",
+      "welcome_back": "Welcome Back",
+      "success": "Login successful"
+    },
+    "dev_otp": "Dev OTP (Testing):"
   }
 }

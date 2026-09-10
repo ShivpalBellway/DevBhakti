@@ -215,7 +215,17 @@ export default function TempleLoginModal({ onClose, loginType = "temple" }: Temp
                 )}
 
                 <div className="mt-8 text-center space-y-3">
-                    {loginType !== "mandal" && (
+                    {loginType === "mandal" ? (
+                        <button
+                            onClick={() => {
+                                onClose();
+                                router.push("/mandals/dashboard/staff-login");
+                            }}
+                            className="text-sm font-bold text-[#7b4623] hover:underline"
+                        >
+                            {t('footer.mandal_staff_login') || "Mandal Staff Login"}
+                        </button>
+                    ) : (
                         <button
                             onClick={() => {
                                 onClose();

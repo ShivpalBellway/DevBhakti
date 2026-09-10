@@ -124,7 +124,12 @@ const Footer: React.FC = () => {
             <ul className="space-y-3">
               {footerLinks.support.map((link) => (
                 <li key={link.label}>
-                  <a href={link.href} className="flex items-center gap-2 hover:text-[#DCB35D] transition-colors text-sm whitespace-nowrap">
+                  <a 
+                    href={link.href} 
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 hover:text-[#DCB35D] transition-colors text-sm whitespace-nowrap"
+                  >
                     <Mail className="w-4 h-4 flex-shrink-0" />
                     {link.label}
                   </a>
