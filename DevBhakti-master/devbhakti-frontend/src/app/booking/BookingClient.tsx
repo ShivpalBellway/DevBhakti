@@ -966,7 +966,9 @@ function BookingForm() {
                           </Label>
                           <div 
                             className="text-xs sm:text-sm text-muted-foreground line-clamp-1 mt-0.5"
-                            dangerouslySetInnerHTML={{ __html: parseLocalizedValue(selectedPoojaData.description?.[0] || selectedPoojaData.about) || "" }}
+                            dangerouslySetInnerHTML={{ 
+                              __html: (parseLocalizedValue(selectedPoojaData.description?.[0] || selectedPoojaData.about) || "").replace(/^[\s{\"]+/, '') 
+                            }}
                           />
                         </div>
                       </div>
@@ -992,31 +994,33 @@ function BookingForm() {
                       {availablePoojas.map((pooja) => (
                         <div
                           key={pooja.id}
-                          className={`flex items-center justify-between p-3 sm:p-3.5 rounded-xl border transition-all cursor-pointer ${selectedPooja === pooja.id
+                          className={`flex flex-wrap sm:flex-nowrap items-center justify-between p-3 sm:p-3.5 rounded-xl border transition-all cursor-pointer gap-2 ${selectedPooja === pooja.id
                             ? "border-primary bg-primary/5 shadow-xs"
                             : "border-border hover:border-primary/50"
                             }`}
                           onClick={() => setSelectedPooja(pooja.id)}
                         >
-                          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+                          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
                             <RadioGroupItem value={pooja.id} id={pooja.id} className="shrink-0" />
                             <img
                               src={getFullImageUrl(pooja.image || pooja.imageUrl || pooja.bannerImage)}
                               alt={parseLocalizedValue(pooja.name)}
-                              className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl object-cover shrink-0 border border-orange-100/80 shadow-xs"
+                              className="w-10 h-10 sm:w-14 sm:h-14 rounded-xl object-cover shrink-0 border border-orange-100/80 shadow-xs"
                             />
                             <div className="min-w-0 flex-1">
-                              <Label htmlFor={pooja.id} className="font-semibold text-sm sm:text-base cursor-pointer truncate block">
+                              <Label htmlFor={pooja.id} className="font-semibold text-xs sm:text-base cursor-pointer truncate block">
                                 {parseLocalizedValue(pooja.name)}
                               </Label>
                               <div 
-                                className="text-xs sm:text-sm text-muted-foreground line-clamp-1 mt-0.5" 
-                                dangerouslySetInnerHTML={{ __html: parseLocalizedValue(pooja.description?.[0] || pooja.about) || "" }} 
+                                className="text-[11px] sm:text-sm text-muted-foreground line-clamp-1 mt-0.5" 
+                                dangerouslySetInnerHTML={{ 
+                                  __html: (parseLocalizedValue(pooja.description?.[0] || pooja.about) || "").replace(/^[\s{\"]+/, '') 
+                                }} 
                               />
                             </div>
                           </div>
-                          <div className="flex items-center text-primary font-bold text-base sm:text-lg shrink-0 ml-3">
-                            <IndianRupee className="h-4 w-4" />
+                          <div className="flex items-center text-primary font-bold text-sm sm:text-lg shrink-0 whitespace-nowrap pl-7 sm:pl-0 sm:ml-3">
+                            <IndianRupee className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                             {pooja.price}
                           </div>
                         </div>
