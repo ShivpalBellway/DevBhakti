@@ -88,6 +88,17 @@ export default function CreateProductPage() {
   const [tempVariantImage, setTempVariantImage] = useState<string | null>(null);
   const [currentVariantId, setCurrentVariantId] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
+  const [vendorSearch, setVendorSearch] = useState("");
+
+  const filteredVendors = vendors.filter((v) => {
+    if (!vendorSearch.trim()) return true;
+    const q = vendorSearch.toLowerCase().trim();
+    return (
+      v.name?.toLowerCase().includes(q) ||
+      v.role?.toLowerCase().includes(q) ||
+      v.searchText?.toLowerCase().includes(q)
+    );
+  });
 
   // All form data in flat structure (same as TempleForm pattern)
   const [formData, setFormData] = useState({
@@ -534,25 +545,43 @@ export default function CreateProductPage() {
                                 <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                               </Button>
                             </PopoverTrigger>
-                            <PopoverContent className="w-full p-0" align="start">
-                              <Command>
-                                <CommandInput placeholder={t("admin.products.search_vendor")} className="h-9" />
-                                <CommandList>
-                                  <CommandEmpty>{t("admin.products.no_vendor_found")}</CommandEmpty>
-                                  <CommandGroup>
-                                    {vendors.map((vendor) => (
-                                      <CommandItem key={vendor.id} value={vendor.searchText || vendor.name} onSelect={() => { setFormData({ ...formData, templeId: vendor.id }); setOpen(false); }}>
-                                        <div className="flex items-center gap-2 w-full">
-                                          {vendor.icon}
-                                          <span className="flex-1">{parseLocalizedValue(vendor.name, activeFormLang)}</span>
-                                          <span className="text-[10px] font-bold uppercase py-0.5 px-1 bg-slate-100 rounded text-slate-500">{vendor.role}</span>
-                                          <Check className={cn("ml-2 h-4 w-4", formData.templeId === vendor.id ? "opacity-100" : "opacity-0")} />
-                                        </div>
-                                      </CommandItem>
-                                    ))}
-                                  </CommandGroup>
-                                </CommandList>
-                              </Command>
+                            <PopoverContent className="w-80 p-0" align="start">
+                              <div className="p-2 border-b">
+                                <Input
+                                  placeholder="Search owner or vendor..."
+                                  value={vendorSearch}
+                                  onChange={(e) => setVendorSearch(e.target.value)}
+                                  className="h-8 text-xs focus:ring-1 focus:ring-amber-500"
+                                  autoFocus
+                                />
+                              </div>
+                              <div className="max-h-60 overflow-y-auto p-1 space-y-0.5">
+                                {filteredVendors.length === 0 ? (
+                                  <p className="text-xs text-slate-400 py-4 text-center">No owner or vendor found</p>
+                                ) : (
+                                  filteredVendors.map((vendor) => (
+                                    <div
+                                      key={vendor.id}
+                                      onClick={() => {
+                                        setFormData({ ...formData, templeId: vendor.id });
+                                        setOpen(false);
+                                        setVendorSearch("");
+                                      }}
+                                      className={cn(
+                                        "flex items-center gap-2 px-2.5 py-2 rounded-lg text-xs cursor-pointer hover:bg-amber-50/80 transition-colors",
+                                        formData.templeId === vendor.id ? "bg-amber-100/70 text-amber-900 font-semibold" : "text-slate-700"
+                                      )}
+                                    >
+                                      {vendor.icon}
+                                      <span className="flex-1 truncate">{parseLocalizedValue(vendor.name, activeFormLang)}</span>
+                                      <span className="text-[10px] font-bold uppercase py-0.5 px-1 bg-slate-100 rounded text-slate-500 shrink-0">
+                                        {vendor.role}
+                                      </span>
+                                      <Check className={cn("ml-1 h-3.5 w-3.5 text-amber-700", formData.templeId === vendor.id ? "opacity-100" : "opacity-0")} />
+                                    </div>
+                                  ))
+                                )}
+                              </div>
                             </PopoverContent>
                           </Popover>
                         </div>

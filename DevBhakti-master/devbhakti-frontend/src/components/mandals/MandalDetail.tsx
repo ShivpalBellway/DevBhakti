@@ -53,7 +53,7 @@ import Footer from "@/components/landing/Footer";
 import { API_URL } from "@/config/apiConfig";
 import { useLanguage } from "@/context/LanguageContext";
 import { getLocalized } from "@/utils/localization";
-import { stripHtml } from "@/utils/textUtils";
+import { stripHtml, parseLocalizedValue } from "@/utils/textUtils";
 import { fetchUserFavorites, addFavorite, removeFavorite } from "@/api/userController";
 import { fetchPublicProducts } from "@/api/publicController";
 
@@ -250,6 +250,22 @@ export function MandalDetail({ slug }: { slug: string }) {
       setPlatformFee(0);
     }
   }, [selectedAmount, customAmount, mandal?.id]);
+
+  // Keyboard controls for gallery lightbox (Rules of Hooks compliant)
+  useEffect(() => {
+    if (!lightboxOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "ArrowLeft") {
+        document.getElementById("lightbox-prev-btn")?.click();
+      } else if (e.key === "ArrowRight") {
+        document.getElementById("lightbox-next-btn")?.click();
+      } else if (e.key === "Escape") {
+        setLightboxOpen(false);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [lightboxOpen]);
 
   const [showDonationOtpInput, setShowDonationOtpInput] = useState(false);
   const [donationOtp, setDonationOtp] = useState("");
@@ -840,14 +856,67 @@ export function MandalDetail({ slug }: { slug: string }) {
         </div>
       </div>
 
-      {/* ─── UNIFIED SINGLE PAGE CONTENT (ORDER MATCHING HANDWRITTEN DIAGRAM) ─── */}
+      {/* ─── UNIFIED SINGLE PAGE CONTENT ─── */}
       <main className="container mx-auto px-4 py-8 space-y-10">
 
-        {/* ─── ROW 1: TOP MEDIA GRID (1: GALLERY, 2: LIVE DARSHAN, 3: TODAY'S AARTI) ─── */}
+        {/* ─── ROW 1: TOP MEDIA GRID (GALLERY, LIVE DARSHAN, TODAY'S AARTI) ─── */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-6">
 
-          {/* CARD 1: GALLERY */}
-          <div id="section-gallery" className="scroll-mt-28 flex flex-col lg:col-span-4">
+          {/* CARD 1: LIVE DARSHAN (Only if mandal has live stream / isLive) */}
+          {hasLiveDarshan && (
+            <div id="section-live" className="scroll-mt-28 flex flex-col lg:col-span-5">
+              <Card className="rounded-3xl border-zinc-200/80 p-5 bg-white shadow-sm hover:shadow-md transition-all flex flex-col justify-between h-full">
+                <div className="flex flex-col h-full justify-between gap-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-serif font-bold text-lg text-zinc-900 flex items-center gap-1.5">
+                        <Video className="w-4 h-4 text-red-600" />
+                        Live Darshan
+                      </h3>
+                    </div>
+                    <Badge className="bg-red-600 text-white font-bold text-[10px] px-2.5 py-0.5 animate-pulse">
+                      ● LIVE 24x7
+                    </Badge>
+                  </div>
+
+                  <div className="flex-1 w-full min-h-[280px] rounded-2xl overflow-hidden bg-zinc-950 relative border border-zinc-200 flex items-center justify-center">
+                    {mandal?.liveUrl ? (
+                      <iframe
+                        src={getEmbedUrl(mandal.liveUrl)}
+                        className="w-full h-full absolute inset-0"
+                        allowFullScreen
+                        title="Live Darshan Stream"
+                      />
+                    ) : (
+                      <div className="text-center p-4">
+                        <Video className="w-12 h-12 text-red-500 mx-auto mb-2 animate-pulse" />
+                        <div className="text-base font-bold text-white">24x7 Live Darshan Stream</div>
+                        <div className="text-xs text-zinc-400 mt-1">Direct live stream from {name}</div>
+                      </div>
+                    )}
+                  </div>
+
+                  <p className="text-xs text-zinc-500 text-center font-medium">
+                    Experience divine live darshan directly from {name}.
+                  </p>
+                </div>
+              </Card>
+            </div>
+          )}
+
+          {/* CARD 2: GALLERY (Expands to lg:col-span-8 or 12 if no Live Darshan) */}
+          <div
+            id="section-gallery"
+            className={`scroll-mt-28 flex flex-col ${
+              hasLiveDarshan
+                ? hasAartis
+                  ? "lg:col-span-4"
+                  : "lg:col-span-7"
+                : hasAartis
+                ? "lg:col-span-8"
+                : "lg:col-span-12"
+            }`}
+          >
             <Card className="rounded-3xl border-zinc-200/80 p-5 bg-white shadow-sm hover:shadow-md transition-all flex flex-col justify-between h-full">
               <div>
                 <div className="flex items-center justify-between mb-4">
@@ -869,7 +938,7 @@ export function MandalDetail({ slug }: { slug: string }) {
                   </Button>
                 </div>
 
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-3 gap-2">
                   <div
                     onClick={() => { setLightboxIndex(0); setLightboxOpen(true); }}
                     className="col-span-2 aspect-[16/9] rounded-2xl overflow-hidden bg-zinc-100 cursor-pointer relative group"
@@ -911,421 +980,385 @@ export function MandalDetail({ slug }: { slug: string }) {
             </Card>
           </div>
 
-          {/* CARD 2: LIVE DARSHAN (LARGER PROPORTION) */}
-          <div id="section-live" className="scroll-mt-28 flex flex-col lg:col-span-5">
-            <Card className="rounded-3xl border-zinc-200/80 p-5 bg-white shadow-sm hover:shadow-md transition-all flex flex-col justify-between h-full">
-              <div className="flex flex-col h-full justify-between gap-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <h3 className="font-serif font-bold text-lg text-zinc-900 flex items-center gap-1.5">
-                      <Video className="w-4 h-4 text-red-600" />
-                      Live Darshan
-                    </h3>
-                  </div>
-                  {hasLiveDarshan && (
-                    <Badge className="bg-red-600 text-white font-bold text-[10px] px-2.5 py-0.5 animate-pulse">
-                      ● LIVE 24x7
-                    </Badge>
-                  )}
-                </div>
-
-                <div className="flex-1 w-full min-h-[280px] rounded-2xl overflow-hidden bg-zinc-950 relative border border-zinc-200 flex items-center justify-center">
-                  {mandal?.liveUrl ? (
-                    <iframe
-                      src={getEmbedUrl(mandal.liveUrl)}
-                      className="w-full h-full absolute inset-0"
-                      allowFullScreen
-                      title="Live Darshan Stream"
-                    />
-                  ) : (
-                    <div className="text-center p-4">
-                      <Video className="w-12 h-12 text-red-500 mx-auto mb-2 animate-pulse" />
-                      <div className="text-base font-bold text-white">24x7 Live Darshan Stream</div>
-                      <div className="text-xs text-zinc-400 mt-1">Direct live stream from {name}</div>
-                    </div>
-                  )}
-                </div>
-
-                <p className="text-xs text-zinc-500 text-center font-medium">
-                  Experience divine live darshan directly from {name}.
-                </p>
-              </div>
-            </Card>
-          </div>
-
-          {/* CARD 3: TODAY'S AARTI TIMINGS (COMPACT) */}
-          <div id="section-aarti" className="scroll-mt-28 flex flex-col lg:col-span-3">
-            <Card className="rounded-3xl border-amber-200/80 p-5 bg-gradient-to-br from-amber-50/50 via-white to-orange-50/30 shadow-sm hover:shadow-md transition-all flex flex-col justify-between h-full">
-              <div>
-                <div className="flex items-center justify-between border-b border-amber-100 pb-3 mb-3">
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-xl bg-amber-100/80 text-amber-900 flex items-center justify-center font-bold">
-                      <Flame className="w-4 h-4 text-amber-700" />
-                    </div>
-                    <div>
-                      <h3 className="text-base font-serif font-bold text-zinc-900">
-                        Today's Aarti
-                      </h3>
-                      <p className="text-[10px] text-amber-900/70">Daily Aarti timings</p>
-                    </div>
-                  </div>
-                  <Badge className="bg-amber-100 text-amber-900 font-bold text-[10px] border border-amber-200">
-                    {hasAartis ? `${activeAartis.length} Scheduled` : 'Daily'}
-                  </Badge>
-                </div>
-
-                {hasAartis ? (
-                  <div className="space-y-2 max-h-[280px] overflow-y-auto pr-1">
-                    {activeAartis.map((item: any, idx: number) => (
-                      <div
-                        key={item.id || idx}
-                        className="p-2.5 bg-white rounded-xl border border-amber-100 shadow-sm flex items-center justify-between gap-2 hover:border-amber-300 transition-all"
-                      >
-                        <div className="flex items-center gap-2.5">
-                          <div className="w-7 h-7 rounded-lg bg-amber-50 text-amber-800 flex items-center justify-center shrink-0">
-                            <Flame className="w-3.5 h-3.5 text-amber-600" />
-                          </div>
-                          <span className="text-xs font-bold text-zinc-900 line-clamp-1">{item.name}</span>
-                        </div>
-                        <span className="text-xs text-amber-800 font-bold bg-amber-50 px-2 py-1 rounded-lg border border-amber-200/50 shrink-0">
-                          {item.time}
-                        </span>
+          {/* CARD 3: TODAY'S AARTI TIMINGS (Only if has aartis or live darshan is present) */}
+          {(hasAartis || hasLiveDarshan) && (
+            <div
+              id="section-aarti"
+              className={`scroll-mt-28 flex flex-col ${
+                hasLiveDarshan ? "lg:col-span-3" : "lg:col-span-4"
+              }`}
+            >
+              <Card className="rounded-3xl border-amber-200/80 p-5 bg-gradient-to-br from-amber-50/50 via-white to-orange-50/30 shadow-sm hover:shadow-md transition-all flex flex-col justify-between h-full">
+                <div>
+                  <div className="flex items-center justify-between border-b border-amber-100 pb-3 mb-3">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-xl bg-amber-100/80 text-amber-900 flex items-center justify-center font-bold">
+                        <Flame className="w-4 h-4 text-amber-700" />
                       </div>
-                    ))}
+                      <div>
+                        <h3 className="text-base font-serif font-bold text-zinc-900">
+                          Today's Aarti
+                        </h3>
+                        <p className="text-[10px] text-amber-900/70">Daily Aarti timings</p>
+                      </div>
+                    </div>
+                    <Badge className="bg-amber-100 text-amber-900 font-bold text-[10px] border border-amber-200">
+                      {hasAartis ? `${activeAartis.length} Scheduled` : 'Daily'}
+                    </Badge>
                   </div>
-                ) : (
-                  <div className="text-center py-8 text-xs text-zinc-400 font-medium">
-                    No Aarti timings updated yet.
-                  </div>
-                )}
-              </div>
-            </Card>
-          </div>
+
+                  {hasAartis ? (
+                    <div className="space-y-2 max-h-[280px] overflow-y-auto pr-1">
+                      {activeAartis.map((item: any, idx: number) => (
+                        <div
+                          key={item.id || idx}
+                          className="p-2.5 bg-white rounded-xl border border-amber-100 shadow-sm flex items-center justify-between gap-2 hover:border-amber-300 transition-all"
+                        >
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-7 h-7 rounded-lg bg-amber-50 text-amber-800 flex items-center justify-center shrink-0">
+                              <Flame className="w-3.5 h-3.5 text-amber-600" />
+                            </div>
+                            <span className="text-xs font-bold text-zinc-900 line-clamp-1">{item.name}</span>
+                          </div>
+                          <span className="text-xs text-amber-800 font-bold bg-amber-50 px-2 py-1 rounded-lg border border-amber-200/50 shrink-0">
+                            {item.time}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-xs text-zinc-400 font-medium">
+                      No Aarti timings updated yet.
+                    </div>
+                  )}
+                </div>
+              </Card>
+            </div>
+          )}
 
         </div>
 
         {/* ─── ROW 2: POOJAS & SEVAS (LEFT) + UPCOMING EVENTS (RIGHT) ─── */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {(hasPoojas || hasEvents) && (
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
 
-          {/* ─── SECTION 4: POOJAS & SEVAS ─── */}
-          {canUseMandalTransactions && mandal.poojas && mandal.poojas.length > 0 ? (
-            <div id="section-poojas" className="scroll-mt-28 lg:col-span-8 flex flex-col">
-              <Card className="rounded-3xl border-zinc-200/80 p-6 bg-white shadow-sm hover:shadow-md transition-all flex flex-col justify-between h-full space-y-5">
-                <div className="flex items-center justify-between border-b border-zinc-100 pb-3">
-                  <div>
-                    <h3 className="text-xl font-serif font-bold text-zinc-900 flex items-center gap-2">
-                      <Gift className="w-5 h-5 text-warm-brown" />
-                      Poojas & Sevas
-                    </h3>
-                    <p className="text-xs text-zinc-500">Online booking available for selected offerings</p>
+            {/* ─── SECTION 4: POOJAS & SEVAS (Expands to col-span-12 if no Events) ─── */}
+            {hasPoojas && (
+              <div
+                id="section-poojas"
+                className={`scroll-mt-28 flex flex-col ${hasEvents ? "lg:col-span-8" : "lg:col-span-12"}`}
+              >
+                <Card className="rounded-3xl border-zinc-200/80 p-6 bg-white shadow-sm hover:shadow-md transition-all flex flex-col justify-between h-full space-y-5">
+                  <div className="flex items-center justify-between border-b border-zinc-100 pb-3">
+                    <div>
+                      <h3 className="text-xl font-serif font-bold text-zinc-900 flex items-center gap-2">
+                        <Gift className="w-5 h-5 text-warm-brown" />
+                        Poojas & Sevas
+                      </h3>
+                      <p className="text-xs text-zinc-500">Online booking available for selected offerings</p>
+                    </div>
+                    <button
+                      onClick={() => router.push(`/mandals/${slug}/booking`)}
+                      className="inline-flex items-center gap-1 text-xs font-bold text-warm-brown hover:underline"
+                    >
+                      View All Poojas & Sevas <ChevronRight className="w-4 h-4" />
+                    </button>
                   </div>
-                  <button
-                    onClick={() => router.push(`/mandals/${slug}/booking`)}
-                    className="inline-flex items-center gap-1 text-xs font-bold text-warm-brown hover:underline"
-                  >
-                    View All Poojas & Sevas <ChevronRight className="w-4 h-4" />
-                  </button>
-                </div>
 
-                <div className="relative group/carousel mt-2">
-                  <button
-                    onClick={() => {
-                      const container = document.getElementById("poojas-scroll-container");
-                      if (container) container.scrollBy({ left: -260, behavior: "smooth" });
-                    }}
-                    className="absolute -left-3 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full bg-white border border-zinc-200 shadow-md flex items-center justify-center text-zinc-700 hover:bg-amber-50 transition-all"
-                    aria-label="Scroll Left"
-                  >
-                    <ChevronLeft className="w-4 h-4" />
-                  </button>
+                  <div className="relative group/carousel mt-2">
+                    <button
+                      onClick={() => {
+                        const container = document.getElementById("poojas-scroll-container");
+                        if (container) container.scrollBy({ left: -260, behavior: "smooth" });
+                      }}
+                      className="absolute -left-3 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full bg-white border border-zinc-200 shadow-md flex items-center justify-center text-zinc-700 hover:bg-amber-50 transition-all"
+                      aria-label="Scroll Left"
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                    </button>
 
-                  <button
-                    onClick={() => {
-                      const container = document.getElementById("poojas-scroll-container");
-                      if (container) container.scrollBy({ left: 260, behavior: "smooth" });
-                    }}
-                    className="absolute -right-3 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full bg-white border border-zinc-200 shadow-md flex items-center justify-center text-zinc-700 hover:bg-amber-50 transition-all"
-                    aria-label="Scroll Right"
-                  >
-                    <ChevronRight className="w-4 h-4" />
-                  </button>
+                    <button
+                      onClick={() => {
+                        const container = document.getElementById("poojas-scroll-container");
+                        if (container) container.scrollBy({ left: 260, behavior: "smooth" });
+                      }}
+                      className="absolute -right-3 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full bg-white border border-zinc-200 shadow-md flex items-center justify-center text-zinc-700 hover:bg-amber-50 transition-all"
+                      aria-label="Scroll Right"
+                    >
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
 
-                  <div 
-                    id="poojas-scroll-container"
-                    className="flex items-stretch gap-4 overflow-x-auto thin-scrollbar pb-2 pt-1 px-1 scroll-smooth"
-                  >
-                    {mandal.poojas.map((p: any, idx: number) => {
-                      const pName = getLocalized(p, "name", language) || p.name || p.title;
-                      const pDesc = getLocalized(p, "description", language) || p.description || p.desc || "Receive divine blessings";
-                      const pImg = p.image ? getFullImageUrl(p.image) : "https://images.unsplash.com/photo-1620766182966-c6eb5ed2b788?auto=format&fit=crop&q=80&w=600";
-                      const pPrice = p.price || 501;
+                    <div 
+                      id="poojas-scroll-container"
+                      className="flex items-stretch gap-4 overflow-x-auto thin-scrollbar pb-2 pt-1 px-1 scroll-smooth"
+                    >
+                      {mandal.poojas.map((p: any, idx: number) => {
+                        const pName = getLocalized(p, "name", language) || p.name || p.title;
+                        const pDesc = getLocalized(p, "description", language) || p.description || p.desc || "Receive divine blessings";
+                        const pImg = p.image ? getFullImageUrl(p.image) : "https://images.unsplash.com/photo-1620766182966-c6eb5ed2b788?auto=format&fit=crop&q=80&w=600";
+                        const pPrice = p.price || 501;
 
-                      return (
-                        <div 
-                          key={p.id || idx} 
-                          onClick={() => router.push(`/mandals/${slug}/booking`)}
-                          className="w-[180px] sm:w-[200px] shrink-0 rounded-2xl border border-zinc-200/80 p-3 bg-white hover:shadow-md transition-all flex flex-col justify-between overflow-hidden group cursor-pointer"
-                        >
-                          <div>
-                            <div className="relative aspect-[4/3] w-full rounded-xl overflow-hidden mb-2 bg-zinc-100">
-                              <img src={pImg} alt={pName} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-                            </div>
-                            <h4 className="font-bold text-xs text-zinc-900 truncate mb-0.5">{pName}</h4>
-                            <p className="text-[11px] text-zinc-500 truncate mb-2">{pDesc}</p>
-                            <div className="font-extrabold text-xs text-zinc-900 mb-2">
-                              ₹{typeof pPrice === "number" ? pPrice.toLocaleString("en-IN") : pPrice}
-                            </div>
-                          </div>
-                          <Button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              router.push(`/mandals/${slug}/booking`);
-                            }}
-                            className="w-full bg-[#6B0F1A] hover:bg-[#520B14] text-white font-bold h-8 text-[11px] rounded-xl transition-all shadow-sm"
+                        return (
+                          <div 
+                            key={p.id || idx} 
+                            onClick={() => router.push(`/mandals/${slug}/booking`)}
+                            className="w-[180px] sm:w-[200px] shrink-0 rounded-2xl border border-zinc-200/80 p-3 bg-white hover:shadow-md transition-all flex flex-col justify-between overflow-hidden group cursor-pointer"
                           >
-                            Book Now
-                          </Button>
-                        </div>
-                      );
-                    })}
+                            <div>
+                              <div className="relative aspect-[4/3] w-full rounded-xl overflow-hidden mb-2 bg-zinc-100">
+                                <img src={pImg} alt={pName} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                              </div>
+                              <h4 className="font-bold text-xs text-zinc-900 truncate mb-0.5">{pName}</h4>
+                              <p className="text-[11px] text-zinc-500 truncate mb-2">{pDesc}</p>
+                              <div className="font-extrabold text-xs text-zinc-900 mb-2">
+                                ₹{typeof pPrice === "number" ? pPrice.toLocaleString("en-IN") : pPrice}
+                              </div>
+                            </div>
+                            <Button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                router.push(`/mandals/${slug}/booking`);
+                              }}
+                              className="w-full bg-[#6B0F1A] hover:bg-[#520B14] text-white font-bold h-8 text-[11px] rounded-xl transition-all shadow-sm"
+                            >
+                              Book Now
+                            </Button>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
-                </div>
-              </Card>
-            </div>
-          ) : (
-            <div className="lg:col-span-8 flex flex-col">
-              <Card className="rounded-3xl border-zinc-200/80 p-6 bg-white shadow-sm flex flex-col items-center justify-center text-center text-xs text-zinc-400 h-full">
-                <Gift className="w-8 h-8 text-zinc-300 mb-2" />
-                No online poojas configured yet.
-              </Card>
-            </div>
-          )}
-
-          {/* ─── SECTION 5: UPCOMING EVENTS (RIGHT SIDE) ─── */}
-          <div id="section-events" className="scroll-mt-28 lg:col-span-4 flex flex-col">
-            <Card className="rounded-3xl border-zinc-200/80 p-6 bg-white shadow-sm hover:shadow-md transition-all flex flex-col justify-start h-full space-y-4">
-              <div className="flex items-center justify-between border-b border-zinc-100 pb-3">
-                <div>
-                  <h3 className="text-lg font-serif font-bold text-zinc-900 flex items-center gap-2">
-                    <Calendar className="w-5 h-5 text-amber-600" />
-                    Upcoming Events & Programs
-                  </h3>
-                </div>
-                <button
-                  onClick={() => {
-                    const el = document.getElementById("section-events");
-                    if (el) el.scrollIntoView({ behavior: "smooth" });
-                  }}
-                  className="text-xs font-bold text-warm-brown hover:underline"
-                >
-                  View All
-                </button>
+                </Card>
               </div>
+            )}
 
-              {hasEvents ? (
-                <div className="space-y-2.5 max-h-[320px] overflow-y-auto pr-1">
-                  {mandal.events.map((e: any, idx: number) => {
-                    const evDate = new Date(e.startDate || Date.now()).getDate().toString().padStart(2, "0");
-                    const evMonth = new Date(e.startDate || Date.now()).toLocaleString("en-US", { month: "short" }).toUpperCase();
-                    const evTitle = getLocalized(e, "title", language) || e.title || e.name || `${name} Event`;
-                    const evDayTime = e.startDate 
-                      ? `${new Date(e.startDate).toLocaleDateString("en-US", { weekday: "short", day: "numeric", month: "short" })}`
-                      : "Festive Seva";
-
-                    const categories = ["Main Event", "Cultural", "Religious", "Special"];
-                    const catTag = categories[idx % categories.length];
-                    const catBg = idx % 3 === 0 
-                      ? "bg-orange-100 text-orange-900 border-orange-200" 
-                      : idx % 3 === 1 
-                        ? "bg-amber-100 text-amber-900 border-amber-200" 
-                        : "bg-rose-100 text-rose-900 border-rose-200";
-
-                    return (
-                      <div key={idx} className="flex items-center justify-between p-2.5 bg-amber-50/40 border border-amber-100/80 rounded-2xl hover:border-amber-200 transition-all gap-2">
-                        <div className="w-10 h-10 bg-amber-500/10 border border-amber-500/20 rounded-xl flex flex-col items-center justify-center shrink-0">
-                          <span className="text-xs font-black text-amber-950 leading-none">{evDate}</span>
-                          <span className="text-[8px] font-bold text-amber-800 uppercase tracking-tighter mt-0.5">{evMonth}</span>
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <div className="font-bold text-zinc-900 text-xs truncate">{evTitle}</div>
-                          <div className="text-[10px] text-zinc-500 truncate mt-0.5">{evDayTime}</div>
-                        </div>
-                        <Badge className={`text-[9px] font-bold border px-2 py-0.5 shrink-0 ${catBg}`}>
-                          {catTag}
-                        </Badge>
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <div className="text-center py-10 text-xs text-zinc-400 font-medium">
-                  No upcoming events scheduled.
-                </div>
-              )}
-            </Card>
-          </div>
-
-        </div>
-
-
-
-        {/* ─── ROW 3: SACRED ITEMS & OFFERINGS (LEFT) + SUPPORT THIS MANDAL (RIGHT) ─── */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-
-          {/* ─── SECTION 6: SACRED ITEMS & OFFERINGS (LEFT SIDE) ─── */}
-          {canUseMandalTransactions && products && products.length > 0 ? (
-            <div id="section-sacred" className="scroll-mt-28 lg:col-span-8 flex flex-col">
-              <Card className="rounded-3xl border-zinc-200/80 p-6 bg-white shadow-sm hover:shadow-md transition-all flex flex-col justify-between h-full space-y-5">
-                <div className="flex items-center justify-between border-b border-zinc-100 pb-3">
-                  <div>
-                    <h3 className="text-xl font-serif font-bold text-zinc-900 flex items-center gap-2">
-                      <ShoppingBag className="w-5 h-5 text-warm-brown" />
-                      Sacred Items & Offerings
-                    </h3>
-                    <p className="text-xs text-zinc-500">Blessed prasad, framed photos & divine keepsakes</p>
+            {/* ─── SECTION 5: UPCOMING EVENTS (Expands to col-span-12 if no Poojas) ─── */}
+            {hasEvents && (
+              <div
+                id="section-events"
+                className={`scroll-mt-28 flex flex-col ${hasPoojas ? "lg:col-span-4" : "lg:col-span-12"}`}
+              >
+                <Card className="rounded-3xl border-zinc-200/80 p-6 bg-white shadow-sm hover:shadow-md transition-all flex flex-col justify-start h-full space-y-4">
+                  <div className="flex items-center justify-between border-b border-zinc-100 pb-3">
+                    <div>
+                      <h3 className="text-lg font-serif font-bold text-zinc-900 flex items-center gap-2">
+                        <Calendar className="w-5 h-5 text-amber-600" />
+                        Upcoming Events & Programs
+                      </h3>
+                    </div>
+                    <button
+                      onClick={() => {
+                        const el = document.getElementById("section-events");
+                        if (el) el.scrollIntoView({ behavior: "smooth" });
+                      }}
+                      className="text-xs font-bold text-warm-brown hover:underline"
+                    >
+                      View All
+                    </button>
                   </div>
-                  <button
-                    onClick={() => router.push("/marketplace")}
-                    className="inline-flex items-center gap-1 text-xs font-bold text-warm-brown hover:underline"
-                  >
-                    View All Items
-                    <ChevronRight className="w-4 h-4" />
-                  </button>
-                </div>
 
-                <div className="relative group/carousel mt-2">
-                  <button
-                    onClick={() => {
-                      const container = document.getElementById("products-scroll-container");
-                      if (container) container.scrollBy({ left: -260, behavior: "smooth" });
-                    }}
-                    className="absolute -left-3 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full bg-white border border-zinc-200 shadow-md flex items-center justify-center text-zinc-700 hover:bg-amber-50 hover:text-amber-900 transition-all opacity-90 group-hover/carousel:opacity-100"
-                    aria-label="Scroll Left"
-                  >
-                    <ChevronLeft className="w-4 h-4" />
-                  </button>
+                  <div className="space-y-2.5 max-h-[320px] overflow-y-auto pr-1">
+                    {mandal.events.map((e: any, idx: number) => {
+                      const rawDateStr = e.date || e.startDate || "";
+                      const cleanedDateStr = rawDateStr.replace(/(\d+)(st|nd|rd|th)/gi, "$1");
+                      const parsedDate = cleanedDateStr && !isNaN(new Date(cleanedDateStr).getTime()) ? new Date(cleanedDateStr) : null;
 
-                  <button
-                    onClick={() => {
-                      const container = document.getElementById("products-scroll-container");
-                      if (container) container.scrollBy({ left: 260, behavior: "smooth" });
-                    }}
-                    className="absolute -right-3 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full bg-white border border-zinc-200 shadow-md flex items-center justify-center text-zinc-700 hover:bg-amber-50 hover:text-amber-900 transition-all opacity-90 group-hover/carousel:opacity-100"
-                    aria-label="Scroll Right"
-                  >
-                    <ChevronRight className="w-4 h-4" />
-                  </button>
+                      const evDate = parsedDate ? parsedDate.getDate().toString().padStart(2, "0") : "--";
+                      const evMonth = parsedDate ? parsedDate.toLocaleString("en-US", { month: "short" }).toUpperCase() : "";
+                      const evTitle = getLocalized(e, "title", language) || e.title || parseLocalizedValue(e.name, language) || e.name || `${name} Event`;
+                      const evDayTime = parsedDate 
+                        ? `${parsedDate.toLocaleDateString("en-US", { weekday: "short", day: "numeric", month: "short" })}`
+                        : (rawDateStr || "Festive Seva");
 
-                  <div 
-                    id="products-scroll-container"
-                    className="flex items-stretch gap-4 overflow-x-auto thin-scrollbar pb-2 pt-1 px-1 scroll-smooth"
-                  >
-                    {products.map((item: any, idx: number) => {
-                      const price = item.price ?? item.variants?.[0]?.price ?? 251;
-                      const itemName = getLocalized(item, "name", language) || item.name || "Sacred Item";
-                      const itemImg = item.image ? getFullImageUrl(item.image) : "https://images.unsplash.com/photo-1600093463592-8e36ae95ef56?auto=format&fit=crop&q=80&w=400";
+                      const categories = ["Cultural", "Cultural", "Cultural", "Cultural"];
+                      const catTag = categories[idx % categories.length];
+                      const catBg = idx % 3 === 0 
+                        ? "bg-orange-100 text-orange-900 border-orange-200" 
+                        : idx % 3 === 1 
+                          ? "bg-amber-100 text-amber-900 border-amber-200" 
+                          : "bg-rose-100 text-rose-900 border-rose-200";
 
                       return (
-                        <Card
-                          key={item.id || idx}
-                          onClick={() => router.push(`/marketplace/product/${item.id}`)}
-                          className="w-[180px] sm:w-[200px] shrink-0 rounded-2xl border border-zinc-200/80 p-3 bg-white hover:shadow-md transition-all flex flex-col justify-between overflow-hidden group cursor-pointer"
-                        >
-                          <div>
-                            <div className="relative aspect-[4/3] rounded-xl overflow-hidden mb-2 bg-zinc-100">
-                              <img src={itemImg} alt={itemName} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-                            </div>
-                            <h4 className="font-bold text-xs text-zinc-900 truncate">{itemName}</h4>
-                            <div className="font-extrabold text-xs text-warm-brown mt-1">₹{typeof price === "number" ? price.toLocaleString("en-IN") : price}</div>
+                        <div key={idx} className="flex items-center justify-between p-2.5 bg-amber-50/40 border border-amber-100/80 rounded-2xl hover:border-amber-200 transition-all gap-2">
+                          <div className="w-10 h-10 bg-amber-500/10 border border-amber-500/20 rounded-xl flex flex-col items-center justify-center shrink-0">
+                            <span className="text-xs font-black text-amber-950 leading-none">{evDate}</span>
+                            <span className="text-[8px] font-bold text-amber-800 uppercase tracking-tighter mt-0.5">{evMonth}</span>
                           </div>
-                          <Button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              router.push(`/marketplace/product/${item.id}`);
-                            }}
-                            className="w-full mt-2 bg-[#6B0F1A] hover:bg-[#520B14] text-white font-bold h-8 text-[11px] rounded-xl transition-all shadow-sm"
-                          >
-                            Buy Now
-                          </Button>
-                        </Card>
+                          <div className="min-w-0 flex-1">
+                            <div className="font-bold text-zinc-900 text-xs truncate">{evTitle}</div>
+                            <div className="text-[10px] text-zinc-500 truncate mt-0.5">{evDayTime}</div>
+                          </div>
+                          <Badge className={`text-[9px] font-bold border px-2 py-0.5 shrink-0 ${catBg}`}>
+                            {catTag}
+                          </Badge>
+                        </div>
                       );
                     })}
                   </div>
-                </div>
-              </Card>
-            </div>
-          ) : (
-            <div className="lg:col-span-8 flex flex-col">
-              <Card className="rounded-3xl border-zinc-200/80 p-6 bg-white shadow-sm flex flex-col items-center justify-center text-center text-xs text-zinc-400 h-full">
-                <ShoppingBag className="w-8 h-8 text-zinc-300 mb-2" />
-                No sacred items available right now.
-              </Card>
-            </div>
-          )}
+                </Card>
+              </div>
+            )}
 
-          {/* ─── SECTION 7: SUPPORT THIS MANDAL (DONATION) (RIGHT SIDE) ─── */}
-          {canUseMandalTransactions && (
-            <div id="section-donate" className="scroll-mt-28 lg:col-span-4 flex flex-col">
-              <Card className="rounded-3xl border-amber-200/80 p-6 bg-gradient-to-b from-amber-50/70 via-white to-amber-50/30 shadow-sm hover:shadow-md transition-all flex flex-col justify-between h-full space-y-4">
-                <div className="flex items-center justify-between border-b border-amber-200/50 pb-3">
-                  <div>
-                    <h3 className="text-xl font-serif font-bold text-zinc-900 flex items-center gap-2">
-                      <IndianRupee className="w-5 h-5 text-warm-brown" />
-                      Support {name}
-                    </h3>
-                    <p className="text-xs text-zinc-600">Your contribution helps us continue our seva & cultural activities</p>
-                  </div>
-                </div>
+          </div>
+        )}
 
-                <div className="space-y-4 flex-1 flex flex-col justify-between">
-                  <div className="grid grid-cols-4 gap-2">
-                    {donationAmounts.slice(0, 4).map((amt) => (
-                      <button
-                        key={amt}
-                        onClick={() => {
-                          setSelectedAmount(amt);
-                          setCustomAmount("");
-                          setShowDonateModal(true);
-                        }}
-                        className={`py-2 bg-white border rounded-xl font-bold text-xs transition-all shadow-sm ${
-                          selectedAmount === amt ? "border-warm-brown bg-amber-100/60 text-warm-brown" : "border-amber-200 text-zinc-800 hover:border-warm-brown"
-                        }`}
-                      >
-                        ₹{amt.toLocaleString("en-IN")}
-                      </button>
-                    ))}
+        {/* ─── ROW 3: SACRED ITEMS & OFFERINGS + SUPPORT THIS MANDAL (DONATION) ─── */}
+        {(hasProducts || canUseMandalTransactions) && (
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+            {/* ─── SECTION 6: SACRED ITEMS & OFFERINGS (Only when products exist) ─── */}
+            {hasProducts && (
+              <div id="section-sacred" className={`scroll-mt-28 flex flex-col ${canUseMandalTransactions ? "lg:col-span-8" : "lg:col-span-12"}`}>
+                <Card className="rounded-3xl border-zinc-200/80 p-6 bg-white shadow-sm hover:shadow-md transition-all flex flex-col justify-between h-full space-y-5">
+                  <div className="flex items-center justify-between border-b border-zinc-100 pb-3">
+                    <div>
+                      <h3 className="text-xl font-serif font-bold text-zinc-900 flex items-center gap-2">
+                        <ShoppingBag className="w-5 h-5 text-warm-brown" />
+                        Sacred Items & Offerings
+                      </h3>
+                      <p className="text-xs text-zinc-500">Blessed prasad, framed photos & divine keepsakes</p>
+                    </div>
+                    <button
+                      onClick={() => router.push("/marketplace")}
+                      className="inline-flex items-center gap-1 text-xs font-bold text-warm-brown hover:underline"
+                    >
+                      View All Items
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
                   </div>
 
-                  <div className="space-y-3">
-                    <div className="relative w-full">
-                      <span className="absolute left-3.5 top-1/2 -translate-y-1/2 font-bold text-zinc-400 text-xs">₹</span>
-                      <input
-                        type="number"
-                        placeholder="Custom Amount..."
-                        value={customAmount}
-                        onChange={(e) => { setCustomAmount(e.target.value); setSelectedAmount(null); }}
-                        className="w-full pl-7 pr-3 py-2.5 bg-white border border-amber-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-warm-brown/20 focus:border-warm-brown"
-                      />
+                  <div className="relative group/carousel mt-2">
+                    <button
+                      onClick={() => {
+                        const container = document.getElementById("products-scroll-container");
+                        if (container) container.scrollBy({ left: -260, behavior: "smooth" });
+                      }}
+                      className="absolute -left-3 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full bg-white border border-zinc-200 shadow-md flex items-center justify-center text-zinc-700 hover:bg-amber-50 hover:text-amber-900 transition-all opacity-90 group-hover/carousel:opacity-100"
+                      aria-label="Scroll Left"
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        const container = document.getElementById("products-scroll-container");
+                        if (container) container.scrollBy({ left: 260, behavior: "smooth" });
+                      }}
+                      className="absolute -right-3 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full bg-white border border-zinc-200 shadow-md flex items-center justify-center text-zinc-700 hover:bg-amber-50 hover:text-amber-900 transition-all opacity-90 group-hover/carousel:opacity-100"
+                      aria-label="Scroll Right"
+                    >
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+
+                    <div 
+                      id="products-scroll-container"
+                      className="flex items-stretch gap-4 overflow-x-auto thin-scrollbar pb-2 pt-1 px-1 scroll-smooth"
+                    >
+                      {products.map((item: any, idx: number) => {
+                        const price = item.price ?? item.variants?.[0]?.price ?? 251;
+                        const itemName = getLocalized(item, "name", language) || item.name || "Sacred Item";
+                        const itemImg = item.image ? getFullImageUrl(item.image) : "https://images.unsplash.com/photo-1600093463592-8e36ae95ef56?auto=format&fit=crop&q=80&w=400";
+
+                        return (
+                          <Card
+                            key={item.id || idx}
+                            onClick={() => router.push(`/marketplace/product/${item.id}`)}
+                            className="w-[180px] sm:w-[200px] shrink-0 rounded-2xl border border-zinc-200/80 p-3 bg-white hover:shadow-md transition-all flex flex-col justify-between overflow-hidden group cursor-pointer"
+                          >
+                            <div>
+                              <div className="relative aspect-[4/3] rounded-xl overflow-hidden mb-2 bg-zinc-100">
+                                <img src={itemImg} alt={itemName} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                              </div>
+                              <h4 className="font-bold text-xs text-zinc-900 truncate">{itemName}</h4>
+                              <div className="font-extrabold text-xs text-warm-brown mt-1">₹{typeof price === "number" ? price.toLocaleString("en-IN") : price}</div>
+                            </div>
+                            <Button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                router.push(`/marketplace/product/${item.id}`);
+                              }}
+                              className="w-full mt-2 bg-[#6B0F1A] hover:bg-[#520B14] text-white font-bold h-8 text-[11px] rounded-xl transition-all shadow-sm"
+                            >
+                              Buy Now
+                            </Button>
+                          </Card>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </Card>
+              </div>
+            )}
+
+            {/* ─── SECTION 7: SUPPORT THIS MANDAL (DONATION) (Expands to col-span-12 if no Products) ─── */}
+            {canUseMandalTransactions && (
+              <div
+                id="section-donate"
+                className={`scroll-mt-28 flex flex-col ${hasProducts ? "lg:col-span-4" : "lg:col-span-12"}`}
+              >
+                <Card className="rounded-3xl border-amber-200/80 p-6 bg-gradient-to-b from-amber-50/70 via-white to-amber-50/30 shadow-sm hover:shadow-md transition-all flex flex-col justify-between h-full space-y-4">
+                  <div className="flex items-center justify-between border-b border-amber-200/50 pb-3">
+                    <div>
+                      <h3 className="text-xl font-serif font-bold text-zinc-900 flex items-center gap-2">
+                        <IndianRupee className="w-5 h-5 text-warm-brown" />
+                        Support {name}
+                      </h3>
+                      <p className="text-xs text-zinc-600">Your contribution helps us continue our seva & cultural activities</p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4 flex-1 flex flex-col justify-between">
+                    <div className={`grid gap-2 ${hasProducts ? "grid-cols-4" : "grid-cols-2 sm:grid-cols-5"}`}>
+                      {donationAmounts.map((amt) => (
+                        <button
+                          key={amt}
+                          onClick={() => {
+                            setSelectedAmount(amt);
+                            setCustomAmount("");
+                            setShowDonateModal(true);
+                          }}
+                          className={`py-2 bg-white border rounded-xl font-bold text-xs transition-all shadow-sm ${
+                            selectedAmount === amt ? "border-warm-brown bg-amber-100/60 text-warm-brown" : "border-amber-200 text-zinc-800 hover:border-warm-brown"
+                          }`}
+                        >
+                          ₹{amt.toLocaleString("en-IN")}
+                        </button>
+                      ))}
                     </div>
 
-                    <Button
-                      onClick={handleOpenDonateModal}
-                      className="w-full bg-warm-brown hover:bg-warm-brown/90 text-white font-bold h-11 px-6 rounded-xl text-xs shadow-md shadow-amber-900/10 flex items-center justify-center gap-2"
-                    >
-                      <Gift className="w-4 h-4" />
-                      Donate Now
-                    </Button>
-                  </div>
+                    <div className={`space-y-3 ${!hasProducts ? "sm:flex sm:items-center sm:gap-4 sm:space-y-0" : ""}`}>
+                      <div className="relative w-full flex-1">
+                        <span className="absolute left-3.5 top-1/2 -translate-y-1/2 font-bold text-zinc-400 text-xs">₹</span>
+                        <input
+                          type="number"
+                          placeholder="Custom Amount..."
+                          value={customAmount}
+                          onChange={(e) => { setCustomAmount(e.target.value); setSelectedAmount(null); }}
+                          className="w-full pl-7 pr-3 py-2.5 bg-white border border-amber-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-warm-brown/20 focus:border-warm-brown"
+                        />
+                      </div>
 
-                  <div className="text-center text-[11px] text-zinc-500 font-medium pt-1">
-                    🔒 100% Secure Payment • Instant Email Tax Receipt
-                  </div>
-                </div>
-              </Card>
-            </div>
-          )}
+                      <Button
+                        onClick={handleOpenDonateModal}
+                        className={`bg-warm-brown hover:bg-warm-brown/90 text-white font-bold h-11 px-6 rounded-xl text-xs shadow-md shadow-amber-900/10 flex items-center justify-center gap-2 ${
+                          !hasProducts ? "sm:w-48 w-full" : "w-full"
+                        }`}
+                      >
+                        <Gift className="w-4 h-4" />
+                        Donate Now
+                      </Button>
+                    </div>
 
-        </div>
+                    <div className="text-center text-[11px] text-zinc-500 font-medium pt-1">
+                      🔒 100% Secure Payment • Instant Email Tax Receipt
+                    </div>
+                  </div>
+                </Card>
+              </div>
+            )}
+
+          </div>
+        )}
 
         {/* ─── ROW 4: BOTTOM CARDS (ABOUT - 8 COLS, LOCATION - 2 COLS, CONTACT - 2 COLS) ─── */}
         {(hasDescription || hasLocation || hasContactOrSocial) && (
@@ -1711,20 +1744,59 @@ export function MandalDetail({ slug }: { slug: string }) {
       {/* ─── GALLERY LIGHTBOX ───────────────────────────────────────────────── */}
       {lightboxOpen && allImages.length > 0 && (
         <div
-          className="fixed inset-0 z-[100] bg-black/95 flex flex-col items-center justify-center"
+          className="fixed inset-0 z-[100] bg-black/95 flex flex-col items-center justify-center select-none"
           onClick={() => setLightboxOpen(false)}
         >
+          {/* Close button */}
           <button
-            className="absolute top-5 right-5 z-10 w-10 h-10 rounded-full bg-white/10 text-white flex items-center justify-center"
+            className="absolute top-5 right-5 z-20 w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center backdrop-blur-sm transition-all"
             onClick={() => setLightboxOpen(false)}
+            title="Close (Esc)"
           >
-            <X className="w-5 h-5" />
+            <X className="w-6 h-6" />
           </button>
-          <div className="relative max-w-4xl max-h-[80vh] w-full px-8" onClick={(e) => e.stopPropagation()}>
+
+          {/* Image Counter */}
+          <div className="absolute top-5 left-5 z-20 px-4 py-1.5 rounded-full bg-white/10 text-white text-xs font-semibold backdrop-blur-sm border border-white/10">
+            {lightboxIndex + 1} / {allImages.length}
+          </div>
+
+          {/* Left Arrow Button */}
+          {allImages.length > 1 && (
+            <button
+              id="lightbox-prev-btn"
+              className="absolute left-4 sm:left-8 top-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full bg-white/15 hover:bg-white/30 text-white flex items-center justify-center backdrop-blur-md transition-all border border-white/20 shadow-lg hover:scale-110 active:scale-95"
+              onClick={(e) => {
+                e.stopPropagation();
+                setLightboxIndex((prev) => (prev > 0 ? prev - 1 : allImages.length - 1));
+              }}
+              title="Previous image (Left Arrow)"
+            >
+              <ChevronLeft className="w-7 h-7" />
+            </button>
+          )}
+
+          {/* Right Arrow Button */}
+          {allImages.length > 1 && (
+            <button
+              id="lightbox-next-btn"
+              className="absolute right-4 sm:right-8 top-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full bg-white/15 hover:bg-white/30 text-white flex items-center justify-center backdrop-blur-md transition-all border border-white/20 shadow-lg hover:scale-110 active:scale-95"
+              onClick={(e) => {
+                e.stopPropagation();
+                setLightboxIndex((prev) => (prev < allImages.length - 1 ? prev + 1 : 0));
+              }}
+              title="Next image (Right Arrow)"
+            >
+              <ChevronRight className="w-7 h-7" />
+            </button>
+          )}
+
+          {/* Main Image Container */}
+          <div className="relative w-full h-full p-2 sm:p-8 flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
             <img
               src={getFullImageUrl(allImages[lightboxIndex])}
-              alt="Mandal Photo"
-              className="w-full h-full object-contain max-h-[80vh] rounded-2xl"
+              alt={`Mandal Photo ${lightboxIndex + 1}`}
+              className="max-w-[94vw] max-h-[90vh] w-auto h-auto object-contain rounded-2xl shadow-2xl transition-all duration-200"
             />
           </div>
         </div>

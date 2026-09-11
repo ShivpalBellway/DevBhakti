@@ -2566,6 +2566,7 @@
     },
     "labels": {
       "phone": "Temple Owner/Authority's Mobile Number",
+      "phone_mandal": "Mandal Owner/Authority's Mobile Number",
       "otp": "Verification Code"
     },
     "placeholders": {

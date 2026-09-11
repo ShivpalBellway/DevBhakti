@@ -83,6 +83,22 @@ export const updateMyMandalProfile = async (req: Request, res: Response) => {
       try { return JSON.parse(val); } catch (e) { return val; }
     };
 
+    // Parse existing multilingual objects
+    const existingName = (typeof mandal.name === 'object' && mandal.name !== null)
+      ? mandal.name as any
+      : (typeof mandal.name === 'string' ? (parseJson(mandal.name) || { en: mandal.name }) : {});
+    const existingDesc = (typeof mandal.description === 'object' && mandal.description !== null)
+      ? mandal.description as any
+      : (typeof mandal.description === 'string' ? (parseJson(mandal.description) || { en: mandal.description }) : {});
+
+    const nameEn = data.name_en !== undefined && data.name_en !== '' ? data.name_en : (data.name || existingName.en || '');
+    const nameHi = data.name_hi !== undefined && data.name_hi !== '' ? data.name_hi : (existingName.hi || '');
+    const nameMr = data.name_mr !== undefined && data.name_mr !== '' ? data.name_mr : (existingName.mr || '');
+
+    const descEn = data.description_en !== undefined && data.description_en !== '' ? data.description_en : (data.description || existingDesc.en || '');
+    const descHi = data.description_hi !== undefined && data.description_hi !== '' ? data.description_hi : (existingDesc.hi || '');
+    const descMr = data.description_mr !== undefined && data.description_mr !== '' ? data.description_mr : (existingDesc.mr || '');
+
     // Images update
     const mainImage = getFilePath(files, 'image') || data.image;
     const newHeroImages = getFilePaths(files, 'heroImages');
@@ -104,8 +120,8 @@ export const updateMyMandalProfile = async (req: Request, res: Response) => {
     const updatedMandal = await prisma.mandal.update({
       where: { id: mandalId },
       data: {
-        name: buildLangJson(data.name || data.name_en, data.name_hi, data.name_mr),
-        description: buildLangJson(data.description_en || data.description || '', data.description_hi, data.description_mr),
+        name: buildLangJson(nameEn, nameHi, nameMr),
+        description: buildLangJson(descEn, descHi, descMr),
         about: data.about ? buildLangJson(data.about_en || data.about || '', data.about_hi, data.about_mr) : undefined,
         mandalType: data.mandalType || undefined,
         establishedYear: data.establishedYear || undefined,

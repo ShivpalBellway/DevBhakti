@@ -39,10 +39,22 @@ import { ImageCropper } from "@/components/admin/ImageCropper";
 
 function getJsonVal(val: any, lang: string) {
     if (!val) return "";
+    let obj = val;
     if (typeof val === "string") {
-        try { val = JSON.parse(val); } catch { return val; }
+        try {
+            obj = JSON.parse(val);
+            if (typeof obj === "string") obj = JSON.parse(obj);
+        } catch {
+            return lang === "en" ? val : "";
+        }
     }
-    return val?.[lang] || "";
+    if (typeof obj === "object" && obj !== null) {
+        const result = obj?.[lang] || obj?.[lang.toUpperCase()];
+        if (result !== undefined && result !== null && result !== "") return result;
+        if (lang === "en" && typeof val === "string") return val;
+        return "";
+    }
+    return lang === "en" && typeof val === "string" ? val : "";
 }
 
 const LANGUAGES = [

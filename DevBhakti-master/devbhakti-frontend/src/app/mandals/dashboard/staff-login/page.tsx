@@ -48,11 +48,11 @@ export default function MandalStaffLoginPage() {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-amber-50/50 via-orange-50/30 to-rose-50/40 relative overflow-hidden font-sans">
+        <div className="min-h-screen flex items-center justify-center bg-[#FDFCF6] relative overflow-hidden font-sans">
             {/* Background Decorations */}
             <div className="absolute top-0 left-0 w-full h-full pointer-events-none">
-                <div className="absolute -top-24 -right-24 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl animate-pulse" />
-                <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-orange-500/10 rounded-full blur-3xl animate-pulse" />
+                <div className="absolute -top-24 -right-24 w-96 h-96 bg-[#7b4623]/5 rounded-full blur-3xl animate-pulse" />
+                <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-[#a65d2e]/5 rounded-full blur-3xl animate-pulse" />
             </div>
 
             <motion.div
@@ -61,18 +61,18 @@ export default function MandalStaffLoginPage() {
                 transition={{ duration: 0.5 }}
                 className="w-full max-w-lg relative z-10 px-6"
             >
-                <div className="bg-white/90 backdrop-blur-xl rounded-[2.5rem] shadow-2xl shadow-amber-900/10 border border-amber-200/50 overflow-hidden">
+                <div className="bg-white/90 backdrop-blur-xl rounded-[2.5rem] shadow-2xl shadow-[#7b4623]/10 border border-[#7b4623]/10 overflow-hidden">
                     {/* Top bar */}
-                    <div className="h-3 bg-gradient-to-r from-amber-600 via-orange-500 to-amber-600" />
+                    <div className="h-3 bg-gradient-to-r from-[#7b4623] via-[#a65d2e] to-[#7b4623]" />
 
                     <div className="p-8 md:p-12">
                         {/* Logo & Intro */}
                         <div className="flex flex-col items-center text-center mb-10">
                             <motion.div
                                 whileHover={{ rotate: 5, scale: 1.05 }}
-                                className="mb-6 p-4 bg-amber-500/10 rounded-2xl border border-amber-500/20 text-amber-600"
+                                className="mb-6 p-4 bg-[#7b4623]/5 rounded-2xl border border-[#7b4623]/10 text-[#7b4623]"
                             >
-                                <ShieldCheck className="w-12 h-12 text-amber-600" />
+                                <ShieldCheck className="w-12 h-12 text-[#7b4623]" />
                             </motion.div>
                             <h1 className="text-3xl font-serif font-bold text-slate-900 mb-2">
                                 Mandal Staff Login
@@ -103,14 +103,14 @@ export default function MandalStaffLoginPage() {
                                 <div className="space-y-2">
                                     <Label htmlFor="email" className="text-xs font-bold uppercase tracking-widest text-slate-500 ml-1">Official Email</Label>
                                     <div className="relative group">
-                                        <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-amber-600 transition-colors" />
+                                        <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-[#7b4623] transition-colors" />
                                         <Input
                                             id="email"
                                             type="email"
                                             placeholder="volunteer@mandal.org"
                                             value={form.email}
                                             onChange={(e) => setForm({ ...form, email: e.target.value })}
-                                            className="h-14 pl-12 bg-white border-slate-200 focus:border-amber-500 focus:ring-amber-500/10 rounded-2xl shadow-sm"
+                                            className="h-14 pl-12 bg-white border-slate-200 focus:border-[#7b4623] focus:ring-[#7b4623]/10 rounded-2xl shadow-sm"
                                             required
                                         />
                                     </div>
@@ -121,14 +121,14 @@ export default function MandalStaffLoginPage() {
                                         <Label htmlFor="password" className="text-xs font-bold uppercase tracking-widest text-slate-500">Secure Password</Label>
                                     </div>
                                     <div className="relative group">
-                                        <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-amber-600 transition-colors" />
+                                        <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-[#7b4623] transition-colors" />
                                         <Input
                                             id="password"
                                             type={showPass ? "text" : "password"}
                                             placeholder="········"
                                             value={form.password}
                                             onChange={(e) => setForm({ ...form, password: e.target.value })}
-                                            className="h-14 pl-12 pr-12 bg-white border-slate-200 focus:border-amber-500 focus:ring-amber-500/10 rounded-2xl shadow-sm"
+                                            className="h-14 pl-12 pr-12 bg-white border-slate-200 focus:border-[#7b4623] focus:ring-[#7b4623]/10 rounded-2xl shadow-sm"
                                             required
                                         />
                                         <button
@@ -145,7 +145,7 @@ export default function MandalStaffLoginPage() {
                             <Button
                                 type="submit"
                                 disabled={loading}
-                                className="w-full h-14 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white rounded-2xl text-lg font-bold shadow-xl shadow-amber-600/20 transition-all hover:scale-[1.02] active:scale-[0.98] mt-4"
+                                className="w-full h-14 bg-gradient-to-r from-[#7b4623] to-[#a65d2e] hover:from-[#5d351a] hover:to-[#7b4623] text-white rounded-2xl text-lg font-bold shadow-xl shadow-[#7b4623]/20 transition-all hover:scale-[1.02] active:scale-[0.98] mt-4"
                             >
                                 {loading ? (
                                     <div className="flex items-center gap-2">

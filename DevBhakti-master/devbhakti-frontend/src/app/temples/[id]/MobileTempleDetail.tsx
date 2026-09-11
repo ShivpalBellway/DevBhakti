@@ -181,7 +181,7 @@ export default function MobileTempleDetail({
         const ios = /iPad|iPhone|iPod/.test(ua) && !(window as any).MSStream;
         setIsIOS(ios);
         if (ios) {
-            setAppStoreUrl("https://apps.apple.com/in/app/devbhakti/id6503041661");
+            setAppStoreUrl("https://apps.apple.com/in/app/devbhakti/id6761248");
         } else {
             setAppStoreUrl("https://play.google.com/store/search?q=devbhakti&c=apps&hl=en_IN");
         }

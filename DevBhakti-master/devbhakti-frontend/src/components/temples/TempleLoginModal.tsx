@@ -140,7 +140,9 @@ export default function TempleLoginModal({ onClose, loginType = "temple" }: Temp
                 {!showOtpInput ? (
                     <form onSubmit={handleSendOTP} className="space-y-6">
                         <div className="space-y-2">
-                            <Label htmlFor="phone" className="text-slate-700 ml-1">{t('labels.phone')}</Label>
+                            <Label htmlFor="phone" className="text-slate-700 ml-1">
+                                {loginType === "mandal" ? (t('labels.phone_mandal') || "Mandal Owner/Authority's Mobile Number") : t('labels.phone')}
+                            </Label>
                             <div className="relative group">
                                 <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
                                     <Phone className="w-5 h-5 text-slate-400 group-focus-within:text-[#7b4623] transition-colors" />
@@ -215,31 +217,24 @@ export default function TempleLoginModal({ onClose, loginType = "temple" }: Temp
                 )}
 
                 <div className="mt-8 text-center space-y-3">
-                    {loginType === "mandal" ? (
-                        <button
-                            onClick={() => {
-                                onClose();
+                    <button
+                        onClick={() => {
+                            onClose();
+                            if (loginType === "mandal") {
                                 router.push("/mandals/dashboard/staff-login");
-                            }}
-                            className="text-sm font-bold text-[#7b4623] hover:underline"
-                        >
-                            {t('footer.mandal_staff_login') || "Mandal Staff Login"}
-                        </button>
-                    ) : (
-                        <button
-                            onClick={() => {
-                                onClose();
+                            } else {
                                 router.push("/temples/dashboard/staff-login");
-                            }}
-                            className="text-sm font-bold text-[#7b4623] hover:underline"
-                        >
-                            {t('footer.staff_login')}
-                        </button>
-                    )}
+                            }
+                        }}
+                        className="text-sm font-bold text-[#7b4623] hover:underline"
+                    >
+                        {loginType === "mandal" ? (t('footer.mandal_staff_login') || "Mandal Staff Login") : t('footer.staff_login')}
+                    </button>
                     <div className="flex flex-col items-center gap-2">
                         <p className="text-slate-500 text-sm font-medium">
                             {loginType === "mandal" ? (t('footer.no_account_mandal') || "Don't have a registered mandal?") : t('footer.new_admin')}
                         </p>
+                        
                         <button 
                             onClick={() => setShowRegistrationModal(true)}
                             className="text-[#88542b] font-bold underline hover:text-[#794a05] transition-colors text-sm"

@@ -281,45 +281,91 @@ export const updateMandal = async (req: Request, res: Response): Promise<void> =
             }
         }
 
+        const normalizedPhone = data.contactNumber ? normalizePhone(data.contactNumber) : existing.contactNumber;
+
         const existingBannerImages: string[] = data.existingBannerImages
             ? JSON.parse(data.existingBannerImages)
             : (existing.bannerImages as string[]);
 
-        const mandal = await prisma.mandal.update({
-            where: { id },
-            data: {
-                name: JSON.stringify(buildLangJson(data.name_en || data.name, data.name_hi, data.name_mr)),
-                description: JSON.stringify(buildLangJson(data.description_en || data.description, data.description_hi, data.description_mr)),
-                about: data.about ? (typeof data.about === 'string' ? JSON.parse(data.about) : data.about) : undefined,
-                mandalType: data.mandalType || undefined,
-                establishedYear: data.establishedYear || undefined,
-                presiding_deity: data.presiding_deity || undefined,
-                festivals: data.festivals || undefined,
-                address: data.address || undefined,
-                city: data.city || undefined,
-                state: data.state || undefined,
-                pinCode: data.pinCode || undefined,
-                contactNumber: data.contactNumber,
-                email: data.email || undefined,
-                presidentName: data.presidentName || undefined,
-                registrationNumber: data.registrationNumber || undefined,
-                verificationDocUrl: data.verificationDocUrl || undefined,
-                presidentIdDocUrl: data.presidentIdDocUrl || undefined,
-                // Media
-                ...(files?.image && { image: getFilePath(files, 'image') }),
-                bannerImages: [
-                    ...existingBannerImages,
-                    ...(getFilePath(files, 'bannerImages') || []),
-                ],
-                ...(files?.documentUrl && { documentUrl: getFilePath(files, 'documentUrl') }),
-                // Meta
-                slug: data.slug || existing.slug || undefined,
-                isActive: data.isActive !== undefined
-                    ? (data.isActive === 'true' || data.isActive === true)
-                    : existing.isActive,
-                status: data.status || existing.status,
-                adminNotes: data.adminNotes !== undefined ? data.adminNotes : existing.adminNotes,
-            },
+        const mandal = await prisma.$transaction(async (tx) => {
+            let userIdToLink = existing.userId;
+
+            // Sync or Create linked User record in User table if contactNumber, email, or presidentName changed
+            if (userIdToLink) {
+                const userUpdateData: any = {};
+                if (data.contactNumber) userUpdateData.phone = normalizedPhone;
+                if (data.email !== undefined) userUpdateData.email = data.email ? data.email.toLowerCase().trim() : null;
+                if (data.presidentName || data.name_en || data.name) {
+                    userUpdateData.name = data.presidentName || data.name_en || data.name;
+                }
+
+                if (Object.keys(userUpdateData).length > 0) {
+                    await tx.user.update({
+                        where: { id: userIdToLink },
+                        data: userUpdateData
+                    });
+                }
+            } else {
+                // If no userId linked yet, check if User exists or create one
+                const phoneVariants = [normalizedPhone, data.contactNumber, '91' + data.contactNumber, '+91' + data.contactNumber];
+                let user = await tx.user.findFirst({
+                    where: { phone: { in: phoneVariants }, role: 'MANDAL' }
+                });
+
+                if (!user) {
+                    const displayId = await generateCustomId('MNID');
+                    user = await tx.user.create({
+                        data: {
+                            displayId,
+                            phone: normalizedPhone,
+                            name: data.presidentName || data.name_en || data.name || 'Mandal Admin',
+                            email: data.email ? data.email.toLowerCase().trim() : (existing.email ? existing.email.toLowerCase().trim() : null),
+                            role: 'MANDAL',
+                            isVerified: true,
+                            isActive: true
+                        }
+                    });
+                }
+                userIdToLink = user.id;
+            }
+
+            return await tx.mandal.update({
+                where: { id },
+                data: {
+                    name: JSON.stringify(buildLangJson(data.name_en || data.name, data.name_hi, data.name_mr)),
+                    description: JSON.stringify(buildLangJson(data.description_en || data.description, data.description_hi, data.description_mr)),
+                    about: data.about ? (typeof data.about === 'string' ? JSON.parse(data.about) : data.about) : undefined,
+                    mandalType: data.mandalType || undefined,
+                    establishedYear: data.establishedYear || undefined,
+                    presiding_deity: data.presiding_deity || undefined,
+                    festivals: data.festivals || undefined,
+                    address: data.address || undefined,
+                    city: data.city || undefined,
+                    state: data.state || undefined,
+                    pinCode: data.pinCode || undefined,
+                    contactNumber: normalizedPhone,
+                    userId: userIdToLink,
+                    email: data.email || undefined,
+                    presidentName: data.presidentName || undefined,
+                    registrationNumber: data.registrationNumber || undefined,
+                    verificationDocUrl: data.verificationDocUrl || undefined,
+                    presidentIdDocUrl: data.presidentIdDocUrl || undefined,
+                    // Media
+                    ...(files?.image && { image: getFilePath(files, 'image') }),
+                    bannerImages: [
+                        ...existingBannerImages,
+                        ...(getFilePath(files, 'bannerImages') || []),
+                    ],
+                    ...(files?.documentUrl && { documentUrl: getFilePath(files, 'documentUrl') }),
+                    // Meta
+                    slug: data.slug || existing.slug || undefined,
+                    isActive: data.isActive !== undefined
+                        ? (data.isActive === 'true' || data.isActive === true)
+                        : existing.isActive,
+                    status: data.status || existing.status,
+                    adminNotes: data.adminNotes !== undefined ? data.adminNotes : existing.adminNotes,
+                },
+            });
         });
 
         res.json({ success: true, message: 'Mandal updated successfully', data: mandal });

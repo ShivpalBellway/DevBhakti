@@ -38,7 +38,6 @@ import {
   ChevronRight,
   ArrowLeft,
   CalendarDays,
-  X,
   Loader2,
   Eye,
   Download,
@@ -46,6 +45,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/context/LanguageContext";
 import { getLocalized } from "@/utils/localization";
+import { parseLocalizedValue } from "@/utils/textUtils";
 import { notifyFailedPayment } from "@/api/adminController";
 
 interface MandalBookingClientProps {
@@ -1053,7 +1053,7 @@ export default function MandalBookingClient({ slug }: MandalBookingClientProps) 
                   </div>
                   <div className="flex justify-between py-1 border-b">
                     <span className="text-muted-foreground">Devotee</span>
-                    <span className="font-semibold">{formData.devoteeName}</span>
+                    <span className="font-semibold">{parseLocalizedValue(formData.devoteeName, language)}</span>
                   </div>
                   <div className="flex justify-between py-1 border-b">
                     <span className="text-muted-foreground">Date</span>
@@ -1073,7 +1073,7 @@ export default function MandalBookingClient({ slug }: MandalBookingClientProps) 
               <div className="space-y-3">
                 <Button
                   onClick={() => router.push(`/profile/bookings`)}
-                  className="w-full h-12 bg-varient-pri hover:bg-blue-700 text-white font-bold rounded-xl flex items-center justify-center gap-2"
+                  className="w-full h-12 bg-primary hover:bg-primary/90 text-primary-foreground font-bold rounded-xl flex items-center justify-center gap-2 shadow-md transition-colors"
                 >
                   <Eye className="w-4 h-4" />
                   View Booking

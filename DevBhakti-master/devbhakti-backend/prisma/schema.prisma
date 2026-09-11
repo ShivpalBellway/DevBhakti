@@ -791,20 +791,6 @@ model Mandal {
   mandalDarshanTickets MandalDarshanTicket[]
   tellerOrders       TellerOrder[]
   availability       BookingAvailability[]
-  documents          MandalDocument[]
-}
-
-model MandalDocument {
-  id          String   @id @default(cuid())
-  mandalId    String
-  title       String
-  fileUrl     String
-  fileType    String?
-  fileSize    Int?
-  description String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  mandal      Mandal   @relation(fields: [mandalId], references: [id], onDelete: Cascade)
 }
 
 model Lead {

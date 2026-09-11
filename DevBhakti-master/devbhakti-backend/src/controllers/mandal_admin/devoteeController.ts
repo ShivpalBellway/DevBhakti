@@ -47,7 +47,7 @@ export const getMandalDevotees = async (req: Request, res: Response) => {
     });
 
     // 4. Fetch Darshan Tickets for Mandal
-    const darshanWhere: any = { mandalId, status: "BOOKED" };
+    const darshanWhere: any = { mandalId, status: { not: "PENDING" } };
     if (Object.keys(dateFilter).length > 0) darshanWhere.createdAt = dateFilter;
     const darshanTickets = await prisma.mandalDarshanTicket.findMany({
       where: darshanWhere,
