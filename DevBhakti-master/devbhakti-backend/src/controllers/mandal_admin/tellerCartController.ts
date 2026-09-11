@@ -377,6 +377,7 @@ export const processTellerCheckout = async (req: Request, res: Response) => {
           }
 
           const ticketDisplayId = await generateCustomId('MDRID');
+          const visitorCount = Number(item.quantity || 1);
           await tx.mandalDarshanTicket.create({
             data: {
               displayId: ticketDisplayId,
@@ -386,11 +387,21 @@ export const processTellerCheckout = async (req: Request, res: Response) => {
               visitorName: devotee.name,
               visitorPhone: devotee.phone,
               visitorEmail: devotee.email || null,
-              visitorCount: Number(item.quantity || 1),
+              visitorCount: visitorCount,
               totalAmount: Number(item.totalPrice || item.price || 0),
               status: 'CONFIRMED' as any,
               paymentMethod: payment?.method || 'CASH',
             },
+          });
+
+          // Increment bookedCount on the MandalDarshanSlot
+          await tx.mandalDarshanSlot.update({
+            where: { id: targetSlotId! },
+            data: {
+              bookedCount: {
+                increment: visitorCount
+              }
+            }
           });
         }
       }

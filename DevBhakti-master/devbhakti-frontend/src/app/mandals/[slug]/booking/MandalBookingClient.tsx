@@ -46,6 +46,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/context/LanguageContext";
 import { getLocalized } from "@/utils/localization";
 import { parseLocalizedValue } from "@/utils/textUtils";
+import { fetchProfile } from "@/api/authController";
 import { notifyFailedPayment } from "@/api/adminController";
 
 interface MandalBookingClientProps {
@@ -147,22 +148,53 @@ export default function MandalBookingClient({ slug }: MandalBookingClientProps) 
           router.push("/mandals");
         }
 
-        // Pre-fill user data
-        const savedUser = localStorage.getItem("user");
-        if (savedUser) {
-          const user = JSON.parse(savedUser);
+        // Helper function to fill user data
+        const fillUserData = (user: any) => {
+          if (!user) return;
           setFormData((prev) => ({
             ...prev,
-            devoteeName: user.name || "",
-            devoteePhone: (user.phone || "").replace(/\D/g, "").slice(-10),
-            devoteeEmail: user.email || "",
-            gothra: user.gothra || "",
-            kuldevi: user.kuldevi || "",
-            kuldevta: user.kuldevta || "",
-            dob: user.dob || "",
-            anniversary: user.anniversary || "",
-            nativePlace: user.nativePlace || "",
+            devoteeName: prev.devoteeName || parseLocalizedValue(user.name, language) || user.name || "",
+            devoteePhone: prev.devoteePhone || (user.phone || "").replace(/\D/g, "").slice(-10),
+            devoteeEmail: prev.devoteeEmail || user.email || "",
+            address: prev.address || user.address || "",
+            prasadStreet: prev.prasadStreet || user.prasadStreet || user.address || "",
+            prasadCity: prev.prasadCity || user.prasadCity || user.city || "",
+            prasadState: prev.prasadState || user.prasadState || user.state || "",
+            prasadPincode: prev.prasadPincode || user.prasadPincode || user.pincode || "",
+            gothra: prev.gothra || user.gothra || "",
+            kuldevi: prev.kuldevi || user.kuldevi || "",
+            kuldevta: prev.kuldevta || user.kuldevta || "",
+            dob: prev.dob || user.dob || "",
+            anniversary: prev.anniversary || user.anniversary || "",
+            nativePlace: prev.nativePlace || user.nativePlace || "",
           }));
+        };
+
+        // Pre-fill user data from localStorage
+        const savedUser = localStorage.getItem("user");
+        if (savedUser) {
+          try {
+            const user = JSON.parse(savedUser);
+            fillUserData(user);
+          } catch (e) {
+            console.error("Error parsing saved user:", e);
+          }
+        }
+
+        // Live fetch profile for mandal booking
+        const token = localStorage.getItem("token");
+        if (token) {
+          fetchProfile()
+            .then((res) => {
+              if (res?.success && res?.data?.user) {
+                const freshUser = res.data.user;
+                localStorage.setItem("user", JSON.stringify(freshUser));
+                fillUserData(freshUser);
+              }
+            })
+            .catch((err) => {
+              console.error("Failed to fetch fresh user profile in mandal booking", err);
+            });
         }
       } catch (error) {
         console.error("Error loading mandal data:", error);

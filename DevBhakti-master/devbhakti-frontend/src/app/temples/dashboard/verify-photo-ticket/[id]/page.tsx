@@ -54,9 +54,6 @@ export default function VerifyPhotoTicketPage() {
                     >
                         <ArrowLeft className="w-4 h-4" /> Back to Dashboard
                     </button>
-                    <span className="text-xs font-mono font-bold text-amber-600 bg-amber-100 dark:bg-amber-900/40 px-2.5 py-1 rounded-full">
-                        {ticketId}
-                    </span>
                 </div>
 
                 <div className="text-center space-y-2">

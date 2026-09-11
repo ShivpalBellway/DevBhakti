@@ -48,18 +48,22 @@ export const generatePoojaReceiptHTML = (booking: PoojaReceiptProps["booking"], 
     const rawPlatformFee = booking?.platformFee ?? 0;
     const platformFeeVal = typeof rawPlatformFee === 'number' ? rawPlatformFee : (parseFloat(rawPlatformFee) || 0);
 
-    const rawPoojaName = booking?.poojaName || (booking as any)?.pooja?.name || "Pooja Service";
+    const isPhotography = (booking as any)?.type === 'PHOTOGRAPHY' || !!(booking as any)?.timeSlot || (booking as any)?.poojaName?.toLowerCase().includes('photography');
+    const rawPoojaName = booking?.poojaName || (booking as any)?.pooja?.name || (isPhotography ? "Pooja & Photography Service" : "Pooja Service");
     const rawTempleName = booking?.templeName || (booking as any)?.temple?.name || "DevBhakti";
     const rawPackageName = booking?.packageName || "Standard";
 
     let poojaNameVal = parseLocalizedValue(rawPoojaName);
-    if (!poojaNameVal || poojaNameVal === "N/A" || poojaNameVal === "[object Object]") poojaNameVal = "Pooja Service";
+    if (!poojaNameVal || poojaNameVal === "N/A" || poojaNameVal === "[object Object]") poojaNameVal = isPhotography ? "Pooja & Photography Service" : "Pooja Service";
 
     let templeNameVal = parseLocalizedValue(rawTempleName);
     if (!templeNameVal || templeNameVal === "N/A" || templeNameVal === "[object Object]") templeNameVal = "DevBhakti";
 
     let packageNameVal = parseLocalizedValue(rawPackageName);
     if (!packageNameVal || packageNameVal === "N/A" || packageNameVal === "[object Object]") packageNameVal = "Standard";
+
+    const receiptTitle = isPhotography ? "PHOTOGRAPHY SERVICE RECEIPT" : "POOJA BOOKING RECEIPT";
+    const serviceLabel = isPhotography ? "Photography Service" : "Pooja Service";
 
     const statusVal = booking?.status || "CONFIRMED";
 
@@ -120,7 +124,7 @@ export const generatePoojaReceiptHTML = (booking: PoojaReceiptProps["booking"], 
                 </div>
 
                 <div style="text-align: center;">
-                    <div class="receipt-title">POOJA BOOKING RECEIPT</div>
+                    <div class="receipt-title">${receiptTitle}</div>
                 </div>
 
                 <div class="section">
@@ -135,7 +139,7 @@ export const generatePoojaReceiptHTML = (booking: PoojaReceiptProps["booking"], 
                             <div class="value">${bookingDateFormatted}</div>
                         </div>
                         <div class="item">
-                            <div class="label">Pooja Service</div>
+                            <div class="label">${serviceLabel}</div>
                             <div class="value">${poojaNameVal}</div>
                         </div>
                         <div class="item">

@@ -119,7 +119,7 @@ const Footer: React.FC = () => {
           </div>
 
           {/* Support Links */}
-          <div>
+          <div className="sm:col-span-2 md:col-span-1">
             <h4 className="font-semibold text-lg mb-2">{t('landing.landing_footer.headings.support')}</h4>
             <ul className="space-y-3">
               {footerLinks.support.map((link) => (
@@ -128,10 +128,10 @@ const Footer: React.FC = () => {
                     href={link.href} 
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-2 hover:text-[#DCB35D] transition-colors text-sm whitespace-nowrap"
+                    className="flex items-start gap-2 hover:text-[#DCB35D] transition-colors text-xs sm:text-sm break-all font-medium"
                   >
-                    <Mail className="w-4 h-4 flex-shrink-0" />
-                    {link.label}
+                    <Mail className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                    <span className="break-all">{link.label}</span>
                   </a>
                 </li>
               ))}

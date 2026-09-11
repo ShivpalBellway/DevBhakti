@@ -915,180 +915,122 @@ export const getBookingReceipt = async (req: Request, res: Response) => {
             booking = {
                 ...photoBooking,
                 pooja: null,
-                devoteeName: photoBooking.user?.name || '',
-                devoteePhone: photoBooking.user?.phone || '',
-                devoteeEmail: photoBooking.user?.email || '',
+                devoteeName: photoBooking.user?.name || (photoBooking as any).devoteeName || 'Devotee',
+                devoteePhone: photoBooking.user?.phone || (photoBooking as any).devoteePhone || '',
+                devoteeEmail: photoBooking.user?.email || (photoBooking as any).devoteeEmail || '',
                 displayId: photoBooking.displayId,
-                packageName: getEnglish(photoBooking.package.name),
+                packageName: getEnglish(photoBooking.package?.name) || 'Photography Pass',
                 packagePrice: photoBooking.packagePrice,
                 platformFee: photoBooking.platformFee,
                 totalAmount: photoBooking.totalAmount,
-                bookingDate: photoBooking.bookingDate
+                bookingDate: photoBooking.bookingDate,
+                selectedArea: photoBooking.selectedArea,
+                timeSlot: photoBooking.timeSlot
             } as any;
             isPhotography = true;
         }
 
-
-
         const doc = new PDFDocument({ margin: 50, size: 'A4' });
         const filename = `receipt-${booking!.displayId || booking!.id.slice(-6)}.pdf`;
 
-
-
         res.setHeader('Content-disposition', 'attachment; filename="' + filename + '"');
-
         res.setHeader('Content-type', 'application/pdf');
-
-
 
         doc.pipe(res);
 
-
-
         // --- Colors ---
-
         const primaryColor = '#88542B';
-
         const textColor = '#1e293b';
-
         const lightGray = '#f8fafc';
-
         const borderColor = '#e2e8f0';
 
-
-
         // --- Header Section ---
-
         const logoPath = path.join(__dirname, '../../../assets/logo.png');
 
         if (fs.existsSync(logoPath)) {
-
             doc.image(logoPath, 50, 45, { width: 60 });
-
             doc.fillColor(primaryColor).fontSize(24).font('Helvetica-Bold').text('DevBhakti', 120, 55);
-
             doc.fillColor(textColor).fontSize(10).font('Helvetica').text('Sacred Offerings & Temple Services', 120, 85);
-
         } else {
-
             doc.fillColor(primaryColor).fontSize(28).font('Helvetica-Bold').text('DevBhakti', { align: 'center' });
-
             doc.fillColor(textColor).fontSize(12).font('Helvetica').text('Sacred Offerings & Temple Services', { align: 'center' });
-
         }
 
-
-
         // Receipt Info (Top Right)
-
-        doc.fillColor(textColor).fontSize(10).font('Helvetica-Bold').text('BOOKING RECEIPT', 400, 55, { align: 'right' });
+        const receiptHeader = isPhotography ? 'PHOTOGRAPHY SERVICE RECEIPT' : 'BOOKING RECEIPT';
+        doc.fillColor(textColor).fontSize(10).font('Helvetica-Bold').text(receiptHeader, 400, 55, { align: 'right' });
         doc.font('Helvetica').fontSize(9).text(`No: #${booking!.displayId || booking!.id.slice(0, 8).toUpperCase()}`, 400, 70, { align: 'right' });
-
         doc.text(`Date: ${new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}`, 400, 82, { align: 'right' });
 
-
-
         doc.moveDown(4);
-
         doc.strokeColor(borderColor).lineWidth(1).moveTo(50, doc.y).lineTo(550, doc.y).stroke();
-
         doc.moveDown(2);
 
-
-
         // --- Devotee & Booking Details ---
-
         const topOfDetails = doc.y;
 
-
-
         // Devotee Column
-
         doc.fillColor(primaryColor).fontSize(11).font('Helvetica-Bold').text('DEVOTEE DETAILS', 50, topOfDetails);
-
         doc.moveDown(0.5);
 
-        doc.fillColor(textColor).font('Helvetica-Bold').fontSize(12).text(booking!.devoteeName);
+        const devoteeDisplayName = booking!.devoteeName || (booking as any)?.user?.name || 'Devotee';
+        doc.fillColor(textColor).font('Helvetica-Bold').fontSize(12).text(devoteeDisplayName);
 
-        doc.font('Helvetica').fontSize(10).text(`Phone: ${booking!.devoteePhone}`);
-
+        if (booking!.devoteePhone) doc.font('Helvetica').fontSize(10).text(`Phone: ${booking!.devoteePhone}`);
         if (booking!.devoteeEmail) doc.text(`Email: ${booking!.devoteeEmail}`);
 
-
-
         // Spiritual Details Below Devotee Initials
-
         doc.moveDown(1);
-
         doc.fillColor(primaryColor).fontSize(10).font('Helvetica-Bold').text('SPIRITUAL DETAILS', 50, doc.y);
-
         doc.fillColor(textColor).font('Helvetica').fontSize(9);
 
         if (booking!.gothra) doc.text(`Gothra: ${booking!.gothra}`);
-
         if (booking!.kuldevi) doc.text(`Kuldevi: ${booking!.kuldevi}`);
-
         if (booking!.kuldevta) doc.text(`Kuldevta: ${booking!.kuldevta}`);
-
         if (booking!.dob) doc.text(`DOB: ${booking!.dob}`);
-
         if (booking!.nativePlace) doc.text(`Native Place: ${booking!.nativePlace}`);
-
-
 
         const leftColumnBottom = doc.y;
 
-
-
         // Booking Status Column (Right)
-
         doc.fillColor(primaryColor).fontSize(11).font('Helvetica-Bold').text('BOOKING STATUS', 350, topOfDetails);
-
         doc.moveDown(0.5);
 
         const status = (booking as any).status || 'BOOKED';
-
         doc.fillColor(status === 'BOOKED' ? '#059669' : '#d97706').fontSize(10).font('Helvetica-Bold').text(status, 350, doc.y);
-
         doc.fillColor(textColor).font('Helvetica').fontSize(10).text(`Payment Method: Online`, 350, doc.y + 2);
-
-
 
         const rightColumnBottom = doc.y;
 
-
-
         // Start table after the longest column
-
         doc.y = Math.max(leftColumnBottom, rightColumnBottom) + 40;
 
-
-
-        // --- Ritual Table ---
-
+        // --- Ritual / Service Table ---
         doc.fillColor(lightGray).rect(50, doc.y, 500, 25).fill();
 
-        doc.fillColor(primaryColor).fontSize(10).font('Helvetica-Bold').text('RITUAL DESCRIPTION', 60, doc.y + 7);
+        const descHeader = isPhotography ? 'PHOTOGRAPHY SERVICE DETAILS' : 'RITUAL DESCRIPTION';
+        doc.fillColor(primaryColor).fontSize(10).font('Helvetica-Bold').text(descHeader, 60, doc.y + 7);
         doc.text('AMOUNT', 400, doc.y, { align: 'right', width: 140 });
 
-
-
         doc.moveDown(2);
-
         const tableY = doc.y;
 
-
-
         // Table Content
-        doc.fillColor(textColor).font('Helvetica-Bold').fontSize(11).text(`${getEnglish((booking as any).pooja?.name) || 'Pooja Service'}`, 60, tableY);
+        const serviceTitleName = isPhotography
+            ? `Pooja & Photography Service (${booking!.packageName || 'Pass'})`
+            : `${getEnglish((booking as any).pooja?.name) || 'Pooja Service'}`;
 
+        doc.fillColor(textColor).font('Helvetica-Bold').fontSize(11).text(serviceTitleName, 60, tableY);
         doc.font('Helvetica').fontSize(9).text(`Temple: ${getEnglish((booking as any).temple?.name) || 'N/A'}`, 60, doc.y + 2);
-
         doc.text(`Package: ${booking!.packageName}`, 60, doc.y + 2);
+        doc.text(`Scheduled Date: ${booking!.bookingDate}`, 60, doc.y + 2);
 
-        doc.text(`Scheduled Date: ${new Date(booking!.bookingDate as any).toLocaleDateString()}`, 60, doc.y + 2);
-
-
+        if (isPhotography && (booking as any).timeSlot) {
+            doc.text(`Slot: ${(booking as any).timeSlot}`, 60, doc.y + 2);
+        }
+        if (isPhotography && (booking as any).selectedArea) {
+            doc.text(`Permitted Area: ${(booking as any).selectedArea}`, 60, doc.y + 2);
+        }
 
         doc.font('Helvetica-Bold').fontSize(11).text(`Rs. ${booking!.packagePrice}`, 400, tableY, { align: 'right', width: 140 });
 

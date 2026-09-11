@@ -293,6 +293,17 @@ export function MandalsList() {
   const locations = ["All", ...new Set(allMandals.map((m) => m?.city).filter(Boolean))];
   const areas = ["All", ...new Set(allMandals.map((m) => m?.address || m?.area).filter(Boolean))];
 
+  const isDummyText = (text?: string | null) => {
+    if (!text || !text.trim()) return true;
+    const lower = text.trim().toLowerCase();
+    return (
+      /^ganesh utsav \d+$/i.test(lower) ||
+      lower === "test" ||
+      lower === "ganesh utsav registration" ||
+      lower === "registration"
+    );
+  };
+
   // Dynamically extract popular searches keywords from actual mandal data
   const dynamicPopularSearches = Array.from(
     new Set(
@@ -300,6 +311,7 @@ export function MandalsList() {
         .flatMap((m) => [m?.area, m?.city, m?.mandalType, m?.presiding_deity])
         .filter(Boolean)
         .map((s) => s.trim())
+        .filter((s) => s.length > 0 && !isDummyText(s))
     )
   ).slice(0, 6);
 
@@ -346,8 +358,14 @@ export function MandalsList() {
   const getLocalizedSettingText = (field: "title" | "subtitle") => {
     if (!activeFestival?.[field]) return null;
     const val = activeFestival[field];
-    if (typeof val === "string") return val;
-    return val[language] || val["en"] || val["hi"] || val["mr"] || null;
+    if (typeof val === "string") {
+      return val.trim() || null;
+    }
+    if (typeof val === "object" && val !== null) {
+      const text = val[language] || val["en"] || val["hi"] || val["mr"] || null;
+      return typeof text === "string" ? text.trim() || null : null;
+    }
+    return null;
   };
 
   const heroTitle =
@@ -356,9 +374,7 @@ export function MandalsList() {
 
   const heroSubtitle =
     getLocalizedSettingText("subtitle") ||
-    (mounted
-      ? t("mandal_list.subtitle")
-      : "");
+    (mounted ? t("mandal_list.subtitle") : "");
 
   // Date range formatting
   const formatDateStr = (dateStr: string) => {
@@ -786,7 +802,7 @@ export function MandalsList() {
                     <div className="p-4 flex-1 flex flex-col justify-between space-y-3">
                       <div className="space-y-1">
                         <div className="flex items-start justify-between gap-3">
-                          <h3 className="font-bold text-base text-zinc-900 dark:text-zinc-100 truncate group-hover:text-[#6B0F1A] transition-colors">
+                          <h3 className="font-bold text-base text-zinc-900 dark:text-zinc-100 truncate group-hover:text-[#7c4624] transition-colors">
                             {localizedName}
                           </h3>
                           {isVerifiedMandal && (
@@ -841,7 +857,7 @@ export function MandalsList() {
                             console.log("Navigating to mandal detail:", targetSlug);
                             router.push(`/mandals/${targetSlug}`);
                           }}
-                          className="text-xs font-bold text-[#6B0F1A] dark:text-amber-400 hover:underline flex items-center gap-1 group/link"
+                          className="text-xs font-bold text-[#7c4624] dark:text-amber-400 hover:underline flex items-center gap-1 group/link"
                         >
                           {t("mandal_list.explore_mandal")}
                           <ArrowRight className="w-3.5 h-3.5 group-hover/link:translate-x-1 transition-transform" />

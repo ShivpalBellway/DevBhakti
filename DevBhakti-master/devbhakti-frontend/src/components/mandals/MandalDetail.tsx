@@ -358,10 +358,15 @@ export function MandalDetail({ slug }: { slug: string }) {
         })
       });
       const data = await res.json();
-      if (data.success && data.token) {
-        localStorage.setItem("token", data.token);
-        localStorage.setItem("user", JSON.stringify(data.user));
-        setCurrentUser(data.user);
+      const token = data.data?.token || data.token;
+      const user = data.data?.user || data.user;
+
+      if (data.success && token) {
+        if (token) localStorage.setItem("token", token);
+        if (user) {
+          localStorage.setItem("user", JSON.stringify(user));
+          setCurrentUser(user);
+        }
         setShowDonationOtpInput(false);
         setDonationOtpSent(false);
         toast({
@@ -455,39 +460,36 @@ export function MandalDetail({ slug }: { slug: string }) {
           name: mandal.name?.en || mandal.name || "Mandal",
           description: `Donation to ${mandal.name?.en || mandal.name || "Mandal"}`,
           order_id: data.order.id,
-          handler: async function (response: any) {
-            try {
-              const verifyRes = await fetch(`${API_URL}/payments/verify`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  razorpay_order_id: response.razorpay_order_id,
-                  razorpay_payment_id: response.razorpay_payment_id,
-                  razorpay_signature: response.razorpay_signature,
-                  orderType: "DONATION",
-                  referenceId: data.donationId,
-                  orderData: { donationId: data.donationId },
-                }),
+          handler: function (response: any) {
+            // Instantly close donate modal & show success toast
+            setShowDonateModal(false);
+            toast({
+              title: "Donation Successful! 🙏",
+              description: `Thank you for your generous contribution of ₹${amount} to ${mandal.name?.en || mandal.name || "Mandal"}. A receipt will be sent to your email.`,
+            });
+
+            // Asynchronously call backend verification & email in background
+            fetch(`${API_URL}/payments/verify`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+                orderType: "DONATION",
+                referenceId: data.donationId,
+                orderData: { donationId: data.donationId },
+              }),
+            })
+              .then(async (res) => {
+                const verifyData = await res.json();
+                if (verifyData.success) {
+                  loadMandal();
+                }
+              })
+              .catch((error) => {
+                console.error("Background Verification Error:", error);
               });
-              const verifyData = await verifyRes.json();
-              
-              if (verifyData.success) {
-                toast({
-                  title: "Donation Successful! 🙏",
-                  description: "Thank you for your contribution. A receipt has been sent to your email.",
-                });
-                setShowDonateModal(false);
-                loadMandal();
-              } else {
-                toast({
-                  title: "Verification Failed",
-                  description: verifyData.message || "Payment verification failed",
-                  variant: "destructive",
-                });
-              }
-            } catch (error) {
-              console.error("Verification Error:", error);
-            }
           },
           prefill: {
             name: isAnonymous ? "Anonymous" : (donorName || currentUser?.name || ""),
@@ -555,7 +557,7 @@ export function MandalDetail({ slug }: { slug: string }) {
   const hasProducts = products.length > 0;
   const hasDescription = !!description;
   const hasLocation = !!(mandal?.address || mandal?.city || mandal?.state);
-  const hasContact = !!(mandal?.phone || mandal?.contactPhone || mandal?.email || mandal?.contactEmail || mandal?.websiteUrl);
+  const hasContact = !!(mandal?.email || mandal?.contactEmail || mandal?.websiteUrl);
   const hasSocialLinks = !!(mandal?.instagramUrl || mandal?.instagram || mandal?.youtubeUrl || mandal?.youtube || mandal?.facebookUrl || mandal?.facebook);
   const hasContactOrSocial = hasContact || hasSocialLinks;
 
@@ -626,10 +628,30 @@ export function MandalDetail({ slug }: { slug: string }) {
             </button>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
+          <div className="flex flex-col lg:grid lg:grid-cols-12 gap-8 items-stretch">
             
-            {/* LEFT HALF (7 COLS): DETAILS & ACTION CTAs & STATS BOX */}
-            <div className="lg:col-span-7 flex flex-col justify-between space-y-6">
+            {/* HERO IMAGE CARD - FIRST ON MOBILE (order-1), SECOND ON DESKTOP (lg:order-2, 5 COLS) */}
+            <div className="order-1 lg:order-2 lg:col-span-5 relative w-full aspect-[4/3] rounded-2xl overflow-hidden shadow-xl border border-amber-500/20 group bg-zinc-900">
+              <img
+                src={getFullImageUrl(mandal.image || allImages[0])}
+                alt={name}
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                onError={(e) => {
+                  (e.target as any).src =
+                    "https://images.unsplash.com/photo-1620766182966-c6eb5ed2b788?auto=format&fit=crop&q=80&w=1200";
+                }}
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+              <div className="absolute bottom-3 left-3 right-3 text-white">
+                <Badge className="bg-amber-500 text-slate-950 font-bold text-[10px] mb-1">
+                  {mandal.presiding_deity || "Presiding Deity"}
+                </Badge>
+                <div className="text-xs font-semibold truncate">{name}</div>
+              </div>
+            </div>
+
+            {/* DETAILS & ACTION CTAs & STATS BOX - SECOND ON MOBILE (order-2), FIRST ON DESKTOP (lg:order-1, 7 COLS) */}
+            <div className="order-2 lg:order-1 lg:col-span-7 flex flex-col justify-between space-y-6">
               
               {/* Main Title & Type */}
               <div className="space-y-2">
@@ -806,26 +828,6 @@ export function MandalDetail({ slug }: { slug: string }) {
 
             </div>
 
-            {/* RIGHT HALF (5 COLS): MAIN HERO IMAGE CARD (EDGE-TO-EDGE 4:3 LANDSCAPE FIT) */}
-            <div className="lg:col-span-5 relative w-full aspect-[4/3] rounded-2xl overflow-hidden shadow-xl border border-amber-500/20 group bg-zinc-900">
-              <img
-                src={getFullImageUrl(mandal.image || allImages[0])}
-                alt={name}
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-                onError={(e) => {
-                  (e.target as any).src =
-                    "https://images.unsplash.com/photo-1620766182966-c6eb5ed2b788?auto=format&fit=crop&q=80&w=1200";
-                }}
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-              <div className="absolute bottom-3 left-3 right-3 text-white">
-                <Badge className="bg-amber-500 text-slate-950 font-bold text-[10px] mb-1">
-                  {mandal.presiding_deity || "Presiding Deity"}
-                </Badge>
-                <div className="text-xs font-semibold truncate">{name}</div>
-              </div>
-            </div>
-
           </div>
         </div>
       </section>
@@ -843,7 +845,7 @@ export function MandalDetail({ slug }: { slug: string }) {
                   onClick={() => scrollToSection(tab.id)}
                   className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold whitespace-nowrap transition-all ${
                     isActive
-                      ? "bg-[#6B0F1A] text-white shadow-md font-bold"
+                      ? "bg-gradient-to-r from-[#7c4624] to-[#5c3a21] text-white shadow-md font-bold"
                       : "text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
                   }`}
                 >
@@ -857,10 +859,10 @@ export function MandalDetail({ slug }: { slug: string }) {
       </div>
 
       {/* ─── UNIFIED SINGLE PAGE CONTENT ─── */}
-      <main className="container mx-auto px-4 py-8 space-y-10">
+      <main className="container mx-auto px-4 py-5 space-y-4">
 
         {/* ─── ROW 1: TOP MEDIA GRID (GALLERY, LIVE DARSHAN, TODAY'S AARTI) ─── */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-3.5 sm:gap-4">
 
           {/* CARD 1: LIVE DARSHAN (Only if mandal has live stream / isLive) */}
           {hasLiveDarshan && (
@@ -997,9 +999,9 @@ export function MandalDetail({ slug }: { slug: string }) {
                       </div>
                       <div>
                         <h3 className="text-base font-serif font-bold text-zinc-900">
-                          Today's Aarti
+                          Aarti Timings
                         </h3>
-                        <p className="text-[10px] text-amber-900/70">Daily Aarti timings</p>
+                        <p className="text-[10px] text-amber-900/70">Daily Aarti schedule</p>
                       </div>
                     </div>
                     <Badge className="bg-amber-100 text-amber-900 font-bold text-[10px] border border-amber-200">
@@ -1040,7 +1042,7 @@ export function MandalDetail({ slug }: { slug: string }) {
 
         {/* ─── ROW 2: POOJAS & SEVAS (LEFT) + UPCOMING EVENTS (RIGHT) ─── */}
         {(hasPoojas || hasEvents) && (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-3.5 sm:gap-4">
 
             {/* ─── SECTION 4: POOJAS & SEVAS (Expands to col-span-12 if no Events) ─── */}
             {hasPoojas && (
@@ -1048,8 +1050,8 @@ export function MandalDetail({ slug }: { slug: string }) {
                 id="section-poojas"
                 className={`scroll-mt-28 flex flex-col ${hasEvents ? "lg:col-span-8" : "lg:col-span-12"}`}
               >
-                <Card className="rounded-3xl border-zinc-200/80 p-6 bg-white shadow-sm hover:shadow-md transition-all flex flex-col justify-between h-full space-y-5">
-                  <div className="flex items-center justify-between border-b border-zinc-100 pb-3">
+                <Card className="rounded-3xl border-zinc-200/80 p-3.5 sm:p-4 bg-white shadow-sm hover:shadow-md transition-all flex flex-col justify-between h-full space-y-2">
+                  <div className="flex items-center justify-between border-b border-zinc-100 pb-2">
                     <div>
                       <h3 className="text-xl font-serif font-bold text-zinc-900 flex items-center gap-2">
                         <Gift className="w-5 h-5 text-warm-brown" />
@@ -1065,7 +1067,7 @@ export function MandalDetail({ slug }: { slug: string }) {
                     </button>
                   </div>
 
-                  <div className="relative group/carousel mt-2">
+                  <div className="relative group/carousel mt-1">
                     <button
                       onClick={() => {
                         const container = document.getElementById("poojas-scroll-container");
@@ -1090,7 +1092,7 @@ export function MandalDetail({ slug }: { slug: string }) {
 
                     <div 
                       id="poojas-scroll-container"
-                      className="flex items-stretch gap-4 overflow-x-auto thin-scrollbar pb-2 pt-1 px-1 scroll-smooth"
+                      className="flex items-stretch gap-2.5 overflow-x-auto thin-scrollbar pb-2 pt-1 px-1 scroll-smooth"
                     >
                       {mandal.poojas.map((p: any, idx: number) => {
                         const pName = getLocalized(p, "name", language) || p.name || p.title;
@@ -1119,7 +1121,7 @@ export function MandalDetail({ slug }: { slug: string }) {
                                 e.stopPropagation();
                                 router.push(`/mandals/${slug}/booking`);
                               }}
-                              className="w-full bg-[#6B0F1A] hover:bg-[#520B14] text-white font-bold h-8 text-[11px] rounded-xl transition-all shadow-sm"
+                              className="w-full bg-gradient-to-r from-[#7c4624] to-[#5c3a21] hover:from-[#5c3a21] hover:to-[#3e2413] text-white font-bold h-8 text-[11px] rounded-xl transition-all shadow-md shadow-[#7c4624]/20"
                             >
                               Book Now
                             </Button>
@@ -1204,13 +1206,13 @@ export function MandalDetail({ slug }: { slug: string }) {
 
         {/* ─── ROW 3: SACRED ITEMS & OFFERINGS + SUPPORT THIS MANDAL (DONATION) ─── */}
         {(hasProducts || canUseMandalTransactions) && (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-3.5 sm:gap-4">
 
             {/* ─── SECTION 6: SACRED ITEMS & OFFERINGS (Only when products exist) ─── */}
             {hasProducts && (
               <div id="section-sacred" className={`scroll-mt-28 flex flex-col ${canUseMandalTransactions ? "lg:col-span-8" : "lg:col-span-12"}`}>
-                <Card className="rounded-3xl border-zinc-200/80 p-6 bg-white shadow-sm hover:shadow-md transition-all flex flex-col justify-between h-full space-y-5">
-                  <div className="flex items-center justify-between border-b border-zinc-100 pb-3">
+                <Card className="rounded-3xl border-zinc-200/80 p-3.5 sm:p-4 bg-white shadow-sm hover:shadow-md transition-all flex flex-col justify-between h-full space-y-2">
+                  <div className="flex items-center justify-between border-b border-zinc-100 pb-2">
                     <div>
                       <h3 className="text-xl font-serif font-bold text-zinc-900 flex items-center gap-2">
                         <ShoppingBag className="w-5 h-5 text-warm-brown" />
@@ -1227,7 +1229,7 @@ export function MandalDetail({ slug }: { slug: string }) {
                     </button>
                   </div>
 
-                  <div className="relative group/carousel mt-2">
+                  <div className="relative group/carousel mt-1">
                     <button
                       onClick={() => {
                         const container = document.getElementById("products-scroll-container");
@@ -1252,7 +1254,7 @@ export function MandalDetail({ slug }: { slug: string }) {
 
                     <div 
                       id="products-scroll-container"
-                      className="flex items-stretch gap-4 overflow-x-auto thin-scrollbar pb-2 pt-1 px-1 scroll-smooth"
+                      className="flex items-stretch gap-2.5 overflow-x-auto thin-scrollbar pb-2 pt-1 px-1 scroll-smooth"
                     >
                       {products.map((item: any, idx: number) => {
                         const price = item.price ?? item.variants?.[0]?.price ?? 251;
@@ -1277,7 +1279,7 @@ export function MandalDetail({ slug }: { slug: string }) {
                                 e.stopPropagation();
                                 router.push(`/marketplace/product/${item.id}`);
                               }}
-                              className="w-full mt-2 bg-[#6B0F1A] hover:bg-[#520B14] text-white font-bold h-8 text-[11px] rounded-xl transition-all shadow-sm"
+                              className="w-full mt-2 bg-gradient-to-r from-[#7c4624] to-[#5c3a21] hover:from-[#5c3a21] hover:to-[#3e2413] text-white font-bold h-8 text-[11px] rounded-xl transition-all shadow-md shadow-[#7c4624]/20"
                             >
                               Buy Now
                             </Button>
@@ -1362,7 +1364,7 @@ export function MandalDetail({ slug }: { slug: string }) {
 
         {/* ─── ROW 4: BOTTOM CARDS (ABOUT - 8 COLS, LOCATION - 2 COLS, CONTACT - 2 COLS) ─── */}
         {(hasDescription || hasLocation || hasContactOrSocial) && (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-3.5 sm:gap-4">
 
             {/* ABOUT (8 COLS) — only if mandal has a description */}
             {hasDescription && (
@@ -1413,35 +1415,50 @@ export function MandalDetail({ slug }: { slug: string }) {
                         embedSrc = mapUrl;
                       }
 
-                      if (embedSrc) {
-                        return (
-                          <div className="w-full h-36 rounded-2xl overflow-hidden border border-zinc-200 mb-3 shadow-inner bg-zinc-100">
+                      if (!embedSrc) {
+                        const locQuery = [name, mandal.address, mandal.city, mandal.state].filter(Boolean).join(", ");
+                        if (locQuery) {
+                          embedSrc = `https://maps.google.com/maps?q=${encodeURIComponent(locQuery)}&t=&z=15&ie=UTF8&iwloc=&output=embed`;
+                        }
+                      }
+
+                      const navUrl = mapUrl && mapUrl.startsWith("http") && !mapUrl.includes("embed")
+                        ? mapUrl
+                        : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${name} ${[mandal.address, mandal.city, mandal.state].filter(Boolean).join(" ")}`)}`;
+
+                      return (
+                        <div
+                          onClick={() => window.open(navUrl, "_blank")}
+                          className="w-full h-36 rounded-2xl overflow-hidden border border-zinc-200 mb-3 shadow-inner bg-zinc-100 relative group cursor-pointer"
+                        >
+                          {embedSrc ? (
                             <iframe
                               src={embedSrc}
                               width="100%"
                               height="100%"
-                              style={{ border: 0 }}
+                              style={{ border: 0, pointerEvents: 'none' }}
                               allowFullScreen={false}
                               loading="lazy"
                               referrerPolicy="no-referrer-when-downgrade"
+                              title="Location Map"
+                              className="w-full h-full object-cover"
                             />
+                          ) : (
+                            <img
+                              src="https://images.unsplash.com/photo-1526778548025-fa2f459cd5c1?auto=format&fit=crop&q=80&w=600"
+                              alt="Map Location Preview"
+                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                            />
+                          )}
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent flex items-end justify-between p-2.5 opacity-90 group-hover:opacity-100 transition-opacity">
+                            <div className="flex items-center gap-1.5 text-white min-w-0">
+                              <MapPin className="w-4 h-4 text-red-500 fill-red-500 shrink-0 animate-bounce" />
+                              <span className="text-[11px] font-bold truncate drop-shadow">{mandal.city || name}</span>
+                            </div>
+                            <span className="text-[10px] font-bold bg-white/95 text-amber-950 px-2 py-0.5 rounded-full shadow-sm shrink-0">
+                              Google Maps ↗
+                            </span>
                           </div>
-                        );
-                      }
-
-                      return (
-                        <div
-                          onClick={() => {
-                            const navUrl = mapUrl && mapUrl.startsWith("http")
-                              ? mapUrl
-                              : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${name} ${mandal.city || ""}`)}`;
-                            window.open(navUrl, "_blank");
-                          }}
-                          className="w-full rounded-2xl bg-zinc-100 border border-zinc-200 flex flex-col items-center justify-center p-4 text-center mb-3 cursor-pointer hover:bg-zinc-200/60 transition-colors"
-                        >
-                          <Compass className="w-7 h-7 text-amber-600 mb-1" />
-                          <div className="text-xs font-bold text-zinc-800">Google Maps Route</div>
-                          <div className="text-[10px] text-zinc-400">Click to navigate to mandal</div>
                         </div>
                       );
                     })()}
@@ -1460,7 +1477,7 @@ export function MandalDetail({ slug }: { slug: string }) {
                       }
                       window.open(navUrl, "_blank");
                     }}
-                    className="w-full bg-warm-brown hover:bg-warm-brown/90 text-white font-bold h-9 text-xs rounded-xl shadow-sm"
+                    className="w-full bg-gradient-to-r from-[#7c4624] to-[#5c3a21] hover:from-[#5c3a21] hover:to-[#3e2413] text-white font-bold h-9 text-xs rounded-xl shadow-md shadow-[#7c4624]/20"
                   >
                     <Navigation className="w-3.5 h-3.5 mr-1.5" />
                     Get Directions
@@ -1469,26 +1486,19 @@ export function MandalDetail({ slug }: { slug: string }) {
               </div>
             )}
 
-            {/* CONTACT US (2 COLS) — only if mandal has phone/email/website or social links */}
+            {/* CONTACT US (2 COLS) — only if mandal has email/website or social links */}
             {hasContactOrSocial && (
               <div id="section-contact" className={`scroll-mt-28 ${hasDescription ? 'lg:col-span-2' : 'lg:col-span-6'}`}>
                 <Card className="rounded-3xl border-zinc-200/80 p-5 bg-white shadow-sm space-y-3 h-full flex flex-col justify-between">
                   <div>
                     <div className="flex items-center gap-2.5 border-b border-zinc-100 pb-3 mb-3">
-                      <h3 className="text-xl font-serif font-bold text-zinc-900 flex items-center gap-1.5">
-                        <Phone className="w-4 h-4 text-warm-brown" />
+                      <h3 className="text-xl font-serif font-bold text-zinc-900">
                         Contact Us
                       </h3>
                     </div>
 
                     {hasContact && (
                       <div className="space-y-2.5 text-xs text-zinc-700 font-medium">
-                        {(mandal?.phone || mandal?.contactPhone) && (
-                          <div className="flex items-center gap-2">
-                            <Phone className="w-3.5 h-3.5 text-amber-600" />
-                            <span>{mandal?.phone || mandal?.contactPhone}</span>
-                          </div>
-                        )}
                         {(mandal?.email || mandal?.contactEmail) && (
                           <div className="flex items-center gap-2">
                             <Mail className="w-3.5 h-3.5 text-amber-600" />

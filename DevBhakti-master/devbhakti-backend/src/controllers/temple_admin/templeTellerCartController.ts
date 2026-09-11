@@ -359,6 +359,7 @@ export const processTempleTellerCheckout = async (req: Request, res: Response) =
           }
 
           const ticketDisplayId = await generateCustomId('TDRID');
+          const visitorCount = Number(item.quantity || 1);
           await tx.darshanTicket.create({
             data: {
               displayId: ticketDisplayId,
@@ -368,11 +369,21 @@ export const processTempleTellerCheckout = async (req: Request, res: Response) =
               visitorName: devotee.name,
               visitorPhone: devotee.phone,
               visitorEmail: devotee.email || null,
-              visitorCount: Number(item.quantity || 1),
+              visitorCount: visitorCount,
               totalAmount: Number(item.totalPrice || item.price || 0),
               status: 'CONFIRMED' as any,
               paymentMethod: payment?.method || 'CASH',
             },
+          });
+
+          // Increment bookedCount on the DarshanSlot
+          await tx.darshanSlot.update({
+            where: { id: targetSlotId! },
+            data: {
+              bookedCount: {
+                increment: visitorCount
+              }
+            }
           });
         } else if (type === 'PHOTOGRAPHY') {
           // Handle Photography Booking

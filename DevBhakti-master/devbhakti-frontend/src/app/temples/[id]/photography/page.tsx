@@ -212,6 +212,7 @@ export default function PhotographyBookingPage() {
                                 setBookingDetails({
                                     bookingId: finalBookingId,
                                     displayId: vData.displayId || displayId,
+                                    devoteeName: savedUser?.name || "Guest Devotee",
                                     packageName: vData.packageName || getLocalized(selectedPackage, 'name', language),
                                     bookingDate: vData.bookingDate || selectedPhotoDate,
                                     timeSlot: vData.timeSlot || selectedPhotoSlot.slotName,
@@ -522,6 +523,8 @@ export default function PhotographyBookingPage() {
                                 </div>
 
                                 <div className="text-left text-xs space-y-1 bg-orange-50/60 p-3 rounded-xl border border-orange-100">
+                                    <p><span className="font-bold text-[#5c3a21]">Service:</span> Pooja & Photography Service</p>
+                                    <p><span className="font-bold text-[#5c3a21]">Devotee Name:</span> {bookingDetails.devoteeName || "Devotee"}</p>
                                     <p><span className="font-bold text-[#5c3a21]">Package:</span> {bookingDetails.packageName}</p>
                                     <p><span className="font-bold text-[#5c3a21]">Date:</span> {bookingDetails.bookingDate}</p>
                                     <p><span className="font-bold text-[#5c3a21]">Slot:</span> {formatSlotTime(bookingDetails.timeSlot)}</p>

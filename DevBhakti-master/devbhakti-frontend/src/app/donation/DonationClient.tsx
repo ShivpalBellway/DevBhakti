@@ -297,38 +297,28 @@ function DonationForm() {
                 name: "DevBhakti",
                 description: t("step4.razorpay_description").replace("{{temple}}", temples.find(t => t.id === selectedTemple)?.name || ""),
                 order_id: initiateData.order.id,
-                handler: async function (response: any) {
-                    try {
-                        // 3. Verify Payment
-                        const verifyRes = await axios.post(`${API_URL}/payments/verify`, {
-                            razorpay_order_id: response.razorpay_order_id,
-                            razorpay_payment_id: response.razorpay_payment_id,
-                            razorpay_signature: response.razorpay_signature,
-                            orderType: "DONATION",
-                            referenceId: initiateData.donationId, // Using donationId as reference
-                            orderData: { donationId: initiateData.donationId },
-                            userId: user?.id
-                        }, { validateStatus: () => true });
+                handler: function (response: any) {
+                    // Instantly show success UI step and toast
+                    setTransactionId(response.razorpay_payment_id);
+                    setDirection(1);
+                    setStep(5); // Success Step
+                    setIsPaymentLoading(false);
+                    toast({
+                        title: t("toasts.success_title"),
+                        description: t("toasts.success_desc"),
+                        variant: "success"
+                    });
 
-                        const verifyData = verifyRes.data;
-
-                        if (verifyData.success) {
-                            setTransactionId(response.razorpay_payment_id);
-                            setDirection(1);
-                            setStep(5); // Success Step
-                            toast({
-                                title: t("toasts.success_title"),
-                                description: verifyData.message || t("toasts.success_desc"),
-                                variant: "success"
-                            });
-                        } else {
-                            toast({ title: t("toasts.verification_failed"), description: verifyData.message, variant: "destructive" });
-                        }
-                    } catch (err: any) {
-                        toast({ title: t("toasts.verification_error"), description: err.message, variant: "destructive" });
-                    } finally {
-                        setIsPaymentLoading(false);
-                    }
+                    // Fire backend verification asynchronously in background
+                    axios.post(`${API_URL}/payments/verify`, {
+                        razorpay_order_id: response.razorpay_order_id,
+                        razorpay_payment_id: response.razorpay_payment_id,
+                        razorpay_signature: response.razorpay_signature,
+                        orderType: "DONATION",
+                        referenceId: initiateData.donationId,
+                        orderData: { donationId: initiateData.donationId },
+                        userId: user?.id
+                    }, { validateStatus: () => true }).catch((err) => console.error("Background verify error:", err));
                 },
                 prefill: {
                     name: formData.name,

@@ -705,6 +705,45 @@ export default function MobileTempleDetail({
             </div>
             )}
 
+            {/* ───── Upcoming Events — DYNAMIC: only show when events exist ───── */}
+            {upcomingEvents.length > 0 && (
+                <div className="mt-4 px-3">
+                    <div className="flex justify-between items-center mb-3">
+                        <h3 className="font-serif font-bold text-2xl text-[#5c3a21]">Upcoming Events</h3>
+                        {upcomingEvents.length > 3 && (
+                            <button onClick={() => setShowAllEvents(!showAllEvents)} className="text-sm font-bold text-[#7c4624] hover:underline">
+                                {showAllEvents ? "Show Less" : "View All"}
+                            </button>
+                        )}
+                    </div>
+                    <div className="bg-white rounded-3xl p-4 shadow-sm border border-orange-50/50 space-y-3">
+                        {displayedEvents.map((event: any, idx: number) => (
+                            <div
+                                key={event.id || idx}
+                                className="flex justify-between items-start py-3 border-b border-orange-50 last:border-none last:pb-0 cursor-pointer hover:bg-orange-50/20 rounded-xl px-2 transition-colors"
+                                onClick={() => setSelectedEvent(event)}
+                            >
+                                <div className="flex-1 min-w-0 pr-3">
+                                    <h4 className="font-bold text-base text-[#3c2a21] leading-snug">
+                                        {getLocalized(event, "name", language)}
+                                        {!event.templeId && (
+                                            <span className="ml-2 text-[10px] font-black text-orange-600 bg-orange-50 px-2 py-0.5 rounded-full uppercase tracking-tight">Global</span>
+                                        )}
+                                    </h4>
+                                    <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1.5">
+                                        <Clock className="h-4 w-4 shrink-0" />
+                                        {event.date || "Coming Soon"}
+                                    </p>
+                                </div>
+                                <Badge className="bg-[#7c4624]/10 text-[#7c4624] border-none text-[10px] font-black px-3 py-1 rounded-full hover:bg-[#7c4624]/10 shrink-0 uppercase tracking-wider">
+                                    {event.date ? new Date(event.date).toLocaleDateString("en-IN", { day: "2-digit", month: "short" }) : "TBD"}
+                                </Badge>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+
             {/* ───── Temple Information ───── */}
             {(activeOperatingHours.length > 0 || temple.openTime || temple.mapUrl || (temple.phone && temple.showPhone !== false) || getLocalized(temple, "description", language)) && (
                 <div className="mt-4 px-3">
@@ -961,45 +1000,6 @@ export default function MobileTempleDetail({
                                         </div>
                                     </div>
                                 </div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            )}
-
-            {/* ───── Upcoming Events — DYNAMIC: only show when events exist ───── */}
-            {upcomingEvents.length > 0 && (
-                <div className="mt-4 px-3">
-                    <div className="flex justify-between items-center mb-3">
-                        <h3 className="font-serif font-bold text-2xl text-[#5c3a21]">Upcoming Events</h3>
-                        {upcomingEvents.length > 3 && (
-                            <button onClick={() => setShowAllEvents(!showAllEvents)} className="text-sm font-bold text-[#7c4624] hover:underline">
-                                {showAllEvents ? "Show Less" : "View All"}
-                            </button>
-                        )}
-                    </div>
-                    <div className="bg-white rounded-3xl p-4 shadow-sm border border-orange-50/50 space-y-3">
-                        {displayedEvents.map((event: any, idx: number) => (
-                            <div
-                                key={event.id || idx}
-                                className="flex justify-between items-start py-3 border-b border-orange-50 last:border-none last:pb-0 cursor-pointer hover:bg-orange-50/20 rounded-xl px-2 transition-colors"
-                                onClick={() => setSelectedEvent(event)}
-                            >
-                                <div className="flex-1 min-w-0 pr-3">
-                                    <h4 className="font-bold text-base text-[#3c2a21] leading-snug">
-                                        {getLocalized(event, "name", language)}
-                                        {!event.templeId && (
-                                            <span className="ml-2 text-[10px] font-black text-orange-600 bg-orange-50 px-2 py-0.5 rounded-full uppercase tracking-tight">Global</span>
-                                        )}
-                                    </h4>
-                                    <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1.5">
-                                        <Clock className="h-4 w-4 shrink-0" />
-                                        {event.date || "Coming Soon"}
-                                    </p>
-                                </div>
-                                <Badge className="bg-[#7c4624]/10 text-[#7c4624] border-none text-[10px] font-black px-3 py-1 rounded-full hover:bg-[#7c4624]/10 shrink-0 uppercase tracking-wider">
-                                    {event.date ? new Date(event.date).toLocaleDateString("en-IN", { day: "2-digit", month: "short" }) : "TBD"}
-                                </Badge>
                             </div>
                         ))}
                     </div>

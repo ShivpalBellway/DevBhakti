@@ -49,6 +49,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/context/LanguageContext";
 
 import { fetchPublicTemples, fetchPublicPoojas, fetchPublicPoojaById } from "@/api/publicController";
+import { fetchProfile } from "@/api/authController";
 import { notifyFailedPayment } from "@/api/adminController";
 import { generatePoojaReceiptHTML } from "@/utils/poojaReceipt";
 import { parseLocalizedValue } from '@/utils/textUtils';
@@ -195,22 +196,53 @@ function BookingForm() {
         setAllTemples(templesData);
         setAllPoojas(poojasData);
 
-        // Pre-fill user data
+        // Helper function to fill user data including address fields
+        const fillUserData = (user: any) => {
+          if (!user) return;
+          setFormData((prev) => ({
+            ...prev,
+            name: prev.name || parseLocalizedValue(user.name, language) || "",
+            phone: prev.phone || (user.phone || "").replace(/\D/g, "").slice(-10),
+            email: prev.email || user.email || "",
+            address: prev.address || user.address || "",
+            prasadStreet: prev.prasadStreet || user.prasadStreet || user.address || "",
+            prasadCity: prev.prasadCity || user.prasadCity || user.city || "",
+            prasadState: prev.prasadState || user.prasadState || user.state || "",
+            prasadPincode: prev.prasadPincode || user.prasadPincode || user.pincode || "",
+            gothra: prev.gothra || user.gothra || "",
+            kuldevi: prev.kuldevi || user.kuldevi || "",
+            kuldevta: prev.kuldevta || user.kuldevta || "",
+            dob: prev.dob || user.dob || "",
+            anniversary: prev.anniversary || user.anniversary || "",
+            nativePlace: prev.nativePlace || user.nativePlace || "",
+          }));
+        };
+
+        // Pre-fill user data from localStorage first for instant speed
         const savedUser = localStorage.getItem("user");
         if (savedUser) {
-          const user = JSON.parse(savedUser);
-          setFormData(prev => ({
-            ...prev,
-            name: parseLocalizedValue(user.name, language) || "",
-            phone: (user.phone || "").replace(/\D/g, "").slice(-10),
-            email: user.email || "",
-            gothra: user.gothra || "",
-            kuldevi: user.kuldevi || "",
-            kuldevta: user.kuldevta || "",
-            dob: user.dob || "",
-            anniversary: user.anniversary || "",
-            nativePlace: user.nativePlace || "",
-          }));
+          try {
+            const user = JSON.parse(savedUser);
+            fillUserData(user);
+          } catch (e) {
+            console.error("Failed to parse saved user:", e);
+          }
+        }
+
+        // Live fetch profile from API to ensure fresh user address & details
+        const token = localStorage.getItem("token");
+        if (token) {
+          fetchProfile()
+            .then((res) => {
+              if (res?.success && res?.data?.user) {
+                const freshUser = res.data.user;
+                localStorage.setItem("user", JSON.stringify(freshUser));
+                fillUserData(freshUser);
+              }
+            })
+            .catch((err) => {
+              console.error("Live profile fetch in booking error:", err);
+            });
         }
 
         // If a pooja is selected via URL, normalize slug → ID and set temple

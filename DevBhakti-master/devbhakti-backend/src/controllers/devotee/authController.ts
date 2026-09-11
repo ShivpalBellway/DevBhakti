@@ -596,15 +596,16 @@ export const verifyOTP = async (req: Request, res: Response) => {
         });
 
         // Legacy fallback for old otp storage on user record
+        let isLegacyOtpValid = false;
         if (!otpVerification && user) {
             const isOtpMatch = String(user.otp) === String(otp);
             const isNotExpired = user.otpExpires ? user.otpExpires > new Date() : false;
             if (isOtpMatch && isNotExpired) {
-                otpVerification = undefined as any; // allow legacy path
+                isLegacyOtpValid = true;
             }
         }
 
-        if (!otpVerification && !user) {
+        if (!otpVerification && !isLegacyOtpValid) {
             return res.status(400).json({ success: false, message: 'Invalid OTP or registration session expired' });
         }
 

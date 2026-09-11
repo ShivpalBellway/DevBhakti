@@ -320,118 +320,120 @@ export const verifyPayment = async (req: Request, res: Response) => {
             }
             
             if (donation) {
-
-                // Send WhatsApp Confirmation
-                try {
-                    const phone = donation.donorPhone.startsWith('+') ? donation.donorPhone : `+91${donation.donorPhone}`;
-                    const placeName = getEnglish(donation.temple?.name) || getEnglish(donation.mandal?.name) || "Dev Bhakti";
-                    await sendWhatsAppMessage(
-                        phone,
-                        donation.donorName,
-                        "donation_confirmation",
-                        [
-                            donation.donorName,
-                            placeName
-                        ]
-                    );
-                } catch (waError) {
-                    console.error("Failed to send donation WhatsApp:", waError);
-                }
-
-                // Notify Devotee, Temple Admin, and Platform Admins via Push Notification
-                try {
-                    const { notifyUser, notifyAdmins } = require("../services/firebaseService");
-                    
-                    if (donation.userId) {
+                // Send WhatsApp, Push Notifications & Email Receipt asynchronously without delaying HTTP response
+                setImmediate(async () => {
+                    // Send WhatsApp Confirmation
+                    try {
+                        const phone = donation.donorPhone.startsWith('+') ? donation.donorPhone : `+91${donation.donorPhone}`;
                         const placeName = getEnglish(donation.temple?.name) || getEnglish(donation.mandal?.name) || "Dev Bhakti";
-                        await notifyUser(donation.userId, 'devotee', {
-                            title: 'Donation Successful! 🙏',
-                            body: `Thank you for your generous donation of ₹${donation.amount} to ${placeName}.`,
-                            data: {
-                                link: `/profile`,
-                                type: 'DONATION_SUCCESS',
-                                donationId: donation.id
-                            }
-                        });
+                        await sendWhatsAppMessage(
+                            phone,
+                            donation.donorName,
+                            "donation_confirmation",
+                            [
+                                donation.donorName,
+                                placeName
+                            ]
+                        );
+                    } catch (waError) {
+                        console.error("Failed to send donation WhatsApp:", waError);
+                    }
 
-                        // Sync email to profile if missing
-                        try {
-                            const user = await prisma.user.findUnique({ where: { id: donation.userId } });
-                            if (user && !user.email) {
-                                // Check if email is already taken by someone else
-                                const existingUserWithEmail = await prisma.user.findFirst({
-                                    where: { email: donation.donorEmail }
-                                });
-
-                                if (!existingUserWithEmail) {
-                                    await prisma.user.update({
-                                        where: { id: donation.userId },
-                                        data: { email: donation.donorEmail }
-                                    });
-                                    console.log(`Synced donor email ${donation.donorEmail} to user ${donation.userId}`);
-                                } else {
-                                    console.log(`Email ${donation.donorEmail} already belongs to another user, skipping sync.`);
+                    // Notify Devotee, Temple Admin, and Platform Admins via Push Notification
+                    try {
+                        const { notifyUser, notifyAdmins } = require("../services/firebaseService");
+                        
+                        if (donation.userId) {
+                            const placeName = getEnglish(donation.temple?.name) || getEnglish(donation.mandal?.name) || "Dev Bhakti";
+                            await notifyUser(donation.userId, 'devotee', {
+                                title: 'Donation Successful! 🙏',
+                                body: `Thank you for your generous donation of ₹${donation.amount} to ${placeName}.`,
+                                data: {
+                                    link: `/profile`,
+                                    type: 'DONATION_SUCCESS',
+                                    donationId: donation.id
                                 }
-                            }
-                        } catch (syncErr) {
-                            console.error("Failed to sync donor email to profile:", syncErr);
-                        }
-                    }
+                            });
 
-                    // Send Email Receipt
-                    if (donation.donorEmail) {
-                        try {
-                            const receiptData = await generateDonationReceiptBuffer(donation.id);
-                            if (receiptData) {
-                                const placeName = getEnglish(donation.temple?.name) || getEnglish(donation.mandal?.name) || "Dev Bhakti";
-                                await sendDonationReceiptEmail({
-                                    donationId: donation.id,
-                                    donorName: donation.donorName,
-                                    donorPhone: donation.donorPhone,
-                                    donorEmail: donation.donorEmail,
-                                    templeName: placeName,
-                                    amount: donation.amount,
-                                    status: "SUCCESSFUL",
-                                    createdAt: donation.createdAt.toISOString(),
-                                    isAnonymous: donation.isAnonymous,
-                                    is80GRequired: donation.is80GRequired,
-                                    panNumber: donation.panNumber || undefined,
-                                    address: donation.address || undefined,
-                                    message: donation.message || undefined,
-                                    displayId: donation.displayId || undefined
-                                }, receiptData.buffer);
-                                console.log(`Donation receipt email sent to ${donation.donorEmail}`);
-                            }
-                        } catch (emailErr) {
-                            console.error("Failed to send donation receipt email:", emailErr);
-                        }
-                    }
+                            // Sync email to profile if missing
+                            try {
+                                const user = await prisma.user.findUnique({ where: { id: donation.userId } });
+                                if (user && !user.email) {
+                                    // Check if email is already taken by someone else
+                                    const existingUserWithEmail = await prisma.user.findFirst({
+                                        where: { email: donation.donorEmail }
+                                    });
 
-                    if (donation.temple && donation.temple.userId) {
-                        await notifyUser(donation.temple.userId, 'temple_admin', {
-                            title: 'New Donation Received! 💰',
-                            body: `${donation.isAnonymous ? 'An anonymous devotee' : donation.donorName} donated ₹${donation.amount} to your temple.`,
+                                    if (!existingUserWithEmail) {
+                                        await prisma.user.update({
+                                            where: { id: donation.userId },
+                                            data: { email: donation.donorEmail }
+                                        });
+                                        console.log(`Synced donor email ${donation.donorEmail} to user ${donation.userId}`);
+                                    } else {
+                                        console.log(`Email ${donation.donorEmail} already belongs to another user, skipping sync.`);
+                                    }
+                                }
+                            } catch (syncErr) {
+                                console.error("Failed to sync donor email to profile:", syncErr);
+                            }
+                        }
+
+                        // Send Email Receipt
+                        if (donation.donorEmail) {
+                            try {
+                                const receiptData = await generateDonationReceiptBuffer(donation.id);
+                                if (receiptData) {
+                                    const placeName = getEnglish(donation.temple?.name) || getEnglish(donation.mandal?.name) || "Dev Bhakti";
+                                    await sendDonationReceiptEmail({
+                                        donationId: donation.id,
+                                        donorName: donation.donorName,
+                                        donorPhone: donation.donorPhone,
+                                        donorEmail: donation.donorEmail,
+                                        templeName: placeName,
+                                        amount: donation.amount,
+                                        status: "SUCCESSFUL",
+                                        createdAt: donation.createdAt.toISOString(),
+                                        isAnonymous: donation.isAnonymous,
+                                        is80GRequired: donation.is80GRequired,
+                                        panNumber: donation.panNumber || undefined,
+                                        address: donation.address || undefined,
+                                        message: donation.message || undefined,
+                                        displayId: donation.displayId || undefined
+                                    }, receiptData.buffer);
+                                    console.log(`Donation receipt email sent to ${donation.donorEmail}`);
+                                }
+                            } catch (emailErr) {
+                                console.error("Failed to send donation receipt email:", emailErr);
+                            }
+                        }
+
+                        if (donation.temple && donation.temple.userId) {
+                            await notifyUser(donation.temple.userId, 'temple_admin', {
+                                title: 'New Donation Received! 💰',
+                                body: `${donation.isAnonymous ? 'An anonymous devotee' : donation.donorName} donated ₹${donation.amount} to your temple.`,
+                                data: {
+                                    link: `/temples/dashboard`,
+                                    type: 'NEW_DONATION',
+                                    donationId: donation.id
+                                }
+                            });
+                        }
+                        
+                        await notifyAdmins({
+                            title: 'New Platform Donation! 🎉',
+                            body: `₹${donation.amount} donated by ${donation.isAnonymous ? 'Anonymous' : donation.donorName} to ${getEnglish(donation.temple?.name) || "Dev Bhakti"}.`,
                             data: {
-                                link: `/temples/dashboard`,
-                                type: 'NEW_DONATION',
+                                link: `/admin/donation`,
+                                type: 'NEW_DONATION_ADMIN',
                                 donationId: donation.id
                             }
                         });
-                    }
-                    
-                    await notifyAdmins({
-                        title: 'New Platform Donation! 🎉',
-                        body: `₹${donation.amount} donated by ${donation.isAnonymous ? 'Anonymous' : donation.donorName} to ${getEnglish(donation.temple?.name) || "Dev Bhakti"}.`,
-                        data: {
-                            link: `/admin/donation`,
-                            type: 'NEW_DONATION_ADMIN',
-                            donationId: donation.id
-                        }
-                    });
 
-                } catch (notifyErr) {
-                    console.error("Failed to send donation push notifications:", notifyErr);
-                }
+                    } catch (notifyErr) {
+                        console.error("Failed to send donation push notifications:", notifyErr);
+                    }
+                });
             }
         } else if (orderType === "DARSHAN") {
             const updatedTicket = await prisma.darshanTicket.update({
