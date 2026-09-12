@@ -114,12 +114,12 @@ export const deleteSlot = async (req: Request, res: Response) => {
   }
 };
 
-// Update a slot (title, price, maxCapacity, times, isClosed)
+// Update a slot (date, title, price, maxCapacity, times, isClosed)
 export const updateSlot = async (req: Request, res: Response) => {
   try {
     const { id } = req.params as { id: string };
     const mandalId = (req as any).owner?.ownerId as string;
-    const { title, price, maxCapacity, startTime, endTime, isClosed } = req.body;
+    const { date, title, price, maxCapacity, startTime, endTime, isClosed } = req.body;
 
     // Verify slot belongs to this mandal
     const existing = await prisma.mandalDarshanSlot.findFirst({
@@ -129,7 +129,25 @@ export const updateSlot = async (req: Request, res: Response) => {
       return res.status(404).json({ error: 'Slot not found or access denied' });
     }
 
+    const targetDate = date || existing.date;
+    const targetStartTime = startTime || existing.startTime;
+
+    if ((startTime && startTime !== existing.startTime) || (date && date !== existing.date)) {
+      const duplicate = await prisma.mandalDarshanSlot.findFirst({
+        where: {
+          mandalId,
+          date: targetDate,
+          startTime: targetStartTime,
+          id: { not: id }
+        }
+      });
+      if (duplicate) {
+        return res.status(400).json({ error: `A slot starting at ${targetStartTime} already exists for ${targetDate}` });
+      }
+    }
+
     const updateData: any = {};
+    if (date !== undefined)        updateData.date        = date;
     if (title !== undefined)       updateData.title       = title;
     if (price !== undefined)       updateData.price       = Number(price);
     if (maxCapacity !== undefined) updateData.maxCapacity = Number(maxCapacity);
@@ -143,8 +161,11 @@ export const updateSlot = async (req: Request, res: Response) => {
     });
 
     res.json({ message: 'Slot updated successfully', slot: updated });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error updating slot:', error);
+    if (error.code === 'P2002') {
+      return res.status(400).json({ error: 'A slot with this start time already exists for this date.' });
+    }
     res.status(500).json({ error: 'Internal server error' });
   }
 };

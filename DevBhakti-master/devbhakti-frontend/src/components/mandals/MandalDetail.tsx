@@ -40,6 +40,7 @@ import {
   PartyPopper,
   Printer,
 } from "lucide-react";
+import { downloadDonationReceiptPDF } from "@/utils/donationReceipt";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -91,9 +92,11 @@ export function MandalDetail({ slug }: { slug: string }) {
   const [isDonating, setIsDonating] = useState(false);
   // Guard to prevent Razorpay handler from firing more than once per payment
   const receiptShownRef = useRef(false);
+  const lastPaymentIdRef = useRef<string | null>(null);
   const [donationReceipt, setDonationReceipt] = useState<{
     donorName: string;
     amount: number;
+    platformFee?: number;
     mandalName: string;
     donationId: string;
     date: string;
@@ -155,8 +158,8 @@ export function MandalDetail({ slug }: { slug: string }) {
     }
   }, [activeTab, canUseMandalTransactions, mandal]);
 
-  const loadMandal = async () => {
-    setLoading(true);
+  const loadMandal = async (showSpinner = true) => {
+    if (showSpinner) setLoading(true);
     try {
       const response = await fetch(`${API_URL}/mandals/${slug}?lang=${language}`);
       const data = await response.json();
@@ -175,7 +178,7 @@ export function MandalDetail({ slug }: { slug: string }) {
     } catch (error) {
       console.error("Error loading mandal:", error);
     }
-    setLoading(false);
+    if (showSpinner) setLoading(false);
   };
 
   const loadSacredProducts = async (mandalId?: string) => {
@@ -448,6 +451,7 @@ export function MandalDetail({ slug }: { slug: string }) {
     }
 
     setIsDonating(true);
+    receiptShownRef.current = false;
     try {
       const response = await fetch(`${API_URL}/donations`, {
         method: "POST",
@@ -477,9 +481,13 @@ export function MandalDetail({ slug }: { slug: string }) {
           description: `Donation to ${mandal.name?.en || mandal.name || "Mandal"}`,
           order_id: data.order.id,
           handler: function (response: any) {
-            // Guard: prevent Razorpay handler from firing more than once
-            if (receiptShownRef.current) return;
+            // Guard: prevent Razorpay handler from firing more than once per payment session
+            const currentPaymentId = response.razorpay_payment_id || data.donationId;
+            if (receiptShownRef.current || (currentPaymentId && lastPaymentIdRef.current === currentPaymentId)) {
+              return;
+            }
             receiptShownRef.current = true;
+            lastPaymentIdRef.current = currentPaymentId;
 
             setShowDonateModal(false);
             const now = new Date();
@@ -491,6 +499,7 @@ export function MandalDetail({ slug }: { slug: string }) {
             setDonationReceipt({
               donorName: isAnonymous ? "Anonymous" : (donorName || currentUser?.name || "Devotee"),
               amount,
+              platformFee,
               mandalName: mandal.name?.en || mandal.name || "Mandal",
               donationId: formattedDonationId,
               date: now.toLocaleString("en-IN", {
@@ -522,7 +531,7 @@ export function MandalDetail({ slug }: { slug: string }) {
               .then(async (res) => {
                 const verifyData = await res.json();
                 if (verifyData.success) {
-                  loadMandal();
+                  loadMandal(false);
                 }
               })
               .catch((error) => {
@@ -649,156 +658,134 @@ export function MandalDetail({ slug }: { slug: string }) {
       <Navbar isSolid={true} />
 
       {/* ─── DONATION SUCCESS RECEIPT MODAL ─────────────────────────────── */}
-      {donationReceipt && (
-        <div
-          className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
-          style={{ background: "rgba(0,0,0,0.72)", backdropFilter: "blur(6px)" }}
-          onClick={() => { receiptShownRef.current = false; setDonationReceipt(null); }}
-        >
-          <div
-            className="relative w-full max-w-md rounded-3xl overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300"
-            style={{ background: "linear-gradient(160deg, #2A0A06 0%, #1a0505 100%)", border: "1px solid rgba(180,83,9,0.25)" }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Close btn */}
-            <button
-              onClick={() => { receiptShownRef.current = false; setDonationReceipt(null); }}
-              className="absolute top-4 right-4 z-10 w-8 h-8 flex items-center justify-center rounded-full hover:bg-amber-500/20 transition"
-              style={{ background: "rgba(255,255,255,0.07)" }}
-            >
-              <X className="w-4 h-4 text-amber-300" />
-            </button>
+      <Dialog open={!!donationReceipt} onOpenChange={(open) => { if (!open) setDonationReceipt(null); }}>
+        <DialogContent className="w-full max-w-md max-h-[92vh] overflow-y-auto rounded-3xl p-0 border border-amber-900/20 shadow-2xl bg-gradient-to-b from-[#FFFDF9] via-[#FFF9F2] to-[#FFF4E5] z-[10000]">
+          <DialogHeader className="sr-only">
+            <DialogTitle>Donation Receipt</DialogTitle>
+            <DialogDescription>Donation receipt details for {donationReceipt?.mandalName}</DialogDescription>
+          </DialogHeader>
 
-            {/* Header — deeper maroon */}
-            <div className="bg-gradient-to-br from-[#6B0F1A] via-[#4a0e10] to-[#2A0A06] px-6 pt-8 pb-10 text-center relative overflow-hidden">
-              {/* Decorative glow circles */}
-              <div className="absolute -top-10 -left-10 w-40 h-40 rounded-full bg-amber-600/10 blur-2xl" />
-              <div className="absolute -bottom-8 -right-8 w-32 h-32 rounded-full bg-amber-500/10 blur-xl" />
-              {/* Success icon */}
-              <div className="relative w-20 h-20 mx-auto mb-4">
-                <div className="w-20 h-20 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center shadow-xl shadow-amber-900/60">
-                  <CheckCircle className="w-10 h-10 text-[#1a0505]" strokeWidth={2.8} />
-                </div>
-                <div className="absolute -top-1 -right-1">
-                  <PartyPopper className="w-6 h-6 text-amber-300" />
-                </div>
+          {/* Header — warm brown theme */}
+          <div className="bg-gradient-to-r from-[#7c4624] via-[#69391b] to-[#5c3a21] px-6 pt-8 pb-10 text-center relative overflow-hidden text-white">
+            {/* Decorative glow circles */}
+            <div className="absolute -top-10 -left-10 w-40 h-40 rounded-full bg-amber-400/10 blur-2xl" />
+            <div className="absolute -bottom-8 -right-8 w-32 h-32 rounded-full bg-amber-300/10 blur-xl" />
+            {/* Success icon */}
+            <div className="relative w-20 h-20 mx-auto mb-4">
+              <div className="w-20 h-20 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center shadow-xl shadow-amber-950/40">
+                <CheckCircle className="w-10 h-10 text-amber-950" strokeWidth={2.8} />
               </div>
-              <h2 className="text-2xl font-bold text-white mb-1">Donation Successful!</h2>
-              <p className="text-amber-300/80 text-sm">
-                🙏 Jai Ganesh — Your contribution has been received
-              </p>
-            </div>
-
-            {/* Amount badge — floats over the join */}
-            <div className="flex justify-center -mt-6 mb-1 relative z-10">
-              <div className="bg-gradient-to-r from-amber-400 to-amber-600 text-[#2A0A06] font-black text-2xl px-8 py-2.5 rounded-full shadow-xl shadow-amber-900/50 border border-amber-300/30">
-                ₹{donationReceipt.amount.toLocaleString("en-IN")}
+              <div className="absolute -top-1 -right-1">
+                <PartyPopper className="w-6 h-6 text-amber-300" />
               </div>
             </div>
+            <h2 className="text-2xl font-bold text-white mb-1">Donation Successful!</h2>
+            <p className="text-amber-200/90 text-sm">
+              🙏 Jai Ganesh — Your contribution has been received
+            </p>
+          </div>
 
-            {/* Receipt body — full dark brown */}
-            <div className="px-6 pb-6 pt-3 space-y-3">
-              {/* Mandal name */}
-              <div className="text-center mb-3">
-                <p className="text-[10px] text-amber-500/60 uppercase font-bold tracking-widest">Donated to</p>
-                <p className="text-sm font-bold text-amber-100">{donationReceipt.mandalName}</p>
-              </div>
-
-              {/* Receipt rows */}
-              <div className="rounded-2xl overflow-hidden" style={{ background: "rgba(107,15,26,0.25)", border: "1px solid rgba(180,83,9,0.2)" }}>
-                {/* Donor */}
-                <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: "1px solid rgba(180,83,9,0.15)" }}>
-                  <span className="text-[10px] text-amber-500/70 font-bold uppercase tracking-wider">Donor</span>
-                  <span className="text-sm font-semibold text-amber-100 text-right max-w-[60%]">{donationReceipt.donorName}</span>
-                </div>
-                {/* Date */}
-                <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: "1px solid rgba(180,83,9,0.15)" }}>
-                  <span className="text-[10px] text-amber-500/70 font-bold uppercase tracking-wider">Date & Time</span>
-                  <span className="text-xs font-semibold text-amber-100 text-right max-w-[60%]">{donationReceipt.date}</span>
-                </div>
-                {/* Txn ID */}
-                <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: "1px solid rgba(180,83,9,0.15)" }}>
-                  <span className="text-[10px] text-amber-500/70 font-bold uppercase tracking-wider">Transaction ID</span>
-                  <span className="text-xs font-mono font-bold text-amber-300 text-right max-w-[60%] break-all">{donationReceipt.txnId}</span>
-                </div>
-                {/* Donation ID — highlighted */}
-                <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: "1px solid rgba(180,83,9,0.15)", background: "rgba(180,83,9,0.1)" }}>
-                  <span className="text-[10px] text-amber-500/70 font-bold uppercase tracking-wider">Donation ID</span>
-                  <span className="text-xs font-mono font-black text-amber-400 text-right max-w-[60%] break-all px-2 py-0.5 rounded-lg" style={{ background: "rgba(245,158,11,0.15)", border: "1px solid rgba(245,158,11,0.3)" }}>{donationReceipt.donationId}</span>
-                </div>
-                {/* Email */}
-                <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: donationReceipt.message ? "1px solid rgba(180,83,9,0.15)" : "none" }}>
-                  <span className="text-[10px] text-amber-500/70 font-bold uppercase tracking-wider">Receipt Email</span>
-                  <span className="text-xs font-semibold text-amber-200/80 text-right max-w-[60%] break-all">{donationReceipt.email}</span>
-                </div>
-                {/* Message (if any) */}
-                {donationReceipt.message && (
-                  <div className="flex items-start justify-between px-4 py-3">
-                    <span className="text-[10px] text-amber-500/70 font-bold uppercase tracking-wider">Message</span>
-                    <span className="text-xs italic text-amber-200/60 text-right max-w-[60%]">"{donationReceipt.message}"</span>
-                  </div>
-                )}
-              </div>
-
-              {/* Info note */}
-              <p className="text-center text-[10px] text-amber-500/40 px-2 pt-1">
-                📧 A detailed receipt will be sent to your registered email address.
-              </p>
-
-              {/* Action buttons */}
-              <div className="flex gap-3 pt-1">
-                <button
-                  onClick={() => {
-                    const content = [
-                      "DONATION RECEIPT — DEVBHAKTI",
-                      "================================",
-                      `Donated to : ${donationReceipt.mandalName}`,
-                      `Amount     : ₹${donationReceipt.amount.toLocaleString("en-IN")}`,
-                      `Donor Name : ${donationReceipt.donorName}`,
-                      `Date & Time: ${donationReceipt.date}`,
-                      `Txn ID     : ${donationReceipt.txnId}`,
-                      `Donation ID: ${donationReceipt.donationId}`,
-                      `Email      : ${donationReceipt.email}`,
-                      donationReceipt.message ? `Message    : ${donationReceipt.message}` : "",
-                      "================================",
-                      "Thank you for your generous support! 🙏",
-                    ].filter(Boolean).join("\n");
-                    const blob = new Blob([content], { type: "text/plain" });
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement("a");
-                    a.href = url;
-                    a.download = `donation-receipt-${donationReceipt.donationId}.txt`;
-                    a.click();
-                    URL.revokeObjectURL(url);
-                  }}
-                  className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm transition"
-                  style={{ border: "1.5px solid rgba(245,158,11,0.4)", color: "#fbbf24", background: "rgba(245,158,11,0.08)" }}
-                  onMouseOver={e => (e.currentTarget.style.background = "rgba(245,158,11,0.15)")}
-                  onMouseOut={e => (e.currentTarget.style.background = "rgba(245,158,11,0.08)")}
-                >
-                  <Download className="w-4 h-4" />
-                  Download
-                </button>
-                <button
-                  onClick={() => { receiptShownRef.current = false; setDonationReceipt(null); }}
-                  className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-black text-sm transition"
-                  style={{ background: "linear-gradient(135deg, #f59e0b, #d97706)", color: "#1a0505", boxShadow: "0 4px 20px rgba(245,158,11,0.35)" }}
-                  onMouseOver={e => (e.currentTarget.style.opacity = "0.9")}
-                  onMouseOut={e => (e.currentTarget.style.opacity = "1")}
-                >
-                  <CheckCircle className="w-4 h-4" />
-                  Done
-                </button>
-              </div>
+          {/* Amount badge — floats over the join */}
+          <div className="flex justify-center -mt-6 mb-1 relative z-10">
+            <div className="bg-gradient-to-r from-[#7c4624] to-[#5c3a21] text-white font-black text-2xl px-8 py-2.5 rounded-full shadow-xl border-2 border-amber-300">
+              ₹{((donationReceipt?.amount || 0) + (donationReceipt?.platformFee || 0)).toLocaleString("en-IN")}
             </div>
           </div>
-        </div>
-      )}
 
-      {/* ─── HERO BANNER SECTION (MATCHING TEMPLE DETAIL HERO HEIGHT) ───────────────── */}
-      <section className="relative bg-gradient-to-r from-[#160403] via-[#2A0A06] to-[#120302] text-white pt-28 pb-12 border-b border-amber-900/20 overflow-hidden min-h-[520px] lg:min-h-[580px] flex flex-col justify-center">
-        {/* Glow backdrop */}
-        <div className="absolute top-0 right-1/3 w-[500px] h-[500px] bg-orange-600/10 rounded-full blur-[130px] pointer-events-none" />
+          {/* Receipt body — warm cream */}
+          <div className="px-6 pb-6 pt-3 space-y-3">
+            {/* Mandal name */}
+            <div className="text-center mb-3">
+              <p className="text-[10px] text-[#7c4624] uppercase font-bold tracking-widest">Donated to</p>
+              <p className="text-base font-bold text-zinc-900">{donationReceipt?.mandalName}</p>
+            </div>
+
+            {/* Receipt rows */}
+            <div className="rounded-2xl overflow-hidden bg-white/90 border border-amber-900/15 shadow-sm">
+              {/* Donor */}
+              <div className="flex items-center justify-between px-4 py-3 border-b border-amber-900/10">
+                <span className="text-[10px] text-[#7c4624] font-bold uppercase tracking-wider">Donor</span>
+                <span className="text-sm font-semibold text-zinc-900 text-right max-w-[60%]">{donationReceipt?.donorName}</span>
+              </div>
+              {/* Date */}
+              <div className="flex items-center justify-between px-4 py-3 border-b border-amber-900/10">
+                <span className="text-[10px] text-[#7c4624] font-bold uppercase tracking-wider">Date & Time</span>
+                <span className="text-xs font-semibold text-zinc-700 text-right max-w-[60%]">{donationReceipt?.date}</span>
+              </div>
+
+              {/* Amount breakdown if platformFee exists */}
+              {donationReceipt?.platformFee ? (
+                <>
+                  <div className="flex items-center justify-between px-4 py-2.5 border-b border-amber-900/10 bg-amber-50/40">
+                    <span className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider">Donation Amount</span>
+                    <span className="text-xs font-semibold text-zinc-800">₹{donationReceipt.amount.toLocaleString("en-IN")}</span>
+                  </div>
+                  <div className="flex items-center justify-between px-4 py-2.5 border-b border-amber-900/10 bg-amber-50/40">
+                    <span className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider">Platform Support Fee</span>
+                    <span className="text-xs font-semibold text-amber-800">+ ₹{donationReceipt.platformFee.toLocaleString("en-IN")}</span>
+                  </div>
+                </>
+              ) : null}
+
+              {/* Txn ID */}
+              <div className="flex items-center justify-between px-4 py-3 border-b border-amber-900/10">
+                <span className="text-[10px] text-[#7c4624] font-bold uppercase tracking-wider">Transaction ID</span>
+                <span className="text-xs font-mono font-bold text-zinc-800 text-right max-w-[60%] break-all">{donationReceipt?.txnId}</span>
+              </div>
+              {/* Donation ID — highlighted */}
+              <div className="flex items-center justify-between px-4 py-3 border-b border-amber-900/10 bg-amber-50/70">
+                <span className="text-[10px] text-[#7c4624] font-bold uppercase tracking-wider">Donation ID</span>
+                <span className="text-xs font-mono font-black text-[#7c4624] text-right max-w-[60%] break-all px-2 py-0.5 rounded-lg bg-amber-100 border border-amber-300">{donationReceipt?.donationId}</span>
+              </div>
+              {/* Email */}
+              <div className="flex items-center justify-between px-4 py-3 border-b border-amber-900/10">
+                <span className="text-[10px] text-[#7c4624] font-bold uppercase tracking-wider">Receipt Email</span>
+                <span className="text-xs font-semibold text-zinc-700 text-right max-w-[60%] break-all">{donationReceipt?.email}</span>
+              </div>
+              {/* Message (if any) */}
+              {donationReceipt?.message && (
+                <div className="flex items-start justify-between px-4 py-3">
+                  <span className="text-[10px] text-[#7c4624] font-bold uppercase tracking-wider">Message</span>
+                  <span className="text-xs italic text-zinc-600 text-right max-w-[60%]">"{donationReceipt.message}"</span>
+                </div>
+              )}
+            </div>
+
+            {/* Info note */}
+            <p className="text-center text-[10px] text-zinc-500 px-2 pt-1">
+              📧 A detailed receipt will be sent to your registered email address.
+            </p>
+
+            {/* Action buttons */}
+            {/* <div className="flex gap-3 pt-1">
+              <button
+                type="button"
+                onClick={() => {
+                  if (donationReceipt) downloadDonationReceiptPDF(donationReceipt);
+                }}
+                className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm transition border-2 border-[#7c4624] text-[#7c4624] hover:bg-[#7c4624]/10 shadow-sm cursor-pointer active:scale-95 z-20"
+              >
+                <Download className="w-4 h-4" />
+                Download PDF
+              </button>
+              <button
+                type="button"
+                onClick={() => { setDonationReceipt(null); }}
+                className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm transition bg-gradient-to-r from-[#7c4624] to-[#5c3a21] hover:from-[#5c3a21] hover:to-[#3e2413] text-white shadow-md shadow-[#7c4624]/20 cursor-pointer active:scale-95 z-20"
+              >
+                <CheckCircle className="w-4 h-4" />
+                Done
+              </button>
+            </div> */}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* ─── HERO BANNER SECTION (MATCHING BRAND THEME COLOR) ───────────────── */}
+      <section className="relative bg-gradient-to-r from-[#7c4624] via-[#69391b] to-[#5c3a21] text-white pt-24 pb-8 lg:pt-28 lg:pb-10 border-b border-amber-900/30 overflow-hidden flex flex-col justify-center">
+        {/* Ambient Glow & Subtle Pattern Grid Effects */}
+        <div className="absolute inset-0 bg-[radial-gradient(#7c4624_1px,transparent_1px)] [background-size:24px_24px] opacity-10 pointer-events-none" />
+        <div className="absolute top-0 right-1/3 w-[500px] h-[500px] bg-orange-600/15 rounded-full blur-[130px] pointer-events-none" />
 
         <div className="container mx-auto px-4 relative z-10">
           
@@ -912,12 +899,12 @@ export function MandalDetail({ slug }: { slug: string }) {
                       onClick={handleOpenDonateModal}
                       disabled={isInternational}
                       variant="outline"
-                      className="bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border-amber-500/40 font-bold px-6 h-12 rounded-xl text-xs sm:text-sm flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="bg-[#FFE8CF] hover:bg-[#FCD8B0] text-[#80380B] border-[#DEB887] font-bold px-6 h-12 rounded-xl text-xs sm:text-sm flex items-center gap-2 shadow-lg shadow-black/15 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                     >
-                      <IndianRupee className="w-4 h-4 text-amber-400" />
+                      <IndianRupee className="w-4 h-4 text-[#D97706]" />
                       <div className="text-left">
-                        <div className="leading-tight font-bold">{isInternational ? "FCRA Restricted" : t("mandal_detail.donate_now")}</div>
-                        <div className="text-[10px] font-normal text-amber-200/80">{t("mandal_detail.support_mandal")}</div>
+                        <div className="leading-tight font-bold text-[#80380B]">{isInternational ? "FCRA Restricted" : t("mandal_detail.donate_now")}</div>
+                        <div className="text-[10px] font-medium text-[#92400E]/80">{t("mandal_detail.support_mandal")}</div>
                       </div>
                     </Button>
                   </>
@@ -1755,10 +1742,10 @@ export function MandalDetail({ slug }: { slug: string }) {
       <Dialog open={canUseMandalTransactions && showDonateModal} onOpenChange={setShowDonateModal}>
         <DialogContent className="w-[95vw] sm:max-w-md max-h-[92vh] overflow-y-auto rounded-3xl p-5 sm:p-6 border border-amber-900/10 shadow-2xl bg-gradient-to-b from-[#FFFDF9] to-[#FFF9F2]">
           <DialogHeader className="text-center pb-2 border-b border-amber-900/10">
-            <div className="w-14 h-14 rounded-full bg-gradient-to-br from-[#6B0F1A] to-amber-700 text-white flex items-center justify-center mx-auto mb-2 shadow-md">
+            <div className="w-14 h-14 rounded-full bg-gradient-to-br from-[#7c4624] to-amber-700 text-white flex items-center justify-center mx-auto mb-2 shadow-md">
               <Gift className="w-7 h-7" />
             </div>
-            <DialogTitle className="text-xl md:text-2xl font-serif font-bold text-[#6B0F1A]">
+            <DialogTitle className="text-xl md:text-2xl font-serif font-bold text-[#7c4624]">
               Donate to {name}
             </DialogTitle>
             <DialogDescription className="text-xs text-amber-900/70">
@@ -1768,7 +1755,7 @@ export function MandalDetail({ slug }: { slug: string }) {
 
           <div className="space-y-4 pt-4">
             <div>
-              <label className="text-xs font-bold uppercase tracking-wider text-[#6B0F1A] block mb-2">Select Contribution Amount (₹)</label>
+              <label className="text-xs font-bold uppercase tracking-wider text-[#7c4624] block mb-2">Select Contribution Amount (₹)</label>
               <div className="grid grid-cols-3 gap-2">
                 {donationAmounts.map((amount) => (
                   <button
@@ -1777,8 +1764,8 @@ export function MandalDetail({ slug }: { slug: string }) {
                     onClick={() => { setSelectedAmount(amount); setCustomAmount(""); }}
                     className={`py-2.5 px-3 rounded-xl font-bold text-sm transition-all border flex items-center justify-center gap-1 ${
                       selectedAmount === amount
-                        ? "bg-[#6B0F1A] text-white border-[#6B0F1A] shadow-md"
-                        : "bg-white text-zinc-700 border-amber-900/15 hover:border-[#6B0F1A]/50 hover:bg-amber-50/50"
+                        ? "bg-gradient-to-r from-[#7c4624] to-[#5c3a21] text-white border-[#7c4624] shadow-md"
+                        : "bg-white text-zinc-700 border-amber-900/15 hover:border-[#7c4624]/50 hover:bg-amber-50/50"
                     }`}
                   >
                     <span>₹{amount.toLocaleString("en-IN")}</span>
@@ -1788,13 +1775,13 @@ export function MandalDetail({ slug }: { slug: string }) {
               </div>
               <div className="mt-2.5">
                 <div className="relative">
-                  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 font-bold text-[#6B0F1A] text-sm">₹</span>
+                  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 font-bold text-[#7c4624] text-sm">₹</span>
                   <input
                     type="number"
                     placeholder="Enter custom amount..."
                     value={customAmount}
                     onChange={(e) => { setCustomAmount(e.target.value); setSelectedAmount(null); }}
-                    className="w-full pl-8 pr-4 py-2.5 bg-white border border-amber-900/20 rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#6B0F1A]/20 focus:border-[#6B0F1A] transition-all"
+                    className="w-full pl-8 pr-4 py-2.5 bg-white border border-amber-900/20 rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#7c4624]/20 focus:border-[#7c4624] transition-all"
                   />
                 </div>
               </div>
@@ -1818,7 +1805,7 @@ export function MandalDetail({ slug }: { slug: string }) {
                           + ₹{platformFee.toLocaleString("en-IN")}
                         </span>
                       </div>
-                      <div className="pt-1.5 border-t border-amber-500/20 flex justify-between items-center text-sm font-black text-[#6B0F1A]">
+                      <div className="pt-1.5 border-t border-amber-500/20 flex justify-between items-center text-sm font-black text-[#7c4624]">
                         <span>Total Payable:</span>
                         <span>₹{(baseAmt + platformFee).toLocaleString("en-IN")}</span>
                       </div>
@@ -1830,17 +1817,17 @@ export function MandalDetail({ slug }: { slug: string }) {
             </div>
 
             <div className="space-y-3 pt-2 border-t border-amber-900/10">
-              <label className="text-xs font-bold uppercase tracking-wider text-[#6B0F1A]">Your Contact Info</label>
+              <label className="text-xs font-bold uppercase tracking-wider text-[#7c4624]">Your Contact Info</label>
               <div className="space-y-2">
                 <div className="relative">
                   <User className="w-4 h-4 text-zinc-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                   <input type="text" placeholder="Full Name *" value={donorName} onChange={(e) => setDonorName(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2.5 bg-white border border-amber-900/15 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#6B0F1A]/20 focus:border-[#6B0F1A]" />
+                    className="w-full pl-10 pr-4 py-2.5 bg-white border border-amber-900/15 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#7c4624]/20 focus:border-[#7c4624]" />
                 </div>
                 <div className="relative">
                   <Mail className="w-4 h-4 text-zinc-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                   <input type="email" placeholder="Email Address *" value={donorEmail} onChange={(e) => setDonorEmail(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2.5 bg-white border border-amber-900/15 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#6B0F1A]/20 focus:border-[#6B0F1A]" required />
+                    className="w-full pl-10 pr-4 py-2.5 bg-white border border-amber-900/15 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#7c4624]/20 focus:border-[#7c4624]" required />
                 </div>
 
                 {/* Mobile Input & Send OTP Button */}
@@ -1854,7 +1841,7 @@ export function MandalDetail({ slug }: { slug: string }) {
                       const clean = e.target.value.replace(/\D/g, '').slice(0, 10);
                       setDonorPhone(clean);
                     }}
-                    className="w-full pl-10 pr-24 py-2.5 bg-white border border-amber-900/15 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#6B0F1A]/20 focus:border-[#6B0F1A]"
+                    className="w-full pl-10 pr-24 py-2.5 bg-white border border-amber-900/15 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#7c4624]/20 focus:border-[#7c4624]"
                     required
                   />
                   {currentUser || localStorage.getItem("token") ? (
@@ -1866,7 +1853,7 @@ export function MandalDetail({ slug }: { slug: string }) {
                       type="button"
                       onClick={handleSendDonationOtp}
                       disabled={isSendingDonationOtp || donorPhone.replace(/\D/g, '').length < 10}
-                      className="absolute right-2 text-xs font-bold bg-[#6B0F1A] text-white px-3 py-1.5 rounded-lg hover:bg-[#520B14] transition-all disabled:opacity-40"
+                      className="absolute right-2 text-xs font-bold bg-[#7c4624] text-white px-3 py-1.5 rounded-lg hover:bg-[#5c3a21] transition-all disabled:opacity-40"
                     >
                       {isSendingDonationOtp ? "Sending..." : (donationOtpSent ? "Resend OTP" : "Send OTP")}
                     </button>
@@ -1886,7 +1873,7 @@ export function MandalDetail({ slug }: { slug: string }) {
                         placeholder="6-digit OTP"
                         value={donationOtp}
                         onChange={(e) => setDonationOtp(e.target.value)}
-                        className="w-full px-3 py-2 bg-white border border-amber-300 rounded-lg text-center font-bold text-base tracking-widest text-zinc-900 focus:outline-none focus:ring-2 focus:ring-[#6B0F1A]"
+                        className="w-full px-3 py-2 bg-white border border-amber-300 rounded-lg text-center font-bold text-base tracking-widest text-zinc-900 focus:outline-none focus:ring-2 focus:ring-[#7c4624]"
                       />
                       <button
                         type="button"
@@ -1919,7 +1906,7 @@ export function MandalDetail({ slug }: { slug: string }) {
             })()}
 
             <Button
-              className="w-full bg-[#6B0F1A] hover:bg-[#520B14] text-white py-3.5 h-auto text-base font-bold rounded-xl shadow-lg transition-all mt-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full bg-gradient-to-r from-[#7c4624] to-[#5c3a21] hover:from-[#5c3a21] hover:to-[#3e2413] text-white py-3.5 h-auto text-base font-bold rounded-xl shadow-lg shadow-[#7c4624]/20 transition-all mt-2 disabled:opacity-50 disabled:cursor-not-allowed"
               onClick={handleDonate}
               disabled={isDonating || (() => {
                 const raw = donorPhone.trim();

@@ -8,7 +8,7 @@ const router = Router();
 router.get('/', async (req, res) => {
     try {
         const lang = req.query.lang as string || getLang({ query: req.query } as any);
-        const { mandalType, festival, all } = req.query;
+        const { mandalType, festival, all, search, category, location, area } = req.query;
 
         // Fetch global settings to determine active festival
         const setting = await prisma.globalSetting.findUnique({
@@ -20,42 +20,44 @@ router.get('/', async (req, res) => {
         const activeFestival = festivalsList.find((f: any) => f.isActive) || festivalsList[0] || null;
 
         const whereClause: any = { isActive: true };
-        const targetType = (mandalType || festival) as string | undefined;
+        const targetType = (mandalType || festival || category) as string | undefined;
 
-        if (targetType) {
+        if (search) {
+            const searchTerm = String(search).trim();
+            whereClause.OR = [
+                { name: { contains: searchTerm, mode: 'insensitive' } },
+                { city: { contains: searchTerm, mode: 'insensitive' } },
+                { address: { contains: searchTerm, mode: 'insensitive' } },
+                { area: { contains: searchTerm, mode: 'insensitive' } },
+                { presiding_deity: { contains: searchTerm, mode: 'insensitive' } }
+            ];
+        } else if (targetType && targetType !== 'All') {
             whereClause.OR = [
                 { mandalType: { contains: targetType, mode: 'insensitive' } },
                 { festivals: { contains: targetType, mode: 'insensitive' } }
             ];
-        } else if (activeFestival && all !== 'true') {
-            const festName = activeFestival.name || activeFestival.title?.en || '';
-            const festHi = activeFestival.title?.hi || '';
-            const festMr = activeFestival.title?.mr || '';
-            const festId = activeFestival.id || '';
-
-            const matchedNames = [festName, festHi, festMr, festId].filter(Boolean);
-
-            const orConditions: any[] = [
-                { mandalType: { in: matchedNames } },
-                { mandalType: { contains: festName, mode: 'insensitive' } },
-                { festivals: { contains: festName, mode: 'insensitive' } },
-                { mandalType: null }
-            ];
-
-            if (festName.toLowerCase().includes('ganesh')) {
-                orConditions.push({ mandalType: { contains: 'Ganesh', mode: 'insensitive' } });
-            }
-            if (festName.toLowerCase().includes('durga')) {
-                orConditions.push({ mandalType: { contains: 'Durga', mode: 'insensitive' } });
-            }
-
-            whereClause.OR = orConditions;
         }
 
-        const mandals = await prisma.mandal.findMany({
+        if (location && location !== 'All') {
+            whereClause.city = { contains: String(location), mode: 'insensitive' };
+        }
+
+        if (area && area !== 'All') {
+            whereClause.address = { contains: String(area), mode: 'insensitive' };
+        }
+
+        let mandals = await prisma.mandal.findMany({
             where: whereClause,
             orderBy: { createdAt: 'desc' }
         });
+
+        // Fallback: If strict filtering yielded 0 mandals and search/location was not specified, fetch all active mandals
+        if (mandals.length === 0 && !search && (!location || location === 'All') && (!area || area === 'All')) {
+            mandals = await prisma.mandal.findMany({
+                where: { isActive: true },
+                orderBy: { createdAt: 'desc' }
+            });
+        }
 
         res.json({
             success: true,

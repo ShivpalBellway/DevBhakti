@@ -112,12 +112,27 @@ export const getSlots = async (req: Request, res: Response) => {
       query.date = String(date);
     }
 
+    const temple = await prisma.temple.findUnique({
+      where: { id: templeId },
+      select: { darshanPrice: true, isDarshanActive: true, name: true }
+    });
+
     const slots = await prisma.darshanSlot.findMany({
       where: query,
       orderBy: [{ date: 'asc' }, { startTime: 'asc' }]
     });
 
-    res.json(slots);
+    const price = temple?.darshanPrice ?? 0;
+
+    const slotsWithPrice = slots.map(slot => ({
+      ...slot,
+      price: price,
+      darshanPrice: price,
+      isDarshanActive: temple?.isDarshanActive ?? true,
+      templeName: temple?.name
+    }));
+
+    res.json(slotsWithPrice);
   } catch (error) {
     console.error('Error fetching slots:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -140,12 +155,12 @@ export const deleteSlot = async (req: Request, res: Response) => {
   }
 };
 
-// Update a slot (startTime, endTime, maxCapacity, isClosed)
+// Update a slot (date, startTime, endTime, maxCapacity, isClosed, price, darshanPrice)
 export const updateSlot = async (req: Request, res: Response) => {
   try {
     const { id } = req.params as { id: string };
     const templeId = (req as any).owner?.ownerId as string;
-    const { startTime, endTime, maxCapacity, isClosed } = req.body;
+    const { date, startTime, endTime, maxCapacity, isClosed, price, darshanPrice } = req.body;
 
     // Verify slot belongs to this temple
     const existing = await prisma.darshanSlot.findFirst({
@@ -155,7 +170,26 @@ export const updateSlot = async (req: Request, res: Response) => {
       return res.status(404).json({ error: 'Slot not found or access denied' });
     }
 
+    const targetDate = date || existing.date;
+    const targetStartTime = startTime || existing.startTime;
+
+    // Check for duplicate slot if startTime or date is changing
+    if ((startTime && startTime !== existing.startTime) || (date && date !== existing.date)) {
+      const duplicate = await prisma.darshanSlot.findFirst({
+        where: {
+          templeId,
+          date: targetDate,
+          startTime: targetStartTime,
+          id: { not: id }
+        }
+      });
+      if (duplicate) {
+        return res.status(400).json({ error: `A slot starting at ${targetStartTime} already exists for ${targetDate}` });
+      }
+    }
+
     const updateData: any = {};
+    if (date !== undefined)        updateData.date        = date;
     if (startTime !== undefined)   updateData.startTime   = startTime;
     if (endTime !== undefined)     updateData.endTime     = endTime;
     if (maxCapacity !== undefined) updateData.maxCapacity = Number(maxCapacity);
@@ -166,9 +200,27 @@ export const updateSlot = async (req: Request, res: Response) => {
       data: updateData
     });
 
-    res.json({ message: 'Slot updated successfully', slot: updated });
-  } catch (error) {
+    const newPrice = price !== undefined ? price : darshanPrice;
+    if (newPrice !== undefined) {
+      await prisma.temple.update({
+        where: { id: templeId },
+        data: { darshanPrice: Number(newPrice) }
+      });
+    }
+
+    res.json({
+      message: 'Slot updated successfully',
+      slot: {
+        ...updated,
+        price: newPrice !== undefined ? Number(newPrice) : undefined,
+        darshanPrice: newPrice !== undefined ? Number(newPrice) : undefined
+      }
+    });
+  } catch (error: any) {
     console.error('Error updating slot:', error);
+    if (error.code === 'P2002') {
+      return res.status(400).json({ error: 'A slot with this start time already exists for this date.' });
+    }
     res.status(500).json({ error: 'Internal server error' });
   }
 };

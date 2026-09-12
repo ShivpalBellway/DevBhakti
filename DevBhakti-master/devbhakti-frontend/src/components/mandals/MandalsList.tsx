@@ -223,6 +223,7 @@ export function MandalsList() {
         params.append("lng", userCoords.lng.toString());
       }
       params.append("lang", language);
+      params.append("all", "true");
 
       const response = await fetch(`${API_URL}/mandals?${params.toString()}`);
       const data = await response.json();
@@ -241,7 +242,7 @@ export function MandalsList() {
   };
 
   const getFullImageUrl = (path: string) => {
-    if (!path) return "https://images.unsplash.com/photo-1600093463592-8e36ae95ef56?auto=format&fit=crop&q=80&w=1200";
+    if (!path) return "";
     if (path.startsWith("http")) return path;
     return `${API_URL.replace("/api", "")}${path}`;
   };
@@ -297,10 +298,15 @@ export function MandalsList() {
     if (!text || !text.trim()) return true;
     const lower = text.trim().toLowerCase();
     return (
-      /^ganesh utsav \d+$/i.test(lower) ||
+      /^ganesh utsav \d*$/i.test(lower) ||
+      /^ganesh utsav registration$/i.test(lower) ||
       lower === "test" ||
-      lower === "ganesh utsav registration" ||
-      lower === "registration"
+      lower === "registration" ||
+      lower.includes("browse mandal") ||
+      lower.includes("browse sacred mandals") ||
+      lower.includes("explore and support devotional mandals") ||
+      lower.includes("maharashtra & beyond") ||
+      lower.includes("thousands of mandals")
     );
   };
 
@@ -315,17 +321,7 @@ export function MandalsList() {
     )
   ).slice(0, 6);
 
-  const popularSearches =
-    dynamicPopularSearches.length > 0
-      ? dynamicPopularSearches
-      : [
-          "Lalbaugcha Raja",
-          "Ganesh Galli",
-          "Andhericha Raja",
-          "GSB Seva Mandal",
-          "Khetwadi",
-          "Parel",
-        ];
+  const popularSearches = dynamicPopularSearches;
 
   // Fuzzy search suggestions
   const getFuzzySuggestions = (query: string) => {
@@ -355,26 +351,33 @@ export function MandalsList() {
   // Helpers for Admin Settings parsing
   const activeFestival = mandalSettings?.activeFestival || mandalSettings; // Fallback to settings directly if legacy format
 
+  const activeFestivalName =
+    typeof activeFestival?.name === "string" ? activeFestival.name.trim() : "";
+
   const getLocalizedSettingText = (field: "title" | "subtitle") => {
     if (!activeFestival?.[field]) return null;
     const val = activeFestival[field];
+    let res: string | null = null;
     if (typeof val === "string") {
-      return val.trim() || null;
-    }
-    if (typeof val === "object" && val !== null) {
+      res = val.trim() || null;
+    } else if (typeof val === "object" && val !== null) {
       const text = val[language] || val["en"] || val["hi"] || val["mr"] || null;
-      return typeof text === "string" ? text.trim() || null : null;
+      res = typeof text === "string" ? text.trim() || null : null;
     }
-    return null;
+    return res;
   };
 
+  const settingTitle = getLocalizedSettingText("title");
+  const settingSubtitle = getLocalizedSettingText("subtitle");
+
   const heroTitle =
-    getLocalizedSettingText("title") ||
-    (mounted ? t("mandal_list.title") : "");
+    settingTitle ||
+    (activeFestivalName && !isDummyText(activeFestivalName) ? activeFestivalName : null) ||
+    (mounted && t("mandal_list.title") && !isDummyText(t("mandal_list.title")) ? t("mandal_list.title") : null);
 
   const heroSubtitle =
-    getLocalizedSettingText("subtitle") ||
-    (mounted ? t("mandal_list.subtitle") : "");
+    settingSubtitle ||
+    (mounted && t("mandal_list.subtitle") && !isDummyText(t("mandal_list.subtitle")) ? t("mandal_list.subtitle") : null);
 
   // Date range formatting
   const formatDateStr = (dateStr: string) => {
@@ -404,106 +407,114 @@ export function MandalsList() {
     }
   };
 
-  let festivalDateDisplay = "27 Aug - 6 Sep 2026";
+  let festivalDateDisplay = "";
   if (activeFestival?.startDate && activeFestival?.endDate) {
     const sFormatted = formatDateStr(activeFestival.startDate);
     const eFormatted = formatDateStr(activeFestival.endDate);
-    const endYear = activeFestival.endDate.split("-")[0] || "2026";
-    festivalDateDisplay = `${sFormatted} - ${eFormatted} ${endYear}`;
+    const endYear = activeFestival.endDate.split("-")[0] || "";
+    festivalDateDisplay = `${sFormatted} - ${eFormatted} ${endYear}`.trim();
   } else if (activeFestival?.startDate) {
     festivalDateDisplay = formatDateStr(activeFestival.startDate);
   }
 
-  const activeFestivalName =
-    getLocalizedSettingText("title") ||
-    activeFestival?.name ||
-    "Ganesh Chaturthi";
-
   const mainFestivalDay = activeFestival?.startDate
-    ? `${activeFestivalName}, ${formatDateStr(activeFestival.startDate)}`
-    : `${activeFestivalName}, 27 Aug 2026`;
+    ? `${activeFestivalName ? activeFestivalName + ", " : ""}${formatDateStr(activeFestival.startDate)}`
+    : activeFestivalName || "";
 
   const adminBannerImage = activeFestival?.image
     ? getFullImageUrl(activeFestival.image)
-    : null;
+    : "";
 
   return (
     <div className="min-h-screen bg-[#FDFBF7] text-zinc-900 flex flex-col justify-between">
       {/* Solid Navbar matching screenshot style */}
       <Navbar isSolid={true} />
 
-      {/* ─── HERO BANNER SECTION (WIDE FULL WIDTH 50-50 SPLIT) ──────────────── */}
-      <section className="relative bg-gradient-to-r from-[#1A0502] via-[#2A0C06] to-[#140402] text-white pt-32 pb-24 overflow-hidden">
-        {/* Ambient Glow Effects */}
-        <div className="absolute top-0 right-1/4 w-[600px] h-[600px] bg-orange-600/15 rounded-full blur-[140px] pointer-events-none" />
-        <div className="absolute bottom-0 left-10 w-[500px] h-[500px] bg-amber-500/10 rounded-full blur-[120px] pointer-events-none" />
+      {/* ─── HERO BANNER SECTION (MATCHING BRAND THEME COLOR) ──────────────── */}
+      <section className="relative bg-gradient-to-r from-[#7c4624] via-[#69391b] to-[#5c3a21] text-white pt-32 pb-24 lg:pt-36 lg:pb-28 border-b border-amber-900/30 overflow-hidden min-h-[560px] lg:min-h-[620px] flex flex-col justify-center">
+        {/* Ambient Glow & Subtle Pattern Grid Effects */}
+        <div className="absolute inset-0 bg-[radial-gradient(#7c4624_1px,transparent_1px)] [background-size:24px_24px] opacity-10 pointer-events-none" />
+        <div className="absolute top-0 right-1/4 w-[600px] h-[600px] bg-amber-700/20 rounded-full blur-[140px] pointer-events-none" />
+        <div className="absolute bottom-0 left-10 w-[500px] h-[500px] bg-orange-800/15 rounded-full blur-[120px] pointer-events-none" />
 
         <div className="container mx-auto px-4 relative z-10">
-          <div className={cn("grid grid-cols-1 items-center gap-8 lg:gap-14", adminBannerImage ? "lg:grid-cols-2" : "max-w-4xl")}>
+          <div className="flex flex-col lg:grid lg:grid-cols-12 gap-8 items-start">
             
-            {/* LEFT HALF (50% ON DESKTOP IF IMAGE EXISTS, FULL WIDTH OTHERWISE): CONTENT */}
-            <div className={cn("space-y-6 flex flex-col justify-center", adminBannerImage ? "order-2 lg:order-1 pr-0 lg:pr-4" : "order-1")}>
+            {/* CONTENT (lg:col-span-7) */}
+            <div className="order-1 lg:order-1 lg:col-span-7 flex flex-col justify-center space-y-6">
               {/* Top Divine Mantra */}
-              <div className="inline-flex items-center gap-2 text-amber-400 font-serif text-base tracking-wider font-semibold">
-                <span>|| गणपति बाप्पा मोरया ||</span>
+              <div className="inline-flex items-center gap-2 text-amber-300 font-serif text-sm sm:text-base tracking-wider font-semibold drop-shadow-sm">
+                <span>
+                  || {activeFestivalName ? (activeFestivalName.toLowerCase().includes("जय") || activeFestivalName.toLowerCase().includes("गणपती") ? activeFestivalName : `जय ${activeFestivalName}`) : "गणपती बाप्पा मोरया"} ||
+                </span>
               </div>
 
               {/* Dynamic Title */}
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-serif font-bold text-white tracking-tight leading-[1.1]">
-                {heroTitle}
-              </h1>
+              {heroTitle ? (
+                <h1 className="text-4xl sm:text-5xl lg:text-6xl font-serif font-bold text-white tracking-tight leading-tight">
+                  {heroTitle}
+                </h1>
+              ) : null}
 
               {/* Dynamic Subtitle */}
-              <p className="text-base sm:text-lg lg:text-xl text-amber-100/90 font-light leading-relaxed max-w-2xl">
-                {heroSubtitle}
-              </p>
+              {heroSubtitle ? (
+                <p className="text-base sm:text-lg text-amber-100/90 font-light leading-relaxed max-w-2xl">
+                  {heroSubtitle}
+                </p>
+              ) : null}
 
               {/* Dynamic Feature Badges */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-2">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
                 {/* 1. Festival Dates */}
-                <div className="flex items-center gap-2.5 bg-white/5 backdrop-blur-md border border-white/10 p-2.5 sm:p-3 rounded-2xl min-w-0">
-                  <div className="p-2 bg-amber-500/20 rounded-xl text-amber-300 shrink-0">
-                    <Calendar className="w-4 h-4 sm:w-5 sm:h-5" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="text-[9px] sm:text-[10px] uppercase font-bold tracking-wider text-amber-200/70 leading-tight">
-                      {t("mandal_list.festival_dates")}
+                {festivalDateDisplay ? (
+                  <div className="flex items-center gap-3.5 bg-black/30 backdrop-blur-md border border-[#DEB887]/50 p-3.5 rounded-2xl min-w-0 shadow-md shadow-black/20">
+                    <div className="p-2.5 bg-amber-500/15 border border-amber-400/40 rounded-xl text-amber-300 shrink-0">
+                      <Calendar className="w-4 h-4 sm:w-5 sm:h-5" />
                     </div>
-                    <div className="text-[11px] sm:text-xs font-bold text-white leading-tight mt-0.5 break-words">
-                      {festivalDateDisplay}
+                    <div className="min-w-0 flex-1">
+                      <div className="text-[9px] sm:text-[10px] uppercase font-bold tracking-wider text-amber-300/90 leading-tight">
+                        {t("mandal_list.festival_dates")}
+                      </div>
+                      <div className="text-[11px] sm:text-xs font-bold text-white leading-tight mt-0.5 break-words">
+                        {festivalDateDisplay}
+                      </div>
                     </div>
                   </div>
-                </div>
+                ) : null}
 
                 {/* 2. Location Info */}
-                <div className="flex items-center gap-2.5 bg-white/5 backdrop-blur-md border border-white/10 p-2.5 sm:p-3 rounded-2xl min-w-0">
-                  <div className="p-2 bg-amber-500/20 rounded-xl text-amber-300 shrink-0">
-                    <MapPin className="w-4 h-4 sm:w-5 sm:h-5" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="text-[9px] sm:text-[10px] uppercase font-bold tracking-wider text-amber-200/70 leading-tight">
-                      {t("mandal_list.celebrated_across")}
+                {locations.filter((l) => l !== "All").length > 0 ? (
+                  <div className="flex items-center gap-3.5 bg-black/30 backdrop-blur-md border border-[#DEB887]/50 p-3.5 rounded-2xl min-w-0 shadow-md shadow-black/20">
+                    <div className="p-2.5 bg-amber-500/15 border border-amber-400/40 rounded-xl text-amber-300 shrink-0">
+                      <MapPin className="w-4 h-4 sm:w-5 sm:h-5" />
                     </div>
-                    <div className="text-[11px] sm:text-xs font-bold text-white leading-tight mt-0.5 break-words">
-                      {t("mandal_list.maharashtra_beyond")}
+                    <div className="min-w-0 flex-1">
+                      <div className="text-[9px] sm:text-[10px] uppercase font-bold tracking-wider text-amber-300/90 leading-tight">
+                        {t("mandal_list.celebrated_across")}
+                      </div>
+                      <div className="text-[11px] sm:text-xs font-bold text-white leading-tight mt-0.5 break-words truncate">
+                        {locations.filter((l) => l !== "All").slice(0, 3).join(", ")}
+                      </div>
                     </div>
                   </div>
-                </div>
+                ) : null}
 
                 {/* 3. Mandal Info */}
-                <div className="flex items-center gap-2.5 bg-white/5 backdrop-blur-md border border-white/10 p-2.5 sm:p-3 rounded-2xl min-w-0">
-                  <div className="p-2 bg-amber-500/20 rounded-xl text-amber-300 shrink-0">
-                    <Building2 className="w-4 h-4 sm:w-5 sm:h-5" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="text-[9px] sm:text-[10px] uppercase font-bold tracking-wider text-amber-200/70 leading-tight">
-                      {t("mandal_list.thousands_of_mandals")}
+                {allMandals.length > 0 ? (
+                  <div className="flex items-center gap-3.5 bg-black/30 backdrop-blur-md border border-[#DEB887]/50 p-3.5 rounded-2xl min-w-0 shadow-md shadow-black/20">
+                    <div className="p-2.5 bg-amber-500/15 border border-amber-400/40 rounded-xl text-amber-300 shrink-0">
+                      <Building2 className="w-4 h-4 sm:w-5 sm:h-5" />
                     </div>
-                    <div className="text-[11px] sm:text-xs font-bold text-white leading-tight mt-0.5 break-words">
-                      {t("mandal_list.one_divine_celebration")}
+                    <div className="min-w-0 flex-1">
+                      <div className="text-[9px] sm:text-[10px] uppercase font-bold tracking-wider text-amber-300/90 leading-tight">
+                        {allMandals.length} {t("mandal_list.mandals")}
+                      </div>
+                      <div className="text-[11px] sm:text-xs font-bold text-white leading-tight mt-0.5 break-words">
+                        {t("mandal_list.one_divine_celebration")}
+                      </div>
                     </div>
                   </div>
-                </div>
+                ) : null}
               </div>
 
               {/* Action Button */}
@@ -513,28 +524,62 @@ export function MandalsList() {
                     const el = document.getElementById("mandals-search-section");
                     el?.scrollIntoView({ behavior: "smooth" });
                   }}
-                  className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-bold px-8 h-12 rounded-xl text-base shadow-lg shadow-amber-500/20 flex items-center gap-2 group transition-all"
+                  className="bg-[#FFE8CF] hover:bg-[#FCD8B0] text-[#80380B] font-bold px-8 h-12 rounded-full text-base shadow-lg shadow-black/15 border border-[#DEB887] flex items-center gap-2.5 group transition-all hover:scale-[1.02] active:scale-95"
                 >
                   {t("mandal_list.explore_mandals")}
-                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform text-[#D97706]" />
                 </Button>
               </div>
             </div>
 
-            {/* RIGHT HALF (ONLY SHOWN IF CUSTOM BANNER IMAGE IS CONFIGURED) */}
-            {adminBannerImage && (
-              <div className="order-1 lg:order-2 relative w-full aspect-[4/3] max-w-[640px] mx-auto rounded-3xl overflow-hidden shadow-2xl border border-amber-500/20 group">
+            {/* HERO IMAGE CARD */}
+            {adminBannerImage ? (
+              <div className="order-2 lg:order-2 lg:col-span-5 relative w-full aspect-[4/3] max-w-[540px] lg:max-w-none mx-auto rounded-3xl overflow-hidden shadow-2xl border border-amber-500/30 group bg-zinc-900">
                 <img
                   src={adminBannerImage}
                   alt={heroTitle}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                  onError={(e) => {
+                    (e.target as HTMLElement).style.display = "none";
+                    const parent = (e.target as HTMLElement).parentElement;
+                    if (parent) {
+                      const fallbackDiv = parent.querySelector(".banner-fallback-bg");
+                      if (fallbackDiv) (fallbackDiv as HTMLElement).style.display = "flex";
+                    }
+                  }}
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent" />
-                <div className="absolute bottom-6 left-6 right-6 text-white">
-                  <Badge className="bg-amber-500 text-slate-950 font-bold text-xs">
-                    {heroTitle}
-                  </Badge>
+                <div className="banner-fallback-bg hidden absolute inset-0 bg-gradient-to-br from-[#3e2413] via-[#5c3a21] to-[#251308] flex-col items-center justify-center p-6 text-center text-amber-100">
+                  <div className="w-16 h-16 rounded-2xl bg-amber-500/20 border border-amber-400/30 flex items-center justify-center text-amber-300 mb-3 shadow-inner">
+                    <Sparkles className="w-8 h-8" />
+                  </div>
+                  {activeFestivalName && (
+                    <Badge className="bg-[#7c4624] text-amber-100 font-bold text-xs mb-2 border border-amber-500/30">
+                      {activeFestivalName}
+                    </Badge>
+                  )}
+                  <div className="text-base font-serif font-bold text-white drop-shadow">{heroTitle}</div>
                 </div>
+                <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent pointer-events-none" />
+                <div className="absolute bottom-4 left-4 right-4 text-white pointer-events-none">
+                  {activeFestivalName && (
+                    <Badge className="bg-[#7c4624] text-amber-100 font-bold text-xs mb-1.5 border border-amber-500/30">
+                      {activeFestivalName}
+                    </Badge>
+                  )}
+                  <div className="text-sm font-semibold truncate text-white drop-shadow">{heroTitle}</div>
+                </div>
+              </div>
+            ) : (
+              <div className="order-2 lg:order-2 lg:col-span-5 relative w-full aspect-[4/3] max-w-[540px] lg:max-w-none mx-auto rounded-3xl overflow-hidden shadow-2xl border border-amber-500/30 bg-gradient-to-br from-[#3e2413] via-[#5c3a21] to-[#251308] flex flex-col items-center justify-center p-6 text-center text-amber-100">
+                <div className="w-16 h-16 rounded-2xl bg-amber-500/20 border border-amber-400/30 flex items-center justify-center text-amber-300 mb-3 shadow-inner">
+                  <Sparkles className="w-8 h-8" />
+                </div>
+                {activeFestivalName && (
+                  <Badge className="bg-[#7c4624] text-amber-100 font-bold text-xs mb-2 border border-amber-500/30">
+                    {activeFestivalName}
+                  </Badge>
+                )}
+                <div className="text-lg font-serif font-bold text-white drop-shadow max-w-xs">{heroTitle}</div>
               </div>
             )}
 
@@ -664,7 +709,7 @@ export function MandalsList() {
                 onClick={() => {
                   setSearchQuery(searchInput);
                 }}
-                className="h-12 flex-1 bg-[#6B0F1A] hover:bg-[#520B14] text-white font-bold rounded-xl flex items-center justify-center gap-2 shadow-md"
+                className="h-12 flex-1 bg-gradient-to-r from-[#7c4624] to-[#5c3a21] hover:from-[#5c3a21] hover:to-[#3e2413] text-white font-bold rounded-xl flex items-center justify-center gap-2 shadow-md shadow-[#7c4624]/20"
               >
                 <Search className="w-4 h-4" />
                 <span className="text-xs sm:text-sm">{t("mandal_list.search")}</span>
@@ -763,15 +808,34 @@ export function MandalsList() {
                   >
                     {/* Standardized 4:3 Landscape Image Container */}
                     <div className="relative aspect-[4/3] w-full overflow-hidden bg-zinc-100">
-                      <img
-                        src={getFullImageUrl(mandal.image)}
-                        alt={localizedName}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                        onError={(e) => {
-                          (e.target as any).src =
-                            "https://images.unsplash.com/photo-1620766182966-c6eb5ed2b788?auto=format&fit=crop&q=80&w=500";
-                        }}
-                      />
+                      {getFullImageUrl(mandal.image) ? (
+                        <img
+                          src={getFullImageUrl(mandal.image)}
+                          alt={localizedName}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                          onError={(e) => {
+                            (e.target as HTMLElement).style.display = "none";
+                            const parent = (e.target as HTMLElement).parentElement;
+                            if (parent) {
+                              const fallbackDiv = parent.querySelector(".mandal-card-fallback-bg");
+                              if (fallbackDiv) (fallbackDiv as HTMLElement).style.display = "flex";
+                            }
+                          }}
+                        />
+                      ) : null}
+
+                      {/* Dynamic Emblem Header when no image or image load error */}
+                      <div
+                        className="mandal-card-fallback-bg absolute inset-0 bg-gradient-to-br from-[#5c2d13] via-[#7c4624] to-[#3a1b0b] flex flex-col items-center justify-center p-4 text-center text-amber-100"
+                        style={{ display: getFullImageUrl(mandal.image) ? "none" : "flex" }}
+                      >
+                        <div className="w-12 h-12 rounded-full bg-amber-500/20 border border-amber-400/40 flex items-center justify-center text-amber-300 mb-2">
+                          <Building2 className="w-6 h-6" />
+                        </div>
+                        <span className="text-xs font-bold font-serif line-clamp-2 drop-shadow text-amber-200">
+                          {localizedName}
+                        </span>
+                      </div>
 
                       {/* LIVE badge */}
                       {mandal.isLive && (
@@ -1038,18 +1102,15 @@ export function MandalsList() {
            
             ];
 
-            // Default fallback cities if no mandal data in DB yet
-            const defaultCities = [
-              { name: "Mumbai", count: cityCounts["Mumbai"] || 0 },
-              { name: "Thane", count: cityCounts["Thane"] || 0 },
-              { name: "Pune", count: cityCounts["Pune"] || 0 },
-              { name: "Navi Mumbai", count: cityCounts["Navi Mumbai"] || 0 },
-              { name: "Nashik", count: cityCounts["Nashik"] || 0 },
-            ];
+            const top5 = topCityEntries.slice(0, 5).map(([name, count]) => ({ name, count }));
 
-            const top5 = topCityEntries.length > 0
-              ? topCityEntries.slice(0, 5).map(([name, count]) => ({ name, count }))
-              : defaultCities;
+            if (top5.length === 0) {
+              return (
+                <div className="col-span-full py-8 text-center text-zinc-500 text-sm font-medium">
+                  {t("mandal_list.no_locations_available") || "No locations available"}
+                </div>
+              );
+            }
 
             const cardsList = [
               ...top5.map((item, idx) => ({
@@ -1134,46 +1195,24 @@ export function MandalsList() {
               {/* News List Container with Auto Scrollbar */}
               <div className="max-h-[300px] overflow-y-auto space-y-3 md:space-y-4 pr-2 custom-scrollbar">
                 {(() => {
-                  const staticNewsItems = [
-                    // {
-                    //   id: "news-1",
-                    //   title: "Mandal Registration for Ganeshotsav 2026 is now open",
-                    //   date: "20 May 2026",
-                    // },
-                    // {
-                    //   id: "news-2",
-                    //   title: "Traffic Advisory for Lalbaugcha Raja Visarjan Route",
-                    //   date: "18 May 2026",
-                    // },
-                    // {
-                    //   id: "news-3",
-                    //   title: "BMC Guidelines for Eco-friendly Ganeshotsav 2026",
-                    //   date: "16 May 2026",
-                    // },
-                    // {
-                    //   id: "news-4",
-                    //   title: "Best Decorated Mandal Competition - Registrations Open",
-                    //   date: "14 May 2026",
-                    // },
-                    // {
-                    //   id: "news-5",
-                    //   title: "Volunteer Registration for Festival Support Open Now",
-                    //   date: "12 May 2026",
-                    // },
-                  ];
+                  if (!mandalNews || mandalNews.length === 0) {
+                    return (
+                      <div className="py-8 text-center text-zinc-500 text-xs md:text-sm font-medium">
+                        {t("mandal_list.no_news_available") || "No news updates available at this time."}
+                      </div>
+                    );
+                  }
 
-                  const displayNews = mandalNews.length > 0
-                    ? mandalNews.map((item, idx) => ({
-                        id: item.id,
-                        title: parseLocalizedValue(item.title, language),
-                        date: formatNewsDate(item.publishedAt || item.createdAt) || staticNewsItems[idx]?.date || "20 May 2026",
-                      }))
-                    : staticNewsItems;
+                  const displayNews = mandalNews.map((item) => ({
+                    id: item.id,
+                    title: parseLocalizedValue(item.title, language),
+                    date: formatNewsDate(item.publishedAt || item.createdAt) || "",
+                  }));
 
                   return displayNews.map((item, idx) => (
                     <Link
                       key={item.id || idx}
-                      href={item.id && !item.id.startsWith("news-") ? `/mandals/news/${item.id}` : "/mandals/news"}
+                      href={item.id ? `/mandals/news/${item.id}` : "/mandals/news"}
                       className="group flex items-center justify-between gap-4 py-2 border-b border-[#F0E6D8]/70 dark:border-zinc-800/80 last:border-b-0"
                     >
                       <div className="flex items-center gap-3 min-w-0">
@@ -1182,9 +1221,11 @@ export function MandalsList() {
                           {item.title}
                         </p>
                       </div>
-                      <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400 shrink-0">
-                        {item.date}
-                      </span>
+                      {item.date && (
+                        <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400 shrink-0">
+                          {item.date}
+                        </span>
+                      )}
                     </Link>
                   ));
                 })()}
@@ -1208,34 +1249,38 @@ export function MandalsList() {
               {/* Items List */}
               <div className="space-y-3 md:space-y-4">
                 {/* Row 1: Festival Dates */}
-                <div className="flex items-start sm:items-center gap-3 py-2 border-b border-[#F0E6D8]/70 dark:border-zinc-800/80">
-                  <div className="p-1.5 rounded-lg bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-400 shrink-0 mt-0.5 sm:mt-0">
-                    <Calendar className="w-5 h-5" />
+                {festivalDateDisplay ? (
+                  <div className="flex items-start sm:items-center gap-3 py-2 border-b border-[#F0E6D8]/70 dark:border-zinc-800/80">
+                    <div className="p-1.5 rounded-lg bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-400 shrink-0 mt-0.5 sm:mt-0">
+                      <Calendar className="w-5 h-5" />
+                    </div>
+                    <div className="flex-1 flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                      <span className="text-xs md:text-sm font-bold text-zinc-900 dark:text-zinc-100 min-w-[160px]">
+                        {t("mandal_list.festival_dates_label")}
+                      </span>
+                      <span className="text-xs md:text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                        {festivalDateDisplay}
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex-1 flex flex-col sm:flex-row sm:items-center justify-between gap-1">
-                    <span className="text-xs md:text-sm font-bold text-zinc-900 dark:text-zinc-100 min-w-[160px]">
-                      {t("mandal_list.festival_dates_label")}
-                    </span>
-                    <span className="text-xs md:text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                      {festivalDateDisplay || "27 Aug – 5 Sep 2026"}
-                    </span>
-                  </div>
-                </div>
+                ) : null}
 
                 {/* Row 2: Main Festival Day */}
-                <div className="flex items-start sm:items-center gap-3 py-2 border-b border-[#F0E6D8]/70 dark:border-zinc-800/80">
-                  <div className="p-1.5 rounded-lg bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-400 shrink-0 mt-0.5 sm:mt-0">
-                    <Calendar className="w-5 h-5" />
+                {mainFestivalDay ? (
+                  <div className="flex items-start sm:items-center gap-3 py-2 border-b border-[#F0E6D8]/70 dark:border-zinc-800/80">
+                    <div className="p-1.5 rounded-lg bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-400 shrink-0 mt-0.5 sm:mt-0">
+                      <Calendar className="w-5 h-5" />
+                    </div>
+                    <div className="flex-1 flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                      <span className="text-xs md:text-sm font-bold text-zinc-900 dark:text-zinc-100 min-w-[160px]">
+                        {t("mandal_list.main_festival_day")}
+                      </span>
+                      <span className="text-xs md:text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                        {mainFestivalDay}
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex-1 flex flex-col sm:flex-row sm:items-center justify-between gap-1">
-                    <span className="text-xs md:text-sm font-bold text-zinc-900 dark:text-zinc-100 min-w-[160px]">
-                      {t("mandal_list.main_festival_day")}
-                    </span>
-                    <span className="text-xs md:text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                      {mainFestivalDay || ""}
-                    </span>
-                  </div>
-                </div>
+                ) : null}
 
                 {/* Row 3: Ganesh Aarti Timings */}
                 <div className="flex items-start sm:items-center gap-3 py-2 border-b border-[#F0E6D8]/70 dark:border-zinc-800/80">

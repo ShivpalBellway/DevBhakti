@@ -1,178 +1,272 @@
-import React from "react";
+import { parseLocalizedValue } from "./textUtils";
 
-interface ReceiptProps {
-    donation: {
-        id: string;
-        donorName: string;
-        donorPhone: string;
-        donorEmail: string;
-        amount: number;
-        status: string;
-        createdAt: string;
-        paymentMethod: string;
-        panNumber?: string;
-        address?: string;
-        message?: string;
-        templeName?: string;
-        displayId?: string;
-    };
-
+export interface DonationReceiptData {
+  donorName: string;
+  amount: number;
+  platformFee?: number;
+  mandalName: string;
+  donationId: string;
+  date: string;
+  email?: string;
+  phone?: string;
+  message?: string;
+  txnId: string;
 }
 
-export const generateReceiptHTML = (donation: ReceiptProps["donation"]) => {
-    const date = new Date(donation.createdAt).toLocaleDateString("en-IN", {
-        day: "numeric",
-        month: "long",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-    });
+export const generateDonationReceiptHTML = (donation: DonationReceiptData) => {
+  const baseAmount = donation.amount || 0;
+  const fee = donation.platformFee || 0;
+  const totalAmount = baseAmount + fee;
+  
+  const rawMandalName = donation.mandalName || "Mandal";
+  const mandalNameVal = parseLocalizedValue(rawMandalName) || "Mandal";
 
-    return `
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <style>
-                body { font-family: 'Inter', sans-serif; color: #333; line-height: 1.6; padding: 40px; }
-                .receipt-container { max-width: 800px; margin: 0 auto; border: 1px solid #eee; padding: 40px; border-radius: 8px; }
-                .header { text-align: center; border-bottom: 2px solid #7c4624; padding-bottom: 20px; margin-bottom: 30px; }
-                .logo { font-size: 28px; font-weight: bold; color: #7c4624; }
-                .temple-name { font-size: 20px; color: #555; margin-top: 5px; }
-                .receipt-title { font-size: 24px; font-weight: bold; margin: 20px 0; text-transform: uppercase; color: #7c4624; }
-                .section { margin-bottom: 25px; }
-                .section-title { font-weight: bold; border-bottom: 1px solid #eee; padding-bottom: 5px; margin-bottom: 15px; color: #7c4624; }
-                .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-                .item { margin-bottom: 10px; }
-                .label { color: #666; font-size: 14px; }
-                .value { font-weight: 500; font-size: 16px; }
-                .amount-box { background: #fdf6f0; padding: 20px; border-radius: 8px; text-align: center; margin: 30px 0; border: 1px solid #7c4624; }
-                .amount-label { font-size: 14px; color: #7c4624; text-transform: uppercase; letter-spacing: 1px; }
-                .amount-value { font-size: 32px; font-weight: bold; color: #7c4624; }
-                .footer { text-align: center; margin-top: 50px; font-size: 12px; color: #999; border-top: 1px solid #eee; padding-top: 20px; }
-                @media print {
-                    body { padding: 0; }
-                    .receipt-container { border: none; padding: 0; }
-                    .no-print { display: none; }
-                }
-            </style>
-        </head>
-        <body>
-            <div class="receipt-container">
-                <div class="header">
-                    <div class="logo">DEV BHAKTI</div>
-                    <div class="temple-name">${donation.templeName || "Sacred Temple Offering"}</div>
-                </div>
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8"/>
+      <title>Donation Receipt - ${donation.donationId}</title>
+      <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Inter:wght@400;500;600;700;800&display=swap');
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Inter', sans-serif; color: #1e293b; background: #fff; padding: 30px; }
+        .receipt-card {
+          max-width: 680px;
+          margin: 0 auto;
+          border: 2px solid #7c4624;
+          border-radius: 20px;
+          padding: 36px;
+          background: #fffdf9;
+          position: relative;
+          box-shadow: 0 10px 30px rgba(124,70,36,0.08);
+        }
+        .header { text-align: center; border-bottom: 2px solid #f1f5f9; padding-bottom: 20px; margin-bottom: 24px; }
+        .om { font-size: 32px; color: #7c4624; font-weight: bold; margin-bottom: 6px; }
+        .brand-title { font-family: 'Cinzel', serif; font-size: 26px; font-weight: 800; color: #7c4624; text-transform: uppercase; letter-spacing: 1px; }
+        .mandal-subtitle { font-size: 16px; color: #64748b; font-weight: 600; margin-top: 4px; }
+        .badge {
+          display: inline-block;
+          background: #7c4624;
+          color: #fff;
+          font-size: 11px;
+          font-weight: 700;
+          padding: 5px 16px;
+          border-radius: 20px;
+          text-transform: uppercase;
+          letter-spacing: 1.5px;
+          margin-top: 10px;
+        }
+        .receipt-id-box {
+          background: #fdf6f0;
+          border: 1px dashed #7c4624;
+          border-radius: 14px;
+          text-align: center;
+          padding: 14px;
+          margin-bottom: 24px;
+        }
+        .id-label { font-size: 11px; font-weight: 700; color: #7c4624; text-transform: uppercase; letter-spacing: 1px; }
+        .id-value { font-size: 22px; font-weight: 800; color: #7c4624; letter-spacing: 1.5px; font-family: monospace; }
+        .section-title { font-size: 13px; font-weight: 800; color: #7c4624; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px; margin-bottom: 16px; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-bottom: 24px; }
+        .item-label { font-size: 11px; font-weight: 600; color: #64748b; text-transform: uppercase; }
+        .item-value { font-size: 14px; font-weight: 700; color: #0f172a; margin-top: 2px; word-break: break-all; }
+        .amount-box {
+          background: linear-gradient(135deg, #7c4624 0%, #5c3a21 100%);
+          color: #fff;
+          border-radius: 16px;
+          padding: 24px;
+          text-align: center;
+          margin: 24px 0;
+          box-shadow: 0 6px 20px rgba(124,70,36,0.2);
+        }
+        .amount-label { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: #fde68a; }
+        .amount-val { font-size: 36px; font-weight: 900; margin: 4px 0; letter-spacing: 0.5px; color: #ffffff; }
+        .amount-sub { font-size: 12px; color: #fef3c7; opacity: 0.9; }
+        .footer { text-align: center; margin-top: 24px; font-size: 11px; color: #64748b; border-top: 1px solid #e2e8f0; padding-top: 18px; }
+        .stamp {
+          display: inline-block;
+          margin-top: 10px;
+          border: 1.5px solid #047857;
+          color: #047857;
+          font-weight: 800;
+          font-size: 11px;
+          padding: 3px 12px;
+          border-radius: 6px;
+          text-transform: uppercase;
+        }
+        @media print {
+          body { padding: 0; background: none; }
+          .receipt-card { box-shadow: none; border-color: #7c4624; }
+        }
+      </style>
+    </head>
+    <body>
+      <div class="receipt-card">
+        <div class="header">
+          <div class="om">🕉️</div>
+          <div class="brand-title">DEVBHAKTI</div>
+          <div class="mandal-subtitle">Donation Receipt for ${mandalNameVal}</div>
+          <div class="badge">OFFICIAL DONATION RECEIPT</div>
+        </div>
 
-                <div style="text-align: center;">
-                    <div class="receipt-title">Donation Receipt</div>
-                </div>
+        <div class="receipt-id-box">
+          <div class="id-label">Donation Reference Number</div>
+          <div class="id-value">${donation.donationId}</div>
+        </div>
 
-                <div class="section">
-                    <div class="section-title">Donation Details</div>
-                    <div class="grid">
-                        <div class="item">
-                            <div class="label">Receipt Number</div>
-                            <div class="value">${donation.displayId || donation.id}</div>
-                        </div>
+        <div class="section-title">Donor & Payment Summary</div>
+        <div class="grid">
+          <div>
+            <div class="item-label">Donor Name</div>
+            <div class="item-value">${donation.donorName}</div>
+          </div>
+          <div>
+            <div class="item-label">Date & Time</div>
+            <div class="item-value">${donation.date}</div>
+          </div>
+          <div>
+            <div class="item-label">Transaction ID</div>
+            <div class="item-value" style="font-family: monospace;">${donation.txnId}</div>
+          </div>
+          <div>
+            <div class="item-label">Receipt Email</div>
+            <div class="item-value">${donation.email || "—"}</div>
+          </div>
+          ${donation.phone ? `
+          <div>
+            <div class="item-label">Phone Number</div>
+            <div class="item-value">${donation.phone}</div>
+          </div>` : ''}
+          ${donation.message ? `
+          <div>
+            <div class="item-label">Message / Note</div>
+            <div class="item-value" style="font-style: italic;">"${donation.message}"</div>
+          </div>` : ''}
+        </div>
 
-                        <div class="item">
-                            <div class="label">Date</div>
-                            <div class="value">${date}</div>
-                        </div>
-                        <div class="item">
-                            <div class="label">Payment Status</div>
-                            <div class="value" style="color: green;">${donation.status}</div>
-                        </div>
-                        <div class="item">
-                            <div class="label">Payment Method</div>
-                            <div class="value">${donation.paymentMethod || "Razorpay"}</div>
-                        </div>
-                    </div>
-                </div>
+        <div class="amount-box">
+          <div class="amount-label">TOTAL CONTRIBUTION PAID</div>
+          <div class="amount-val">₹ ${totalAmount.toLocaleString('en-IN')}</div>
+          <div class="amount-sub">
+            Base Donation: ₹${baseAmount.toLocaleString('en-IN')}${fee > 0 ? ` + Platform Support Fee: ₹${fee.toLocaleString('en-IN')}` : ''}
+          </div>
+        </div>
 
-                <div class="section">
-                    <div class="section-title">Donor Information</div>
-                    <div class="grid">
-                        <div class="item">
-                            <div class="label">Name</div>
-                            <div class="value">${donation.donorName}</div>
-                        </div>
-                        <div class="item">
-                            <div class="label">Phone</div>
-                            <div class="value">${donation.donorPhone}</div>
-                        </div>
-                        <div class="item">
-                            <div class="label">Email</div>
-                            <div class="value">${donation.donorEmail}</div>
-                        </div>
-                        ${donation.panNumber ? `
-                        <div class="item">
-                            <div class="label">PAN Number</div>
-                            <div class="value">${donation.panNumber}</div>
-                        </div>` : ''}
-                    </div>
-                    ${donation.address ? `
-                    <div class="item" style="margin-top: 10px;">
-                        <div class="label">Address</div>
-                        <div class="value">${donation.address}</div>
-                    </div>` : ''}
-                </div>
-
-                <div class="amount-box">
-                    <div class="amount-label">Contribution Amount</div>
-                    <div class="amount-value">₹ ${donation.amount.toLocaleString('en-IN')}</div>
-                    <div style="margin-top: 10px; font-size: 14px; font-style: italic; color: #666;">
-                        (Rupees ${numberToWords(donation.amount)} Only)
-                    </div>
-                </div>
-
-           
-                <div class="footer">
-                    <p>This is a computer-generated receipt and does not require a physical signature.</p>
-                    <p>Thank you for your divine contribution. May you be blessed with peace and prosperity.</p>
-                    <p>&copy; ${new Date().getFullYear()} Dev Bhakti. All rights reserved.</p>
-                </div>
-            </div>
-        </body>
-        </html>
-    `;
+        <div class="footer">
+          <p>Thank you for your divine offering and generous contribution to ${mandalNameVal}. 🙏</p>
+          <p style="margin-top: 4px;">This is a computer-generated official receipt issued by DevBhakti.</p>
+          <div class="stamp">PAYMENT VERIFIED & CONFIRMED</div>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
 };
 
-const numberToWords = (num: number): string => {
-    const a = ['', 'One ', 'Two ', 'Three ', 'Four ', 'Five ', 'Six ', 'Seven ', 'Eight ', 'Nine ', 'Ten ', 'Eleven ', 'Twelve ', 'Thirteen ', 'Fourteen ', 'Fifteen ', 'Sixteen ', 'Seventeen ', 'Eighteen ', 'Nineteen '];
-    const b = ['', '', 'Twenty ', 'Thirty ', 'Forty ', 'Fifty ', 'Sixty ', 'Seventy ', 'Eighty ', 'Ninety '];
-
-    const numStr = num.toString(); // ✅ new variable
-
-    if (numStr.length > 9) return 'overflow';
-
-    const n = ('000000000' + numStr)
-        .slice(-9)
-        .match(/^(\d{2})(\d{2})(\d{2})(\d{1})(\d{2})$/);
-
-    if (!n) return '';
-
-    let str = '';
-
-    str += n[1] !== '00' ? (a[+n[1]] || (b[+n[1][0]] + a[+n[1][1]])) + 'Crore ' : '';
-    str += n[2] !== '00' ? (a[+n[2]] || (b[+n[2][0]] + a[+n[2][1]])) + 'Lakh ' : '';
-    str += n[3] !== '00' ? (a[+n[3]] || (b[+n[3][0]] + a[+n[3][1]])) + 'Thousand ' : '';
-    str += n[4] !== '0' ? (a[+n[4]] || (b[+n[4][0]] + a[+n[4][1]])) + 'Hundred ' : '';
-    str += n[5] !== '00'
-        ? ((str !== '') ? 'and ' : '') + (a[+n[5]] || (b[+n[5][0]] + a[+n[5][1]]))
-        : '';
-
-    return str.trim();
+export const generateReceiptHTML = (donation: any) => {
+  return generateDonationReceiptHTML({
+    donorName: donation.donorName || donation.name || "Devotee",
+    amount: donation.amount || 0,
+    platformFee: donation.platformFee || 0,
+    mandalName: donation.mandalName || donation.templeName || "DevBhakti",
+    donationId: donation.displayId || donation.donationId || donation.id || `DON-${Date.now().toString().slice(-6)}`,
+    date: donation.createdAt ? new Date(donation.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : (donation.date || new Date().toLocaleDateString('en-IN')),
+    email: donation.donorEmail || donation.email,
+    phone: donation.donorPhone || donation.phone,
+    message: donation.message,
+    txnId: donation.transactionRef || donation.razorpayPaymentId || donation.txnId || donation.paymentId || "CONFIRMED"
+  });
 };
 
-export const downloadDonationReceiptPDF = (donation: ReceiptProps["donation"]) => {
-    const html = generateReceiptHTML(donation);
-    const printWindow = window.open("", "_blank");
-    if (printWindow) {
-        printWindow.document.open();
-        printWindow.document.write(html);
-        printWindow.document.close();
-        setTimeout(() => printWindow.print(), 400);
+export const downloadDonationReceiptPDF = (donation: DonationReceiptData) => {
+  if (typeof window === "undefined") return;
+  const html = generateDonationReceiptHTML(donation);
+  const cleanId = (donation.donationId || "Receipt").replace(/[^a-zA-Z0-9_-]/g, "");
+  const fileName = `Donation_Receipt_${cleanId}.pdf`;
+
+  const container = document.createElement('div');
+  container.style.position = 'fixed';
+  container.style.left = '0px';
+  container.style.top = '0px';
+  container.style.width = '794px';
+  container.style.padding = '0px';
+  container.style.margin = '0px';
+  container.style.background = '#ffffff';
+  container.style.color = '#1e293b';
+  container.style.zIndex = '-9999';
+  container.style.opacity = '0.99';
+  container.style.pointerEvents = 'none';
+  container.innerHTML = html;
+  document.body.appendChild(container);
+
+  const opt = {
+    margin: [8, 8, 8, 8],
+    filename: fileName,
+    image: { type: 'jpeg', quality: 0.98 },
+    html2canvas: {
+      scale: 2,
+      useCORS: true,
+      logging: false,
+      scrollX: 0,
+      scrollY: 0,
+      windowWidth: 794,
+      backgroundColor: '#ffffff'
+    },
+    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+  };
+
+  const executePDFDownload = () => {
+    if ((window as any).html2pdf) {
+      (window as any).html2pdf().set(opt).from(container).save().then(() => {
+        if (document.body.contains(container)) {
+          document.body.removeChild(container);
+        }
+      }).catch((err: any) => {
+        console.error("PDF generation error, opening print preview fallback", err);
+        if (document.body.contains(container)) {
+          document.body.removeChild(container);
+        }
+        openPrintPDFWindow(html);
+      });
+    } else {
+      const script = document.createElement('script');
+      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
+      script.onload = () => {
+        (window as any).html2pdf().set(opt).from(container).save().then(() => {
+          if (document.body.contains(container)) {
+            document.body.removeChild(container);
+          }
+        }).catch(() => {
+          if (document.body.contains(container)) {
+            document.body.removeChild(container);
+          }
+          openPrintPDFWindow(html);
+        });
+      };
+      script.onerror = () => {
+        if (document.body.contains(container)) {
+          document.body.removeChild(container);
+        }
+        openPrintPDFWindow(html);
+      };
+      document.head.appendChild(script);
     }
+  };
+
+  setTimeout(executePDFDownload, 350);
 };
 
+export const openPrintPDFWindow = (html: string) => {
+  if (typeof window === "undefined") return;
+  const printWindow = window.open('', '_blank');
+  if (printWindow) {
+    printWindow.document.open();
+    printWindow.document.write(html);
+    printWindow.document.close();
+    printWindow.focus();
+    setTimeout(() => {
+      printWindow.print();
+    }, 400);
+  }
+};
