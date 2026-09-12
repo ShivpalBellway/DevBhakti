@@ -197,7 +197,7 @@ export default function OfflineMandalTicketClient() {
       const query = searchQuery.toLowerCase();
 
       const matchesSearch = !searchQuery || name.includes(query) || phone.includes(query) || id.includes(query) || passType.includes(query);
-      const matchesPayment = paymentFilter === "ALL" || (t.paymentMode || "").toUpperCase() === paymentFilter.toUpperCase();
+      const matchesPayment = paymentFilter === "ALL" || (t.paymentMethod || "").toUpperCase() === paymentFilter.toUpperCase();
 
       return matchesSearch && matchesPayment;
     });
@@ -292,9 +292,9 @@ export default function OfflineMandalTicketClient() {
       "Phone": t.visitorPhone || "N/A",
       "Visitors": t.visitorCount || 1,
       "Pass Type": t.ticketType ? t.ticketType.replace(/_/g, " ") : "General Pass",
-      "Date": t.createdAt ? new Date(t.createdAt).toLocaleDateString("en-IN") : "N/A",
+      "Darshan Date": t.slot?.date ? new Date(t.slot.date).toLocaleDateString("en-IN") : t.createdAt ? new Date(t.createdAt).toLocaleDateString("en-IN") : "N/A",
       "Amount (₹)": Number(t.totalAmount || t.amount || 0),
-      "Payment": t.paymentMode || "CASH"
+      "Payment": t.paymentMethod || t.paymentMode || "CASH"
     }));
 
     const ws = XLSX.utils.json_to_sheet(exportData);
@@ -473,16 +473,20 @@ export default function OfflineMandalTicketClient() {
                         <td className="px-4 py-3.5 font-medium text-slate-800">
                           {ticket.ticketType ? ticket.ticketType.replace(/_/g, " ") : "General Pass"}
                         </td>
-                        <td className="px-4 py-3.5 text-slate-600">
-                          {ticket.createdAt ? new Date(ticket.createdAt).toLocaleDateString("en-IN") : "N/A"}
-                        </td>
+                         <td className="px-4 py-3.5 text-slate-600">
+                           {ticket.slot?.date
+                             ? new Date(ticket.slot.date).toLocaleDateString("en-IN")
+                             : ticket.createdAt
+                             ? new Date(ticket.createdAt).toLocaleDateString("en-IN")
+                             : "N/A"}
+                         </td>
                         <td className="px-4 py-3.5 font-bold text-emerald-700">
                           ₹{Number(ticket.totalAmount || ticket.amount || 0).toLocaleString()}
                         </td>
                         <td className="px-4 py-3.5">
-                          <Badge variant="outline" className="uppercase text-xs font-semibold bg-slate-50 text-slate-700">
-                            {ticket.paymentMode || "CASH"}
-                          </Badge>
+                           <Badge variant="outline" className="uppercase text-xs font-semibold bg-slate-50 text-slate-700">
+                             {ticket.paymentMethod || ticket.paymentMode || "CASH"}
+                           </Badge>
                         </td>
                         <td className="px-4 py-3.5 text-right">
                           <div className="flex items-center justify-end gap-1">

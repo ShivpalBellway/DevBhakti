@@ -113,13 +113,23 @@ export default function MyDarshanTicketsPage() {
 
                                         <div className="flex-1 grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
                                             <div className="col-span-2">
-                                                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Darshan</p>
+                                                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-2">
+                                                  Darshan
+                                                  {ticket._type === 'MANDAL' && (
+                                                    <span className="text-[9px] bg-amber-100 text-amber-700 border border-amber-200 px-2 py-0.5 rounded-full font-bold uppercase">Mandal</span>
+                                                  )}
+                                                </p>
                                                 <div className="font-bold text-slate-800 text-lg group-hover:text-primary transition-colors">
                                                     {ticket.slot?.date ? format(new Date(ticket.slot.date), "dd MMM, yyyy") : "Date TBD"} - {ticket.slot?.startTime} to {ticket.slot?.endTime}
                                                 </div>
                                                 <div className="flex items-center gap-1.5 mt-1">
                                                     <MapPin className="w-3.5 h-3.5 text-slate-400" />
-                                                    <p className="text-[10px] text-slate-500 font-medium">@{parseLocalizedValue(ticket.temple?.name, language)}</p>
+                                                    <p className="text-[10px] text-slate-500 font-medium">
+                                                      @{ticket._type === 'MANDAL'
+                                                        ? (ticket.mandalName || 'Mandal')
+                                                        : parseLocalizedValue(ticket.temple?.name, language)
+                                                      }
+                                                    </p>
                                                 </div>
                                             </div>
                                             <div>
@@ -142,7 +152,9 @@ export default function MyDarshanTicketsPage() {
                                                         e.stopPropagation();
                                                         setSelectedPassTicket(ticket);
                                                         try {
-                                                            const dataUrl = await QRCode.toDataURL(ticket.qrToken, { margin: 1, width: 220 });
+                                                            // Mandal tickets use displayId as qrToken; temple tickets use qrToken
+                                                            const qrValue = ticket.qrToken || ticket.displayId || ticket.id;
+                                                            const dataUrl = await QRCode.toDataURL(qrValue, { margin: 1, width: 220 });
                                                             setPassQrUrl(dataUrl);
                                                         } catch (err) {
                                                             console.error(err);
@@ -242,7 +254,12 @@ export default function MyDarshanTicketsPage() {
                         <div className="absolute inset-0 pattern-sacred opacity-10 pointer-events-none" />
                         <div className="relative z-10">
                             <h2 className="text-2xl font-serif font-bold mb-1 tracking-tight">Darshan Pass</h2>
-                            <p className="text-orange-200 text-sm font-medium uppercase tracking-widest">{parseLocalizedValue(selectedPassTicket?.temple?.name, language)}</p>
+                            <p className="text-orange-200 text-sm font-medium uppercase tracking-widest">
+                              {selectedPassTicket?._type === 'MANDAL'
+                                ? (selectedPassTicket?.mandalName || 'Mandal')
+                                : parseLocalizedValue(selectedPassTicket?.temple?.name, language)
+                              }
+                            </p>
                         </div>
                     </div>
                     <div className="px-8 pb-8 pt-0 -mt-8 relative z-20">

@@ -67,19 +67,41 @@ function CheckoutContent() {
         pincode: "",
     });
 
-    // Autofill basic details if logged in
+    // Restore shipping address draft or autofill basic details if logged in
     React.useEffect(() => {
-        const userData = localStorage.getItem("user");
-        if (userData) {
-            try {
-                const user = JSON.parse(userData);
-                setAddress(prev => ({
-                    ...prev,
-                    fullName: parseLocalizedValue(user.name, language) || prev.fullName,
-                    phone: (user.phone || "").replace(/\D/g, "").slice(-10) || prev.phone,
-                }));
-            } catch (e) {
-                console.error("Failed to parse user data", e);
+        let restoredFromDraft = false;
+        try {
+            const savedDraft = sessionStorage.getItem("devbhakti_checkout_address");
+            if (savedDraft) {
+                const parsed = JSON.parse(savedDraft);
+                if (parsed) {
+                    setAddress(parsed);
+                    restoredFromDraft = true;
+                    sessionStorage.removeItem("devbhakti_checkout_address");
+                    toast({
+                        title: "Welcome back!",
+                        description: "Your shipping details have been restored.",
+                        variant: "success",
+                    });
+                }
+            }
+        } catch (e) {
+            console.error("Failed to restore shipping address draft", e);
+        }
+
+        if (!restoredFromDraft) {
+            const userData = localStorage.getItem("user");
+            if (userData) {
+                try {
+                    const user = JSON.parse(userData);
+                    setAddress(prev => ({
+                        ...prev,
+                        fullName: parseLocalizedValue(user.name, language) || prev.fullName,
+                        phone: (user.phone || "").replace(/\D/g, "").slice(-10) || prev.phone,
+                    }));
+                } catch (e) {
+                    console.error("Failed to parse user data", e);
+                }
             }
         }
     }, []);
@@ -196,7 +218,13 @@ function CheckoutContent() {
                 description: "Please login to place an order.",
                 variant: "destructive",
             });
-            router.push("/auth?mode=login");
+            try {
+                sessionStorage.setItem("devbhakti_checkout_address", JSON.stringify(address));
+            } catch (e) {
+                console.error("Failed to save checkout address draft", e);
+            }
+            const returnUrl = encodeURIComponent(window.location.pathname + window.location.search);
+            router.push(`/auth?redirect=${returnUrl}`);
             return;
         }
 
@@ -208,7 +236,13 @@ function CheckoutContent() {
                 description: "Only devotee accounts can place marketplace orders.",
                 variant: "destructive",
             });
-            router.push("/auth?mode=login");
+            try {
+                sessionStorage.setItem("devbhakti_checkout_address", JSON.stringify(address));
+            } catch (e) {
+                console.error("Failed to save checkout address draft", e);
+            }
+            const returnUrl = encodeURIComponent(window.location.pathname + window.location.search);
+            router.push(`/auth?redirect=${returnUrl}`);
             return;
         }
 

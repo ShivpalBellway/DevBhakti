@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -36,6 +36,9 @@ import {
   Navigation,
   ChevronRight,
   ChevronLeft,
+  Download,
+  PartyPopper,
+  Printer,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -86,6 +89,19 @@ export function MandalDetail({ slug }: { slug: string }) {
   const [donationMessage, setDonationMessage] = useState("");
   const [isAnonymous, setIsAnonymous] = useState(false);
   const [isDonating, setIsDonating] = useState(false);
+  // Guard to prevent Razorpay handler from firing more than once per payment
+  const receiptShownRef = useRef(false);
+  const [donationReceipt, setDonationReceipt] = useState<{
+    donorName: string;
+    amount: number;
+    mandalName: string;
+    donationId: string;
+    date: string;
+    email: string;
+    phone: string;
+    message?: string;
+    txnId: string;
+  } | null>(null);
   const [activeTab, setActiveTab] = useState<MandalTab>("overview");
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [lightboxOpen, setLightboxOpen] = useState(false);
@@ -461,11 +477,33 @@ export function MandalDetail({ slug }: { slug: string }) {
           description: `Donation to ${mandal.name?.en || mandal.name || "Mandal"}`,
           order_id: data.order.id,
           handler: function (response: any) {
-            // Instantly close donate modal & show success toast
+            // Guard: prevent Razorpay handler from firing more than once
+            if (receiptShownRef.current) return;
+            receiptShownRef.current = true;
+
             setShowDonateModal(false);
-            toast({
-              title: "Donation Successful! 🙏",
-              description: `Thank you for your generous contribution of ₹${amount} to ${mandal.name?.en || mandal.name || "Mandal"}. A receipt will be sent to your email.`,
+            const now = new Date();
+            // Format donation ID as short readable reference
+            const rawId = data.donationId || "";
+            const formattedDonationId = rawId
+              ? `#DON-${rawId.slice(-8).toUpperCase()}`
+              : "—";
+            setDonationReceipt({
+              donorName: isAnonymous ? "Anonymous" : (donorName || currentUser?.name || "Devotee"),
+              amount,
+              mandalName: mandal.name?.en || mandal.name || "Mandal",
+              donationId: formattedDonationId,
+              date: now.toLocaleString("en-IN", {
+                day: "2-digit",
+                month: "long",
+                year: "numeric",
+                hour: "2-digit",
+                minute: "2-digit",
+              }),
+              email: donorEmail || currentUser?.email || "—",
+              phone: donorPhone || currentUser?.phone || "—",
+              message: donationMessage || undefined,
+              txnId: response.razorpay_payment_id || "—",
             });
 
             // Asynchronously call backend verification & email in background
@@ -609,6 +647,153 @@ export function MandalDetail({ slug }: { slug: string }) {
     <div className="min-h-screen bg-[#FDFBF7] text-zinc-900">
       {/* Solid Top Navbar */}
       <Navbar isSolid={true} />
+
+      {/* ─── DONATION SUCCESS RECEIPT MODAL ─────────────────────────────── */}
+      {donationReceipt && (
+        <div
+          className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
+          style={{ background: "rgba(0,0,0,0.72)", backdropFilter: "blur(6px)" }}
+          onClick={() => { receiptShownRef.current = false; setDonationReceipt(null); }}
+        >
+          <div
+            className="relative w-full max-w-md rounded-3xl overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300"
+            style={{ background: "linear-gradient(160deg, #2A0A06 0%, #1a0505 100%)", border: "1px solid rgba(180,83,9,0.25)" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Close btn */}
+            <button
+              onClick={() => { receiptShownRef.current = false; setDonationReceipt(null); }}
+              className="absolute top-4 right-4 z-10 w-8 h-8 flex items-center justify-center rounded-full hover:bg-amber-500/20 transition"
+              style={{ background: "rgba(255,255,255,0.07)" }}
+            >
+              <X className="w-4 h-4 text-amber-300" />
+            </button>
+
+            {/* Header — deeper maroon */}
+            <div className="bg-gradient-to-br from-[#6B0F1A] via-[#4a0e10] to-[#2A0A06] px-6 pt-8 pb-10 text-center relative overflow-hidden">
+              {/* Decorative glow circles */}
+              <div className="absolute -top-10 -left-10 w-40 h-40 rounded-full bg-amber-600/10 blur-2xl" />
+              <div className="absolute -bottom-8 -right-8 w-32 h-32 rounded-full bg-amber-500/10 blur-xl" />
+              {/* Success icon */}
+              <div className="relative w-20 h-20 mx-auto mb-4">
+                <div className="w-20 h-20 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center shadow-xl shadow-amber-900/60">
+                  <CheckCircle className="w-10 h-10 text-[#1a0505]" strokeWidth={2.8} />
+                </div>
+                <div className="absolute -top-1 -right-1">
+                  <PartyPopper className="w-6 h-6 text-amber-300" />
+                </div>
+              </div>
+              <h2 className="text-2xl font-bold text-white mb-1">Donation Successful!</h2>
+              <p className="text-amber-300/80 text-sm">
+                🙏 Jai Ganesh — Your contribution has been received
+              </p>
+            </div>
+
+            {/* Amount badge — floats over the join */}
+            <div className="flex justify-center -mt-6 mb-1 relative z-10">
+              <div className="bg-gradient-to-r from-amber-400 to-amber-600 text-[#2A0A06] font-black text-2xl px-8 py-2.5 rounded-full shadow-xl shadow-amber-900/50 border border-amber-300/30">
+                ₹{donationReceipt.amount.toLocaleString("en-IN")}
+              </div>
+            </div>
+
+            {/* Receipt body — full dark brown */}
+            <div className="px-6 pb-6 pt-3 space-y-3">
+              {/* Mandal name */}
+              <div className="text-center mb-3">
+                <p className="text-[10px] text-amber-500/60 uppercase font-bold tracking-widest">Donated to</p>
+                <p className="text-sm font-bold text-amber-100">{donationReceipt.mandalName}</p>
+              </div>
+
+              {/* Receipt rows */}
+              <div className="rounded-2xl overflow-hidden" style={{ background: "rgba(107,15,26,0.25)", border: "1px solid rgba(180,83,9,0.2)" }}>
+                {/* Donor */}
+                <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: "1px solid rgba(180,83,9,0.15)" }}>
+                  <span className="text-[10px] text-amber-500/70 font-bold uppercase tracking-wider">Donor</span>
+                  <span className="text-sm font-semibold text-amber-100 text-right max-w-[60%]">{donationReceipt.donorName}</span>
+                </div>
+                {/* Date */}
+                <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: "1px solid rgba(180,83,9,0.15)" }}>
+                  <span className="text-[10px] text-amber-500/70 font-bold uppercase tracking-wider">Date & Time</span>
+                  <span className="text-xs font-semibold text-amber-100 text-right max-w-[60%]">{donationReceipt.date}</span>
+                </div>
+                {/* Txn ID */}
+                <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: "1px solid rgba(180,83,9,0.15)" }}>
+                  <span className="text-[10px] text-amber-500/70 font-bold uppercase tracking-wider">Transaction ID</span>
+                  <span className="text-xs font-mono font-bold text-amber-300 text-right max-w-[60%] break-all">{donationReceipt.txnId}</span>
+                </div>
+                {/* Donation ID — highlighted */}
+                <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: "1px solid rgba(180,83,9,0.15)", background: "rgba(180,83,9,0.1)" }}>
+                  <span className="text-[10px] text-amber-500/70 font-bold uppercase tracking-wider">Donation ID</span>
+                  <span className="text-xs font-mono font-black text-amber-400 text-right max-w-[60%] break-all px-2 py-0.5 rounded-lg" style={{ background: "rgba(245,158,11,0.15)", border: "1px solid rgba(245,158,11,0.3)" }}>{donationReceipt.donationId}</span>
+                </div>
+                {/* Email */}
+                <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: donationReceipt.message ? "1px solid rgba(180,83,9,0.15)" : "none" }}>
+                  <span className="text-[10px] text-amber-500/70 font-bold uppercase tracking-wider">Receipt Email</span>
+                  <span className="text-xs font-semibold text-amber-200/80 text-right max-w-[60%] break-all">{donationReceipt.email}</span>
+                </div>
+                {/* Message (if any) */}
+                {donationReceipt.message && (
+                  <div className="flex items-start justify-between px-4 py-3">
+                    <span className="text-[10px] text-amber-500/70 font-bold uppercase tracking-wider">Message</span>
+                    <span className="text-xs italic text-amber-200/60 text-right max-w-[60%]">"{donationReceipt.message}"</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Info note */}
+              <p className="text-center text-[10px] text-amber-500/40 px-2 pt-1">
+                📧 A detailed receipt will be sent to your registered email address.
+              </p>
+
+              {/* Action buttons */}
+              <div className="flex gap-3 pt-1">
+                <button
+                  onClick={() => {
+                    const content = [
+                      "DONATION RECEIPT — DEVBHAKTI",
+                      "================================",
+                      `Donated to : ${donationReceipt.mandalName}`,
+                      `Amount     : ₹${donationReceipt.amount.toLocaleString("en-IN")}`,
+                      `Donor Name : ${donationReceipt.donorName}`,
+                      `Date & Time: ${donationReceipt.date}`,
+                      `Txn ID     : ${donationReceipt.txnId}`,
+                      `Donation ID: ${donationReceipt.donationId}`,
+                      `Email      : ${donationReceipt.email}`,
+                      donationReceipt.message ? `Message    : ${donationReceipt.message}` : "",
+                      "================================",
+                      "Thank you for your generous support! 🙏",
+                    ].filter(Boolean).join("\n");
+                    const blob = new Blob([content], { type: "text/plain" });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement("a");
+                    a.href = url;
+                    a.download = `donation-receipt-${donationReceipt.donationId}.txt`;
+                    a.click();
+                    URL.revokeObjectURL(url);
+                  }}
+                  className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm transition"
+                  style={{ border: "1.5px solid rgba(245,158,11,0.4)", color: "#fbbf24", background: "rgba(245,158,11,0.08)" }}
+                  onMouseOver={e => (e.currentTarget.style.background = "rgba(245,158,11,0.15)")}
+                  onMouseOut={e => (e.currentTarget.style.background = "rgba(245,158,11,0.08)")}
+                >
+                  <Download className="w-4 h-4" />
+                  Download
+                </button>
+                <button
+                  onClick={() => { receiptShownRef.current = false; setDonationReceipt(null); }}
+                  className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-black text-sm transition"
+                  style={{ background: "linear-gradient(135deg, #f59e0b, #d97706)", color: "#1a0505", boxShadow: "0 4px 20px rgba(245,158,11,0.35)" }}
+                  onMouseOver={e => (e.currentTarget.style.opacity = "0.9")}
+                  onMouseOut={e => (e.currentTarget.style.opacity = "1")}
+                >
+                  <CheckCircle className="w-4 h-4" />
+                  Done
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ─── HERO BANNER SECTION (MATCHING TEMPLE DETAIL HERO HEIGHT) ───────────────── */}
       <section className="relative bg-gradient-to-r from-[#160403] via-[#2A0A06] to-[#120302] text-white pt-28 pb-12 border-b border-amber-900/20 overflow-hidden min-h-[520px] lg:min-h-[580px] flex flex-col justify-center">

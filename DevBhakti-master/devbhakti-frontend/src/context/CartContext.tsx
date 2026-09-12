@@ -40,6 +40,27 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const fetchCart = async () => {
         if (isLoggedIn) {
             try {
+                // Sync any guest cart items saved in localStorage to server cart first
+                const savedGuestCart = localStorage.getItem("devbhakti_cart");
+                if (savedGuestCart) {
+                    try {
+                        const parsedGuestItems: CartItem[] = JSON.parse(savedGuestCart);
+                        if (Array.isArray(parsedGuestItems) && parsedGuestItems.length > 0) {
+                            for (const item of parsedGuestItems) {
+                                if (item.productId && item.variantId) {
+                                    await addItemToCart(item.productId, item.variantId, item.quantity || 1).catch(err =>
+                                        console.error("Failed to sync guest item to cart:", err)
+                                    );
+                                }
+                            }
+                        }
+                    } catch (e) {
+                        console.error("Failed to parse guest cart for syncing", e);
+                    } finally {
+                        localStorage.removeItem("devbhakti_cart");
+                    }
+                }
+
                 const response = await getMyCart();
                 if (response.success) {
                     setCartItems(response.data);

@@ -140,6 +140,39 @@ export const deleteSlot = async (req: Request, res: Response) => {
   }
 };
 
+// Update a slot (startTime, endTime, maxCapacity, isClosed)
+export const updateSlot = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params as { id: string };
+    const templeId = (req as any).owner?.ownerId as string;
+    const { startTime, endTime, maxCapacity, isClosed } = req.body;
+
+    // Verify slot belongs to this temple
+    const existing = await prisma.darshanSlot.findFirst({
+      where: { id, templeId }
+    });
+    if (!existing) {
+      return res.status(404).json({ error: 'Slot not found or access denied' });
+    }
+
+    const updateData: any = {};
+    if (startTime !== undefined)   updateData.startTime   = startTime;
+    if (endTime !== undefined)     updateData.endTime     = endTime;
+    if (maxCapacity !== undefined) updateData.maxCapacity = Number(maxCapacity);
+    if (isClosed !== undefined)    updateData.isClosed    = Boolean(isClosed);
+
+    const updated = await prisma.darshanSlot.update({
+      where: { id },
+      data: updateData
+    });
+
+    res.json({ message: 'Slot updated successfully', slot: updated });
+  } catch (error) {
+    console.error('Error updating slot:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
 // List tickets
 export const getTickets = async (req: Request, res: Response) => {
   try {

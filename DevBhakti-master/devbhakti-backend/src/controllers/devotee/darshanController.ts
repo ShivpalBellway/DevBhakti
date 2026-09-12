@@ -181,7 +181,8 @@ export const getMyTickets = async (req: Request, res: Response) => {
   try {
     const { userId } = (req as any).user;
     
-    const tickets = await prisma.darshanTicket.findMany({
+    // Fetch temple darshan tickets
+    const templeTickets = await prisma.darshanTicket.findMany({
       where: { userId },
       include: {
         slot: true,
@@ -191,13 +192,46 @@ export const getMyTickets = async (req: Request, res: Response) => {
       },
       orderBy: { createdAt: 'desc' }
     });
+
+    // Fetch mandal darshan tickets (issued via teller or online)
+    const mandalTickets = await prisma.mandalDarshanTicket.findMany({
+      where: { userId },
+      include: {
+        slot: true,
+        mandal: {
+          select: { name: true, image: true, address: true, city: true, state: true }
+        }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    // Normalise mandal tickets to a common shape so frontend doesn't need extra logic
+    const normalisedMandalTickets = mandalTickets.map((t: any) => ({
+      ...t,
+      _type: 'MANDAL',          // flag so frontend can differentiate
+      temple: null,             // no temple
+      mandalName: t.mandal?.name || null,
+      mandalImage: t.mandal?.image || null,
+      mandalAddress: [t.mandal?.address, t.mandal?.city, t.mandal?.state].filter(Boolean).join(', ') || null,
+    }));
+
+    const normalisedTempleTickets = templeTickets.map((t: any) => ({
+      ...t,
+      _type: 'TEMPLE',
+      mandal: null,
+    }));
+
+    // Merge and sort by createdAt desc
+    const allTickets = [...normalisedTempleTickets, ...normalisedMandalTickets]
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     
-    res.json(tickets);
+    res.json(allTickets);
   } catch (error) {
     console.error('Error fetching tickets:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 };
+
 
 export const getTicketDetail = async (req: Request, res: Response) => {
   try {

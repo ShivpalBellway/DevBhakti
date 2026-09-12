@@ -196,6 +196,22 @@ export default function MandalBookingClient({ slug }: MandalBookingClientProps) 
               console.error("Failed to fetch fresh user profile in mandal booking", err);
             });
         }
+        // ✅ Restore booking draft saved before login redirect
+        try {
+          const draftKey = `mandal_booking_draft_${slug}`;
+          const draft = sessionStorage.getItem(draftKey);
+          if (draft) {
+            const { formData: savedForm, selectedPooja: savedPooja, selectedPackage: savedPkg, step: savedStep } = JSON.parse(draft);
+            if (savedForm)    setFormData(savedForm);
+            if (savedPooja)   setSelectedPooja(savedPooja);
+            if (savedPkg)     setSelectedPackage(savedPkg);
+            if (savedStep)    setStep(savedStep);
+            sessionStorage.removeItem(draftKey); // clear so it doesn't persist on next visit
+            toast({ title: "Welcome back!", description: "Your booking details have been restored.", variant: "success" as any });
+          }
+        } catch (e) {
+          console.error("Failed to restore booking draft", e);
+        }
       } catch (error) {
         console.error("Error loading mandal data:", error);
         toast({
@@ -355,7 +371,23 @@ export default function MandalBookingClient({ slug }: MandalBookingClientProps) 
           description: "Please login to complete the booking",
           variant: "destructive",
         });
-        router.push("/auth");
+        // ✅ Save all booking state before redirecting so user returns to exact point
+        try {
+          sessionStorage.setItem(
+            `mandal_booking_draft_${slug}`,
+            JSON.stringify({
+              formData,
+              selectedPooja,
+              selectedPackage,
+              step,
+            })
+          );
+        } catch (e) {
+          console.error("Failed to save booking draft", e);
+        }
+        // Pass current page as ?redirect= so AuthForm brings user back here
+        const returnUrl = encodeURIComponent(window.location.pathname + window.location.search);
+        router.push(`/auth?redirect=${returnUrl}`);
         setIsPaymentLoading(false);
         return;
       }
