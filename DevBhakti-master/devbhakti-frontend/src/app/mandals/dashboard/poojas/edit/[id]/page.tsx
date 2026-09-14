@@ -476,18 +476,6 @@ export default function MandalEditPoojaPage() {
                         <div className="flex items-center gap-2">
                             <input
                                 type="checkbox"
-                                id="hasPrasad"
-                                className="h-4 w-4 rounded border-slate-300 text-orange-600 focus:ring-orange-500"
-                                checked={formData.hasPrasad}
-                                onChange={(e) => setFormData({ ...formData, hasPrasad: e.target.checked })}
-                            />
-                            <Label htmlFor="hasPrasad" className="font-bold text-xs text-slate-700 cursor-pointer">
-                                Include Prasad delivery with this booking?
-                            </Label>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <input
-                                type="checkbox"
                                 id="status"
                                 className="h-4 w-4 rounded border-slate-300 text-orange-600 focus:ring-orange-500"
                                 checked={formData.status}

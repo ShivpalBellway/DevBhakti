@@ -202,8 +202,23 @@ export default function MandalRegistrationForm({ onClose }: { onClose?: () => vo
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        setIsLoading(true);
         setError("");
+
+        if (phoneError) {
+            setError(phoneError);
+            return;
+        }
+
+        if (!mainImage) {
+            setError(t('registerMandal.main_image_required') || "Mandal main image is required. Please select and crop an image for your Mandal.");
+            const mediaSection = document.getElementById("media-assets-section");
+            if (mediaSection) {
+                mediaSection.scrollIntoView({ behavior: "smooth" });
+            }
+            return;
+        }
+
+        setIsLoading(true);
 
         try {
             const fd = new FormData();
@@ -521,7 +536,7 @@ export default function MandalRegistrationForm({ onClose }: { onClose?: () => vo
                 </section>
 
                 {/* Media Assets */}
-                <section className="space-y-6">
+                <section id="media-assets-section" className="space-y-6">
                     <div className="flex items-center gap-3 pb-3 border-b border-slate-100">
                         <div className="p-2 bg-orange-50 text-orange-600 rounded-lg">
                             <ImageIcon className="w-5 h-5" />
@@ -530,8 +545,19 @@ export default function MandalRegistrationForm({ onClose }: { onClose?: () => vo
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                         <div className="space-y-3">
-                            <label className="text-sm font-bold text-slate-600 ml-1">{t('registerMandal.main_image') || 'Main Image'}</label>
-                            <div className="border-2 border-dashed border-slate-200 rounded-3xl p-1 hover:border-[#88542b]/50 hover:bg-orange-50/30 transition-all group relative cursor-pointer overflow-hidden aspect-[16/9] flex items-center justify-center bg-slate-50/50">
+                            <div className="flex items-center justify-between">
+                                <label className="text-sm font-bold text-slate-600 ml-1">
+                                    {t('registerMandal.main_image') || 'Main Image'} <span className="text-red-500 font-bold">*</span>
+                                </label>
+                                {!mainImage && (
+                                    <span className="text-[10px] text-red-500 font-bold bg-red-50 px-2 py-0.5 rounded-full border border-red-200">
+                                        Required
+                                    </span>
+                                )}
+                            </div>
+                            <div className={`border-2 border-dashed rounded-3xl p-1 transition-all group relative cursor-pointer overflow-hidden aspect-[16/9] flex items-center justify-center ${
+                                !mainImage && error ? 'border-red-400 bg-red-50/50 shadow-sm' : 'border-slate-200 hover:border-[#88542b]/50 hover:bg-orange-50/30 bg-slate-50/50'
+                            }`}>
                                 <input
                                     type="file"
                                     accept="image/*"

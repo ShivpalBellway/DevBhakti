@@ -35,26 +35,8 @@ const normalizeBracketedLink = (value: string) => {
  *  https://account20.livebox.co.in/livebox/player/?chnl=Divinityone
  * -> https://account20.livebox.co.in/Divinityonehls/Live.m3u8
  */
-export const convertLiveboxToHls = (value?: string | null): string | null => {
-  if (!value) return null;
-  try {
-    const s = value.trim();
-    // Normalize bracketed/markdown links first
-    const cleaned = normalizeBracketedLink(s);
-    const url = new URL(cleaned.startsWith("//") ? `https:${cleaned}` : cleaned);
-    // Hostnames like account20.livebox.co.in
-    if (url.hostname && url.pathname && url.pathname.includes("/livebox/player")) {
-      // Extract chnl param
-      const chnl = url.searchParams.get("chnl") || url.searchParams.get("channel") || null;
-      if (chnl) {
-        // Construct HLS path: /{chnl}hls/Live.m3u8
-        const hlsPath = `/${encodeURIComponent(chnl)}hls/Live.m3u8`;
-        return `${url.protocol}//${url.hostname}${hlsPath}`;
-      }
-    }
-  } catch (e) {
-    // ignore
-  }
+export const convertLiveboxToHls = (_value?: string | null): string | null => {
+  // Livebox player URLs (e.g. https://account10.livebox.co.in/livebox/player/?chnl=...) must be loaded via iframe.
   return null;
 };
 
@@ -270,6 +252,10 @@ export const getVideoRenderInfo = (value?: string | null): VideoRenderInfo => {
 
   if (lower.includes("dailymotion.com")) {
     return { kind: "iframe", src: getDailymotionEmbedUrl(trimmed), platform: "dailymotion" };
+  }
+
+  if (lower.includes("livebox.co.in") || lower.includes("/livebox/player")) {
+    return { kind: "iframe", src: trimmed, platform: "livebox" };
   }
 
   if (/^(https?:\/\/|\/\/)/.test(trimmed)) {

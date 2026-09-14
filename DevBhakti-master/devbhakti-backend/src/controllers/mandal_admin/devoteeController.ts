@@ -60,7 +60,10 @@ export const getMandalDevotees = async (req: Request, res: Response) => {
     if (Object.keys(dateFilter).length > 0) tellerWhere.createdAt = dateFilter;
     const tellerOrders = await prisma.tellerOrder.findMany({
       where: tellerWhere,
-      include: { devotee: { select: { name: true, phone: true, email: true, address: true } } },
+      include: {
+        devotee: { select: { name: true, phone: true, email: true, address: true } },
+        items: true
+      },
       orderBy: { createdAt: "desc" }
     });
 
@@ -195,21 +198,31 @@ export const getMandalDevotees = async (req: Request, res: Response) => {
       });
     });
 
-    // Process Teller Orders
+    // Process Teller Orders - ONLY include product items to avoid double-counting items
+    // (donations, pooja bookings, darshan tickets) already synchronized into domain tables
     tellerOrders.forEach(to => {
       const name = to.devotee?.name || to.devoteeName || "Devotee";
       const phone = to.devotee?.phone || to.devoteePhone || "";
       const email = to.devotee?.email || to.devoteeEmail || "";
       const address = to.devotee?.address || "";
-      addRecordToDevotee(name, phone, email, address, null, false, to.totalAmount, to.createdAt, {
-        id: to.id,
-        displayId: to.displayId || to.id.slice(-8).toUpperCase(),
-        type: "TELLER_COUNTER",
-        amount: to.totalAmount,
-        createdAt: to.createdAt,
-        status: to.paymentStatus,
-        paymentMethod: to.paymentMethod || "CASH"
+
+      const productItems = (to.items || []).filter(item => {
+        const itemType = (item.itemType || '').toUpperCase();
+        return itemType === 'PRODUCT' || itemType === 'MARKETPLACE';
       });
+
+      if (productItems.length > 0) {
+        const productTotal = productItems.reduce((sum, item) => sum + (item.totalPrice || 0), 0);
+        addRecordToDevotee(name, phone, email, address, null, false, productTotal, to.createdAt, {
+          id: to.id,
+          displayId: to.displayId || to.id.slice(-8).toUpperCase(),
+          type: "TELLER_COUNTER",
+          amount: productTotal,
+          createdAt: to.createdAt,
+          status: to.paymentStatus,
+          paymentMethod: to.paymentMethod || "CASH"
+        });
+      }
     });
 
     let allDevotees = Array.from(devoteeMap.values()).sort(

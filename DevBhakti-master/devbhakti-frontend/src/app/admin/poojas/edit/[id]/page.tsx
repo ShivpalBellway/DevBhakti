@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { updatePoojaAdmin, fetchAllTemplesAdmin, fetchPoojaCategoriesAdmin, fetchPoojaByIdAdmin, fetchAllPoojasAdmin } from "@/api/adminController";
+import { updatePoojaAdmin, fetchAllTemplesAdmin, fetchPoojaCategoriesAdmin, fetchPoojaByIdAdmin, fetchAllPoojasAdmin, fetchAllMandalsAdmin } from "@/api/adminController";
 import { useToast } from "@/hooks/use-toast";
 import { PoojaForm } from "@/components/admin/poojas/PoojaForm";
 
@@ -15,6 +15,7 @@ export default function EditPoojaPage() {
     const { toast } = useToast();
     
     const [temples, setTemples] = useState<any[]>([]);
+    const [mandals, setMandals] = useState<any[]>([]);
     const [availableCategories, setAvailableCategories] = useState<any[]>([]);
     const [masterTemplates, setMasterTemplates] = useState<any[]>([]);
     const [poojaData, setPoojaData] = useState<any>(null);
@@ -50,12 +51,13 @@ export default function EditPoojaPage() {
             const poojaName = poojaRes.data.name?.en || poojaRes.data.name_en || "Edit Pooja";
             window.dispatchEvent(new CustomEvent('updateBreadcrumb', { detail: `Edit: ${poojaName}` }));
 
-            // Fetch auxiliary data (temples, categories, master templates)
+            // Fetch auxiliary data (temples, mandals, categories, master templates)
             try {
-                const [templesRes, categoriesRes, masterRes] = await Promise.all([
+                const [templesRes, categoriesRes, masterRes, mandalsRes] = await Promise.all([
                     fetchAllTemplesAdmin({ isVerified: true, isActive: true }).catch(e => { console.warn('Could not load temples:', e); return []; }),
                     fetchPoojaCategoriesAdmin({ status: "APPROVED" }).catch(e => { console.warn('Could not load categories:', e); return { success: false, data: [] }; }),
-                    fetchAllPoojasAdmin({ isMaster: true, lang: 'raw' }).catch(e => { console.warn('Could not load master templates:', e); return []; })
+                    fetchAllPoojasAdmin({ isMaster: true, lang: 'raw' }).catch(e => { console.warn('Could not load master templates:', e); return []; }),
+                    fetchAllMandalsAdmin({ status: "APPROVED", isActive: true, limit: 100 }).catch(e => { console.warn('Could not load mandals:', e); return []; })
                 ]);
 
                 if (Array.isArray(templesRes)) {
@@ -63,6 +65,11 @@ export default function EditPoojaPage() {
                         .filter((user: any) => user.temple)
                         .map((user: any) => user.temple);
                     setTemples(actualTemples);
+                }
+
+                const mandalsList = mandalsRes?.data?.mandals || mandalsRes?.data || (Array.isArray(mandalsRes) ? mandalsRes : []);
+                if (Array.isArray(mandalsList)) {
+                    setMandals(mandalsList);
                 }
 
                 if (categoriesRes && categoriesRes.success) {
@@ -121,6 +128,7 @@ export default function EditPoojaPage() {
                 mode="edit"
                 initialData={poojaData}
                 temples={temples}
+                mandals={mandals}
                 availableCategories={availableCategories}
                 masterTemplates={masterTemplates}
                 onSubmit={handleSubmit}

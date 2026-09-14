@@ -17,9 +17,17 @@ export default function OfflineDarshanClient() {
   const { toast } = useToast();
   const [viewMode, setViewMode] = useState<"list" | "add">("list");
   const [slots, setSlots] = useState<any[]>([]);
+  const getTodayString = () => {
+    const d = new Date();
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
+
   const [ticketsList, setTicketsList] = useState<any[]>([]);
   const [loadingTickets, setLoadingTickets] = useState<boolean>(false);
-  const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split("T")[0]);
+  const [selectedDate, setSelectedDate] = useState<string>(getTodayString());
   const [selectedSlotId, setSelectedSlotId] = useState<string>("");
   const [loadingSlots, setLoadingSlots] = useState<boolean>(false);
   const [submitting, setSubmitting] = useState<boolean>(false);
@@ -83,6 +91,10 @@ export default function OfflineDarshanClient() {
     e.preventDefault();
     if (!selectedSlotId) {
       toast({ title: "Validation Error", description: "Please select a Darshan slot", variant: "destructive" });
+      return;
+    }
+    if (selectedDate < getTodayString()) {
+      toast({ title: "Validation Error", description: "Cannot issue tickets for past dates.", variant: "destructive" });
       return;
     }
     if (!visitorName.trim() || !visitorPhone.trim()) {
@@ -305,9 +317,19 @@ export default function OfflineDarshanClient() {
                   <Label>Date</Label>
                   <Input
                     type="date"
+                    min={getTodayString()}
                     value={selectedDate}
                     onChange={(e) => {
-                      setSelectedDate(e.target.value);
+                      const val = e.target.value;
+                      if (val && val < getTodayString()) {
+                        toast({
+                          title: "Invalid Date",
+                          description: "Selecting past dates is not allowed.",
+                          variant: "destructive"
+                        });
+                        return;
+                      }
+                      setSelectedDate(val);
                       setSelectedSlotId("");
                     }}
                   />

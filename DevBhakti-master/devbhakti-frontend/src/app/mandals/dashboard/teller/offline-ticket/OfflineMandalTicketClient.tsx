@@ -59,9 +59,17 @@ export default function OfflineMandalTicketClient() {
   // View ticket details modal
   const [selectedTicketDetails, setSelectedTicketDetails] = useState<any | null>(null);
 
+  const getTodayString = () => {
+    const d = new Date();
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
+
   // Slots state (for "add" view)
   const [slots, setSlots] = useState<any[]>([]);
-  const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split("T")[0]);
+  const [selectedDate, setSelectedDate] = useState<string>(getTodayString());
   const [selectedSlotId, setSelectedSlotId] = useState<string>("");
   const [loadingSlots, setLoadingSlots] = useState<boolean>(false);
 
@@ -217,6 +225,11 @@ export default function OfflineMandalTicketClient() {
       return;
     }
 
+    if (selectedDate < getTodayString()) {
+      toast({ title: "Validation Error", description: "Cannot issue tickets for past dates.", variant: "destructive" });
+      return;
+    }
+
     setSubmitting(true);
     try {
       const token = localStorage.getItem("token");
@@ -235,6 +248,7 @@ export default function OfflineMandalTicketClient() {
           ticketType: ticketType || "General Darshan Pass",
           amount: ticketPrice * visitorCount,
           paymentMode,
+          paymentMethod: paymentMode,
           paymentReference: paymentReference.trim() || undefined
         })
       });
@@ -250,6 +264,7 @@ export default function OfflineMandalTicketClient() {
         ticketType,
         totalAmount: ticketPrice * visitorCount,
         paymentMode,
+        paymentMethod: paymentMode,
         createdAt: new Date().toISOString()
       };
       
@@ -292,9 +307,10 @@ export default function OfflineMandalTicketClient() {
       "Phone": t.visitorPhone || "N/A",
       "Visitors": t.visitorCount || 1,
       "Pass Type": t.ticketType ? t.ticketType.replace(/_/g, " ") : "General Pass",
-      "Darshan Date": t.slot?.date ? new Date(t.slot.date).toLocaleDateString("en-IN") : t.createdAt ? new Date(t.createdAt).toLocaleDateString("en-IN") : "N/A",
+      "Booking Issued Date": t.createdAt ? new Date(t.createdAt).toLocaleString("en-IN") : "N/A",
+      "Darshan Visit Date": t.slot?.date ? new Date(t.slot.date).toLocaleDateString("en-IN") : t.date ? new Date(t.date).toLocaleDateString("en-IN") : "N/A",
       "Amount (₹)": Number(t.totalAmount || t.amount || 0),
-      "Payment": t.paymentMethod || t.paymentMode || "CASH"
+      "Payment Method": t.paymentMethod || t.paymentMode || "CASH"
     }));
 
     const ws = XLSX.utils.json_to_sheet(exportData);
@@ -431,8 +447,9 @@ export default function OfflineMandalTicketClient() {
                     <th className="px-4 py-3.5 text-left font-semibold">Devotee Name</th>
                     <th className="px-4 py-3.5 text-left font-semibold">Phone</th>
                     <th className="px-4 py-3.5 text-left font-semibold">Visitors</th>
-                    <th className="px-4 py-3.5 text-left font-semibold">Pass Type / Slot</th>
-                    <th className="px-4 py-3.5 text-left font-semibold">Date</th>
+                    <th className="px-4 py-3.5 text-left font-semibold">Pass Type</th>
+                    <th className="px-4 py-3.5 text-left font-semibold">Booking Date</th>
+                    <th className="px-4 py-3.5 text-left font-semibold">Darshan Visit Date</th>
                     <th className="px-4 py-3.5 text-left font-semibold">Amount</th>
                     <th className="px-4 py-3.5 text-left font-semibold">Payment</th>
                     <th className="px-4 py-3.5 text-right font-semibold">Actions</th>
@@ -441,7 +458,7 @@ export default function OfflineMandalTicketClient() {
                 <tbody className="divide-y divide-slate-100">
                   {loadingTickets ? (
                     <tr>
-                      <td colSpan={9} className="px-4 py-12 text-center text-slate-500">
+                      <td colSpan={10} className="px-4 py-12 text-center text-slate-500">
                         <div className="flex flex-col items-center gap-2">
                           <Loader2 className="w-6 h-6 animate-spin text-[#7b4623]" />
                           <span>Loading offline tickets history...</span>
@@ -450,7 +467,7 @@ export default function OfflineMandalTicketClient() {
                     </tr>
                   ) : paginatedTickets.length === 0 ? (
                     <tr>
-                      <td colSpan={9} className="px-4 py-12 text-center text-slate-500">
+                      <td colSpan={10} className="px-4 py-12 text-center text-slate-500">
                         <p className="font-medium text-base text-slate-700">No offline tickets found</p>
                         <p className="text-xs text-slate-400 mt-1">Try adjusting your search query or payment filter.</p>
                       </td>
@@ -473,20 +490,39 @@ export default function OfflineMandalTicketClient() {
                         <td className="px-4 py-3.5 font-medium text-slate-800">
                           {ticket.ticketType ? ticket.ticketType.replace(/_/g, " ") : "General Pass"}
                         </td>
-                         <td className="px-4 py-3.5 text-slate-600">
-                           {ticket.slot?.date
-                             ? new Date(ticket.slot.date).toLocaleDateString("en-IN")
-                             : ticket.createdAt
-                             ? new Date(ticket.createdAt).toLocaleDateString("en-IN")
-                             : "N/A"}
-                         </td>
+                        <td className="px-4 py-3.5 text-xs text-slate-600">
+                          {ticket.createdAt
+                            ? new Date(ticket.createdAt).toLocaleString("en-IN", {
+                                day: "2-digit",
+                                month: "short",
+                                year: "numeric",
+                                hour: "2-digit",
+                                minute: "2-digit"
+                              })
+                            : "N/A"}
+                        </td>
+                        <td className="px-4 py-3.5 text-xs font-semibold text-slate-800">
+                          {ticket.slot?.date
+                            ? new Date(ticket.slot.date).toLocaleDateString("en-IN", {
+                                day: "2-digit",
+                                month: "short",
+                                year: "numeric"
+                              })
+                            : ticket.date
+                            ? new Date(ticket.date).toLocaleDateString("en-IN", {
+                                day: "2-digit",
+                                month: "short",
+                                year: "numeric"
+                              })
+                            : "N/A"}
+                        </td>
                         <td className="px-4 py-3.5 font-bold text-emerald-700">
                           ₹{Number(ticket.totalAmount || ticket.amount || 0).toLocaleString()}
                         </td>
                         <td className="px-4 py-3.5">
-                           <Badge variant="outline" className="uppercase text-xs font-semibold bg-slate-50 text-slate-700">
-                             {ticket.paymentMethod || ticket.paymentMode || "CASH"}
-                           </Badge>
+                          <Badge variant="outline" className="uppercase text-xs font-semibold bg-amber-50 text-[#7b4623] border-amber-200">
+                            {ticket.paymentMethod || ticket.paymentMode || "CASH"}
+                          </Badge>
                         </td>
                         <td className="px-4 py-3.5 text-right">
                           <div className="flex items-center justify-end gap-1">
@@ -743,9 +779,19 @@ export default function OfflineMandalTicketClient() {
                     <Input
                       id="slotDate"
                       type="date"
+                      min={getTodayString()}
                       value={selectedDate}
                       onChange={(e) => {
-                        setSelectedDate(e.target.value);
+                        const val = e.target.value;
+                        if (val && val < getTodayString()) {
+                          toast({
+                            title: "Invalid Date",
+                            description: "Selecting past dates is not allowed.",
+                            variant: "destructive"
+                          });
+                          return;
+                        }
+                        setSelectedDate(val);
                         setSelectedSlotId("");
                       }}
                       className="rounded-xl h-10 text-sm"
@@ -884,7 +930,9 @@ export default function OfflineMandalTicketClient() {
                 </div>
                 <div>
                   <p className="text-xs text-slate-500 uppercase font-semibold">Payment Mode</p>
-                  <Badge variant="outline" className="uppercase text-xs mt-0.5">{selectedTicketDetails.paymentMode || "CASH"}</Badge>
+                  <Badge variant="outline" className="uppercase text-xs mt-0.5 font-bold text-[#7b4623] bg-amber-50">
+                    {selectedTicketDetails.paymentMethod || selectedTicketDetails.paymentMode || "CASH"}
+                  </Badge>
                 </div>
                 <div>
                   <p className="text-xs text-slate-500 uppercase font-semibold">Devotee Name</p>
@@ -906,8 +954,20 @@ export default function OfflineMandalTicketClient() {
                   <span className="font-semibold text-slate-900">{selectedTicketDetails.ticketType?.replace(/_/g, " ") || "General Pass"}</span>
                 </div>
                 <div className="flex justify-between py-1.5 border-b border-slate-100">
-                  <span className="text-slate-500">Issued Date</span>
-                  <span className="font-semibold text-slate-900">{selectedTicketDetails.createdAt ? new Date(selectedTicketDetails.createdAt).toLocaleString("en-IN") : "N/A"}</span>
+                  <span className="text-slate-500">Booking Issue Date</span>
+                  <span className="font-semibold text-slate-900">
+                    {selectedTicketDetails.createdAt ? new Date(selectedTicketDetails.createdAt).toLocaleString("en-IN") : "N/A"}
+                  </span>
+                </div>
+                <div className="flex justify-between py-1.5 border-b border-slate-100">
+                  <span className="text-slate-500">Darshan Visit Date</span>
+                  <span className="font-semibold text-slate-900">
+                    {selectedTicketDetails.slot?.date
+                      ? new Date(selectedTicketDetails.slot.date).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })
+                      : selectedTicketDetails.date
+                      ? new Date(selectedTicketDetails.date).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })
+                      : "N/A"}
+                  </span>
                 </div>
               </div>
 
@@ -957,6 +1017,18 @@ export default function OfflineMandalTicketClient() {
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Visitors:</span>
                   <span className="font-bold">{issuedTicket.visitorCount} Person(s)</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Booking Issue Date:</span>
+                  <span className="font-medium">{issuedTicket.createdAt ? new Date(issuedTicket.createdAt).toLocaleString("en-IN") : "N/A"}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Darshan Visit Date:</span>
+                  <span className="font-bold">{issuedTicket.slot?.date ? new Date(issuedTicket.slot.date).toLocaleDateString("en-IN") : selectedDate}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Payment Mode:</span>
+                  <span className="font-bold uppercase text-[#7b4623]">{issuedTicket.paymentMethod || issuedTicket.paymentMode || "CASH"}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Total Paid:</span>

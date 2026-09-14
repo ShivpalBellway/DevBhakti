@@ -441,7 +441,7 @@ export function MandalsList() {
           <div className="flex flex-col lg:grid lg:grid-cols-12 gap-8 items-start">
             
             {/* CONTENT (lg:col-span-7) */}
-            <div className="order-1 lg:order-1 lg:col-span-7 flex flex-col justify-center space-y-6">
+            <div className="order-2 lg:order-1 lg:col-span-7 flex flex-col justify-center space-y-6">
               {/* Top Divine Mantra */}
               <div className="inline-flex items-center gap-2 text-amber-300 font-serif text-sm sm:text-base tracking-wider font-semibold drop-shadow-sm">
                 <span>
@@ -534,7 +534,7 @@ export function MandalsList() {
 
             {/* HERO IMAGE CARD */}
             {adminBannerImage ? (
-              <div className="order-2 lg:order-2 lg:col-span-5 relative w-full aspect-[4/3] max-w-[540px] lg:max-w-none mx-auto rounded-3xl overflow-hidden shadow-2xl border border-amber-500/30 group bg-zinc-900">
+              <div className="order-1 lg:order-2 lg:col-span-5 relative w-full aspect-[4/3] max-w-[540px] lg:max-w-none mx-auto rounded-3xl overflow-hidden shadow-2xl border border-amber-500/30 group bg-zinc-900">
                 <img
                   src={adminBannerImage}
                   alt={heroTitle}
@@ -570,7 +570,7 @@ export function MandalsList() {
                 </div>
               </div>
             ) : (
-              <div className="order-2 lg:order-2 lg:col-span-5 relative w-full aspect-[4/3] max-w-[540px] lg:max-w-none mx-auto rounded-3xl overflow-hidden shadow-2xl border border-amber-500/30 bg-gradient-to-br from-[#3e2413] via-[#5c3a21] to-[#251308] flex flex-col items-center justify-center p-6 text-center text-amber-100">
+              <div className="order-1 lg:order-2 lg:col-span-5 relative w-full aspect-[4/3] max-w-[540px] lg:max-w-none mx-auto rounded-3xl overflow-hidden shadow-2xl border border-amber-500/30 bg-gradient-to-br from-[#3e2413] via-[#5c3a21] to-[#251308] flex flex-col items-center justify-center p-6 text-center text-amber-100">
                 <div className="w-16 h-16 rounded-2xl bg-amber-500/20 border border-amber-400/30 flex items-center justify-center text-amber-300 mb-3 shadow-inner">
                   <Sparkles className="w-8 h-8" />
                 </div>

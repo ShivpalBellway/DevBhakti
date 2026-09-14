@@ -50,6 +50,11 @@ router.post('/register', (upload as any).fields([
         const image = files?.image?.[0] ? `/uploads/mandals/${files.image[0].filename}` : data.image;
         const heroImages = files?.heroImages?.map((f: any) => `/uploads/mandals/${f.filename}`) || [];
 
+        if (!image) {
+            res.status(400).json({ success: false, message: 'Main Mandal image is required for registration.' });
+            return;
+        }
+
         const mandal = await prisma.mandal.create({
             data: {
                 name: JSON.stringify({

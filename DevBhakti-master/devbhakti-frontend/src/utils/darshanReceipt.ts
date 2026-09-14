@@ -9,6 +9,7 @@ interface DarshanReceiptData {
   visitorCount: number;
   totalAmount: number;
   paymentMode?: string;
+  paymentMethod?: string;
   status?: string;
   createdAt?: string;
   slot?: {
@@ -25,8 +26,13 @@ export const generateDarshanReceiptHTML = (data: DarshanReceiptData) => {
   const rawName = data.templeName || data.mandalName || "DevBhakti";
   const entityName = parseLocalizedValue(rawName) || "DevBhakti";
   const ticketId = data.displayId || data.id || `TK-${Date.now().toString().slice(-6)}`;
-  const dateStr = data.slot?.date
+  
+  const darshanDateStr = data.slot?.date
     ? new Date(data.slot.date).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })
+    : new Date().toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+
+  const bookingDateStr = data.createdAt
+    ? new Date(data.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })
     : new Date().toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
   
   const slotTime = (data.slot?.startTime && data.slot?.endTime)
@@ -35,6 +41,7 @@ export const generateDarshanReceiptHTML = (data: DarshanReceiptData) => {
 
   const totalAmount = data.totalAmount ?? 0;
   const passType = (data.ticketType || "GENERAL_DARSHAN").replace(/_/g, " ");
+  const paymentMethod = (data.paymentMethod || data.paymentMode || "CASH").toUpperCase();
 
   return `
     <!DOCTYPE html>
@@ -141,8 +148,12 @@ export const generateDarshanReceiptHTML = (data: DarshanReceiptData) => {
             <div class="field-value">${passType}</div>
           </div>
           <div>
-            <div class="field-label">Darshan Date</div>
-            <div class="field-value">${dateStr}</div>
+            <div class="field-label">Booking Issue Date</div>
+            <div class="field-value">${bookingDateStr}</div>
+          </div>
+          <div>
+            <div class="field-label">Darshan Visit Date</div>
+            <div class="field-value">${darshanDateStr}</div>
           </div>
           <div>
             <div class="field-label">Slot Time</div>
@@ -150,7 +161,7 @@ export const generateDarshanReceiptHTML = (data: DarshanReceiptData) => {
           </div>
           <div>
             <div class="field-label">Payment Mode</div>
-            <div class="field-value">${data.paymentMode || "CASH"}</div>
+            <div class="field-value">${paymentMethod}</div>
           </div>
           <div>
             <div class="field-label">Amount Paid</div>

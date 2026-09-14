@@ -140,6 +140,7 @@ model Temple {
   updateRequests        TempleUpdateRequest[]
   withdrawals           WithdrawalRequest[]
   tellerOrders          TellerOrder[]
+  dailyActivityReports  DailyActivityReport[]
 }
 
 model BookingAvailability {
@@ -791,6 +792,7 @@ model Mandal {
   mandalDarshanTickets MandalDarshanTicket[]
   tellerOrders       TellerOrder[]
   availability       BookingAvailability[]
+  dailyActivityReports DailyActivityReport[]
 }
 
 model Lead {
@@ -970,6 +972,34 @@ model MandalDarshanTicket {
   user             User?               @relation(fields: [userId], references: [id])
 }
 
+
+model DailyActivityReport {
+  id              String      @id @default(cuid())
+  entityType      String      // "TEMPLE" or "MANDAL"
+  templeId        String?
+  mandalId        String?
+  reportDate      String      // "YYYY-MM-DD" e.g. "2026-08-27"
+  reportingPeriod String      // "27 Aug 2026, 12:00 AM – 28 Aug 2026, 12:00 AM"
+  generatedAt     DateTime    @default(now())
+  
+  reportData      Json        // Cached reporting payload
+  
+  emailSent       Boolean     @default(false)
+  emailSentAt     DateTime?
+  whatsappSent    Boolean     @default(false)
+  whatsappSentAt  DateTime?
+  pdfUrl          String?
+  
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  
+  temple          Temple?     @relation(fields: [templeId], references: [id], onDelete: Cascade)
+  mandal          Mandal?     @relation(fields: [mandalId], references: [id], onDelete: Cascade)
+
+  @@unique([templeId, reportDate])
+  @@unique([mandalId, reportDate])
+  @@index([reportDate])
+}
 
 enum SlabType {
   GLOBAL

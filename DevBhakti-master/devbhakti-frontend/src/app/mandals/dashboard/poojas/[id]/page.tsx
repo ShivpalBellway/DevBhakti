@@ -254,19 +254,7 @@ export default function MandalViewPoojaPage() {
                             </div>
                         </div>
 
-                        {/* Prasad Option */}
-                        <div className="flex items-center justify-between p-3.5 bg-orange-50/30 border border-orange-100/50 rounded-2xl">
-                            <div className="flex gap-2">
-                                <span className="text-xl">📦</span>
-                                <div>
-                                    <h4 className="text-xs font-bold text-slate-800">Prasad Available</h4>
-                                    <p className="text-[10px] text-slate-400 mt-0.5">Delivered straight to devotees</p>
-                                </div>
-                            </div>
-                            <Badge variant={pooja.hasPrasad ? "success" : "outline"} className="font-bold rounded-lg">
-                                {pooja.hasPrasad ? "Yes (Free)" : "No Prasad"}
-                            </Badge>
-                        </div>
+
 
                         {/* Package Options */}
                         <div className="space-y-3">

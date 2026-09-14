@@ -22,9 +22,13 @@ export const getMandalDonations = async (req: Request, res: Response) => {
 
         if (donationType) {
             if (donationType === "ONLINE") {
-                where.razorpayOrderId = { not: null };
+                where.OR = [
+                    { razorpayOrderId: { not: null } },
+                    { razorpayPaymentId: { not: null } }
+                ];
             } else if (donationType === "OFFLINE") {
                 where.razorpayOrderId = null;
+                where.razorpayPaymentId = null;
             }
         }
 

@@ -41,6 +41,7 @@ import {
   Printer,
 } from "lucide-react";
 import { downloadDonationReceiptPDF } from "@/utils/donationReceipt";
+import { UniversalVideoPlayer } from "@/components/video/UniversalVideoPlayer";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -1055,11 +1056,13 @@ export function MandalDetail({ slug }: { slug: string }) {
 
                   <div className="flex-1 w-full min-h-[280px] rounded-2xl overflow-hidden bg-zinc-950 relative border border-zinc-200 flex items-center justify-center">
                     {mandal?.liveUrl ? (
-                      <iframe
-                        src={getEmbedUrl(mandal.liveUrl)}
+                      <UniversalVideoPlayer
+                        url={mandal.liveUrl}
                         className="w-full h-full absolute inset-0"
-                        allowFullScreen
-                        title="Live Darshan Stream"
+                        autoPlay
+                        muted
+                        controls
+                        playsInline
                       />
                     ) : (
                       <div className="text-center p-4">

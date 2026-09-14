@@ -27,8 +27,9 @@ export default function CreatePoojaPage() {
     const loadMandals = async () => {
         try {
             const res = await fetchAllMandalsAdmin({ status: "APPROVED", isActive: true, limit: 100 });
-            if (res.success && res.data?.mandals) {
-                setMandals(res.data.mandals);
+            const mandalsList = res?.data?.mandals || res?.data || [];
+            if (Array.isArray(mandalsList)) {
+                setMandals(mandalsList);
             }
         } catch (error) {
             console.error("Failed to load mandals", error);

@@ -2,15 +2,17 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { Mail } from "lucide-react";
+import { Mail, Smartphone, X } from "lucide-react";
 import Logo from "@/components/icons/Logo";
 import { fetchMandalRegistrationStatus } from "@/api/publicController";
 import { useLanguage } from "@/context/LanguageContext";
+import { AppQRCode } from "@/components/common/AppQRCode";
 
 const Footer: React.FC = () => {
   const { t } = useLanguage();
 
   const [isMandalRegistrationEnabled, setIsMandalRegistrationEnabled] = useState(false);
+  const [isQrModalOpen, setIsQrModalOpen] = useState(false);
 
   useEffect(() => {
     const checkMandalStatus = async () => {
@@ -55,7 +57,7 @@ const Footer: React.FC = () => {
   };
 
   return (
-    <footer className="bg-warm-brown text-sidebar-foreground">
+    <footer className="bg-warm-brown text-sidebar-foreground relative">
       <div className="container mx-auto px-4 py-12">
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-8 gap-y-12">
           {/* Brand */}
@@ -64,7 +66,6 @@ const Footer: React.FC = () => {
             <p className="text-sidebar-foreground/70 mt-4 max-w-sm">
               {t('landing.landing_footer.about')}
             </p>
-            {/* Social icons disabled as requested */}
           </div>
 
           {/* Offerings Links */}
@@ -81,6 +82,17 @@ const Footer: React.FC = () => {
                   </Link>
                 </li>
               ))}
+              {/* Get App Link with QR Modal Trigger */}
+              <li className="pt-1">
+                <button
+                  type="button"
+                  onClick={() => setIsQrModalOpen(true)}
+                  className="inline-flex items-center gap-1.5 text-xs font-bold text-amber-300 hover:text-amber-200 bg-amber-950/60 px-2.5 py-1.5 rounded-lg border border-amber-400/40 hover:border-amber-400 transition-all shadow-sm group"
+                >
+                  <Smartphone className="w-3.5 h-3.5 text-amber-300 group-hover:scale-110 transition-transform" />
+                  <span>Get DevBhakti App</span>
+                </button>
+              </li>
             </ul>
           </div>
 
@@ -155,6 +167,50 @@ const Footer: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* App Download QR Code Modal Dialog */}
+      {isQrModalOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200"
+          onClick={() => setIsQrModalOpen(false)}
+        >
+          <div
+            className="relative w-full max-w-[340px] bg-white dark:bg-zinc-900 rounded-3xl p-5 shadow-2xl border border-amber-300/50 text-zinc-900 dark:text-zinc-100 animate-in zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="flex items-center justify-between pb-2.5 border-b border-zinc-100 dark:border-zinc-800">
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 rounded-lg bg-amber-100 dark:bg-amber-950 text-[#7c4624]">
+                  <Smartphone className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-sm text-zinc-900 dark:text-zinc-100">Get DevBhakti App</h3>
+                  <p className="text-[10px] text-zinc-500 font-medium">Sacred Darshan & Pooja</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsQrModalOpen(false)}
+                className="p-1.5 rounded-full text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 bg-zinc-100 dark:bg-zinc-800"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Modal Content: Enlarged Center-Logo QR Code */}
+            <div className="py-3 flex flex-col items-center justify-center text-center">
+              <AppQRCode size={260} showLabels={false} logoUrl="/logo.png" />
+              <div className="mt-3 space-y-0.5">
+                <p className="text-xs font-bold text-zinc-900 dark:text-zinc-100">
+                  Scan QR Code to Download App
+                </p>
+                
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </footer>
   );
 };

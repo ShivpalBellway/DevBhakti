@@ -834,7 +834,7 @@ function BookingForm() {
       <Navbar />
 
       {/* Header */}
-      <section className="bg-gradient-to-br from-primary/10 via-secondary/20 to-background pt-24 pb-12">
+      <section className="bg-gradient-to-br from-primary/10 via-secondary/20 to-background pt-28 md:pt-32 pb-12">
         <div className="container mx-auto px-4">
           <Link href={searchParams.get("pooja") ? "/poojas" : "/temples"} className="inline-flex items-center text-muted-foreground hover:text-foreground mb-4 transition-colors">
             <ArrowLeft className="h-4 w-4 mr-2" />

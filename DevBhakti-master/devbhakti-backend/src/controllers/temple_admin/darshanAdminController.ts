@@ -129,7 +129,8 @@ export const getSlots = async (req: Request, res: Response) => {
       price: price,
       darshanPrice: price,
       isDarshanActive: temple?.isDarshanActive ?? true,
-      templeName: temple?.name
+      templeName: temple?.name,
+      remainingCapacity: Math.max(0, slot.maxCapacity - slot.bookedCount)
     }));
 
     res.json(slotsWithPrice);

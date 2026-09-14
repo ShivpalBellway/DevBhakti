@@ -12,6 +12,15 @@ export const createSlots = async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
+    const todayStr = new Date().toISOString().split('T')[0];
+    if (startDate < todayStr) {
+      return res.status(400).json({ error: 'Start date cannot be in the past' });
+    }
+
+    if (endDate < startDate) {
+      return res.status(400).json({ error: 'End date cannot be before start date' });
+    }
+
     const slotTitle = title && title.trim() ? title.trim() : "General Darshan Ticket";
     const slotPrice = price !== undefined && price !== null && price !== "" ? Number(price) : 0;
 
@@ -91,7 +100,12 @@ export const getSlots = async (req: Request, res: Response) => {
       orderBy: [{ date: 'asc' }, { startTime: 'asc' }]
     });
 
-    res.json(slots);
+    const slotsWithCapacity = slots.map(slot => ({
+      ...slot,
+      remainingCapacity: Math.max(0, slot.maxCapacity - slot.bookedCount)
+    }));
+
+    res.json(slotsWithCapacity);
   } catch (error) {
     console.error('Error fetching slots:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -219,6 +233,7 @@ export const createOfflineTicket = async (req: Request, res: Response) => {
       visitorEmail,
       visitorCount,
       paymentMode,
+      paymentMethod,
       paymentReference,
       notes,
       amount
@@ -323,7 +338,7 @@ export const createOfflineTicket = async (req: Request, res: Response) => {
           visitorCount: count,
           totalAmount,
           status: DarshanTicketStatus.CONFIRMED,
-          paymentMethod: paymentMode || 'CASH',
+          paymentMethod: paymentMethod || paymentMode || 'CASH',
         },
         include: { slot: true }
       });

@@ -400,20 +400,7 @@ export default function MandalCreatePoojaPage() {
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-6 p-4 bg-orange-50/20 border border-orange-100 rounded-2xl">
-                        <div className="flex items-center gap-2">
-                            <input
-                                type="checkbox"
-                                id="hasPrasad"
-                                className="h-4 w-4 rounded border-slate-300 text-orange-600 focus:ring-orange-500"
-                                checked={formData.hasPrasad}
-                                onChange={(e) => setFormData({ ...formData, hasPrasad: e.target.checked })}
-                            />
-                            <Label htmlFor="hasPrasad" className="font-bold text-xs text-slate-700 cursor-pointer">
-                                Include Prasad delivery with this booking?
-                            </Label>
-                        </div>
-                    </div>
+
                 </div>
 
                 {/* 2. Cover Image */}

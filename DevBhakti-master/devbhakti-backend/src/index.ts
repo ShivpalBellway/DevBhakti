@@ -67,6 +67,7 @@ import adminSettingsRoutes from './routes/admin/globalSettingsRoutes';
 import adminMandalRoutes from './routes/admin/mandalRoutes';
 import adminDarshanRoutes from './routes/admin/darshanSuperAdminRoutes';
 import mandalNewsRoutes from './routes/admin/mandalNewsRoutes';
+import dailyReportRoutes from './routes/dailyReportRoutes';
 
 import mandalAdminProfileRoutes from './routes/mandal_admin/mandalRoutes';
 import mandalAdminEventRoutes from './routes/mandal_admin/eventRoutes';
@@ -187,6 +188,9 @@ app.use('/api/contact', contactRoutes);
 
 // Mandal Registration Route
 app.use('/api/mandals', mandalRoutes);
+
+// Daily Activity Reports Route
+app.use('/api/reports/daily', dailyReportRoutes);
 
 
 // Basic Error Handler

@@ -41,6 +41,7 @@ export default function MandalDonationClient() {
     const searchParams = useSearchParams();
     const typeParam = searchParams.get("type")?.toUpperCase();
 
+    const [donationType, setDonationType] = useState<string>("all");
     const [searchQuery, setSearchQuery] = useState("");
     const debouncedSearch = useDebounce(searchQuery, 500);
     const [dateRange, setDateRange] = useState<DateRange | undefined>();
@@ -51,6 +52,14 @@ export default function MandalDonationClient() {
     const [totalPages, setTotalPages] = useState(1);
     const [totalItems, setTotalItems] = useState(0);
     const { toast } = useToast();
+
+    useEffect(() => {
+        if (typeParam === "ONLINE" || typeParam === "OFFLINE") {
+            setDonationType(typeParam);
+        } else {
+            setDonationType("all");
+        }
+    }, [typeParam]);
 
     const [stats, setStats] = useState({
         totalAmount: 0,
@@ -67,6 +76,9 @@ export default function MandalDonationClient() {
                 page: page.toString(),
                 limit: "10",
             };
+            if (donationType && donationType !== "all") {
+                params.donationType = donationType;
+            }
             if (dateRange?.from) params.startDate = dateRange.from.toISOString();
             if (dateRange?.to) params.endDate = dateRange.to.toISOString();
 
@@ -103,10 +115,10 @@ export default function MandalDonationClient() {
     };
 
     useEffect(() => {
-        fetchDonationsData(1);
+        fetchDonationsData(currentPage);
         fetchStatsData();
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [debouncedSearch, dateRange]);
+    }, [debouncedSearch, dateRange, donationType, currentPage]);
 
     // Export full data
     const handleExportExcel = async () => {
@@ -115,6 +127,9 @@ export default function MandalDonationClient() {
                 search: debouncedSearch,
                 limit: "5000",
             };
+            if (donationType && donationType !== "all") {
+                params.donationType = donationType;
+            }
             if (dateRange?.from) params.startDate = dateRange.from.toISOString();
             if (dateRange?.to) params.endDate = dateRange.to.toISOString();
 
@@ -241,7 +256,23 @@ export default function MandalDonationClient() {
                     />
                 </div>
 
-                <div className="flex gap-3 shrink-0">
+                <div className="flex gap-3 shrink-0 flex-wrap">
+                    <div className="flex items-center gap-2 bg-white px-3 py-2 rounded-xl border border-slate-200 shadow-sm min-w-0">
+                        <Filter className="w-4 h-4 text-slate-400 flex-shrink-0" />
+                        <select
+                            className="bg-transparent text-sm font-medium focus:outline-none cursor-pointer text-slate-700"
+                            value={donationType}
+                            onChange={(e) => {
+                                setDonationType(e.target.value);
+                                setCurrentPage(1);
+                            }}
+                        >
+                            <option value="all">All Donations</option>
+                            <option value="ONLINE">Online Donations</option>
+                            <option value="OFFLINE">Offline Donations</option>
+                        </select>
+                    </div>
+
                     <Popover>
                         <PopoverTrigger asChild>
                             <Button
