@@ -179,6 +179,46 @@ const Navbar: React.FC<NavbarProps> = ({ variant = "default", isSolid = false })
 
               <div className="flex items-center gap-3 2xl:gap-8 shrink-0">
                 {!isTempleRegistrationPage && !isMandalRegistrationPage && navLinks.map((link) => {
+                  if (link.href === "/mandals") {
+                    const isMandalActive = pathname.startsWith('/mandals') || pathname.startsWith('/maza-ganesha');
+                    return (
+                      <DropdownMenu key="mandal-desktop-dropdown">
+                        <DropdownMenuTrigger asChild>
+                          <button
+                            className={`text-[12px] 2xl:text-sm font-bold transition-all whitespace-nowrap uppercase tracking-wider relative group flex items-center gap-1 outline-none cursor-pointer py-1 ${
+                              isMandalActive ? "text-primary" : "text-foreground hover:text-primary"
+                            }`}
+                          >
+                            <span>{mounted ? link.label : "Mandals"}</span>
+                            <ChevronDown className="w-3.5 h-3.5 transition-transform duration-200 group-data-[state=open]:rotate-180" />
+                            {isMandalActive && (
+                              <motion.div
+                                layoutId="activeNav"
+                                className="absolute -bottom-1 left-0 right-0 h-0.5 bg-primary rounded-full"
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                transition={{ duration: 0.3 }}
+                              />
+                            )}
+                          </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="start" className="w-56 mt-2 p-1.5 rounded-2xl shadow-xl border-orange-100/60 bg-white/95 backdrop-blur-md">
+                          <DropdownMenuItem asChild className="cursor-pointer rounded-xl px-3.5 py-2.5 text-xs font-bold uppercase tracking-wider focus:bg-orange-50 focus:text-primary">
+                            <Link href="/mandals" className="flex items-center justify-between w-full">
+                              <span>Ganesh Utsav 2026</span>
+                            </Link>
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator className="bg-orange-100/60 my-1" />
+                          <DropdownMenuItem asChild className="cursor-pointer rounded-xl px-3.5 py-2.5 text-xs font-bold uppercase tracking-wider focus:bg-orange-50 focus:text-primary">
+                            <Link href="/maza-ganesha" className="flex items-center justify-between w-full">
+                              <span>Maza Ganesha Contest</span>
+                            </Link>
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    );
+                  }
+
                   const active = isLinkActive(link.href);
                   return (
                     <Link
@@ -516,6 +556,36 @@ const Navbar: React.FC<NavbarProps> = ({ variant = "default", isSolid = false })
                 <div className="flex flex-col gap-4">
                   {/* Navigation links - Hidden on temple registration page */}
                   {!isTempleRegistrationPage && navLinks.map((link) => {
+                    if (link.href === "/mandals") {
+                      return (
+                        <div key="mandal-mobile-group" className="py-2 border-b border-border space-y-1">
+                          <div className="text-xs font-black text-primary uppercase tracking-widest px-1 py-1">
+                            {mounted ? link.label : "Mandals"}
+                          </div>
+                          <Link
+                            href="/mandals"
+                            onClick={() => setIsMobileMenuOpen(false)}
+                            className={`text-base font-bold py-2.5 px-3 rounded-xl flex items-center justify-between transition-colors ${
+                              pathname === '/mandals' ? "text-primary bg-primary/10" : "text-foreground hover:text-primary"
+                            }`}
+                          >
+                            <span>Ganesh Utsav 2026</span>
+                            <ChevronRight className="w-4 h-4 text-primary" />
+                          </Link>
+                          <Link
+                            href="/maza-ganesha"
+                            onClick={() => setIsMobileMenuOpen(false)}
+                            className={`text-base font-bold py-2.5 px-3 rounded-xl flex items-center justify-between transition-colors ${
+                              pathname.startsWith('/maza-ganesha') ? "text-primary bg-primary/10" : "text-foreground hover:text-primary"
+                            }`}
+                          >
+                            <span>Maza Ganesha Contest</span>
+                            <ChevronRight className="w-4 h-4 text-primary" />
+                          </Link>
+                        </div>
+                      );
+                    }
+
                     const active = isLinkActive(link.href);
                     return (
                       <Link
