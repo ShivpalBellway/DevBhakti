@@ -127,3 +127,20 @@ export const uploadProofPhotos = multer({
     fileFilter: fileFilter,
     limits: { fileSize: 5 * 1024 * 1024 } // 5MB per proof image
 });
+
+const campaignUploadDir = 'uploads/campaigns';
+if (!fs.existsSync(campaignUploadDir)) {
+    fs.mkdirSync(campaignUploadDir, { recursive: true });
+}
+
+export const uploadCampaignImage = multer({
+    storage: multer.diskStorage({
+        destination: (req, file, cb) => cb(null, campaignUploadDir),
+        filename: (req, file, cb) => {
+            const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+            cb(null, 'campaign-' + uniqueSuffix + path.extname(file.originalname));
+        }
+    }),
+    fileFilter: fileFilter,
+    limits: { fileSize: 5 * 1024 * 1024 }
+});

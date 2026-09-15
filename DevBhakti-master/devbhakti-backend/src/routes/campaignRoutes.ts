@@ -5,6 +5,7 @@ import {
   submitCampaignEntry,
   getGalleryEntries,
   getUserEntry,
+  getSingleEntry,
   likeCampaignEntry,
 } from "../controllers/campaignController";
 
@@ -18,6 +19,7 @@ router.get("/info/:slug", getCampaignInfo);
 // Contest Submissions & User Entry
 router.post("/entries", submitCampaignEntry);
 router.get("/my-entry", getUserEntry);
+router.get("/entries/single/:id", getSingleEntry);
 
 // Public Gallery
 router.get("/gallery", getGalleryEntries);

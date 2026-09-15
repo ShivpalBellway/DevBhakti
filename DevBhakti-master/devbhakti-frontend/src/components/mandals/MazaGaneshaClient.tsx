@@ -21,6 +21,7 @@ import {
   Sparkles,
   Crown,
   Award,
+  X,
 } from "lucide-react";
 
 type ParticipantType = "home" | "mandal";
@@ -43,7 +44,15 @@ const STEPS = [
   { icon: Share2,     step: "4", title: "4. Share & Celebrate",  desc: "Show it to your family and friends." },
 ];
 
-function GalleryCard({ entry, slug }: { entry: GalleryEntry; slug: string }) {
+function GalleryCard({
+  entry,
+  slug,
+  onCardClick,
+}: {
+  entry: GalleryEntry;
+  slug: string;
+  onCardClick: (entry: GalleryEntry) => void;
+}) {
   const [likes, setLikes] = useState(entry.likesCount || 0);
   const [liked, setLiked] = useState(false);
   const [liking, setLiking] = useState(false);
@@ -88,7 +97,7 @@ function GalleryCard({ entry, slug }: { entry: GalleryEntry; slug: string }) {
 
   const handleShare = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    const targetUrl = window.location.origin + `/campaigns/${slug}`;
+    const targetUrl = `${window.location.origin}/campaigns/${slug}?entry=${entry.id}`;
     if (navigator.share) {
       try {
         await navigator.share({
@@ -102,15 +111,16 @@ function GalleryCard({ entry, slug }: { entry: GalleryEntry; slug: string }) {
     } else {
       if (navigator.clipboard && window.isSecureContext) {
         await navigator.clipboard.writeText(targetUrl);
-        alert("Link copied to clipboard!");
+        alert("Direct Entry Deep Link copied to clipboard!");
       } else {
-        alert(`Please copy this link manually: ${targetUrl}`);
+        alert(`Copy this entry link: ${targetUrl}`);
       }
     }
   };
 
   return (
     <motion.div
+      onClick={() => onCardClick(entry)}
       whileHover={{ y: -4 }}
       transition={{ type: "spring", stiffness: 300, damping: 20 }}
       className="bg-white rounded-2xl overflow-hidden border border-slate-200/70 shadow-sm hover:shadow-md transition-all duration-300 flex flex-col group cursor-pointer"
@@ -152,7 +162,7 @@ function GalleryCard({ entry, slug }: { entry: GalleryEntry; slug: string }) {
           <button
             onClick={handleShare}
             className="p-1.5 rounded-full text-slate-600 hover:text-[#88542B] hover:bg-orange-50 transition-colors cursor-pointer"
-            title="Share Entry"
+            title="Share Entry Link"
           >
             <Share2 className="w-4 h-4 stroke-[2.2]" />
           </button>
@@ -169,6 +179,180 @@ function GalleryCard({ entry, slug }: { entry: GalleryEntry; slug: string }) {
         </div>
       </div>
     </motion.div>
+  );
+}
+
+// ─────────────────────────────────────────────
+// Lightbox Entry Modal Popup Component
+// ─────────────────────────────────────────────
+function EntryModal({
+  entry,
+  slug,
+  onClose,
+}: {
+  entry: GalleryEntry;
+  slug: string;
+  onClose: () => void;
+}) {
+  const [currentImgIdx, setCurrentImgIdx] = useState(0);
+  const [likes, setLikes] = useState(entry.likesCount || 0);
+  const [liked, setLiked] = useState(false);
+  const [liking, setLiking] = useState(false);
+
+  const images =
+    entry.images && entry.images.length > 0
+      ? entry.images.map((img) =>
+          img.startsWith("http") || img.startsWith("data:") ? img : `${BASE_URL}${img}`
+        )
+      : ["/maza-ganesha-hero.png"];
+
+  const handleLike = async () => {
+    if (liking) return;
+    const savedUser = localStorage.getItem("user");
+    const user = savedUser ? JSON.parse(savedUser) : null;
+    if (!user) {
+      alert("Please login first to vote for this Ganesha!");
+      window.location.href = `/auth?redirect=/campaigns/${slug}?entry=${entry.id}`;
+      return;
+    }
+
+    setLiking(true);
+    try {
+      const res = await axios.post(`${API_URL}/campaigns/entries/${entry.id}/like`, {
+        userId: user?.id,
+        userPhone: user?.phone,
+      });
+
+      if (res.data.success) {
+        setLikes(res.data.likesCount);
+        setLiked(true);
+      }
+    } catch (err: any) {
+      const msg = err.response?.data?.message || "Error casting vote!";
+      alert(msg);
+    } finally {
+      setLiking(false);
+    }
+  };
+
+  const handleShare = async () => {
+    const targetUrl = `${window.location.origin}/campaigns/${slug}?entry=${entry.id}`;
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: `${entry.name}'s Ganpati on DevBhakti`,
+          text: `Check out ${entry.name}'s Ganpati entry in ${slug} contest!`,
+          url: targetUrl,
+        });
+      } catch (err) {
+        console.error("Error sharing:", err);
+      }
+    } else {
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(targetUrl);
+        alert("Direct Entry Deep Link copied to clipboard!");
+      } else {
+        alert(`Copy this entry link: ${targetUrl}`);
+      }
+    }
+  };
+
+  return (
+    <AnimatePresence>
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-[#1a0b07]/80 backdrop-blur-md">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.9, y: 20 }}
+          className="relative w-full max-w-2xl bg-white rounded-3xl overflow-hidden shadow-2xl border-2 border-[#88542B]/30 flex flex-col max-h-[90vh]"
+        >
+          {/* Close Button */}
+          <button
+            onClick={onClose}
+            className="absolute top-4 right-4 z-20 w-10 h-10 rounded-full bg-[#3d1a10]/70 hover:bg-[#3d1a10] text-white flex items-center justify-center backdrop-blur-md transition-all cursor-pointer border border-amber-200/20 shadow-lg"
+          >
+            <X className="w-5 h-5" />
+          </button>
+
+          {/* Modal Header / Type */}
+          <div className="absolute top-4 left-4 z-20">
+            <span className="bg-gradient-to-r from-[#88542B] to-[#3d1a10] text-white text-xs font-bold px-3.5 py-1.5 rounded-full uppercase tracking-wider shadow-lg border border-amber-300/30">
+              {entry.participantType === "mandal" ? "Mandal Entry" : "Home Entry"}
+            </span>
+          </div>
+
+          {/* Image Viewport — Rich Warm Brown Theme */}
+          <div className="relative w-full aspect-[4/3] bg-gradient-to-b from-[#2a120b] via-[#3d1a10] to-[#2a120b] overflow-hidden shrink-0 flex items-center justify-center">
+            <img
+              src={images[currentImgIdx]}
+              alt={entry.name}
+              className="w-full h-full object-contain"
+            />
+            {images.length > 1 && (
+              <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5 bg-[#3d1a10]/70 px-3.5 py-1.5 rounded-full backdrop-blur-md border border-amber-200/20">
+                {images.map((_, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => setCurrentImgIdx(idx)}
+                    className={`w-2 h-2 rounded-full transition-all ${
+                      idx === currentImgIdx ? "bg-[#CA9E52] w-5" : "bg-white/50"
+                    }`}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Details & Actions */}
+          <div className="p-6 overflow-y-auto space-y-4 bg-white">
+            <div className="flex items-start justify-between gap-4 border-b border-amber-100 pb-4">
+              <div>
+                <h3 className="text-2xl font-serif font-black text-[#3d1a10]">
+                  {entry.name}
+                </h3>
+                <div className="flex items-center gap-1.5 text-slate-500 text-sm mt-1">
+                  <MapPin className="w-4 h-4 text-[#88542B]" />
+                  <span className="capitalize font-medium text-slate-600">{entry.city}</span>
+                </div>
+              </div>
+
+              {/* Vote & Share Controls */}
+              <div className="flex items-center gap-3 shrink-0">
+                <button
+                  onClick={handleLike}
+                  disabled={liking}
+                  className={`flex items-center gap-2 px-5 py-2.5 rounded-2xl font-bold text-sm transition-all cursor-pointer shadow-sm ${
+                    liked
+                      ? "bg-red-500 text-white"
+                      : "bg-red-50 text-red-600 hover:bg-red-100 border border-red-200"
+                  }`}
+                >
+                  <Heart className={`w-5 h-5 ${liked ? "fill-current" : ""}`} />
+                  <span>{likes}</span>
+                </button>
+
+                <button
+                  onClick={handleShare}
+                  className="p-2.5 rounded-2xl bg-[#fdf8f0] hover:bg-amber-100/70 text-[#88542B] border border-amber-200/80 transition-colors cursor-pointer shadow-xs"
+                  title="Share Entry Link"
+                >
+                  <Share2 className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Caption / Note */}
+            {entry.caption && (
+              <div className="bg-[#fdf8f0] p-4 rounded-2xl border border-amber-200/80 shadow-xs">
+                <p className="text-[#3d1a10] text-sm italic font-medium leading-relaxed">
+                  &ldquo;{entry.caption}&rdquo;
+                </p>
+              </div>
+            )}
+          </div>
+        </motion.div>
+      </div>
+    </AnimatePresence>
   );
 }
 
@@ -326,6 +510,25 @@ export default function MazaGaneshaClient({ slug = "maza-ganesha" }: { slug?: st
   const [winner, setWinner] = useState<any | null>(null);
   const [campaignInfo, setCampaignInfo] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
+  const [selectedEntry, setSelectedEntry] = useState<GalleryEntry | null>(null);
+
+  // Deep Link Support: Check for ?entry=ENTRY_ID in URL query params
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const entryId = params.get("entry") || params.get("entryId");
+      if (entryId) {
+        axios
+          .get(`${API_URL}/campaigns/entries/single/${entryId}`)
+          .then((res) => {
+            if (res.data?.success && res.data?.data) {
+              setSelectedEntry(res.data.data);
+            }
+          })
+          .catch((err) => console.error("Error loading deep-linked entry:", err));
+      }
+    }
+  }, []);
 
   // Fetch Campaign Info (including Winner) & Gallery Entries
   useEffect(() => {
@@ -509,7 +712,12 @@ export default function MazaGaneshaClient({ slug = "maza-ganesha" }: { slug?: st
                   className="grid grid-cols-2 md:grid-cols-4 gap-5 xl:gap-6"
                 >
                   {entries.map((entry) => (
-                    <GalleryCard key={entry.id} entry={entry} slug={slug} />
+                    <GalleryCard
+                      key={entry.id}
+                      entry={entry}
+                      slug={slug}
+                      onCardClick={(e) => setSelectedEntry(e)}
+                    />
                   ))}
                 </motion.div>
               </AnimatePresence>
@@ -562,6 +770,15 @@ export default function MazaGaneshaClient({ slug = "maza-ganesha" }: { slug?: st
           </motion.div>
         </div>
       </section>
+
+      {/* Lightbox Entry Modal Popup */}
+      {selectedEntry && (
+        <EntryModal
+          entry={selectedEntry}
+          slug={slug}
+          onClose={() => setSelectedEntry(null)}
+        />
+      )}
     </div>
   );
 }

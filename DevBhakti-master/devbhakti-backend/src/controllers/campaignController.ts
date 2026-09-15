@@ -131,6 +131,38 @@ export const submitCampaignEntry = async (req: Request, res: Response) => {
       if (dbUser) dbUserId = dbUser.id;
     }
 
+    // Process images array: convert base64 data URLs to file paths on disk if present
+    const fs = require("fs");
+    const path = require("path");
+    const processedImages: string[] = [];
+
+    if (Array.isArray(images)) {
+      const uploadDir = path.join(process.cwd(), "uploads", "campaigns");
+      if (!fs.existsSync(uploadDir)) {
+        fs.mkdirSync(uploadDir, { recursive: true });
+      }
+
+      for (let i = 0; i < images.length; i++) {
+        const img = images[i];
+        if (typeof img === "string" && img.startsWith("data:image")) {
+          // Extract extension & base64 string
+          const matches = img.match(/^data:image\/([a-zA-Z0-9]+);base64,(.+)$/);
+          if (matches && matches.length === 3) {
+            const ext = matches[1] === "jpeg" ? "jpg" : matches[1];
+            const base64Data = matches[2];
+            const fileName = `campaign-${Date.now()}-${Math.round(Math.random() * 1e9)}.${ext}`;
+            const filePath = path.join(uploadDir, fileName);
+            fs.writeFileSync(filePath, Buffer.from(base64Data, "base64"));
+            processedImages.push(`/uploads/campaigns/${fileName}`);
+          } else {
+            processedImages.push(img);
+          }
+        } else {
+          processedImages.push(img);
+        }
+      }
+    }
+
     // Create entry in database
     const newEntry = await prisma.campaignEntry.create({
       data: {
@@ -140,7 +172,7 @@ export const submitCampaignEntry = async (req: Request, res: Response) => {
         name,
         city,
         address,
-        images,
+        images: processedImages,
         caption: caption || "",
         status: "APPROVED", // Auto-approved for immediate public gallery display
       },
@@ -200,22 +232,59 @@ export const getGalleryEntries = async (req: Request, res: Response) => {
   }
 };
 
+// GET /api/campaigns/entries/single/:id — Fetch Single Entry for Deep Linking & App API
+export const getSingleEntry = async (req: Request, res: Response) => {
+  try {
+    const id = req.params.id as string;
+    if (!id) {
+      return res.status(400).json({ success: false, message: "Entry ID required." });
+    }
+
+    const entry = await prisma.campaignEntry.findUnique({
+      where: { id },
+      include: {
+        campaign: {
+          select: { id: true, name: true, slug: true },
+        },
+        user: {
+          select: { id: true, name: true, phone: true },
+        },
+      },
+    });
+
+    if (!entry) {
+      return res.status(404).json({ success: false, message: "Entry not found" });
+    }
+
+    return res.json({ success: true, data: entry });
+  } catch (error: any) {
+    console.error("Error fetching single entry:", error);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 // GET /api/campaigns/my-entry — Fetch User's Submitted Entry
 export const getUserEntry = async (req: Request, res: Response) => {
   try {
     const userPhone = req.query.phone as string;
     const userId = req.query.userId as string;
-    const slug = req.query.slug as string;
+    let slug = req.query.slug as string;
 
     if (!userPhone && !userId) {
       return res.status(400).json({ success: false, message: "User phone or userId required." });
     }
-    
-    if (!slug) {
-      return res.status(400).json({ success: false, message: "Campaign slug required." });
+
+    let campaign = null;
+    if (slug) {
+      campaign = await prisma.campaign.findUnique({ where: { slug } });
+    } else {
+      // Default fallback if app developer doesn't pass slug: find active maza-ganesha or latest active campaign
+      campaign = await prisma.campaign.findFirst({
+        where: { OR: [{ slug: "maza-ganesha" }, { isActive: true }] },
+        orderBy: { createdAt: "desc" },
+      });
     }
 
-    const campaign = await prisma.campaign.findUnique({ where: { slug } });
     if (!campaign) {
       return res.status(404).json({ success: false, message: "Campaign not found" });
     }
