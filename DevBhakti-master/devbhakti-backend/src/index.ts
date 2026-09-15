@@ -68,6 +68,8 @@ import adminMandalRoutes from './routes/admin/mandalRoutes';
 import adminDarshanRoutes from './routes/admin/darshanSuperAdminRoutes';
 import mandalNewsRoutes from './routes/admin/mandalNewsRoutes';
 import dailyReportRoutes from './routes/dailyReportRoutes';
+import campaignRoutes from './routes/campaignRoutes';
+import campaignAdminRoutes from './routes/admin/campaignAdminRoutes';
 
 import mandalAdminProfileRoutes from './routes/mandal_admin/mandalRoutes';
 import mandalAdminEventRoutes from './routes/mandal_admin/eventRoutes';
@@ -88,7 +90,8 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // Health Check
@@ -119,6 +122,7 @@ app.use("/api/admin/donations", adminDonationRoutes);
 app.use('/api/admin/marketing', adminMarketingRoutes);
 app.use('/api/admin/settings', adminSettingsRoutes);
 app.use('/api/admin/mandals', adminMandalRoutes);
+app.use('/api/admin/campaigns', campaignAdminRoutes);
 app.use('/api/admin/darshan', adminDarshanRoutes);
 app.use('/api/admin/mandal-news', mandalNewsRoutes);
 app.use('/api/mandal-news', mandalNewsRoutes);
@@ -191,6 +195,9 @@ app.use('/api/mandals', mandalRoutes);
 
 // Daily Activity Reports Route
 app.use('/api/reports/daily', dailyReportRoutes);
+
+// Maza Ganesha / Campaign Engine Routes
+app.use('/api/campaigns', campaignRoutes);
 
 
 // Basic Error Handler

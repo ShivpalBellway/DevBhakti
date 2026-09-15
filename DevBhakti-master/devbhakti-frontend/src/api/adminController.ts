@@ -417,10 +417,10 @@ export const rejectTempleUpdate = async (requestId: string) => {
 };
 
 // Admin CMS Management
-export const fetchAllBannersAdmin = async (params?: { lang?: string }) => {
+export const fetchAllBannersAdmin = async (params?: { lang?: string; page?: string }) => {
     const token = getAdminToken();
-    let url = `${API_URL}/admin/cms/banners`;
-    if (params?.lang) url += `?lang=${params.lang}`;
+    let url = `${API_URL}/admin/cms/banners?page=${params?.page || 'all'}`;
+    if (params?.lang) url += `&lang=${params.lang}`;
     
     const response = await axios.get(url, {
         headers: { Authorization: `Bearer ${token}` }

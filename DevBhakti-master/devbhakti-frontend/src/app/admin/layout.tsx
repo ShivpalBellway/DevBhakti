@@ -67,9 +67,9 @@ const sidebarItems = [
     subItems: [
       { label: "All Mandals", href: "/admin/mandals", permission: "mandals.view" },
       { label: "Add Mandal", href: "/admin/mandals/create", permission: "mandals.create" },
+      { label: "Campaigns", href: "/admin/mandals/campaigns", permission: "mandals.view" },
       { label: "Mandal Settings", href: "/admin/settings/mandal", permission: "mandals.manage" },
       { label: "Mandal News", href: "/admin/mandals/news", permission: "mandals.news" },
-
     ]
   },
   {

@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X, ChevronDown, ChevronRight, User, LogIn, UserPlus, ShoppingBag, ShoppingCart, Church, Search, ArrowRight, LogOut, Heart, Globe } from "lucide-react";
-import { BASE_URL } from "@/config/apiConfig";
+import { BASE_URL, API_URL } from "@/config/apiConfig";
 import { useRouter, usePathname } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
@@ -45,6 +45,8 @@ const Navbar: React.FC<NavbarProps> = ({ variant = "default", isSolid = false })
   const router = useRouter();
   const pathname = usePathname();
 
+  const [activeCampaigns, setActiveCampaigns] = useState<any[]>([]);
+
   // Check if we're on the temple or mandal registration page
   const isTempleRegistrationPage = pathname === '/temples/register';
   const isMandalRegistrationPage = pathname === '/register-mandal';
@@ -74,6 +76,19 @@ const Navbar: React.FC<NavbarProps> = ({ variant = "default", isSolid = false })
       }
     };
     checkMandalStatus();
+
+    const fetchCampaigns = async () => {
+      try {
+        const res = await fetch(`${API_URL}/campaigns/list-active`);
+        const json = await res.json();
+        if (json.success && json.data) {
+          setActiveCampaigns(json.data);
+        }
+      } catch (e) {
+        console.error("Failed to fetch campaigns", e);
+      }
+    };
+    fetchCampaigns();
     
     const handleAuthChange = () => {
       const updatedUser = localStorage.getItem("user");
@@ -208,12 +223,17 @@ const Navbar: React.FC<NavbarProps> = ({ variant = "default", isSolid = false })
                               <span>Ganesh Utsav 2026</span>
                             </Link>
                           </DropdownMenuItem>
-                          <DropdownMenuSeparator className="bg-orange-100/60 my-1" />
-                          <DropdownMenuItem asChild className="cursor-pointer rounded-xl px-3.5 py-2.5 text-xs font-bold uppercase tracking-wider focus:bg-orange-50 focus:text-primary">
-                            <Link href="/maza-ganesha" className="flex items-center justify-between w-full">
-                              <span>Maza Ganesha Contest</span>
-                            </Link>
-                          </DropdownMenuItem>
+
+                          {activeCampaigns.map((c) => (
+                            <React.Fragment key={c.id}>
+                              <DropdownMenuSeparator className="bg-orange-100/60 my-1" />
+                              <DropdownMenuItem asChild className="cursor-pointer rounded-xl px-3.5 py-2.5 text-xs font-bold uppercase tracking-wider focus:bg-orange-50 focus:text-primary">
+                                <Link href={`/campaigns/${c.slug}`} className="flex items-center justify-between w-full">
+                                  <span>{c.name || c.title}</span>
+                                </Link>
+                              </DropdownMenuItem>
+                            </React.Fragment>
+                          ))}
                         </DropdownMenuContent>
                       </DropdownMenu>
                     );
@@ -572,16 +592,19 @@ const Navbar: React.FC<NavbarProps> = ({ variant = "default", isSolid = false })
                             <span>Ganesh Utsav 2026</span>
                             <ChevronRight className="w-4 h-4 text-primary" />
                           </Link>
-                          <Link
-                            href="/maza-ganesha"
-                            onClick={() => setIsMobileMenuOpen(false)}
-                            className={`text-base font-bold py-2.5 px-3 rounded-xl flex items-center justify-between transition-colors ${
-                              pathname.startsWith('/maza-ganesha') ? "text-primary bg-primary/10" : "text-foreground hover:text-primary"
-                            }`}
-                          >
-                            <span>Maza Ganesha Contest</span>
-                            <ChevronRight className="w-4 h-4 text-primary" />
-                          </Link>
+                          {activeCampaigns.map((c) => (
+                            <Link
+                              key={c.id}
+                              href={`/campaigns/${c.slug}`}
+                              onClick={() => setIsMobileMenuOpen(false)}
+                              className={`text-base font-bold py-2.5 px-3 rounded-xl flex items-center justify-between transition-colors ${
+                                pathname.startsWith(`/campaigns/${c.slug}`) ? "text-primary bg-primary/10" : "text-foreground hover:text-primary"
+                              }`}
+                            >
+                              <span>{c.name || c.title}</span>
+                              <ChevronRight className="w-4 h-4 text-primary" />
+                            </Link>
+                          ))}
                         </div>
                       );
                     }

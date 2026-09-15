@@ -12,24 +12,38 @@ const safeParse = (val: any, fallback: any = []) => {
 export const getBanners = async (req: Request, res: Response) => {
     try {
         const lang = getLang(req);
+        // If ?page=all or lang=raw → return ALL banners for admin management table
+        // If ?page=slug → return page-specific banners
+        // If no page param (homepage) → return global banners (targetPage is null)
+        const targetPage = req.query.page as string | undefined;
+
+        const whereClause: any = {
+            NOT: { id: "GLOBAL_SECTION_toggle" },
+            ...(lang !== 'raw' ? { active: true } : {}),
+        };
+
+        if (targetPage === 'all' || lang === 'raw') {
+            // Return all banners for Admin CMS Table
+        } else if (targetPage) {
+            whereClause.targetPage = targetPage;
+        } else {
+            whereClause.targetPage = null;
+        }
+
         const banners = await prisma.banner.findMany({
-            where: {
-                NOT: { id: "GLOBAL_SECTION_toggle" },
-                ...(lang !== 'raw' ? { active: true } : {})
-            },
-            orderBy: { createdAt: 'asc' }
+            where: whereClause,
+            orderBy: { order: 'asc' }
         });
         res.json({ success: true, data: localize(banners, lang) });
     } catch (error) {
         console.error('Error fetching banners:', error);
         res.status(500).json({ success: false, message: 'Error fetching banners' });
     }
-
 };
 
 export const createBanner = async (req: Request, res: Response) => {
     try {
-        const { active, order } = req.body;
+        const { active, order, targetPage } = req.body;
         const image = req.file ? `/uploads/cms/banners/${req.file.filename}` : null;
 
         if (!image) {
@@ -41,7 +55,7 @@ export const createBanner = async (req: Request, res: Response) => {
                 image,
                 active: active === 'true' || active === true,
                 order: parseInt(order as string) || 0,
-                // Removed title, subtitle, and link
+                targetPage: targetPage && targetPage !== 'global' ? targetPage : null,
             }
         });
 
@@ -55,7 +69,7 @@ export const createBanner = async (req: Request, res: Response) => {
 export const updateBanner = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
-        const { active, order } = req.body;
+        const { active, order, targetPage } = req.body;
 
         const existingBanner = await prisma.banner.findUnique({ where: { id: id as string } });
         if (!existingBanner) return res.status(404).json({ success: false, message: 'Banner not found' });
@@ -71,7 +85,9 @@ export const updateBanner = async (req: Request, res: Response) => {
                 image,
                 active: active === 'true' || active === true,
                 order: parseInt(order as string) || 0,
-                // Removed title, subtitle, and link
+                targetPage: targetPage !== undefined
+                    ? (targetPage && targetPage !== 'global' ? targetPage : null)
+                    : existingBanner.targetPage,
             }
         });
 

@@ -40,6 +40,7 @@ model User {
   tellerOrders        TellerOrder[]
   sellerProfile       SellerProfile?
   temple              Temple?
+  campaignEntries     CampaignEntry[]
 
   @@unique([email, role])
   @@unique([phone, role])
@@ -286,15 +287,16 @@ model Event {
 }
 
 model Banner {
-  id        String   @id @default(cuid())
-  image     String
-  link      String?
-  active    Boolean  @default(true)
-  order     Int      @default(0)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  title     Json?
-  subtitle  Json?
+  id          String   @id @default(cuid())
+  image       String
+  link        String?
+  active      Boolean  @default(true)
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  title       Json?
+  subtitle    Json?
+  targetPage  String?  // null = global (homepage), "maza-ganesha" = page-specific
 }
 
 model Feature {
@@ -1144,4 +1146,73 @@ model TellerOrderItem {
   createdAt     DateTime    @default(now())
   tellerOrder   TellerOrder @relation(fields: [tellerOrderId], references: [id], onDelete: Cascade)
 }
+
+model Campaign {
+  id                    String          @id @default(cuid())
+  slug                  String          @unique // e.g. "maza-ganesha"
+  title                 String
+  name                  String?
+  description           String?
+  bannerImage           String?
+  startDate             DateTime?
+  endDate               DateTime?
+  isActive              Boolean         @default(true)
+  maxImagesPerEntry     Int             @default(3)
+  maxLikesPerUserPerDay Int             @default(15)
+  playStoreLink         String?
+  appStoreLink          String?
+  createdAt             DateTime        @default(now())
+  updatedAt             DateTime        @updatedAt
+  entries               CampaignEntry[]
+  winner                CampaignWinner?
+}
+
+model CampaignEntry {
+  id              String          @id @default(cuid())
+  campaignId      String
+  userId          String?
+  participantType String          @default("home") // "home" | "mandal"
+  name            String // Family Name or Mandal Name
+  city            String
+  address         String
+  images          String[]
+  caption         String?
+  likesCount      Int             @default(0)
+  status          String          @default("APPROVED") // "PENDING" | "APPROVED" | "REJECTED"
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  campaign        Campaign        @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  user            User?           @relation(fields: [userId], references: [id], onDelete: SetNull)
+  votes           CampaignVote[]
+  winner          CampaignWinner?
+
+  @@index([campaignId, status])
+  @@index([userId])
+}
+
+model CampaignVote {
+  id        String        @id @default(cuid())
+  entryId   String
+  userId    String?
+  userPhone String?
+  votedAt   DateTime      @default(now())
+  entry     CampaignEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
+
+  @@index([userId, votedAt])
+  @@index([userPhone, votedAt])
+}
+
+model CampaignWinner {
+  id          String        @id @default(cuid())
+  campaignId  String        @unique
+  entryId     String        @unique
+  prize       String
+  tagline     String?
+  winnerImage String?
+  publishedAt DateTime      @default(now())
+  campaign    Campaign      @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  entry       CampaignEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
+}
+
+
 

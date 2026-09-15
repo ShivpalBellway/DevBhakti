@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import axios from "axios";
 import {
     Plus,
     Edit2,
@@ -39,12 +40,14 @@ import { API_URL, BASE_URL } from "@/config/apiConfig";
 
 export default function BannersPage() {
     const [banners, setBanners] = useState<any[]>([]);
+    const [campaigns, setCampaigns] = useState<any[]>([]);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingBanner, setEditingBanner] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [bannerSectionActive, setBannerSectionActive] = useState(true);
     const [formData, setFormData] = useState({
         active: "true",
+        targetPage: "global",
     });
     const [imageFile, setImageFile] = useState<File | null>(null);
     const [imagePreview, setImagePreview] = useState<string>("");
@@ -64,6 +67,16 @@ export default function BannersPage() {
             ]);
             setBanners(data);
             setBannerSectionActive(statusData.active);
+
+            // Fetch dynamic campaigns
+            try {
+                const res = await axios.get(`${API_URL}/admin/campaigns`);
+                if (res.data?.success) {
+                    setCampaigns(res.data.data || []);
+                }
+            } catch (err) {
+                console.error("Error fetching campaigns for banners", err);
+            }
         } catch (error) {
             console.error("Error loading banners:", error);
         } finally {
@@ -76,6 +89,7 @@ export default function BannersPage() {
             setEditingBanner(banner);
             setFormData({
                 active: banner.active ? "true" : "false",
+                targetPage: banner.targetPage || "global",
             });
             setImagePreview(banner.image.startsWith('http') ? banner.image : `${BASE_URL}${banner.image}`);
             setImageFile(null);
@@ -83,6 +97,7 @@ export default function BannersPage() {
             setEditingBanner(null);
             setFormData({
                 active: "true",
+                targetPage: "global",
             });
             setImagePreview("");
             setImageFile(null);
@@ -116,6 +131,7 @@ export default function BannersPage() {
             const data = new FormData();
             data.append('active', formData.active);
             data.append('order', '1');
+            data.append('targetPage', formData.targetPage);
 
             if (imageFile) {
                 data.append('image', imageFile);
@@ -225,7 +241,7 @@ export default function BannersPage() {
                         <TableHeader>
                             <TableRow className="hover:bg-transparent border-b border-border">
                                 <TableHead className="w-[350px] pl-6 py-4">Preview</TableHead>
-                                {/* Added min-w and pl-4 to create gap */}
+                                <TableHead className="min-w-[150px] pl-6 py-4">Target Page</TableHead>
                                 <TableHead className="min-w-[120px] pl-6 py-4">Status</TableHead>
                                 <TableHead className="min-w-[140px] pl-6 py-4">Uploaded Date</TableHead>
                                 <TableHead className="text-right min-w-[120px] pr-6 py-4">Actions</TableHead>
@@ -242,6 +258,15 @@ export default function BannersPage() {
                                                 className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                                             />
                                         </div>
+                                    </TableCell>
+                                    <TableCell className="pl-6 py-4">
+                                        <span className={`inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full ${
+                                            (!banner.targetPage || banner.targetPage === 'global')
+                                                ? 'bg-slate-100 text-slate-600'
+                                                : 'bg-orange-100 text-orange-700'
+                                        }`}>
+                                            {(!banner.targetPage || banner.targetPage === 'global') ? '🏠 Homepage' : `🙏 ${campaigns.find(c => c.slug === banner.targetPage)?.title || banner.targetPage}`}
+                                        </span>
                                     </TableCell>
                                     {/* Matching padding to headers */}
                                     <TableCell className="pl-6 py-4">
@@ -309,6 +334,24 @@ export default function BannersPage() {
                                 <option value="true">Active</option>
                                 <option value="false">Inactive</option>
                             </select>
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="targetPage" className="text-sm font-medium">Target Page</Label>
+                            <select
+                                id="targetPage"
+                                className="w-full h-10 px-3 rounded-md border border-input bg-background focus:ring-2 focus:ring-ring focus:ring-offset-2 outline-none transition-all text-sm"
+                                value={formData.targetPage}
+                                onChange={(e) => setFormData({ ...formData, targetPage: e.target.value })}
+                            >
+                                <option value="global">🏠 Homepage (Global)</option>
+                                {campaigns.map((camp) => (
+                                    <option key={camp.slug} value={camp.slug}>🙏 {camp.title || camp.name}</option>
+                                ))}
+                            </select>
+                            <p className="text-xs text-muted-foreground">
+                                Select which page this banner will appear on.
+                            </p>
                         </div>
 
                         <div className="space-y-3">
