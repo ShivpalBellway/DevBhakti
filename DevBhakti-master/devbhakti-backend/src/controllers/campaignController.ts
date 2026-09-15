@@ -287,22 +287,51 @@ export const getSingleEntry = async (req: Request, res: Response) => {
   }
 };
 
-// GET /api/campaigns/my-entry — Fetch User's Submitted Entry
+// GET /api/campaigns/my-entry — Fetch User's Submitted Entry (Supports Bearer Token or Query Params)
 export const getUserEntry = async (req: Request, res: Response) => {
   try {
-    const userPhone = req.query.phone as string;
-    const userId = req.query.userId as string;
+    let userPhone = req.query.phone as string;
+    let userId = req.query.userId as string;
     let slug = req.query.slug as string;
 
+    // Check Bearer Token header if passed
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith("Bearer ")) {
+      const token = authHeader.split(" ")[1];
+      try {
+        const jwt = require("jsonwebtoken");
+        const decoded = jwt.verify(
+          token,
+          process.env.JWT_SECRET || "devbhakti_secret_key_2026"
+        ) as any;
+        if (decoded) {
+          if (decoded.userId) userId = decoded.userId;
+          if (decoded.id && !userId) userId = decoded.id;
+          if (decoded.phone) userPhone = decoded.phone;
+        }
+      } catch (err) {
+        console.warn("Invalid JWT token provided in /my-entry header:", err);
+      }
+    }
+
+    // Also check if (req as any).user exists from express auth middleware
+    if ((req as any).user) {
+      const u = (req as any).user;
+      if (u.userId || u.id) userId = u.userId || u.id;
+      if (u.phone) userPhone = u.phone;
+    }
+
     if (!userPhone && !userId) {
-      return res.status(400).json({ success: false, message: "User phone or userId required." });
+      return res.status(400).json({
+        success: false,
+        message: "Authentication token (Authorization: Bearer <token>) or query parameters (userId / phone) required.",
+      });
     }
 
     let campaign = null;
     if (slug) {
       campaign = await prisma.campaign.findUnique({ where: { slug } });
     } else {
-      // Default fallback if app developer doesn't pass slug: find active maza-ganesha or latest active campaign
       campaign = await prisma.campaign.findFirst({
         where: { OR: [{ slug: "maza-ganesha" }, { isActive: true }] },
         orderBy: { createdAt: "desc" },
@@ -313,13 +342,14 @@ export const getUserEntry = async (req: Request, res: Response) => {
       return res.status(404).json({ success: false, message: "Campaign not found" });
     }
 
+    const whereConditions: any[] = [];
+    if (userId) whereConditions.push({ userId });
+    if (userPhone) whereConditions.push({ user: { phone: userPhone } });
+
     const entry = await prisma.campaignEntry.findFirst({
       where: {
         campaignId: campaign.id,
-        OR: [
-          userId ? { userId } : {},
-          userPhone ? { user: { phone: userPhone } } : {},
-        ],
+        OR: whereConditions,
       },
     });
 
