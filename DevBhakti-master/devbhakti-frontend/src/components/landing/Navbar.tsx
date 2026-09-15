@@ -220,7 +220,7 @@ const Navbar: React.FC<NavbarProps> = ({ variant = "default", isSolid = false })
                         <DropdownMenuContent align="start" className="w-56 mt-2 p-1.5 rounded-2xl shadow-xl border-orange-100/60 bg-white/95 backdrop-blur-md">
                           <DropdownMenuItem asChild className="cursor-pointer rounded-xl px-3.5 py-2.5 text-xs font-bold uppercase tracking-wider focus:bg-orange-50 focus:text-primary">
                             <Link href="/mandals" className="flex items-center justify-between w-full">
-                              <span>Ganesh Utsav 2026</span>
+                              <span>Ganeshotsav 2026</span>
                             </Link>
                           </DropdownMenuItem>
 

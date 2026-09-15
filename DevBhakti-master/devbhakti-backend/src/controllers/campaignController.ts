@@ -189,14 +189,14 @@ export const submitCampaignEntry = async (req: Request, res: Response) => {
   }
 };
 
-// GET /api/campaigns/entries — Fetch Public Gallery Entries
+// GET /api/campaigns/entries — Fetch Public Gallery Entries (Paginated & Sorted)
 export const getGalleryEntries = async (req: Request, res: Response) => {
   try {
     const slug = req.query.slug as string;
     if (!slug) {
       return res.status(400).json({ success: false, message: "Campaign slug required." });
     }
-    const sortBy = (req.query.sortBy as string) || "popular"; // "popular" | "latest"
+    const sortBy = (req.query.sortBy as string) || "popular"; // "popular" | "latest" | "alphabetical"
     const type = req.query.type as string; // "home" | "mandal"
 
     const campaign = await prisma.campaign.findUnique({ where: { slug } });
@@ -213,19 +213,43 @@ export const getGalleryEntries = async (req: Request, res: Response) => {
       where.participantType = type;
     }
 
-    const orderBy: any = sortBy === "latest" ? { createdAt: "desc" } : { likesCount: "desc" };
+    let orderBy: any = { likesCount: "desc" };
+    if (sortBy === "latest") {
+      orderBy = { createdAt: "desc" };
+    } else if (sortBy === "alphabetical" || sortBy === "name" || sortBy === "az") {
+      orderBy = { name: "asc" };
+    }
 
-    const entries = await prisma.campaignEntry.findMany({
-      where,
-      orderBy,
-      include: {
-        user: {
-          select: { id: true, name: true, phone: true },
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 12;
+    const skip = (page - 1) * limit;
+
+    const [entries, totalCount] = await Promise.all([
+      prisma.campaignEntry.findMany({
+        where,
+        orderBy,
+        skip,
+        take: limit,
+        include: {
+          user: {
+            select: { id: true, name: true, phone: true },
+          },
         },
-      },
-    });
+      }),
+      prisma.campaignEntry.count({ where }),
+    ]);
 
-    return res.json({ success: true, count: entries.length, data: entries });
+    const hasMore = skip + entries.length < totalCount;
+
+    return res.json({
+      success: true,
+      page,
+      limit,
+      totalCount,
+      hasMore,
+      count: entries.length,
+      data: entries,
+    });
   } catch (error: any) {
     console.error("Error fetching gallery entries:", error);
     return res.status(500).json({ success: false, message: error.message });

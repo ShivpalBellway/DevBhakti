@@ -22,6 +22,7 @@ import {
   Crown,
   Award,
   X,
+  Search,
 } from "lucide-react";
 
 type ParticipantType = "home" | "mandal";
@@ -182,18 +183,25 @@ function GalleryCard({
   );
 }
 
-// ─────────────────────────────────────────────
-// Lightbox Entry Modal Popup Component
-// ─────────────────────────────────────────────
+interface EntryModalProps {
+  entry: GalleryEntry;
+  slug: string;
+  onClose: () => void;
+  onPrev?: () => void;
+  onNext?: () => void;
+  currentIndex?: number;
+  totalEntries?: number;
+}
+
 function EntryModal({
   entry,
   slug,
   onClose,
-}: {
-  entry: GalleryEntry;
-  slug: string;
-  onClose: () => void;
-}) {
+  onPrev,
+  onNext,
+  currentIndex = 1,
+  totalEntries = 1,
+}: EntryModalProps) {
   const [currentImgIdx, setCurrentImgIdx] = useState(0);
   const [likes, setLikes] = useState(entry.likesCount || 0);
   const [liked, setLiked] = useState(false);
@@ -206,7 +214,8 @@ function EntryModal({
         )
       : ["/maza-ganesha-hero.png"];
 
-  const handleLike = async () => {
+  const handleLike = async (e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
     if (liking) return;
     const savedUser = localStorage.getItem("user");
     const user = savedUser ? JSON.parse(savedUser) : null;
@@ -235,7 +244,8 @@ function EntryModal({
     }
   };
 
-  const handleShare = async () => {
+  const handleShare = async (e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
     const targetUrl = `${window.location.origin}/campaigns/${slug}?entry=${entry.id}`;
     if (navigator.share) {
       try {
@@ -259,98 +269,121 @@ function EntryModal({
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-[#1a0b07]/80 backdrop-blur-md">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9, y: 20 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.9, y: 20 }}
-          className="relative w-full max-w-2xl bg-white rounded-3xl overflow-hidden shadow-2xl border-2 border-[#88542B]/30 flex flex-col max-h-[90vh]"
-        >
-          {/* Close Button */}
+      <div className="fixed inset-0 z-50 flex flex-col items-center justify-between p-4 sm:p-6 bg-black/95 backdrop-blur-md select-none">
+        {/* Top Header Bar — Counter & Close Button */}
+        <div className="w-full flex items-center justify-between z-20">
+          <div className="bg-white/10 text-white text-xs sm:text-sm font-semibold px-4 py-1.5 rounded-full border border-white/15 backdrop-blur-sm">
+            {currentIndex} / {totalEntries}
+          </div>
+
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 z-20 w-10 h-10 rounded-full bg-[#3d1a10]/70 hover:bg-[#3d1a10] text-white flex items-center justify-center backdrop-blur-md transition-all cursor-pointer border border-amber-200/20 shadow-lg"
+            className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-all cursor-pointer border border-white/20 shadow-lg"
+            title="Close Lightbox"
           >
             <X className="w-5 h-5" />
           </button>
+        </div>
 
-          {/* Modal Header / Type */}
-          <div className="absolute top-4 left-4 z-20">
-            <span className="bg-gradient-to-r from-[#88542B] to-[#3d1a10] text-white text-xs font-bold px-3.5 py-1.5 rounded-full uppercase tracking-wider shadow-lg border border-amber-300/30">
-              {entry.participantType === "mandal" ? "Mandal Entry" : "Home Entry"}
-            </span>
-          </div>
+        {/* Left Arrow Button */}
+        {onPrev && (
+          <button
+            onClick={onPrev}
+            className="fixed left-4 sm:left-8 top-1/2 -translate-y-1/2 z-30 w-11 h-11 sm:w-13 sm:h-13 rounded-full bg-white/10 hover:bg-white/25 text-white flex items-center justify-center backdrop-blur-md transition-all border border-white/20 shadow-xl cursor-pointer"
+            title="Previous Entry"
+          >
+            <ChevronRight className="w-6 h-6 rotate-180" />
+          </button>
+        )}
 
-          {/* Image Viewport — Rich Warm Brown Theme */}
-          <div className="relative w-full aspect-[4/3] bg-gradient-to-b from-[#2a120b] via-[#3d1a10] to-[#2a120b] overflow-hidden shrink-0 flex items-center justify-center">
-            <img
-              src={images[currentImgIdx]}
-              alt={entry.name}
-              className="w-full h-full object-contain"
-            />
-            {images.length > 1 && (
-              <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5 bg-[#3d1a10]/70 px-3.5 py-1.5 rounded-full backdrop-blur-md border border-amber-200/20">
-                {images.map((_, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => setCurrentImgIdx(idx)}
-                    className={`w-2 h-2 rounded-full transition-all ${
-                      idx === currentImgIdx ? "bg-[#CA9E52] w-5" : "bg-white/50"
-                    }`}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
+        {/* Right Arrow Button */}
+        {onNext && (
+          <button
+            onClick={onNext}
+            className="fixed right-4 sm:right-8 top-1/2 -translate-y-1/2 z-30 w-11 h-11 sm:w-13 sm:h-13 rounded-full bg-white/10 hover:bg-white/25 text-white flex items-center justify-center backdrop-blur-md transition-all border border-white/20 shadow-xl cursor-pointer"
+            title="Next Entry"
+          >
+            <ChevronRight className="w-6 h-6" />
+          </button>
+        )}
 
-          {/* Details & Actions */}
-          <div className="p-6 overflow-y-auto space-y-4 bg-white">
-            <div className="flex items-start justify-between gap-4 border-b border-amber-100 pb-4">
-              <div>
-                <h3 className="text-2xl font-serif font-black text-[#3d1a10]">
+        {/* Center Image Container */}
+        <div className="relative flex-1 w-full max-w-4xl my-4 flex items-center justify-center overflow-hidden">
+          <motion.img
+            key={images[currentImgIdx]}
+            initial={{ opacity: 0, scale: 0.96 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.96 }}
+            transition={{ duration: 0.2 }}
+            src={images[currentImgIdx]}
+            alt={entry.name}
+            className="max-h-[65vh] sm:max-h-[72vh] w-auto max-w-full object-contain rounded-2xl sm:rounded-3xl shadow-2xl border border-white/10"
+          />
+
+          {images.length > 1 && (
+            <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-1.5 bg-black/60 px-4 py-1.5 rounded-full border border-white/20 backdrop-blur-md z-20">
+              {images.map((_, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => setCurrentImgIdx(idx)}
+                  className={`w-2.5 h-2.5 rounded-full transition-all ${
+                    idx === currentImgIdx ? "bg-[#CA9E52] w-6" : "bg-white/50"
+                  }`}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Bottom Details Overlay Panel */}
+        <div className="w-full max-w-2xl bg-white/95 backdrop-blur-md rounded-2xl sm:rounded-3xl p-4 sm:p-5 border border-white/20 shadow-2xl z-20 text-[#3d1a10]">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-md bg-[#88542B] text-white">
+                  {entry.participantType === "mandal" ? "Mandal" : "Home"}
+                </span>
+                <h3 className="text-base sm:text-xl font-serif font-black text-[#3d1a10] truncate">
                   {entry.name}
                 </h3>
-                <div className="flex items-center gap-1.5 text-slate-500 text-sm mt-1">
-                  <MapPin className="w-4 h-4 text-[#88542B]" />
-                  <span className="capitalize font-medium text-slate-600">{entry.city}</span>
-                </div>
               </div>
-
-              {/* Vote & Share Controls */}
-              <div className="flex items-center gap-3 shrink-0">
-                <button
-                  onClick={handleLike}
-                  disabled={liking}
-                  className={`flex items-center gap-2 px-5 py-2.5 rounded-2xl font-bold text-sm transition-all cursor-pointer shadow-sm ${
-                    liked
-                      ? "bg-red-500 text-white"
-                      : "bg-red-50 text-red-600 hover:bg-red-100 border border-red-200"
-                  }`}
-                >
-                  <Heart className={`w-5 h-5 ${liked ? "fill-current" : ""}`} />
-                  <span>{likes}</span>
-                </button>
-
-                <button
-                  onClick={handleShare}
-                  className="p-2.5 rounded-2xl bg-[#fdf8f0] hover:bg-amber-100/70 text-[#88542B] border border-amber-200/80 transition-colors cursor-pointer shadow-xs"
-                  title="Share Entry Link"
-                >
-                  <Share2 className="w-5 h-5" />
-                </button>
+              <div className="flex items-center gap-1.5 text-slate-500 text-xs sm:text-sm mt-0.5">
+                <MapPin className="w-3.5 h-3.5 text-[#88542B]" />
+                <span className="capitalize font-medium">{entry.city}</span>
               </div>
             </div>
 
-            {/* Caption / Note */}
-            {entry.caption && (
-              <div className="bg-[#fdf8f0] p-4 rounded-2xl border border-amber-200/80 shadow-xs">
-                <p className="text-[#3d1a10] text-sm italic font-medium leading-relaxed">
-                  &ldquo;{entry.caption}&rdquo;
-                </p>
-              </div>
-            )}
+            {/* Like & Share */}
+            <div className="flex items-center gap-2.5 shrink-0">
+              <button
+                onClick={handleLike}
+                disabled={liking}
+                className={`flex items-center gap-1.5 px-4 py-2 rounded-xl font-bold text-xs sm:text-sm transition-all cursor-pointer ${
+                  liked
+                    ? "bg-red-500 text-white"
+                    : "bg-red-50 text-red-600 hover:bg-red-100 border border-red-200"
+                }`}
+              >
+                <Heart className={`w-4 h-4 ${liked ? "fill-current" : ""}`} />
+                <span>{likes}</span>
+              </button>
+
+              <button
+                onClick={handleShare}
+                className="p-2 rounded-xl bg-slate-100 hover:bg-orange-50 text-[#88542B] border border-slate-200 transition-colors cursor-pointer"
+                title="Share Entry"
+              >
+                <Share2 className="w-4 h-4" />
+              </button>
+            </div>
           </div>
-        </motion.div>
+
+          {entry.caption && (
+            <p className="mt-2.5 text-slate-600 text-xs sm:text-sm italic border-t border-slate-200/60 pt-2 truncate">
+              &ldquo;{entry.caption}&rdquo;
+            </p>
+          )}
+        </div>
       </div>
     </AnimatePresence>
   );
@@ -474,16 +507,7 @@ function CmsBannerStrip({ slug }: { slug: string }) {
         </div>
       )}
 
-      {/* Floating CTA Button Overlay on Banner */}
-      <div className="absolute bottom-4 right-4 sm:bottom-6 sm:right-8 z-30">
-        <Link
-          href={`/campaigns/${slug}/participate`}
-          className="bg-gradient-to-r from-[#CA9E52] via-[#88542B] to-[#3d1a10] hover:from-[#88542B] hover:to-[#CA9E52] text-white font-black text-xs sm:text-sm md:text-base px-5 sm:px-7 py-2.5 sm:py-3.5 rounded-full shadow-2xl backdrop-blur-md border border-white/30 flex items-center gap-2 hover:scale-105 transition-all duration-300 group"
-        >
-          <span>Tell Us About Your Ganpati 🙏</span>
-          <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-        </Link>
-      </div>
+
 
       {/* Progress bar */}
       {banners.length > 1 && (
@@ -505,12 +529,27 @@ function CmsBannerStrip({ slug }: { slug: string }) {
 // Main Page Component
 // ─────────────────────────────────────────────
 export default function MazaGaneshaClient({ slug = "maza-ganesha" }: { slug?: string }) {
-  const [activeTab, setActiveTab] = useState<"popular" | "latest">("popular");
+  const [activeTab, setActiveTab] = useState<"popular" | "latest" | "alphabetical">("popular");
   const [entries, setEntries] = useState<GalleryEntry[]>([]);
   const [winner, setWinner] = useState<any | null>(null);
   const [campaignInfo, setCampaignInfo] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedEntry, setSelectedEntry] = useState<GalleryEntry | null>(null);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const filteredEntries = entries.filter((entry) => {
+    if (!searchQuery.trim()) return true;
+    const q = searchQuery.toLowerCase().trim();
+    return (
+      entry.name?.toLowerCase().includes(q) ||
+      entry.city?.toLowerCase().includes(q) ||
+      entry.caption?.toLowerCase().includes(q)
+    );
+  });
 
   // Deep Link Support: Check for ?entry=ENTRY_ID in URL query params
   useEffect(() => {
@@ -533,6 +572,7 @@ export default function MazaGaneshaClient({ slug = "maza-ganesha" }: { slug?: st
   // Fetch Campaign Info (including Winner) & Gallery Entries
   useEffect(() => {
     setLoading(true);
+    setPage(1);
 
     // Fetch winner info
     axios
@@ -547,17 +587,38 @@ export default function MazaGaneshaClient({ slug = "maza-ganesha" }: { slug?: st
       })
       .catch(() => {});
 
-    // Fetch entries
+    // Fetch initial gallery entries (12 per page)
     axios
-      .get(`${API_URL}/campaigns/gallery`, { params: { slug, sortBy: activeTab } })
+      .get(`${API_URL}/campaigns/gallery`, { params: { slug, sortBy: activeTab, page: 1, limit: 12 } })
       .then((res) => {
         if (res.data.success && res.data.data) {
           setEntries(res.data.data);
+          setHasMore(!!res.data.hasMore);
         }
       })
       .catch((err) => console.error("Error fetching gallery:", err))
       .finally(() => setLoading(false));
   }, [activeTab, slug]);
+
+  const handleLoadMore = async () => {
+    if (loadingMore || !hasMore) return;
+    setLoadingMore(true);
+    const nextPage = page + 1;
+    try {
+      const res = await axios.get(`${API_URL}/campaigns/gallery`, {
+        params: { slug, sortBy: activeTab, page: nextPage, limit: 12 },
+      });
+      if (res.data.success && res.data.data) {
+        setEntries((prev) => [...prev, ...res.data.data]);
+        setPage(nextPage);
+        setHasMore(!!res.data.hasMore);
+      }
+    } catch (err) {
+      console.error("Error loading more entries:", err);
+    } finally {
+      setLoadingMore(false);
+    }
+  };
 
   return (
     <div className="pt-24 xl:pt-28">
@@ -568,40 +629,59 @@ export default function MazaGaneshaClient({ slug = "maza-ganesha" }: { slug?: st
           PUBLISHED WINNER CARD (Visible when Admin publishes winner)
       ══════════════════════════════════════════════════════════════ */}
       {winner && winner.entry && (
-        <section className="py-10 bg-gradient-to-b from-[#fdf8f0] to-white border-b border-amber-200/60">
-          <div className="container mx-auto px-6 max-w-4xl">
+        <section className="py-12 sm:py-16 bg-gradient-to-b from-[#fdf8f0] via-amber-50/40 to-[#fdf8f0] border-b border-amber-200/50">
+          <div className="container mx-auto px-4 max-w-5xl">
             <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="bg-gradient-to-r from-[#3d1a10] via-[#542416] to-[#35150c] rounded-3xl p-6 sm:p-8 text-white shadow-2xl relative overflow-hidden border-2 border-amber-400/50"
+              initial={{ opacity: 0, scale: 0.96, y: 15 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+              className="bg-gradient-to-r from-[#2a110a] via-[#3d1a10] to-[#4a1e12] rounded-3xl p-6 sm:p-10 text-white shadow-2xl relative overflow-hidden border-2 border-[#CA9E52]/70"
             >
-              <div className="flex flex-col sm:flex-row items-center gap-6 relative z-10">
-                <div className="relative shrink-0">
+              {/* Decorative Background Glows */}
+              <div className="absolute -top-20 -left-20 w-60 h-60 bg-amber-500/15 rounded-full blur-3xl pointer-events-none" />
+              <div className="absolute -bottom-20 -right-20 w-60 h-60 bg-orange-500/15 rounded-full blur-3xl pointer-events-none" />
+
+              <div className="flex flex-col md:flex-row items-center gap-8 relative z-10">
+                {/* Winner Image with Golden Crown Badge */}
+                <div className="relative shrink-0 group">
+                  <div className="absolute -inset-1.5 bg-gradient-to-r from-[#CA9E52] to-amber-300 rounded-3xl blur-xs opacity-75 group-hover:opacity-100 transition duration-500" />
                   <img
                     src={winner.winnerImage || winner.entry.images[0] || "/maza-ganesha-hero.png"}
                     alt={winner.entry.name}
-                    className="w-28 h-28 sm:w-36 sm:h-36 rounded-2xl object-cover border-4 border-amber-400 shadow-xl"
+                    className="relative w-36 h-36 sm:w-44 sm:h-44 rounded-2xl object-cover border-4 border-[#CA9E52] shadow-2xl"
                   />
-                  <div className="absolute -top-3 -right-3 w-10 h-10 rounded-full bg-amber-400 text-[#3d1a10] flex items-center justify-center shadow-lg font-black">
-                    <Crown className="w-6 h-6" />
+                  <div className="absolute -top-4 -right-4 w-12 h-12 rounded-full bg-gradient-to-tr from-amber-400 via-yellow-300 to-amber-500 text-[#3d1a10] flex items-center justify-center shadow-xl border-2 border-white font-black animate-bounce">
+                    <Crown className="w-7 h-7 fill-current" />
                   </div>
                 </div>
 
-                <div className="text-center sm:text-left space-y-2 flex-1">
-                  <div className="inline-flex items-center gap-1.5 bg-amber-400/20 border border-amber-400/40 text-amber-300 text-xs font-black px-3.5 py-1 rounded-full uppercase tracking-wider">
-                    <Award className="w-4 h-4 text-amber-400" /> Contest Winner Announced 🎉
+                {/* Winner Info Details */}
+                <div className="text-center md:text-left space-y-3 flex-1">
+                  <div className="inline-flex items-center gap-2 bg-gradient-to-r from-amber-400 to-amber-500 text-[#3d1a10] text-xs sm:text-sm font-black px-4 py-1.5 rounded-full uppercase tracking-wider shadow-md">
+                    <Trophy className="w-4 h-4 fill-current" /> Contest Winner Announced 🎉
                   </div>
 
-                  <h3 className="text-2xl sm:text-3xl font-black text-white">
-                    {winner.entry.name} — {winner.entry.city}
+                  <h3 className="text-3xl sm:text-4xl xl:text-5xl font-serif font-black text-white capitalize leading-tight">
+                    {winner.entry.name}
                   </h3>
 
-                  <p className="text-amber-200 text-sm font-bold">
-                    Prize: {winner.prize}
-                  </p>
-                  <p className="text-white/70 text-xs italic">
-                    &ldquo;{winner.tagline}&rdquo;
-                  </p>
+                  <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 pt-1">
+                    <div className="flex items-center gap-1.5 text-amber-200 text-sm font-bold bg-white/10 px-3.5 py-1.5 rounded-xl border border-white/15">
+                      <MapPin className="w-4 h-4 text-amber-400" />
+                      <span className="capitalize">{winner.entry.city}</span>
+                    </div>
+
+                    <div className="flex items-center gap-2 text-amber-300 text-sm font-bold bg-amber-400/20 px-4 py-1.5 rounded-xl border border-amber-400/30">
+                      <Award className="w-4 h-4 text-amber-300" />
+                      <span>Prize: {winner.prize}</span>
+                    </div>
+                  </div>
+
+                  {winner.tagline && (
+                    <p className="text-amber-100/90 text-sm sm:text-base italic pt-2 font-medium leading-relaxed max-w-xl">
+                      &ldquo;{winner.tagline}&rdquo;
+                    </p>
+                  )}
                 </div>
               </div>
             </motion.div>
@@ -612,8 +692,19 @@ export default function MazaGaneshaClient({ slug = "maza-ganesha" }: { slug?: st
       {/* ══════════════════════════════════════════════════════════════
           HOW IT WORKS
       ══════════════════════════════════════════════════════════════ */}
-      <section className="py-16 xl:py-20 bg-[#fdf8f0]">
+      <section className="pt-6 sm:pt-8 pb-12 sm:pb-16 bg-[#fdf8f0]">
         <div className="container mx-auto px-4">
+          {/* Participate CTA Button right above How It Works */}
+          <div className="mb-6 flex justify-center">
+            <Link
+              href={`/campaigns/${slug}/participate`}
+              className="bg-gradient-to-r from-[#CA9E52] via-[#88542B] to-[#3d1a10] hover:from-[#3d1a10] hover:to-[#CA9E52] text-white font-black text-base sm:text-lg px-8 py-3 rounded-full shadow-lg border border-amber-300/40 flex items-center gap-3 hover:scale-105 transition-all duration-300 group cursor-pointer"
+            >
+              <span>Participate Now 🙏</span>
+              <ArrowRight className="w-5 h-5 group-hover:translate-x-1.5 transition-transform" />
+            </Link>
+          </div>
+
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -652,33 +743,54 @@ export default function MazaGaneshaClient({ slug = "maza-ganesha" }: { slug?: st
       ══════════════════════════════════════════════════════════════ */}
       <section className="py-16 xl:py-20 bg-[#fdf8f0]">
         <div className="container mx-auto px-4">
-          {/* Header Row with Centered Title & Subtitle + Top-Right Tabs */}
-          <div className="relative mb-12 flex flex-col md:block items-center">
-            {/* Centered Heading & Subtitle */}
-            <div className="text-center max-w-2xl mx-auto">
-              <h2 className="text-3xl xl:text-4xl font-serif font-black text-[#3d1a10] mb-2">
-                Our Ganesha Gallery
-              </h2>
-              <p className="text-slate-600 text-xs sm:text-sm xl:text-base font-normal leading-relaxed">
-                See Ganeshas from homes across India. Like your favourites and share the joy!
-              </p>
-            </div>
+          {/* Centered Gallery Title & Subtitle */}
+          <div className="text-center max-w-2xl mx-auto mb-8">
+            <h2 className="text-3xl xl:text-4xl font-serif font-black text-[#3d1a10] mb-2">
+              Our Ganesha Gallery
+            </h2>
+            <p className="text-slate-600 text-xs sm:text-sm font-medium">
+              See Ganeshas from homes across India. Like your favourites and share the joy!
+            </p>
+          </div>
 
-            {/* Popular / Latest Tab Switcher on Top-Right */}
-            <div className="mt-6 md:mt-0 md:absolute md:top-0 md:right-0 flex items-center gap-2 bg-white/60 p-1 rounded-2xl border border-orange-100/80 shadow-xs">
-              {(["popular", "latest"] as const).map((tab) => (
+          {/* Controls Bar: Popular / Latest / A-Z Tabs on Left, Working Search Bar on Right */}
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-10 pb-4 border-b border-amber-200/40">
+            {/* Filter Tabs */}
+            <div className="inline-flex items-center gap-1.5 bg-white p-1.5 rounded-2xl border border-amber-200/60 shadow-sm shrink-0 self-start sm:self-auto">
+              {(["popular", "latest", "alphabetical"] as const).map((tab) => (
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
-                  className={`px-6 py-2.5 rounded-xl text-sm font-bold capitalize transition-all duration-300 cursor-pointer ${
+                  className={`px-4 sm:px-5 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all duration-200 cursor-pointer ${
                     activeTab === tab
-                      ? "bg-[#88542B] text-white shadow-sm"
-                      : "bg-white text-slate-700 border border-slate-200 hover:bg-slate-50"
+                      ? "bg-[#88542B] text-white shadow-xs"
+                      : "bg-transparent text-slate-600 hover:text-[#3d1a10] hover:bg-slate-50"
                   }`}
                 >
-                  {tab === "popular" ? "Popular" : "Latest"}
+                  {tab === "popular" ? "Popular" : tab === "latest" ? "Latest" : "A - Z"}
                 </button>
               ))}
+            </div>
+
+            {/* Real-time Working Search Box */}
+            <div className="relative w-full sm:w-72">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#88542B]/70" />
+              <input
+                type="text"
+                placeholder="Search by name, city..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-9 py-2 bg-white border border-amber-200/80 rounded-2xl text-xs sm:text-sm font-medium text-[#3d1a10] placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#88542B]/40 transition-all shadow-xs"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery("")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5 cursor-pointer"
+                  title="Clear search"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
             </div>
           </div>
 
@@ -700,6 +812,18 @@ export default function MazaGaneshaClient({ slug = "maza-ganesha" }: { slug?: st
                 Tell Us About Your Ganpati 🙏
               </Link>
             </div>
+          ) : filteredEntries.length === 0 ? (
+            <div className="py-16 text-center text-slate-500 bg-white rounded-3xl border border-amber-200/60 max-w-md mx-auto p-8 shadow-xs">
+              <Search className="w-8 h-8 text-[#88542B]/50 mx-auto mb-2" />
+              <h4 className="font-bold text-base text-[#3d1a10]">No entries found</h4>
+              <p className="text-xs text-slate-500 mt-1">No Ganesha entries match &ldquo;{searchQuery}&rdquo;</p>
+              <button
+                onClick={() => setSearchQuery("")}
+                className="mt-4 text-xs font-bold text-[#88542B] underline cursor-pointer"
+              >
+                Clear Search Filter
+              </button>
+            </div>
           ) : (
             <>
               <AnimatePresence mode="wait">
@@ -711,7 +835,7 @@ export default function MazaGaneshaClient({ slug = "maza-ganesha" }: { slug?: st
                   transition={{ duration: 0.3 }}
                   className="grid grid-cols-2 md:grid-cols-4 gap-5 xl:gap-6"
                 >
-                  {entries.map((entry) => (
+                  {filteredEntries.map((entry) => (
                     <GalleryCard
                       key={entry.id}
                       entry={entry}
@@ -725,10 +849,17 @@ export default function MazaGaneshaClient({ slug = "maza-ganesha" }: { slug?: st
               {/* Load More Button */}
               <div className="mt-12 text-center">
                 <button
-                  onClick={() => alert("All entries loaded!")}
-                  className="bg-white hover:bg-slate-50 text-[#3d1a10] border border-slate-200 font-bold px-8 py-2.5 rounded-xl shadow-xs text-sm transition-all cursor-pointer"
+                  onClick={handleLoadMore}
+                  disabled={loadingMore || !hasMore}
+                  className="inline-flex items-center gap-2 bg-[#3d1a10] hover:bg-[#542416] text-[#fdf8f0] font-bold px-9 py-3 rounded-full shadow-md border border-[#CA9E52]/40 text-sm transition-all hover:scale-[1.02] active:scale-95 cursor-pointer disabled:opacity-80 disabled:cursor-not-allowed"
                 >
-                  Load More
+                  {loadingMore ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" /> Loading...
+                    </>
+                  ) : (
+                    "Load More"
+                  )}
                 </button>
               </div>
             </>
@@ -763,7 +894,7 @@ export default function MazaGaneshaClient({ slug = "maza-ganesha" }: { slug?: st
             </div>
             <Link
               href={`/campaigns/${slug}/participate`}
-              className="shrink-0 inline-flex items-center gap-2 bg-[#CA9E52] hover:bg-white hover:text-[#88542B] text-white font-bold px-7 py-3 rounded-full transition-all duration-300 text-sm whitespace-nowrap shadow"
+              className="shrink-0 inline-flex items-center gap-2 bg-[#CA9E52] hover:bg-white hover:text-[#88542B] text-[#3d1a10] hover:text-[#88542B] font-bold px-7 py-3 rounded-full transition-all duration-300 text-sm whitespace-nowrap shadow"
             >
               Participate Now <ArrowRight className="w-4 h-4" />
             </Link>
@@ -771,12 +902,30 @@ export default function MazaGaneshaClient({ slug = "maza-ganesha" }: { slug?: st
         </div>
       </section>
 
-      {/* Lightbox Entry Modal Popup */}
+      {/* Lightbox Entry Modal Popup — Fullscreen Dark Viewer matching Image 2 */}
       {selectedEntry && (
         <EntryModal
           entry={selectedEntry}
           slug={slug}
           onClose={() => setSelectedEntry(null)}
+          onPrev={
+            entries.findIndex((e) => e.id === selectedEntry.id) > 0
+              ? () => {
+                  const idx = entries.findIndex((e) => e.id === selectedEntry.id);
+                  if (idx > 0) setSelectedEntry(entries[idx - 1]);
+                }
+              : undefined
+          }
+          onNext={
+            entries.findIndex((e) => e.id === selectedEntry.id) < entries.length - 1
+              ? () => {
+                  const idx = entries.findIndex((e) => e.id === selectedEntry.id);
+                  if (idx < entries.length - 1) setSelectedEntry(entries[idx + 1]);
+                }
+              : undefined
+          }
+          currentIndex={entries.findIndex((e) => e.id === selectedEntry.id) + 1}
+          totalEntries={entries.length}
         />
       )}
     </div>
