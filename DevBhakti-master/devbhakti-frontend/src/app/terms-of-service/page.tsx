@@ -4,7 +4,7 @@ import React from "react";
 import { motion } from "framer-motion";
 import Navbar from "@/components/landing/Navbar";
 import Footer from "@/components/landing/Footer";
-import { Scale, CheckCircle2, AlertTriangle, Gavel, Globe, CreditCard, Info } from "lucide-react";
+import { Scale, CheckCircle2, AlertTriangle, Gavel, Globe, CreditCard, Info, Trophy } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
 import Image from "next/image";
 import termsImage from "@/assets/temple-meenakshi.jpg";
@@ -91,6 +91,10 @@ export default function TermsOfServicePage() {
         ...localizedClauses[idx]
     }));
 
+    const contestTnc = tRaw('maza_ganesha_tnc');
+    const contestTitle = contestTnc?.title || t('maza_ganesha_tnc.title') || "Maza Ganesha Photo Contest – Terms & Conditions";
+    const contestClauses = contestTnc?.clauses || [];
+
     return (
         <main className="min-h-screen bg-background pattern-lotus" style={{ wordBreak: 'keep-all' }}>
             <Navbar />
@@ -175,6 +179,42 @@ export default function TermsOfServicePage() {
                             )}
                         </motion.div>
                     ))}
+
+                    {/* Maza Ganesha Photo Contest Terms & Conditions */}
+                    {contestClauses && contestClauses.length > 0 && (
+                        <motion.div
+                            initial={{ opacity: 0, y: 30 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true }}
+                            transition={{ duration: 0.6 }}
+                            id="maza-ganesha-tnc"
+                            className="mt-12 sm:mt-16 bg-gradient-to-br from-[#fdf8f0] via-white to-amber-50/60 p-6 sm:p-8 lg:p-10 rounded-xl sm:rounded-[2rem] border-2 border-[#CA9E52]/40 shadow-warm overflow-hidden"
+                        >
+                            <div className="flex items-center gap-3.5 mb-6 sm:mb-8 pb-4 border-b border-amber-200/60">
+                                <div className="p-3 rounded-2xl bg-gradient-to-br from-[#88542B] to-[#3d1a10] text-white shadow-md">
+                                    <Trophy className="w-7 h-7 text-amber-300" />
+                                </div>
+                                <div>
+                                    <span className="text-[11px] font-black uppercase tracking-widest text-[#88542B]">Special Contest Terms</span>
+                                    <h2 className="text-xl sm:text-2xl lg:text-3xl font-serif font-black text-[#3d1a10] leading-tight">
+                                        {contestTitle}
+                                    </h2>
+                                </div>
+                            </div>
+
+                            <div className="space-y-4 sm:space-y-5">
+                                {contestClauses.map((clause: any, idx: number) => (
+                                    <div
+                                        key={idx}
+                                        className="bg-white p-5 sm:p-6 rounded-2xl border border-amber-200/60 shadow-xs hover:border-[#CA9E52]/50 transition-all"
+                                    >
+                                        <h3 className="text-base sm:text-lg font-serif font-bold text-[#88542B] mb-1.5">{clause.title}</h3>
+                                        <p className="text-sm sm:text-base text-foreground/80 leading-relaxed">{clause.content}</p>
+                                    </div>
+                                ))}
+                            </div>
+                        </motion.div>
+                    )}
                 </div>
             </section>
 

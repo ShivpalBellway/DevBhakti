@@ -34,7 +34,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { fetchAllBannersAdmin, createBannerAdmin, updateBannerAdmin, deleteBannerAdmin, fetchBannerGlobalStatus, toggleBannerGlobalStatus } from "@/api/adminController";
+import { fetchAllBannersAdmin, createBannerAdmin, updateBannerAdmin, deleteBannerAdmin, fetchBannerGlobalStatus, toggleBannerGlobalStatus, fetchBannerTargetsAdmin } from "@/api/adminController";
 import { API_URL, BASE_URL } from "@/config/apiConfig";
 
 
@@ -45,9 +45,16 @@ export default function BannersPage() {
     const [editingBanner, setEditingBanner] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [bannerSectionActive, setBannerSectionActive] = useState(true);
+    const [targetItems, setTargetItems] = useState<any[]>([]);
+    const [loadingTargets, setLoadingTargets] = useState(false);
+    
     const [formData, setFormData] = useState({
         active: "true",
         targetPage: "global",
+        targetType: "NONE",
+        targetId: "",
+        targetSlug: "",
+        customUrl: "",
     });
     const [imageFile, setImageFile] = useState<File | null>(null);
     const [imagePreview, setImagePreview] = useState<string>("");
@@ -84,23 +91,72 @@ export default function BannersPage() {
         }
     };
 
-    const handleOpenDialog = (banner: any = null) => {
+    const handleTargetTypeChange = async (type: string) => {
+        setFormData(prev => ({
+            ...prev,
+            targetType: type,
+            targetId: "",
+            targetSlug: "",
+            customUrl: type === 'CUSTOM_URL' ? prev.customUrl : ""
+        }));
+
+        if (['POOJA', 'TEMPLE', 'PRODUCT', 'MANDAL', 'CONTEST'].includes(type)) {
+            try {
+                setLoadingTargets(true);
+                const items = await fetchBannerTargetsAdmin(type);
+                setTargetItems(items);
+            } catch (err) {
+                console.error("Error fetching target items", err);
+                setTargetItems([]);
+            } finally {
+                setLoadingTargets(false);
+            }
+        } else {
+            setTargetItems([]);
+        }
+    };
+
+    const handleOpenDialog = async (banner: any = null) => {
         if (banner) {
             setEditingBanner(banner);
+            const tType = banner.targetType || "NONE";
             setFormData({
                 active: banner.active ? "true" : "false",
                 targetPage: banner.targetPage || "global",
+                targetType: tType,
+                targetId: banner.targetId || "",
+                targetSlug: banner.targetSlug || "",
+                customUrl: banner.customUrl || "",
             });
             setImagePreview(banner.image.startsWith('http') ? banner.image : `${BASE_URL}${banner.image}`);
             setImageFile(null);
+
+            if (['POOJA', 'TEMPLE', 'PRODUCT', 'MANDAL', 'CONTEST'].includes(tType)) {
+                try {
+                    setLoadingTargets(true);
+                    const items = await fetchBannerTargetsAdmin(tType);
+                    setTargetItems(items);
+                } catch (err) {
+                    console.error("Error fetching target items", err);
+                } finally {
+                    setLoadingTargets(false);
+                }
+            } else {
+                setTargetItems([]);
+            }
         } else {
             setEditingBanner(null);
             setFormData({
                 active: "true",
                 targetPage: "global",
+                targetType: "NONE",
+                targetId: "",
+                targetSlug: "",
+                customUrl: "",
             });
             setImagePreview("");
             setImageFile(null);
+            setTargetItems([]);
         }
         setIsDialogOpen(true);
     };
@@ -132,6 +188,10 @@ export default function BannersPage() {
             data.append('active', formData.active);
             data.append('order', '1');
             data.append('targetPage', formData.targetPage);
+            data.append('targetType', formData.targetType);
+            data.append('targetId', formData.targetId);
+            data.append('targetSlug', formData.targetSlug);
+            data.append('customUrl', formData.customUrl);
 
             if (imageFile) {
                 data.append('image', imageFile);
@@ -260,13 +320,20 @@ export default function BannersPage() {
                                         </div>
                                     </TableCell>
                                     <TableCell className="pl-6 py-4">
-                                        <span className={`inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full ${
-                                            (!banner.targetPage || banner.targetPage === 'global')
-                                                ? 'bg-slate-100 text-slate-600'
-                                                : 'bg-orange-100 text-orange-700'
-                                        }`}>
-                                            {(!banner.targetPage || banner.targetPage === 'global') ? '🏠 Homepage' : `🙏 ${campaigns.find(c => c.slug === banner.targetPage)?.title || banner.targetPage}`}
-                                        </span>
+                                        <div className="flex flex-col gap-1 items-start">
+                                            <span className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-0.5 rounded-full ${
+                                                (!banner.targetPage || banner.targetPage === 'global')
+                                                    ? 'bg-slate-100 text-slate-600'
+                                                    : 'bg-orange-100 text-orange-700'
+                                            }`}>
+                                                {(!banner.targetPage || banner.targetPage === 'global') ? '🏠 Homepage' : `🙏 ${campaigns.find(c => c.slug === banner.targetPage)?.title || banner.targetPage}`}
+                                            </span>
+                                            {banner.targetType && banner.targetType !== 'NONE' && (
+                                                <span className="inline-flex items-center gap-1 text-[11px] font-medium text-amber-800 bg-amber-50 px-2 py-0.5 rounded border border-amber-200/60">
+                                                    🎯 {banner.targetType}: {banner.targetSlug || banner.customUrl || banner.targetId}
+                                                </span>
+                                            )}
+                                        </div>
                                     </TableCell>
                                     {/* Matching padding to headers */}
                                     <TableCell className="pl-6 py-4">
@@ -337,7 +404,7 @@ export default function BannersPage() {
                         </div>
 
                         <div className="space-y-2">
-                            <Label htmlFor="targetPage" className="text-sm font-medium">Target Page</Label>
+                            <Label htmlFor="targetPage" className="text-sm font-medium">Target Page Placement</Label>
                             <select
                                 id="targetPage"
                                 className="w-full h-10 px-3 rounded-md border border-input bg-background focus:ring-2 focus:ring-ring focus:ring-offset-2 outline-none transition-all text-sm"
@@ -350,9 +417,85 @@ export default function BannersPage() {
                                 ))}
                             </select>
                             <p className="text-xs text-muted-foreground">
-                                Select which page this banner will appear on.
+                                Select which page slider this banner will appear on.
                             </p>
                         </div>
+
+                        {/* Destination Type & Target Item Selection */}
+                        <div className="space-y-2">
+                            <Label htmlFor="targetType" className="text-sm font-medium">Click Action / Destination Type</Label>
+                            <select
+                                id="targetType"
+                                className="w-full h-10 px-3 rounded-md border border-input bg-background focus:ring-2 focus:ring-ring focus:ring-offset-2 outline-none transition-all text-sm font-medium"
+                                value={formData.targetType}
+                                onChange={(e) => handleTargetTypeChange(e.target.value)}
+                            >
+                                <option value="NONE">❌ None (Info Only - No Click Action)</option>
+                                <option value="POOJA">🕉️ Pooja Detail Page</option>
+                                <option value="TEMPLE">🛕 Temple Detail Page</option>
+                                <option value="PRODUCT">🛍️ Product / Samagri Page</option>
+                                <option value="MANDAL">🚩 Mandal Detail Page</option>
+                                <option value="CONTEST">🏆 Contest / Campaign Page</option>
+                                <option value="CUSTOM_URL">🔗 Custom Link / External URL</option>
+                            </select>
+                            <p className="text-xs text-muted-foreground">
+                                Choose where the user goes when they click this banner on Web or App.
+                            </p>
+                        </div>
+
+                        {/* Item Picker for POOJA, TEMPLE, PRODUCT, MANDAL, CONTEST */}
+                        {['POOJA', 'TEMPLE', 'PRODUCT', 'MANDAL', 'CONTEST'].includes(formData.targetType) && (
+                            <div className="space-y-2 bg-muted/40 p-4 rounded-lg border border-border">
+                                <Label htmlFor="targetItem" className="text-sm font-semibold text-primary">
+                                    Select Target {formData.targetType.charAt(0) + formData.targetType.slice(1).toLowerCase()}
+                                </Label>
+                                {loadingTargets ? (
+                                    <div className="text-xs text-muted-foreground animate-pulse py-2">Loading active items...</div>
+                                ) : (
+                                    <select
+                                        id="targetItem"
+                                        className="w-full h-10 px-3 rounded-md border border-input bg-background focus:ring-2 focus:ring-ring outline-none transition-all text-sm"
+                                        value={formData.targetId}
+                                        onChange={(e) => {
+                                            const selectedId = e.target.value;
+                                            const item = targetItems.find(i => i.id === selectedId);
+                                            setFormData(prev => ({
+                                                ...prev,
+                                                targetId: selectedId,
+                                                targetSlug: item?.slug || ""
+                                            }));
+                                        }}
+                                    >
+                                        <option value="">-- Select Item --</option>
+                                        {targetItems.map((item) => (
+                                            <option key={item.id} value={item.id}>
+                                                {item.name} {item.slug ? `(${item.slug})` : ''}
+                                            </option>
+                                        ))}
+                                    </select>
+                                )}
+                            </div>
+                        )}
+
+                        {/* Custom Link Input */}
+                        {formData.targetType === 'CUSTOM_URL' && (
+                            <div className="space-y-2 bg-muted/40 p-4 rounded-lg border border-border">
+                                <Label htmlFor="customUrl" className="text-sm font-semibold text-primary">
+                                    Enter Custom URL / Path
+                                </Label>
+                                <Input
+                                    id="customUrl"
+                                    type="text"
+                                    placeholder="e.g. /donations or https://youtube.com/..."
+                                    value={formData.customUrl}
+                                    onChange={(e) => setFormData(prev => ({ ...prev, customUrl: e.target.value }))}
+                                    className="h-10 text-sm bg-background"
+                                />
+                                <p className="text-xs text-muted-foreground">
+                                    Relative path (e.g., /donations) or full URL (https://...).
+                                </p>
+                            </div>
+                        )}
 
                         <div className="space-y-3">
                             <Label className="text-sm font-medium">Banner Image</Label>

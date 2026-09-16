@@ -21,6 +21,7 @@ import {
   ChevronRight,
   Menu,
   Image as ImageIcon,
+  Camera,
   Flower2,
   Package,
   Store,
@@ -67,11 +68,22 @@ const sidebarItems = [
     subItems: [
       { label: "All Mandals", href: "/admin/mandals", permission: "mandals.view" },
       { label: "Add Mandal", href: "/admin/mandals/create", permission: "mandals.create" },
-      { label: "Campaigns", href: "/admin/mandals/campaigns", permission: "mandals.view" },
+      // { label: "Campaigns", href: "/admin/mandals/campaigns", permission: "mandals.view" },
       { label: "Mandal Settings", href: "/admin/settings/mandal", permission: "mandals.manage" },
       { label: "Mandal News", href: "/admin/mandals/news", permission: "mandals.news" },
     ]
   },
+
+     {
+    label: "Photo gallary Contest ",
+    icon: Camera,
+    href: "/admin/mandals/campaigns",
+    permission: "leads.menu",
+  },
+
+
+
+
   {
     label: "Users Management",
     icon: Users,

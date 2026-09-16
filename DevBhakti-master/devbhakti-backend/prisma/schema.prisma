@@ -287,16 +287,20 @@ model Event {
 }
 
 model Banner {
-  id          String   @id @default(cuid())
+  id          String           @id @default(cuid())
   image       String
   link        String?
-  active      Boolean  @default(true)
-  order       Int      @default(0)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  active      Boolean          @default(true)
+  order       Int              @default(0)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
   title       Json?
   subtitle    Json?
-  targetPage  String?  // null = global (homepage), "maza-ganesha" = page-specific
+  targetPage  String?          // null = global (homepage), "maza-ganesha" = page-specific
+  targetType  BannerTargetType @default(NONE)
+  targetId    String?
+  targetSlug  String?
+  customUrl   String?
 }
 
 model Feature {
@@ -1001,6 +1005,16 @@ model DailyActivityReport {
   @@unique([templeId, reportDate])
   @@unique([mandalId, reportDate])
   @@index([reportDate])
+}
+
+enum BannerTargetType {
+  NONE
+  POOJA
+  TEMPLE
+  PRODUCT
+  MANDAL
+  CONTEST
+  CUSTOM_URL
 }
 
 enum SlabType {

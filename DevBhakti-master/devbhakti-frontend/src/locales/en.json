@@ -62,7 +62,7 @@
     "my_cart": "My Cart",
     "language": "Language",
     "Donation": "Contribution",
-    "mandals": "Mandals",
+    "mandals": "Ganeshotsav",
     "mandal_login": "Mandal Login"
   },
   "mandal_list": {
@@ -2595,5 +2595,54 @@
       "success": "Login successful"
     },
     "dev_otp": "Dev OTP (Testing):"
+  },
+  "maza_ganesha_tnc": {
+    "title": "Maza Ganesha Photo Contest – Terms & Conditions",
+    "clauses": [
+      {
+        "title": "1. Eligibility",
+        "content": "Participation is open to registered users of DevBhakti. Participation requires a valid DevBhakti account."
+      },
+      {
+        "title": "2. Contest Period",
+        "content": "The contest will remain open from the date of launch until 25 September 2026, 11:59 PM IST, unless otherwise announced by DevBhakti."
+      },
+      {
+        "title": "3. Entry",
+        "content": "Participants may submit a photograph of their Home Ganpati or Ganpati Mandal through the designated contest entry process. The photograph and information submitted must be the participant's own or submitted with the necessary permission."
+      },
+      {
+        "title": "4. Likes & Engagement",
+        "content": "Likes and shares are intended to encourage participation and engagement. Participants may share their entries with family and friends and encourage others to view and like their entries."
+      },
+      {
+        "title": "5. Winner Selection",
+        "content": "Up to three winners may be selected by DevBhakti through a jury or judging panel appointed by DevBhakti. Winner selection will be at the sole discretion of DevBhakti and its appointed jury, and the decision shall be final."
+      },
+      {
+        "title": "6. Jury & Evaluation",
+        "content": "DevBhakti may determine the evaluation process and criteria as it considers appropriate. The identity of jury members, evaluation criteria, deliberations and individual assessment need not be publicly disclosed."
+      },
+      {
+        "title": "7. Prizes & Recognition",
+        "content": "Selected winners will receive exciting prizes and recognition, as communicated by DevBhakti. DevBhakti reserves the right to substitute or modify prizes where reasonably necessary."
+      },
+      {
+        "title": "8. Disqualification",
+        "content": "DevBhakti reserves the right to reject or disqualify any entry that is inappropriate, unlawful, misleading, infringes another person's rights, or is found to involve manipulation, cheating or misuse of the contest."
+      },
+      {
+        "title": "9. Use of Entries",
+        "content": "By participating, the participant permits DevBhakti to display the submitted photograph, participant/family/mandal name and city in the contest gallery and to use the entry for contest-related promotion and publicity across DevBhakti's digital channels. Full residential addresses will not be publicly displayed."
+      },
+      {
+        "title": "10. Changes / Cancellation",
+        "content": "DevBhakti reserves the right to modify, extend, suspend or cancel the contest, or modify these Terms & Conditions, where reasonably necessary. Any material changes will be communicated through appropriate DevBhakti channels."
+      },
+      {
+        "title": "11. Acceptance",
+        "content": "Participation in the contest constitutes acceptance of these Terms & Conditions."
+      }
+    ]
   }
 }

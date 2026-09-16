@@ -70,6 +70,7 @@ import mandalNewsRoutes from './routes/admin/mandalNewsRoutes';
 import dailyReportRoutes from './routes/dailyReportRoutes';
 import campaignRoutes from './routes/campaignRoutes';
 import campaignAdminRoutes from './routes/admin/campaignAdminRoutes';
+import deepLinkRoutes from './routes/deepLinkRoutes';
 
 import mandalAdminProfileRoutes from './routes/mandal_admin/mandalRoutes';
 import mandalAdminEventRoutes from './routes/mandal_admin/eventRoutes';
@@ -93,6 +94,23 @@ app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+
+// ─── .well-known: Android App Links + iOS Universal Links ───────────────────
+// Android: https://yourdomain.com/.well-known/assetlinks.json
+// iOS:     https://yourdomain.com/.well-known/apple-app-site-association
+app.use(
+  '/.well-known',
+  express.static(path.join(__dirname, '../.well-known'), {
+    setHeaders: (res, filePath) => {
+      // iOS AASA MUST be served as application/json (no .json extension)
+      if (filePath.endsWith('apple-app-site-association')) {
+        res.setHeader('Content-Type', 'application/json');
+      }
+      // Both files must be publicly cacheable
+      res.setHeader('Cache-Control', 'public, max-age=3600');
+    },
+  })
+);
 
 // Health Check
 app.get('/health', (req: Request, res: Response) => {
@@ -198,6 +216,13 @@ app.use('/api/reports/daily', dailyReportRoutes);
 
 // Maza Ganesha / Campaign Engine Routes
 app.use('/api/campaigns', campaignRoutes);
+
+// ─── Smart Deep Link Routes ───────────────────────────────────────────────────
+// Mobile Developer: Use  GET /app/campaigns/:slug?entry=ENTRY_ID  as deep link
+// Android Intent: intent://campaigns/maza-ganesha?entry=xyz#Intent;scheme=devbhakti;package=com.devbhakti.app;end
+// iOS Universal Link: https://api.devbhakti.com/campaigns/maza-ganesha?entry=xyz (AASA handles this)
+// App Store/Play Store redirect: GET /app/download
+app.use('/app', deepLinkRoutes);
 
 
 // Basic Error Handler

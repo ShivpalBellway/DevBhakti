@@ -200,11 +200,15 @@ const Navbar: React.FC<NavbarProps> = ({ variant = "default", isSolid = false })
                       <DropdownMenu key="mandal-desktop-dropdown">
                         <DropdownMenuTrigger asChild>
                           <button
-                            className={`text-[12px] 2xl:text-sm font-bold transition-all whitespace-nowrap uppercase tracking-wider relative group flex items-center gap-1 outline-none cursor-pointer py-1 ${
+                            className={`text-[12px] 2xl:text-sm font-bold transition-all whitespace-nowrap uppercase tracking-wider relative group flex items-center gap-1.5 outline-none cursor-pointer py-1 ${
                               isMandalActive ? "text-primary" : "text-foreground hover:text-primary"
                             }`}
                           >
-                            <span>{mounted ? link.label : "Mandals"}</span>
+                            <span className="relative flex h-2.5 w-2.5 shrink-0 items-center justify-center">
+                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                              <span className="relative inline-flex rounded-full h-2 w-2 bg-gradient-to-r from-amber-500 to-red-500 shadow-[0_0_8px_rgba(245,158,11,0.9)]"></span>
+                            </span>
+                            <span>{mounted ? link.label : "Ganeshotsav"}</span>
                             <ChevronDown className="w-3.5 h-3.5 transition-transform duration-200 group-data-[state=open]:rotate-180" />
                             {isMandalActive && (
                               <motion.div
@@ -220,7 +224,7 @@ const Navbar: React.FC<NavbarProps> = ({ variant = "default", isSolid = false })
                         <DropdownMenuContent align="start" className="w-56 mt-2 p-1.5 rounded-2xl shadow-xl border-orange-100/60 bg-white/95 backdrop-blur-md">
                           <DropdownMenuItem asChild className="cursor-pointer rounded-xl px-3.5 py-2.5 text-xs font-bold uppercase tracking-wider focus:bg-orange-50 focus:text-primary">
                             <Link href="/mandals" className="flex items-center justify-between w-full">
-                              <span>Ganeshotsav 2026</span>
+                              <span>{mounted ? t('mandal_list.explore_mandals') : "Explore Mandals"}</span>
                             </Link>
                           </DropdownMenuItem>
 
@@ -250,7 +254,7 @@ const Navbar: React.FC<NavbarProps> = ({ variant = "default", isSolid = false })
                       {mounted ? link.label : (
                         link.href === "/poojas" ? "Poojas" :
                         link.href === "/temples" ? "Temples" :
-                        link.href === "/mandals" ? "Mandals" :
+                        link.href === "/mandals" ? "Ganeshotsav" :
                         link.href.includes("/marketplace") ? "Marketplace" :
                         link.href === "/live-darshan" ? "Live Darshan" :
                         link.href === "/donation" ? "Donation" : link.label
@@ -579,8 +583,12 @@ const Navbar: React.FC<NavbarProps> = ({ variant = "default", isSolid = false })
                     if (link.href === "/mandals") {
                       return (
                         <div key="mandal-mobile-group" className="py-2 border-b border-border space-y-1">
-                          <div className="text-xs font-black text-primary uppercase tracking-widest px-1 py-1">
-                            {mounted ? link.label : "Mandals"}
+                          <div className="text-xs font-black text-primary uppercase tracking-widest px-1 py-1 flex items-center gap-2">
+                            <span className="relative flex h-2.5 w-2.5 shrink-0 items-center justify-center">
+                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                              <span className="relative inline-flex rounded-full h-2 w-2 bg-gradient-to-r from-amber-500 to-red-500 shadow-[0_0_8px_rgba(245,158,11,0.9)]"></span>
+                            </span>
+                            <span>{mounted ? link.label : "Ganeshotsav"}</span>
                           </div>
                           <Link
                             href="/mandals"
@@ -589,7 +597,7 @@ const Navbar: React.FC<NavbarProps> = ({ variant = "default", isSolid = false })
                               pathname === '/mandals' ? "text-primary bg-primary/10" : "text-foreground hover:text-primary"
                             }`}
                           >
-                            <span>Ganesh Utsav 2026</span>
+                            <span>{mounted ? t('mandal_list.explore_mandals') : "Explore Mandals"}</span>
                             <ChevronRight className="w-4 h-4 text-primary" />
                           </Link>
                           {activeCampaigns.map((c) => (

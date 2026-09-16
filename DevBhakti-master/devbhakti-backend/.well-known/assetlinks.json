@@ -1,0 +1,13 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.devbhakti.app",
+      "sha256_cert_fingerprints": [
+        "02:04:BE:E8:A0:68:C1:9E:DA:0D:33:65:CC:5D:12:87:79:B2:C4:F3:B8:7D:B8:36:2B:F0:68:DC:3B:61:54:65",
+        "E5:67:DF:36:E9:20:3C:56:9C:21:F0:5D:DC:36:C9:99:95:CF:D5:A4"
+      ]
+    }
+  }
+]

@@ -689,7 +689,7 @@ export function MandalsList() {
 
             {/* Action Buttons: Near Me & Search (3 cols) */}
             <div className="lg:col-span-3 flex items-center gap-2">
-              <Button
+              {/* <Button
                 type="button"
                 onClick={handleNearMe}
                 disabled={isLocating}
@@ -703,7 +703,7 @@ export function MandalsList() {
                 <span className="text-xs sm:text-sm">
                   {isLocating ? t("mandal_list.locating") : userCoords ? t("mandal_list.near_me_active") : t("mandal_list.near_me")}
                 </span>
-              </Button>
+              </Button> */}
 
               <Button
                 onClick={() => {

@@ -94,12 +94,26 @@ export function AppQRCode({
     );
   }, [size, logoUrl]);
 
+  const handleDirectClick = () => {
+    if (typeof window !== "undefined") {
+      const ua = navigator.userAgent || "";
+      const url = /iphone|ipad|ipod/i.test(ua)
+        ? "https://apps.apple.com/in/app/devbhakti/id6761248"
+        : "https://play.google.com/store/search?q=devbhakti&c=apps&hl=en_IN";
+      window.open(url, "_blank", "noopener,noreferrer");
+    }
+  };
+
   return (
     <div className={`flex flex-col items-center justify-center text-center ${className}`}>
       {/* Hidden working canvas for composite drawing */}
       <canvas ref={canvasRef} style={{ display: "none" }} />
 
-      <div className="relative p-1.5 bg-white dark:bg-zinc-900 rounded-2xl shadow-xl border border-amber-300/60 dark:border-amber-900/50 group transition-all hover:scale-[1.02]">
+      <div
+        onClick={handleDirectClick}
+        className="relative p-1.5 bg-white dark:bg-zinc-900 rounded-2xl shadow-xl border border-amber-300/60 dark:border-amber-900/50 group transition-all hover:scale-[1.02] cursor-pointer"
+        title="Click to open App Store / Play Store"
+      >
         {qrDataUrl ? (
           <img
             src={qrDataUrl}
@@ -118,7 +132,7 @@ export function AppQRCode({
 
         <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/40 backdrop-blur-[2px] rounded-2xl">
           <span className="text-white text-xs font-bold px-3 py-1 bg-[#5d2e0b] rounded-full shadow-lg flex items-center gap-1">
-            <Smartphone className="w-3.5 h-3.5 text-amber-300" /> Scan Phone
+            <Smartphone className="w-3.5 h-3.5 text-amber-300" /> Open App Store
           </span>
         </div>
       </div>
@@ -127,7 +141,7 @@ export function AppQRCode({
         <div className="mt-2 space-y-0.5">
           <p className="text-xs font-bold text-zinc-900 dark:text-zinc-100">Scan QR Code</p>
           <p className="text-[10px] text-amber-800 dark:text-amber-400 font-semibold">
-            Android & iPhone
+            Android &amp; iPhone
           </p>
         </div>
       )}

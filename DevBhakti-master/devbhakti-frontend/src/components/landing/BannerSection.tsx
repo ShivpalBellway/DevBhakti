@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
@@ -10,6 +11,7 @@ import axios from "axios";
 import { useLanguage } from "@/context/LanguageContext";
 
 const BannerSection: React.FC = () => {
+    const router = useRouter();
     const [banners, setBanners] = useState<any[]>([]);
     const [currentIndex, setCurrentIndex] = useState(0);
     const [direction, setDirection] = useState(0); // -1 for left, 1 for right
@@ -17,6 +19,45 @@ const BannerSection: React.FC = () => {
     const [isSectionActive, setIsSectionActive] = useState(true);
     const [isPaused, setIsPaused] = useState(false);
     const { language, t } = useLanguage();
+
+    const handleBannerClick = (banner: any) => {
+        if (!banner || !banner.targetType || banner.targetType === 'NONE') return;
+
+        const { targetType, targetId, targetSlug, customUrl } = banner;
+
+        switch (targetType) {
+            case 'POOJA':
+                if (targetSlug) router.push(`/poojas/${targetSlug}`);
+                else if (targetId) router.push(`/poojas/${targetId}`);
+                break;
+            case 'TEMPLE':
+                if (targetSlug) router.push(`/temples/${targetSlug}`);
+                else if (targetId) router.push(`/temples/${targetId}`);
+                break;
+            case 'PRODUCT':
+                if (targetId) router.push(`/products/${targetId}`);
+                break;
+            case 'MANDAL':
+                if (targetSlug) router.push(`/mandals/${targetSlug}`);
+                else if (targetId) router.push(`/mandals/${targetId}`);
+                break;
+            case 'CONTEST':
+                if (targetSlug) router.push(`/campaigns/${targetSlug}`);
+                else router.push(`/campaigns/maza-ganesha`);
+                break;
+            case 'CUSTOM_URL':
+                if (customUrl) {
+                    if (customUrl.startsWith('http://') || customUrl.startsWith('https://')) {
+                        window.open(customUrl, '_blank');
+                    } else {
+                        router.push(customUrl);
+                    }
+                }
+                break;
+            default:
+                break;
+        }
+    };
 
     useEffect(() => {
         const fetchBannersAndStatus = async () => {
@@ -80,95 +121,106 @@ const BannerSection: React.FC = () => {
         })
     };
 
+    const currentBanner = banners[currentIndex];
+    const isClickable = currentBanner?.targetType && currentBanner?.targetType !== 'NONE';
+
     return (
         <section
-            className="w-full relative bg-background overflow-hidden"
+            className="w-full py-3 md:py-5 bg-background relative overflow-hidden"
             onMouseEnter={() => setIsPaused(true)}
             onMouseLeave={() => setIsPaused(false)}
         >
-            <div className="relative h-[250px] sm:h-[400px] md:h-[500px] lg:h-[600px] w-full overflow-hidden group bg-black/5">
-                <AnimatePresence initial={false} custom={direction}>
-                    <motion.div
-                        key={currentIndex}
-                        custom={direction}
-                        variants={variants}
-                        initial="enter"
-                        animate="center"
-                        exit="exit"
-                        transition={{
-                            x: { type: "spring", stiffness: 300, damping: 30 },
-                            opacity: { duration: 0.2 }
-                        }}
-                        className="absolute inset-0 w-full h-full"
-                    >
+            <div className="w-full max-w-[1920px] mx-auto px-2 sm:px-4 lg:px-6">
+                <div
+                    className={`relative w-full h-[220px] sm:h-[350px] md:h-[460px] lg:h-[580px] xl:h-[680px] 2xl:h-[750px] rounded-xl sm:rounded-2xl overflow-hidden group border border-border/50 shadow-md bg-black/5 ${
+                        isClickable ? 'cursor-pointer' : ''
+                    }`}
+                >
+                    <AnimatePresence initial={false} custom={direction}>
                         <motion.div
+                            key={currentIndex}
+                            custom={direction}
+                            variants={variants}
+                            initial="enter"
+                            animate="center"
+                            exit="exit"
+                            transition={{
+                                x: { type: "spring", stiffness: 300, damping: 30 },
+                                opacity: { duration: 0.2 }
+                            }}
                             className="absolute inset-0 w-full h-full"
-                            animate={{ scale: [1, 1.05, 1] }}
-                            transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+                            onClick={() => handleBannerClick(currentBanner)}
                         >
-                            <Image
-                                src={banners[currentIndex].image.startsWith('http') ? banners[currentIndex].image : `${BASE_URL}${banners[currentIndex].image}`}
-                                alt={`${t('landing.banner.alt')} ${currentIndex + 1}`}
-                                fill
-                                className="object-cover object-center z-10"
-                                priority
-                            />
+                            <motion.div
+                                className="absolute inset-0 w-full h-full"
+                                animate={{ scale: [1, 1.04, 1] }}
+                                transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+                            >
+                                <Image
+                                    src={currentBanner.image.startsWith('http') ? currentBanner.image : `${BASE_URL}${currentBanner.image}`}
+                                    alt={`${t('landing.banner.alt')} ${currentIndex + 1}`}
+                                    fill
+                                    className="object-cover object-center z-10"
+                                    priority
+                                />
+                            </motion.div>
+                            {/* Subtle Overlay */}
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-transparent z-20 pointer-events-none" />
                         </motion.div>
-                        {/* Subtle Overlay */}
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent z-20" />
-                    </motion.div>
-                </AnimatePresence>
+                    </AnimatePresence>
 
-                {/* Navigation Arrows */}
-                {banners.length > 1 && (
-                    <>
-                        <button
-                            onClick={prevSlide}
-                            className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-all hover:bg-white/20 z-30"
-                        >
-                            <ChevronLeft className="w-6 h-6" />
-                        </button>
-                        <button
-                            onClick={nextSlide}
-                            className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-all hover:bg-white/20 z-30"
-                        >
-                            <ChevronRight className="w-6 h-6" />
-                        </button>
-                    </>
-                )}
-
-                {/* Navigation Dots */}
-                {banners.length > 1 && (
-                    <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-3 z-30">
-                        {banners.map((_, index) => (
+                    {/* Navigation Arrows */}
+                    {banners.length > 1 && (
+                        <>
                             <button
-                                key={index}
-                                onClick={() => {
-                                    setDirection(index > currentIndex ? 1 : -1);
-                                    setCurrentIndex(index);
-                                }}
-                                className={`transition-all duration-500 rounded-full ${index === currentIndex
-                                    ? "w-10 h-2 bg-white shadow-glow"
-                                    : "w-2 h-2 bg-white/40 hover:bg-white/60 hover:scale-125"
-                                    }`}
-                                aria-label={`Go to slide ${index + 1}`}
-                            />
-                        ))}
-                    </div>
-                )}
+                                onClick={(e) => { e.stopPropagation(); prevSlide(); }}
+                                className="absolute left-3 sm:left-5 top-1/2 -translate-y-1/2 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-black/30 hover:bg-black/50 backdrop-blur-md border border-white/20 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-all shadow-lg z-30"
+                            >
+                                <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6" />
+                            </button>
+                            <button
+                                onClick={(e) => { e.stopPropagation(); nextSlide(); }}
+                                className="absolute right-3 sm:right-5 top-1/2 -translate-y-1/2 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-black/30 hover:bg-black/50 backdrop-blur-md border border-white/20 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-all shadow-lg z-30"
+                            >
+                                <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6" />
+                            </button>
+                        </>
+                    )}
 
-                {/* Animated Progress Bar */}
-                {banners.length > 1 && (
-                    <div className="absolute bottom-0 left-0 h-1.5 w-full bg-white/10 z-30">
-                        <motion.div
-                            key={`progress-${currentIndex}-${isPaused}`}
-                            initial={{ width: "0%" }}
-                            animate={{ width: isPaused ? "0%" : "100%" }}
-                            transition={{ duration: isPaused ? 0 : 2.5, ease: "linear" }}
-                            className="h-full bg-gradient-to-r from-orange-400 to-yellow-400"
-                        />
-                    </div>
-                )}
+                    {/* Navigation Dots */}
+                    {banners.length > 1 && (
+                        <div className="absolute bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2.5 z-30">
+                            {banners.map((_, index) => (
+                                <button
+                                    key={index}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setDirection(index > currentIndex ? 1 : -1);
+                                        setCurrentIndex(index);
+                                    }}
+                                    className={`transition-all duration-500 rounded-full ${index === currentIndex
+                                        ? "w-8 sm:w-10 h-2 bg-white shadow-glow"
+                                        : "w-2 h-2 bg-white/50 hover:bg-white/80 hover:scale-125"
+                                        }`}
+                                    aria-label={`Go to slide ${index + 1}`}
+                                />
+                            ))}
+                        </div>
+                    )}
+
+                    {/* Animated Progress Bar */}
+                    {banners.length > 1 && (
+                        <div className="absolute bottom-0 left-0 h-1.5 w-full bg-white/10 z-30 pointer-events-none">
+                            <motion.div
+                                key={`progress-${currentIndex}-${isPaused}`}
+                                initial={{ width: "0%" }}
+                                animate={{ width: isPaused ? "0%" : "100%" }}
+                                transition={{ duration: isPaused ? 0 : 2.5, ease: "linear" }}
+                                className="h-full bg-gradient-to-r from-amber-400 via-orange-400 to-yellow-400"
+                            />
+                        </div>
+                    )}
+                </div>
             </div>
         </section>
     );

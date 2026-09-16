@@ -90,11 +90,11 @@ export default function MazaGaneshaFormClient({ slug = "maza-ganesha" }: { slug?
           .catch(() => {});
       } catch (e) {
         setIsLoggedIn(false);
-        router.push(`/auth?redirect=/campaigns/${slug}/participate`);
+        router.push(`/campaigns/${slug}/auth?redirect=/campaigns/${slug}/participate`);
       }
     } else {
       setIsLoggedIn(false);
-      router.push(`/auth?redirect=/campaigns/${slug}/participate`);
+      router.push(`/campaigns/${slug}/auth?redirect=/campaigns/${slug}/participate`);
     }
     setCheckingAuth(false);
   }, [slug, router]);

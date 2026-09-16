@@ -41,9 +41,86 @@ export const getBanners = async (req: Request, res: Response) => {
     }
 };
 
+export const getBannerTargets = async (req: Request, res: Response) => {
+    try {
+        const { type } = req.query;
+        let items: any[] = [];
+
+        switch (type) {
+            case 'POOJA': {
+                const poojas = await prisma.pooja.findMany({
+                    where: { status: true },
+                    select: { id: true, name: true, slug: true }
+                });
+                items = poojas.map(p => ({
+                    id: p.id,
+                    name: typeof p.name === 'object' ? (p.name as any)?.en || (p.name as any)?.hi || JSON.stringify(p.name) : (p.name || 'Unnamed Pooja'),
+                    slug: p.slug
+                }));
+                break;
+            }
+            case 'TEMPLE': {
+                const temples = await prisma.temple.findMany({
+                    where: { isActive: true },
+                    select: { id: true, name: true, slug: true }
+                });
+                items = temples.map(t => ({
+                    id: t.id,
+                    name: typeof t.name === 'object' ? (t.name as any)?.en || (t.name as any)?.hi || JSON.stringify(t.name) : (t.name || 'Unnamed Temple'),
+                    slug: t.slug
+                }));
+                break;
+            }
+            case 'PRODUCT': {
+                const products = await prisma.product.findMany({
+                    select: { id: true, name: true }
+                });
+                items = products.map(pr => ({
+                    id: pr.id,
+                    name: typeof pr.name === 'object' ? (pr.name as any)?.en || (pr.name as any)?.hi || JSON.stringify(pr.name) : (pr.name || 'Unnamed Product'),
+                    slug: null
+                }));
+                break;
+            }
+            case 'MANDAL': {
+                const mandals = await prisma.mandal.findMany({
+                    where: { isActive: true },
+                    select: { id: true, name: true, slug: true }
+                });
+                items = mandals.map(m => ({
+                    id: m.id,
+                    name: typeof m.name === 'object' ? (m.name as any)?.en || (m.name as any)?.hi || JSON.stringify(m.name) : (m.name || 'Unnamed Mandal'),
+                    slug: m.slug
+                }));
+                break;
+            }
+            case 'CONTEST': {
+                const campaigns = await prisma.campaign.findMany({
+                    where: { isActive: true },
+                    select: { id: true, title: true, name: true, slug: true }
+                });
+                items = campaigns.map(c => ({
+                    id: c.id,
+                    name: c.title || c.name || c.slug,
+                    slug: c.slug
+                }));
+                break;
+            }
+            default:
+                items = [];
+                break;
+        }
+
+        res.json({ success: true, data: items });
+    } catch (error) {
+        console.error('Error fetching banner targets:', error);
+        res.status(500).json({ success: false, message: 'Error fetching banner targets' });
+    }
+};
+
 export const createBanner = async (req: Request, res: Response) => {
     try {
-        const { active, order, targetPage } = req.body;
+        const { active, order, targetPage, targetType, targetId, targetSlug, customUrl } = req.body;
         const image = req.file ? `/uploads/cms/banners/${req.file.filename}` : null;
 
         if (!image) {
@@ -56,7 +133,11 @@ export const createBanner = async (req: Request, res: Response) => {
                 active: active === 'true' || active === true,
                 order: parseInt(order as string) || 0,
                 targetPage: targetPage && targetPage !== 'global' ? targetPage : null,
-            }
+                targetType: (targetType || 'NONE') as any,
+                targetId: targetId || null,
+                targetSlug: targetSlug || null,
+                customUrl: customUrl || null,
+            } as any
         });
 
         res.status(201).json({ success: true, message: 'Banner created successfully', data: banner });
@@ -69,9 +150,9 @@ export const createBanner = async (req: Request, res: Response) => {
 export const updateBanner = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
-        const { active, order, targetPage } = req.body;
+        const { active, order, targetPage, targetType, targetId, targetSlug, customUrl } = req.body;
 
-        const existingBanner = await prisma.banner.findUnique({ where: { id: id as string } });
+        const existingBanner: any = await prisma.banner.findUnique({ where: { id: id as string } });
         if (!existingBanner) return res.status(404).json({ success: false, message: 'Banner not found' });
 
         let image = existingBanner.image;
@@ -88,7 +169,11 @@ export const updateBanner = async (req: Request, res: Response) => {
                 targetPage: targetPage !== undefined
                     ? (targetPage && targetPage !== 'global' ? targetPage : null)
                     : existingBanner.targetPage,
-            }
+                targetType: targetType !== undefined ? targetType : existingBanner.targetType,
+                targetId: targetId !== undefined ? targetId : existingBanner.targetId,
+                targetSlug: targetSlug !== undefined ? targetSlug : existingBanner.targetSlug,
+                customUrl: customUrl !== undefined ? customUrl : existingBanner.customUrl,
+            } as any
         });
 
         res.json({ success: true, message: 'Banner updated successfully', data: banner });

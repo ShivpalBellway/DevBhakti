@@ -9,6 +9,7 @@ const router = Router();
 // Public GET routes
 router.get('/banners', cmsController.getBanners);
 router.get('/banners/global-status', cmsController.getBannerGlobalStatus);
+router.get('/banner-targets', cmsController.getBannerTargets);
 router.get('/features', cmsController.getFeatures);
 router.get('/testimonials', cmsController.getTestimonials);
 router.get('/cta-cards', cmsController.getCTACards);
