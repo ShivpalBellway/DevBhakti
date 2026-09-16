@@ -21,7 +21,6 @@ import {
   ChevronRight,
   Menu,
   Image as ImageIcon,
-  Camera,
   Flower2,
   Package,
   Store,
@@ -76,7 +75,7 @@ const sidebarItems = [
 
      {
     label: "Photo gallary Contest ",
-    icon: Camera,
+    icon: Heart,
     href: "/admin/mandals/campaigns",
     permission: "leads.menu",
   },

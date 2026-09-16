@@ -200,6 +200,22 @@ export default function AdminCampaignsPage() {
     }
   };
 
+  const handleDeleteSubmission = async (submissionId: string) => {
+    if (!window.confirm("Are you sure you want to delete this submission entry?")) return;
+
+    try {
+      const res = await axios.delete(`${API_URL}/admin/campaigns/submissions/${submissionId}`);
+      if (res.data.success) {
+        alert("Submission entry deleted successfully!");
+        if (selectedCampaign) {
+          selectCampaignHandler(selectedCampaign);
+        }
+      }
+    } catch (err: any) {
+      alert(err.response?.data?.message || "Failed to delete submission.");
+    }
+  };
+
   const handlePublishWinner = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedCampaign || !selectedWinnerSubmissionId) return;
@@ -525,15 +541,24 @@ export default function AdminCampaignsPage() {
                             {new Date(sub.createdAt).toLocaleDateString()}
                           </td>
                           <td className="p-4 text-right">
-                            <button
-                              onClick={() => {
-                                setSelectedWinnerSubmissionId(sub.id);
-                                setShowWinnerModal(true);
-                              }}
-                              className="bg-amber-100 hover:bg-amber-200 text-amber-800 font-bold px-3 py-1.5 rounded-lg text-[11px] transition-all"
-                            >
-                              Pick as Winner
-                            </button>
+                            <div className="flex items-center justify-end gap-2">
+                              <button
+                                onClick={() => {
+                                  setSelectedWinnerSubmissionId(sub.id);
+                                  setShowWinnerModal(true);
+                                }}
+                                className="bg-amber-100 hover:bg-amber-200 text-amber-800 font-bold px-3 py-1.5 rounded-lg text-[11px] transition-all"
+                              >
+                                Pick as Winner
+                              </button>
+                              <button
+                                onClick={() => handleDeleteSubmission(sub.id)}
+                                title="Delete Submission Entry"
+                                className="w-7 h-7 bg-red-50 hover:bg-red-100 text-red-500 rounded-lg flex items-center justify-center transition-all cursor-pointer"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       ))}

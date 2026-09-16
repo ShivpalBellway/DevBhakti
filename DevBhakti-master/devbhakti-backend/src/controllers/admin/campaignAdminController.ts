@@ -249,3 +249,19 @@ export const publishCampaignWinnerAdmin = async (req: Request, res: Response) =>
     return res.status(500).json({ success: false, message: error.message });
   }
 };
+
+// DELETE /api/admin/campaigns/submissions/:id — Delete a campaign submission entry
+export const deleteSubmissionAdmin = async (req: Request, res: Response) => {
+  try {
+    const id = req.params.id as string;
+
+    await prisma.campaignVote.deleteMany({ where: { entryId: id } });
+    await prisma.campaignWinner.deleteMany({ where: { entryId: id } });
+    await prisma.campaignEntry.delete({ where: { id } });
+
+    return res.json({ success: true, message: "Submission entry deleted successfully." });
+  } catch (error: any) {
+    console.error("Error deleting campaign submission:", error);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};

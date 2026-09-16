@@ -180,10 +180,10 @@ export default function ContestAuthForm({ slug = "maza-ganesha" }: { slug?: stri
   };
 
   return (
-    <div className="min-h-screen flex flex-col relative overflow-hidden bg-white font-sans">
+    <div className="min-h-[100dvh] flex flex-col relative overflow-y-auto bg-white font-sans py-4 sm:py-8">
       {/* Full Page Background Image */}
       <div
-        className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat"
+        className="fixed inset-0 z-0 bg-cover bg-center bg-no-repeat"
         style={{
           backgroundImage: `url(${heroBg.src})`,
           filter: "brightness(0.7) blur(2px)",
@@ -191,46 +191,46 @@ export default function ContestAuthForm({ slug = "maza-ganesha" }: { slug?: stri
       />
 
       {/* Subtle Mesh Gradient Overlay */}
-      <div className="absolute inset-0 z-[1] bg-white/30 backdrop-blur-[1px]" />
+      <div className="fixed inset-0 z-[1] bg-white/30 backdrop-blur-[1px]" />
 
       {/* Decorative Background Elements */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden z-[2]">
+      <div className="fixed inset-0 pointer-events-none overflow-hidden z-[2]">
         <div className="absolute top-[10%] -left-24 w-96 h-96 bg-primary/10 rounded-full blur-[120px] opacity-40" />
         <div className="absolute bottom-[10%] -right-48 w-[500px] h-[500px] bg-orange-300/10 rounded-full blur-[150px] opacity-30" />
       </div>
 
-      <div className="flex-1 flex flex-col items-center justify-center p-4 md:p-6 relative z-10 w-full">
-        {/* Main Form Center Card Container (Increased Width: max-w-[520px]) */}
+      <div className="flex-1 flex flex-col items-center justify-center p-3 sm:p-6 relative z-10 w-full my-auto">
+        {/* Main Form Center Card Container (Increased Width & Adaptive Mobile Padding) */}
         <motion.div
           initial={{ opacity: 0, scale: 0.96, y: 12 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           transition={{ duration: 0.4 }}
-          className="w-full max-w-[520px] bg-[#fdfbf7] rounded-[2.5rem] p-6 sm:p-9 shadow-[0_20px_50px_rgba(0,0,0,0.12)] border border-amber-200/50 relative z-20 text-center text-[#3d1a10]"
+          className="w-full max-w-[520px] bg-[#fdfbf7] rounded-3xl sm:rounded-[2.5rem] p-4 xs:p-5 sm:p-9 shadow-[0_20px_50px_rgba(0,0,0,0.12)] border border-amber-200/50 relative z-20 text-center text-[#3d1a10] my-auto"
         >
           {/* Back Button Container matching AuthForm */}
-          <div className="w-full flex justify-start mb-2 -mt-1">
+          <div className="w-full flex justify-start mb-1 sm:mb-2 -mt-1">
             <button
               onClick={() => router.push(`/campaigns/${slug}`)}
-              className="group flex items-center gap-2 text-slate-500 hover:text-primary transition-all text-sm font-medium cursor-pointer"
+              className="group flex items-center gap-1.5 sm:gap-2 text-slate-500 hover:text-primary transition-all text-xs sm:text-sm font-medium cursor-pointer"
             >
-              <div className="p-2 rounded-full bg-slate-100 group-hover:bg-primary/10 transition-all border border-slate-200 group-hover:border-primary/30">
-                <ArrowLeft className="w-4 h-4" />
+              <div className="p-1.5 sm:p-2 rounded-full bg-slate-100 group-hover:bg-primary/10 transition-all border border-slate-200 group-hover:border-primary/30">
+                <ArrowLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               </div>
               Back to Home
             </button>
           </div>
 
           {/* Logo at Top */}
-          <div className="flex justify-center mb-2">
-            <Logo size="lg" className="drop-shadow-sm" />
+          <div className="flex justify-center mb-1.5 sm:mb-2">
+            <Logo size="lg" className="drop-shadow-sm scale-90 sm:scale-100" />
           </div>
 
           {/* ══════════════════════════════════════════════════════════════
               OFFICIAL CONTEST BRANDING LOGO IMAGE & SUBTITLE
           ══════════════════════════════════════════════════════════════ */}
-          <div className="mb-5 flex flex-col items-center justify-center">
+          <div className="mb-4 sm:mb-5 flex flex-col items-center justify-center">
             {/* Official Maza Ganesha Logo Image */}
-            <div className="relative w-full max-w-[340px] sm:max-w-[380px] h-auto my-1">
+            <div className="relative w-full max-w-[240px] xs:max-w-[290px] sm:max-w-[360px] h-auto my-0.5 sm:my-1">
               <Image
                 src="/maza-ganesha-logo.png"
                 alt="Maza Ganesha Photo Contest"
@@ -242,7 +242,7 @@ export default function ContestAuthForm({ slug = "maza-ganesha" }: { slug?: stri
             </div>
 
             {/* Subheading */}
-            <p className="text-xs sm:text-sm text-slate-700 font-medium leading-relaxed mt-2">
+            <p className="text-[11px] xs:text-xs sm:text-sm text-slate-700 font-medium leading-relaxed mt-1 sm:mt-2">
               Share your Ganpati decoration <br />
               and stand a chance to <span className="text-[#a81d11] font-black">win exciting prizes!</span>
             </p>
@@ -251,33 +251,33 @@ export default function ContestAuthForm({ slug = "maza-ganesha" }: { slug?: stri
           {/* ══════════════════════════════════════════════════════════════
               3 FEATURE PILLARS WITH VERTICAL DIVIDERS MATCHING IMAGE 2
           ══════════════════════════════════════════════════════════════ */}
-          <div className="grid grid-cols-3 mb-6 text-center border-y border-amber-200/60 py-4">
+          <div className="grid grid-cols-3 mb-4 sm:mb-6 text-center border-y border-amber-200/60 py-2.5 sm:py-4 gap-0.5 sm:gap-1">
             {/* Pillar 1 */}
-            <div className="flex flex-col items-center px-1">
-              <div className="w-10 h-10 rounded-full bg-[#fbf1e5] border border-amber-200/60 text-[#88542B] flex items-center justify-center mb-2 shadow-xs">
-                <Camera className="w-5 h-5 text-[#88542B]" />
+            <div className="flex flex-col items-center px-0.5 sm:px-1">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-[#fbf1e5] border border-amber-200/60 text-[#88542B] flex items-center justify-center mb-1 sm:mb-2 shadow-xs">
+                <Camera className="w-4 h-4 sm:w-5 sm:h-5 text-[#88542B]" />
               </div>
-              <span className="text-[10px] sm:text-[11px] font-bold text-[#3d1a10] leading-snug">
+              <span className="text-[9px] xs:text-[10px] sm:text-[11px] font-bold text-[#3d1a10] leading-tight sm:leading-snug">
                 Upload <br /> Your Photo
               </span>
             </div>
 
             {/* Pillar 2 */}
-            <div className="flex flex-col items-center px-1 border-x border-amber-200/70">
-              <div className="w-10 h-10 rounded-full bg-[#fbf1e5] border border-amber-200/60 text-[#88542B] flex items-center justify-center mb-2 shadow-xs">
-                <Users className="w-5 h-5 text-[#88542B]" />
+            <div className="flex flex-col items-center px-0.5 sm:px-1 border-x border-amber-200/70">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-[#fbf1e5] border border-amber-200/60 text-[#88542B] flex items-center justify-center mb-1 sm:mb-2 shadow-xs">
+                <Users className="w-4 h-4 sm:w-5 sm:h-5 text-[#88542B]" />
               </div>
-              <span className="text-[10px] sm:text-[11px] font-bold text-[#3d1a10] leading-snug">
+              <span className="text-[9px] xs:text-[10px] sm:text-[11px] font-bold text-[#3d1a10] leading-tight sm:leading-snug">
                 Share with <br /> Family &amp; Friends
               </span>
             </div>
 
             {/* Pillar 3 */}
-            <div className="flex flex-col items-center px-1">
-              <div className="w-10 h-10 rounded-full bg-[#fbf1e5] border border-amber-200/60 text-[#88542B] flex items-center justify-center mb-2 shadow-xs">
-                <Trophy className="w-5 h-5 text-[#88542B]" />
+            <div className="flex flex-col items-center px-0.5 sm:px-1">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-[#fbf1e5] border border-amber-200/60 text-[#88542B] flex items-center justify-center mb-1 sm:mb-2 shadow-xs">
+                <Trophy className="w-4 h-4 sm:w-5 sm:h-5 text-[#88542B]" />
               </div>
-              <span className="text-[10px] sm:text-[11px] font-bold text-[#3d1a10] leading-snug">
+              <span className="text-[9px] xs:text-[10px] sm:text-[11px] font-bold text-[#3d1a10] leading-tight sm:leading-snug">
                 Win <br /> Exciting Prizes
               </span>
             </div>
@@ -287,34 +287,34 @@ export default function ContestAuthForm({ slug = "maza-ganesha" }: { slug?: stri
               FORM CONTAINER MATCHING IMAGE 2
           ══════════════════════════════════════════════════════════════ */}
           {!showOtpInput ? (
-            <form onSubmit={handleSendOTP} className="space-y-4">
+            <form onSubmit={handleSendOTP} className="space-y-3 sm:space-y-4">
               <div>
-                <h3 className="font-serif font-black text-xl sm:text-2xl text-[#3d1a10] mb-0.5">
+                <h3 className="font-serif font-black text-lg sm:text-2xl text-[#3d1a10] mb-0.5">
                   Ready to participate?
                 </h3>
-                <p className="text-slate-500 text-xs sm:text-sm font-medium mb-4">
+                <p className="text-slate-500 text-[11px] sm:text-sm font-medium mb-3 sm:mb-4">
                   Enter your mobile number to continue
                 </p>
               </div>
 
               {isRegisterMode && (
-                <div className="mb-3">
+                <div className="mb-2 sm:mb-3">
                   <input
                     type="text"
                     required
                     placeholder="Your Full Name"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    className="w-full bg-white border border-slate-200 rounded-full px-5 py-3 text-xs sm:text-sm font-medium text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#88542B] shadow-xs"
+                    className="w-full bg-white border border-slate-200 rounded-full px-4 sm:px-5 py-2.5 sm:py-3 text-xs sm:text-sm font-medium text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#88542B] shadow-xs"
                   />
                 </div>
               )}
 
               {/* Pill-shaped Mobile Input Box */}
-              <div className="flex items-center bg-white border border-slate-200/90 rounded-full px-4 py-3 shadow-xs focus-within:border-[#88542B] focus-within:ring-2 focus-within:ring-[#88542B]/10 transition-all">
-                <Phone className="w-4.5 h-4.5 text-slate-400 shrink-0 mr-1.5" />
+              <div className="flex items-center bg-white border border-slate-200/90 rounded-full px-3.5 sm:px-4 py-2.5 sm:py-3 shadow-xs focus-within:border-[#88542B] focus-within:ring-2 focus-within:ring-[#88542B]/10 transition-all">
+                <Phone className="w-4 h-4 sm:w-4.5 sm:h-4.5 text-slate-400 shrink-0 mr-1 sm:mr-1.5" />
                 <CountryCodePicker value={countryCode} onChange={setCountryCode} />
-                <span className="text-slate-300 font-light mx-2">|</span>
+                <span className="text-slate-300 font-light mx-1.5 sm:mx-2">|</span>
                 <input
                   type="tel"
                   required
@@ -330,7 +330,7 @@ export default function ContestAuthForm({ slug = "maza-ganesha" }: { slug?: stri
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-3.5 rounded-full bg-gradient-to-r from-[#4a1306] via-[#8d5020] to-[#cc8b34] hover:from-[#350c03] hover:to-[#b07425] text-white font-black text-sm sm:text-base shadow-lg shadow-amber-900/20 flex items-center justify-center gap-2 transition-all duration-300 hover:scale-[1.01] active:scale-98 cursor-pointer disabled:opacity-75"
+                className="w-full py-3 sm:py-3.5 rounded-full bg-gradient-to-r from-[#4a1306] via-[#8d5020] to-[#cc8b34] hover:from-[#350c03] hover:to-[#b07425] text-white font-black text-xs sm:text-base shadow-lg shadow-amber-900/20 flex items-center justify-center gap-2 transition-all duration-300 hover:scale-[1.01] active:scale-98 cursor-pointer disabled:opacity-75"
               >
                 {loading ? (
                   <>
@@ -344,7 +344,7 @@ export default function ContestAuthForm({ slug = "maza-ganesha" }: { slug?: stri
               </button>
 
               {/* Bottom Sign In Link matching Image 2 */}
-              <p className="text-xs text-slate-500 pt-2 font-medium">
+              <p className="text-[11px] sm:text-xs text-slate-500 pt-1 sm:pt-2 font-medium">
                 Already have a DevBhakti account?{" "}
                 <button
                   type="button"

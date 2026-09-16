@@ -156,6 +156,17 @@ const sidebarItems = [
         href: "/temples/dashboard/finance",
         permission: "finance.menu"
     },
+    // {
+    //     label: "Expense Management",
+    //     icon: CreditCard,
+    //     href: "/temples/dashboard/expenses",
+    //     permission: "expenses.menu",
+    //     subItems: [
+    //         { label: "📊 Expense Overview", href: "/temples/dashboard/expenses", permission: "expenses.view" },
+    //         { label: "📋 All Expenses", href: "/temples/dashboard/expenses/list", permission: "expenses.view" },
+    //         { label: "🏷️ Expense Categories", href: "/temples/dashboard/expenses/categories", permission: "expenses.view" },
+    //     ]
+    // },
     {
         label: "Bank Details",
         icon: Building2,

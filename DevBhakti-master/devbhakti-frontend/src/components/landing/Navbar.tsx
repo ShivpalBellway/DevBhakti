@@ -204,9 +204,13 @@ const Navbar: React.FC<NavbarProps> = ({ variant = "default", isSolid = false })
                               isMandalActive ? "text-primary" : "text-foreground hover:text-primary"
                             }`}
                           >
-                            <span className="relative flex h-2.5 w-2.5 shrink-0 items-center justify-center">
-                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
-                              <span className="relative inline-flex rounded-full h-2 w-2 bg-gradient-to-r from-amber-500 to-red-500 shadow-[0_0_8px_rgba(245,158,11,0.9)]"></span>
+                            <span className="relative flex h-6 w-6 shrink-0 items-center justify-center">
+                              <span className="animate-ping absolute inline-flex h-5 w-5 rounded-full bg-amber-400/50 opacity-75"></span>
+                              <img 
+                                src="/ganesh-icon.svg" 
+                                alt="Ganesh Bappa" 
+                                className="relative w-5.5 h-5.5 object-contain animate-pulse drop-shadow-[0_0_8px_rgba(245,158,11,1)]"
+                              />
                             </span>
                             <span>{mounted ? link.label : "Ganeshotsav"}</span>
                             <ChevronDown className="w-3.5 h-3.5 transition-transform duration-200 group-data-[state=open]:rotate-180" />
@@ -584,9 +588,13 @@ const Navbar: React.FC<NavbarProps> = ({ variant = "default", isSolid = false })
                       return (
                         <div key="mandal-mobile-group" className="py-2 border-b border-border space-y-1">
                           <div className="text-xs font-black text-primary uppercase tracking-widest px-1 py-1 flex items-center gap-2">
-                            <span className="relative flex h-2.5 w-2.5 shrink-0 items-center justify-center">
-                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
-                              <span className="relative inline-flex rounded-full h-2 w-2 bg-gradient-to-r from-amber-500 to-red-500 shadow-[0_0_8px_rgba(245,158,11,0.9)]"></span>
+                            <span className="relative flex h-6 w-6 shrink-0 items-center justify-center">
+                              <span className="animate-ping absolute inline-flex h-5 w-5 rounded-full bg-amber-400/50 opacity-75"></span>
+                              <img 
+                                src="/ganesh-icon.svg" 
+                                alt="Ganesh Bappa" 
+                                className="relative w-5.5 h-5.5 object-contain animate-pulse drop-shadow-[0_0_8px_rgba(245,158,11,1)]"
+                              />
                             </span>
                             <span>{mounted ? link.label : "Ganeshotsav"}</span>
                           </div>

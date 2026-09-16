@@ -142,6 +142,8 @@ model Temple {
   withdrawals           WithdrawalRequest[]
   tellerOrders          TellerOrder[]
   dailyActivityReports  DailyActivityReport[]
+  expenses              Expense[]
+  expenseCategories     ExpenseCategory[]
 }
 
 model BookingAvailability {
@@ -799,6 +801,8 @@ model Mandal {
   tellerOrders       TellerOrder[]
   availability       BookingAvailability[]
   dailyActivityReports DailyActivityReport[]
+  expenses           Expense[]
+  expenseCategories  ExpenseCategory[]
 }
 
 model Lead {
@@ -1227,6 +1231,72 @@ model CampaignWinner {
   campaign    Campaign      @relation(fields: [campaignId], references: [id], onDelete: Cascade)
   entry       CampaignEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
 }
+
+model ExpenseCategory {
+  id          String    @id @default(cuid())
+  name        String
+  description String?
+  mandalId    String?
+  templeId    String?
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  expenses    Expense[]
+  mandal      Mandal?   @relation(fields: [mandalId], references: [id], onDelete: Cascade)
+  temple      Temple?   @relation(fields: [templeId], references: [id], onDelete: Cascade)
+
+  @@unique([name, mandalId])
+  @@unique([name, templeId])
+  @@index([mandalId])
+  @@index([templeId])
+}
+
+model Expense {
+  id              String          @id @default(cuid())
+  entityType      String          // "MANDAL" or "TEMPLE"
+  mandalId        String?
+  templeId        String?
+  
+  amount          Float
+  categoryId      String
+  categoryName    String
+  description     String
+  expenseDate     DateTime        @default(now())
+  paymentMode     String          @default("CASH") // CASH, UPI, BANK_TRANSFER, CHEQUE, OTHER
+  
+  paidByMemberId  String?
+  paidByName      String
+  enteredByUserId String
+  enteredByName   String
+  
+  receiptImage    String?
+  notes           String?
+  
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  auditLogs       ExpenseAudit[]
+
+  category        ExpenseCategory @relation(fields: [categoryId], references: [id])
+  mandal          Mandal?         @relation(fields: [mandalId], references: [id], onDelete: Cascade)
+  temple          Temple?         @relation(fields: [templeId], references: [id], onDelete: Cascade)
+
+  @@index([mandalId, expenseDate])
+  @@index([templeId, expenseDate])
+  @@index([categoryId])
+}
+
+model ExpenseAudit {
+  id              String   @id @default(cuid())
+  expenseId       String
+  action          String   // "CREATED", "UPDATED", "DELETED"
+  changes         Json?
+  performedBy     String
+  performedByName String
+  createdAt       DateTime @default(now())
+  expense         Expense  @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+}
+
 
 
 

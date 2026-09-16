@@ -382,166 +382,194 @@ export default function BannersPage() {
 
             {/* Add/Edit Dialog */}
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <DialogContent className="sm:max-w-[600px] gap-0 p-0">
-                    <DialogHeader className="p-6 pb-2">
-                        <DialogTitle className="text-xl">{editingBanner ? "Edit Banner" : "Add New Banner"}</DialogTitle>
-                        <DialogDescription className="text-base">
+                <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto gap-0 p-0">
+                    <DialogHeader className="p-6 pb-4 border-b border-border">
+                        <DialogTitle className="text-xl font-bold font-serif flex items-center gap-2">
+                            {editingBanner ? "Edit Banner" : "Add New Banner"}
+                        </DialogTitle>
+                        <DialogDescription className="text-sm">
                             {editingBanner ? "Update the banner details below." : "Configure the new banner settings."}
                         </DialogDescription>
                     </DialogHeader>
-                    <form onSubmit={handleSubmit} className="flex flex-col gap-6 p-6 pt-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="status" className="text-sm font-medium">Status</Label>
-                            <select
-                                id="status"
-                                className="w-full h-10 px-3 rounded-md border border-input bg-background focus:ring-2 focus:ring-ring focus:ring-offset-2 outline-none transition-all text-sm"
-                                value={formData.active}
-                                onChange={(e) => setFormData({ ...formData, active: e.target.value })}
-                            >
-                                <option value="true">Active</option>
-                                <option value="false">Inactive</option>
-                            </select>
-                        </div>
+                    <form onSubmit={handleSubmit} className="p-6 space-y-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {/* Left Column: Banner Settings & Routing */}
+                            <div className="space-y-4">
+                                <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground border-b pb-1">
+                                    1. Placement & Target
+                                </h3>
 
-                        <div className="space-y-2">
-                            <Label htmlFor="targetPage" className="text-sm font-medium">Target Page Placement</Label>
-                            <select
-                                id="targetPage"
-                                className="w-full h-10 px-3 rounded-md border border-input bg-background focus:ring-2 focus:ring-ring focus:ring-offset-2 outline-none transition-all text-sm"
-                                value={formData.targetPage}
-                                onChange={(e) => setFormData({ ...formData, targetPage: e.target.value })}
-                            >
-                                <option value="global">🏠 Homepage (Global)</option>
-                                {campaigns.map((camp) => (
-                                    <option key={camp.slug} value={camp.slug}>🙏 {camp.title || camp.name}</option>
-                                ))}
-                            </select>
-                            <p className="text-xs text-muted-foreground">
-                                Select which page slider this banner will appear on.
-                            </p>
-                        </div>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div className="space-y-1.5">
+                                        <Label htmlFor="status" className="text-xs font-bold">Status</Label>
+                                        <select
+                                            id="status"
+                                            className="w-full h-10 px-3 rounded-md border border-input bg-background focus:ring-2 focus:ring-ring outline-none transition-all text-sm font-medium"
+                                            value={formData.active}
+                                            onChange={(e) => setFormData({ ...formData, active: e.target.value })}
+                                        >
+                                            <option value="true">Active</option>
+                                            <option value="false">Inactive</option>
+                                        </select>
+                                    </div>
 
-                        {/* Destination Type & Target Item Selection */}
-                        <div className="space-y-2">
-                            <Label htmlFor="targetType" className="text-sm font-medium">Click Action / Destination Type</Label>
-                            <select
-                                id="targetType"
-                                className="w-full h-10 px-3 rounded-md border border-input bg-background focus:ring-2 focus:ring-ring focus:ring-offset-2 outline-none transition-all text-sm font-medium"
-                                value={formData.targetType}
-                                onChange={(e) => handleTargetTypeChange(e.target.value)}
-                            >
-                                <option value="NONE">❌ None (Info Only - No Click Action)</option>
-                                <option value="POOJA">🕉️ Pooja Detail Page</option>
-                                <option value="TEMPLE">🛕 Temple Detail Page</option>
-                                <option value="PRODUCT">🛍️ Product / Samagri Page</option>
-                                <option value="MANDAL">🚩 Mandal Detail Page</option>
-                                <option value="CONTEST">🏆 Contest / Campaign Page</option>
-                                <option value="CUSTOM_URL">🔗 Custom Link / External URL</option>
-                            </select>
-                            <p className="text-xs text-muted-foreground">
-                                Choose where the user goes when they click this banner on Web or App.
-                            </p>
-                        </div>
+                                    <div className="space-y-1.5">
+                                        <Label htmlFor="targetPage" className="text-xs font-bold">Page Placement</Label>
+                                        <select
+                                            id="targetPage"
+                                            className="w-full h-10 px-3 rounded-md border border-input bg-background focus:ring-2 focus:ring-ring outline-none transition-all text-sm font-medium"
+                                            value={formData.targetPage}
+                                            onChange={(e) => setFormData({ ...formData, targetPage: e.target.value })}
+                                        >
+                                            <option value="global">🏠 Homepage (Global)</option>
+                                            {campaigns.map((camp) => (
+                                                <option key={camp.slug} value={camp.slug}>🙏 {camp.title || camp.name}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                </div>
 
-                        {/* Item Picker for POOJA, TEMPLE, PRODUCT, MANDAL, CONTEST */}
-                        {['POOJA', 'TEMPLE', 'PRODUCT', 'MANDAL', 'CONTEST'].includes(formData.targetType) && (
-                            <div className="space-y-2 bg-muted/40 p-4 rounded-lg border border-border">
-                                <Label htmlFor="targetItem" className="text-sm font-semibold text-primary">
-                                    Select Target {formData.targetType.charAt(0) + formData.targetType.slice(1).toLowerCase()}
-                                </Label>
-                                {loadingTargets ? (
-                                    <div className="text-xs text-muted-foreground animate-pulse py-2">Loading active items...</div>
-                                ) : (
+                                <div className="space-y-1.5">
+                                    <Label htmlFor="targetType" className="text-xs font-bold">Click Action / Destination Type</Label>
                                     <select
-                                        id="targetItem"
-                                        className="w-full h-10 px-3 rounded-md border border-input bg-background focus:ring-2 focus:ring-ring outline-none transition-all text-sm"
-                                        value={formData.targetId}
-                                        onChange={(e) => {
-                                            const selectedId = e.target.value;
-                                            const item = targetItems.find(i => i.id === selectedId);
-                                            setFormData(prev => ({
-                                                ...prev,
-                                                targetId: selectedId,
-                                                targetSlug: item?.slug || ""
-                                            }));
-                                        }}
+                                        id="targetType"
+                                        className="w-full h-10 px-3 rounded-md border border-input bg-background focus:ring-2 focus:ring-ring outline-none transition-all text-sm font-medium"
+                                        value={formData.targetType}
+                                        onChange={(e) => handleTargetTypeChange(e.target.value)}
                                     >
-                                        <option value="">-- Select Item --</option>
-                                        {targetItems.map((item) => (
-                                            <option key={item.id} value={item.id}>
-                                                {item.name} {item.slug ? `(${item.slug})` : ''}
-                                            </option>
-                                        ))}
+                                        <option value="NONE">❌ None (Info Only - No Click Action)</option>
+                                        <option value="POOJA">🕉️ Pooja Detail Page</option>
+                                        <option value="TEMPLE">🛕 Temple Detail Page</option>
+                                        <option value="PRODUCT">🛍️ Product / Samagri Page</option>
+                                        <option value="MANDAL">🚩 Mandal Detail Page</option>
+                                        <option value="CONTEST">🏆 Contest / Campaign Page</option>
+                                        <option value="CUSTOM_URL">🔗 Custom Link / External URL</option>
                                     </select>
+                                    <p className="text-xs text-muted-foreground">
+                                        Choose where the user goes when they click this banner on Web or App.
+                                    </p>
+                                </div>
+
+                                {/* Dynamic Item Picker */}
+                                {['POOJA', 'TEMPLE', 'PRODUCT', 'MANDAL', 'CONTEST'].includes(formData.targetType) && (
+                                    <div className="space-y-1.5 bg-muted/40 p-3.5 rounded-lg border border-border">
+                                        <Label htmlFor="targetItem" className="text-xs font-bold text-primary">
+                                            Select Target {formData.targetType.charAt(0) + formData.targetType.slice(1).toLowerCase()}
+                                        </Label>
+                                        {loadingTargets ? (
+                                            <div className="text-xs text-muted-foreground animate-pulse py-2">Loading active items...</div>
+                                        ) : (
+                                            <select
+                                                id="targetItem"
+                                                className="w-full h-10 px-3 rounded-md border border-input bg-background focus:ring-2 focus:ring-ring outline-none transition-all text-sm"
+                                                value={formData.targetId}
+                                                onChange={(e) => {
+                                                    const selectedId = e.target.value;
+                                                    const item = targetItems.find(i => i.id === selectedId);
+                                                    setFormData(prev => ({
+                                                        ...prev,
+                                                        targetId: selectedId,
+                                                        targetSlug: item?.slug || ""
+                                                    }));
+                                                }}
+                                            >
+                                                <option value="">-- Select Item --</option>
+                                                {targetItems.map((item) => {
+                                                    let displayName = item.name;
+                                                    if (typeof item.name === 'string' && item.name.trim().startsWith('{')) {
+                                                        try {
+                                                            const parsed = JSON.parse(item.name);
+                                                            displayName = parsed.en || parsed.hi || parsed.mr || item.name;
+                                                        } catch (e) {}
+                                                    }
+                                                    return (
+                                                        <option key={item.id} value={item.id}>
+                                                            {displayName} {item.slug ? `(${item.slug})` : ''}
+                                                        </option>
+                                                    );
+                                                })}
+                                            </select>
+                                        )}
+                                    </div>
+                                )}
+
+                                {formData.targetType === 'CUSTOM_URL' && (
+                                    <div className="space-y-1.5 bg-muted/40 p-3.5 rounded-lg border border-border">
+                                        <Label htmlFor="customUrl" className="text-xs font-bold text-primary">
+                                            Custom URL / Path
+                                        </Label>
+                                        <Input
+                                            id="customUrl"
+                                            type="text"
+                                            placeholder="e.g. /donations or https://..."
+                                            value={formData.customUrl}
+                                            onChange={(e) => setFormData(prev => ({ ...prev, customUrl: e.target.value }))}
+                                            className="h-10 text-sm bg-background"
+                                        />
+                                        <p className="text-xs text-muted-foreground">
+                                            Relative path (e.g., /donations) or full URL (https://...).
+                                        </p>
+                                    </div>
                                 )}
                             </div>
-                        )}
 
-                        {/* Custom Link Input */}
-                        {formData.targetType === 'CUSTOM_URL' && (
-                            <div className="space-y-2 bg-muted/40 p-4 rounded-lg border border-border">
-                                <Label htmlFor="customUrl" className="text-sm font-semibold text-primary">
-                                    Enter Custom URL / Path
-                                </Label>
-                                <Input
-                                    id="customUrl"
-                                    type="text"
-                                    placeholder="e.g. /donations or https://youtube.com/..."
-                                    value={formData.customUrl}
-                                    onChange={(e) => setFormData(prev => ({ ...prev, customUrl: e.target.value }))}
-                                    className="h-10 text-sm bg-background"
-                                />
-                                <p className="text-xs text-muted-foreground">
-                                    Relative path (e.g., /donations) or full URL (https://...).
-                                </p>
+                            {/* Right Column: Banner Media & Preview */}
+                            <div className="space-y-4">
+                                <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground border-b pb-1">
+                                    2. Banner Image Media
+                                </h3>
+
+                                <div className="space-y-3">
+                                    <div className="border-2 border-dashed border-border rounded-lg p-6 flex flex-col items-center justify-center gap-2 hover:bg-muted/50 transition-colors cursor-pointer relative group min-h-[130px]">
+                                        <div className="p-2.5 bg-primary/10 rounded-full text-primary group-hover:scale-110 transition-transform">
+                                            <Upload className="w-5 h-5" />
+                                        </div>
+                                        <div className="text-center space-y-0.5">
+                                            <div className="text-sm font-medium text-foreground">Click to upload image</div>
+                                            <div className="text-xs text-muted-foreground">Aspect Ratio: 2.4 (1920x800 px)</div>
+                                        </div>
+                                        <Input
+                                            type="file"
+                                            className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                                            onChange={handleFileChange}
+                                        />
+                                    </div>
+
+                                    {imagePreview ? (
+                                        <div className="relative w-full h-44 bg-muted rounded-lg overflow-hidden border border-border shadow-inner flex items-center justify-center">
+                                            <img src={imagePreview} className="w-full h-full object-cover" alt="Preview" />
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    setImagePreview("");
+                                                    setImageFile(null);
+                                                }}
+                                                className="absolute top-2 right-2 p-1.5 bg-background/80 backdrop-blur-sm border border-border rounded-full text-foreground hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-all shadow-sm"
+                                            >
+                                                <X className="w-4 h-4" />
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <div className="h-44 rounded-lg border border-dashed border-border/60 bg-muted/20 flex items-center justify-center text-xs text-muted-foreground italic">
+                                            No image selected yet
+                                        </div>
+                                    )}
+                                </div>
                             </div>
-                        )}
-
-                        <div className="space-y-3">
-                            <Label className="text-sm font-medium">Banner Image</Label>
-                            <div className="border-2 border-dashed border-border rounded-lg p-8 flex flex-col items-center justify-center gap-3 hover:bg-muted/50 transition-colors cursor-pointer relative group">
-                                <div className="p-3 bg-primary/10 rounded-full text-primary group-hover:scale-110 transition-transform">
-                                    <Upload className="w-6 h-6" />
-                                </div>
-                                <div className="text-center space-y-1">
-                                    <div className="text-sm font-medium text-foreground">Click to upload image</div>
-                                    <div className="text-xs text-muted-foreground">Aspect Ratio: 2.4 (1920x800 px)</div>
-                                </div>
-                                <Input
-                                    type="file"
-                                    className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                                    onChange={handleFileChange}
-                                />
-                            </div>
-
-                            {imagePreview && (
-                                <div className="mt-2 relative w-full h-48 bg-muted rounded-lg overflow-hidden border border-border shadow-inner flex items-center justify-center">
-                                    <img src={imagePreview} className="max-w-full max-h-full object-contain" alt="Preview" />
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            setImagePreview("");
-                                            setImageFile(null);
-                                        }}
-                                        className="absolute top-2 right-2 p-1.5 bg-background/80 backdrop-blur-sm border border-border rounded-full text-foreground hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-all shadow-sm"
-                                    >
-                                        <X className="w-4 h-4" />
-                                    </button>
-                                </div>
-                            )}
                         </div>
 
-                        <DialogFooter className="pt-2 gap-2">
+                        <DialogFooter className="pt-4 border-t border-border gap-2">
                             <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)} className="h-10 px-6">
                                 Cancel
                             </Button>
-                            <Button type="submit" className="h-10 px-6">
+                            <Button type="submit" className="h-10 px-6 bg-primary hover:bg-primary/90 text-white font-semibold">
                                 {editingBanner ? "Update Banner" : "Create Banner"}
                             </Button>
                         </DialogFooter>
                     </form>
                 </DialogContent>
             </Dialog>
+
         </div>
     );
 }

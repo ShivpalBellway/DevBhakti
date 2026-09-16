@@ -440,5 +440,81 @@ export const staffLoginMandal = async (data: any) => {
     return response.data;
 };
 
+// ─── Mandal Expense Management APIs ─────────────────────────────────────────
+export const fetchMandalExpenses = async (params?: any) => {
+    const token = localStorage.getItem("token");
+    const response = await axios.get(`${API_URL}/mandal-admin/expenses`, {
+        headers: { Authorization: `Bearer ${token}` },
+        params
+    });
+    return response.data;
+};
+
+export const fetchMandalExpenseStats = async (params?: any) => {
+    const token = localStorage.getItem("token");
+    const response = await axios.get(`${API_URL}/mandal-admin/expenses/stats`, {
+        headers: { Authorization: `Bearer ${token}` },
+        params
+    });
+    return response.data;
+};
+
+export const createMandalExpense = async (data: any) => {
+    const token = localStorage.getItem("token");
+    const response = await axios.post(`${API_URL}/mandal-admin/expenses`, data, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+
+export const updateMandalExpense = async (id: string, data: any) => {
+    const token = localStorage.getItem("token");
+    const response = await axios.put(`${API_URL}/mandal-admin/expenses/${id}`, data, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+
+export const deleteMandalExpense = async (id: string) => {
+    const token = localStorage.getItem("token");
+    const response = await axios.delete(`${API_URL}/mandal-admin/expenses/${id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+
+// Mandal Expense Categories APIs
+export const fetchMandalExpenseCategories = async () => {
+    const token = localStorage.getItem("token");
+    const response = await axios.get(`${API_URL}/mandal-admin/expenses/categories`, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+
+export const createMandalExpenseCategory = async (data: { name: string; description?: string }) => {
+    const token = localStorage.getItem("token");
+    const response = await axios.post(`${API_URL}/mandal-admin/expenses/categories`, data, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+
+export const updateMandalExpenseCategory = async (id: string, data: { name?: string; description?: string }) => {
+    const token = localStorage.getItem("token");
+    const response = await axios.put(`${API_URL}/mandal-admin/expenses/categories/${id}`, data, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+
+export const deleteMandalExpenseCategory = async (id: string) => {
+    const token = localStorage.getItem("token");
+    const response = await axios.delete(`${API_URL}/mandal-admin/expenses/categories/${id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+
 
 

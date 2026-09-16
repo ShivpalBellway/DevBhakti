@@ -24,7 +24,9 @@ export function AppQRCode({
     if (typeof window === "undefined") return;
 
     const currentOrigin = window.location.origin;
-    const smartUrl = `${currentOrigin}/download`;
+    const smartUrl = (currentOrigin.includes("localhost") || currentOrigin.includes("127.0.0.1"))
+      ? "https://devbhakti.com/download"
+      : `${currentOrigin}/download`;
 
     const canvas = canvasRef.current || document.createElement("canvas");
     canvas.width = size;
@@ -97,9 +99,13 @@ export function AppQRCode({
   const handleDirectClick = () => {
     if (typeof window !== "undefined") {
       const ua = navigator.userAgent || "";
-      const url = /iphone|ipad|ipod/i.test(ua)
+      const isIOS =
+        /iphone|ipad|ipod/i.test(ua) ||
+        (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1) ||
+        (/Macintosh/i.test(ua) && "ontouchend" in document);
+      const url = isIOS
         ? "https://apps.apple.com/in/app/devbhakti/id6761248"
-        : "https://play.google.com/store/search?q=devbhakti&c=apps&hl=en_IN";
+        : "https://play.google.com/store/apps/details?id=com.devbhakti.app";
       window.open(url, "_blank", "noopener,noreferrer");
     }
   };

@@ -149,6 +149,17 @@ const sidebarItems = [
         permission: "finance.menu"
     },
     {
+        label: "Expense Management",
+        icon: CreditCard,
+        href: "/mandals/dashboard/expenses",
+        permission: "expenses.menu",
+        subItems: [
+            { label: "📊 Expense Overview", href: "/mandals/dashboard/expenses", permission: "expenses.view" },
+            { label: "📋 All Expenses", href: "/mandals/dashboard/expenses/list", permission: "expenses.view" },
+            { label: "🏷️ Expense Categories", href: "/mandals/dashboard/expenses/categories", permission: "expenses.view" },
+        ]
+    },
+    {
         label: "Aarti Timings",
         icon: Flame,
         href: "/mandals/dashboard/aarti",

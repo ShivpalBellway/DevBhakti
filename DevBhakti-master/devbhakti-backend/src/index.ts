@@ -85,6 +85,8 @@ import mandalAdminDarshanRoutes from './routes/mandal_admin/darshanAdminRoutes';
 import mandalAdminTellerCartRoutes from './routes/mandal_admin/tellerCartRoutes';
 import mandalAdminBankRoutes from './routes/mandal_admin/bankRoutes';
 import mandalAdminDevoteeRoutes from './routes/mandal_admin/devoteeRoutes';
+import mandalAdminExpenseRoutes from './routes/mandal_admin/expenseRoutes';
+import templeAdminExpenseRoutes from './routes/temple_admin/expenseRoutes';
 
 
 const app = express();
@@ -149,6 +151,7 @@ app.use('/api/mandal-news', mandalNewsRoutes);
 
 // Temple Admin Routes
 app.use('/api/temple-admin/temples', templeAdminTempleRoutes);
+app.use('/api/temple-admin/expenses', templeAdminExpenseRoutes);
 app.use('/api/temple-admin/poojas', templeAdminPoojaRoutes);
 app.use('/api/temple-admin/events', templeAdminEventRoutes);
 app.use('/api/temple-admin/bookings', templeAdminBookingRoutes);
@@ -184,6 +187,7 @@ app.use('/api/mandal-admin/darshan-bookings', mandalAdminDarshanRoutes);
 app.use('/api/mandal-admin/teller', mandalAdminTellerCartRoutes);
 app.use('/api/mandal-admin/bank', mandalAdminBankRoutes);
 app.use('/api/mandal-admin/devotees', mandalAdminDevoteeRoutes);
+app.use('/api/mandal-admin/expenses', mandalAdminExpenseRoutes);
 
 // Devotee Auth Routes
 app.use('/api/auth', authRoutes);

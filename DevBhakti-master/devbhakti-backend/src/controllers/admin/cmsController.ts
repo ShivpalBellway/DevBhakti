@@ -1,11 +1,124 @@
 import { Request, Response } from 'express';
 import { prisma } from '../../lib/prisma';
-import { buildLangJson, buildLangArray, getLang, localize } from '../../utils/localization';
+import { buildLangJson, buildLangArray, getLang, localize, getEnglish } from '../../utils/localization';
 
 const safeParse = (val: any, fallback: any = []) => {
     if (!val) return fallback;
     if (typeof val === 'object') return val;
     try { return JSON.parse(val); } catch { return fallback; }
+};
+
+// Helper to populate targetDetails for banners
+const enrichBannersWithTargetDetails = async (banners: any[]) => {
+    if (!banners || banners.length === 0) return [];
+
+    const enriched = await Promise.all(
+        banners.map(async (banner) => {
+            if (!banner.targetType || banner.targetType === 'NONE' || !banner.targetId) {
+                return { ...banner, targetDetails: null };
+            }
+
+            let targetDetails: any = null;
+
+            try {
+                switch (banner.targetType) {
+                    case 'POOJA': {
+                        const pooja = await prisma.pooja.findUnique({
+                            where: { id: banner.targetId },
+                            select: { id: true, name: true, image: true, price: true, slug: true }
+                        });
+                        if (pooja) {
+                            targetDetails = {
+                                id: pooja.id,
+                                name: getEnglish(pooja.name) || (typeof pooja.name === 'string' ? pooja.name : ''),
+                                image: pooja.image,
+                                price: pooja.price,
+                                slug: pooja.slug
+                            };
+                        }
+                        break;
+                    }
+                    case 'TEMPLE': {
+                        const temple = await prisma.temple.findUnique({
+                            where: { id: banner.targetId },
+                            select: { id: true, name: true, image: true, location: true, slug: true }
+                        });
+                        if (temple) {
+                            targetDetails = {
+                                id: temple.id,
+                                name: getEnglish(temple.name) || (typeof temple.name === 'string' ? temple.name : ''),
+                                image: temple.image,
+                                location: getEnglish(temple.location) || (typeof temple.location === 'string' ? temple.location : ''),
+                                slug: temple.slug
+                            };
+                        }
+                        break;
+                    }
+                    case 'PRODUCT': {
+                        const product = await prisma.product.findUnique({
+                            where: { id: banner.targetId },
+                            include: {
+                                variants: { select: { price: true, image: true } }
+                            }
+                        });
+                        if (product) {
+                            const rawImages = (product as any).images;
+                            const images = safeParse(rawImages, []);
+                            const firstImage = (Array.isArray(images) && images.length > 0) ? images[0] : (product.variants?.[0]?.image || null);
+                            targetDetails = {
+                                id: product.id,
+                                name: getEnglish(product.name) || (typeof product.name === 'string' ? product.name : ''),
+                                image: firstImage,
+                                price: product.variants?.[0]?.price || null,
+                                slug: null
+                            };
+                        }
+                        break;
+                    }
+                    case 'MANDAL': {
+                        const mandal = await prisma.mandal.findUnique({
+                            where: { id: banner.targetId },
+                            select: { id: true, name: true, image: true, city: true, state: true, slug: true }
+                        });
+                        if (mandal) {
+                            targetDetails = {
+                                id: mandal.id,
+                                name: getEnglish(mandal.name) || (typeof mandal.name === 'string' ? mandal.name : ''),
+                                image: mandal.image,
+                                location: mandal.city && mandal.state ? `${mandal.city}, ${mandal.state}` : (mandal.city || mandal.state || ''),
+                                slug: mandal.slug
+                            };
+                        }
+                        break;
+                    }
+                    case 'CONTEST': {
+                        const campaign = await prisma.campaign.findUnique({
+                            where: { id: banner.targetId },
+                            select: { id: true, title: true, name: true, bannerImage: true, slug: true }
+                        });
+                        if (campaign) {
+                            targetDetails = {
+                                id: campaign.id,
+                                name: campaign.title || getEnglish(campaign.name) || campaign.name || '',
+                                image: campaign.bannerImage,
+                                slug: campaign.slug
+                            };
+                        }
+                        break;
+                    }
+                }
+            } catch (e) {
+                console.error(`Error populating targetDetails for banner ${banner.id}:`, e);
+            }
+
+            return {
+                ...banner,
+                targetDetails
+            };
+        })
+    );
+
+    return enriched;
 };
 
 // Banner Controllers
@@ -34,7 +147,11 @@ export const getBanners = async (req: Request, res: Response) => {
             where: whereClause,
             orderBy: { order: 'asc' }
         });
-        res.json({ success: true, data: localize(banners, lang) });
+
+        const localizedBanners = localize(banners, lang);
+        const enrichedBanners = await enrichBannersWithTargetDetails(localizedBanners);
+
+        res.json({ success: true, data: enrichedBanners });
     } catch (error) {
         console.error('Error fetching banners:', error);
         res.status(500).json({ success: false, message: 'Error fetching banners' });
@@ -54,19 +171,22 @@ export const getBannerTargets = async (req: Request, res: Response) => {
                 });
                 items = poojas.map(p => ({
                     id: p.id,
-                    name: typeof p.name === 'object' ? (p.name as any)?.en || (p.name as any)?.hi || JSON.stringify(p.name) : (p.name || 'Unnamed Pooja'),
+                    name: getEnglish(p.name) || (typeof p.name === 'string' ? p.name : 'Unnamed Pooja'),
                     slug: p.slug
                 }));
                 break;
             }
             case 'TEMPLE': {
                 const temples = await prisma.temple.findMany({
-                    where: { isActive: true },
+                    where: {
+                        isActive: true,
+                        user: { isVerified: true }
+                    },
                     select: { id: true, name: true, slug: true }
                 });
                 items = temples.map(t => ({
                     id: t.id,
-                    name: typeof t.name === 'object' ? (t.name as any)?.en || (t.name as any)?.hi || JSON.stringify(t.name) : (t.name || 'Unnamed Temple'),
+                    name: getEnglish(t.name) || (typeof t.name === 'string' ? t.name : 'Unnamed Temple'),
                     slug: t.slug
                 }));
                 break;
@@ -77,19 +197,19 @@ export const getBannerTargets = async (req: Request, res: Response) => {
                 });
                 items = products.map(pr => ({
                     id: pr.id,
-                    name: typeof pr.name === 'object' ? (pr.name as any)?.en || (pr.name as any)?.hi || JSON.stringify(pr.name) : (pr.name || 'Unnamed Product'),
+                    name: getEnglish(pr.name) || (typeof pr.name === 'string' ? pr.name : 'Unnamed Product'),
                     slug: null
                 }));
                 break;
             }
             case 'MANDAL': {
                 const mandals = await prisma.mandal.findMany({
-                    where: { isActive: true },
+                    where: { isActive: true, status: 'APPROVED' },
                     select: { id: true, name: true, slug: true }
                 });
                 items = mandals.map(m => ({
                     id: m.id,
-                    name: typeof m.name === 'object' ? (m.name as any)?.en || (m.name as any)?.hi || JSON.stringify(m.name) : (m.name || 'Unnamed Mandal'),
+                    name: getEnglish(m.name) || (typeof m.name === 'string' ? m.name : 'Unnamed Mandal'),
                     slug: m.slug
                 }));
                 break;
@@ -101,7 +221,7 @@ export const getBannerTargets = async (req: Request, res: Response) => {
                 });
                 items = campaigns.map(c => ({
                     id: c.id,
-                    name: c.title || c.name || c.slug,
+                    name: c.title || getEnglish(c.name) || c.name || c.slug,
                     slug: c.slug
                 }));
                 break;

@@ -7,6 +7,7 @@ import {
   getCampaignDashboardAdmin,
   getCampaignSubmissionsAdmin,
   publishCampaignWinnerAdmin,
+  deleteSubmissionAdmin,
 } from "../../controllers/admin/campaignAdminController";
 
 const router = Router();
@@ -20,8 +21,9 @@ router.delete("/:id", deleteCampaignAdmin);
 // Campaign Dashboard & Analytics
 router.get("/:id/dashboard", getCampaignDashboardAdmin);
 
-// Campaign Submissions List
+// Campaign Submissions List & Delete
 router.get("/:id/submissions", getCampaignSubmissionsAdmin);
+router.delete("/submissions/:id", deleteSubmissionAdmin);
 
 // Publish Winner
 router.post("/:id/winner", publishCampaignWinnerAdmin);

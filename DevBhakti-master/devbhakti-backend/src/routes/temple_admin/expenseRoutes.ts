@@ -1,0 +1,23 @@
+import { Router } from 'express';
+import { authenticate, injectTempleContext } from '../../middleware/authMiddleware';
+import * as expenseController from '../../controllers/temple_admin/expenseController';
+import * as categoryController from '../../controllers/temple_admin/expenseCategoryController';
+
+const router = Router();
+
+router.use(authenticate, injectTempleContext);
+
+// Expense Entries CRUD & Stats
+router.post('/', expenseController.createTempleExpense);
+router.get('/', expenseController.getTempleExpenses);
+router.get('/stats', expenseController.getTempleExpenseStats);
+router.put('/:id', expenseController.updateTempleExpense);
+router.delete('/:id', expenseController.deleteTempleExpense);
+
+// Expense Categories CRUD
+router.get('/categories', categoryController.getTempleExpenseCategories);
+router.post('/categories', categoryController.createTempleExpenseCategory);
+router.put('/categories/:id', categoryController.updateTempleExpenseCategory);
+router.delete('/categories/:id', categoryController.deleteTempleExpenseCategory);
+
+export default router;

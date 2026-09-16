@@ -35,7 +35,7 @@ const BannerSection: React.FC = () => {
                 else if (targetId) router.push(`/temples/${targetId}`);
                 break;
             case 'PRODUCT':
-                if (targetId) router.push(`/products/${targetId}`);
+                if (targetId) router.push(`/marketplace/product/${targetId}`);
                 break;
             case 'MANDAL':
                 if (targetSlug) router.push(`/mandals/${targetSlug}`);
@@ -126,13 +126,13 @@ const BannerSection: React.FC = () => {
 
     return (
         <section
-            className="w-full py-3 md:py-5 bg-background relative overflow-hidden"
+            className="w-full py-0 bg-background relative overflow-hidden"
             onMouseEnter={() => setIsPaused(true)}
             onMouseLeave={() => setIsPaused(false)}
         >
-            <div className="w-full max-w-[1920px] mx-auto px-2 sm:px-4 lg:px-6">
+            <div className="w-full px-0">
                 <div
-                    className={`relative w-full h-[220px] sm:h-[350px] md:h-[460px] lg:h-[580px] xl:h-[680px] 2xl:h-[750px] rounded-xl sm:rounded-2xl overflow-hidden group border border-border/50 shadow-md bg-black/5 ${
+                    className={`relative w-full h-[220px] sm:h-[350px] md:h-[460px] lg:h-[580px] xl:h-[680px] 2xl:h-[750px] rounded-none overflow-hidden group bg-black/5 ${
                         isClickable ? 'cursor-pointer' : ''
                     }`}
                 >

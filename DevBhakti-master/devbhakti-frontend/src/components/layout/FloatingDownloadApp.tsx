@@ -19,7 +19,7 @@ export function FloatingDownloadApp() {
     const [userOs, setUserOs] = useState<"android" | "ios" | "other">("other");
     const isMobile = useMediaQuery("(max-width: 640px)");
 
-    const PLAY_STORE_URL = "https://play.google.com/store/search?q=devbhakti&c=apps&hl=en_IN";
+    const PLAY_STORE_URL = "https://play.google.com/store/apps/details?id=com.devbhakti.app";
     const APP_STORE_URL = "https://apps.apple.com/in/app/devbhakti/id6761248";
 
     useEffect(() => {

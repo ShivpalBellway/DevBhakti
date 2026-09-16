@@ -482,3 +482,79 @@ export const createBulkMyEvents = async (data: { events: any[] }) => {
     return response.data;
 };
 
+// ─── Temple Expense Management APIs ─────────────────────────────────────────
+export const fetchTempleExpenses = async (params?: any) => {
+    const token = localStorage.getItem("token");
+    const response = await axios.get(`${API_URL}/temple-admin/expenses`, {
+        headers: { Authorization: `Bearer ${token}` },
+        params
+    });
+    return response.data;
+};
+
+export const fetchTempleExpenseStats = async (params?: any) => {
+    const token = localStorage.getItem("token");
+    const response = await axios.get(`${API_URL}/temple-admin/expenses/stats`, {
+        headers: { Authorization: `Bearer ${token}` },
+        params
+    });
+    return response.data;
+};
+
+export const createTempleExpense = async (data: any) => {
+    const token = localStorage.getItem("token");
+    const response = await axios.post(`${API_URL}/temple-admin/expenses`, data, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+
+export const updateTempleExpense = async (id: string, data: any) => {
+    const token = localStorage.getItem("token");
+    const response = await axios.put(`${API_URL}/temple-admin/expenses/${id}`, data, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+
+export const deleteTempleExpense = async (id: string) => {
+    const token = localStorage.getItem("token");
+    const response = await axios.delete(`${API_URL}/temple-admin/expenses/${id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+
+// Temple Expense Categories APIs
+export const fetchTempleExpenseCategories = async () => {
+    const token = localStorage.getItem("token");
+    const response = await axios.get(`${API_URL}/temple-admin/expenses/categories`, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+
+export const createTempleExpenseCategory = async (data: { name: string; description?: string }) => {
+    const token = localStorage.getItem("token");
+    const response = await axios.post(`${API_URL}/temple-admin/expenses/categories`, data, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+
+export const updateTempleExpenseCategory = async (id: string, data: { name?: string; description?: string }) => {
+    const token = localStorage.getItem("token");
+    const response = await axios.put(`${API_URL}/temple-admin/expenses/categories/${id}`, data, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+
+export const deleteTempleExpenseCategory = async (id: string) => {
+    const token = localStorage.getItem("token");
+    const response = await axios.delete(`${API_URL}/temple-admin/expenses/categories/${id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+

@@ -439,12 +439,30 @@ function CmsBannerStrip({ slug }: { slug: string }) {
     exit:   (d: number) => ({ x: d < 0 ? "100%" : "-100%", opacity: 1, zIndex: 0 }),
   };
 
+  const handleBannerClick = (b: any) => {
+    if (b.targetType === 'POOJA' && (b.targetSlug || b.targetId)) { window.location.href = `/poojas/${b.targetSlug || b.targetId}`; return; }
+    if (b.targetType === 'TEMPLE' && (b.targetSlug || b.targetId)) { window.location.href = `/temples/${b.targetSlug || b.targetId}`; return; }
+    if (b.targetType === 'PRODUCT' && (b.targetSlug || b.targetId)) { window.location.href = `/products/${b.targetSlug || b.targetId}`; return; }
+    if (b.targetType === 'MANDAL' && (b.targetSlug || b.targetId)) { window.location.href = `/mandals/${b.targetSlug || b.targetId}`; return; }
+    if (b.targetType === 'CUSTOM_URL' && b.customUrl) { window.location.href = b.customUrl; return; }
+
+    const savedUserStr = typeof window !== "undefined" ? localStorage.getItem("user") : null;
+    const token = typeof window !== "undefined" ? (localStorage.getItem("token") || localStorage.getItem("user_token")) : null;
+
+    if (savedUserStr || token) {
+      window.location.href = `/campaigns/${slug}/participate`;
+    } else {
+      window.location.href = `/campaigns/${slug}/auth?redirect=/campaigns/${slug}/participate`;
+    }
+  };
+
   return (
     <div
-      className="relative w-full overflow-hidden group bg-black"
+      className="relative w-full overflow-hidden group bg-black cursor-pointer"
       style={{ height: "clamp(180px, 40vw, 560px)" }}
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
+      onClick={() => handleBannerClick(banners[current])}
     >
       <AnimatePresence initial={false} custom={direction}>
         <motion.div
@@ -478,13 +496,13 @@ function CmsBannerStrip({ slug }: { slug: string }) {
       {banners.length > 1 && (
         <>
           <button
-            onClick={prev}
+            onClick={(e) => { e.stopPropagation(); prev(); }}
             className="absolute left-4 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-black/20 hover:bg-black/40 backdrop-blur-md border border-white/20 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all z-20"
           >
             <ChevronRight className="w-5 h-5 rotate-180" />
           </button>
           <button
-            onClick={next}
+            onClick={(e) => { e.stopPropagation(); next(); }}
             className="absolute right-4 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-black/20 hover:bg-black/40 backdrop-blur-md border border-white/20 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all z-20"
           >
             <ChevronRight className="w-5 h-5" />
@@ -498,7 +516,7 @@ function CmsBannerStrip({ slug }: { slug: string }) {
           {banners.map((_, i) => (
             <button
               key={i}
-              onClick={() => { setDirection(i > current ? 1 : -1); setCurrent(i); }}
+              onClick={(e) => { e.stopPropagation(); setDirection(i > current ? 1 : -1); setCurrent(i); }}
               className={`rounded-full transition-all duration-500 ${
                 i === current ? "w-8 h-2 bg-white" : "w-2 h-2 bg-white/40 hover:bg-white/70"
               }`}
@@ -621,7 +639,7 @@ export default function MazaGaneshaClient({ slug = "maza-ganesha" }: { slug?: st
   };
 
   return (
-    <div className="pt-24 xl:pt-28">
+    <div className="pt-[72px] md:pt-[88px]">
       {/* CMS Banner Strip */}
       <CmsBannerStrip slug={slug} />
 

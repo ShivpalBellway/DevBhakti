@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120">
+  <defs>
+    <linearGradient id="g1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FF9933" />
+      <stop offset="40%" stop-color="#F59E0B" />
+      <stop offset="80%" stop-color="#D97706" />
+      <stop offset="100%" stop-color="#B45309" />
+    </linearGradient>
+    <linearGradient id="crownGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FDE047" />
+      <stop offset="50%" stop-color="#F59E0B" />
+      <stop offset="100%" stop-color="#B45309" />
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="1" stdDeviation="3" flood-color="#EA580C" flood-opacity="0.6"/>
+    </filter>
+  </defs>
+
+  <g filter="url(#glow)">
+    <!-- Crown / Mukut -->
+    <path d="M60 8 L70 28 L82 20 L74 38 L88 40 L60 50 L32 40 L46 38 L38 20 L50 28 Z" fill="url(#crownGrad)" stroke="#78350F" stroke-width="1.5" />
+    <polygon points="60,12 65,24 55,24" fill="#EF4444" />
+
+    <!-- Big Ears -->
+    <path d="M34 40 C14 36 8 56 22 64 C30 68 38 60 40 52" fill="none" stroke="url(#g1)" stroke-width="6" stroke-linecap="round" />
+    <path d="M86 40 C106 36 112 56 98 64 C90 68 82 60 80 52" fill="none" stroke="url(#g1)" stroke-width="6" stroke-linecap="round" />
+
+    <!-- Head Contour -->
+    <path d="M40 44 Q60 38 80 44 Q80 58 60 62 Q40 58 40 44 Z" fill="url(#g1)" opacity="0.15" />
+
+    <!-- Face & Trunk (Sond curving gracefully right) -->
+    <path d="M44 42 C44 56 50 68 60 76 C66 81 75 83 82 78 C88 74 86 64 78 64 C72 64 68 59 68 52 L68 42" fill="none" stroke="url(#g1)" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" />
+
+    <!-- Tusk (Dant) -->
+    <path d="M46 54 L38 56" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round" />
+
+    <!-- Red Tilak & Chandrabindu -->
+    <path d="M60 26 V38 M52 30 H68" stroke="#DC2626" stroke-width="4" stroke-linecap="round" />
+    <circle cx="60" cy="34" r="2.5" fill="#EF4444" />
+    <path d="M54 23 Q60 19 66 23" fill="none" stroke="#DC2626" stroke-width="2.5" stroke-linecap="round" />
+    <circle cx="60" cy="20" r="1.5" fill="#DC2626" />
+
+    <!-- Modak at tip of trunk -->
+    <path d="M78 63 C78 57 84 55 87 60 C90 64 86 68 78 68 Z" fill="#F59E0B" stroke="#78350F" stroke-width="1" />
+  </g>
+</svg>
