@@ -2644,5 +2644,104 @@
         "content": "Participation in the contest constitutes acceptance of these Terms & Conditions."
       }
     ]
+  },
+  "maza_ganesha": {
+    "steps": {
+      "step1_title": "1. Download DevBhakti",
+      "step1_desc": "Get the app on your phone.",
+      "step2_title": "2. Register",
+      "step2_desc": "Create your account in a few seconds.",
+      "step3_title": "3. Upload Your Ganesha",
+      "step3_desc": "Share a beautiful photo of your Ganpati at home.",
+      "step4_title": "4. Share & Celebrate",
+      "step4_desc": "Show it to your family and friends."
+    },
+    "winner": {
+      "announced": "Contest Winner Announced 🎉",
+      "prize": "Prize: {{prize}}"
+    },
+    "how_it_works": {
+      "title": "How It Works",
+      "subtitle": "It's simple. Just 4 easy steps.",
+      "participate_now": "Participate Now 🙏"
+    },
+    "gallery": {
+      "title": "Our Ganesha Gallery",
+      "subtitle": "See Ganeshas from homes across India. Like your favourites and share the joy!",
+      "tab_popular": "Popular",
+      "tab_latest": "Latest",
+      "tab_alphabetical": "A - Z",
+      "search_placeholder": "Search by name, city...",
+      "loading": "Loading Ganesha Gallery...",
+      "empty_title": "Be the First to Participate!",
+      "empty_desc": "No entries submitted yet. Upload your Ganesha idol now!",
+      "empty_cta": "Tell Us About Your Ganpati 🙏",
+      "no_match_title": "No entries found",
+      "no_match_desc": "No Ganesha entries match \"{{query}}\"",
+      "clear_search": "Clear Search Filter",
+      "load_more": "Load More",
+      "loading_more": "Loading..."
+    },
+    "prizes_banner": {
+      "title": "Win Exciting Prizes!",
+      "desc": "Our expert jury will select the winning entries.",
+      "subdesc": "Likes and shares are for engagement only and do not determine the winners.",
+      "cta": "Participate Now"
+    },
+    "card": {
+      "type_mandal": "Mandal",
+      "type_home": "Home",
+      "login_required_vote": "Please login first to vote for this Ganesha!",
+      "share_title": "{{name}}'s Ganpati on DevBhakti",
+      "share_text": "Vote for {{name}}'s Ganpati entry in Maza Ganesha Contest!",
+      "copied_link": "Direct Entry Deep Link copied to clipboard!",
+      "copy_link_prompt": "Copy this entry link: {{url}}"
+    },
+    "form": {
+      "loading_form": "Loading Contest Form...",
+      "back_to_contest": "Back to {{title}}",
+      "default_contest_title": "Contest",
+      "contest_entry_badge": "{{title}} Entry",
+      "default_entry_badge": "Contest Entry",
+      "heading_join": "Join {{name}}",
+      "heading_default": "Tell Us About Your Ganpati",
+      "subheading_default": "Share your home or Mandal Ganesha photo with millions of devotees across India.",
+      "redirecting_login": "Redirecting to Login...",
+      "thank_you_badge": "Entry Saved & Submitted Successfully",
+      "thank_you_title": "Thank You For Participating! 🙏",
+      "thank_you_desc": "Your details & photos are saved in the DevBhakti database and displayed in the contest gallery.",
+      "entry_mandal": "Mandal Entry",
+      "entry_home": "Home Ganpati Entry",
+      "view_public_gallery": "View in Public Gallery",
+      "share_my_entry": "Share My Entry Link",
+      "share_copied": "Entry link copied to clipboard!",
+      "share_manual": "Please share this link manually: {{url}}",
+      "logged_in_devotee": "Logged in DevBhakti Devotee",
+      "default_user": "DevBhakti User",
+      "one_entry_allowed": "1 Entry Allowed",
+      "participant_type": "Participant Type",
+      "home_ganpati": "Home Ganpati",
+      "home_desc": "Family Ganpati at home",
+      "mandal_ganpati": "Ganpati Mandal",
+      "mandal_desc": "Public/Community Mandal",
+      "mandal_name": "Mandal Name",
+      "family_name": "Family Name",
+      "mandal_placeholder": "e.g. Shri Siddhivinayak Mandal",
+      "family_placeholder": "e.g. Pednekar Family",
+      "city": "City",
+      "city_placeholder": "e.g. Mumbai",
+      "full_address": "Full Address",
+      "prefilled_notice": "Pre-filled from profile",
+      "address_placeholder": "e.g. Flat No. 4B, Sunrise Apartment, MG Road",
+      "upload_photos": "Upload Ganesha Photo(s)",
+      "photos_count": "{{count}}/3 photos",
+      "add_photo": "Add Photo",
+      "upload_help": "Upload up to 3 high-resolution images of your Ganesha idol or Mandal decoration.",
+      "caption": "Caption / Devotional Story",
+      "optional": "(Optional)",
+      "caption_placeholder": "Tell us something special about your Ganesha worship...",
+      "saving_entry": "Saving Entry...",
+      "submit_btn": "Submit My Entry 🙏"
+    }
   }
 }

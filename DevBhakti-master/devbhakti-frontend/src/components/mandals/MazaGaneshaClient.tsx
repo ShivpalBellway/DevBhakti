@@ -25,6 +25,8 @@ import {
   Search,
 } from "lucide-react";
 
+import { useLanguage } from "@/context/LanguageContext";
+
 type ParticipantType = "home" | "mandal";
 
 interface GalleryEntry {
@@ -38,13 +40,6 @@ interface GalleryEntry {
   createdAt: string;
 }
 
-const STEPS = [
-  { icon: Smartphone, step: "1", title: "1. Download DevBhakti", desc: "Get the app on your phone." },
-  { icon: User,       step: "2", title: "2. Register",          desc: "Create your account in a few seconds." },
-  { icon: Camera,     step: "3", title: "3. Upload Your Ganesha", desc: "Share a beautiful photo of your Ganpati at home." },
-  { icon: Share2,     step: "4", title: "4. Share & Celebrate",  desc: "Show it to your family and friends." },
-];
-
 function GalleryCard({
   entry,
   slug,
@@ -54,6 +49,7 @@ function GalleryCard({
   slug: string;
   onCardClick: (entry: GalleryEntry) => void;
 }) {
+  const { t } = useLanguage();
   const [likes, setLikes] = useState(entry.likesCount || 0);
   const [liked, setLiked] = useState(false);
   const [liking, setLiking] = useState(false);
@@ -72,7 +68,7 @@ function GalleryCard({
     const savedUser = localStorage.getItem("user");
     const user = savedUser ? JSON.parse(savedUser) : null;
     if (!user) {
-      alert("Please login first to vote for this Ganesha!");
+      alert(t("maza_ganesha.card.login_required_vote"));
       window.location.href = `/auth?redirect=/campaigns/${slug}`;
       return;
     }
@@ -102,8 +98,8 @@ function GalleryCard({
     if (navigator.share) {
       try {
         await navigator.share({
-          title: `${entry.name}'s Ganpati on DevBhakti`,
-          text: `Vote for ${entry.name}'s Ganpati entry in Maza Ganesha Contest!`,
+          title: t("maza_ganesha.card.share_title", { name: entry.name }),
+          text: t("maza_ganesha.card.share_text", { name: entry.name }),
           url: targetUrl,
         });
       } catch (err) {
@@ -112,9 +108,9 @@ function GalleryCard({
     } else {
       if (navigator.clipboard && window.isSecureContext) {
         await navigator.clipboard.writeText(targetUrl);
-        alert("Direct Entry Deep Link copied to clipboard!");
+        alert(t("maza_ganesha.card.copied_link"));
       } else {
-        alert(`Copy this entry link: ${targetUrl}`);
+        alert(t("maza_ganesha.card.copy_link_prompt", { url: targetUrl }));
       }
     }
   };
@@ -140,7 +136,7 @@ function GalleryCard({
               entry.participantType === "mandal" ? "bg-[#88542B] text-white" : "bg-white/90 text-[#3d1a10]"
             }`}
           >
-            {entry.participantType === "mandal" ? "Mandal" : "Home"}
+            {entry.participantType === "mandal" ? t("maza_ganesha.card.type_mandal") : t("maza_ganesha.card.type_home")}
           </span>
         </div>
       </div>
@@ -202,6 +198,7 @@ function EntryModal({
   currentIndex = 1,
   totalEntries = 1,
 }: EntryModalProps) {
+  const { t } = useLanguage();
   const [currentImgIdx, setCurrentImgIdx] = useState(0);
   const [likes, setLikes] = useState(entry.likesCount || 0);
   const [liked, setLiked] = useState(false);
@@ -220,7 +217,7 @@ function EntryModal({
     const savedUser = localStorage.getItem("user");
     const user = savedUser ? JSON.parse(savedUser) : null;
     if (!user) {
-      alert("Please login first to vote for this Ganesha!");
+      alert(t("maza_ganesha.card.login_required_vote"));
       window.location.href = `/auth?redirect=/campaigns/${slug}?entry=${entry.id}`;
       return;
     }
@@ -250,8 +247,8 @@ function EntryModal({
     if (navigator.share) {
       try {
         await navigator.share({
-          title: `${entry.name}'s Ganpati on DevBhakti`,
-          text: `Check out ${entry.name}'s Ganpati entry in ${slug} contest!`,
+          title: t("maza_ganesha.card.share_title", { name: entry.name }),
+          text: t("maza_ganesha.card.share_text", { name: entry.name }),
           url: targetUrl,
         });
       } catch (err) {
@@ -260,9 +257,9 @@ function EntryModal({
     } else {
       if (navigator.clipboard && window.isSecureContext) {
         await navigator.clipboard.writeText(targetUrl);
-        alert("Direct Entry Deep Link copied to clipboard!");
+        alert(t("maza_ganesha.card.copied_link"));
       } else {
-        alert(`Copy this entry link: ${targetUrl}`);
+        alert(t("maza_ganesha.card.copy_link_prompt", { url: targetUrl }));
       }
     }
   };
@@ -341,7 +338,7 @@ function EntryModal({
             <div>
               <div className="flex items-center gap-2">
                 <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-md bg-[#88542B] text-white">
-                  {entry.participantType === "mandal" ? "Mandal" : "Home"}
+                  {entry.participantType === "mandal" ? t("maza_ganesha.card.type_mandal") : t("maza_ganesha.card.type_home")}
                 </span>
                 <h3 className="text-base sm:text-xl font-serif font-black text-[#3d1a10] truncate">
                   {entry.name}
@@ -548,6 +545,7 @@ function CmsBannerStrip({ slug }: { slug: string }) {
 // Main Page Component
 // ─────────────────────────────────────────────
 export default function MazaGaneshaClient({ slug = "maza-ganesha" }: { slug?: string }) {
+  const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState<"popular" | "latest" | "alphabetical">("popular");
   const [entries, setEntries] = useState<GalleryEntry[]>([]);
   const [winner, setWinner] = useState<any | null>(null);
@@ -559,6 +557,13 @@ export default function MazaGaneshaClient({ slug = "maza-ganesha" }: { slug?: st
   const [loadingMore, setLoadingMore] = useState(false);
 
   const [searchQuery, setSearchQuery] = useState("");
+
+  const steps = [
+    { icon: Smartphone, step: "1", title: t("maza_ganesha.steps.step1_title"), desc: t("maza_ganesha.steps.step1_desc") },
+    { icon: User,       step: "2", title: t("maza_ganesha.steps.step2_title"), desc: t("maza_ganesha.steps.step2_desc") },
+    { icon: Camera,     step: "3", title: t("maza_ganesha.steps.step3_title"), desc: t("maza_ganesha.steps.step3_desc") },
+    { icon: Share2,     step: "4", title: t("maza_ganesha.steps.step4_title"), desc: t("maza_ganesha.steps.step4_desc") },
+  ];
 
   const filteredEntries = entries.filter((entry) => {
     if (!searchQuery.trim()) return true;
@@ -677,7 +682,7 @@ export default function MazaGaneshaClient({ slug = "maza-ganesha" }: { slug?: st
                 {/* Winner Info Details */}
                 <div className="text-center md:text-left space-y-3 flex-1">
                   <div className="inline-flex items-center gap-2 bg-gradient-to-r from-amber-400 to-amber-500 text-[#3d1a10] text-xs sm:text-sm font-black px-4 py-1.5 rounded-full uppercase tracking-wider shadow-md">
-                    <Trophy className="w-4 h-4 fill-current" /> Contest Winner Announced 🎉
+                    <Trophy className="w-4 h-4 fill-current" /> {t("maza_ganesha.winner.announced")}
                   </div>
 
                   <h3 className="text-3xl sm:text-4xl xl:text-5xl font-serif font-black text-white capitalize leading-tight">
@@ -692,7 +697,7 @@ export default function MazaGaneshaClient({ slug = "maza-ganesha" }: { slug?: st
 
                     <div className="flex items-center gap-2 text-amber-300 text-sm font-bold bg-amber-400/20 px-4 py-1.5 rounded-xl border border-amber-400/30">
                       <Award className="w-4 h-4 text-amber-300" />
-                      <span>Prize: {winner.prize}</span>
+                      <span>{t("maza_ganesha.winner.prize", { prize: winner.prize })}</span>
                     </div>
                   </div>
 
@@ -719,12 +724,12 @@ export default function MazaGaneshaClient({ slug = "maza-ganesha" }: { slug?: st
             viewport={{ once: true }}
             className="text-center mb-8"
           >
-            <h2 className="text-3xl xl:text-4xl font-black text-[#3d1a10] mb-2 font-serif">How It Works</h2>
-            <p className="text-[#88542B]/75 text-sm sm:text-base font-medium">It&apos;s simple. Just 4 easy steps.</p>
+            <h2 className="text-3xl xl:text-4xl font-black text-[#3d1a10] mb-2 font-serif">{t("maza_ganesha.how_it_works.title")}</h2>
+            <p className="text-[#88542B]/75 text-sm sm:text-base font-medium">{t("maza_ganesha.how_it_works.subtitle")}</p>
           </motion.div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-y-6 w-full mb-6">
-            {STEPS.map((s, i) => (
+            {steps.map((s, i) => (
               <motion.div
                 key={s.step}
                 initial={{ opacity: 0, y: 30 }}
@@ -732,7 +737,7 @@ export default function MazaGaneshaClient({ slug = "maza-ganesha" }: { slug?: st
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: i * 0.1 }}
                 className={`flex flex-col items-center text-center px-4 ${
-                  i < STEPS.length - 1 ? "md:border-r md:border-amber-200/60" : ""
+                  i < steps.length - 1 ? "md:border-r md:border-amber-200/60" : ""
                 }`}
               >
                 <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-[#fdeedc] flex items-center justify-center mb-4 transition-transform hover:scale-105 shadow-sm">
@@ -750,7 +755,7 @@ export default function MazaGaneshaClient({ slug = "maza-ganesha" }: { slug?: st
               href={`/campaigns/${slug}/participate`}
               className="bg-gradient-to-r from-[#CA9E52] via-[#88542B] to-[#3d1a10] hover:from-[#3d1a10] hover:to-[#CA9E52] text-white font-black text-base sm:text-lg px-8 py-3 rounded-full shadow-lg border border-amber-300/40 flex items-center gap-3 hover:scale-105 transition-all duration-300 group cursor-pointer"
             >
-              <span>Participate Now 🙏</span>
+              <span>{t("maza_ganesha.how_it_works.participate_now")}</span>
               <ArrowRight className="w-5 h-5 group-hover:translate-x-1.5 transition-transform" />
             </Link>
           </div>
@@ -765,10 +770,10 @@ export default function MazaGaneshaClient({ slug = "maza-ganesha" }: { slug?: st
           {/* Centered Gallery Title & Subtitle */}
           <div className="text-center max-w-2xl mx-auto mb-8">
             <h2 className="text-3xl xl:text-4xl font-serif font-black text-[#3d1a10] mb-2">
-              Our Ganesha Gallery
+              {t("maza_ganesha.gallery.title")}
             </h2>
             <p className="text-slate-600 text-xs sm:text-sm font-medium">
-              See Ganeshas from homes across India. Like your favourites and share the joy!
+              {t("maza_ganesha.gallery.subtitle")}
             </p>
           </div>
 
@@ -786,7 +791,7 @@ export default function MazaGaneshaClient({ slug = "maza-ganesha" }: { slug?: st
                       : "bg-transparent text-slate-600 hover:text-[#3d1a10] hover:bg-slate-50"
                   }`}
                 >
-                  {tab === "popular" ? "Popular" : tab === "latest" ? "Latest" : "A - Z"}
+                  {tab === "popular" ? t("maza_ganesha.gallery.tab_popular") : tab === "latest" ? t("maza_ganesha.gallery.tab_latest") : t("maza_ganesha.gallery.tab_alphabetical")}
                 </button>
               ))}
             </div>
@@ -796,7 +801,7 @@ export default function MazaGaneshaClient({ slug = "maza-ganesha" }: { slug?: st
               <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#88542B]/70" />
               <input
                 type="text"
-                placeholder="Search by name, city..."
+                placeholder={t("maza_ganesha.gallery.search_placeholder")}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-10 pr-9 py-2 bg-white border border-amber-200/80 rounded-2xl text-xs sm:text-sm font-medium text-[#3d1a10] placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#88542B]/40 transition-all shadow-xs"
@@ -817,30 +822,30 @@ export default function MazaGaneshaClient({ slug = "maza-ganesha" }: { slug?: st
           {loading ? (
             <div className="py-20 text-center text-[#88542B] flex flex-col items-center gap-3">
               <Loader2 className="w-8 h-8 animate-spin" />
-              <p className="font-bold text-sm">Loading Ganesha Gallery...</p>
+              <p className="font-bold text-sm">{t("maza_ganesha.gallery.loading")}</p>
             </div>
           ) : entries.length === 0 ? (
             <div className="py-16 text-center text-slate-500 bg-white rounded-3xl border border-orange-100 max-w-lg mx-auto p-8 shadow-sm">
               <Sparkles className="w-10 h-10 text-[#CA9E52] mx-auto mb-3" />
-              <h3 className="font-bold text-lg text-[#3d1a10] mb-1">Be the First to Participate!</h3>
-              <p className="text-xs text-slate-400 mb-5">No entries submitted yet. Upload your Ganesha idol now!</p>
+              <h3 className="font-bold text-lg text-[#3d1a10] mb-1">{t("maza_ganesha.gallery.empty_title")}</h3>
+              <p className="text-xs text-slate-400 mb-5">{t("maza_ganesha.gallery.empty_desc")}</p>
               <Link
                 href={`/campaigns/${slug}/participate`}
                 className="bg-[#88542B] hover:bg-[#CA9E52] text-white font-bold px-6 py-2.5 rounded-full text-xs transition-all inline-block"
               >
-                Tell Us About Your Ganpati 🙏
+                {t("maza_ganesha.gallery.empty_cta")}
               </Link>
             </div>
           ) : filteredEntries.length === 0 ? (
             <div className="py-16 text-center text-slate-500 bg-white rounded-3xl border border-amber-200/60 max-w-md mx-auto p-8 shadow-xs">
               <Search className="w-8 h-8 text-[#88542B]/50 mx-auto mb-2" />
-              <h4 className="font-bold text-base text-[#3d1a10]">No entries found</h4>
-              <p className="text-xs text-slate-500 mt-1">No Ganesha entries match &ldquo;{searchQuery}&rdquo;</p>
+              <h4 className="font-bold text-base text-[#3d1a10]">{t("maza_ganesha.gallery.no_match_title")}</h4>
+              <p className="text-xs text-slate-500 mt-1">{t("maza_ganesha.gallery.no_match_desc", { query: searchQuery })}</p>
               <button
                 onClick={() => setSearchQuery("")}
                 className="mt-4 text-xs font-bold text-[#88542B] underline cursor-pointer"
               >
-                Clear Search Filter
+                {t("maza_ganesha.gallery.clear_search")}
               </button>
             </div>
           ) : (
@@ -874,10 +879,10 @@ export default function MazaGaneshaClient({ slug = "maza-ganesha" }: { slug?: st
                 >
                   {loadingMore ? (
                     <>
-                      <Loader2 className="w-4 h-4 animate-spin" /> Loading...
+                      <Loader2 className="w-4 h-4 animate-spin" /> {t("maza_ganesha.gallery.loading_more")}
                     </>
                   ) : (
-                    "Load More"
+                    t("maza_ganesha.gallery.load_more")
                   )}
                 </button>
               </div>
@@ -902,11 +907,11 @@ export default function MazaGaneshaClient({ slug = "maza-ganesha" }: { slug?: st
                 <Trophy className="w-7 h-7 text-white" />
               </div>
               <div>
-                <h3 className="text-white font-black text-xl xl:text-2xl">Win Exciting Prizes!</h3>
+                <h3 className="text-white font-black text-xl xl:text-2xl">{t("maza_ganesha.prizes_banner.title")}</h3>
                 <p className="text-white/70 text-sm mt-0.5 leading-relaxed">
-                  Our expert jury will select the winning entries.{" "}
+                  {t("maza_ganesha.prizes_banner.desc")}{" "}
                   <span className="text-white/45">
-                    Likes and shares are for engagement only and do not determine the winners.
+                    {t("maza_ganesha.prizes_banner.subdesc")}
                   </span>
                 </p>
               </div>
@@ -915,13 +920,13 @@ export default function MazaGaneshaClient({ slug = "maza-ganesha" }: { slug?: st
               href={`/campaigns/${slug}/participate`}
               className="shrink-0 inline-flex items-center gap-2 bg-[#CA9E52] hover:bg-white hover:text-[#88542B] text-[#3d1a10] hover:text-[#88542B] font-bold px-7 py-3 rounded-full transition-all duration-300 text-sm whitespace-nowrap shadow"
             >
-              Participate Now <ArrowRight className="w-4 h-4" />
+              {t("maza_ganesha.prizes_banner.cta")} <ArrowRight className="w-4 h-4" />
             </Link>
           </motion.div>
         </div>
       </section>
 
-      {/* Lightbox Entry Modal Popup — Fullscreen Dark Viewer matching Image 2 */}
+      {/* Lightbox Entry Modal Popup */}
       {selectedEntry && (
         <EntryModal
           entry={selectedEntry}

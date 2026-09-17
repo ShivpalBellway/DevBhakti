@@ -33,6 +33,7 @@ interface UserProfile {
 }
 
 import { useRouter } from "next/navigation";
+import { useLanguage } from "@/context/LanguageContext";
 
 export default function MazaGaneshaFormClient({
   slug = "maza-ganesha",
@@ -41,6 +42,7 @@ export default function MazaGaneshaFormClient({
   slug?: string;
   isThankYouPage?: boolean;
 }) {
+  const { t } = useLanguage();
   const router = useRouter();
   const [user, setUser] = useState<UserProfile | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -94,14 +96,10 @@ export default function MazaGaneshaFormClient({
               if (!isThankYouPage) {
                 router.replace(`/campaigns/${slug}/thank-you`);
               }
-            } else if (isThankYouPage) {
-              router.replace(`/campaigns/${slug}/participate`);
             }
           })
           .catch(() => {
-            if (isThankYouPage) {
-              router.replace(`/campaigns/${slug}/participate`);
-            }
+            // Do not auto-redirect from thank you page
           });
       } catch (e) {
         setIsLoggedIn(false);
@@ -170,7 +168,7 @@ export default function MazaGaneshaFormClient({
   if (checkingAuth) {
     return (
       <div className="pt-32 pb-20 text-center text-[#88542B]">
-        <p className="font-bold text-base">Loading Contest Form...</p>
+        <p className="font-bold text-base">{t("maza_ganesha.form.loading_form")}</p>
       </div>
     );
   }
@@ -184,7 +182,10 @@ export default function MazaGaneshaFormClient({
             href={`/campaigns/${slug}`}
             className="inline-flex items-center gap-2 text-sm font-bold text-[#88542B] hover:text-[#CA9E52] bg-white px-4 py-2 rounded-full border border-orange-200/60 shadow-sm transition-all"
           >
-            <ArrowLeft className="w-4 h-4" /> Back to {campaignInfo?.title || "Contest"}
+            <ArrowLeft className="w-4 h-4" />{" "}
+            {t("maza_ganesha.form.back_to_contest", {
+              title: campaignInfo?.title || t("maza_ganesha.form.default_contest_title"),
+            })}
           </Link>
         </motion.div>
 
@@ -193,34 +194,35 @@ export default function MazaGaneshaFormClient({
           <div className="inline-flex items-center gap-2 bg-[#CA9E52]/20 border border-[#CA9E52]/50 rounded-full px-4 py-1.5 mb-3">
             <Sparkles className="w-4 h-4 text-[#88542B]" />
             <span className="text-[#88542B] text-xs font-bold uppercase tracking-widest">
-              {campaignInfo?.title ? `${campaignInfo.title} Entry` : "Contest Entry"}
+              {campaignInfo?.title
+                ? t("maza_ganesha.form.contest_entry_badge", { title: campaignInfo.title })
+                : t("maza_ganesha.form.default_entry_badge")}
             </span>
           </div>
           <h1 className="text-3xl xl:text-5xl font-black text-[#3d1a10] mb-3">
-            {campaignInfo?.name || campaignInfo?.title ? `Join ${campaignInfo.name || campaignInfo.title}` : "Tell Us About Your Ganpati"}
+            {campaignInfo?.name || campaignInfo?.title
+              ? t("maza_ganesha.form.heading_join", { name: campaignInfo.name || campaignInfo.title })
+              : t("maza_ganesha.form.heading_default")}
           </h1>
           <p className="text-[#88542B]/75 text-base">
-            {campaignInfo?.description || "Share your home or Mandal Ganesha photo with millions of devotees across India."}
+            {campaignInfo?.description || t("maza_ganesha.form.subheading_default")}
           </p>
         </motion.div>
 
-        {/* ══════════════════════════════════════════════════════════════
-            SCENARIO 1: NOT LOGGED IN -> Show Login Guard
-        ══════════════════════════════════════════════════════════════ */}
         {/* ══════════════════════════════════════════════════════════════
             SCENARIO 1: NOT LOGGED IN -> Redirecting handled in useEffect
         ══════════════════════════════════════════════════════════════ */}
         {!isLoggedIn && (
            <div className="pt-20 text-center text-[#88542B]">
              <Loader2 className="w-8 h-8 animate-spin mx-auto mb-3" />
-             <p className="font-bold">Redirecting to Login...</p>
+             <p className="font-bold">{t("maza_ganesha.form.redirecting_login")}</p>
            </div>
         )}
 
         {/* ══════════════════════════════════════════════════════════════
             SCENARIO 2: LOGGED IN & ALREADY SUBMITTED -> Show Existing Entry
         ══════════════════════════════════════════════════════════════ */}
-        {isLoggedIn && alreadySubmittedEntry && (
+        {isLoggedIn && (alreadySubmittedEntry || isThankYouPage) && (
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -231,49 +233,53 @@ export default function MazaGaneshaFormClient({
             </div>
 
             <div className="inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-700 text-xs font-bold px-3 py-1 rounded-full mb-3">
-              Entry Saved in Database (1 Per Person)
+              {t("maza_ganesha.form.thank_you_badge")}
             </div>
 
             <h2 className="text-2xl xl:text-3xl font-black text-[#3d1a10] mb-2">
-              Your Entry is Live in {campaignInfo?.title || "our gallery"}! 🙏
+              {t("maza_ganesha.form.thank_you_title")}
             </h2>
             <p className="text-[#88542B]/75 text-sm mb-6 leading-relaxed">
-              Your details &amp; photos are saved in the DevBhakti database and displayed in the public contest gallery.
+              {t("maza_ganesha.form.thank_you_desc")}
             </p>
 
             {/* Submitted Entry Card Preview */}
-            <div className="bg-[#fdf8f0] rounded-2xl p-5 border border-orange-200/80 text-left mb-6 space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-black uppercase tracking-wider text-[#88542B]">
-                  {alreadySubmittedEntry.participantType === "mandal" ? "Mandal Entry" : "Home Ganpati Entry"}
-                </span>
-                <span className="text-xs text-slate-400">
-                  {new Date(alreadySubmittedEntry.createdAt || Date.now()).toLocaleDateString()}
-                </span>
-              </div>
-              <h3 className="font-bold text-base text-[#3d1a10]">
-                {alreadySubmittedEntry.name} — {alreadySubmittedEntry.city}
-              </h3>
-              {alreadySubmittedEntry.caption && (
-                <p className="text-xs text-slate-600 italic">
-                  {alreadySubmittedEntry.caption}
-                </p>
-              )}
-              {alreadySubmittedEntry.images && alreadySubmittedEntry.images.length > 0 && (
-                <div className="flex gap-2 pt-2">
-                  {alreadySubmittedEntry.images.map((imgSrc: string, i: number) => (
-                    <img key={i} src={imgSrc} alt="" className="w-16 h-16 rounded-xl object-cover border border-orange-200" />
-                  ))}
+            {alreadySubmittedEntry && (
+              <div className="bg-[#fdf8f0] rounded-2xl p-5 border border-orange-200/80 text-left mb-6 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-black uppercase tracking-wider text-[#88542B]">
+                    {alreadySubmittedEntry.participantType === "mandal"
+                      ? t("maza_ganesha.form.entry_mandal")
+                      : t("maza_ganesha.form.entry_home")}
+                  </span>
+                  <span className="text-xs text-slate-400">
+                    {new Date(alreadySubmittedEntry.createdAt || Date.now()).toLocaleDateString()}
+                  </span>
                 </div>
-              )}
-            </div>
+                <h3 className="font-bold text-base text-[#3d1a10]">
+                  {alreadySubmittedEntry.name} — {alreadySubmittedEntry.city}
+                </h3>
+                {alreadySubmittedEntry.caption && (
+                  <p className="text-xs text-slate-600 italic">
+                    {alreadySubmittedEntry.caption}
+                  </p>
+                )}
+                {alreadySubmittedEntry.images && alreadySubmittedEntry.images.length > 0 && (
+                  <div className="flex gap-2 pt-2">
+                    {alreadySubmittedEntry.images.map((imgSrc: string, i: number) => (
+                      <img key={i} src={imgSrc} alt="" className="w-16 h-16 rounded-xl object-cover border border-orange-200" />
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
 
             <div className="flex flex-col sm:flex-row gap-3">
               <Link
                 href={`/campaigns/${slug}`}
                 className="flex-1 bg-[#88542B] hover:bg-[#CA9E52] text-white font-bold py-3.5 px-6 rounded-2xl transition-all text-center text-sm"
               >
-                View in Public Gallery
+                {t("maza_ganesha.form.view_public_gallery")}
               </Link>
               <button
                 onClick={async () => {
@@ -282,22 +288,22 @@ export default function MazaGaneshaFormClient({
                     try {
                       await navigator.share({
                         title: `${campaignInfo?.title || "Contest"} Entry`,
-                        text: `Check out ${alreadySubmittedEntry.name}'s entry on DevBhakti!`,
+                        text: `Check out the entry on DevBhakti!`,
                         url: targetUrl,
                       });
                     } catch (err) {}
                   } else {
                     if (navigator.clipboard && window.isSecureContext) {
                       await navigator.clipboard.writeText(targetUrl);
-                      alert("Entry link copied to clipboard!");
+                      alert(t("maza_ganesha.form.share_copied"));
                     } else {
-                      alert(`Please share this link manually: ${targetUrl}`);
+                      alert(t("maza_ganesha.form.share_manual", { url: targetUrl }));
                     }
                   }
                 }}
                 className="flex-1 bg-orange-50 hover:bg-orange-100 text-[#88542B] font-bold py-3.5 px-6 rounded-2xl transition-all text-sm flex items-center justify-center gap-2"
               >
-                <Share2 className="w-4 h-4" /> Share My Entry Link
+                <Share2 className="w-4 h-4" /> {t("maza_ganesha.form.share_my_entry")}
               </button>
             </div>
           </motion.div>
@@ -306,7 +312,7 @@ export default function MazaGaneshaFormClient({
         {/* ══════════════════════════════════════════════════════════════
             SCENARIO 3: LOGGED IN & NO PREVIOUS ENTRY -> Show Participation Form
         ══════════════════════════════════════════════════════════════ */}
-        {isLoggedIn && !alreadySubmittedEntry && (
+        {isLoggedIn && !alreadySubmittedEntry && !isThankYouPage && (
           <div className="max-w-2xl mx-auto">
             {/* Main Form */}
             <motion.div
@@ -323,15 +329,15 @@ export default function MazaGaneshaFormClient({
                   </div>
                   <div className="min-w-0">
                     <p className="text-xs font-bold text-emerald-800 uppercase tracking-wider">
-                      Logged in DevBhakti Devotee
+                      {t("maza_ganesha.form.logged_in_devotee")}
                     </p>
                     <p className="text-sm font-black text-[#3d1a10] truncate">
-                      {user?.name || "DevBhakti User"} ({user?.phone})
+                      {user?.name || t("maza_ganesha.form.default_user")} ({user?.phone})
                     </p>
                   </div>
                 </div>
                 <span className="text-[11px] bg-emerald-200/60 text-emerald-900 font-bold px-2.5 py-1 rounded-full shrink-0">
-                  1 Entry Allowed
+                  {t("maza_ganesha.form.one_entry_allowed")}
                 </span>
               </div>
 
@@ -345,12 +351,22 @@ export default function MazaGaneshaFormClient({
                 {/* Participant Type */}
                 <div>
                   <label className="block text-sm font-bold text-[#3d1a10] mb-2">
-                    Participant Type <span className="text-red-500">*</span>
+                    {t("maza_ganesha.form.participant_type")} <span className="text-red-500">*</span>
                   </label>
                   <div className="grid grid-cols-2 gap-3">
                     {([
-                      { key: "home", label: "Home Ganpati", icon: Home, desc: "Family Ganpati at home" },
-                      { key: "mandal", label: "Ganpati Mandal", icon: Building2, desc: "Public/Community Mandal" },
+                      {
+                        key: "home",
+                        label: t("maza_ganesha.form.home_ganpati"),
+                        icon: Home,
+                        desc: t("maza_ganesha.form.home_desc"),
+                      },
+                      {
+                        key: "mandal",
+                        label: t("maza_ganesha.form.mandal_ganpati"),
+                        icon: Building2,
+                        desc: t("maza_ganesha.form.mandal_desc"),
+                      },
                     ] as const).map(({ key, label, icon: Icon, desc }) => (
                       <button
                         key={key}
@@ -387,7 +403,9 @@ export default function MazaGaneshaFormClient({
                 {/* Family / Mandal Name */}
                 <div>
                   <label className="block text-sm font-bold text-[#3d1a10] mb-1.5">
-                    {participantType === "mandal" ? "Mandal Name" : "Family Name"}{" "}
+                    {participantType === "mandal"
+                      ? t("maza_ganesha.form.mandal_name")
+                      : t("maza_ganesha.form.family_name")}{" "}
                     <span className="text-red-500">*</span>
                   </label>
                   <input
@@ -396,8 +414,8 @@ export default function MazaGaneshaFormClient({
                     onChange={(e) => setName(e.target.value)}
                     placeholder={
                       participantType === "mandal"
-                        ? "e.g. Shri Siddhivinayak Mandal"
-                        : "e.g. Pednekar Family"
+                        ? t("maza_ganesha.form.mandal_placeholder")
+                        : t("maza_ganesha.form.family_placeholder")
                     }
                     className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#88542B] focus:ring-2 focus:ring-[#88542B]/10 transition-all"
                   />
@@ -406,13 +424,13 @@ export default function MazaGaneshaFormClient({
                 {/* City */}
                 <div>
                   <label className="block text-sm font-bold text-[#3d1a10] mb-1.5">
-                    City <span className="text-red-500">*</span>
+                    {t("maza_ganesha.form.city")} <span className="text-red-500">*</span>
                   </label>
                   <input
                     required
                     value={city}
                     onChange={(e) => setCity(e.target.value)}
-                    placeholder="e.g. Mumbai"
+                    placeholder={t("maza_ganesha.form.city_placeholder")}
                     className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#88542B] focus:ring-2 focus:ring-[#88542B]/10 transition-all"
                   />
                 </div>
@@ -421,10 +439,10 @@ export default function MazaGaneshaFormClient({
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
                     <label className="text-sm font-bold text-[#3d1a10]">
-                      Full Address <span className="text-red-500">*</span>
+                      {t("maza_ganesha.form.full_address")} <span className="text-red-500">*</span>
                     </label>
                     <span className="flex items-center gap-1 text-[10px] text-[#88542B] font-semibold bg-[#88542B]/8 px-2.5 py-0.5 rounded-full">
-                      <Info className="w-3 h-3" /> Pre-filled from profile
+                      <Info className="w-3 h-3" /> {t("maza_ganesha.form.prefilled_notice")}
                     </span>
                   </div>
                   <textarea
@@ -432,7 +450,7 @@ export default function MazaGaneshaFormClient({
                     value={address}
                     onChange={(e) => setAddress(e.target.value)}
                     rows={2}
-                    placeholder="e.g. Flat No. 4B, Sunrise Apartment, MG Road"
+                    placeholder={t("maza_ganesha.form.address_placeholder")}
                     className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#88542B] focus:ring-2 focus:ring-[#88542B]/10 transition-all resize-none"
                   />
                 </div>
@@ -441,9 +459,11 @@ export default function MazaGaneshaFormClient({
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
                     <label className="text-sm font-bold text-[#3d1a10]">
-                      Upload Ganesha Photo(s) <span className="text-red-500">*</span>
+                      {t("maza_ganesha.form.upload_photos")} <span className="text-red-500">*</span>
                     </label>
-                    <span className="text-xs text-slate-400 font-medium">{images.length}/3 photos</span>
+                    <span className="text-xs text-slate-400 font-medium">
+                      {t("maza_ganesha.form.photos_count", { count: images.length })}
+                    </span>
                   </div>
 
                   <div className="grid grid-cols-3 gap-3">
@@ -467,7 +487,7 @@ export default function MazaGaneshaFormClient({
                       >
                         <ImagePlus className="w-8 h-8 text-[#CA9E52] group-hover:text-[#88542B] transition-colors" />
                         <span className="text-xs font-bold text-[#88542B]/70 group-hover:text-[#88542B]">
-                          Add Photo
+                          {t("maza_ganesha.form.add_photo")}
                         </span>
                       </button>
                     )}
@@ -481,22 +501,22 @@ export default function MazaGaneshaFormClient({
                     onChange={handleFileChange}
                   />
                   <p className="text-xs text-slate-400 mt-2">
-                    Upload up to 3 high-resolution images of your Ganesha idol or Mandal decoration.
+                    {t("maza_ganesha.form.upload_help")}
                   </p>
                 </div>
 
                 {/* Caption */}
                 <div>
                   <label className="block text-sm font-bold text-[#3d1a10] mb-1.5">
-                    Caption / Devotional Story{" "}
-                    <span className="text-slate-400 font-normal">(Optional)</span>
+                    {t("maza_ganesha.form.caption")}{" "}
+                    <span className="text-slate-400 font-normal">{t("maza_ganesha.form.optional")}</span>
                   </label>
                   <textarea
                     value={caption}
                     onChange={(e) => setCaption(e.target.value)}
                     rows={3}
                     maxLength={200}
-                    placeholder="Tell us something special about your Ganesha worship..."
+                    placeholder={t("maza_ganesha.form.caption_placeholder")}
                     className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#88542B] focus:ring-2 focus:ring-[#88542B]/10 transition-all resize-none"
                   />
                   <p className="text-right text-xs text-slate-400 mt-1">{caption.length}/200</p>
@@ -510,10 +530,10 @@ export default function MazaGaneshaFormClient({
                 >
                   {submitting ? (
                     <>
-                      <Loader2 className="w-5 h-5 animate-spin" /> Saving Entry...
+                      <Loader2 className="w-5 h-5 animate-spin" /> {t("maza_ganesha.form.saving_entry")}
                     </>
                   ) : (
-                    "Submit My Entry 🙏"
+                    t("maza_ganesha.form.submit_btn")
                   )}
                 </button>
               </form>

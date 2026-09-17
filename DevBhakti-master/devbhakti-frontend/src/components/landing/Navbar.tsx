@@ -167,20 +167,20 @@ const Navbar: React.FC<NavbarProps> = ({ variant = "default", isSolid = false })
             </div>
 
             {/* Desktop Navigation & Search (Wide Screens Only) */}
-            <div className="hidden xl:flex flex-1 items-center justify-between gap-4 2xl:gap-10 mx-2 xl:mx-4 2xl:mx-8">
+            <div className="hidden lg:flex flex-1 items-center justify-between gap-2 xl:gap-4 2xl:gap-8 mx-1 lg:mx-2 xl:mx-4">
               {/* Desktop Search Bar */}
               {!isTempleRegistrationPage && !isMandalRegistrationPage ? (
                 <div
                   onClick={() => setIsSearchOpen(true)}
-                  className="flex items-center gap-3 px-6 py-2.5
-                             flex-1 max-w-[350px] 2xl:max-w-[550px] min-w-[200px]
+                  className="flex items-center gap-2.5 px-4 lg:px-5 py-2
+                             flex-1 max-w-[240px] xl:max-w-[360px] 2xl:max-w-[480px] min-w-[140px]
                              bg-orange-50/70 dark:bg-zinc-900/90 backdrop-blur-md rounded-full
                              cursor-pointer transition-all border border-orange-200/50
                              dark:border-zinc-800/50 hover:border-primary/60
                              shadow-md hover:shadow-xl hover:bg-orange-100/60 group"
                 >
-                  <Search className="w-4 h-4 text-primary shrink-0 transition-transform group-hover:scale-110" />
-                  <span className="text-black/80 dark:text-white/80 text-[13px] font-semibold truncate">
+                  <Search className="w-3.5 h-3.5 text-primary shrink-0 transition-transform group-hover:scale-110" />
+                  <span className="text-black/80 dark:text-white/80 text-[11px] xl:text-[13px] font-semibold truncate">
                     {mounted ? t('navbar.search_placeholder') : "Search temples, poojas, products..."}
                   </span>
                 </div>
@@ -192,7 +192,7 @@ const Navbar: React.FC<NavbarProps> = ({ variant = "default", isSolid = false })
                 </div>
               )}
 
-              <div className="flex items-center gap-3 2xl:gap-8 shrink-0">
+              <div className="flex items-center gap-2 xl:gap-4 2xl:gap-6 shrink-0">
                 {!isTempleRegistrationPage && !isMandalRegistrationPage && navLinks.map((link) => {
                   if (link.href === "/mandals") {
                     const isMandalActive = pathname.startsWith('/mandals') || pathname.startsWith('/maza-ganesha');
@@ -200,20 +200,20 @@ const Navbar: React.FC<NavbarProps> = ({ variant = "default", isSolid = false })
                       <DropdownMenu key="mandal-desktop-dropdown">
                         <DropdownMenuTrigger asChild>
                           <button
-                            className={`text-[12px] 2xl:text-sm font-bold transition-all whitespace-nowrap uppercase tracking-wider relative group flex items-center gap-1.5 outline-none cursor-pointer py-1 ${
+                            className={`text-[11px] xl:text-[12px] 2xl:text-xs font-bold transition-all whitespace-nowrap uppercase tracking-wider relative group flex items-center gap-1 outline-none cursor-pointer py-1 ${
                               isMandalActive ? "text-primary" : "text-foreground hover:text-primary"
                             }`}
                           >
-                            <span className="relative flex h-6 w-6 shrink-0 items-center justify-center">
-                              <span className="animate-ping absolute inline-flex h-5 w-5 rounded-full bg-amber-400/50 opacity-75"></span>
+                            <span className="relative flex h-5 w-5 shrink-0 items-center justify-center">
+                              <span className="animate-ping absolute inline-flex h-4 w-4 rounded-full bg-amber-400/50 opacity-75"></span>
                               <img 
                                 src="/ganesh-icon.svg" 
                                 alt="Ganesh Bappa" 
-                                className="relative w-5.5 h-5.5 object-contain animate-pulse drop-shadow-[0_0_8px_rgba(245,158,11,1)]"
+                                className="relative w-4.5 h-4.5 object-contain animate-pulse drop-shadow-[0_0_8px_rgba(245,158,11,1)]"
                               />
                             </span>
                             <span>{mounted ? link.label : "Ganeshotsav"}</span>
-                            <ChevronDown className="w-3.5 h-3.5 transition-transform duration-200 group-data-[state=open]:rotate-180" />
+                            <ChevronDown className="w-3 h-3 transition-transform duration-200 group-data-[state=open]:rotate-180" />
                             {isMandalActive && (
                               <motion.div
                                 layoutId="activeNav"
@@ -225,7 +225,7 @@ const Navbar: React.FC<NavbarProps> = ({ variant = "default", isSolid = false })
                             )}
                           </button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="start" className="w-56 mt-2 p-1.5 rounded-2xl shadow-xl border-orange-100/60 bg-white/95 backdrop-blur-md">
+                        <DropdownMenuContent align="start" className="w-56 mt-2 p-1.5 rounded-2xl shadow-xl border-orange-100/60 bg-white/95 backdrop-blur-md z-[100]">
                           <DropdownMenuItem asChild className="cursor-pointer rounded-xl px-3.5 py-2.5 text-xs font-bold uppercase tracking-wider focus:bg-orange-50 focus:text-primary">
                             <Link href="/mandals" className="flex items-center justify-between w-full">
                               <span>{mounted ? t('mandal_list.explore_mandals') : "Explore Mandals"}</span>
@@ -252,7 +252,7 @@ const Navbar: React.FC<NavbarProps> = ({ variant = "default", isSolid = false })
                     <Link
                       key={link.href}
                       href={link.href}
-                      className={`text-[12px] 2xl:text-sm font-bold transition-all whitespace-nowrap uppercase tracking-wider relative group ${active ? "text-primary" : "text-foreground hover:text-primary"
+                      className={`text-[11px] xl:text-[12px] 2xl:text-xs font-bold transition-all whitespace-nowrap uppercase tracking-wider relative group ${active ? "text-primary" : "text-foreground hover:text-primary"
                         }`}
                     >
                       {mounted ? link.label : (
@@ -280,7 +280,7 @@ const Navbar: React.FC<NavbarProps> = ({ variant = "default", isSolid = false })
             </div>
 
             {/* Action Group */}
-            <div className="flex items-center gap-2 md:gap-3 shrink-0">
+            <div className="flex items-center gap-1.5 md:gap-2.5 shrink-0">
 
               {/* Language Switcher */}
               {mounted && (
@@ -289,15 +289,15 @@ const Navbar: React.FC<NavbarProps> = ({ variant = "default", isSolid = false })
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="relative rounded-full w-9 h-9 md:w-10 md:h-10 border-2 border-[#794A05]/20 hover:border-[#794A05] hover:bg-white text-[#794A05] transition-all"
+                      className="relative rounded-full w-8 h-8 md:w-9 md:h-9 border-2 border-[#794A05]/20 hover:border-[#794A05] hover:bg-white text-[#794A05] transition-all"
                     >
-                      <Globe className="w-4 h-4 md:w-5 md:h-5" />
+                      <Globe className="w-3.5 h-3.5 md:w-4 md:h-4" />
                       <span className="absolute -bottom-1 -right-1 bg-[#794A05] text-white text-[8px] font-black px-1 rounded-full leading-tight">
                         {langLabels[language]}
                       </span>
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-40 mt-2 rounded-2xl shadow-xl border-orange-100/50 bg-white/95 backdrop-blur-md">
+                  <DropdownMenuContent align="end" className="w-40 mt-2 rounded-2xl shadow-xl border-orange-100/50 bg-white/95 backdrop-blur-md z-[100]">
                     <DropdownMenuLabel className="text-xs uppercase tracking-widest text-[#794A05]/60 px-3 py-2">
                       {t('navbar.language')}
                     </DropdownMenuLabel>
@@ -327,10 +327,10 @@ const Navbar: React.FC<NavbarProps> = ({ variant = "default", isSolid = false })
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="xl:hidden text-muted-foreground w-10 h-10 rounded-full bg-black/5 hover:bg-black/10"
+                  className="lg:hidden text-muted-foreground w-8 h-8 md:w-9 md:h-9 rounded-full bg-black/5 hover:bg-black/10"
                   onClick={() => setIsSearchOpen(true)}
                 >
-                  <Search className="w-5 h-5 text-primary" />
+                  <Search className="w-4 h-4 text-primary" />
                 </Button>
               )}
                 {/* Login Button for Institution (Temple/Mandal) */}
@@ -338,7 +338,7 @@ const Navbar: React.FC<NavbarProps> = ({ variant = "default", isSolid = false })
                 <Button
                   variant="outline"
                   onClick={() => { setLoginType("temple"); setShowTempleLoginModal(true); }}
-                  className="flex bg-[#88542B] border-[#c2a087] text-white hover:bg-[#CA9E52] hover:text-white rounded-full px-4 md:px-6 h-9 mr-1 md:mr-2 text-xs md:text-sm font-medium transition-all hover:border-[#864c20]"
+                  className="flex bg-[#88542B] border-[#c2a087] text-white hover:bg-[#CA9E52] hover:text-white rounded-full px-3 md:px-5 h-8 md:h-9 text-xs font-medium transition-all hover:border-[#864c20]"
                 >
                   {mounted ? t('navbar.temple_login') : "Temple Login"}
                 </Button>
@@ -348,7 +348,7 @@ const Navbar: React.FC<NavbarProps> = ({ variant = "default", isSolid = false })
                 <Button
                   variant="outline"
                   onClick={() => { setLoginType("mandal"); setShowTempleLoginModal(true); }}
-                  className="flex bg-[#88542B] border-[#c2a087] text-white hover:bg-[#CA9E52] hover:text-white rounded-full px-4 md:px-6 h-9 mr-1 md:mr-2 text-xs md:text-sm font-medium transition-all hover:border-[#864c20]"
+                  className="flex bg-[#88542B] border-[#c2a087] text-white hover:bg-[#CA9E52] hover:text-white rounded-full px-3 md:px-5 h-8 md:h-9 text-xs font-medium transition-all hover:border-[#864c20]"
                 >
                   {mounted ? t('navbar.mandal_login') || "Mandal Login" : "Mandal Login"}
                 </Button>
@@ -361,10 +361,10 @@ const Navbar: React.FC<NavbarProps> = ({ variant = "default", isSolid = false })
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="relative rounded-full w-9 h-9 md:w-10 md:h-10 border-2 border-[#794A05]/20 hover:border-[#794A05] hover:bg-white text-[#794A05] transition-all"
+                    className="relative rounded-full w-8 h-8 md:w-9 md:h-9 border-2 border-[#794A05]/20 hover:border-[#794A05] hover:bg-white text-[#794A05] transition-all"
                     onClick={() => setIsCartOpen(true)}
                   >
-                    <ShoppingCart className="w-4 h-4 md:w-5 md:h-5" />
+                    <ShoppingCart className="w-3.5 h-3.5 md:w-4 md:h-4" />
                     {itemCount > 0 && (
                       <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-black w-4 h-4 flex items-center justify-center rounded-full shadow-sm">
                         {itemCount}
@@ -378,7 +378,7 @@ const Navbar: React.FC<NavbarProps> = ({ variant = "default", isSolid = false })
               {variant === "default" && mounted && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="relative rounded-full w-9 h-9 md:w-10 md:h-10 border-2 border-[#794A05]
+                    <Button variant="ghost" size="icon" className="relative rounded-full w-8 h-8 md:w-9 md:h-9 border-2 border-[#794A05]
                       hover:border-[#794A05] hover:bg-[#ffffff] transition-all duration-300 ease-in-out
                         hover:shadow-[0_0_0_4px_#ffffff,0_0_0_6px_#794A05] group overflow-hidden">
                       {user?.profileImage ? (
@@ -387,12 +387,12 @@ const Navbar: React.FC<NavbarProps> = ({ variant = "default", isSolid = false })
                           className="w-full h-full object-cover"
                         />
                       ) : (
-                        <User className="w-4 h-4 md:w-5 md:h-5 text-[#794A05] transition-all duration-300 group-hover:scale-110" />
+                        <User className="w-3.5 h-3.5 md:w-4 md:h-4 text-[#794A05] transition-all duration-300 group-hover:scale-110" />
                       )}
                     </Button>
                   </DropdownMenuTrigger>
 
-                  <DropdownMenuContent align="end" className="w-64 mt-3 p-2 rounded-[1.8rem] shadow-2xl border-orange-100/50 dark:border-zinc-800 bg-white/95 dark:bg-zinc-950/95 backdrop-blur-md animate-in fade-in zoom-in-95 duration-200">
+                  <DropdownMenuContent align="end" className="w-64 mt-3 p-2 rounded-[1.8rem] shadow-2xl border-orange-100/50 dark:border-zinc-800 bg-white/95 dark:bg-zinc-950/95 backdrop-blur-md animate-in fade-in zoom-in-95 duration-200 z-[100]">
                     <DropdownMenuLabel className="font-sans text-primary px-4 py-3 text-xs uppercase tracking-[0.2em] opacity-70">
                       {user
                         ? `${t('common.hari_om')}, ${parseLocalizedValue(user.name, language).split(' ')[0]}`
@@ -532,7 +532,7 @@ const Navbar: React.FC<NavbarProps> = ({ variant = "default", isSolid = false })
               {/* Mobile Menu Button */}
               <button
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                className="xl:hidden relative z-10 p-2 text-foreground hover:bg-black/5 rounded-lg"
+                className="lg:hidden relative z-10 p-2 text-foreground hover:bg-black/5 rounded-lg"
               >
                 {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
               </button>
@@ -578,10 +578,10 @@ const Navbar: React.FC<NavbarProps> = ({ variant = "default", isSolid = false })
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: "100%" }}
               transition={{ type: "spring", damping: 25, stiffness: 200 }}
-              className="fixed inset-0 z-40 bg-background pt-24 xl:hidden"
+              className="fixed inset-0 z-40 bg-background pt-20 lg:hidden overflow-y-auto max-h-screen"
             >
-              <div className="container px-4 py-8">
-                <div className="flex flex-col gap-4">
+              <div className="container px-4 py-6 pb-28">
+                <div className="flex flex-col gap-3">
                   {/* Navigation links - Hidden on temple registration page */}
                   {!isTempleRegistrationPage && navLinks.map((link) => {
                     if (link.href === "/mandals") {
