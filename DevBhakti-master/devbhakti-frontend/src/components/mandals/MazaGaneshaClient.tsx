@@ -711,19 +711,19 @@ export default function MazaGaneshaClient({ slug = "maza-ganesha" }: { slug?: st
       {/* ══════════════════════════════════════════════════════════════
           HOW IT WORKS
       ══════════════════════════════════════════════════════════════ */}
-      <section className="pt-6 sm:pt-8 pb-12 sm:pb-16 bg-[#fdf8f0]">
+      <section className="pt-6 sm:pt-8 pb-4 bg-[#fdf8f0]">
         <div className="container mx-auto px-4">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="text-center mb-12"
+            className="text-center mb-8"
           >
             <h2 className="text-3xl xl:text-4xl font-black text-[#3d1a10] mb-2 font-serif">How It Works</h2>
             <p className="text-[#88542B]/75 text-sm sm:text-base font-medium">It&apos;s simple. Just 4 easy steps.</p>
           </motion.div>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-y-8 w-full mb-10">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-y-6 w-full mb-6">
             {STEPS.map((s, i) => (
               <motion.div
                 key={s.step}
@@ -760,7 +760,7 @@ export default function MazaGaneshaClient({ slug = "maza-ganesha" }: { slug?: st
       {/* ══════════════════════════════════════════════════════════════
           GALLERY SECTION
       ══════════════════════════════════════════════════════════════ */}
-      <section className="py-16 xl:py-20 bg-[#fdf8f0]">
+      <section className="pt-6 pb-16 xl:pb-20 bg-[#fdf8f0]">
         <div className="container mx-auto px-4">
           {/* Centered Gallery Title & Subtitle */}
           <div className="text-center max-w-2xl mx-auto mb-8">

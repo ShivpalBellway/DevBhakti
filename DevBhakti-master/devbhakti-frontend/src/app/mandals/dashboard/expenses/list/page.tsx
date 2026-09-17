@@ -61,7 +61,13 @@ export default function MandalExpensesListPage() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [selectedExpense, setSelectedExpense] = useState<any>(null);
+
+  const handleOpenViewModal = (exp: any) => {
+    setSelectedExpense(exp);
+    setIsViewModalOpen(true);
+  };
 
   // Form state
   const [formData, setFormData] = useState({
@@ -179,14 +185,6 @@ export default function MandalExpensesListPage() {
     }
     if (!formData.categoryId) {
       setErrorMsg("Please select an expense category");
-      return;
-    }
-    if (!formData.description.trim()) {
-      setErrorMsg("Description / Purpose is required");
-      return;
-    }
-    if (!formData.paidByName.trim()) {
-      setErrorMsg("Paid By / Spent By member name is required");
       return;
     }
 
@@ -479,6 +477,15 @@ export default function MandalExpensesListPage() {
                         <Button
                           variant="ghost"
                           size="icon"
+                          onClick={() => handleOpenViewModal(exp)}
+                          className="h-8 w-8 text-blue-600 hover:bg-blue-50"
+                          title="View Expense Details"
+                        >
+                          <Eye className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
                           onClick={() => handleOpenEditModal(exp)}
                           className="h-8 w-8 text-amber-700 hover:bg-amber-100"
                           title="Edit Expense"
@@ -531,7 +538,9 @@ export default function MandalExpensesListPage() {
           <form onSubmit={handleSubmitCreate} className="space-y-4 pt-2">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="text-xs font-bold text-foreground">Expense Amount (₹) *</label>
+                <label className="text-xs font-bold text-foreground">
+                  Expense Amount (₹) <span className="text-rose-600 font-bold">*</span>
+                </label>
                 <Input
                   type="number"
                   placeholder="e.g. 2500"
@@ -543,7 +552,9 @@ export default function MandalExpensesListPage() {
               </div>
 
               <div>
-                <label className="text-xs font-bold text-foreground">Expense Category *</label>
+                <label className="text-xs font-bold text-foreground">
+                  Expense Category <span className="text-rose-600 font-bold">*</span>
+                </label>
                 <select
                   value={formData.categoryId}
                   onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
@@ -561,24 +572,22 @@ export default function MandalExpensesListPage() {
             </div>
 
             <div>
-              <label className="text-xs font-bold text-foreground">Description / Purpose *</label>
+              <label className="text-xs font-bold text-foreground">Description / Purpose (Optional)</label>
               <Input
                 placeholder="e.g. Flowers for daily Ganesh pooja"
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                required
                 className="mt-1"
               />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="text-xs font-bold text-foreground">Spent By / Paid By Member *</label>
+                <label className="text-xs font-bold text-foreground">Spent By / Paid By Member (Optional)</label>
                 <Input
                   placeholder="e.g. Ramesh Patil (Treasurer)"
                   value={formData.paidByName}
                   onChange={(e) => setFormData({ ...formData, paidByName: e.target.value })}
-                  required
                   className="mt-1"
                 />
               </div>
@@ -600,12 +609,11 @@ export default function MandalExpensesListPage() {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="text-xs font-bold text-foreground">Expense Date *</label>
+                <label className="text-xs font-bold text-foreground">Expense Date (Optional)</label>
                 <Input
                   type="date"
                   value={formData.expenseDate}
                   onChange={(e) => setFormData({ ...formData, expenseDate: e.target.value })}
-                  required
                   className="mt-1"
                 />
               </div>
@@ -717,7 +725,9 @@ export default function MandalExpensesListPage() {
           <form onSubmit={handleSubmitUpdate} className="space-y-4 pt-2">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="text-xs font-bold text-foreground">Expense Amount (₹) *</label>
+                <label className="text-xs font-bold text-foreground">
+                  Expense Amount (₹) <span className="text-rose-600 font-bold">*</span>
+                </label>
                 <Input
                   type="number"
                   value={formData.amount}
@@ -728,7 +738,9 @@ export default function MandalExpensesListPage() {
               </div>
 
               <div>
-                <label className="text-xs font-bold text-foreground">Expense Category *</label>
+                <label className="text-xs font-bold text-foreground">
+                  Expense Category <span className="text-rose-600 font-bold">*</span>
+                </label>
                 <select
                   value={formData.categoryId}
                   onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
@@ -745,22 +757,20 @@ export default function MandalExpensesListPage() {
             </div>
 
             <div>
-              <label className="text-xs font-bold text-foreground">Description / Purpose *</label>
+              <label className="text-xs font-bold text-foreground">Description / Purpose (Optional)</label>
               <Input
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                required
                 className="mt-1"
               />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="text-xs font-bold text-foreground">Spent By / Paid By Member *</label>
+                <label className="text-xs font-bold text-foreground">Spent By / Paid By Member (Optional)</label>
                 <Input
                   value={formData.paidByName}
                   onChange={(e) => setFormData({ ...formData, paidByName: e.target.value })}
-                  required
                   className="mt-1"
                 />
               </div>
@@ -782,12 +792,11 @@ export default function MandalExpensesListPage() {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="text-xs font-bold text-foreground">Expense Date *</label>
+                <label className="text-xs font-bold text-foreground">Expense Date (Optional)</label>
                 <Input
                   type="date"
                   value={formData.expenseDate}
                   onChange={(e) => setFormData({ ...formData, expenseDate: e.target.value })}
-                  required
                   className="mt-1"
                 />
               </div>
@@ -871,6 +880,106 @@ export default function MandalExpensesListPage() {
               </Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* VIEW EXPENSE DETAILS MODAL */}
+      <Dialog open={isViewModalOpen} onOpenChange={setIsViewModalOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="font-serif text-lg font-bold text-amber-900 flex items-center gap-2">
+              <Eye className="w-5 h-5 text-blue-600" /> Expense Details
+            </DialogTitle>
+          </DialogHeader>
+
+          {selectedExpense && (
+            <div className="space-y-4 pt-2 text-sm">
+              <div className="flex items-center justify-between p-3 bg-amber-50 rounded-xl border border-amber-200">
+                <div>
+                  <span className="text-xs text-muted-foreground block">Amount Spent</span>
+                  <span className="text-2xl font-bold text-rose-700">₹{selectedExpense.amount?.toLocaleString("en-IN")}</span>
+                </div>
+                <div className="text-right">
+                  <span className="text-xs text-muted-foreground block">Payment Mode</span>
+                  <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-slate-100 text-slate-800 border">
+                    {selectedExpense.paymentMode}
+                  </span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 text-xs">
+                <div>
+                  <span className="text-muted-foreground font-semibold block">Category:</span>
+                  <span className="font-bold text-amber-950">{selectedExpense.categoryName}</span>
+                </div>
+                <div>
+                  <span className="text-muted-foreground font-semibold block">Expense Date:</span>
+                  <span className="font-medium">
+                    {new Date(selectedExpense.expenseDate).toLocaleDateString("en-IN", {
+                      day: "2-digit",
+                      month: "long",
+                      year: "numeric"
+                    })}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-muted-foreground font-semibold block">Paid By (Spent By):</span>
+                  <span className="font-bold text-slate-900">{selectedExpense.paidByName}</span>
+                </div>
+                <div>
+                  <span className="text-muted-foreground font-semibold block">Recorded By:</span>
+                  <span className="font-medium">{selectedExpense.enteredByName}</span>
+                </div>
+              </div>
+
+              <div>
+                <span className="text-xs text-muted-foreground font-semibold block mb-0.5">Description / Purpose:</span>
+                <p className="p-2.5 bg-muted/40 rounded-lg text-xs font-medium text-foreground border border-border/50">
+                  {selectedExpense.description}
+                </p>
+              </div>
+
+              {selectedExpense.notes && (
+                <div>
+                  <span className="text-xs text-muted-foreground font-semibold block mb-0.5">Additional Notes:</span>
+                  <p className="p-2 bg-muted/30 rounded-lg text-xs text-muted-foreground italic border border-border/30">
+                    {selectedExpense.notes}
+                  </p>
+                </div>
+              )}
+
+              {selectedExpense.receiptImage && (
+                <div>
+                  <span className="text-xs text-muted-foreground font-semibold block mb-1">Bill / Receipt:</span>
+                  <a
+                    href={selectedExpense.receiptImage}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-between p-2.5 bg-amber-50 hover:bg-amber-100 rounded-lg border border-amber-300 text-amber-950 text-xs font-semibold transition-colors"
+                  >
+                    <span className="flex items-center gap-2 truncate">
+                      {selectedExpense.receiptImage.toLowerCase().endsWith(".pdf") ? (
+                        <>
+                          <FileText className="w-4 h-4 text-rose-600 shrink-0" /> PDF Bill Attachment
+                        </>
+                      ) : (
+                        <>
+                          <Paperclip className="w-4 h-4 text-amber-800 shrink-0" /> View Receipt Image
+                        </>
+                      )}
+                    </span>
+                    <ExternalLink className="w-3.5 h-3.5 opacity-70 shrink-0" />
+                  </a>
+                </div>
+              )}
+            </div>
+          )}
+
+          <DialogFooter className="pt-3">
+            <Button variant="outline" onClick={() => setIsViewModalOpen(false)}>
+              Close
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 

@@ -497,10 +497,11 @@ export const uploadMandalExpenseReceipt = async (file: File) => {
 };
 
 // Mandal Expense Categories APIs
-export const fetchMandalExpenseCategories = async () => {
+export const fetchMandalExpenseCategories = async (params?: { search?: string }) => {
     const token = localStorage.getItem("token");
     const response = await axios.get(`${API_URL}/mandal-admin/expenses/categories`, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
+        params
     });
     return response.data;
 };

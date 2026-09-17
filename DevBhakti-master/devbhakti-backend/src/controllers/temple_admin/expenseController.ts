@@ -33,14 +33,6 @@ export const createTempleExpense = async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, message: "Expense category is required" });
     }
 
-    if (!description || !description.trim()) {
-      return res.status(400).json({ success: false, message: "Description / Purpose is required" });
-    }
-
-    if (!paidByName || !paidByName.trim()) {
-      return res.status(400).json({ success: false, message: "Paid By / Spent By name is required" });
-    }
-
     const category = await prisma.expenseCategory.findFirst({
       where: { id: categoryId, templeId },
     });
@@ -61,11 +53,11 @@ export const createTempleExpense = async (req: Request, res: Response) => {
         amount: Number(amount),
         categoryId,
         categoryName: category.name,
-        description: description.trim(),
+        description: description?.trim() || "N/A",
         expenseDate: dateVal,
         paymentMode: paymentMode?.toUpperCase() || "CASH",
         paidByMemberId: paidByMemberId || null,
-        paidByName: paidByName.trim(),
+        paidByName: paidByName?.trim() || "Temple Admin",
         enteredByUserId,
         enteredByName,
         receiptImage: receiptImage || null,

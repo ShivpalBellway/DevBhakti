@@ -539,10 +539,11 @@ export const uploadTempleExpenseReceipt = async (file: File) => {
 };
 
 // Temple Expense Categories APIs
-export const fetchTempleExpenseCategories = async () => {
+export const fetchTempleExpenseCategories = async (params?: { search?: string }) => {
     const token = localStorage.getItem("token");
     const response = await axios.get(`${API_URL}/temple-admin/expenses/categories`, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
+        params
     });
     return response.data;
 };

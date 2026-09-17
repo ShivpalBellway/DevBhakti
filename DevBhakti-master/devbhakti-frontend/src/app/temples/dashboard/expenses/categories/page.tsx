@@ -9,11 +9,12 @@ import {
   Trash2,
   CheckCircle2,
   ArrowLeft,
-  FolderPlus
+  FolderPlus,
+  Search
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import {
   Dialog,
   DialogContent,
@@ -32,6 +33,7 @@ import {
 export default function TempleExpenseCategoriesPage() {
   const [categories, setCategories] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
 
   // Modals
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -45,10 +47,10 @@ export default function TempleExpenseCategoriesPage() {
   const [errorMsg, setErrorMsg] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
 
-  const loadCategories = async () => {
+  const loadCategories = async (query?: string) => {
     setLoading(true);
     try {
-      const res = await fetchTempleExpenseCategories();
+      const res = await fetchTempleExpenseCategories({ search: query ?? searchQuery });
       if (res.success) {
         setCategories(res.data || []);
       }
@@ -60,8 +62,11 @@ export default function TempleExpenseCategoriesPage() {
   };
 
   useEffect(() => {
-    loadCategories();
-  }, []);
+    const timer = setTimeout(() => {
+      loadCategories(searchQuery);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   const handleOpenAdd = () => {
     setFormData({ name: "", description: "" });
@@ -175,66 +180,89 @@ export default function TempleExpenseCategoriesPage() {
         </div>
       </div>
 
-      {/* Grid of Categories */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {loading ? (
-          <div className="col-span-full py-12 text-center text-muted-foreground text-sm">
-            Loading expense categories...
-          </div>
-        ) : categories.length === 0 ? (
-          <div className="col-span-full py-12 text-center text-muted-foreground text-sm">
-            No categories defined. Click "+ Add New Category" to get started.
-          </div>
-        ) : (
-          categories.map((cat) => (
-            <Card key={cat.id} className="border-amber-200/60 shadow-sm hover:shadow-md transition-shadow">
-              <CardHeader className="pb-3 border-b border-border/40">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-lg bg-amber-100 text-amber-900 flex items-center justify-center font-bold">
-                      <Tag className="w-4 h-4" />
-                    </div>
-                    <CardTitle className="text-base font-bold text-foreground">{cat.name}</CardTitle>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleOpenEdit(cat)}
-                      className="h-8 w-8 text-amber-800 hover:bg-amber-100"
-                      title="Edit Category"
-                    >
-                      <Edit className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleOpenDelete(cat)}
-                      className="h-8 w-8 text-rose-600 hover:bg-rose-100"
-                      title="Delete Category"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="pt-3">
-                <p className="text-xs text-muted-foreground min-h-[36px]">
-                  {cat.description || "No description provided."}
-                </p>
-                <div className="mt-3 flex items-center justify-between pt-2 border-t border-border/30 text-xs">
-                  <span className="text-muted-foreground">Total Spent:</span>
-                  <span className="font-bold text-rose-700">₹{(cat.totalSpent || 0).toLocaleString("en-IN")}</span>
-                </div>
-                <div className="mt-1 flex items-center justify-between text-xs">
-                  <span className="text-muted-foreground">Entries logged:</span>
-                  <span className="font-semibold text-foreground">{cat.expenseCount || 0}</span>
-                </div>
-              </CardContent>
-            </Card>
-          ))
-        )}
+      {/* Toolbar: Search Bar */}
+      <div className="flex items-center justify-between gap-4 bg-card p-4 rounded-xl border border-border shadow-sm">
+        <div className="relative w-full sm:w-96">
+          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder="Search categories by name or description..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-9 bg-background"
+          />
+        </div>
       </div>
+
+      {/* Categories Content View (Strict List View) */}
+      {loading ? (
+        <div className="py-12 text-center text-muted-foreground text-sm bg-card rounded-xl border border-border">
+          Loading expense categories...
+        </div>
+      ) : categories.length === 0 ? (
+        <div className="py-12 text-center text-muted-foreground text-sm bg-card rounded-xl border border-border">
+          {searchQuery ? `No categories found matching "${searchQuery}".` : 'No categories defined. Click "+ Add New Category" to get started.'}
+        </div>
+      ) : (
+        /* TABLE / LIST VIEW */
+        <div className="bg-card rounded-xl border border-border shadow-sm overflow-hidden">
+          <Table>
+            <TableHeader className="bg-amber-50/50">
+              <TableRow>
+                <TableHead className="w-[280px] font-bold text-amber-950">Category Name</TableHead>
+                <TableHead className="font-bold text-amber-950">Description</TableHead>
+                <TableHead className="text-center font-bold text-amber-950">Entries Logged</TableHead>
+                <TableHead className="text-right font-bold text-amber-950">Total Spent</TableHead>
+                <TableHead className="text-right font-bold text-amber-950 pr-6">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {categories.map((cat) => (
+                <TableRow key={cat.id} className="hover:bg-amber-50/30">
+                  <TableCell className="font-bold text-foreground">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-lg bg-amber-100 text-amber-900 flex items-center justify-center shrink-0">
+                        <Tag className="w-4 h-4" />
+                      </div>
+                      <span>{cat.name}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-muted-foreground text-xs max-w-xs truncate">
+                    {cat.description || "No description provided."}
+                  </TableCell>
+                  <TableCell className="text-center font-semibold text-foreground">
+                    {cat.expenseCount || 0}
+                  </TableCell>
+                  <TableCell className="text-right font-bold text-rose-700">
+                    ₹{(cat.totalSpent || 0).toLocaleString("en-IN")}
+                  </TableCell>
+                  <TableCell className="text-right pr-6">
+                    <div className="flex items-center justify-end gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleOpenEdit(cat)}
+                        className="h-8 w-8 text-amber-800 hover:bg-amber-100"
+                        title="Edit Category"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleOpenDelete(cat)}
+                        className="h-8 w-8 text-rose-600 hover:bg-rose-100"
+                        title="Delete Category"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
 
       {/* ADD CATEGORY MODAL */}
       <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
@@ -352,10 +380,10 @@ export default function TempleExpenseCategoriesPage() {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="font-serif text-lg font-bold text-rose-700 flex items-center gap-2">
-              <Trash2 className="w-5 h-5" /> Deactivate Category
+              <Trash2 className="w-5 h-5" /> Delete Category
             </DialogTitle>
             <DialogDescription className="text-xs pt-2">
-              Deactivating <strong>"{selectedCategory?.name}"</strong> will remove it from active options for future expenses. Past expense entries under this category will remain intact.
+              Are you sure you want to delete <strong>"{selectedCategory?.name}"</strong>? This will remove it from active options for future expenses. Past expense entries under this category will remain intact.
             </DialogDescription>
           </DialogHeader>
 
@@ -364,7 +392,7 @@ export default function TempleExpenseCategoriesPage() {
               Cancel
             </Button>
             <Button onClick={handleDeleteConfirm} disabled={submitting} className="bg-rose-600 hover:bg-rose-700 text-white">
-              {submitting ? "Deactivating..." : "Deactivate Category"}
+              {submitting ? "Deleting..." : "Delete Category"}
             </Button>
           </DialogFooter>
         </DialogContent>

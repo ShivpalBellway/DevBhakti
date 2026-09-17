@@ -34,14 +34,25 @@ export const ensureDefaultTempleCategories = async (templeId: string) => {
 export const getTempleExpenseCategories = async (req: Request, res: Response) => {
   try {
     const templeId = (req as any).owner?.ownerId;
+    const search = req.query.search as string;
+
     if (!templeId) {
       return res.status(401).json({ success: false, message: "Unauthorized: Temple ID missing" });
     }
 
     await ensureDefaultTempleCategories(templeId);
 
+    const whereClause: any = { templeId, isActive: true };
+    if (search && search.trim()) {
+      const q = search.trim();
+      whereClause.OR = [
+        { name: { contains: q, mode: "insensitive" } },
+        { description: { contains: q, mode: "insensitive" } },
+      ];
+    }
+
     const categories = await prisma.expenseCategory.findMany({
-      where: { templeId, isActive: true },
+      where: whereClause,
       include: {
         _count: {
           select: { expenses: true },
@@ -190,7 +201,7 @@ export const deleteTempleExpenseCategory = async (req: Request, res: Response) =
       data: { isActive: false },
     });
 
-    return res.status(200).json({ success: true, message: "Category deactivated successfully" });
+    return res.status(200).json({ success: true, message: "Category deleted successfully" });
   } catch (error: any) {
     console.error("Delete Temple Expense Category Error:", error);
     return res.status(500).json({ success: false, message: error.message });

@@ -45,23 +45,23 @@ export default function MandalExpenseDashboardPage() {
   return (
     <div className="space-y-6 pb-12">
       {/* Header Bar */}
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 bg-gradient-to-r from-amber-700 via-amber-800 to-amber-900 text-white p-6 rounded-2xl shadow-lg">
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 bg-gradient-to-r from-amber-900 via-amber-950 to-stone-900 text-white p-6 rounded-2xl shadow-lg border border-amber-800/30">
         <div>
-          <div className="flex items-center gap-2 text-amber-200 text-xs font-semibold uppercase tracking-wider mb-1">
+          <div className="flex items-center gap-2 text-amber-300 text-xs font-semibold uppercase tracking-wider mb-1">
             <Wallet className="w-4 h-4" /> Expense Management System
           </div>
-          <h1 className="text-2xl md:text-3xl font-bold font-serif">Mandal Expense Dashboard</h1>
-          <p className="text-amber-100/80 text-sm mt-1">
+          <h1 className="text-2xl md:text-3xl font-bold font-serif text-white">Mandal Expense Dashboard</h1>
+          <p className="text-amber-100/90 text-sm mt-1">
             Real-time track of all expenses, categories, paid-by members, and operational balance.
           </p>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <Button asChild className="bg-white text-amber-900 hover:bg-amber-100 font-semibold shadow-md">
+        <div className="flex flex-wrap items-center gap-3">
+          <Button asChild className="bg-amber-500 hover:bg-amber-600 text-amber-950 font-bold shadow-md">
             <Link href="/mandals/dashboard/expenses/list">
               <PlusCircle className="w-4 h-4 mr-2" /> + Record New Expense
             </Link>
           </Button>
-          <Button asChild variant="outline" className="border-amber-400/40 text-white hover:bg-amber-800/50">
+          <Button asChild className="bg-white/10 hover:bg-white/20 text-white font-medium border border-amber-300/40 backdrop-blur-sm shadow-sm">
             <Link href="/mandals/dashboard/expenses/categories">
               Category Settings
             </Link>

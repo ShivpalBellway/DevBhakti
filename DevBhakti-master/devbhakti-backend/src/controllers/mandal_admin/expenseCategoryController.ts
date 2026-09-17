@@ -36,14 +36,25 @@ export const ensureDefaultMandalCategories = async (mandalId: string) => {
 export const getMandalExpenseCategories = async (req: Request, res: Response) => {
   try {
     const mandalId = (req as any).owner?.ownerId;
+    const search = req.query.search as string;
+
     if (!mandalId) {
       return res.status(401).json({ success: false, message: "Unauthorized: Mandal ID missing" });
     }
 
     await ensureDefaultMandalCategories(mandalId);
 
+    const whereClause: any = { mandalId, isActive: true };
+    if (search && search.trim()) {
+      const q = search.trim();
+      whereClause.OR = [
+        { name: { contains: q, mode: "insensitive" } },
+        { description: { contains: q, mode: "insensitive" } },
+      ];
+    }
+
     const categories = await prisma.expenseCategory.findMany({
-      where: { mandalId, isActive: true },
+      where: whereClause,
       include: {
         _count: {
           select: { expenses: true },
@@ -198,7 +209,7 @@ export const deleteMandalExpenseCategory = async (req: Request, res: Response) =
       data: { isActive: false },
     });
 
-    return res.status(200).json({ success: true, message: "Category deactivated successfully" });
+    return res.status(200).json({ success: true, message: "Category deleted successfully" });
   } catch (error: any) {
     console.error("Delete Mandal Expense Category Error:", error);
     return res.status(500).json({ success: false, message: error.message });
