@@ -12,7 +12,7 @@ router.use(authenticate, injectMandalContext);
 router.post('/upload-receipt', uploadExpenseReceipt.single('file'), expenseController.uploadReceipt);
 
 // Expense Entries CRUD & Stats
-router.post('/', expenseController.createMandalExpense);
+router.post('/', uploadExpenseReceipt.single('receipt'), expenseController.createMandalExpense);
 router.get('/', expenseController.getMandalExpenses);
 router.get('/stats', expenseController.getMandalExpenseStats);
 router.put('/:id', expenseController.updateMandalExpense);

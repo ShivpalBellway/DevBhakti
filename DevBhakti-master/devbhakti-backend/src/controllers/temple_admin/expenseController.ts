@@ -13,6 +13,13 @@ export const createTempleExpense = async (req: Request, res: Response) => {
       return res.status(401).json({ success: false, message: "Unauthorized: Temple ID missing" });
     }
 
+    let receiptImageUrl = req.body.receiptImage || null;
+    if (req.file) {
+      const protocol = req.protocol || "http";
+      const host = req.get("host") || "localhost:5000";
+      receiptImageUrl = `${protocol}://${host}/uploads/expenses/${req.file.filename}`;
+    }
+
     const {
       amount,
       categoryId,
@@ -21,7 +28,6 @@ export const createTempleExpense = async (req: Request, res: Response) => {
       paymentMode = "CASH",
       paidByMemberId,
       paidByName,
-      receiptImage,
       notes,
     } = req.body;
 
@@ -60,7 +66,7 @@ export const createTempleExpense = async (req: Request, res: Response) => {
         paidByName: paidByName?.trim() || "Temple Admin",
         enteredByUserId,
         enteredByName,
-        receiptImage: receiptImage || null,
+        receiptImage: receiptImageUrl,
         notes: notes?.trim() || null,
         auditLogs: {
           create: {

@@ -12,7 +12,7 @@ router.use(authenticate, injectTempleContext);
 router.post('/upload-receipt', uploadExpenseReceipt.single('file'), expenseController.uploadReceipt);
 
 // Expense Entries CRUD & Stats
-router.post('/', expenseController.createTempleExpense);
+router.post('/', uploadExpenseReceipt.single('receipt'), expenseController.createTempleExpense);
 router.get('/', expenseController.getTempleExpenses);
 router.get('/stats', expenseController.getTempleExpenseStats);
 router.put('/:id', expenseController.updateTempleExpense);
