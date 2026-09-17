@@ -49,6 +49,18 @@ export const createMandalExpense = async (req: Request, res: Response) => {
     if (!category) {
       return res.status(400).json({ success: false, message: "Invalid category selected" });
     }
+    let resolvedPaidByName = paidByName?.trim() || null;
+    if (paidByMemberId && !resolvedPaidByName) {
+      const staffMember = await prisma.staffMember.findFirst({
+        where: { id: paidByMemberId, ownerId: mandalId, ownerType: "MANDAL" },
+      });
+      if (staffMember) {
+        resolvedPaidByName = staffMember.name;
+      }
+    }
+    if (!resolvedPaidByName) {
+      resolvedPaidByName = "Mandal Admin";
+    }
 
     const enteredByUserId = user?.userId || user?.staffId || "SYSTEM";
     const enteredByName = user?.name || user?.email || "Mandal Admin";
@@ -59,14 +71,14 @@ export const createMandalExpense = async (req: Request, res: Response) => {
       data: {
         entityType: "MANDAL",
         mandalId,
-        amount: Number(amount),
+        amount: numAmount,
         categoryId,
         categoryName: category.name,
         description: description?.trim() || "N/A",
         expenseDate: dateVal,
         paymentMode: paymentMode?.toUpperCase() || "CASH",
         paidByMemberId: paidByMemberId || null,
-        paidByName: paidByName?.trim() || "Mandal Admin",
+        paidByName: resolvedPaidByName,
         enteredByUserId,
         enteredByName,
         receiptImage: receiptImageUrl,

@@ -48,6 +48,19 @@ export const createTempleExpense = async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, message: "Invalid category selected" });
     }
 
+    let resolvedPaidByName = paidByName?.trim() || null;
+    if (paidByMemberId && !resolvedPaidByName) {
+      const staffMember = await prisma.staffMember.findFirst({
+        where: { id: paidByMemberId, ownerId: templeId, ownerType: "TEMPLE" },
+      });
+      if (staffMember) {
+        resolvedPaidByName = staffMember.name;
+      }
+    }
+    if (!resolvedPaidByName) {
+      resolvedPaidByName = "Temple Admin";
+    }
+
     const enteredByUserId = user?.userId || user?.staffId || "SYSTEM";
     const enteredByName = user?.name || user?.email || "Temple Admin";
 
@@ -57,14 +70,14 @@ export const createTempleExpense = async (req: Request, res: Response) => {
       data: {
         entityType: "TEMPLE",
         templeId,
-        amount: Number(amount),
+        amount: numAmount,
         categoryId,
         categoryName: category.name,
         description: description?.trim() || "N/A",
         expenseDate: dateVal,
         paymentMode: paymentMode?.toUpperCase() || "CASH",
         paidByMemberId: paidByMemberId || null,
-        paidByName: paidByName?.trim() || "Temple Admin",
+        paidByName: resolvedPaidByName,
         enteredByUserId,
         enteredByName,
         receiptImage: receiptImageUrl,
