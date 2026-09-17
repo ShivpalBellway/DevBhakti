@@ -18,7 +18,10 @@ import {
   FileText,
   X,
   CheckCircle2,
-  RefreshCw
+  RefreshCw,
+  Upload,
+  Paperclip,
+  ExternalLink
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,7 +39,8 @@ import {
   fetchMandalExpenseCategories,
   createMandalExpense,
   updateMandalExpense,
-  deleteMandalExpense
+  deleteMandalExpense,
+  uploadMandalExpenseReceipt
 } from "@/api/mandalAdminController";
 
 export default function MandalExpensesListPage() {
@@ -71,8 +75,29 @@ export default function MandalExpensesListPage() {
     notes: ""
   });
   const [submitting, setSubmitting] = useState(false);
+  const [uploadingFile, setUploadingFile] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingFile(true);
+    setErrorMsg("");
+    try {
+      const res = await uploadMandalExpenseReceipt(file);
+      if (res.success && res.url) {
+        setFormData(prev => ({ ...prev, receiptImage: res.url }));
+      } else {
+        setErrorMsg(res.message || "File upload failed");
+      }
+    } catch (err: any) {
+      setErrorMsg(err.response?.data?.message || err.message || "Failed to upload receipt file");
+    } finally {
+      setUploadingFile(false);
+    }
+  };
 
   const loadData = async () => {
     setLoading(true);
@@ -411,6 +436,28 @@ export default function MandalExpensesListPage() {
                     <td className="py-3 px-4 max-w-xs">
                       <p className="font-semibold text-foreground truncate">{exp.description}</p>
                       {exp.notes && <p className="text-xs text-muted-foreground truncate">{exp.notes}</p>}
+                      {exp.receiptImage && (
+                        <div className="mt-1">
+                          <a
+                            href={exp.receiptImage}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-[11px] font-semibold text-amber-800 bg-amber-100/90 hover:bg-amber-200 px-2 py-0.5 rounded border border-amber-300 transition-colors"
+                            title="View Attached Bill / Receipt"
+                          >
+                            {exp.receiptImage.toLowerCase().endsWith(".pdf") ? (
+                              <>
+                                <FileText className="w-3 h-3 text-rose-600" /> PDF Bill
+                              </>
+                            ) : (
+                              <>
+                                <Paperclip className="w-3 h-3 text-amber-800" /> View Receipt
+                              </>
+                            )}
+                            <ExternalLink className="w-2.5 h-2.5 ml-0.5 opacity-70" />
+                          </a>
+                        </div>
+                      )}
                     </td>
                     <td className="py-3 px-4">
                       <div className="flex items-center gap-1.5 font-medium text-foreground">
@@ -564,13 +611,63 @@ export default function MandalExpensesListPage() {
               </div>
 
               <div>
-                <label className="text-xs font-bold text-foreground">Bill / Receipt URL (Optional)</label>
-                <Input
-                  placeholder="https://..."
-                  value={formData.receiptImage}
-                  onChange={(e) => setFormData({ ...formData, receiptImage: e.target.value })}
-                  className="mt-1"
-                />
+                <label className="text-xs font-bold text-foreground flex items-center justify-between">
+                  <span>Bill / Receipt (Image or PDF)</span>
+                  <span className="text-[10px] text-muted-foreground font-normal">Max 10MB</span>
+                </label>
+                <div className="mt-1 space-y-1.5">
+                  {formData.receiptImage ? (
+                    <div className="flex items-center justify-between p-2 bg-amber-50 border border-amber-200 rounded-lg text-xs">
+                      <div className="flex items-center gap-2 overflow-hidden mr-1">
+                        {formData.receiptImage.toLowerCase().endsWith(".pdf") ? (
+                          <div className="px-1.5 py-0.5 bg-rose-100 text-rose-700 rounded font-bold text-[10px] flex items-center gap-1 shrink-0">
+                            <FileText className="w-3.5 h-3.5" /> PDF
+                          </div>
+                        ) : (
+                          <div className="w-7 h-7 rounded border overflow-hidden shrink-0 bg-slate-100">
+                            <img src={formData.receiptImage} alt="Receipt" className="w-full h-full object-cover" />
+                          </div>
+                        )}
+                        <span className="truncate text-amber-950 font-medium text-[11px]">{formData.receiptImage.split('/').pop()}</span>
+                      </div>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <a
+                          href={formData.receiptImage}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="p-1 text-amber-800 hover:bg-amber-100 rounded"
+                          title="View File"
+                        >
+                          <ExternalLink className="w-3.5 h-3.5" />
+                        </a>
+                        <button
+                          type="button"
+                          onClick={() => setFormData({ ...formData, receiptImage: "" })}
+                          className="p-1 text-rose-600 hover:bg-rose-100 rounded"
+                          title="Remove File"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <label className="flex items-center justify-center gap-1.5 border border-dashed border-amber-300 hover:border-amber-500 bg-amber-50/50 hover:bg-amber-50 p-2 rounded-lg cursor-pointer transition-colors text-xs font-medium text-amber-900 h-10">
+                      {uploadingFile ? (
+                        <RefreshCw className="w-3.5 h-3.5 animate-spin text-amber-700" />
+                      ) : (
+                        <Upload className="w-3.5 h-3.5 text-amber-700" />
+                      )}
+                      <span className="text-[11px]">{uploadingFile ? "Uploading..." : "Upload Image or PDF"}</span>
+                      <input
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp,application/pdf"
+                        onChange={handleFileUpload}
+                        disabled={uploadingFile}
+                        className="hidden"
+                      />
+                    </label>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -696,12 +793,63 @@ export default function MandalExpensesListPage() {
               </div>
 
               <div>
-                <label className="text-xs font-bold text-foreground">Bill / Receipt URL</label>
-                <Input
-                  value={formData.receiptImage}
-                  onChange={(e) => setFormData({ ...formData, receiptImage: e.target.value })}
-                  className="mt-1"
-                />
+                <label className="text-xs font-bold text-foreground flex items-center justify-between">
+                  <span>Bill / Receipt (Image or PDF)</span>
+                  <span className="text-[10px] text-muted-foreground font-normal">Max 10MB</span>
+                </label>
+                <div className="mt-1 space-y-1.5">
+                  {formData.receiptImage ? (
+                    <div className="flex items-center justify-between p-2 bg-amber-50 border border-amber-200 rounded-lg text-xs">
+                      <div className="flex items-center gap-2 overflow-hidden mr-1">
+                        {formData.receiptImage.toLowerCase().endsWith(".pdf") ? (
+                          <div className="px-1.5 py-0.5 bg-rose-100 text-rose-700 rounded font-bold text-[10px] flex items-center gap-1 shrink-0">
+                            <FileText className="w-3.5 h-3.5" /> PDF
+                          </div>
+                        ) : (
+                          <div className="w-7 h-7 rounded border overflow-hidden shrink-0 bg-slate-100">
+                            <img src={formData.receiptImage} alt="Receipt" className="w-full h-full object-cover" />
+                          </div>
+                        )}
+                        <span className="truncate text-amber-950 font-medium text-[11px]">{formData.receiptImage.split('/').pop()}</span>
+                      </div>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <a
+                          href={formData.receiptImage}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="p-1 text-amber-800 hover:bg-amber-100 rounded"
+                          title="View File"
+                        >
+                          <ExternalLink className="w-3.5 h-3.5" />
+                        </a>
+                        <button
+                          type="button"
+                          onClick={() => setFormData({ ...formData, receiptImage: "" })}
+                          className="p-1 text-rose-600 hover:bg-rose-100 rounded"
+                          title="Remove File"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <label className="flex items-center justify-center gap-1.5 border border-dashed border-amber-300 hover:border-amber-500 bg-amber-50/50 hover:bg-amber-50 p-2 rounded-lg cursor-pointer transition-colors text-xs font-medium text-amber-900 h-10">
+                      {uploadingFile ? (
+                        <RefreshCw className="w-3.5 h-3.5 animate-spin text-amber-700" />
+                      ) : (
+                        <Upload className="w-3.5 h-3.5 text-amber-700" />
+                      )}
+                      <span className="text-[11px]">{uploadingFile ? "Uploading..." : "Upload Image or PDF"}</span>
+                      <input
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp,application/pdf"
+                        onChange={handleFileUpload}
+                        disabled={uploadingFile}
+                        className="hidden"
+                      />
+                    </label>
+                  )}
+                </div>
               </div>
             </div>
 

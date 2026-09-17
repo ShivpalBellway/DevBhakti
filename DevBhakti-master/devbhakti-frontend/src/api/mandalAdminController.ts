@@ -483,6 +483,19 @@ export const deleteMandalExpense = async (id: string) => {
     return response.data;
 };
 
+export const uploadMandalExpenseReceipt = async (file: File) => {
+    const token = localStorage.getItem("token");
+    const formData = new FormData();
+    formData.append("file", file);
+    const response = await axios.post(`${API_URL}/mandal-admin/expenses/upload-receipt`, formData, {
+        headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "multipart/form-data"
+        }
+    });
+    return response.data;
+};
+
 // Mandal Expense Categories APIs
 export const fetchMandalExpenseCategories = async () => {
     const token = localStorage.getItem("token");

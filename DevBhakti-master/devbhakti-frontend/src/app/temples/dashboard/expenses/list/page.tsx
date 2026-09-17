@@ -11,7 +11,13 @@ import {
   Trash2,
   Edit,
   User,
-  CheckCircle2
+  CheckCircle2,
+  FileText,
+  X,
+  RefreshCw,
+  Upload,
+  Paperclip,
+  ExternalLink
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,7 +35,8 @@ import {
   fetchTempleExpenseCategories,
   createTempleExpense,
   updateTempleExpense,
-  deleteTempleExpense
+  deleteTempleExpense,
+  uploadTempleExpenseReceipt
 } from "@/api/templeAdminController";
 
 export default function TempleExpensesListPage() {
@@ -64,8 +71,29 @@ export default function TempleExpensesListPage() {
     notes: ""
   });
   const [submitting, setSubmitting] = useState(false);
+  const [uploadingFile, setUploadingFile] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingFile(true);
+    setErrorMsg("");
+    try {
+      const res = await uploadTempleExpenseReceipt(file);
+      if (res.success && res.url) {
+        setFormData(prev => ({ ...prev, receiptImage: res.url }));
+      } else {
+        setErrorMsg(res.message || "File upload failed");
+      }
+    } catch (err: any) {
+      setErrorMsg(err.response?.data?.message || err.message || "Failed to upload receipt file");
+    } finally {
+      setUploadingFile(false);
+    }
+  };
 
   const loadData = async () => {
     setLoading(true);
@@ -404,6 +432,28 @@ export default function TempleExpensesListPage() {
                     <td className="py-3 px-4 max-w-xs">
                       <p className="font-semibold text-foreground truncate">{exp.description}</p>
                       {exp.notes && <p className="text-xs text-muted-foreground truncate">{exp.notes}</p>}
+                      {exp.receiptImage && (
+                        <div className="mt-1">
+                          <a
+                            href={exp.receiptImage}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-[11px] font-semibold text-amber-800 bg-amber-100/90 hover:bg-amber-200 px-2 py-0.5 rounded border border-amber-300 transition-colors"
+                            title="View Attached Bill / Receipt"
+                          >
+                            {exp.receiptImage.toLowerCase().endsWith(".pdf") ? (
+                              <>
+                                <FileText className="w-3 h-3 text-rose-600" /> PDF Bill
+                              </>
+                            ) : (
+                              <>
+                                <Paperclip className="w-3 h-3 text-amber-800" /> View Receipt
+                              </>
+                            )}
+                            <ExternalLink className="w-2.5 h-2.5 ml-0.5 opacity-70" />
+                          </a>
+                        </div>
+                      )}
                     </td>
                     <td className="py-3 px-4">
                       <div className="flex items-center gap-1.5 font-medium text-foreground">

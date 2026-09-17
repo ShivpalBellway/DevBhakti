@@ -3,8 +3,8 @@
 import { useEffect, useState } from "react";
 import { Smartphone, ExternalLink, Apple } from "lucide-react";
 
-const PLAY_STORE_URL = "https://play.google.com/store/apps/details?id=com.devbhakti.app";
-const APP_STORE_URL = "https://apps.apple.com/in/app/devbhakti/id6761248";
+const PLAY_STORE_URL = "https://play.google.com/store/apps/details?id=com.devbhakti.user&hl=en_IN";
+const APP_STORE_URL = "https://apps.apple.com/in/app/devbhakti/id6761248156";
 
 export default function DownloadAppPage() {
   const [storeUrl, setStoreUrl] = useState<string>(APP_STORE_URL);
@@ -22,34 +22,11 @@ export default function DownloadAppPage() {
     setIsIosDevice(isIOS);
 
     if (!isIOS) {
-      // Android: Intent URL — Opens App if installed, else opens Play Store directly
-      const androidIntentUrl =
-        "intent://open#Intent;scheme=devbhakti;package=com.devbhakti.app;S.browser_fallback_url=" +
-        encodeURIComponent(PLAY_STORE_URL) +
-        ";end";
-
       setStoreUrl(PLAY_STORE_URL);
-      try {
-        window.location.href = androidIntentUrl;
-      } catch (e) {
-        window.location.href = PLAY_STORE_URL;
-      }
+      window.location.replace(PLAY_STORE_URL);
     } else {
-      // iOS: Try launching devbhakti:// app scheme first, fallback to App Store if not installed
       setStoreUrl(APP_STORE_URL);
-      const appSchemeUrl = "devbhakti://open";
-      const start = Date.now();
-
-      window.location.href = appSchemeUrl;
-
-      // If app is not installed (browser stays open), fallback to App Store after delay
-      const timer = setTimeout(() => {
-        if (Date.now() - start < 2500) {
-          window.location.href = APP_STORE_URL;
-        }
-      }, 1500);
-
-      return () => clearTimeout(timer);
+      window.location.replace(APP_STORE_URL);
     }
   }, []);
 

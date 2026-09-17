@@ -34,7 +34,13 @@ interface UserProfile {
 
 import { useRouter } from "next/navigation";
 
-export default function MazaGaneshaFormClient({ slug = "maza-ganesha" }: { slug?: string }) {
+export default function MazaGaneshaFormClient({
+  slug = "maza-ganesha",
+  isThankYouPage = false,
+}: {
+  slug?: string;
+  isThankYouPage?: boolean;
+}) {
   const router = useRouter();
   const [user, setUser] = useState<UserProfile | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -85,9 +91,18 @@ export default function MazaGaneshaFormClient({ slug = "maza-ganesha" }: { slug?
           .then((res) => {
             if (res.data.success && res.data.data) {
               setAlreadySubmittedEntry(res.data.data);
+              if (!isThankYouPage) {
+                router.replace(`/campaigns/${slug}/thank-you`);
+              }
+            } else if (isThankYouPage) {
+              router.replace(`/campaigns/${slug}/participate`);
             }
           })
-          .catch(() => {});
+          .catch(() => {
+            if (isThankYouPage) {
+              router.replace(`/campaigns/${slug}/participate`);
+            }
+          });
       } catch (e) {
         setIsLoggedIn(false);
         router.push(`/campaigns/${slug}/auth?redirect=/campaigns/${slug}/participate`);
@@ -97,7 +112,7 @@ export default function MazaGaneshaFormClient({ slug = "maza-ganesha" }: { slug?
       router.push(`/campaigns/${slug}/auth?redirect=/campaigns/${slug}/participate`);
     }
     setCheckingAuth(false);
-  }, [slug, router]);
+  }, [slug, router, isThankYouPage]);
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files || []);
@@ -140,6 +155,7 @@ export default function MazaGaneshaFormClient({ slug = "maza-ganesha" }: { slug?
         const userKey = user.id || user.phone || "user_default";
         localStorage.setItem(`maza_ganesha_entry_${userKey}`, JSON.stringify(createdData));
         setAlreadySubmittedEntry(createdData);
+        router.push(`/campaigns/${slug}/thank-you`);
       } else {
         setSubmitError(res.data.message || "Failed to submit entry.");
       }

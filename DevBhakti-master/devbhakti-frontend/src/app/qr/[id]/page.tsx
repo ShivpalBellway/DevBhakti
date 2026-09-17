@@ -10,8 +10,8 @@ const INVALID_QR_IDS = new Set(["", "undefined", "null"]);
 // App configuration
 const APP_CONFIG = {
   scheme: 'devbhakti://',
-  androidPackage: 'com.devbhakti.app',
-  iosBundleId: 'com.devbhakti.app',
+  androidPackage: 'com.devbhakti.user',
+  iosBundleId: 'com.devbhakti.user',
   deepLinkPath: 'temples',
 };
 

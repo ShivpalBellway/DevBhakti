@@ -330,7 +330,7 @@ export default function BannersPage() {
                                             </span>
                                             {banner.targetType && banner.targetType !== 'NONE' && (
                                                 <span className="inline-flex items-center gap-1 text-[11px] font-medium text-amber-800 bg-amber-50 px-2 py-0.5 rounded border border-amber-200/60">
-                                                    🎯 {banner.targetType}: {banner.targetSlug || banner.customUrl || banner.targetId}
+                                                    🎯 {banner.targetType}: {banner.targetDetails?.name || banner.targetSlug || banner.customUrl || banner.targetId}
                                                 </span>
                                             )}
                                         </div>

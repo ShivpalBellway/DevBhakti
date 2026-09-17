@@ -444,6 +444,7 @@ function CmsBannerStrip({ slug }: { slug: string }) {
     if (b.targetType === 'TEMPLE' && (b.targetSlug || b.targetId)) { window.location.href = `/temples/${b.targetSlug || b.targetId}`; return; }
     if (b.targetType === 'PRODUCT' && (b.targetSlug || b.targetId)) { window.location.href = `/products/${b.targetSlug || b.targetId}`; return; }
     if (b.targetType === 'MANDAL' && (b.targetSlug || b.targetId)) { window.location.href = `/mandals/${b.targetSlug || b.targetId}`; return; }
+    if (b.targetType === 'CONTEST' && (b.targetSlug || b.targetId)) { window.location.href = `/campaigns/${b.targetSlug || b.targetId}`; return; }
     if (b.targetType === 'CUSTOM_URL' && b.customUrl) { window.location.href = b.customUrl; return; }
 
     const savedUserStr = typeof window !== "undefined" ? localStorage.getItem("user") : null;
@@ -712,17 +713,6 @@ export default function MazaGaneshaClient({ slug = "maza-ganesha" }: { slug?: st
       ══════════════════════════════════════════════════════════════ */}
       <section className="pt-6 sm:pt-8 pb-12 sm:pb-16 bg-[#fdf8f0]">
         <div className="container mx-auto px-4">
-          {/* Participate CTA Button right above How It Works */}
-          <div className="mb-6 flex justify-center">
-            <Link
-              href={`/campaigns/${slug}/participate`}
-              className="bg-gradient-to-r from-[#CA9E52] via-[#88542B] to-[#3d1a10] hover:from-[#3d1a10] hover:to-[#CA9E52] text-white font-black text-base sm:text-lg px-8 py-3 rounded-full shadow-lg border border-amber-300/40 flex items-center gap-3 hover:scale-105 transition-all duration-300 group cursor-pointer"
-            >
-              <span>Participate Now 🙏</span>
-              <ArrowRight className="w-5 h-5 group-hover:translate-x-1.5 transition-transform" />
-            </Link>
-          </div>
-
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -733,7 +723,7 @@ export default function MazaGaneshaClient({ slug = "maza-ganesha" }: { slug?: st
             <p className="text-[#88542B]/75 text-sm sm:text-base font-medium">It&apos;s simple. Just 4 easy steps.</p>
           </motion.div>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-y-8 w-full">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-y-8 w-full mb-10">
             {STEPS.map((s, i) => (
               <motion.div
                 key={s.step}
@@ -752,6 +742,17 @@ export default function MazaGaneshaClient({ slug = "maza-ganesha" }: { slug?: st
                 <p className="text-slate-500 text-xs sm:text-sm leading-relaxed max-w-[200px]">{s.desc}</p>
               </motion.div>
             ))}
+          </div>
+
+          {/* Participate CTA Button below How It Works */}
+          <div className="flex justify-center">
+            <Link
+              href={`/campaigns/${slug}/participate`}
+              className="bg-gradient-to-r from-[#CA9E52] via-[#88542B] to-[#3d1a10] hover:from-[#3d1a10] hover:to-[#CA9E52] text-white font-black text-base sm:text-lg px-8 py-3 rounded-full shadow-lg border border-amber-300/40 flex items-center gap-3 hover:scale-105 transition-all duration-300 group cursor-pointer"
+            >
+              <span>Participate Now 🙏</span>
+              <ArrowRight className="w-5 h-5 group-hover:translate-x-1.5 transition-transform" />
+            </Link>
           </div>
         </div>
       </section>

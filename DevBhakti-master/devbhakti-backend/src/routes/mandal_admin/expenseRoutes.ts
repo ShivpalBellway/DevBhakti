@@ -2,10 +2,14 @@ import { Router } from 'express';
 import { authenticate, injectMandalContext } from '../../middleware/authMiddleware';
 import * as expenseController from '../../controllers/mandal_admin/expenseController';
 import * as categoryController from '../../controllers/mandal_admin/expenseCategoryController';
+import { uploadExpenseReceipt } from '../../middleware/uploadMiddleware';
 
 const router = Router();
 
 router.use(authenticate, injectMandalContext);
+
+// Upload Bill/Receipt File Endpoint
+router.post('/upload-receipt', uploadExpenseReceipt.single('file'), expenseController.uploadReceipt);
 
 // Expense Entries CRUD & Stats
 router.post('/', expenseController.createMandalExpense);

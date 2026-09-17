@@ -17,8 +17,9 @@ const userUploadDir = 'uploads/users';
 const productUploadDir = 'uploads/products';
 const categoryUploadDir = 'uploads/categories';
 const proofUploadDir = 'uploads/proofs';
+const expenseUploadDir = 'uploads/expenses';
 
-[cmsBannerDir, cmsFeatureDir, cmsTestimonialDir, cmsCTADir, cmsMandalDir, userUploadDir, productUploadDir, categoryUploadDir, proofUploadDir].forEach(dir => {
+[cmsBannerDir, cmsFeatureDir, cmsTestimonialDir, cmsCTADir, cmsMandalDir, userUploadDir, productUploadDir, categoryUploadDir, proofUploadDir, expenseUploadDir].forEach(dir => {
     if (!fs.existsSync(dir)) {
         fs.mkdirSync(dir, { recursive: true });
     }
@@ -144,3 +145,27 @@ export const uploadCampaignImage = multer({
     fileFilter: fileFilter,
     limits: { fileSize: 5 * 1024 * 1024 }
 });
+
+export const uploadExpenseReceipt = multer({
+    storage: multer.diskStorage({
+        destination: (req, file, cb) => cb(null, expenseUploadDir),
+        filename: (req, file, cb) => {
+            const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+            cb(null, 'receipt-' + uniqueSuffix + path.extname(file.originalname));
+        }
+    }),
+    fileFilter: (req: any, file: any, cb: any) => {
+        if (
+            file.mimetype.startsWith('image/') ||
+            file.mimetype === 'application/pdf' ||
+            file.mimetype.includes('pdf') ||
+            file.mimetype.includes('document')
+        ) {
+            cb(null, true);
+        } else {
+            cb(new Error('Only image files (JPG, PNG, WEBP) and PDF documents are allowed!'), false);
+        }
+    },
+    limits: { fileSize: 10 * 1024 * 1024 } // 10MB
+});
+

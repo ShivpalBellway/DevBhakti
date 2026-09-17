@@ -362,3 +362,25 @@ export const deleteTempleExpense = async (req: Request, res: Response) => {
     return res.status(500).json({ success: false, message: error.message });
   }
 };
+
+// Upload Expense Bill / Receipt File (Image or PDF)
+export const uploadReceipt = async (req: Request, res: Response) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: "No bill/receipt file uploaded" });
+    }
+    const fileUrl = `/uploads/expenses/${req.file.filename}`;
+    return res.status(200).json({
+      success: true,
+      message: "File uploaded successfully",
+      url: fileUrl,
+      fileName: req.file.originalname,
+      mimeType: req.file.mimetype,
+      size: req.file.size
+    });
+  } catch (error: any) {
+    console.error("Upload Expense Receipt Error:", error);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+

@@ -104,8 +104,8 @@ export function AppQRCode({
         (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1) ||
         (/Macintosh/i.test(ua) && "ontouchend" in document);
       const url = isIOS
-        ? "https://apps.apple.com/in/app/devbhakti/id6761248"
-        : "https://play.google.com/store/apps/details?id=com.devbhakti.app";
+        ? "https://apps.apple.com/in/app/devbhakti/id6761248156"
+        : "https://play.google.com/store/apps/details?id=com.devbhakti.user&hl=en_IN";
       window.open(url, "_blank", "noopener,noreferrer");
     }
   };

@@ -525,6 +525,19 @@ export const deleteTempleExpense = async (id: string) => {
     return response.data;
 };
 
+export const uploadTempleExpenseReceipt = async (file: File) => {
+    const token = localStorage.getItem("token");
+    const formData = new FormData();
+    formData.append("file", file);
+    const response = await axios.post(`${API_URL}/temple-admin/expenses/upload-receipt`, formData, {
+        headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "multipart/form-data"
+        }
+    });
+    return response.data;
+};
+
 // Temple Expense Categories APIs
 export const fetchTempleExpenseCategories = async () => {
     const token = localStorage.getItem("token");
