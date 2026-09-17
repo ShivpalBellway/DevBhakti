@@ -31,8 +31,9 @@ export const createMandalExpense = async (req: Request, res: Response) => {
       notes,
     } = req.body;
 
+    const numAmount = Number(amount);
     // Validations
-    if (!amount || Number(amount) <= 0) {
+    if (!amount || isNaN(numAmount) || numAmount <= 0) {
       return res.status(400).json({ success: false, message: "Expense amount must be greater than zero" });
     }
 

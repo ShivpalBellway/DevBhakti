@@ -31,7 +31,8 @@ export const createTempleExpense = async (req: Request, res: Response) => {
       notes,
     } = req.body;
 
-    if (!amount || Number(amount) <= 0) {
+    const numAmount = Number(amount);
+    if (!amount || isNaN(numAmount) || numAmount <= 0) {
       return res.status(400).json({ success: false, message: "Expense amount must be greater than zero" });
     }
 
