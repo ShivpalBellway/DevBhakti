@@ -169,6 +169,21 @@ const permissions = [
   { key: 'live_darshan.view',   module: 'live_darshan', label: 'View Live List',   applicableTo: [OwnerType.ADMIN] },
   { key: 'live_darshan.manage', module: 'live_darshan', label: 'Manage Live Links', applicableTo: [OwnerType.ADMIN] },
 
+  // ── GALLERY MANAGEMENT ─────────────────────────────────────
+  { key: 'gallery.menu',   module: 'gallery', label: 'Show Gallery Menu', applicableTo: [OwnerType.ADMIN, OwnerType.TEMPLE, OwnerType.MANDAL] },
+  { key: 'gallery.view',   module: 'gallery', label: 'View Photo/Video Gallery', applicableTo: [OwnerType.ADMIN, OwnerType.TEMPLE, OwnerType.MANDAL] },
+  { key: 'gallery.upload', module: 'gallery', label: 'Upload Gallery Photos/Videos', applicableTo: [OwnerType.ADMIN, OwnerType.TEMPLE, OwnerType.MANDAL] },
+  { key: 'gallery.delete', module: 'gallery', label: 'Delete Gallery Photos/Videos', applicableTo: [OwnerType.ADMIN, OwnerType.TEMPLE, OwnerType.MANDAL] },
+
+  // ── EXPENSE MANAGEMENT ────────────────────────────────────
+  { key: 'expenses.menu',            module: 'expenses', label: 'Show Expenses Menu', applicableTo: [OwnerType.ADMIN, OwnerType.TEMPLE, OwnerType.MANDAL] },
+  { key: 'expenses.view',            module: 'expenses', label: 'View Expenses & Stats', applicableTo: [OwnerType.ADMIN, OwnerType.TEMPLE, OwnerType.MANDAL] },
+  { key: 'expenses.create',          module: 'expenses', label: 'Record New Expense', applicableTo: [OwnerType.ADMIN, OwnerType.TEMPLE, OwnerType.MANDAL] },
+  { key: 'expenses.edit',            module: 'expenses', label: 'Edit Expense Entry', applicableTo: [OwnerType.ADMIN, OwnerType.TEMPLE, OwnerType.MANDAL] },
+  { key: 'expenses.delete',          module: 'expenses', label: 'Delete Expense Entry', applicableTo: [OwnerType.ADMIN, OwnerType.TEMPLE, OwnerType.MANDAL] },
+  { key: 'expenses.categories.view', module: 'expenses', label: 'View Expense Categories', applicableTo: [OwnerType.ADMIN, OwnerType.TEMPLE, OwnerType.MANDAL] },
+  { key: 'expenses.categories.manage', module: 'expenses', label: 'Manage Expense Categories', applicableTo: [OwnerType.ADMIN, OwnerType.TEMPLE, OwnerType.MANDAL] },
+
   // ── SETTINGS ────────────────────────────────────────────
   { key: 'settings.commission', module: 'settings', label: 'Manage Commissions', applicableTo: [OwnerType.ADMIN] },
 ];
