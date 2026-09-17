@@ -177,7 +177,7 @@ export const getTempleExpenseStats = async (req: Request, res: Response) => {
       return res.status(401).json({ success: false, message: "Unauthorized: Temple ID missing" });
     }
 
-    const { startDate, endDate } = req.query;
+    const { startDate, endDate, categorySearch, memberSearch } = req.query;
 
     const where: any = { templeId };
     if (startDate || endDate) {
@@ -190,17 +190,27 @@ export const getTempleExpenseStats = async (req: Request, res: Response) => {
       }
     }
 
+    const categoryWhere: any = { ...where };
+    if (categorySearch) {
+      categoryWhere.categoryName = { contains: String(categorySearch), mode: "insensitive" };
+    }
+
+    const memberWhere: any = { ...where };
+    if (memberSearch) {
+      memberWhere.paidByName = { contains: String(memberSearch), mode: "insensitive" };
+    }
+
     const [allExpenses, categoryGroup, memberGroup, ledger, withdrawals] = await Promise.all([
       prisma.expense.findMany({ where, orderBy: { expenseDate: "desc" } }),
       prisma.expense.groupBy({
         by: ["categoryId", "categoryName"],
-        where,
+        where: categoryWhere,
         _sum: { amount: true },
         _count: { id: true },
       }),
       prisma.expense.groupBy({
         by: ["paidByName"],
-        where,
+        where: memberWhere,
         _sum: { amount: true },
         _count: { id: true },
       }),
@@ -361,7 +371,9 @@ export const uploadReceipt = async (req: Request, res: Response) => {
     if (!req.file) {
       return res.status(400).json({ success: false, message: "No bill/receipt file uploaded" });
     }
-    const fileUrl = `/uploads/expenses/${req.file.filename}`;
+    const protocol = req.protocol || "http";
+    const host = req.get("host") || "localhost:5000";
+    const fileUrl = `${protocol}://${host}/uploads/expenses/${req.file.filename}`;
     return res.status(200).json({
       success: true,
       message: "File uploaded successfully",

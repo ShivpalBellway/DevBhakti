@@ -37,12 +37,14 @@ import {
   createTempleExpense,
   updateTempleExpense,
   deleteTempleExpense,
-  uploadTempleExpenseReceipt
+  uploadTempleExpenseReceipt,
+  fetchStaffMembers
 } from "@/api/templeAdminController";
 
 export default function TempleExpensesListPage() {
   const [expenses, setExpenses] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
+  const [staffList, setStaffList] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [total, setTotal] = useState(0);
 
@@ -74,6 +76,7 @@ export default function TempleExpensesListPage() {
     expenseDate: new Date().toISOString().split("T")[0],
     paymentMode: "CASH",
     paidByName: "",
+    paidByMemberId: "",
     receiptImage: "",
     notes: ""
   });
@@ -105,7 +108,7 @@ export default function TempleExpensesListPage() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [expRes, catRes] = await Promise.all([
+      const [expRes, catRes, staffRes] = await Promise.all([
         fetchTempleExpenses({
           search,
           categoryId: selectedCategory,
@@ -114,7 +117,8 @@ export default function TempleExpensesListPage() {
           startDate,
           endDate
         }),
-        fetchTempleExpenseCategories()
+        fetchTempleExpenseCategories(),
+        fetchStaffMembers()
       ]);
 
       if (expRes.success) {
@@ -124,6 +128,10 @@ export default function TempleExpensesListPage() {
 
       if (catRes.success) {
         setCategories(catRes.data || []);
+      }
+
+      if (staffRes.success) {
+        setStaffList(staffRes.data || []);
       }
     } catch (error) {
       console.error("Failed to load temple expenses data:", error);
@@ -144,6 +152,7 @@ export default function TempleExpensesListPage() {
       expenseDate: new Date().toISOString().split("T")[0],
       paymentMode: "CASH",
       paidByName: "",
+      paidByMemberId: "",
       receiptImage: "",
       notes: ""
     });
@@ -161,6 +170,7 @@ export default function TempleExpensesListPage() {
       expenseDate: exp.expenseDate ? new Date(exp.expenseDate).toISOString().split("T")[0] : "",
       paymentMode: exp.paymentMode || "CASH",
       paidByName: exp.paidByName || "",
+      paidByMemberId: exp.paidByMemberId || "",
       receiptImage: exp.receiptImage || "",
       notes: exp.notes || ""
     });
@@ -581,12 +591,35 @@ export default function TempleExpensesListPage() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="text-xs font-bold text-foreground">Spent By / Paid By Staff (Optional)</label>
-                <Input
-                  placeholder="e.g. Pujari Panditji / Manager"
-                  value={formData.paidByName}
-                  onChange={(e) => setFormData({ ...formData, paidByName: e.target.value })}
-                  className="mt-1"
-                />
+                {staffList.length > 0 ? (
+                  <select
+                    value={formData.paidByName}
+                    onChange={(e) => {
+                      const selectedName = e.target.value;
+                      const selectedStaff = staffList.find((st) => st.name === selectedName);
+                      setFormData({
+                        ...formData,
+                        paidByName: selectedName,
+                        paidByMemberId: selectedStaff ? selectedStaff.id : ""
+                      });
+                    }}
+                    className="mt-1 w-full h-10 px-3 rounded-md border border-input bg-background text-sm"
+                  >
+                    <option value="">-- Select Staff Member --</option>
+                    {staffList.map((st) => (
+                      <option key={st.id} value={st.name}>
+                        {st.name} {st.roleName ? `(${st.roleName})` : ""}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <Input
+                    placeholder="e.g. Pujari Panditji / Manager"
+                    value={formData.paidByName}
+                    onChange={(e) => setFormData({ ...formData, paidByName: e.target.value })}
+                    className="mt-1"
+                  />
+                )}
               </div>
 
               <div>
@@ -626,7 +659,7 @@ export default function TempleExpensesListPage() {
               </div>
             </div>
 
-            <div>
+            {/* <div>
               <label className="text-xs font-bold text-foreground">Additional Notes (Optional)</label>
               <Input
                 placeholder="Receipt #..."
@@ -634,7 +667,7 @@ export default function TempleExpensesListPage() {
                 onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                 className="mt-1"
               />
-            </div>
+            </div> */}
 
             <DialogFooter className="pt-4">
               <Button type="button" variant="outline" onClick={() => setIsAddModalOpen(false)}>
@@ -715,11 +748,27 @@ export default function TempleExpensesListPage() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="text-xs font-bold text-foreground">Spent By / Paid By Staff (Optional)</label>
-                <Input
-                  value={formData.paidByName}
-                  onChange={(e) => setFormData({ ...formData, paidByName: e.target.value })}
-                  className="mt-1"
-                />
+                {staffList.length > 0 ? (
+                  <select
+                    value={formData.paidByName}
+                    onChange={(e) => setFormData({ ...formData, paidByName: e.target.value })}
+                    className="mt-1 w-full h-10 px-3 rounded-md border border-input bg-background text-sm"
+                  >
+                    <option value="">-- Select Staff Member --</option>
+                    {staffList.map((st) => (
+                      <option key={st.id} value={st.name}>
+                        {st.name} {st.roleName ? `(${st.roleName})` : ""}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <Input
+                    placeholder="e.g. Pujari Panditji / Manager"
+                    value={formData.paidByName}
+                    onChange={(e) => setFormData({ ...formData, paidByName: e.target.value })}
+                    className="mt-1"
+                  />
+                )}
               </div>
 
               <div>

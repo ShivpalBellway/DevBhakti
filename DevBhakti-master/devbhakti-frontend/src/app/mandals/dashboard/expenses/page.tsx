@@ -9,14 +9,15 @@ import {
   Users,
   PlusCircle,
   ArrowUpRight,
-  RefreshCw,
-  Calendar,
-  Filter,
+  Search,
+  ChevronLeft,
+  ChevronRight,
   DollarSign,
   Scale
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { fetchMandalExpenseStats } from "@/api/mandalAdminController";
 
 export default function MandalExpenseDashboardPage() {
@@ -24,10 +25,21 @@ export default function MandalExpenseDashboardPage() {
   const [stats, setStats] = useState<any>(null);
   const [dateRange, setDateRange] = useState({ startDate: "", endDate: "" });
 
+  // Search & Pagination States
+  const [categorySearch, setCategorySearch] = useState("");
+  const [memberSearch, setMemberSearch] = useState("");
+  const [catPage, setCatPage] = useState(1);
+  const [memPage, setMemPage] = useState(1);
+  const ITEMS_PER_PAGE = 5;
+
   const loadStats = async () => {
     setLoading(true);
     try {
-      const res = await fetchMandalExpenseStats(dateRange);
+      const res = await fetchMandalExpenseStats({
+        ...dateRange,
+        categorySearch: categorySearch.trim(),
+        memberSearch: memberSearch.trim(),
+      });
       if (res.success) {
         setStats(res.data);
       }
@@ -39,8 +51,29 @@ export default function MandalExpenseDashboardPage() {
   };
 
   useEffect(() => {
-    loadStats();
-  }, [dateRange]);
+    const timer = setTimeout(() => {
+      loadStats();
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [dateRange, categorySearch, memberSearch]);
+
+  // Reset pagination when search changes
+  useEffect(() => {
+    setCatPage(1);
+  }, [categorySearch]);
+
+  useEffect(() => {
+    setMemPage(1);
+  }, [memberSearch]);
+
+  // Paginated Data
+  const categoriesList = stats?.categoryBreakdown || [];
+  const catTotalPages = Math.ceil(categoriesList.length / ITEMS_PER_PAGE) || 1;
+  const paginatedCategories = categoriesList.slice((catPage - 1) * ITEMS_PER_PAGE, catPage * ITEMS_PER_PAGE);
+
+  const membersList = stats?.memberBreakdown || [];
+  const memTotalPages = Math.ceil(membersList.length / ITEMS_PER_PAGE) || 1;
+  const paginatedMembers = membersList.slice((memPage - 1) * ITEMS_PER_PAGE, memPage * ITEMS_PER_PAGE);
 
   return (
     <div className="space-y-6 pb-12">
@@ -69,80 +102,64 @@ export default function MandalExpenseDashboardPage() {
         </div>
       </div>
 
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="border-amber-200/50 shadow-sm bg-card hover:shadow-md transition-shadow">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Total Expenses
-            </CardTitle>
-            <div className="w-9 h-9 rounded-full bg-rose-100 text-rose-700 flex items-center justify-center">
-              <TrendingDown className="w-5 h-5" />
+      {/* KPI Cards Overview */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Total Expenses */}
+        <Card className="border-slate-100 shadow-sm bg-white hover:shadow-md transition-shadow">
+          <CardContent className="pt-6 flex flex-col items-center justify-center text-center">
+            <div className="w-12 h-12 rounded-xl bg-amber-900/10 text-amber-900 flex items-center justify-center mb-3">
+              <Wallet className="w-6 h-6" />
             </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-rose-700">
+            <div className="text-xl sm:text-2xl font-bold text-slate-900">
               ₹{(stats?.totalExpenses || 0).toLocaleString('en-IN')}
             </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              From {stats?.totalRecords || 0} expense entries recorded
+            <p className="text-xs font-medium text-slate-500 mt-1">
+              Total Expenses
             </p>
           </CardContent>
         </Card>
 
-        <Card className="border-amber-200/50 shadow-sm bg-card hover:shadow-md transition-shadow">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Gross Revenue
-            </CardTitle>
-            <div className="w-9 h-9 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center">
-              <ArrowUpRight className="w-5 h-5" />
+        {/* Total Entries */}
+        <Card className="border-slate-100 shadow-sm bg-white hover:shadow-md transition-shadow">
+          <CardContent className="pt-6 flex flex-col items-center justify-center text-center">
+            <div className="w-12 h-12 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center mb-3">
+              <TrendingDown className="w-6 h-6" />
             </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-emerald-700">
-              ₹{(stats?.totalGrossEarnings || 0).toLocaleString('en-IN')}
+            <div className="text-xl sm:text-2xl font-bold text-slate-900">
+              {stats?.totalRecords || 0}
             </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Bookings, Donations & Orders combined
+            <p className="text-xs font-medium text-slate-500 mt-1">
+              Total Entries
             </p>
           </CardContent>
         </Card>
 
-        <Card className="border-amber-200/50 shadow-sm bg-card hover:shadow-md transition-shadow">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Total Withdrawn
-            </CardTitle>
-            <div className="w-9 h-9 rounded-full bg-amber-100 text-amber-800 flex items-center justify-center">
-              <DollarSign className="w-5 h-5" />
+        {/* Members Spent */}
+        <Card className="border-slate-100 shadow-sm bg-white hover:shadow-md transition-shadow">
+          <CardContent className="pt-6 flex flex-col items-center justify-center text-center">
+            <div className="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center mb-3">
+              <Users className="w-6 h-6" />
             </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-amber-800">
-              ₹{(stats?.totalWithdrawn || 0).toLocaleString('en-IN')}
+            <div className="text-xl sm:text-2xl font-bold text-slate-900">
+              {stats?.memberBreakdown?.length || 0}
             </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Approved / Processed bank payouts
+            <p className="text-xs font-medium text-slate-500 mt-1">
+              Members Spent
             </p>
           </CardContent>
         </Card>
 
-        <Card className="border-amber-200/50 shadow-sm bg-card hover:shadow-md transition-shadow">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Net Operational Balance
-            </CardTitle>
-            <div className="w-9 h-9 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center">
-              <Scale className="w-5 h-5" />
+        {/* Categories */}
+        <Card className="border-slate-100 shadow-sm bg-white hover:shadow-md transition-shadow">
+          <CardContent className="pt-6 flex flex-col items-center justify-center text-center">
+            <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-3">
+              <PieIcon className="w-6 h-6" />
             </div>
-          </CardHeader>
-          <CardContent>
-            <div className={`text-2xl font-bold ${(stats?.netOperationalBalance || 0) >= 0 ? 'text-blue-700' : 'text-rose-700'}`}>
-              ₹{(stats?.netOperationalBalance || 0).toLocaleString('en-IN')}
+            <div className="text-xl sm:text-2xl font-bold text-slate-900">
+              {stats?.categoryBreakdown?.length || 0}
             </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              (Earnings - Expenses - Withdrawals)
+            <p className="text-xs font-medium text-slate-500 mt-1">
+              Categories
             </p>
           </CardContent>
         </Card>
@@ -150,100 +167,222 @@ export default function MandalExpenseDashboardPage() {
 
       {/* Analytics Breakdown Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Category Breakdown */}
-        <Card className="border-amber-200/50 shadow-sm">
-          <CardHeader className="border-b border-border/50 pb-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <PieIcon className="w-5 h-5 text-amber-700" />
-                <CardTitle className="text-base font-bold">Category-wise Expenses</CardTitle>
+        {/* Category-wise Expenses Card */}
+        <Card className="border-amber-100 shadow-sm bg-amber-50/20 flex flex-col justify-between">
+          <div>
+            <CardHeader className="pb-3 space-y-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-lg font-bold text-amber-950 font-serif">
+                  Category-wise Expenses
+                </CardTitle>
+                <Link
+                  href="/mandals/dashboard/expenses/categories"
+                  className="text-xs font-semibold text-amber-900 hover:text-amber-700 transition-colors"
+                >
+                  Manage Categories →
+                </Link>
               </div>
-              <Button asChild variant="ghost" size="sm" className="text-xs text-amber-800 hover:text-amber-900">
-                <Link href="/mandals/dashboard/expenses/categories">Manage Categories →</Link>
-              </Button>
-            </div>
-            <CardDescription className="text-xs">
-              Spending distribution across heads (Decoration, Prasad, Transport, etc.)
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="pt-4">
-            {loading ? (
-              <div className="py-8 text-center text-muted-foreground text-sm">Loading category stats...</div>
-            ) : !stats?.categoryBreakdown || stats.categoryBreakdown.length === 0 ? (
-              <div className="py-8 text-center text-muted-foreground text-sm">
-                No expense entries logged yet.
+
+              {/* Search Category */}
+              <div className="relative">
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <Input
+                  type="text"
+                  placeholder="Search Category..."
+                  value={categorySearch}
+                  onChange={(e) => setCategorySearch(e.target.value)}
+                  className="pl-9 h-9 text-xs bg-white border-amber-200/80 rounded-lg focus-visible:ring-amber-500"
+                />
               </div>
-            ) : (
-              <div className="space-y-4">
-                {stats.categoryBreakdown.map((item: any, idx: number) => (
-                  <div key={idx} className="space-y-1.5">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="font-semibold text-foreground">{item.categoryName}</span>
-                      <span className="font-medium text-rose-700">
-                        ₹{item.totalAmount.toLocaleString('en-IN')} ({item.percentage}%)
-                      </span>
-                    </div>
-                    <div className="w-full h-2.5 bg-amber-100 rounded-full overflow-hidden">
+            </CardHeader>
+
+            <CardContent className="space-y-3">
+              {loading ? (
+                <div className="py-8 text-center text-muted-foreground text-sm">Loading category stats...</div>
+              ) : paginatedCategories.length === 0 ? (
+                <div className="py-8 text-center text-muted-foreground text-sm">
+                  No category expenses found.
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {paginatedCategories.map((item: any, idx: number) => {
+                    const iconBgColors = [
+                      "bg-rose-100 text-rose-700",
+                      "bg-sky-100 text-sky-700",
+                      "bg-amber-100 text-amber-700",
+                      "bg-emerald-100 text-emerald-700",
+                      "bg-indigo-100 text-indigo-700",
+                    ];
+                    const bgClass = iconBgColors[idx % iconBgColors.length];
+
+                    return (
                       <div
-                        className="h-full bg-gradient-to-r from-amber-600 to-rose-600 rounded-full"
-                        style={{ width: `${Math.min(100, item.percentage)}%` }}
-                      />
-                    </div>
-                    <p className="text-[11px] text-muted-foreground text-right">{item.count} transaction(s)</p>
-                  </div>
-                ))}
+                        key={idx}
+                        className="flex items-center justify-between p-3 rounded-xl bg-white border border-amber-100/80 shadow-2xs hover:shadow-xs transition-all"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className={`w-9 h-9 rounded-lg ${bgClass} flex items-center justify-center font-bold text-sm shrink-0`}>
+                            <PieIcon className="w-4 h-4" />
+                          </div>
+                          <span className="font-semibold text-slate-800 text-sm">
+                            {item.categoryName}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <span className="font-bold text-slate-900 text-sm">
+                            ₹{item.totalAmount.toLocaleString('en-IN')}
+                          </span>
+                          <span className="px-2.5 py-1 rounded-md bg-amber-100/70 text-amber-800 font-bold text-xs">
+                            {item.percentage}%
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </CardContent>
+          </div>
+
+          {/* Pagination Controls */}
+          {categoriesList.length > ITEMS_PER_PAGE && (
+            <div className="p-4 pt-0 flex items-center justify-between border-t border-amber-100/60 mt-2">
+              <span className="text-xs text-slate-500">
+                Page {catPage} of {catTotalPages}
+              </span>
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={catPage === 1}
+                  onClick={() => setCatPage(prev => Math.max(1, prev - 1))}
+                  className="h-8 px-2 text-xs"
+                >
+                  <ChevronLeft className="w-4 h-4 mr-1" /> Prev
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={catPage >= catTotalPages}
+                  onClick={() => setCatPage(prev => Math.min(catTotalPages, prev + 1))}
+                  className="h-8 px-2 text-xs"
+                >
+                  Next <ChevronRight className="w-4 h-4 ml-1" />
+                </Button>
               </div>
-            )}
-          </CardContent>
+            </div>
+          )}
         </Card>
 
-        {/* Member-wise Breakdown */}
-        <Card className="border-amber-200/50 shadow-sm">
-          <CardHeader className="border-b border-border/50 pb-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Users className="w-5 h-5 text-amber-700" />
-                <CardTitle className="text-base font-bold">Member-wise Spending</CardTitle>
+        {/* Member-wise Expenses Card */}
+        <Card className="border-amber-100 shadow-sm bg-amber-50/20 flex flex-col justify-between">
+          <div>
+            <CardHeader className="pb-3 space-y-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-lg font-bold text-amber-950 font-serif">
+                  Member-wise Expenses
+                </CardTitle>
+                <Link
+                  href="/mandals/dashboard/expenses/list"
+                  className="text-xs font-semibold text-amber-900 hover:text-amber-700 transition-colors"
+                >
+                  View All Entries →
+                </Link>
               </div>
-              <Button asChild variant="ghost" size="sm" className="text-xs text-amber-800 hover:text-amber-900">
-                <Link href="/mandals/dashboard/expenses/list">View All Entries →</Link>
-              </Button>
+
+              {/* Search Member */}
+              <div className="relative">
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <Input
+                  type="text"
+                  placeholder="Search Member Name..."
+                  value={memberSearch}
+                  onChange={(e) => setMemberSearch(e.target.value)}
+                  className="pl-9 h-9 text-xs bg-white border-amber-200/80 rounded-lg focus-visible:ring-amber-500"
+                />
+              </div>
+            </CardHeader>
+
+            <CardContent className="space-y-3">
+              {loading ? (
+                <div className="py-8 text-center text-muted-foreground text-sm">Loading member stats...</div>
+              ) : paginatedMembers.length === 0 ? (
+                <div className="py-8 text-center text-muted-foreground text-sm">
+                  No member spending records found.
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {paginatedMembers.map((item: any, idx: number) => {
+                    const avatarBgColors = [
+                      "bg-orange-200 text-orange-800",
+                      "bg-amber-200 text-amber-900",
+                      "bg-stone-300 text-stone-800",
+                      "bg-yellow-200 text-yellow-900",
+                    ];
+                    const avatarBg = avatarBgColors[idx % avatarBgColors.length];
+
+                    const initials = item.paidByName
+                      .split(" ")
+                      .map((n: string) => n[0])
+                      .join("")
+                      .substring(0, 2)
+                      .toUpperCase() || "MB";
+
+                    return (
+                      <div
+                        key={idx}
+                        className="flex items-center justify-between p-3 rounded-xl bg-white border border-amber-100/80 shadow-2xs hover:shadow-xs transition-all"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className={`w-10 h-10 rounded-full ${avatarBg} font-bold text-sm flex items-center justify-center shrink-0`}>
+                            {initials}
+                          </div>
+                          <div>
+                            <p className="font-bold text-slate-800 text-sm">{item.paidByName}</p>
+                            <p className="text-xs text-muted-foreground">{item.count} entries</p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-bold text-slate-900 text-sm">
+                            ₹{item.totalAmount.toLocaleString('en-IN')}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </CardContent>
+          </div>
+
+          {/* Pagination Controls */}
+          {membersList.length > ITEMS_PER_PAGE && (
+            <div className="p-4 pt-0 flex items-center justify-between border-t border-amber-100/60 mt-2">
+              <span className="text-xs text-slate-500">
+                Page {memPage} of {memTotalPages}
+              </span>
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={memPage === 1}
+                  onClick={() => setMemPage(prev => Math.max(1, prev - 1))}
+                  className="h-8 px-2 text-xs"
+                >
+                  <ChevronLeft className="w-4 h-4 mr-1" /> Prev
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={memPage >= memTotalPages}
+                  onClick={() => setMemPage(prev => Math.min(memTotalPages, prev + 1))}
+                  className="h-8 px-2 text-xs"
+                >
+                  Next <ChevronRight className="w-4 h-4 ml-1" />
+                </Button>
+              </div>
             </div>
-            <CardDescription className="text-xs">
-              Attribution of who paid out-of-pocket on behalf of the Mandal
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="pt-4">
-            {loading ? (
-              <div className="py-8 text-center text-muted-foreground text-sm">Loading member stats...</div>
-            ) : !stats?.memberBreakdown || stats.memberBreakdown.length === 0 ? (
-              <div className="py-8 text-center text-muted-foreground text-sm">
-                No member spending records found.
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {stats.memberBreakdown.map((item: any, idx: number) => (
-                  <div key={idx} className="flex items-center justify-between p-3 rounded-lg border border-border/50 bg-amber-50/40 hover:bg-amber-50/80 transition-colors">
-                    <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-full bg-amber-700 text-white font-bold flex items-center justify-center text-sm">
-                        {item.paidByName.charAt(0).toUpperCase()}
-                      </div>
-                      <div>
-                        <p className="text-sm font-bold text-foreground">{item.paidByName}</p>
-                        <p className="text-xs text-muted-foreground">{item.count} expense(s) paid</p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-sm font-bold text-rose-700">₹{item.totalAmount.toLocaleString('en-IN')}</p>
-                      <span className="text-[11px] px-2 py-0.5 rounded-full bg-amber-200/60 text-amber-900 font-medium">
-                        {item.percentage}% of total
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
+          )}
         </Card>
       </div>
     </div>

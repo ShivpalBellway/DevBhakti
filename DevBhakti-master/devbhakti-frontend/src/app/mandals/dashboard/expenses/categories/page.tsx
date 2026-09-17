@@ -210,8 +210,8 @@ export default function MandalExpenseCategoriesPage() {
               <TableRow>
                 <TableHead className="w-[280px] font-bold text-amber-950">Category Name</TableHead>
                 <TableHead className="font-bold text-amber-950">Description</TableHead>
-                <TableHead className="text-center font-bold text-amber-950">Entries Logged</TableHead>
-                <TableHead className="text-right font-bold text-amber-950">Total Spent</TableHead>
+                {/* <TableHead className="text-center font-bold text-amber-950">Entries Logged</TableHead> */}
+                {/* <TableHead className="text-right font-bold text-amber-950">Total Spent</TableHead> */}
                 <TableHead className="text-right font-bold text-amber-950 pr-6">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -229,12 +229,12 @@ export default function MandalExpenseCategoriesPage() {
                   <TableCell className="text-muted-foreground text-xs max-w-xs truncate">
                     {cat.description || "No description provided."}
                   </TableCell>
-                  <TableCell className="text-center font-semibold text-foreground">
+                  {/* <TableCell className="text-center font-semibold text-foreground">
                     {cat.expenseCount || 0}
-                  </TableCell>
-                  <TableCell className="text-right font-bold text-rose-700">
+                  </TableCell> */}
+                  {/* <TableCell className="text-right font-bold text-rose-700">
                     ₹{(cat.totalSpent || 0).toLocaleString("en-IN")}
-                  </TableCell>
+                  </TableCell> */}
                   <TableCell className="text-right pr-6">
                     <div className="flex items-center justify-end gap-1">
                       <Button
