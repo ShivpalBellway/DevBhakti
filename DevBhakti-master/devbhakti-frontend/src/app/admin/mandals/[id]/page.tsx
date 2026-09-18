@@ -6,7 +6,8 @@ import Link from "next/link";
 import {
     ArrowLeft, Edit, Trash2, ToggleLeft, ToggleRight,
     MapPin, Phone, Mail, User, Building2, FileText,
-    CheckCircle, XCircle, Clock, Image as ImageIcon
+    CheckCircle, XCircle, Clock, Image as ImageIcon,
+    Video, ExternalLink, Wifi, WifiOff
 } from "lucide-react";
 import { fetchMandalByIdAdmin, deleteMandalAdmin, toggleMandalStatusAdmin } from "@/api/adminController";
 
@@ -153,10 +154,34 @@ export default function MandalDetailPage() {
                     {descData && (
                         <div className="bg-card border border-border rounded-xl p-5">
                             <h3 className="text-sm font-semibold text-foreground mb-3">Description</h3>
-                            <div className="space-y-3">
-                                {descData.en && <div><span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">English</span><p className="text-sm text-foreground mt-1">{descData.en}</p></div>}
-                                {descData.hi && <div><span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Hindi</span><p className="text-sm text-foreground mt-1">{descData.hi}</p></div>}
-                                {descData.mr && <div><span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Marathi</span><p className="text-sm text-foreground mt-1">{descData.mr}</p></div>}
+                            <div className="space-y-4">
+                                {descData.en && (
+                                    <div>
+                                        <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">English</span>
+                                        <div
+                                            className="text-sm text-foreground mt-1 prose prose-sm max-w-none leading-relaxed"
+                                            dangerouslySetInnerHTML={{ __html: descData.en }}
+                                        />
+                                    </div>
+                                )}
+                                {descData.hi && (
+                                    <div>
+                                        <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Hindi</span>
+                                        <div
+                                            className="text-sm text-foreground mt-1 prose prose-sm max-w-none leading-relaxed"
+                                            dangerouslySetInnerHTML={{ __html: descData.hi }}
+                                        />
+                                    </div>
+                                )}
+                                {descData.mr && (
+                                    <div>
+                                        <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Marathi</span>
+                                        <div
+                                            className="text-sm text-foreground mt-1 prose prose-sm max-w-none leading-relaxed"
+                                            dangerouslySetInnerHTML={{ __html: descData.mr }}
+                                        />
+                                    </div>
+                                )}
                             </div>
                         </div>
                     )}
@@ -185,6 +210,84 @@ export default function MandalDetailPage() {
                                     <div><span className="text-xs text-muted-foreground">Festivals</span><p className="font-medium">{mandal.festivals}</p></div>
                                 )}
                             </div>
+                        </div>
+                    )}
+
+                    {/* Live Darshan Section */}
+                    {(mandal.liveUrl || mandal.isLive) && (
+                        <div className="bg-card border border-border rounded-xl p-5">
+                            <div className="flex items-center justify-between mb-4">
+                                <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                                    <Video className="w-4 h-4 text-red-600" />
+                                    Live Darshan
+                                </h3>
+                                <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold border ${
+                                    mandal.isLive
+                                        ? "bg-red-50 text-red-700 border-red-200 animate-pulse"
+                                        : "bg-zinc-100 text-zinc-500 border-zinc-200"
+                                }`}>
+                                    <span className={`w-1.5 h-1.5 rounded-full ${mandal.isLive ? "bg-red-600" : "bg-zinc-400"}`} />
+                                    {mandal.isLive ? "LIVE ENABLED" : "INACTIVE"}
+                                </span>
+                            </div>
+
+                            {mandal.liveUrl && (
+                                <>
+                                    <div className="mb-3">
+                                        <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Stream URL</span>
+                                        <div className="mt-1 flex items-center gap-2">
+                                            <a
+                                                href={mandal.liveUrl}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="text-sm text-primary hover:underline break-all flex items-center gap-1.5 font-medium"
+                                            >
+                                                {mandal.liveUrl}
+                                                <ExternalLink className="w-3.5 h-3.5 shrink-0" />
+                                            </a>
+                                        </div>
+                                    </div>
+
+                                    {/* Video Preview */}
+                                    <div className="rounded-xl overflow-hidden bg-zinc-950 border border-zinc-200">
+                                        <div className="flex items-center justify-between px-3 py-2 bg-zinc-900 text-xs text-zinc-400">
+                                            <span className="flex items-center gap-1.5 font-semibold">
+                                                <Video className="w-3.5 h-3.5 text-red-500" />
+                                                Live Preview
+                                            </span>
+                                            {mandal.isLive ? (
+                                                <span className="text-green-400 text-[10px] font-bold flex items-center gap-1">
+                                                    <Wifi className="w-3 h-3" /> Active
+                                                </span>
+                                            ) : (
+                                                <span className="text-yellow-400 text-[10px] font-bold flex items-center gap-1">
+                                                    <WifiOff className="w-3 h-3" /> Disabled
+                                                </span>
+                                            )}
+                                        </div>
+                                        <div className="aspect-video w-full">
+                                            <iframe
+                                                src={
+                                                    mandal.liveUrl.includes("youtube.com/watch?v=")
+                                                        ? mandal.liveUrl.replace("watch?v=", "embed/").split("&")[0]
+                                                        : mandal.liveUrl.includes("youtu.be/")
+                                                        ? mandal.liveUrl.replace("youtu.be/", "youtube.com/embed/").split("?")[0]
+                                                        : mandal.liveUrl
+                                                }
+                                                className="w-full h-full"
+                                                allowFullScreen
+                                                title="Live Darshan Preview"
+                                            />
+                                        </div>
+                                    </div>
+                                </>
+                            )}
+
+                            {!mandal.liveUrl && mandal.isLive && (
+                                <div className="text-sm text-yellow-700 bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                                    ⚠️ Live is enabled but no stream URL is set. Add a YouTube/Embed URL in Edit.
+                                </div>
+                            )}
                         </div>
                     )}
                 </div>

@@ -7,6 +7,7 @@ import {
   getCampaignDashboardAdmin,
   getCampaignSubmissionsAdmin,
   publishCampaignWinnerAdmin,
+  updateSubmissionAdmin,
   deleteSubmissionAdmin,
   exportCampaignSubmissionsAdmin,
 } from "../../controllers/admin/campaignAdminController";
@@ -25,6 +26,7 @@ router.get("/:id/dashboard", getCampaignDashboardAdmin);
 // Campaign Submissions List, Delete & Export
 router.get("/:id/submissions", getCampaignSubmissionsAdmin);
 router.get("/:id/export", exportCampaignSubmissionsAdmin);
+router.put("/submissions/:id", updateSubmissionAdmin);
 router.delete("/submissions/:id", deleteSubmissionAdmin);
 
 // Publish Winner

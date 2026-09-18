@@ -85,6 +85,56 @@ export default function AdminCampaignsPage() {
   const [prizeTagline, setPrizeTagline] = useState("Selected by DevBhakti Grand Jury");
   const [publishingWinner, setPublishingWinner] = useState(false);
 
+  // Edit Submission Modal State
+  const [showEditSubmissionModal, setShowEditSubmissionModal] = useState(false);
+  const [editingSubmission, setEditingSubmission] = useState<Submission | null>(null);
+  const [submissionFormData, setSubmissionFormData] = useState({
+    name: "",
+    phone: "",
+    city: "",
+    address: "",
+    participantType: "home",
+    caption: "",
+    likesCount: 0,
+    images: [] as string[],
+  });
+  const [updatingSubmission, setUpdatingSubmission] = useState(false);
+
+  const handleEditSubmission = (sub: Submission) => {
+    setEditingSubmission(sub);
+    setSubmissionFormData({
+      name: sub.name || "",
+      phone: sub.user?.phone || "",
+      city: sub.city || "",
+      address: sub.address || "",
+      participantType: sub.participantType || "home",
+      caption: sub.caption || "",
+      likesCount: sub.likesCount || 0,
+      images: Array.isArray(sub.images) ? [...sub.images] : [],
+    });
+    setShowEditSubmissionModal(true);
+  };
+
+  const handleSaveSubmissionEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingSubmission) return;
+    setUpdatingSubmission(true);
+
+    try {
+      const res = await axios.put(`${API_URL}/admin/campaigns/submissions/${editingSubmission.id}`, submissionFormData);
+      if (res.data.success) {
+        showToast("Submission entry updated successfully!", "success", "Updated");
+        setShowEditSubmissionModal(false);
+        setEditingSubmission(null);
+        if (selectedCampaign) selectCampaignHandler(selectedCampaign);
+      }
+    } catch (err: any) {
+      showToast(err.response?.data?.message || "Failed to update submission.", "error", "Error");
+    } finally {
+      setUpdatingSubmission(false);
+    }
+  };
+
   const [isEditing, setIsEditing] = useState(false);
   const [editingCampaignId, setEditingCampaignId] = useState("");
 
@@ -591,7 +641,7 @@ export default function AdminCampaignsPage() {
                             </td>
                             <td className="p-5 text-right">
                               <div className="flex items-center justify-end gap-2.5">
-                                <button
+                                {/* <button
                                   onClick={() => {
                                     setSelectedWinnerSubmissionId(sub.id);
                                     setShowWinnerModal(true);
@@ -599,6 +649,13 @@ export default function AdminCampaignsPage() {
                                   className="bg-amber-500 hover:bg-amber-600 text-white font-bold px-4 py-2 rounded-xl text-xs shadow-sm transition-all whitespace-nowrap flex items-center gap-1.5"
                                 >
                                   <Trophy className="w-3.5 h-3.5" /> Pick as Winner
+                                </button> */}
+                                <button
+                                  onClick={() => handleEditSubmission(sub)}
+                                  title="Edit Submission Details"
+                                  className="w-9 h-9 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl flex items-center justify-center transition-all cursor-pointer shrink-0"
+                                >
+                                  <Edit className="w-4 h-4" />
                                 </button>
                                 <button
                                   onClick={() => handleDeleteSubmission(sub.id)}
@@ -885,6 +942,176 @@ export default function AdminCampaignsPage() {
           >
             <X className="w-4 h-4" />
           </button>
+        </div>
+      )}
+
+      {/* Modal: Edit Submission Entry */}
+      {showEditSubmissionModal && editingSubmission && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-[100]">
+          <div className="bg-white rounded-3xl p-6 max-w-lg w-full shadow-2xl space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <h3 className="font-extrabold text-slate-900 text-lg">Edit Submission Entry</h3>
+              <button
+                onClick={() => setShowEditSubmissionModal(false)}
+                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveSubmissionEdit} className="space-y-4 text-xs font-semibold">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-700 uppercase mb-1">Participant / Family Name</label>
+                  <input
+                    required
+                    value={submissionFormData.name}
+                    onChange={(e) => setSubmissionFormData({ ...submissionFormData, name: e.target.value })}
+                    className="w-full border border-slate-200 rounded-xl px-3 py-2"
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-700 uppercase mb-1">Phone Number</label>
+                  <input
+                    value={submissionFormData.phone}
+                    onChange={(e) => setSubmissionFormData({ ...submissionFormData, phone: e.target.value })}
+                    className="w-full border border-slate-200 rounded-xl px-3 py-2"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-700 uppercase mb-1">City</label>
+                  <input
+                    required
+                    value={submissionFormData.city}
+                    onChange={(e) => setSubmissionFormData({ ...submissionFormData, city: e.target.value })}
+                    className="w-full border border-slate-200 rounded-xl px-3 py-2"
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-700 uppercase mb-1">Participant Type</label>
+                  <select
+                    value={submissionFormData.participantType}
+                    onChange={(e) => setSubmissionFormData({ ...submissionFormData, participantType: e.target.value })}
+                    className="w-full border border-slate-200 rounded-xl px-3 py-2 font-semibold"
+                  >
+                    <option value="home">Home</option>
+                    <option value="mandal">Mandal</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-slate-700 uppercase mb-1">Address</label>
+                <input
+                  value={submissionFormData.address}
+                  onChange={(e) => setSubmissionFormData({ ...submissionFormData, address: e.target.value })}
+                  className="w-full border border-slate-200 rounded-xl px-3 py-2"
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-700 uppercase mb-1">Caption / Message</label>
+                <textarea
+                  rows={2}
+                  value={submissionFormData.caption}
+                  onChange={(e) => setSubmissionFormData({ ...submissionFormData, caption: e.target.value })}
+                  className="w-full border border-slate-200 rounded-xl px-3 py-2"
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-700 uppercase mb-1">Likes Count</label>
+                <input
+                  type="number"
+                  min="0"
+                  value={submissionFormData.likesCount}
+                  onChange={(e) => setSubmissionFormData({ ...submissionFormData, likesCount: Number(e.target.value) })}
+                  className="w-full border border-slate-200 rounded-xl px-3 py-2"
+                />
+              </div>
+
+              {/* Entry Photos / Image Update Section */}
+              <div>
+                <label className="block text-slate-700 uppercase mb-1">Submission Photos ({submissionFormData.images.length})</label>
+                <div className="flex flex-wrap gap-2.5 items-center mt-1 p-3 bg-slate-50 border border-slate-200 rounded-xl">
+                  {submissionFormData.images.map((imgUrl, idx) => (
+                    <div key={idx} className="relative group w-20 h-20 rounded-xl overflow-hidden border border-slate-300 bg-black/5 shadow-sm">
+                      <img
+                        src={imgUrl}
+                        alt={`Photo ${idx + 1}`}
+                        className="w-full h-full object-cover"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSubmissionFormData(prev => ({
+                            ...prev,
+                            images: prev.images.filter((_, i) => i !== idx)
+                          }));
+                        }}
+                        className="absolute top-1 right-1 w-5 h-5 bg-red-600 hover:bg-red-700 text-white rounded-full flex items-center justify-center shadow-md transition-all opacity-90 group-hover:opacity-100"
+                        title="Remove Photo"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ))}
+
+                  {/* Add New Photo Button */}
+                  <label className="w-20 h-20 rounded-xl border-2 border-dashed border-[#88542B]/40 hover:border-[#88542B] bg-[#88542B]/5 hover:bg-[#88542B]/10 flex flex-col items-center justify-center cursor-pointer text-[#88542B] transition-all p-1 text-center">
+                    <Plus className="w-5 h-5 mb-0.5" />
+                    <span className="text-[10px] font-bold leading-tight">Add Photo</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      className="hidden"
+                      onChange={(e) => {
+                        const files = Array.from(e.target.files || []);
+                        files.forEach((file) => {
+                          const reader = new FileReader();
+                          reader.onload = (uploadEvent) => {
+                            if (uploadEvent.target?.result) {
+                              const base64Str = uploadEvent.target.result as string;
+                              setSubmissionFormData(prev => ({
+                                ...prev,
+                                images: [...prev.images, base64Str]
+                              }));
+                            }
+                          };
+                          reader.readAsDataURL(file);
+                        });
+                        e.target.value = "";
+                      }}
+                    />
+                  </label>
+                </div>
+                <p className="text-[10px] text-slate-400 mt-1">
+                  Click 'Add Photo' to upload new images or hover over an image to remove it.
+                </p>
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowEditSubmissionModal(false)}
+                  className="flex-1 border border-slate-200 rounded-xl py-2.5 font-bold text-slate-600 hover:bg-slate-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={updatingSubmission}
+                  className="flex-1 bg-[#88542B] hover:bg-[#CA9E52] text-white font-bold py-2.5 rounded-xl flex items-center justify-center gap-2"
+                >
+                  {updatingSubmission ? <Loader2 className="w-4 h-4 animate-spin" /> : "Save Changes"}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
 

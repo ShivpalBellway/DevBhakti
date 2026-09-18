@@ -250,6 +250,90 @@ export const publishCampaignWinnerAdmin = async (req: Request, res: Response) =>
   }
 };
 
+// PUT /api/admin/campaigns/submissions/:id — Update submission entry details
+export const updateSubmissionAdmin = async (req: Request, res: Response) => {
+  try {
+    const id = req.params.id as string;
+    const { name, city, address, participantType, caption, likesCount, phone, images } = req.body;
+
+    const existing = await prisma.campaignEntry.findUnique({
+      where: { id },
+      include: { user: true },
+    });
+
+    if (!existing) {
+      return res.status(404).json({ success: false, message: "Submission not found." });
+    }
+
+    // Process images array: convert base64 data URLs to file paths on disk if present
+    const fs = require("fs");
+    const path = require("path");
+    let processedImages: string[] | undefined = undefined;
+
+    if (Array.isArray(images)) {
+      processedImages = [];
+      const uploadDir = path.join(process.cwd(), "uploads", "campaigns");
+      if (!fs.existsSync(uploadDir)) {
+        fs.mkdirSync(uploadDir, { recursive: true });
+      }
+
+      for (let i = 0; i < images.length; i++) {
+        const img = images[i];
+        if (typeof img === "string" && img.startsWith("data:image")) {
+          // Extract extension & base64 string
+          const matches = img.match(/^data:image\/([a-zA-Z0-9]+);base64,(.+)$/);
+          if (matches && matches.length === 3) {
+            const ext = matches[1] === "jpeg" ? "jpg" : matches[1];
+            const base64Data = matches[2];
+            const fileName = `campaign-${Date.now()}-${Math.round(Math.random() * 1e9)}.${ext}`;
+            const filePath = path.join(uploadDir, fileName);
+            fs.writeFileSync(filePath, Buffer.from(base64Data, "base64"));
+            processedImages.push(`/uploads/campaigns/${fileName}`);
+          } else {
+            processedImages.push(img);
+          }
+        } else {
+          processedImages.push(img);
+        }
+      }
+    }
+
+    const updated = await prisma.campaignEntry.update({
+      where: { id },
+      data: {
+        ...(name !== undefined && { name }),
+        ...(city !== undefined && { city }),
+        ...(address !== undefined && { address }),
+        ...(participantType !== undefined && { participantType }),
+        ...(caption !== undefined && { caption }),
+        ...(likesCount !== undefined && { likesCount: Number(likesCount) }),
+        ...(processedImages !== undefined && { images: processedImages }),
+      },
+      include: {
+        user: {
+          select: { id: true, name: true, phone: true },
+        },
+      },
+    });
+
+    if (phone && existing.userId) {
+      await prisma.user.update({
+        where: { id: existing.userId },
+        data: { phone },
+      });
+    }
+
+    return res.json({
+      success: true,
+      message: "Submission updated successfully.",
+      data: updated,
+    });
+  } catch (error: any) {
+    console.error("Error updating campaign submission:", error);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 // DELETE /api/admin/campaigns/submissions/:id — Delete a campaign submission entry
 export const deleteSubmissionAdmin = async (req: Request, res: Response) => {
   try {

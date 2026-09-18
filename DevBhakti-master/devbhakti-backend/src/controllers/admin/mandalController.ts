@@ -207,6 +207,12 @@ export const createMandal = async (req: Request, res: Response): Promise<void> =
                     ...(getFilePath(files, 'bannerImages') || []),
                 ],
                 documentUrl: getFilePath(files, 'documentUrl') || data.documentUrl || undefined,
+                // Live Darshan fields
+                liveUrl: data.liveUrl || undefined,
+                channelId: data.channelId || undefined,
+                isLive: data.isLive !== undefined ? (data.isLive === 'true' || data.isLive === true) : false,
+                liveStatus: data.liveStatus !== undefined ? (data.liveStatus === 'true' || data.liveStatus === true) : undefined,
+                isPrimaryLive: data.isPrimaryLive !== undefined ? (data.isPrimaryLive === 'true' || data.isPrimaryLive === true) : undefined,
                 // Meta
                 slug: data.slug || undefined,
                 isActive: data.isActive === 'true' || data.isActive === true,
@@ -357,6 +363,12 @@ export const updateMandal = async (req: Request, res: Response): Promise<void> =
                         ...(getFilePath(files, 'bannerImages') || []),
                     ],
                     ...(files?.documentUrl && { documentUrl: getFilePath(files, 'documentUrl') }),
+                    // Live Darshan fields
+                    liveUrl: data.liveUrl !== undefined ? (data.liveUrl || null) : undefined,
+                    channelId: data.channelId !== undefined ? (data.channelId || null) : undefined,
+                    isLive: data.isLive !== undefined ? (data.isLive === 'true' || data.isLive === true) : undefined,
+                    liveStatus: data.liveStatus !== undefined ? (data.liveStatus === 'true' || data.liveStatus === true) : undefined,
+                    isPrimaryLive: data.isPrimaryLive !== undefined ? (data.isPrimaryLive === 'true' || data.isPrimaryLive === true) : undefined,
                     // Meta
                     slug: data.slug || existing.slug || undefined,
                     isActive: data.isActive !== undefined

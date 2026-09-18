@@ -173,9 +173,7 @@ export default function MandalRegistrationForm({ onClose }: { onClose?: () => vo
         const validFiles = files.slice(0, remaining);
         if (!validFiles.length) return;
 
-        const [first, ...rest] = validFiles;
-        setPendingHeroFiles(rest);
-        openCropper(first, "banner", "Crop Banner Image (Free Size)", 0, false);
+        setHeroImages(prev => [...prev, ...validFiles]);
         e.target.value = "";
     };
 
@@ -183,17 +181,6 @@ export default function MandalRegistrationForm({ onClose }: { onClose?: () => vo
         if (cropTarget === "main") {
             setMainImage(croppedFile);
             setMainImagePreview(URL.createObjectURL(croppedFile));
-        } else if (cropTarget === "banner") {
-            setHeroImages(prev => [...prev, croppedFile]);
-            setHeroPreviews(prev => [...prev, URL.createObjectURL(croppedFile)]);
-            if (pendingHeroFiles.length > 0) {
-                const [next, ...remaining] = pendingHeroFiles;
-                setPendingHeroFiles(remaining);
-                setTimeout(() => {
-                    openCropper(next, "banner", "Crop Banner Image (Free Size)", 0, false);
-                }, 100);
-                return;
-            }
         }
         setShowCropper(false);
         setTempImage(null);

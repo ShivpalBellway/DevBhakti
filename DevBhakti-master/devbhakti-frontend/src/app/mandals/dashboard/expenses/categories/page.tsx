@@ -163,7 +163,7 @@ export default function MandalExpenseCategoriesPage() {
           <div className="flex items-center gap-2 text-xs font-bold text-amber-700 uppercase tracking-wider mb-1">
             <Tag className="w-4 h-4" /> Category Management
           </div>
-          <h1 className="text-2xl font-bold font-serif text-foreground">Expense Categories / Heads</h1>
+          <h1 className="text-2xl font-bold font-serif text-foreground">Expense Categories </h1>
           <p className="text-sm text-muted-foreground mt-0.5">
             Manage custom expense categories tailored specifically for your Mandal.
           </p>

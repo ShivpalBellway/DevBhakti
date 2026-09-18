@@ -37,6 +37,7 @@ import {
 import {
   fetchMandalExpenses,
   fetchMandalExpenseCategories,
+  createMandalExpenseCategory,
   createMandalExpense,
   updateMandalExpense,
   deleteMandalExpense,
@@ -83,6 +84,10 @@ export default function MandalExpensesListPage() {
     receiptImage: "",
     notes: ""
   });
+  const [isPaidByOther, setIsPaidByOther] = useState(false);
+  const [customPaidByName, setCustomPaidByName] = useState("");
+  const [isCategoryOther, setIsCategoryOther] = useState(false);
+  const [customCategoryName, setCustomCategoryName] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [uploadingFile, setUploadingFile] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
@@ -159,6 +164,10 @@ export default function MandalExpensesListPage() {
       receiptImage: "",
       notes: ""
     });
+    setIsPaidByOther(false);
+    setCustomPaidByName("");
+    setIsCategoryOther(false);
+    setCustomCategoryName("");
     setErrorMsg("");
     setSuccessMsg("");
     setIsAddModalOpen(true);
@@ -177,6 +186,25 @@ export default function MandalExpensesListPage() {
       receiptImage: exp.receiptImage || "",
       notes: exp.notes || ""
     });
+
+    const isMemberInList = staffList.some((st) => st.name === exp.paidByName);
+    if (!isMemberInList && exp.paidByName) {
+      setIsPaidByOther(true);
+      setCustomPaidByName(exp.paidByName);
+    } else {
+      setIsPaidByOther(false);
+      setCustomPaidByName("");
+    }
+
+    const isCatInList = categories.some((c) => c.id === exp.categoryId);
+    if (!isCatInList && exp.categoryId) {
+      setIsCategoryOther(true);
+      setCustomCategoryName(exp.categoryName || "");
+    } else {
+      setIsCategoryOther(false);
+      setCustomCategoryName("");
+    }
+
     setErrorMsg("");
     setSuccessMsg("");
     setIsEditModalOpen(true);
@@ -193,15 +221,42 @@ export default function MandalExpensesListPage() {
       setErrorMsg("Amount must be greater than zero");
       return;
     }
-    if (!formData.categoryId) {
+    if (!formData.expenseDate) {
+      setErrorMsg("Expense date is required");
+      return;
+    }
+    if (!isCategoryOther && !formData.categoryId) {
       setErrorMsg("Please select an expense category");
+      return;
+    }
+    if (isCategoryOther && !customCategoryName.trim()) {
+      setErrorMsg("Please enter new category name");
       return;
     }
 
     setSubmitting(true);
     setErrorMsg("");
     try {
-      const res = await createMandalExpense(formData);
+      let finalCategoryId = formData.categoryId;
+
+      if (isCategoryOther) {
+        const catRes = await createMandalExpenseCategory({ name: customCategoryName.trim() });
+        if (catRes.success && catRes.data?.id) {
+          finalCategoryId = catRes.data.id;
+        } else {
+          setErrorMsg(catRes.message || "Failed to create expense category");
+          setSubmitting(false);
+          return;
+        }
+      }
+
+      const payload = {
+        ...formData,
+        categoryId: finalCategoryId,
+        paidByName: isPaidByOther ? customPaidByName.trim() : formData.paidByName,
+      };
+
+      const res = await createMandalExpense(payload);
       if (res.success) {
         setSuccessMsg("Expense recorded successfully!");
         setTimeout(() => {
@@ -222,10 +277,42 @@ export default function MandalExpensesListPage() {
     e.preventDefault();
     if (!selectedExpense) return;
 
+    if (!isCategoryOther && !formData.categoryId) {
+      setErrorMsg("Please select an expense category");
+      return;
+    }
+    if (!formData.expenseDate) {
+      setErrorMsg("Expense date is required");
+      return;
+    }
+    if (isCategoryOther && !customCategoryName.trim()) {
+      setErrorMsg("Please enter new category name");
+      return;
+    }
+
     setSubmitting(true);
     setErrorMsg("");
     try {
-      const res = await updateMandalExpense(selectedExpense.id, formData);
+      let finalCategoryId = formData.categoryId;
+
+      if (isCategoryOther) {
+        const catRes = await createMandalExpenseCategory({ name: customCategoryName.trim() });
+        if (catRes.success && catRes.data?.id) {
+          finalCategoryId = catRes.data.id;
+        } else {
+          setErrorMsg(catRes.message || "Failed to create expense category");
+          setSubmitting(false);
+          return;
+        }
+      }
+
+      const payload = {
+        ...formData,
+        categoryId: finalCategoryId,
+        paidByName: isPaidByOther ? customPaidByName.trim() : formData.paidByName,
+      };
+
+      const res = await updateMandalExpense(selectedExpense.id, payload);
       if (res.success) {
         setSuccessMsg("Expense updated successfully!");
         setTimeout(() => {
@@ -405,7 +492,7 @@ export default function MandalExpensesListPage() {
               <tr>
                 <th className="py-3.5 px-4">Date</th>
                 <th className="py-3.5 px-4">Category</th>
-                <th className="py-3.5 px-4">Description / Purpose</th>
+                <th className="py-3.5 px-4">Description / Note</th>
                 <th className="py-1 px-3">Enter by </th>
                 <th className="py-3.5 px-4">Paid By (Spent By)</th>
                 <th className="py-3.5 px-4">Mode</th>
@@ -573,10 +660,20 @@ export default function MandalExpensesListPage() {
                   Expense Category <span className="text-rose-600 font-bold">*</span>
                 </label>
                 <select
-                  value={formData.categoryId}
-                  onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
-                  required
-                  className="mt-1 w-full h-10 px-3 rounded-md border border-input bg-background text-sm"
+                  value={isCategoryOther ? "OTHER" : formData.categoryId}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (val === "OTHER") {
+                      setIsCategoryOther(true);
+                      setFormData(prev => ({ ...prev, categoryId: "" }));
+                    } else {
+                      setIsCategoryOther(false);
+                      setCustomCategoryName("");
+                      setFormData(prev => ({ ...prev, categoryId: val }));
+                    }
+                  }}
+                  required={!isCategoryOther}
+                  className="mt-1 w-full h-10 px-3 rounded-md border border-input bg-background text-sm font-medium"
                 >
                   <option value="">-- Select Category --</option>
                   {categories.map((c) => (
@@ -584,12 +681,29 @@ export default function MandalExpensesListPage() {
                       {c.name}
                     </option>
                   ))}
+                  <option value="OTHER">Other</option>
                 </select>
+
+                {isCategoryOther && (
+                  <div className="mt-2">
+                    <label className="text-[11px] font-semibold text-muted-foreground">
+                      New Category Name <span className="text-rose-600 font-bold">*</span>
+                    </label>
+                    <Input
+                      type="text"
+                      placeholder="Enter new category name (e.g. Decoration2)"
+                      value={customCategoryName}
+                      onChange={(e) => setCustomCategoryName(e.target.value)}
+                      required
+                      className="mt-1"
+                    />
+                  </div>
+                )}
               </div>
             </div>
 
             <div>
-              <label className="text-xs font-bold text-foreground">Description / Purpose (Optional)</label>
+              <label className="text-xs font-bold text-foreground">Description  (Optional)</label>
               <Input
                 placeholder="e.g. Flowers for daily Ganesh pooja"
                 value={formData.description}
@@ -602,26 +716,52 @@ export default function MandalExpensesListPage() {
               <div>
                 <label className="text-xs font-bold text-foreground">Spent By / Paid By Member (Optional)</label>
                 {staffList.length > 0 ? (
-                  <select
-                    value={formData.paidByName}
-                    onChange={(e) => {
-                      const selectedName = e.target.value;
-                      const selectedStaff = staffList.find((st) => st.name === selectedName);
-                      setFormData({
-                        ...formData,
-                        paidByName: selectedName,
-                        paidByMemberId: selectedStaff ? selectedStaff.id : ""
-                      });
-                    }}
-                    className="mt-1 w-full h-10 px-3 rounded-md border border-input bg-background text-sm"
-                  >
-                    <option value="">-- Select Staff Member --</option>
-                    {staffList.map((st) => (
-                      <option key={st.id} value={st.name}>
-                        {st.name} {st.roleName ? `(${st.roleName})` : ""}
-                      </option>
-                    ))}
-                  </select>
+                  <div className="space-y-1.5">
+                    <select
+                      value={isPaidByOther ? "OTHER" : formData.paidByName}
+                      onChange={(e) => {
+                        const selectedVal = e.target.value;
+                        if (selectedVal === "OTHER") {
+                          setIsPaidByOther(true);
+                          setFormData(prev => ({
+                            ...prev,
+                            paidByName: customPaidByName,
+                            paidByMemberId: ""
+                          }));
+                        } else {
+                          setIsPaidByOther(false);
+                          const selectedStaff = staffList.find((st) => st.name === selectedVal);
+                          setFormData(prev => ({
+                            ...prev,
+                            paidByName: selectedVal,
+                            paidByMemberId: selectedStaff ? selectedStaff.id : ""
+                          }));
+                        }
+                      }}
+                      className="mt-1 w-full h-10 px-3 rounded-md border border-input bg-background text-sm"
+                    >
+                      <option value="">-- Select Staff Member --</option>
+                      {staffList.map((st) => (
+                        <option key={st.id} value={st.name}>
+                          {st.name} {st.roleName ? `(${st.roleName})` : ""}
+                        </option>
+                      ))}
+                      <option value="OTHER">Other / Enter Name Manually</option>
+                    </select>
+                    {isPaidByOther && (
+                      <Input
+                        placeholder="Enter member / person name..."
+                        value={customPaidByName}
+                        onChange={(e) => {
+                          const nameVal = e.target.value;
+                          setCustomPaidByName(nameVal);
+                          setFormData(prev => ({ ...prev, paidByName: nameVal, paidByMemberId: "" }));
+                        }}
+                        className="mt-1"
+                        required
+                      />
+                    )}
+                  </div>
                 ) : (
                   <Input
                     placeholder="e.g. Ramesh Patil (Treasurer)"
@@ -649,11 +789,14 @@ export default function MandalExpensesListPage() {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="text-xs font-bold text-foreground">Expense Date (Optional)</label>
+                <label className="text-xs font-bold text-foreground">
+                  Expense Date <span className="text-rose-600 font-bold">*</span>
+                </label>
                 <Input
                   type="date"
                   value={formData.expenseDate}
                   onChange={(e) => setFormData({ ...formData, expenseDate: e.target.value })}
+                  required
                   className="mt-1"
                 />
               </div>
@@ -782,22 +925,50 @@ export default function MandalExpensesListPage() {
                   Expense Category <span className="text-rose-600 font-bold">*</span>
                 </label>
                 <select
-                  value={formData.categoryId}
-                  onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
-                  required
-                  className="mt-1 w-full h-10 px-3 rounded-md border border-input bg-background text-sm"
+                  value={isCategoryOther ? "OTHER" : formData.categoryId}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (val === "OTHER") {
+                      setIsCategoryOther(true);
+                      setFormData(prev => ({ ...prev, categoryId: "" }));
+                    } else {
+                      setIsCategoryOther(false);
+                      setCustomCategoryName("");
+                      setFormData(prev => ({ ...prev, categoryId: val }));
+                    }
+                  }}
+                  required={!isCategoryOther}
+                  className="mt-1 w-full h-10 px-3 rounded-md border border-input bg-background text-sm font-medium"
                 >
+                  <option value="">-- Select Category --</option>
                   {categories.map((c) => (
                     <option key={c.id} value={c.id}>
                       {c.name}
                     </option>
                   ))}
+                  <option value="OTHER">Other</option>
                 </select>
+
+                {isCategoryOther && (
+                  <div className="mt-2">
+                    <label className="text-[11px] font-semibold text-muted-foreground">
+                      New Category Name <span className="text-rose-600 font-bold">*</span>
+                    </label>
+                    <Input
+                      type="text"
+                      placeholder="Enter new category name (e.g. Decoration2)"
+                      value={customCategoryName}
+                      onChange={(e) => setCustomCategoryName(e.target.value)}
+                      required
+                      className="mt-1"
+                    />
+                  </div>
+                )}
               </div>
             </div>
 
             <div>
-              <label className="text-xs font-bold text-foreground">Description / Purpose (Optional)</label>
+              <label className="text-xs font-bold text-foreground">Description  (Optional)</label>
               <Input
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
@@ -809,18 +980,53 @@ export default function MandalExpensesListPage() {
               <div>
                 <label className="text-xs font-bold text-foreground">Spent By / Paid By Member (Optional)</label>
                 {staffList.length > 0 ? (
-                  <select
-                    value={formData.paidByName}
-                    onChange={(e) => setFormData({ ...formData, paidByName: e.target.value })}
-                    className="mt-1 w-full h-10 px-3 rounded-md border border-input bg-background text-sm"
-                  >
-                    <option value="">-- Select Staff Member --</option>
-                    {staffList.map((st) => (
-                      <option key={st.id} value={st.name}>
-                        {st.name} {st.roleName ? `(${st.roleName})` : ""}
-                      </option>
-                    ))}
-                  </select>
+                  <div className="space-y-1.5">
+                    <select
+                      value={isPaidByOther ? "OTHER" : formData.paidByName}
+
+                      onChange={(e) => {
+                        const selectedVal = e.target.value;
+                        if (selectedVal === "OTHER") {
+                          setIsPaidByOther(true);
+                          setFormData(prev => ({
+                            ...prev,
+                            paidByName: customPaidByName,
+                            paidByMemberId: ""
+                          }));
+                        } else {
+                          setIsPaidByOther(false);
+                          const selectedStaff = staffList.find((st) => st.name === selectedVal);
+                          setFormData(prev => ({
+                            ...prev,
+                            paidByName: selectedVal,
+                            paidByMemberId: selectedStaff ? selectedStaff.id : ""
+                          }));
+                        }
+                      }}
+                      className="mt-1 w-full h-10 px-3 rounded-md border border-input bg-background text-sm"
+                    >
+                      <option value="">-- Select Staff Member --</option>
+                      {staffList.map((st) => (
+                        <option key={st.id} value={st.name}>
+                          {st.name} {st.roleName ? `(${st.roleName})` : ""}
+                        </option>
+                      ))}
+                      <option value="OTHER">Other / Enter Name Manually</option>
+                    </select>
+                    {isPaidByOther && (
+                      <Input
+                        placeholder="Enter member / person name..."
+                        value={customPaidByName}
+                        onChange={(e) => {
+                          const nameVal = e.target.value;
+                          setCustomPaidByName(nameVal);
+                          setFormData(prev => ({ ...prev, paidByName: nameVal, paidByMemberId: "" }));
+                        }}
+                        className="mt-1"
+                        required
+                      />
+                    )}
+                  </div>
                 ) : (
                   <Input
                     placeholder="e.g. Ramesh Patil (Treasurer)"
@@ -848,11 +1054,14 @@ export default function MandalExpensesListPage() {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="text-xs font-bold text-foreground">Expense Date (Optional)</label>
+                <label className="text-xs font-bold text-foreground">
+                  Expense Date <span className="text-rose-600 font-bold">*</span>
+                </label>
                 <Input
                   type="date"
                   value={formData.expenseDate}
                   onChange={(e) => setFormData({ ...formData, expenseDate: e.target.value })}
+                  required
                   className="mt-1"
                 />
               </div>
@@ -917,7 +1126,7 @@ export default function MandalExpensesListPage() {
                 </div>
               </div>
             </div>
-
+{/* 
             <div>
               <label className="text-xs font-bold text-foreground">Additional Notes</label>
               <Input
@@ -925,7 +1134,7 @@ export default function MandalExpensesListPage() {
                 onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                 className="mt-1"
               />
-            </div>
+            </div> */}
 
             <DialogFooter className="pt-4">
               <Button type="button" variant="outline" onClick={() => setIsEditModalOpen(false)}>
@@ -989,7 +1198,7 @@ export default function MandalExpensesListPage() {
               </div>
 
               <div>
-                <span className="text-xs text-muted-foreground font-semibold block mb-0.5">Description / Purpose:</span>
+                <span className="text-xs text-muted-foreground font-semibold block mb-0.5">Description:</span>
                 <p className="p-2.5 bg-muted/40 rounded-lg text-xs font-medium text-foreground border border-border/50">
                   {selectedExpense.description}
                 </p>

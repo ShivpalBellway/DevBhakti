@@ -212,10 +212,7 @@ export default function MandalFormPage({ mandalId }: MandalFormProps) {
   const handleBannersChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []).filter(file => file.type.startsWith("image/"));
     if (!files.length) return;
-
-    const [first, ...rest] = files;
-    setPendingBannerFiles(rest);
-    openCropper(first, "banner", "Crop Banner Image (Free Size)", 0, false);
+    setBannerFiles(prev => [...prev, ...files]);
     e.target.value = "";
   };
 
@@ -237,16 +234,6 @@ export default function MandalFormPage({ mandalId }: MandalFormProps) {
       setImagePreview(URL.createObjectURL(croppedFile));
     } else if (cropTarget === "document") {
       setDocFile(croppedFile);
-    } else if (cropTarget === "banner") {
-      setBannerFiles(prev => [...prev, croppedFile]);
-      if (pendingBannerFiles.length > 0) {
-        const [next, ...remaining] = pendingBannerFiles;
-        setPendingBannerFiles(remaining);
-        setTimeout(() => {
-          openCropper(next, "banner", "Crop Banner Image (Free Size)", 0, false);
-        }, 100);
-        return;
-      }
     }
 
     setShowCropper(false);

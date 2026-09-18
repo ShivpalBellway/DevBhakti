@@ -138,8 +138,8 @@ export const updateMyMandalProfile = async (req: Request, res: Response) => {
         image: mainImage || undefined,
         bannerImages: updatedBannerImages,
         // Live Darshan fields
-        liveUrl: data.liveUrl || undefined,
-        channelId: data.channelId || undefined,
+        liveUrl: data.liveUrl !== undefined ? (data.liveUrl || null) : undefined,
+        channelId: data.channelId !== undefined ? (data.channelId || null) : undefined,
         liveStatus: data.liveStatus !== undefined ? (data.liveStatus === 'true' || data.liveStatus === true) : undefined,
         isLive: data.isLive !== undefined ? (data.isLive === 'true' || data.isLive === true) : undefined,
         isPrimaryLive: data.isPrimaryLive !== undefined ? (data.isPrimaryLive === 'true' || data.isPrimaryLive === true) : undefined,

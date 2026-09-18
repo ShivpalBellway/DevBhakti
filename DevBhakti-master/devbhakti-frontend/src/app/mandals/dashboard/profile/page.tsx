@@ -276,10 +276,7 @@ export default function EnhancedMandalProfilePage() {
     const handleHeroesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = Array.from(e.target.files || []).filter(file => file.type.startsWith("image/"));
         if (!files.length) return;
-
-        const [first, ...rest] = files;
-        setPendingHeroFiles(rest);
-        openCropper(first, "banner", "Crop Banner Image (Free Size)", 0, false);
+        setHeroFiles(prev => [...prev, ...files]);
         e.target.value = "";
     };
 
@@ -287,16 +284,6 @@ export default function EnhancedMandalProfilePage() {
         if (cropTarget === "main") {
             setImageFile(croppedFile);
             setImagePreview(URL.createObjectURL(croppedFile));
-        } else if (cropTarget === "banner") {
-            setHeroFiles(prev => [...prev, croppedFile]);
-            if (pendingHeroFiles.length > 0) {
-                const [next, ...remaining] = pendingHeroFiles;
-                setPendingHeroFiles(remaining);
-                setTimeout(() => {
-                    openCropper(next, "banner", "Crop Banner Image (Free Size)", 0, false);
-                }, 100);
-                return;
-            }
         }
         setShowCropper(false);
         setTempImage(null);
@@ -383,11 +370,22 @@ export default function EnhancedMandalProfilePage() {
                         Update your mandal's public information, location, images, and contact details.
                     </p>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 flex-wrap">
+                    {(mandalData?.slug || mandalData?.id) && (
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => window.open(`/mandals/${mandalData?.slug || mandalData?.id}`, '_blank')}
+                            className="rounded-xl border-[#7b4623]/20 text-[#7b4623] hover:bg-[#7b4623]/5 shadow-sm px-4 h-10 text-xs md:text-sm font-semibold"
+                        >
+                            <Eye className="w-4 h-4 mr-1.5" />
+                            View Public Profile
+                        </Button>
+                    )}
                     <Button
                         onClick={handleSubmit}
                         disabled={isSaving}
-                        className="bg-[#7b4623] hover:bg-[#5d351a] text-white shadow-md rounded-xl px-6"
+                        className="bg-[#7b4623] hover:bg-[#5d351a] text-white shadow-md rounded-xl px-6 h-10 text-xs md:text-sm font-bold"
                     >
                         {isSaving ? (
                             <>

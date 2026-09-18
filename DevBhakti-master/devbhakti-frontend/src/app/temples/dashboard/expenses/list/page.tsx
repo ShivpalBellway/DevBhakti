@@ -34,6 +34,7 @@ import {
 import {
   fetchTempleExpenses,
   fetchTempleExpenseCategories,
+  createTempleExpenseCategory,
   createTempleExpense,
   updateTempleExpense,
   deleteTempleExpense,
@@ -80,6 +81,10 @@ export default function TempleExpensesListPage() {
     receiptImage: "",
     notes: ""
   });
+  const [isPaidByOther, setIsPaidByOther] = useState(false);
+  const [customPaidByName, setCustomPaidByName] = useState("");
+  const [isCategoryOther, setIsCategoryOther] = useState(false);
+  const [customCategoryName, setCustomCategoryName] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [uploadingFile, setUploadingFile] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
@@ -156,6 +161,10 @@ export default function TempleExpensesListPage() {
       receiptImage: "",
       notes: ""
     });
+    setIsPaidByOther(false);
+    setCustomPaidByName("");
+    setIsCategoryOther(false);
+    setCustomCategoryName("");
     setErrorMsg("");
     setSuccessMsg("");
     setIsAddModalOpen(true);
@@ -174,6 +183,25 @@ export default function TempleExpensesListPage() {
       receiptImage: exp.receiptImage || "",
       notes: exp.notes || ""
     });
+
+    const isMemberInList = staffList.some((st) => st.name === exp.paidByName);
+    if (!isMemberInList && exp.paidByName) {
+      setIsPaidByOther(true);
+      setCustomPaidByName(exp.paidByName);
+    } else {
+      setIsPaidByOther(false);
+      setCustomPaidByName("");
+    }
+
+    const isCatInList = categories.some((c) => c.id === exp.categoryId);
+    if (!isCatInList && exp.categoryId) {
+      setIsCategoryOther(true);
+      setCustomCategoryName(exp.categoryName || "");
+    } else {
+      setIsCategoryOther(false);
+      setCustomCategoryName("");
+    }
+
     setErrorMsg("");
     setSuccessMsg("");
     setIsEditModalOpen(true);
@@ -190,15 +218,38 @@ export default function TempleExpensesListPage() {
       setErrorMsg("Amount must be greater than zero");
       return;
     }
-    if (!formData.categoryId) {
+    if (!isCategoryOther && !formData.categoryId) {
       setErrorMsg("Please select an expense category");
+      return;
+    }
+    if (isCategoryOther && !customCategoryName.trim()) {
+      setErrorMsg("Please enter new category name");
       return;
     }
 
     setSubmitting(true);
     setErrorMsg("");
     try {
-      const res = await createTempleExpense(formData);
+      let finalCategoryId = formData.categoryId;
+
+      if (isCategoryOther) {
+        const catRes = await createTempleExpenseCategory({ name: customCategoryName.trim() });
+        if (catRes.success && catRes.data?.id) {
+          finalCategoryId = catRes.data.id;
+        } else {
+          setErrorMsg(catRes.message || "Failed to create expense category");
+          setSubmitting(false);
+          return;
+        }
+      }
+
+      const payload = {
+        ...formData,
+        categoryId: finalCategoryId,
+        paidByName: isPaidByOther ? customPaidByName.trim() : formData.paidByName,
+      };
+
+      const res = await createTempleExpense(payload);
       if (res.success) {
         setSuccessMsg("Expense recorded successfully!");
         setTimeout(() => {
@@ -219,10 +270,38 @@ export default function TempleExpensesListPage() {
     e.preventDefault();
     if (!selectedExpense) return;
 
+    if (!isCategoryOther && !formData.categoryId) {
+      setErrorMsg("Please select an expense category");
+      return;
+    }
+    if (isCategoryOther && !customCategoryName.trim()) {
+      setErrorMsg("Please enter new category name");
+      return;
+    }
+
     setSubmitting(true);
     setErrorMsg("");
     try {
-      const res = await updateTempleExpense(selectedExpense.id, formData);
+      let finalCategoryId = formData.categoryId;
+
+      if (isCategoryOther) {
+        const catRes = await createTempleExpenseCategory({ name: customCategoryName.trim() });
+        if (catRes.success && catRes.data?.id) {
+          finalCategoryId = catRes.data.id;
+        } else {
+          setErrorMsg(catRes.message || "Failed to create expense category");
+          setSubmitting(false);
+          return;
+        }
+      }
+
+      const payload = {
+        ...formData,
+        categoryId: finalCategoryId,
+        paidByName: isPaidByOther ? customPaidByName.trim() : formData.paidByName,
+      };
+
+      const res = await updateTempleExpense(selectedExpense.id, payload);
       if (res.success) {
         setSuccessMsg("Expense updated successfully!");
         setTimeout(() => {
@@ -563,10 +642,20 @@ export default function TempleExpensesListPage() {
                   Expense Category <span className="text-rose-600 font-bold">*</span>
                 </label>
                 <select
-                  value={formData.categoryId}
-                  onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
-                  required
-                  className="mt-1 w-full h-10 px-3 rounded-md border border-input bg-background text-sm"
+                  value={isCategoryOther ? "OTHER" : formData.categoryId}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (val === "OTHER") {
+                      setIsCategoryOther(true);
+                      setFormData(prev => ({ ...prev, categoryId: "" }));
+                    } else {
+                      setIsCategoryOther(false);
+                      setCustomCategoryName("");
+                      setFormData(prev => ({ ...prev, categoryId: val }));
+                    }
+                  }}
+                  required={!isCategoryOther}
+                  className="mt-1 w-full h-10 px-3 rounded-md border border-input bg-background text-sm font-medium"
                 >
                   <option value="">-- Select Category --</option>
                   {categories.map((c) => (
@@ -574,7 +663,24 @@ export default function TempleExpensesListPage() {
                       {c.name}
                     </option>
                   ))}
+                  <option value="OTHER">Other</option>
                 </select>
+
+                {isCategoryOther && (
+                  <div className="mt-2">
+                    <label className="text-[11px] font-semibold text-muted-foreground">
+                      New Category Name <span className="text-rose-600 font-bold">*</span>
+                    </label>
+                    <Input
+                      type="text"
+                      placeholder="Enter new category name (e.g. Decoration2)"
+                      value={customCategoryName}
+                      onChange={(e) => setCustomCategoryName(e.target.value)}
+                      required
+                      className="mt-1"
+                    />
+                  </div>
+                )}
               </div>
             </div>
 
@@ -592,26 +698,52 @@ export default function TempleExpensesListPage() {
               <div>
                 <label className="text-xs font-bold text-foreground">Spent By / Paid By Staff (Optional)</label>
                 {staffList.length > 0 ? (
-                  <select
-                    value={formData.paidByName}
-                    onChange={(e) => {
-                      const selectedName = e.target.value;
-                      const selectedStaff = staffList.find((st) => st.name === selectedName);
-                      setFormData({
-                        ...formData,
-                        paidByName: selectedName,
-                        paidByMemberId: selectedStaff ? selectedStaff.id : ""
-                      });
-                    }}
-                    className="mt-1 w-full h-10 px-3 rounded-md border border-input bg-background text-sm"
-                  >
-                    <option value="">-- Select Staff Member --</option>
-                    {staffList.map((st) => (
-                      <option key={st.id} value={st.name}>
-                        {st.name} {st.roleName ? `(${st.roleName})` : ""}
-                      </option>
-                    ))}
-                  </select>
+                  <div className="space-y-1.5">
+                    <select
+                      value={isPaidByOther ? "OTHER" : formData.paidByName}
+                      onChange={(e) => {
+                        const selectedVal = e.target.value;
+                        if (selectedVal === "OTHER") {
+                          setIsPaidByOther(true);
+                          setFormData(prev => ({
+                            ...prev,
+                            paidByName: customPaidByName,
+                            paidByMemberId: ""
+                          }));
+                        } else {
+                          setIsPaidByOther(false);
+                          const selectedStaff = staffList.find((st) => st.name === selectedVal);
+                          setFormData(prev => ({
+                            ...prev,
+                            paidByName: selectedVal,
+                            paidByMemberId: selectedStaff ? selectedStaff.id : ""
+                          }));
+                        }
+                      }}
+                      className="mt-1 w-full h-10 px-3 rounded-md border border-input bg-background text-sm"
+                    >
+                      <option value="">-- Select Staff Member --</option>
+                      {staffList.map((st) => (
+                        <option key={st.id} value={st.name}>
+                          {st.name} {st.roleName ? `(${st.roleName})` : ""}
+                        </option>
+                      ))}
+                      <option value="OTHER">Other / Enter Name Manually</option>
+                    </select>
+                    {isPaidByOther && (
+                      <Input
+                        placeholder="Enter staff / person name..."
+                        value={customPaidByName}
+                        onChange={(e) => {
+                          const nameVal = e.target.value;
+                          setCustomPaidByName(nameVal);
+                          setFormData(prev => ({ ...prev, paidByName: nameVal, paidByMemberId: "" }));
+                        }}
+                        className="mt-1"
+                        required
+                      />
+                    )}
+                  </div>
                 ) : (
                   <Input
                     placeholder="e.g. Pujari Panditji / Manager"
@@ -722,17 +854,45 @@ export default function TempleExpensesListPage() {
                   Expense Category <span className="text-rose-600 font-bold">*</span>
                 </label>
                 <select
-                  value={formData.categoryId}
-                  onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
-                  required
-                  className="mt-1 w-full h-10 px-3 rounded-md border border-input bg-background text-sm"
+                  value={isCategoryOther ? "OTHER" : formData.categoryId}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (val === "OTHER") {
+                      setIsCategoryOther(true);
+                      setFormData(prev => ({ ...prev, categoryId: "" }));
+                    } else {
+                      setIsCategoryOther(false);
+                      setCustomCategoryName("");
+                      setFormData(prev => ({ ...prev, categoryId: val }));
+                    }
+                  }}
+                  required={!isCategoryOther}
+                  className="mt-1 w-full h-10 px-3 rounded-md border border-input bg-background text-sm font-medium"
                 >
+                  <option value="">-- Select Category --</option>
                   {categories.map((c) => (
                     <option key={c.id} value={c.id}>
                       {c.name}
                     </option>
                   ))}
+                  <option value="OTHER">Other</option>
                 </select>
+
+                {isCategoryOther && (
+                  <div className="mt-2">
+                    <label className="text-[11px] font-semibold text-muted-foreground">
+                      New Category Name <span className="text-rose-600 font-bold">*</span>
+                    </label>
+                    <Input
+                      type="text"
+                      placeholder="Enter new category name (e.g. Decoration2)"
+                      value={customCategoryName}
+                      onChange={(e) => setCustomCategoryName(e.target.value)}
+                      required
+                      className="mt-1"
+                    />
+                  </div>
+                )}
               </div>
             </div>
 
@@ -749,18 +909,52 @@ export default function TempleExpensesListPage() {
               <div>
                 <label className="text-xs font-bold text-foreground">Spent By / Paid By Staff (Optional)</label>
                 {staffList.length > 0 ? (
-                  <select
-                    value={formData.paidByName}
-                    onChange={(e) => setFormData({ ...formData, paidByName: e.target.value })}
-                    className="mt-1 w-full h-10 px-3 rounded-md border border-input bg-background text-sm"
-                  >
-                    <option value="">-- Select Staff Member --</option>
-                    {staffList.map((st) => (
-                      <option key={st.id} value={st.name}>
-                        {st.name} {st.roleName ? `(${st.roleName})` : ""}
-                      </option>
-                    ))}
-                  </select>
+                  <div className="space-y-1.5">
+                    <select
+                      value={isPaidByOther ? "OTHER" : formData.paidByName}
+                      onChange={(e) => {
+                        const selectedVal = e.target.value;
+                        if (selectedVal === "OTHER") {
+                          setIsPaidByOther(true);
+                          setFormData(prev => ({
+                            ...prev,
+                            paidByName: customPaidByName,
+                            paidByMemberId: ""
+                          }));
+                        } else {
+                          setIsPaidByOther(false);
+                          const selectedStaff = staffList.find((st) => st.name === selectedVal);
+                          setFormData(prev => ({
+                            ...prev,
+                            paidByName: selectedVal,
+                            paidByMemberId: selectedStaff ? selectedStaff.id : ""
+                          }));
+                        }
+                      }}
+                      className="mt-1 w-full h-10 px-3 rounded-md border border-input bg-background text-sm"
+                    >
+                      <option value="">-- Select Staff Member --</option>
+                      {staffList.map((st) => (
+                        <option key={st.id} value={st.name}>
+                          {st.name} {st.roleName ? `(${st.roleName})` : ""}
+                        </option>
+                      ))}
+                      <option value="OTHER">Other / Enter Name Manually</option>
+                    </select>
+                    {isPaidByOther && (
+                      <Input
+                        placeholder="Enter staff / person name..."
+                        value={customPaidByName}
+                        onChange={(e) => {
+                          const nameVal = e.target.value;
+                          setCustomPaidByName(nameVal);
+                          setFormData(prev => ({ ...prev, paidByName: nameVal, paidByMemberId: "" }));
+                        }}
+                        className="mt-1"
+                        required
+                      />
+                    )}
+                  </div>
                 ) : (
                   <Input
                     placeholder="e.g. Pujari Panditji / Manager"
@@ -901,20 +1095,20 @@ export default function TempleExpensesListPage() {
               </div>
 
               <div>
-                <span className="text-xs text-muted-foreground font-semibold block mb-0.5">Description / Purpose:</span>
+                <span className="text-xs text-muted-foreground font-semibold block mb-0.5">Description :</span>
                 <p className="p-2.5 bg-muted/40 rounded-lg text-xs font-medium text-foreground border border-border/50">
                   {selectedExpense.description}
                 </p>
               </div>
 
-              {selectedExpense.notes && (
+              {/* {selectedExpense.notes && (
                 <div>
                   <span className="text-xs text-muted-foreground font-semibold block mb-0.5">Additional Notes:</span>
                   <p className="p-2 bg-muted/30 rounded-lg text-xs text-muted-foreground italic border border-border/30">
                     {selectedExpense.notes}
                   </p>
                 </div>
-              )}
+              )} */}
 
               {selectedExpense.receiptImage && (
                 <div>
