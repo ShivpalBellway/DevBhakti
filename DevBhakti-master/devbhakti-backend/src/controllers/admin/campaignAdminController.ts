@@ -265,3 +265,51 @@ export const deleteSubmissionAdmin = async (req: Request, res: Response) => {
     return res.status(500).json({ success: false, message: error.message });
   }
 };
+
+// GET /api/admin/campaigns/:id/export — Export all campaign submissions as CSV
+export const exportCampaignSubmissionsAdmin = async (req: Request, res: Response) => {
+  try {
+    const campaignId = req.params.id as string;
+    const campaign = await prisma.campaign.findUnique({ where: { id: campaignId } });
+
+    if (!campaign) {
+      return res.status(404).json({ success: false, message: "Campaign not found." });
+    }
+
+    const submissions = await prisma.campaignEntry.findMany({
+      where: { campaignId },
+      orderBy: { createdAt: "desc" },
+      include: {
+        user: {
+          select: { name: true, phone: true },
+        },
+      },
+    });
+
+    const csvHeaders = ["ID", "Name", "Phone", "Participant Type", "City", "Address", "Caption", "Likes", "Submitted Date", "Images"];
+    const csvRows = submissions.map((sub) => {
+      const escape = (text: string | null | undefined) => `"${(text || "").replace(/"/g, '""')}"`;
+      return [
+        escape(sub.id),
+        escape(sub.name),
+        escape(sub.user?.phone || ""),
+        escape(sub.participantType),
+        escape(sub.city),
+        escape(sub.address),
+        escape(sub.caption),
+        sub.likesCount,
+        new Date(sub.createdAt).toISOString(),
+        escape(sub.images.join("; ")),
+      ].join(",");
+    });
+
+    const csvContent = [csvHeaders.join(","), ...csvRows].join("\n");
+
+    res.setHeader("Content-Type", "text/csv");
+    res.setHeader("Content-Disposition", `attachment; filename="${campaign.slug}-submissions.csv"`);
+    return res.status(200).send(csvContent);
+  } catch (error: any) {
+    console.error("Error exporting campaign submissions:", error);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};

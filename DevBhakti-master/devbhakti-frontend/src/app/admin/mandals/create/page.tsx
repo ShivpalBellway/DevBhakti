@@ -139,7 +139,7 @@ export default function MandalFormPage({ mandalId }: MandalFormProps) {
             city: m.city || "",
             state: m.state || "",
             pinCode: m.pinCode || "",
-            contactNumber: m.contactNumber || "",
+            contactNumber: (m.contactNumber || m.phone || "").replace(/\D/g, "").slice(-10),
             email: m.email || "",
             presidentName: m.presidentName || "",
             registrationNumber: m.registrationNumber || "",
@@ -205,7 +205,7 @@ export default function MandalFormPage({ mandalId }: MandalFormProps) {
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    openCropper(file, "main", "Crop Mandal Main Image (4:3 Landscape Ratio)", 4 / 3, true);
+    openCropper(file, "main", "Crop Mandal Cover Image (4:3 Aspect Ratio)", 4 / 3, true);
     e.target.value = "";
   };
 
@@ -215,7 +215,7 @@ export default function MandalFormPage({ mandalId }: MandalFormProps) {
 
     const [first, ...rest] = files;
     setPendingBannerFiles(rest);
-    openCropper(first, "banner", "Crop Banner Image (4:3 Landscape Ratio)", 4 / 3, true);
+    openCropper(first, "banner", "Crop Banner Image (Free Size)", 0, false);
     e.target.value = "";
   };
 
@@ -224,7 +224,7 @@ export default function MandalFormPage({ mandalId }: MandalFormProps) {
     if (!file) return;
 
     if (file.type.startsWith("image/")) {
-      openCropper(file, "document", "Crop Document Image", 0);
+      openCropper(file, "document", "Crop Document Image", 0, false);
     } else {
       setDocFile(file);
     }
@@ -243,7 +243,7 @@ export default function MandalFormPage({ mandalId }: MandalFormProps) {
         const [next, ...remaining] = pendingBannerFiles;
         setPendingBannerFiles(remaining);
         setTimeout(() => {
-          openCropper(next, "banner", "Crop Banner Image (4:3 Landscape Ratio)", 4 / 3, true);
+          openCropper(next, "banner", "Crop Banner Image (Free Size)", 0, false);
         }, 100);
         return;
       }

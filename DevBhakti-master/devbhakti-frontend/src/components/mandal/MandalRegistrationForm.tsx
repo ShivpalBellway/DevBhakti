@@ -134,14 +134,18 @@ export default function MandalRegistrationForm({ onClose }: { onClose?: () => vo
     const [tempImage, setTempImage] = useState<string | null>(null);
     const [cropTarget, setCropTarget] = useState<"main" | "banner">("main");
     const [cropperTitle, setCropperTitle] = useState("Crop Image");
+    const [initialAspect, setInitialAspect] = useState(4 / 3);
+    const [lockAspect, setLockAspect] = useState(false);
     const [pendingHeroFiles, setPendingHeroFiles] = useState<File[]>([]);
 
-    const openCropper = (file: File, target: "main" | "banner", title: string) => {
+    const openCropper = (file: File, target: "main" | "banner", title: string, aspect = 4 / 3, shouldLock = false) => {
         const reader = new FileReader();
         reader.onload = () => {
             setTempImage(reader.result as string);
             setCropTarget(target);
             setCropperTitle(title);
+            setInitialAspect(aspect);
+            setLockAspect(shouldLock);
             setShowCropper(true);
         };
         reader.readAsDataURL(file);
@@ -155,7 +159,7 @@ export default function MandalRegistrationForm({ onClose }: { onClose?: () => vo
     const handleMainImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
-            openCropper(file, "main", "Crop Mandal Main Image (4:3 Landscape Ratio)");
+            openCropper(file, "main", "Crop Mandal Cover Image (4:3 Aspect Ratio)", 4 / 3, true);
             e.target.value = "";
         }
     };
@@ -171,7 +175,7 @@ export default function MandalRegistrationForm({ onClose }: { onClose?: () => vo
 
         const [first, ...rest] = validFiles;
         setPendingHeroFiles(rest);
-        openCropper(first, "banner", "Crop Banner Image (4:3 Landscape Ratio)");
+        openCropper(first, "banner", "Crop Banner Image (Free Size)", 0, false);
         e.target.value = "";
     };
 
@@ -186,7 +190,7 @@ export default function MandalRegistrationForm({ onClose }: { onClose?: () => vo
                 const [next, ...remaining] = pendingHeroFiles;
                 setPendingHeroFiles(remaining);
                 setTimeout(() => {
-                    openCropper(next, "banner", "Crop Banner Image (4:3 Landscape Ratio)");
+                    openCropper(next, "banner", "Crop Banner Image (Free Size)", 0, false);
                 }, 100);
                 return;
             }
@@ -706,8 +710,8 @@ export default function MandalRegistrationForm({ onClose }: { onClose?: () => vo
             {showCropper && tempImage && (
                 <ImageCropper
                     image={tempImage}
-                    initialAspect={4 / 3}
-                    lockAspect={true}
+                    initialAspect={initialAspect}
+                    lockAspect={lockAspect}
                     title={cropperTitle}
                     onCropComplete={handleCropComplete}
                     onCancel={() => {

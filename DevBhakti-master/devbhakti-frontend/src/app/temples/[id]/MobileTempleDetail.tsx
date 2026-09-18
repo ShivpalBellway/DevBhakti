@@ -171,21 +171,37 @@ export default function MobileTempleDetail({
     // Donation amount
     const [donationAmount, setDonationAmount] = useState<number>(251);
 
-    // Device detection for App Store links
-    const [appStoreUrl, setAppStoreUrl] = useState("https://play.google.com/store/search?q=devbhakti&c=apps&hl=en_IN");
+    // Device detection for App Store & Play Store links
+    const PLAY_STORE_URL = "https://play.google.com/store/apps/details?id=com.devbhakti.user&hl=en_IN";
+    const APP_STORE_URL = "https://apps.apple.com/in/app/devbhakti/id6761248156";
+    const [appStoreUrl, setAppStoreUrl] = useState(PLAY_STORE_URL);
     const [isIOS, setIsIOS] = useState(false);
     const [showDownloadBanner, setShowDownloadBanner] = useState(true);
 
     useEffect(() => {
-        const ua = navigator.userAgent || navigator.vendor || (window as any).opera || "";
-        const ios = /iPad|iPhone|iPod/.test(ua) && !(window as any).MSStream;
-        setIsIOS(ios);
-        if (ios) {
-            setAppStoreUrl("https://apps.apple.com/in/app/devbhakti/id6761248");
-        } else {
-            setAppStoreUrl("https://play.google.com/store/apps/details?id=com.devbhakti.app");
+        if (typeof window !== "undefined") {
+            const ua = navigator.userAgent || "";
+            const ios =
+                /iphone|ipad|ipod/i.test(ua) ||
+                (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1) ||
+                (/Macintosh/i.test(ua) && "ontouchend" in document);
+            setIsIOS(ios);
+            setAppStoreUrl(ios ? APP_STORE_URL : PLAY_STORE_URL);
         }
     }, []);
+
+    const handleDownloadApp = (e: React.MouseEvent) => {
+        e.preventDefault();
+        if (typeof window !== "undefined") {
+            const ua = navigator.userAgent || "";
+            const ios =
+                /iphone|ipad|ipod/i.test(ua) ||
+                (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1) ||
+                (/Macintosh/i.test(ua) && "ontouchend" in document);
+            const targetUrl = ios ? APP_STORE_URL : PLAY_STORE_URL;
+            window.open(targetUrl, "_blank", "noopener,noreferrer");
+        }
+    };
 
     const { addToCart: addToCartGlobal } = useCart();
     const { toast } = useToast();
@@ -1031,6 +1047,7 @@ export default function MobileTempleDetail({
                     <div className="shrink-0 flex flex-col items-center gap-2 relative z-10">
                         <a
                             href={appStoreUrl}
+                            onClick={handleDownloadApp}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="flex items-center gap-2 bg-white text-[#3c2a21] px-4 py-2.5 rounded-xl text-sm font-bold shadow-md hover:bg-orange-50 active:scale-95 transition-all whitespace-nowrap"
@@ -1063,6 +1080,7 @@ export default function MobileTempleDetail({
                         </div>
                         <a
                             href={appStoreUrl}
+                            onClick={handleDownloadApp}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="ml-1 bg-white text-[#5c3a21] text-xs font-black px-3 py-1.5 rounded-full shadow active:scale-95 transition-transform whitespace-nowrap"

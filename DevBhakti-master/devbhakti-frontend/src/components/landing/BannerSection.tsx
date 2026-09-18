@@ -132,7 +132,7 @@ const BannerSection: React.FC = () => {
         >
             <div className="w-full px-0">
                 <div
-                    className={`relative w-full h-[220px] sm:h-[350px] md:h-[460px] lg:h-[580px] xl:h-[680px] 2xl:h-[750px] rounded-none overflow-hidden group bg-black/5 ${
+                    className={`relative w-full aspect-[16/7] sm:aspect-[21/8] md:aspect-[3/1] max-h-[550px] rounded-none overflow-hidden group bg-black/5 ${
                         isClickable ? 'cursor-pointer' : ''
                     }`}
                 >

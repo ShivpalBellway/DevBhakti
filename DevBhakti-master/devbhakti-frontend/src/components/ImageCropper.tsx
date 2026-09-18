@@ -66,8 +66,6 @@ export function ImageCropper({
             setIsLoading(true);
             const canvas = cropper.getCroppedCanvas({
                 imageSmoothingQuality: 'high',
-                width: 800,
-                height: 800,
             });
 
             if (canvas) {

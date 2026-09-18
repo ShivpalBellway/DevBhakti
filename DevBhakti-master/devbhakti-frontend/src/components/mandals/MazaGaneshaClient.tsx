@@ -69,7 +69,7 @@ function GalleryCard({
     const user = savedUser ? JSON.parse(savedUser) : null;
     if (!user) {
       alert(t("maza_ganesha.card.login_required_vote"));
-      window.location.href = `/auth?redirect=/campaigns/${slug}`;
+      window.location.href = `/campaigns/${slug}/auth?redirect=/campaigns/${slug}`;
       return;
     }
 
@@ -218,7 +218,7 @@ function EntryModal({
     const user = savedUser ? JSON.parse(savedUser) : null;
     if (!user) {
       alert(t("maza_ganesha.card.login_required_vote"));
-      window.location.href = `/auth?redirect=/campaigns/${slug}?entry=${entry.id}`;
+      window.location.href = `/campaigns/${slug}/auth?redirect=${encodeURIComponent(`/campaigns/${slug}?entry=${entry.id}`)}`;
       return;
     }
 
@@ -456,8 +456,7 @@ function CmsBannerStrip({ slug }: { slug: string }) {
 
   return (
     <div
-      className="relative w-full overflow-hidden group bg-black cursor-pointer"
-      style={{ height: "clamp(180px, 40vw, 560px)" }}
+      className="relative w-full aspect-[16/7] sm:aspect-[21/8] md:aspect-[3/1] max-h-[520px] overflow-hidden group bg-black cursor-pointer"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
       onClick={() => handleBannerClick(banners[current])}
