@@ -29,21 +29,26 @@ const BannerSection: React.FC = () => {
             case 'POOJA':
                 if (targetSlug) router.push(`/poojas/${targetSlug}`);
                 else if (targetId) router.push(`/poojas/${targetId}`);
+                else router.push(`/poojas`);
                 break;
             case 'TEMPLE':
                 if (targetSlug) router.push(`/temples/${targetSlug}`);
                 else if (targetId) router.push(`/temples/${targetId}`);
+                else router.push(`/temples`);
                 break;
             case 'PRODUCT':
                 if (targetId) router.push(`/marketplace/product/${targetId}`);
+                else router.push(`/marketplace`);
                 break;
             case 'MANDAL':
                 if (targetSlug) router.push(`/mandals/${targetSlug}`);
                 else if (targetId) router.push(`/mandals/${targetId}`);
+                else router.push(`/mandals`);
                 break;
             case 'CONTEST':
                 if (targetSlug) router.push(`/campaigns/${targetSlug}`);
-                else router.push(`/campaigns/maza-ganesha`);
+                else if (targetId) router.push(`/campaigns/${targetId}`);
+                else router.push(`/campaigns`);
                 break;
             case 'CUSTOM_URL':
                 if (customUrl) {

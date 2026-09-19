@@ -437,11 +437,12 @@ function CmsBannerStrip({ slug }: { slug: string }) {
   };
 
   const handleBannerClick = (b: any) => {
-    if (b.targetType === 'POOJA' && (b.targetSlug || b.targetId)) { window.location.href = `/poojas/${b.targetSlug || b.targetId}`; return; }
-    if (b.targetType === 'TEMPLE' && (b.targetSlug || b.targetId)) { window.location.href = `/temples/${b.targetSlug || b.targetId}`; return; }
-    if (b.targetType === 'PRODUCT' && (b.targetSlug || b.targetId)) { window.location.href = `/products/${b.targetSlug || b.targetId}`; return; }
-    if (b.targetType === 'MANDAL' && (b.targetSlug || b.targetId)) { window.location.href = `/mandals/${b.targetSlug || b.targetId}`; return; }
-    if (b.targetType === 'CONTEST' && (b.targetSlug || b.targetId)) { window.location.href = `/campaigns/${b.targetSlug || b.targetId}`; return; }
+    if (!b || !b.targetType || b.targetType === 'NONE') return;
+    if (b.targetType === 'POOJA') { window.location.href = b.targetSlug ? `/poojas/${b.targetSlug}` : (b.targetId ? `/poojas/${b.targetId}` : `/poojas`); return; }
+    if (b.targetType === 'TEMPLE') { window.location.href = b.targetSlug ? `/temples/${b.targetSlug}` : (b.targetId ? `/temples/${b.targetId}` : `/temples`); return; }
+    if (b.targetType === 'PRODUCT') { window.location.href = b.targetId ? `/marketplace/product/${b.targetId}` : `/marketplace`; return; }
+    if (b.targetType === 'MANDAL') { window.location.href = b.targetSlug ? `/mandals/${b.targetSlug}` : (b.targetId ? `/mandals/${b.targetId}` : `/mandals`); return; }
+    if (b.targetType === 'CONTEST') { window.location.href = b.targetSlug ? `/campaigns/${b.targetSlug}` : (b.targetId ? `/campaigns/${b.targetId}` : `/campaigns`); return; }
     if (b.targetType === 'CUSTOM_URL' && b.customUrl) { window.location.href = b.customUrl; return; }
 
     const savedUserStr = typeof window !== "undefined" ? localStorage.getItem("user") : null;
