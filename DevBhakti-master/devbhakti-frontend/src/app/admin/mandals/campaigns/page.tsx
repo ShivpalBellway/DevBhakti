@@ -397,104 +397,190 @@ export default function AdminCampaignsPage() {
         </button>
       </div>
 
-      {/* Top Row: All Configured Campaigns Grid (Row-wise layout) */}
-      <div className="space-y-3">
-        <div className="flex items-center justify-between px-1">
-          <h2 className="text-xs font-black uppercase tracking-wider text-slate-400">
-            All Configured Campaigns ({campaigns.length})
-          </h2>
-          {selectedCampaign && (
-            <span className="text-xs font-bold text-[#88542B] bg-[#88542B]/10 px-3 py-1 rounded-full">
-              Selected: {selectedCampaign.title}
-            </span>
-          )}
+      {/* Top Section: Campaign Selection List (Left) & Selected Campaign Details/Stats (Right) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        {/* Left Column: All Configured Campaigns List */}
+        <div className="lg:col-span-4 space-y-3">
+          <div className="flex items-center justify-between px-1">
+            <h2 className="text-xs font-black uppercase tracking-wider text-slate-400">
+              All Configured Campaigns ({campaigns.length})
+            </h2>
+            {selectedCampaign && (
+              <span className="text-xs font-bold text-[#88542B] bg-[#88542B]/10 px-3 py-1 rounded-full">
+                Selected: {selectedCampaign.title}
+              </span>
+            )}
+          </div>
+
+          <div className="flex flex-col gap-4 max-h-[420px] overflow-y-auto pr-1">
+            {campaigns.map((c) => {
+              const isSelected = selectedCampaign?.id === c.id;
+              const isExpired = c.endDate && new Date(c.endDate) < new Date();
+              const isActiveNow = c.isActive && !isExpired;
+
+              return (
+                <div
+                  key={c.id}
+                  onClick={() => selectCampaignHandler(c)}
+                  className={`p-5 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between ${
+                    isSelected
+                      ? "bg-[#88542B]/5 border-[#88542B] shadow-md ring-2 ring-[#88542B]/20"
+                      : "bg-white border-slate-200 hover:border-orange-300 hover:shadow-sm"
+                  }`}
+                >
+                  <div>
+                    <div className="flex items-center justify-between mb-3">
+                      <span
+                        className={`text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full ${
+                          isActiveNow
+                            ? "bg-emerald-100 text-emerald-700"
+                            : isExpired
+                            ? "bg-slate-100 text-slate-500"
+                            : "bg-amber-100 text-amber-700"
+                        }`}
+                      >
+                        {isActiveNow ? "🟢 Active Now" : isExpired ? "🔴 Expired" : "🟡 Inactive"}
+                      </span>
+                      <span className="text-xs font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md">
+                        {c._count?.entries || 0} entries
+                      </span>
+                    </div>
+
+                    <h3 className="font-extrabold text-base text-slate-900 truncate mb-1">{c.title || c.slug}</h3>
+                    
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-[11px] font-mono text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">
+                        slug: {c.slug}
+                      </span>
+                      <a
+                        href={`/campaigns/${c.slug}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        className="text-[11px] text-[#88542B] font-bold hover:underline flex items-center gap-0.5"
+                      >
+                        Live <ExternalLink className="w-3 h-3" />
+                      </a>
+                    </div>
+
+                    <p className="text-xs text-slate-400 flex items-center gap-1">
+                      <Calendar className="w-3.5 h-3.5" />
+                      {c.startDate ? new Date(c.startDate).toLocaleDateString() : "No start"} -{" "}
+                      {c.endDate ? new Date(c.endDate).toLocaleDateString() : "No end"}
+                    </p>
+                  </div>
+
+                  <div className="flex items-center justify-between mt-4 pt-3 border-t border-slate-100">
+                    {c.winner ? (
+                      <div className="text-[10px] bg-amber-50 text-amber-800 font-bold px-2.5 py-1 rounded-lg flex items-center gap-1 border border-amber-200">
+                        <Crown className="w-3 h-3 text-amber-600" /> Winner Published!
+                      </div>
+                    ) : <div />}
+
+                    <div className="flex gap-1.5" onClick={(e) => e.stopPropagation()}>
+                      <button
+                        onClick={() => handleEditClick(c)}
+                        title="Edit Campaign"
+                        className="w-8 h-8 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl flex items-center justify-center transition-all"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteCampaign(c.id)}
+                        title="Delete Campaign"
+                        className="w-8 h-8 bg-red-50 hover:bg-red-100 text-red-500 rounded-xl flex items-center justify-center transition-all"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {campaigns.map((c) => {
-            const isSelected = selectedCampaign?.id === c.id;
-            const isExpired = c.endDate && new Date(c.endDate) < new Date();
-            const isActiveNow = c.isActive && !isExpired;
-
-            return (
-              <div
-                key={c.id}
-                onClick={() => selectCampaignHandler(c)}
-                className={`p-5 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between ${
-                  isSelected
-                    ? "bg-[#88542B]/5 border-[#88542B] shadow-md ring-2 ring-[#88542B]/20"
-                    : "bg-white border-slate-200 hover:border-orange-300 hover:shadow-sm"
-                }`}
-              >
+        {/* Right Column: Selected Campaign Header & Stats Cards (Matching Image 2) */}
+        <div className="lg:col-span-8">
+          {selectedCampaign ? (
+            <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm space-y-6">
+              {/* Campaign Header & Publish Winner Action */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                  <div className="flex items-center justify-between mb-3">
-                    <span
-                      className={`text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full ${
-                        isActiveNow
-                          ? "bg-emerald-100 text-emerald-700"
-                          : isExpired
-                          ? "bg-slate-100 text-slate-500"
-                          : "bg-amber-100 text-amber-700"
-                      }`}
-                    >
-                      {isActiveNow ? "🟢 Active Now" : isExpired ? "🔴 Expired" : "🟡 Inactive"}
-                    </span>
-                    <span className="text-xs font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md">
-                      {c._count?.entries || 0} entries
-                    </span>
-                  </div>
-
-                  <h3 className="font-extrabold text-base text-slate-900 truncate mb-1">{c.title || c.slug}</h3>
-                  
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="text-[11px] font-mono text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">
-                      slug: {c.slug}
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-xs font-mono text-slate-500 bg-slate-100/90 px-2.5 py-1 rounded-md border border-slate-200/60">
+                      slug: {selectedCampaign.slug}
                     </span>
                     <a
-                      href={`/campaigns/${c.slug}`}
+                      href={`/campaigns/${selectedCampaign.slug}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      onClick={(e) => e.stopPropagation()}
-                      className="text-[11px] text-[#88542B] font-bold hover:underline flex items-center gap-0.5"
+                      className="text-xs text-[#88542B] font-bold hover:underline flex items-center gap-1"
                     >
-                      Live <ExternalLink className="w-3 h-3" />
+                      View Live Page <ExternalLink className="w-3.5 h-3.5" />
                     </a>
                   </div>
+                  <h2 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight">
+                    {selectedCampaign.title || selectedCampaign.slug}
+                  </h2>
+                </div>
 
-                  <p className="text-xs text-slate-400 flex items-center gap-1">
-                    <Calendar className="w-3.5 h-3.5" />
-                    {c.startDate ? new Date(c.startDate).toLocaleDateString() : "No start"} -{" "}
-                    {c.endDate ? new Date(c.endDate).toLocaleDateString() : "No end"}
+                <button
+                  onClick={() => setShowWinnerModal(true)}
+                  className="bg-amber-500 hover:bg-amber-600 text-white font-extrabold px-5 py-3 rounded-2xl text-xs sm:text-sm flex items-center gap-2 shadow-md transition-all shrink-0 cursor-pointer"
+                >
+                  <Trophy className="w-4 h-4" /> Select &amp; Publish Winner
+                </button>
+              </div>
+
+              {/* Stat Cards Grid (Image 2 Cards) */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                {/* Total Entries Card */}
+                <div className="bg-[#f8fafc] p-5 rounded-3xl border border-slate-100 flex flex-col justify-between">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-extrabold uppercase text-slate-400 tracking-wider">
+                      TOTAL ENTRIES
+                    </span>
+                    <Users className="w-5 h-5 text-slate-500" />
+                  </div>
+                  <p className="text-3xl md:text-4xl font-black text-slate-900 mt-4">
+                    {dashboardStats?.totalEntries ?? selectedCampaign._count?.entries ?? 0}
                   </p>
                 </div>
 
-                <div className="flex items-center justify-between mt-4 pt-3 border-t border-slate-100">
-                  {c.winner ? (
-                    <div className="text-[10px] bg-amber-50 text-amber-800 font-bold px-2.5 py-1 rounded-lg flex items-center gap-1 border border-amber-200">
-                      <Crown className="w-3 h-3 text-amber-600" /> Winner Published!
-                    </div>
-                  ) : <div />}
-
-                  <div className="flex gap-1.5" onClick={(e) => e.stopPropagation()}>
-                    <button
-                      onClick={() => handleEditClick(c)}
-                      title="Edit Campaign"
-                      className="w-8 h-8 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl flex items-center justify-center transition-all"
-                    >
-                      <Edit className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => handleDeleteCampaign(c.id)}
-                      title="Delete Campaign"
-                      className="w-8 h-8 bg-red-50 hover:bg-red-100 text-red-500 rounded-xl flex items-center justify-center transition-all"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                {/* Total Likes Card */}
+                <div className="bg-[#f8fafc] p-5 rounded-3xl border border-slate-100 flex flex-col justify-between">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-extrabold uppercase text-slate-400 tracking-wider">
+                      TOTAL LIKES
+                    </span>
+                    <Heart className="w-5 h-5 text-red-500" />
                   </div>
+                  <p className="text-3xl md:text-4xl font-black text-slate-900 mt-4">
+                    {dashboardStats?.totalLikes ?? 0}
+                  </p>
+                </div>
+
+                {/* Total Shares Card */}
+                <div className="bg-[#f8fafc] p-5 rounded-3xl border border-slate-100 flex flex-col justify-between">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-extrabold uppercase text-slate-400 tracking-wider">
+                      TOTAL SHARES
+                    </span>
+                    <Share2 className="w-5 h-5 text-blue-500" />
+                  </div>
+                  <p className="text-3xl md:text-4xl font-black text-slate-900 mt-4">
+                    {dashboardStats?.totalShares ?? 0}
+                  </p>
                 </div>
               </div>
-            );
-          })}
+            </div>
+          ) : (
+            <div className="bg-white rounded-3xl p-12 border border-slate-200 shadow-sm text-center text-slate-400">
+              <Sparkles className="w-10 h-10 mx-auto mb-2 text-slate-300" />
+              <p className="font-semibold text-sm">Select a campaign from the left to view detailed metrics.</p>
+            </div>
+          )}
         </div>
       </div>
 
@@ -1031,67 +1117,6 @@ export default function AdminCampaignsPage() {
                   onChange={(e) => setSubmissionFormData({ ...submissionFormData, likesCount: Number(e.target.value) })}
                   className="w-full border border-slate-200 rounded-xl px-3 py-2"
                 />
-              </div>
-
-              {/* Entry Photos / Image Update Section */}
-              <div>
-                <label className="block text-slate-700 uppercase mb-1">Submission Photos ({submissionFormData.images.length})</label>
-                <div className="flex flex-wrap gap-2.5 items-center mt-1 p-3 bg-slate-50 border border-slate-200 rounded-xl">
-                  {submissionFormData.images.map((imgUrl, idx) => (
-                    <div key={idx} className="relative group w-20 h-20 rounded-xl overflow-hidden border border-slate-300 bg-black/5 shadow-sm">
-                      <img
-                        src={imgUrl}
-                        alt={`Photo ${idx + 1}`}
-                        className="w-full h-full object-cover"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setSubmissionFormData(prev => ({
-                            ...prev,
-                            images: prev.images.filter((_, i) => i !== idx)
-                          }));
-                        }}
-                        className="absolute top-1 right-1 w-5 h-5 bg-red-600 hover:bg-red-700 text-white rounded-full flex items-center justify-center shadow-md transition-all opacity-90 group-hover:opacity-100"
-                        title="Remove Photo"
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
-                    </div>
-                  ))}
-
-                  {/* Add New Photo Button */}
-                  <label className="w-20 h-20 rounded-xl border-2 border-dashed border-[#88542B]/40 hover:border-[#88542B] bg-[#88542B]/5 hover:bg-[#88542B]/10 flex flex-col items-center justify-center cursor-pointer text-[#88542B] transition-all p-1 text-center">
-                    <Plus className="w-5 h-5 mb-0.5" />
-                    <span className="text-[10px] font-bold leading-tight">Add Photo</span>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      multiple
-                      className="hidden"
-                      onChange={(e) => {
-                        const files = Array.from(e.target.files || []);
-                        files.forEach((file) => {
-                          const reader = new FileReader();
-                          reader.onload = (uploadEvent) => {
-                            if (uploadEvent.target?.result) {
-                              const base64Str = uploadEvent.target.result as string;
-                              setSubmissionFormData(prev => ({
-                                ...prev,
-                                images: [...prev.images, base64Str]
-                              }));
-                            }
-                          };
-                          reader.readAsDataURL(file);
-                        });
-                        e.target.value = "";
-                      }}
-                    />
-                  </label>
-                </div>
-                <p className="text-[10px] text-slate-400 mt-1">
-                  Click 'Add Photo' to upload new images or hover over an image to remove it.
-                </p>
               </div>
 
               <div className="flex gap-3 pt-2">

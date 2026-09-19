@@ -250,90 +250,6 @@ export const publishCampaignWinnerAdmin = async (req: Request, res: Response) =>
   }
 };
 
-// PUT /api/admin/campaigns/submissions/:id — Update submission entry details
-export const updateSubmissionAdmin = async (req: Request, res: Response) => {
-  try {
-    const id = req.params.id as string;
-    const { name, city, address, participantType, caption, likesCount, phone, images } = req.body;
-
-    const existing = await prisma.campaignEntry.findUnique({
-      where: { id },
-      include: { user: true },
-    });
-
-    if (!existing) {
-      return res.status(404).json({ success: false, message: "Submission not found." });
-    }
-
-    // Process images array: convert base64 data URLs to file paths on disk if present
-    const fs = require("fs");
-    const path = require("path");
-    let processedImages: string[] | undefined = undefined;
-
-    if (Array.isArray(images)) {
-      processedImages = [];
-      const uploadDir = path.join(process.cwd(), "uploads", "campaigns");
-      if (!fs.existsSync(uploadDir)) {
-        fs.mkdirSync(uploadDir, { recursive: true });
-      }
-
-      for (let i = 0; i < images.length; i++) {
-        const img = images[i];
-        if (typeof img === "string" && img.startsWith("data:image")) {
-          // Extract extension & base64 string
-          const matches = img.match(/^data:image\/([a-zA-Z0-9]+);base64,(.+)$/);
-          if (matches && matches.length === 3) {
-            const ext = matches[1] === "jpeg" ? "jpg" : matches[1];
-            const base64Data = matches[2];
-            const fileName = `campaign-${Date.now()}-${Math.round(Math.random() * 1e9)}.${ext}`;
-            const filePath = path.join(uploadDir, fileName);
-            fs.writeFileSync(filePath, Buffer.from(base64Data, "base64"));
-            processedImages.push(`/uploads/campaigns/${fileName}`);
-          } else {
-            processedImages.push(img);
-          }
-        } else {
-          processedImages.push(img);
-        }
-      }
-    }
-
-    const updated = await prisma.campaignEntry.update({
-      where: { id },
-      data: {
-        ...(name !== undefined && { name }),
-        ...(city !== undefined && { city }),
-        ...(address !== undefined && { address }),
-        ...(participantType !== undefined && { participantType }),
-        ...(caption !== undefined && { caption }),
-        ...(likesCount !== undefined && { likesCount: Number(likesCount) }),
-        ...(processedImages !== undefined && { images: processedImages }),
-      },
-      include: {
-        user: {
-          select: { id: true, name: true, phone: true },
-        },
-      },
-    });
-
-    if (phone && existing.userId) {
-      await prisma.user.update({
-        where: { id: existing.userId },
-        data: { phone },
-      });
-    }
-
-    return res.json({
-      success: true,
-      message: "Submission updated successfully.",
-      data: updated,
-    });
-  } catch (error: any) {
-    console.error("Error updating campaign submission:", error);
-    return res.status(500).json({ success: false, message: error.message });
-  }
-};
-
 // DELETE /api/admin/campaigns/submissions/:id — Delete a campaign submission entry
 export const deleteSubmissionAdmin = async (req: Request, res: Response) => {
   try {
@@ -350,50 +266,119 @@ export const deleteSubmissionAdmin = async (req: Request, res: Response) => {
   }
 };
 
+// PUT /api/admin/campaigns/submissions/:id — Update submission details
+export const updateSubmissionAdmin = async (req: Request, res: Response) => {
+  try {
+    const id = req.params.id as string;
+    const { name, phone, city, address, participantType, caption, likesCount, images, status } = req.body;
+
+    const submission = await prisma.campaignEntry.findUnique({
+      where: { id },
+      include: { user: true },
+    });
+
+    if (!submission) {
+      return res.status(404).json({ success: false, message: "Submission not found." });
+    }
+
+    if (phone && submission.userId) {
+      await prisma.user.update({
+        where: { id: submission.userId },
+        data: { phone },
+      });
+    }
+
+    const updated = await prisma.campaignEntry.update({
+      where: { id },
+      data: {
+        ...(name !== undefined && { name }),
+        ...(city !== undefined && { city }),
+        ...(address !== undefined && { address }),
+        ...(participantType !== undefined && { participantType }),
+        ...(caption !== undefined && { caption }),
+        ...(likesCount !== undefined && { likesCount: Number(likesCount) }),
+        ...(images !== undefined && { images: Array.isArray(images) ? images : [] }),
+        ...(status !== undefined && { status }),
+      },
+      include: {
+        user: {
+          select: { id: true, name: true, phone: true },
+        },
+      },
+    });
+
+    return res.json({ success: true, message: "Submission updated successfully.", data: updated });
+  } catch (error: any) {
+    console.error("Error updating submission:", error);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 // GET /api/admin/campaigns/:id/export — Export all campaign submissions as CSV
 export const exportCampaignSubmissionsAdmin = async (req: Request, res: Response) => {
   try {
     const campaignId = req.params.id as string;
-    const campaign = await prisma.campaign.findUnique({ where: { id: campaignId } });
 
-    if (!campaign) {
-      return res.status(404).json({ success: false, message: "Campaign not found." });
-    }
+    const campaign = await prisma.campaign.findUnique({
+      where: { id: campaignId },
+    });
 
     const submissions = await prisma.campaignEntry.findMany({
       where: { campaignId },
       orderBy: { createdAt: "desc" },
       include: {
         user: {
-          select: { name: true, phone: true },
+          select: { name: true, phone: true, email: true },
         },
       },
     });
 
-    const csvHeaders = ["ID", "Name", "Phone", "Participant Type", "City", "Address", "Caption", "Likes", "Submitted Date", "Images"];
-    const csvRows = submissions.map((sub) => {
-      const escape = (text: string | null | undefined) => `"${(text || "").replace(/"/g, '""')}"`;
-      return [
-        escape(sub.id),
-        escape(sub.name),
-        escape(sub.user?.phone || ""),
-        escape(sub.participantType),
-        escape(sub.city),
-        escape(sub.address),
-        escape(sub.caption),
-        sub.likesCount,
-        new Date(sub.createdAt).toISOString(),
-        escape(sub.images.join("; ")),
-      ].join(",");
-    });
+    const headers = [
+      "Entry ID",
+      "Participant Name",
+      "Phone",
+      "Email",
+      "Type",
+      "City",
+      "Address",
+      "Caption",
+      "Likes Count",
+      "Status",
+      "Submitted At",
+      "Image URLs",
+    ];
 
-    const csvContent = [csvHeaders.join(","), ...csvRows].join("\n");
+    const escapeCsv = (str: string | number | null | undefined) => {
+      if (str === null || str === undefined) return '""';
+      const val = String(str).replace(/"/g, '""');
+      return `"${val}"`;
+    };
 
-    res.setHeader("Content-Type", "text/csv");
-    res.setHeader("Content-Disposition", `attachment; filename="${campaign.slug}-submissions.csv"`);
+    const rows = submissions.map((sub) => [
+      escapeCsv(sub.id),
+      escapeCsv(sub.name),
+      escapeCsv(sub.user?.phone || ""),
+      escapeCsv(sub.user?.email || ""),
+      escapeCsv(sub.participantType),
+      escapeCsv(sub.city),
+      escapeCsv(sub.address),
+      escapeCsv(sub.caption || ""),
+      escapeCsv(sub.likesCount),
+      escapeCsv(sub.status),
+      escapeCsv(new Date(sub.createdAt).toISOString()),
+      escapeCsv(sub.images.join(" | ")),
+    ]);
+
+    const csvContent = [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
+
+    const filename = `submissions_${campaign?.slug || campaignId}_${new Date().toISOString().slice(0, 10)}.csv`;
+
+    res.setHeader("Content-Type", "text/csv; charset=utf-8");
+    res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
     return res.status(200).send(csvContent);
   } catch (error: any) {
     console.error("Error exporting campaign submissions:", error);
     return res.status(500).json({ success: false, message: error.message });
   }
 };
+
