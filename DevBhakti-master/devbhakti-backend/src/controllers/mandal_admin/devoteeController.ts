@@ -208,6 +208,8 @@ export const getMandalDevotees = async (req: Request, res: Response) => {
 
       const productItems = (to.items || []).filter(item => {
         const itemType = (item.itemType || '').toUpperCase();
+        const name = (item.itemName || '').toLowerCase();
+        if (name.includes('donation')) return false;
         return itemType === 'PRODUCT' || itemType === 'MARKETPLACE';
       });
 

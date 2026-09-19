@@ -323,28 +323,42 @@ export const getMandalFinancialReport = async (req: Request, res: Response) => {
       prisma.poojaBooking.findMany({ where: rangePoojaWhere, include: { user: { select: { name: true, phone: true, email: true } } } }),
       prisma.donation.findMany({ where: rangeDonationWhere, include: { user: { select: { name: true, phone: true, email: true } } } }),
       prisma.subOrder.findMany({ where: rangeSubOrderWhere, include: { order: { include: { user: { select: { name: true, phone: true, email: true } } } } } }),
-      prisma.tellerOrder.findMany({ where: rangeTellerOrderWhere }),
+      prisma.tellerOrder.findMany({ where: rangeTellerOrderWhere, include: { items: true } }),
       prisma.mandalDarshanTicket.findMany({ where: rangeTicketWhere, include: { user: { select: { name: true, phone: true, email: true } } } }),
       prisma.poojaBooking.findMany({ where: todayPoojaWhere }),
       prisma.donation.findMany({ where: todayDonationWhere }),
       prisma.subOrder.findMany({ where: todaySubOrderWhere }),
-      prisma.tellerOrder.findMany({ where: todayTellerOrderWhere }),
+      prisma.tellerOrder.findMany({ where: todayTellerOrderWhere, include: { items: true } }),
       prisma.mandalDarshanTicket.findMany({ where: todayTicketWhere })
     ]);
 
+    const getTellerProductTotal = (t: any) => {
+      if (!t.items || t.items.length === 0) return 0;
+      return t.items
+        .filter((it: any) => {
+          const type = (it.itemType || '').toUpperCase();
+          const name = (it.itemName || '').toLowerCase();
+          if (type === 'DONATION' || type === 'POOJA' || type === 'TICKET') return false;
+          if (name.includes('donat') || name.includes('pooja') || name.includes('ticket') || name.includes('darshan')) return false;
+          return type === 'PRODUCT' || type === 'MARKETPLACE';
+        })
+        .reduce((sum: number, it: any) => sum + (it.totalPrice || 0), 0);
+    };
+
     const todayPoojaAmount = todayPoojas.reduce((sum, b) => sum + (b.packagePrice || 0) + (b.prasadAmount || 0), 0);
     const todayDonationAmount = todayDonations.reduce((sum, d) => sum + (d.amount || 0), 0);
-    const todaySacredItemsAmount = todaySubOrders.reduce((sum, o) => sum + (o.totalAmount || 0), 0) + todayTellerOrders.reduce((sum, t) => sum + (t.totalAmount || 0), 0);
+    const todaySacredItemsAmount = todaySubOrders.reduce((sum, o) => sum + (o.totalAmount || 0), 0) + todayTellerOrders.reduce((sum, t) => sum + getTellerProductTotal(t), 0);
     const todayTicketingAmount = todayTickets.reduce((sum, t) => sum + (t.totalAmount || 0), 0);
     const todayTotalCollection = todayPoojaAmount + todayDonationAmount + todaySacredItemsAmount + todayTicketingAmount;
 
     const poojaAmount = rangePoojas.reduce((sum, b) => sum + (b.packagePrice || 0) + (b.prasadAmount || 0), 0);
     const donationAmount = rangeDonations.reduce((sum, d) => sum + (d.amount || 0), 0);
-    const sacredItemsAmount = rangeSubOrders.reduce((sum, o) => sum + (o.totalAmount || 0), 0) + rangeTellerOrders.reduce((sum, t) => sum + (t.totalAmount || 0), 0);
+    const sacredItemsAmount = rangeSubOrders.reduce((sum, o) => sum + (o.totalAmount || 0), 0) + rangeTellerOrders.reduce((sum, t) => sum + getTellerProductTotal(t), 0);
     const ticketingAmount = rangeTickets.reduce((sum, t) => sum + (t.totalAmount || 0), 0);
 
     const totalCollection = poojaAmount + donationAmount + sacredItemsAmount + ticketingAmount;
-    const totalTransactions = rangePoojas.length + rangeDonations.length + rangeSubOrders.length + rangeTellerOrders.length + rangeTickets.length;
+    const tellerProductTxCount = rangeTellerOrders.filter(t => getTellerProductTotal(t) > 0).length;
+    const totalTransactions = rangePoojas.length + rangeDonations.length + rangeSubOrders.length + tellerProductTxCount + rangeTickets.length;
     const avgTransactionValue = totalTransactions > 0 ? Math.round(totalCollection / totalTransactions) : 0;
 
     const getPercent = (amount: number) => totalCollection > 0 ? Number(((amount / totalCollection) * 100).toFixed(1)) : 0;
@@ -473,7 +487,9 @@ export const getMandalFinancialReport = async (req: Request, res: Response) => {
     });
 
     rangeTellerOrders.forEach(t => {
-      const amt = t.totalAmount || 0;
+      const amt = getTellerProductTotal(t);
+      if (amt <= 0) return;
+
       const tellerObj = t as any;
       offlineCollection += amt;
       offlineTxCount++;

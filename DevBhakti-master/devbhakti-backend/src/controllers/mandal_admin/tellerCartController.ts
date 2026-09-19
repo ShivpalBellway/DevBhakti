@@ -251,8 +251,20 @@ export const processTellerCheckout = async (req: Request, res: Response) => {
       const lineTotal = itemPrice * qty;
       totalAmount += lineTotal;
 
+      let detectedType = (item.itemType || item.type || item.category || '').toUpperCase();
+      if (!detectedType) {
+        if (item.poojaId || item.packageName) detectedType = 'POOJA';
+        else if (item.slotId || item.slotTime) detectedType = 'TICKET';
+        else if (item.donorName || item.message) detectedType = 'DONATION';
+        else detectedType = 'PRODUCT';
+      }
+      if (detectedType.includes('DONAT')) detectedType = 'DONATION';
+      else if (detectedType.includes('POOJA')) detectedType = 'POOJA';
+      else if (detectedType.includes('TICKET') || detectedType.includes('DARSHAN')) detectedType = 'TICKET';
+      else if (detectedType.includes('PRODUCT') || detectedType.includes('MARKET') || detectedType.includes('PRASAD')) detectedType = 'PRODUCT';
+
       orderItemsData.push({
-        itemType: item.itemType || item.type, // POOJA, DONATION, TICKET, PRODUCT
+        itemType: detectedType, // POOJA, DONATION, TICKET, PRODUCT
         itemId: item.itemId || item.id || null,
         itemName: item.itemName || item.name || 'Item',
         unitPrice: itemPrice,
@@ -528,22 +540,36 @@ export const getTellerProductOrders = async (req: Request, res: Response) => {
     });
 
     // Normalize SOURCE 1 (TellerOrders)
-    const tellerNormalized = tellerOrders.map((o) => ({
-      id: o.id,
-      displayId: o.displayId,
-      customerName: o.devoteeName,
-      customerPhone: o.devoteePhone,
-      paymentMethod: o.paymentMethod,
-      totalAmount: Number(o.totalAmount),
-      createdAt: o.createdAt,
-      source: 'TELLER',
-      items: o.items.map((it) => ({
-        productName: it.itemName,
-        variantName: '',
-        price: it.unitPrice,
-        quantity: it.quantity,
-      })),
-    }));
+    const tellerNormalized = tellerOrders.map((o) => {
+      const productItems = o.items.filter((it) => {
+        const type = (it.itemType || '').toUpperCase();
+        const name = (it.itemName || '').toLowerCase();
+        if (name.includes('donation')) return false;
+        return type === 'PRODUCT' || type === 'MARKETPLACE';
+      });
+
+      const productTotal = productItems.reduce(
+        (sum, it) => sum + (Number(it.totalPrice) || Number(it.unitPrice) * Number(it.quantity) || 0),
+        0
+      );
+
+      return {
+        id: o.id,
+        displayId: o.displayId,
+        customerName: o.devoteeName,
+        customerPhone: o.devoteePhone,
+        paymentMethod: o.paymentMethod,
+        totalAmount: productTotal,
+        createdAt: o.createdAt,
+        source: 'TELLER',
+        items: productItems.map((it) => ({
+          productName: it.itemName,
+          variantName: '',
+          price: it.unitPrice,
+          quantity: it.quantity,
+        })),
+      };
+    });
 
     // Normalize SOURCE 2 (SubOrders from Order model)
     const subOrderNormalized = subOrders.map((s: any) => ({

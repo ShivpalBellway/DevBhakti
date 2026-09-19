@@ -210,14 +210,25 @@ export const generateDailyReportData = async (
   });
 
   tellerOrders.forEach(to => {
-    sacredCounterCount++;
-    sacredCounterAmount += to.totalAmount;
-    to.items.forEach(item => {
-      const itemName = item.itemName || 'Sacred Item';
-      if (!itemsMap[itemName]) itemsMap[itemName] = { qty: 0, revenue: 0 };
-      itemsMap[itemName].qty += item.quantity;
-      itemsMap[itemName].revenue += item.totalPrice;
+    const productItems = (to.items || []).filter(item => {
+      const type = (item.itemType || '').toUpperCase();
+      const name = (item.itemName || '').toLowerCase();
+      if (name.includes('donation')) return false;
+      return type === 'PRODUCT' || type === 'MARKETPLACE';
     });
+
+    if (productItems.length > 0) {
+      sacredCounterCount++;
+      const orderProductTotal = productItems.reduce((sum, item) => sum + (item.totalPrice || 0), 0);
+      sacredCounterAmount += orderProductTotal;
+
+      productItems.forEach(item => {
+        const itemName = item.itemName || 'Sacred Item';
+        if (!itemsMap[itemName]) itemsMap[itemName] = { qty: 0, revenue: 0 };
+        itemsMap[itemName].qty += item.quantity;
+        itemsMap[itemName].revenue += item.totalPrice;
+      });
+    }
   });
 
   // 4. TICKETING / DARSHAN (Reporting Period)
@@ -369,11 +380,18 @@ export const generateDailyReportData = async (
   });
 
   tellerOrders.forEach(to => {
-    const method = (to.paymentMethod || '').toUpperCase();
-    if (method === 'CASH') cash += to.totalAmount;
-    else if (method.includes('UPI')) upi += to.totalAmount;
-    else if (method.includes('CARD')) card += to.totalAmount;
-    else other += to.totalAmount;
+    const productItems = (to.items || []).filter(item => {
+      const type = (item.itemType || '').toUpperCase();
+      return type === 'PRODUCT' || type === 'MARKETPLACE';
+    });
+    if (productItems.length > 0) {
+      const orderProductTotal = productItems.reduce((sum, item) => sum + (item.totalPrice || 0), 0);
+      const method = (to.paymentMethod || '').toUpperCase();
+      if (method === 'CASH') cash += orderProductTotal;
+      else if (method.includes('UPI')) upi += orderProductTotal;
+      else if (method.includes('CARD')) card += orderProductTotal;
+      else other += orderProductTotal;
+    }
   });
 
   // 9. EXCEPTIONS / ATTENTION REQUIRED
