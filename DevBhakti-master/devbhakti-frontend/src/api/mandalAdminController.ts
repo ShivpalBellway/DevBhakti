@@ -530,5 +530,75 @@ export const deleteMandalExpenseCategory = async (id: string) => {
     return response.data;
 };
 
+// ─── Mandal Aarti Timings Management APIs ────────────────────────────────────
+export const fetchMandalAartiTimings = async () => {
+    const token = localStorage.getItem("token");
+    const response = await axios.get(`${API_URL}/mandal-admin/aarti`, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+
+export const createMandalAartiTiming = async (data: { name: string; time: string; isActive?: boolean }) => {
+    const token = localStorage.getItem("token");
+    const response = await axios.post(`${API_URL}/mandal-admin/aarti`, data, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+
+export const updateMandalAartiTiming = async (id: string, data: { name?: string; time?: string; isActive?: boolean }) => {
+    const token = localStorage.getItem("token");
+    const response = await axios.put(`${API_URL}/mandal-admin/aarti/${id}`, data, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+
+export const toggleMandalAartiStatus = async (id: string) => {
+    const token = localStorage.getItem("token");
+    const response = await axios.patch(`${API_URL}/mandal-admin/aarti/${id}/toggle`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+
+export const deleteMandalAartiTiming = async (id: string) => {
+    const token = localStorage.getItem("token");
+    const response = await axios.delete(`${API_URL}/mandal-admin/aarti/${id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+
+export const saveBulkMandalAartiSchedule = async (aartiTimings: Array<{ id?: string; name: string; time: string; isActive?: boolean }>) => {
+    const token = localStorage.getItem("token");
+    const response = await axios.put(`${API_URL}/mandal-admin/aarti`, { aartiTimings }, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+
+// ─── Mandal Receipt Customization APIs ──────────────────────────────────────
+export const fetchReceiptConfig = async () => {
+    const token = localStorage.getItem("token");
+    const response = await axios.get(`${API_URL}/mandal-admin/receipt-config`, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+
+export const updateReceiptConfig = async (formData: FormData) => {
+    const token = localStorage.getItem("token");
+    const response = await axios.post(`${API_URL}/mandal-admin/receipt-config`, formData, {
+        headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'multipart/form-data'
+        }
+    });
+    return response.data;
+};
+
+
 
 

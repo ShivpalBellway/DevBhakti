@@ -24,6 +24,7 @@ import {
     ShieldCheck,
     ShieldAlert,
     Flame,
+    FileText,
     X
 } from "lucide-react";
 import { useSearchParams } from "next/navigation";
@@ -165,6 +166,12 @@ const sidebarItems = [
         href: "/mandals/dashboard/aarti",
         permission: "aarti.view"
     },
+    // {
+    //     label: "Receipt Settings",
+    //     icon: FileText,
+    //     href: "/mandals/dashboard/receipt-settings",
+    //     permission: "receipt.settings.manage"
+    // },
     {
         label: "Profile",
         icon: Settings,

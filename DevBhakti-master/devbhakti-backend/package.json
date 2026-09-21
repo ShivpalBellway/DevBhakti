@@ -20,6 +20,7 @@
     "type": "commonjs",
     "dependencies": {
         "@prisma/client": "^6.19.2",
+        "@types/node-cron": "^3.0.11",
         "axios": "^1.13.5",
         "bcrypt": "^6.0.0",
         "cors": "^2.8.5",
@@ -31,6 +32,7 @@
         "hls.js": "^1.6.16",
         "jsonwebtoken": "^9.0.3",
         "multer": "^2.0.2",
+        "node-cron": "^4.6.0",
         "nodemailer": "^8.0.1",
         "pdfkit": "^0.15.0",
         "razorpay": "^2.9.6",

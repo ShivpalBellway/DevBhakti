@@ -36,6 +36,8 @@ import { fetchMandalProfile, updateMandalProfile } from "@/api/mandalAdminContro
 import { RichTextEditor } from "@/components/ui/rich-text-editor";
 import { API_URL } from "@/config/apiConfig";
 import { ImageCropper } from "@/components/admin/ImageCropper";
+import { generateMandalReceiptHTML } from "@/utils/mandalReceiptTemplate";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 function getJsonVal(val: any, lang: string) {
     if (!val) return "";
@@ -131,6 +133,20 @@ export default function EnhancedMandalProfilePage() {
     const [editingAartiId, setEditingAartiId] = useState<string | null>(null);
     const [editAartiName, setEditAartiName] = useState("");
     const [editAartiTime, setEditAartiTime] = useState("");
+    // Receipt Customization States
+    const [receiptHeaderFile, setReceiptHeaderFile] = useState<File | null>(null);
+    const [receiptHeaderPreview, setReceiptHeaderPreview] = useState<string | null>(null);
+    const [existingReceiptHeader, setExistingReceiptHeader] = useState<string | null>(null);
+    const [removeReceiptHeader, setRemoveReceiptHeader] = useState<boolean>(false);
+
+    const [sponsorFiles, setSponsorFiles] = useState<File[]>([]);
+    const [existingSponsors, setExistingSponsors] = useState<any[]>([]);
+    const [customThankYouNote, setCustomThankYouNote] = useState<string>("");
+
+    const [showReceiptPreviewModal, setShowReceiptPreviewModal] = useState<boolean>(false);
+
+    const receiptHeaderInputRef = useRef<HTMLInputElement>(null);
+    const sponsorInputRef = useRef<HTMLInputElement>(null);
 
     const handleAddAarti = () => {
         if (!newAartiName.trim() || !newAartiTime.trim()) {
@@ -211,6 +227,16 @@ export default function EnhancedMandalProfilePage() {
                 }
                 if (m.aartiTimings && Array.isArray(m.aartiTimings)) {
                     setAartiTimings(m.aartiTimings);
+                }
+                if (m.receiptConfig) {
+                    try {
+                        const cfg = typeof m.receiptConfig === 'string' ? JSON.parse(m.receiptConfig) : m.receiptConfig;
+                        if (cfg.headerBanner) setExistingReceiptHeader(cfg.headerBanner);
+                        if (cfg.sponsors && Array.isArray(cfg.sponsors)) setExistingSponsors(cfg.sponsors);
+                        if (cfg.customThankYouNote) setCustomThankYouNote(cfg.customThankYouNote);
+                    } catch (err) {
+                        console.error("Error parsing receiptConfig", err);
+                    }
                 }
             }
         } catch (error) {
@@ -319,6 +345,16 @@ export default function EnhancedMandalProfilePage() {
             heroFiles.forEach(f => fd.append("heroImages", f));
             fd.append("existingBannerImages", JSON.stringify(existingBanners));
             fd.append("aartiTimings", JSON.stringify(aartiTimings));
+
+            if (receiptHeaderFile) {
+                fd.append("receiptHeaderBanner", receiptHeaderFile);
+            }
+            if (removeReceiptHeader) {
+                fd.append("removeReceiptHeader", "true");
+            }
+            sponsorFiles.forEach(f => fd.append("sponsorBanners", f));
+            fd.append("existingSponsors", JSON.stringify(existingSponsors));
+            fd.append("receiptConfig", JSON.stringify({ customThankYouNote }));
 
             const res = await updateMandalProfile(fd);
             if (res.success) {

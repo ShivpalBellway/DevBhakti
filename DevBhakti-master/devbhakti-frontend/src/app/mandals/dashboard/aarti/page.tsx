@@ -16,7 +16,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { fetchMandalProfile, updateMandalProfile } from "@/api/mandalAdminController";
+import {
+  fetchMandalAartiTimings,
+  createMandalAartiTiming,
+  updateMandalAartiTiming,
+  toggleMandalAartiStatus,
+  deleteMandalAartiTiming,
+  saveBulkMandalAartiSchedule
+} from "@/api/mandalAdminController";
 
 const HOURS = Array.from({ length: 12 }, (_, i) => String(i + 1));
 const MINUTES = ["00", "05", "10", "15", "20", "25", "30", "35", "40", "45", "50", "55"];
@@ -49,10 +56,10 @@ export default function DedicatedMandalAartiPage() {
   const loadProfile = async () => {
     setIsLoading(true);
     try {
-      const res = await fetchMandalProfile();
+      const res = await fetchMandalAartiTimings();
       if (res.success && res.data) {
-        if (res.data.aartiTimings && Array.isArray(res.data.aartiTimings)) {
-          const sanitized = res.data.aartiTimings.map((item: any) => ({
+        if (Array.isArray(res.data)) {
+          const sanitized = res.data.map((item: any) => ({
             ...item,
             isActive: item.isActive !== false,
           }));
@@ -60,7 +67,7 @@ export default function DedicatedMandalAartiPage() {
         }
       }
     } catch (error) {
-      console.error("Failed to load mandal profile for Aarti page", error);
+      console.error("Failed to load mandal Aarti page", error);
       toast({ title: "Error", description: "Failed to load Aarti data", variant: "destructive" });
     } finally {
       setIsLoading(false);
@@ -88,7 +95,7 @@ export default function DedicatedMandalAartiPage() {
     return { hour: "7", minute: "00", period: "PM" };
   };
 
-  const handleAddAarti = () => {
+  const handleAddAarti = async () => {
     const trimmedName = aartiNameInput.trim();
     if (!trimmedName) {
       toast({
@@ -101,25 +108,33 @@ export default function DedicatedMandalAartiPage() {
 
     const formattedTime = formatTimeString(selectedHour, selectedMinute, selectedPeriod);
 
-    const newEntry = {
-      id: Date.now().toString(),
-      name: trimmedName,
-      time: formattedTime,
-      isActive: true,
-    };
+    try {
+      const res = await createMandalAartiTiming({
+        name: trimmedName,
+        time: formattedTime,
+        isActive: true,
+      });
 
-    setAartiTimings((prev) => [...prev, newEntry]);
-    setAartiNameInput("");
-    toast({ title: "Added to Schedule", description: `${trimmedName} at ${formattedTime} added.` });
+      if (res.success && res.data) {
+        setAartiTimings(res.data);
+        setAartiNameInput("");
+        toast({ title: "Added & Saved 🙏", description: `${trimmedName} at ${formattedTime} added successfully.` });
+      }
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message || "Failed to add Aarti", variant: "destructive" });
+    }
   };
 
-  const handleToggleActive = (id: string) => {
-    setAartiTimings((prev) =>
-      prev.map((item) =>
-        item.id === id ? { ...item, isActive: item.isActive === false ? true : false } : item
-      )
-    );
-    toast({ title: "Status Updated", description: "Aarti status updated." });
+  const handleToggleActive = async (id: string) => {
+    try {
+      const res = await toggleMandalAartiStatus(id);
+      if (res.success && res.data) {
+        setAartiTimings(res.data);
+        toast({ title: "Status Updated", description: res.message || "Aarti status updated." });
+      }
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message || "Failed to update status", variant: "destructive" });
+    }
   };
 
   const handleStartEdit = (item: { id: string; name: string; time: string }) => {
@@ -131,7 +146,8 @@ export default function DedicatedMandalAartiPage() {
     setEditPeriod(parsed.period);
   };
 
-  const handleSaveEdit = () => {
+  const handleSaveEdit = async () => {
+    if (!editingAartiId) return;
     const trimmedName = editNameInput.trim();
     if (!trimmedName) {
       toast({
@@ -144,27 +160,38 @@ export default function DedicatedMandalAartiPage() {
 
     const formattedTime = formatTimeString(editHour, editMinute, editPeriod);
 
-    setAartiTimings((prev) =>
-      prev.map((item) =>
-        item.id === editingAartiId ? { ...item, name: trimmedName, time: formattedTime } : item
-      )
-    );
-    setEditingAartiId(null);
-    toast({ title: "Updated", description: "Aarti timing updated." });
+    try {
+      const res = await updateMandalAartiTiming(editingAartiId, {
+        name: trimmedName,
+        time: formattedTime
+      });
+
+      if (res.success && res.data) {
+        setAartiTimings(res.data);
+        setEditingAartiId(null);
+        toast({ title: "Updated & Saved", description: "Aarti timing updated successfully." });
+      }
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message || "Failed to update Aarti", variant: "destructive" });
+    }
   };
 
-  const handleDeleteAarti = (id: string) => {
-    setAartiTimings((prev) => prev.filter((item) => item.id !== id));
-    toast({ title: "Removed", description: "Aarti timing removed." });
+  const handleDeleteAarti = async (id: string) => {
+    try {
+      const res = await deleteMandalAartiTiming(id);
+      if (res.success && res.data) {
+        setAartiTimings(res.data);
+        toast({ title: "Removed", description: "Aarti timing removed." });
+      }
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message || "Failed to delete Aarti", variant: "destructive" });
+    }
   };
 
   const handleSaveAll = async () => {
     setIsSaving(true);
     try {
-      const fd = new FormData();
-      fd.append("aartiTimings", JSON.stringify(aartiTimings));
-
-      const res = await updateMandalProfile(fd);
+      const res = await saveBulkMandalAartiSchedule(aartiTimings);
       if (res.success) {
         toast({
           title: "Schedule Saved! 🙏",

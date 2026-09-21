@@ -173,8 +173,15 @@ app.use('/api/seller/finance', sellerFinanceRoutes);
 app.use('/api/seller/team', sellerStaffManagementRoutes);
 app.use('/api/seller', sellerGeneralRoutes);
 
+import mandalAdminAartiRoutes from './routes/mandal_admin/aartiRoutes';
+import { getPublicMandalAartiTimings } from './controllers/mandal_admin/aartiController';
+import mandalAdminReceiptRoutes from './routes/mandal_admin/receiptRoutes';
+import { getPublicReceiptConfig } from './controllers/mandal_admin/receiptController';
+
 // Mandal Admin Routes
 app.use('/api/mandal-admin/profile', mandalAdminProfileRoutes);
+app.use('/api/mandal-admin/receipt-config', mandalAdminReceiptRoutes);
+app.use('/api/mandal-admin/aarti', mandalAdminAartiRoutes);
 app.use('/api/mandal-admin/events', mandalAdminEventRoutes);
 app.use('/api/mandal-admin/donations', mandalAdminDonationRoutes);
 app.use('/api/mandal-admin/finance', mandalAdminFinanceRoutes);
@@ -212,7 +219,8 @@ app.use('/api/notifications', notificationRoutes);
 // Contact Inquiry Route
 app.use('/api/contact', contactRoutes);
 
-// Mandal Registration Route
+// Mandal Registration & Public Routes
+app.get('/api/mandals/:idOrSlug/aarti-timings', getPublicMandalAartiTimings);
 app.use('/api/mandals', mandalRoutes);
 
 // Daily Activity Reports Route
@@ -238,6 +246,20 @@ app.use((err: any, req: Request, res: Response, next: any) => {
   return res.status(500).json({ success: false, message: 'Internal Server Error' });
 });
 
+import cron from 'node-cron';
+import { runDailyActivityReports } from './jobs/dailyReportJob';
+
 app.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
+
+  // Schedule Daily Activity Report Job to run automatically every night at 21:00 (9:00 PM IST)
+  cron.schedule('0 21 * * *', () => {
+    console.log('[Cron Job] Triggering Daily Activity Report and Next Day Pooja Schedule WhatsApp Dispatch...');
+    runDailyActivityReports().catch(err => {
+      console.error('[Cron Job Error] Failed to run daily activity reports:', err);
+    });
+  }, {
+    timezone: "Asia/Kolkata"
+  });
+  console.log('⏰ Daily Activity Report cron job scheduled for 21:00 (Asia/Kolkata)');
 });

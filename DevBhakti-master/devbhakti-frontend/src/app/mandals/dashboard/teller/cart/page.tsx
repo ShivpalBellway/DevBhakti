@@ -29,7 +29,8 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { parseLocalizedValue } from "@/utils/textUtils";
-import { lookupDevoteeByPhoneMandal } from "@/api/mandalAdminController";
+import { lookupDevoteeByPhoneMandal, fetchMandalProfile } from "@/api/mandalAdminController";
+import { generateMandalReceiptHTML } from "@/utils/mandalReceiptTemplate";
 import { API_URL } from "@/config/apiConfig";
 
 const getImageUrl = (path: string) => {
@@ -121,9 +122,74 @@ export default function UnifiedTellerCartPage() {
     }
   };
 
+  const [mandalProfile, setMandalProfile] = useState<any>(null);
+
+  const fetchMandalProfileData = async () => {
+    try {
+      const res = await fetchMandalProfile();
+      if (res && res.success && res.data) {
+        setMandalProfile(res.data);
+      }
+    } catch (err) {
+      console.error("Error fetching mandal profile for receipt:", err);
+    }
+  };
+
   useEffect(() => {
     fetchCatalog();
+    fetchMandalProfileData();
   }, []);
+
+  const handlePrintReceipt = () => {
+    if (!completedOrder) return;
+
+    const config = mandalProfile?.receiptConfig || {};
+    const headerBanner = config.headerBanner ? getImageUrl(config.headerBanner) : null;
+    const sponsors = (config.sponsors || []).map((sp: any) => ({
+      ...sp,
+      imageUrl: getImageUrl(sp.imageUrl)
+    }));
+
+    const rawName = mandalProfile?.name || "Mandal / Temple";
+    const nameStr = parseLocalizedValue(rawName);
+
+    const receiptHtml = generateMandalReceiptHTML({
+      receiptNo: completedOrder.displayId || completedOrder.id?.slice(0, 8) || "REC-1001",
+      dateTime: new Date(completedOrder.createdAt || Date.now()).toLocaleString("en-IN", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit"
+      }),
+      paymentMode: completedOrder.paymentMethod || "CASH",
+      transactionId: completedOrder.transactionRef || completedOrder.id || `TXN_${Date.now()}`,
+      mandalName: nameStr,
+      mandalAddress: mandalProfile?.address ? `${mandalProfile.address}, ${mandalProfile.city || ''}` : "India",
+      mandalSlug: mandalProfile?.slug || "mandal",
+      headerBanner,
+      sponsors,
+      customThankYouNote: config.customThankYouNote,
+      items: completedOrder.items?.map((it: any) => ({
+        description: it.itemName,
+        quantity: it.quantity,
+        amount: it.totalPrice
+      })) || [],
+      totalAmount: completedOrder.totalAmount || 0,
+      devoteeName: completedOrder.devoteeName,
+      devoteePhone: completedOrder.devoteePhone
+    });
+
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.write(receiptHtml);
+      printWindow.document.close();
+      printWindow.focus();
+      setTimeout(() => {
+        printWindow.print();
+      }, 500);
+    }
+  };
 
   // Cart Helper Operations
   const addToCart = (item: any) => {
@@ -770,7 +836,7 @@ export default function UnifiedTellerCartPage() {
           )}
 
           <DialogFooter className="flex gap-2">
-            <Button onClick={() => window.print()} variant="outline" className="w-full text-xs">
+            <Button onClick={handlePrintReceipt} variant="outline" className="w-full text-xs bg-amber-50 border-amber-300 text-[#7b4623] hover:bg-amber-100">
               <Printer className="w-4 h-4 mr-2" /> Print Receipt
             </Button>
             <Button onClick={() => setShowReceipt(false)} className="w-full bg-[#7b4623] text-xs">

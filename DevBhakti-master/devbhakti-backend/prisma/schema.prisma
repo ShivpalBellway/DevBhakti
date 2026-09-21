@@ -784,6 +784,7 @@ model Mandal {
   ifscCode           String?
   upiId              String?
   aartiTimings       Json?
+  receiptConfig      Json?
   createdAt          DateTime                  @default(now())
   updatedAt          DateTime                  @updatedAt
   documentUrl        String[]                  @default([])

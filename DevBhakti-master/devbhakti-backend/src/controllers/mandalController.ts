@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
 import { buildLangJson } from '../utils/localization';
+import { sendMandalRegistrationAlerts } from '../services/mandalNotificationService';
 
 // Create a new Mandal Registration
 export const registerMandal = async (req: Request, res: Response): Promise<void> => {
@@ -99,6 +100,11 @@ export const registerMandal = async (req: Request, res: Response): Promise<void>
                 status: 'PENDING',
                 isActive: false,
             }
+        });
+
+        // Trigger Alerts asynchronously (Admin In-App notification & WhatsApp alert)
+        sendMandalRegistrationAlerts(mandal).catch(err => {
+            console.error('[Mandal Alert] Non-blocking alert trigger failed:', err);
         });
 
         res.status(201).json({
