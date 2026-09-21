@@ -292,7 +292,7 @@ export const getMandalFinancialReport = async (req: Request, res: Response) => {
 
     const rangeTellerOrderWhere = {
       mandalId,
-      paymentStatus: "PAID",
+      paymentStatus: { in: ["PAID", "COMPLETED", "SUCCESS"] },
       createdAt: { gte: rangeStart, lte: rangeEnd }
     };
 
@@ -338,11 +338,14 @@ export const getMandalFinancialReport = async (req: Request, res: Response) => {
         .filter((it: any) => {
           const type = (it.itemType || '').toUpperCase();
           const name = (it.itemName || '').toLowerCase();
-          if (type === 'DONATION' || type === 'POOJA' || type === 'TICKET') return false;
+          if (type.includes('DONAT') || type.includes('POOJA') || type.includes('TICKET') || type.includes('DARSHAN')) return false;
           if (name.includes('donat') || name.includes('pooja') || name.includes('ticket') || name.includes('darshan')) return false;
-          return type === 'PRODUCT' || type === 'MARKETPLACE';
+          return true;
         })
-        .reduce((sum: number, it: any) => sum + (it.totalPrice || 0), 0);
+        .reduce((sum: number, it: any) => {
+          const lineVal = Number(it.totalPrice) || (Number(it.unitPrice || 0) * Number(it.quantity || 1)) || 0;
+          return sum + lineVal;
+        }, 0);
     };
 
     const todayPoojaAmount = todayPoojas.reduce((sum, b) => sum + (b.packagePrice || 0) + (b.prasadAmount || 0), 0);
@@ -496,12 +499,24 @@ export const getMandalFinancialReport = async (req: Request, res: Response) => {
       const mode = normalizePaymentMode(t.paymentMethod || "Cash");
       paymentModes[mode] = (paymentModes[mode] || 0) + amt;
 
+      const productItemNames = (t.items || [])
+        .filter((it: any) => {
+          const type = (it.itemType || '').toUpperCase();
+          const name = (it.itemName || '').toLowerCase();
+          if (type.includes('DONAT') || type.includes('POOJA') || type.includes('TICKET') || type.includes('DARSHAN')) return false;
+          if (name.includes('donat') || name.includes('pooja') || name.includes('ticket') || name.includes('darshan')) return false;
+          return true;
+        })
+        .map((it: any) => it.itemName)
+        .filter(Boolean)
+        .join(", ");
+
       allTransactionsList.push({
         id: t.id,
         receiptNo: tellerObj.receiptNumber || t.displayId || t.id,
         category: "SACRED_ITEMS",
         categoryName: "Sacred Items",
-        title: "Counter Sacred Items Sale",
+        title: productItemNames ? `Sacred Items (${productItemNames})` : "Counter Sacred Items Sale",
         amount: amt,
         channel: "OFFLINE",
         paymentMode: mode,
