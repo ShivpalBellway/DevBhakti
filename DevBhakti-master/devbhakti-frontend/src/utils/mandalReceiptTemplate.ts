@@ -21,6 +21,7 @@ export interface MandalReceiptData {
   mandalName: string;
   mandalAddress?: string;
   mandalSlug?: string;
+  mandalId?: string;
   headerBanner?: string | null;
   sponsors?: SponsorBanner[];
   items: ReceiptItem[];
@@ -34,12 +35,12 @@ export const generateMandalReceiptHTML = (data: MandalReceiptData) => {
   const rawMandalName = data.mandalName || "Mandal / Temple";
   const mandalName = parseLocalizedValue(rawMandalName) || "Mandal / Temple";
   const address = data.mandalAddress || "India";
-  const mandalSlug = data.mandalSlug || "mandal";
-  const mandalPageUrl = `devbhakti.com/mandals/${mandalSlug}`;
-  const fullMandalUrl = `https://devbhakti.com/mandals/${mandalSlug}`;
+  const slugOrId = data.mandalSlug || data.mandalId || "mandal";
+  const mandalPageUrl = `devbhakti.com/mandals/${slugOrId}`;
+  const fullMandalUrl = `https://devbhakti.com/mandals/${slugOrId}`;
 
-  // QR Code generator using QR Server API pointing to Mandal Detail Page
-  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(fullMandalUrl)}`;
+  // QR Code generator pointing to Mandal Detail Page
+  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(fullMandalUrl)}`;
 
   // Minimum 5 items in table as per visual template rules
   const displayItems = [...data.items];
@@ -85,13 +86,16 @@ export const generateMandalReceiptHTML = (data: MandalReceiptData) => {
         /* 1. Dynamic Header Banner */
         .header-banner-container {
           width: 100%;
-          aspect-ratio: 1600 / 300;
+          min-height: 150px;
+          max-height: 220px;
           overflow: hidden;
           background: #7b4623;
         }
         .header-banner-img {
           width: 100%;
-          height: 100%;
+          height: auto;
+          min-height: 150px;
+          max-height: 220px;
           display: block;
           object-fit: cover;
         }
@@ -262,8 +266,8 @@ export const generateMandalReceiptHTML = (data: MandalReceiptData) => {
           margin-bottom: 6px;
         }
         .qr-img {
-          width: 80px;
-          height: 80px;
+          width: 85px;
+          height: 85px;
           border-radius: 6px;
           border: 1px solid #e2e8f0;
         }
@@ -304,12 +308,12 @@ export const generateMandalReceiptHTML = (data: MandalReceiptData) => {
         .sponsor-strips-wrapper {
           display: flex;
           flex-direction: column;
-          gap: 10px;
+          gap: 12px;
         }
         .sponsor-strip-img {
           width: 100%;
-          aspect-ratio: 1600 / 120;
-          height: auto;
+          min-height: 90px;
+          max-height: 130px;
           object-fit: cover;
           border-radius: 8px;
           border: 1px solid #f1f5f9;
@@ -381,6 +385,18 @@ export const generateMandalReceiptHTML = (data: MandalReceiptData) => {
           <!-- 3. DETAILS BLOCK -->
           <div class="details-grid">
             <table class="details-left-table">
+              ${data.devoteeName ? `
+                <tr>
+                  <td class="detail-label">Devotee Name</td>
+                  <td>: <span class="detail-val" style="font-family: inherit; color: #0f172a; text-transform: capitalize;">${data.devoteeName}</span></td>
+                </tr>
+              ` : ''}
+              ${data.devoteePhone ? `
+                <tr>
+                  <td class="detail-label">Devotee Phone</td>
+                  <td>: <span class="detail-val">${data.devoteePhone}</span></td>
+                </tr>
+              ` : ''}
               <tr>
                 <td class="detail-label">Receipt No.</td>
                 <td>: <span class="detail-val">${data.receiptNo}</span></td>

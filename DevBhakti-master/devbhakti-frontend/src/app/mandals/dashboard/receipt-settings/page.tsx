@@ -19,7 +19,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
@@ -443,6 +443,9 @@ export default function MandalReceiptSettingsPage() {
                         <DialogTitle className="text-center font-serif font-bold text-lg text-[#7b4623] flex items-center justify-center gap-2">
                             <Eye className="w-5 h-5" /> Full Printable Receipt Preview
                         </DialogTitle>
+                        <DialogDescription className="sr-only">
+                            Full printable receipt visual preview
+                        </DialogDescription>
                     </DialogHeader>
                     <div className="border rounded-xl p-2 bg-slate-50">
                         <iframe
