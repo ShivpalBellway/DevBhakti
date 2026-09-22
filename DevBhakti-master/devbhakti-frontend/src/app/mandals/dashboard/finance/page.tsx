@@ -130,12 +130,14 @@ export default function MandalFinancePage() {
     };
 
     const filteredLedger = ledger.filter((entry: any) => {
-        const matchesType =
-            typeFilter === "ALL"
-                ? true
-                : typeFilter === "EARNINGS"
-                ? entry.type !== "WITHDRAWAL"
-                : entry.type === "WITHDRAWAL";
+        let matchesType = true;
+        if (typeFilter === "EARNINGS") {
+            matchesType = entry.type !== "WITHDRAWAL";
+        } else if (typeFilter === "WITHDRAWALS") {
+            matchesType = entry.type === "WITHDRAWAL";
+        } else if (typeFilter !== "ALL") {
+            matchesType = entry.type === typeFilter;
+        }
 
         const search = searchTerm.toLowerCase().trim();
         const matchesSearch =
@@ -258,6 +260,9 @@ export default function MandalFinancePage() {
                             >
                                 <option value="ALL">All Transactions</option>
                                 <option value="EARNINGS">Earnings Only</option>
+                                <option value="MARKETPLACE_EARNING">Sacred Items</option>
+                                <option value="POOJA_EARNING">Pooja & Seva</option>
+                                <option value="DONATION_EARNING">Donations</option>
                                 <option value="WITHDRAWALS">Withdrawals Only</option>
                             </select>
                         </div>

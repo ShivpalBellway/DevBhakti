@@ -204,6 +204,8 @@ export const getGalleryEntries = async (req: Request, res: Response) => {
       return res.status(404).json({ success: false, message: "Campaign not found" });
     }
 
+    const search = req.query.search as string;
+
     const where: any = {
       campaignId: campaign.id,
       status: "APPROVED",
@@ -211,6 +213,16 @@ export const getGalleryEntries = async (req: Request, res: Response) => {
 
     if (type === "home" || type === "mandal") {
       where.participantType = type;
+    }
+
+    if (search && search.trim()) {
+      const q = search.trim();
+      where.OR = [
+        { name: { contains: q, mode: "insensitive" } },
+        { city: { contains: q, mode: "insensitive" } },
+        { caption: { contains: q, mode: "insensitive" } },
+        { address: { contains: q, mode: "insensitive" } },
+      ];
     }
 
     let orderBy: any = { likesCount: "desc" };

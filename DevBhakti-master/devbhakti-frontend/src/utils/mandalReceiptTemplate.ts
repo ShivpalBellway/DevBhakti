@@ -85,13 +85,13 @@ export const generateMandalReceiptHTML = (data: MandalReceiptData) => {
         /* 1. Dynamic Header Banner */
         .header-banner-container {
           width: 100%;
-          max-height: 140px;
+          aspect-ratio: 1600 / 300;
           overflow: hidden;
           background: #7b4623;
         }
         .header-banner-img {
           width: 100%;
-          height: auto;
+          height: 100%;
           display: block;
           object-fit: cover;
         }
@@ -308,10 +308,12 @@ export const generateMandalReceiptHTML = (data: MandalReceiptData) => {
         }
         .sponsor-strip-img {
           width: 100%;
-          max-height: 70px;
-          object-fit: contain;
+          aspect-ratio: 1600 / 120;
+          height: auto;
+          object-fit: cover;
           border-radius: 8px;
           border: 1px solid #f1f5f9;
+          display: block;
         }
 
         /* 8. Fixed DevBhakti Footer */

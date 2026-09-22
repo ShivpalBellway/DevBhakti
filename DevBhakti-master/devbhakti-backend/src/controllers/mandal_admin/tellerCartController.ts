@@ -415,6 +415,67 @@ export const processTellerCheckout = async (req: Request, res: Response) => {
               }
             }
           });
+        } else if (type === 'PRODUCT' || type === 'MARKETPLACE' || type === 'PRASAD') {
+          try {
+            const subOrderDisplayId = await generateCustomId('SO');
+            const masterOrderDisplayId = await generateCustomId('ORD');
+            const itemPrice = Number(item.price || item.unitPrice || 0);
+            const qty = Number(item.quantity || 1);
+            const lineTotal = itemPrice * qty;
+
+            // Create Master Order
+            const parentOrder = await tx.order.create({
+              data: {
+                displayId: masterOrderDisplayId,
+                userId: devoteeUser!.id,
+                totalAmount: lineTotal,
+                status: 'COMPLETED',
+                paymentStatus: 'PAID',
+                paymentMethod: payment?.method || 'CASH',
+                shippingAddress: {
+                  name: devotee.name,
+                  phone: devotee.phone,
+                  address: devotee.address || 'Counter Counter Pickup'
+                }
+              }
+            });
+
+            // Create SubOrder
+            const subOrder = await tx.subOrder.create({
+              data: {
+                orderId: parentOrder.id,
+                mandalId,
+                totalAmount: lineTotal,
+                status: 'COMPLETED',
+                netEarning: lineTotal,
+              }
+            });
+
+            // If item has a valid productId in DB, link OrderItem
+            let targetProductId = item.itemId || item.productId;
+            if (targetProductId) {
+              const prodExists = await tx.product.findUnique({ where: { id: targetProductId } });
+              if (!prodExists) targetProductId = null;
+            }
+
+            if (targetProductId) {
+              const variant = await tx.productVariant.findFirst({ where: { productId: targetProductId } });
+              if (variant) {
+                await tx.orderItem.create({
+                  data: {
+                    subOrderId: subOrder.id,
+                    productId: targetProductId,
+                    variantId: variant.id,
+                    variantName: item.itemName || 'Standard Variant',
+                    price: itemPrice,
+                    quantity: qty
+                  }
+                });
+              }
+            }
+          } catch (prodErr) {
+            console.error("Error creating offline product SubOrder:", prodErr);
+          }
         }
       }
 
@@ -437,6 +498,10 @@ export const processTellerCheckout = async (req: Request, res: Response) => {
         }
       }
 
+      // Check if order contains products
+      const hasProducts = orderItemsData.some((it: any) => it.itemType === 'PRODUCT');
+      const ledgerType = hasProducts ? LedgerType.MARKETPLACE_EARNING : LedgerType.POOJA_EARNING;
+
       // Add entry into MandalLedger for total counter collection with calculated commission
       await tx.mandalLedger.create({
         data: {
@@ -444,7 +509,7 @@ export const processTellerCheckout = async (req: Request, res: Response) => {
           amount: totalAmount - totalCommission,
           grossAmount: totalAmount,
           commission: totalCommission,
-          type: LedgerType.POOJA_EARNING,
+          type: ledgerType,
           sourceId: tellerOrder.id,
           description: `Counter Checkout Receipt #${displayId} (${payment?.method || 'CASH'})`,
           status: LedgerStatus.COMPLETED,

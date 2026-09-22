@@ -581,7 +581,7 @@ export const saveBulkMandalAartiSchedule = async (aartiTimings: Array<{ id?: str
 
 // ─── Mandal Receipt Customization APIs ──────────────────────────────────────
 export const fetchReceiptConfig = async () => {
-    const token = localStorage.getItem("token");
+    const token = localStorage.getItem("token") || localStorage.getItem("mandalToken");
     const response = await axios.get(`${API_URL}/mandal-admin/receipt-config`, {
         headers: { Authorization: `Bearer ${token}` }
     });
@@ -589,7 +589,7 @@ export const fetchReceiptConfig = async () => {
 };
 
 export const updateReceiptConfig = async (formData: FormData) => {
-    const token = localStorage.getItem("token");
+    const token = localStorage.getItem("token") || localStorage.getItem("mandalToken");
     const response = await axios.post(`${API_URL}/mandal-admin/receipt-config`, formData, {
         headers: {
             Authorization: `Bearer ${token}`,

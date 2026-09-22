@@ -5,7 +5,7 @@ import path from 'path';
 
 export const getReceiptConfig = async (req: any, res: Response) => {
     try {
-        const mandalId = req.user?.mandalId;
+        const mandalId = req.owner?.ownerId || req.user?.mandalId || req.user?.ownerId;
         if (!mandalId) {
             return res.status(401).json({ success: false, message: 'Unauthorized. Mandal account required.' });
         }
@@ -46,7 +46,7 @@ export const getReceiptConfig = async (req: any, res: Response) => {
 
 export const updateReceiptConfig = async (req: any, res: Response) => {
     try {
-        const mandalId = req.user?.mandalId;
+        const mandalId = req.owner?.ownerId || req.user?.mandalId || req.user?.ownerId;
         if (!mandalId) {
             return res.status(401).json({ success: false, message: 'Unauthorized. Mandal account required.' });
         }

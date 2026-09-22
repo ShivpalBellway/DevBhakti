@@ -565,14 +565,22 @@ export default function MazaGaneshaClient({ slug = "maza-ganesha" }: { slug?: st
     { icon: Share2,     step: "4", title: t("maza_ganesha.steps.step4_title"), desc: t("maza_ganesha.steps.step4_desc") },
   ];
 
+  const normalizeText = (text: string) =>
+    text
+      ? text
+          .normalize("NFC")
+          .toLowerCase()
+          .trim()
+      : "";
+
   const filteredEntries = entries.filter((entry) => {
     if (!searchQuery.trim()) return true;
-    const q = searchQuery.toLowerCase().trim();
-    return (
-      entry.name?.toLowerCase().includes(q) ||
-      entry.city?.toLowerCase().includes(q) ||
-      entry.caption?.toLowerCase().includes(q)
-    );
+    const q = normalizeText(searchQuery);
+    const name = normalizeText(entry.name);
+    const city = normalizeText(entry.city);
+    const caption = normalizeText(entry.caption || "");
+
+    return name.includes(q) || city.includes(q) || caption.includes(q);
   });
 
   // Deep Link Support: Check for ?entry=ENTRY_ID in URL query params
@@ -612,8 +620,13 @@ export default function MazaGaneshaClient({ slug = "maza-ganesha" }: { slug?: st
       .catch(() => {});
 
     // Fetch initial gallery entries (12 per page)
+    const queryParams: any = { slug, sortBy: activeTab, page: 1, limit: 12 };
+    if (searchQuery.trim()) {
+      queryParams.search = searchQuery.trim();
+    }
+
     axios
-      .get(`${API_URL}/campaigns/gallery`, { params: { slug, sortBy: activeTab, page: 1, limit: 12 } })
+      .get(`${API_URL}/campaigns/gallery`, { params: queryParams })
       .then((res) => {
         if (res.data.success && res.data.data) {
           setEntries(res.data.data);
@@ -622,15 +635,19 @@ export default function MazaGaneshaClient({ slug = "maza-ganesha" }: { slug?: st
       })
       .catch((err) => console.error("Error fetching gallery:", err))
       .finally(() => setLoading(false));
-  }, [activeTab, slug]);
+  }, [activeTab, slug, searchQuery]);
 
   const handleLoadMore = async () => {
     if (loadingMore || !hasMore) return;
     setLoadingMore(true);
     const nextPage = page + 1;
     try {
+      const queryParams: any = { slug, sortBy: activeTab, page: nextPage, limit: 12 };
+      if (searchQuery.trim()) {
+        queryParams.search = searchQuery.trim();
+      }
       const res = await axios.get(`${API_URL}/campaigns/gallery`, {
-        params: { slug, sortBy: activeTab, page: nextPage, limit: 12 },
+        params: queryParams,
       });
       if (res.data.success && res.data.data) {
         setEntries((prev) => [...prev, ...res.data.data]);

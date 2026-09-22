@@ -19,13 +19,20 @@ export const getMandalLedger = async (req: Request, res: Response) => {
       const sourceIds = entries.filter(e => e.sourceId).map(e => e.sourceId as string);
       
       if (sourceIds.length > 0) {
-        // Fetch donations in parallel
-        const donations = await prisma.donation.findMany({
-          where: { id: { in: sourceIds } },
-          include: { user: { select: { name: true } } }
-        });
+        // Fetch donations and teller orders in parallel
+        const [donations, tellerOrders] = await Promise.all([
+          prisma.donation.findMany({
+            where: { id: { in: sourceIds } },
+            include: { user: { select: { name: true } } }
+          }),
+          prisma.tellerOrder.findMany({
+            where: { id: { in: sourceIds } },
+            include: { items: true }
+          })
+        ]);
 
         const donationMap = new Map(donations.map(d => [d.id, d]));
+        const tellerOrderMap = new Map(tellerOrders.map(t => [t.id, t]));
 
         enrichedEntries = entries.map(entry => {
           if (entry.sourceId) {
@@ -35,9 +42,22 @@ export const getMandalLedger = async (req: Request, res: Response) => {
                 return {
                   ...entry,
                   orderDetail: {
-                    displayId: donation.id.slice(-8).toUpperCase(),
-                    customerName: donation.user?.name || donation.donorName || "Anonymous",
+                    displayId: donation.displayId || donation.id.slice(-8).toUpperCase(),
+                    customerName: donation.donorName || donation.user?.name || "Anonymous",
                     paymentStatus: "PAID",
+                    deliveryStatus: "COMPLETED"
+                  }
+                };
+              }
+            } else if (entry.type === "MARKETPLACE_EARNING" || entry.type === "POOJA_EARNING") {
+              const tellerOrder = tellerOrderMap.get(entry.sourceId);
+              if (tellerOrder) {
+                return {
+                  ...entry,
+                  orderDetail: {
+                    displayId: tellerOrder.displayId,
+                    customerName: tellerOrder.devoteeName || "Counter Devotee",
+                    paymentStatus: tellerOrder.paymentStatus,
                     deliveryStatus: "COMPLETED"
                   }
                 };
@@ -286,7 +306,7 @@ export const getMandalFinancialReport = async (req: Request, res: Response) => {
 
     const rangeSubOrderWhere = {
       mandalId,
-      status: { notIn: ["CANCELLED", "FAILED", "PENDING"] },
+      status: { in: ["COMPLETED", "PAID", "DELIVERED", "PROCESSING", "SHIPPED", "PENDING"] },
       createdAt: { gte: rangeStart, lte: rangeEnd }
     };
 
@@ -336,10 +356,11 @@ export const getMandalFinancialReport = async (req: Request, res: Response) => {
       if (!t.items || t.items.length === 0) return 0;
       return t.items
         .filter((it: any) => {
-          const type = (it.itemType || '').toUpperCase();
-          const name = (it.itemName || '').toLowerCase();
+          const type = (it.itemType || '').toUpperCase().trim();
+          const name = (it.itemName || '').toLowerCase().trim();
           if (type.includes('DONAT') || type.includes('POOJA') || type.includes('TICKET') || type.includes('DARSHAN')) return false;
           if (name.includes('donat') || name.includes('pooja') || name.includes('ticket') || name.includes('darshan')) return false;
+          if (type.includes('PROD') || type.includes('PRASAD') || type.includes('MARKET') || type.includes('ITEM') || !type) return true;
           return true;
         })
         .reduce((sum: number, it: any) => {
@@ -394,15 +415,7 @@ export const getMandalFinancialReport = async (req: Request, res: Response) => {
     rangePoojas.forEach(b => {
       const amt = (b.packagePrice || 0) + (b.prasadAmount || 0);
       const isOff = b.isOffline || b.bookingSource === "MANDAL_OFFLINE" || b.bookingSource === "COUNTER" || b.bookingSource === "TELLER" || !b.razorpayOrderId;
-      if (isOff) {
-        offlineCollection += amt;
-        offlineTxCount++;
-      } else {
-        onlineCollection += amt;
-        onlineTxCount++;
-      }
       const mode = normalizePaymentMode(b.paymentMethod || (isOff ? "Cash" : "UPI"));
-      paymentModes[mode] = (paymentModes[mode] || 0) + amt;
 
       allTransactionsList.push({
         id: b.id,
@@ -426,15 +439,7 @@ export const getMandalFinancialReport = async (req: Request, res: Response) => {
     rangeDonations.forEach(d => {
       const amt = d.amount || 0;
       const isOff = !d.razorpayOrderId || d.paymentMethod === "CASH";
-      if (isOff) {
-        offlineCollection += amt;
-        offlineTxCount++;
-      } else {
-        onlineCollection += amt;
-        onlineTxCount++;
-      }
       const mode = normalizePaymentMode(d.paymentMethod || (isOff ? "Cash" : "UPI"));
-      paymentModes[mode] = (paymentModes[mode] || 0) + amt;
 
       const donationObj = d as any;
       allTransactionsList.push({
@@ -457,18 +462,10 @@ export const getMandalFinancialReport = async (req: Request, res: Response) => {
     });
 
     rangeSubOrders.forEach(o => {
-      const amt = o.totalAmount || 0;
       const subOrderObj = o as any;
+      const amt = o.totalAmount || 0;
       const isOff = !o.order?.razorpayOrderId;
-      if (isOff) {
-        offlineCollection += amt;
-        offlineTxCount++;
-      } else {
-        onlineCollection += amt;
-        onlineTxCount++;
-      }
       const mode = normalizePaymentMode(o.order?.paymentMethod || (isOff ? "Cash" : "UPI"));
-      paymentModes[mode] = (paymentModes[mode] || 0) + amt;
 
       allTransactionsList.push({
         id: o.id,
@@ -494,15 +491,12 @@ export const getMandalFinancialReport = async (req: Request, res: Response) => {
       if (amt <= 0) return;
 
       const tellerObj = t as any;
-      offlineCollection += amt;
-      offlineTxCount++;
       const mode = normalizePaymentMode(t.paymentMethod || "Cash");
-      paymentModes[mode] = (paymentModes[mode] || 0) + amt;
 
       const productItemNames = (t.items || [])
         .filter((it: any) => {
-          const type = (it.itemType || '').toUpperCase();
-          const name = (it.itemName || '').toLowerCase();
+          const type = (it.itemType || '').toUpperCase().trim();
+          const name = (it.itemName || '').toLowerCase().trim();
           if (type.includes('DONAT') || type.includes('POOJA') || type.includes('TICKET') || type.includes('DARSHAN')) return false;
           if (name.includes('donat') || name.includes('pooja') || name.includes('ticket') || name.includes('darshan')) return false;
           return true;
@@ -523,7 +517,7 @@ export const getMandalFinancialReport = async (req: Request, res: Response) => {
         status: t.paymentStatus,
         createdAt: t.createdAt,
         devotee: {
-          name: t.devoteeName || "Counter Devotee",
+          name: t.devoteeName || "Devotee",
           phone: t.devoteePhone || "",
           email: t.devoteeEmail || ""
         }
@@ -533,15 +527,7 @@ export const getMandalFinancialReport = async (req: Request, res: Response) => {
     rangeTickets.forEach(t => {
       const amt = t.totalAmount || 0;
       const isOff = t.paymentMethod === "CASH" || !t.paymentMethod;
-      if (isOff) {
-        offlineCollection += amt;
-        offlineTxCount++;
-      } else {
-        onlineCollection += amt;
-        onlineTxCount++;
-      }
       const mode = normalizePaymentMode(t.paymentMethod || (isOff ? "Cash" : "UPI"));
-      paymentModes[mode] = (paymentModes[mode] || 0) + amt;
 
       allTransactionsList.push({
         id: t.id,
@@ -564,6 +550,21 @@ export const getMandalFinancialReport = async (req: Request, res: Response) => {
 
     // Sort transactions descending by createdAt date
     allTransactionsList.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+    // Calculate aggregated online/offline channel summary & payment mode summary dynamically from allTransactionsList
+    allTransactionsList.forEach(t => {
+      const amt = Number(t.amount || 0);
+      const isOff = t.channel === "OFFLINE";
+      if (isOff) {
+        offlineCollection += amt;
+        offlineTxCount++;
+      } else {
+        onlineCollection += amt;
+        onlineTxCount++;
+      }
+      const mode = t.paymentMode || "Cash";
+      paymentModes[mode] = (paymentModes[mode] || 0) + amt;
+    });
 
     // Filter transaction list if optional filter parameters are passed
     let filteredTransactions = allTransactionsList;

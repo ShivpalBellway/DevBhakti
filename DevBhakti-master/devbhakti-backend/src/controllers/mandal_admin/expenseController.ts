@@ -200,7 +200,16 @@ export const getMandalExpenseStats = async (req: Request, res: Response) => {
       return res.status(401).json({ success: false, message: "Unauthorized: Mandal ID missing" });
     }
 
-    const { startDate, endDate, categorySearch, memberSearch } = req.query;
+    const {
+      startDate,
+      endDate,
+      categorySearch,
+      memberSearch,
+      categoryStartDate,
+      categoryEndDate,
+      memberStartDate,
+      memberEndDate,
+    } = req.query;
 
     const where: any = { mandalId };
     if (startDate || endDate) {
@@ -213,12 +222,36 @@ export const getMandalExpenseStats = async (req: Request, res: Response) => {
       }
     }
 
-    const categoryWhere: any = { ...where };
+    // Category Specific Filters
+    const categoryWhere: any = { mandalId };
+    const catStart = categoryStartDate || startDate;
+    const catEnd = categoryEndDate || endDate;
+    if (catStart || catEnd) {
+      categoryWhere.expenseDate = {};
+      if (catStart) categoryWhere.expenseDate.gte = new Date(String(catStart));
+      if (catEnd) {
+        const end = new Date(String(catEnd));
+        end.setHours(23, 59, 59, 999);
+        categoryWhere.expenseDate.lte = end;
+      }
+    }
     if (categorySearch) {
       categoryWhere.categoryName = { contains: String(categorySearch), mode: "insensitive" };
     }
 
-    const memberWhere: any = { ...where };
+    // Member Specific Filters
+    const memberWhere: any = { mandalId };
+    const memStart = memberStartDate || startDate;
+    const memEnd = memberEndDate || endDate;
+    if (memStart || memEnd) {
+      memberWhere.expenseDate = {};
+      if (memStart) memberWhere.expenseDate.gte = new Date(String(memStart));
+      if (memEnd) {
+        const end = new Date(String(memEnd));
+        end.setHours(23, 59, 59, 999);
+        memberWhere.expenseDate.lte = end;
+      }
+    }
     if (memberSearch) {
       memberWhere.paidByName = { contains: String(memberSearch), mode: "insensitive" };
     }
@@ -242,6 +275,8 @@ export const getMandalExpenseStats = async (req: Request, res: Response) => {
     ]);
 
     const totalExpenses = allExpenses.reduce((sum, e) => sum + e.amount, 0);
+    const categoryTotalExpenses = categoryGroup.reduce((sum, cg) => sum + (cg._sum.amount || 0), 0);
+    const memberTotalExpenses = memberGroup.reduce((sum, mg) => sum + (mg._sum.amount || 0), 0);
 
     // Calculate Gross Earnings from ledger
     const totalGrossEarnings = ledger
@@ -260,7 +295,7 @@ export const getMandalExpenseStats = async (req: Request, res: Response) => {
       categoryName: cg.categoryName,
       totalAmount: cg._sum.amount || 0,
       count: cg._count.id,
-      percentage: totalExpenses > 0 ? Number((((cg._sum.amount || 0) / totalExpenses) * 100).toFixed(1)) : 0,
+      percentage: categoryTotalExpenses > 0 ? Number((((cg._sum.amount || 0) / categoryTotalExpenses) * 100).toFixed(1)) : 0,
     })).sort((a, b) => b.totalAmount - a.totalAmount);
 
     // Member breakdown
@@ -268,7 +303,7 @@ export const getMandalExpenseStats = async (req: Request, res: Response) => {
       paidByName: mg.paidByName,
       totalAmount: mg._sum.amount || 0,
       count: mg._count.id,
-      percentage: totalExpenses > 0 ? Number((((mg._sum.amount || 0) / totalExpenses) * 100).toFixed(1)) : 0,
+      percentage: memberTotalExpenses > 0 ? Number((((mg._sum.amount || 0) / memberTotalExpenses) * 100).toFixed(1)) : 0,
     })).sort((a, b) => b.totalAmount - a.totalAmount);
 
     return res.status(200).json({

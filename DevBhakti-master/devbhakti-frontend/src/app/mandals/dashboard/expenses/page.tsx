@@ -13,7 +13,8 @@ import {
   ChevronLeft,
   ChevronRight,
   DollarSign,
-  Scale
+  Scale,
+  Calendar
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,6 +25,8 @@ export default function MandalExpenseDashboardPage() {
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<any>(null);
   const [dateRange, setDateRange] = useState({ startDate: "", endDate: "" });
+  const [categoryDateRange, setCategoryDateRange] = useState({ startDate: "", endDate: "" });
+  const [memberDateRange, setMemberDateRange] = useState({ startDate: "", endDate: "" });
 
   // Search & Pagination States
   const [categorySearch, setCategorySearch] = useState("");
@@ -39,6 +42,10 @@ export default function MandalExpenseDashboardPage() {
         ...dateRange,
         categorySearch: categorySearch.trim(),
         memberSearch: memberSearch.trim(),
+        categoryStartDate: categoryDateRange.startDate,
+        categoryEndDate: categoryDateRange.endDate,
+        memberStartDate: memberDateRange.startDate,
+        memberEndDate: memberDateRange.endDate,
       });
       if (res.success) {
         setStats(res.data);
@@ -55,16 +62,16 @@ export default function MandalExpenseDashboardPage() {
       loadStats();
     }, 300);
     return () => clearTimeout(timer);
-  }, [dateRange, categorySearch, memberSearch]);
+  }, [dateRange, categorySearch, memberSearch, categoryDateRange, memberDateRange]);
 
-  // Reset pagination when search changes
+  // Reset pagination when search or date changes
   useEffect(() => {
     setCatPage(1);
-  }, [categorySearch]);
+  }, [categorySearch, categoryDateRange]);
 
   useEffect(() => {
     setMemPage(1);
-  }, [memberSearch]);
+  }, [memberSearch, memberDateRange]);
 
   // Paginated Data
   const categoriesList = stats?.categoryBreakdown || [];
@@ -183,16 +190,45 @@ export default function MandalExpenseDashboardPage() {
                 </Link>
               </div>
 
-              {/* Search Category */}
-              <div className="relative">
-                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                <Input
-                  type="text"
-                  placeholder="Search Category..."
-                  value={categorySearch}
-                  onChange={(e) => setCategorySearch(e.target.value)}
-                  className="pl-9 h-9 text-xs bg-white border-amber-200/80 rounded-lg focus-visible:ring-amber-500"
-                />
+              {/* Filters: Search & Date Range */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <div className="relative">
+                  <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <Input
+                    type="text"
+                    placeholder="Search Category..."
+                    value={categorySearch}
+                    onChange={(e) => setCategorySearch(e.target.value)}
+                    className="pl-9 h-9 text-xs bg-white border-amber-200/80 rounded-lg focus-visible:ring-amber-500"
+                  />
+                </div>
+                <div className="flex items-center gap-1.5 bg-white px-2 py-1 rounded-lg border border-amber-200/80">
+                  <Calendar className="w-3.5 h-3.5 text-amber-800 shrink-0" />
+                  <input
+                    type="date"
+                    value={categoryDateRange.startDate}
+                    onChange={(e) => setCategoryDateRange(prev => ({ ...prev, startDate: e.target.value }))}
+                    className="w-full text-[11px] bg-transparent focus:outline-none text-slate-700"
+                    title="From Date"
+                  />
+                  <span className="text-xs text-slate-400">-</span>
+                  <input
+                    type="date"
+                    value={categoryDateRange.endDate}
+                    onChange={(e) => setCategoryDateRange(prev => ({ ...prev, endDate: e.target.value }))}
+                    className="w-full text-[11px] bg-transparent focus:outline-none text-slate-700"
+                    title="To Date"
+                  />
+                  {(categoryDateRange.startDate || categoryDateRange.endDate) && (
+                    <button
+                      onClick={() => setCategoryDateRange({ startDate: "", endDate: "" })}
+                      className="text-[10px] text-amber-800 hover:text-amber-950 font-bold px-1"
+                      title="Clear date filter"
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
               </div>
             </CardHeader>
 
@@ -290,16 +326,45 @@ export default function MandalExpenseDashboardPage() {
                 </Link>
               </div>
 
-              {/* Search Member */}
-              <div className="relative">
-                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                <Input
-                  type="text"
-                  placeholder="Search Member Name..."
-                  value={memberSearch}
-                  onChange={(e) => setMemberSearch(e.target.value)}
-                  className="pl-9 h-9 text-xs bg-white border-amber-200/80 rounded-lg focus-visible:ring-amber-500"
-                />
+              {/* Filters: Search & Date Range */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <div className="relative">
+                  <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <Input
+                    type="text"
+                    placeholder="Search Member Name..."
+                    value={memberSearch}
+                    onChange={(e) => setMemberSearch(e.target.value)}
+                    className="pl-9 h-9 text-xs bg-white border-amber-200/80 rounded-lg focus-visible:ring-amber-500"
+                  />
+                </div>
+                <div className="flex items-center gap-1.5 bg-white px-2 py-1 rounded-lg border border-amber-200/80">
+                  <Calendar className="w-3.5 h-3.5 text-amber-800 shrink-0" />
+                  <input
+                    type="date"
+                    value={memberDateRange.startDate}
+                    onChange={(e) => setMemberDateRange(prev => ({ ...prev, startDate: e.target.value }))}
+                    className="w-full text-[11px] bg-transparent focus:outline-none text-slate-700"
+                    title="From Date"
+                  />
+                  <span className="text-xs text-slate-400">-</span>
+                  <input
+                    type="date"
+                    value={memberDateRange.endDate}
+                    onChange={(e) => setMemberDateRange(prev => ({ ...prev, endDate: e.target.value }))}
+                    className="w-full text-[11px] bg-transparent focus:outline-none text-slate-700"
+                    title="To Date"
+                  />
+                  {(memberDateRange.startDate || memberDateRange.endDate) && (
+                    <button
+                      onClick={() => setMemberDateRange({ startDate: "", endDate: "" })}
+                      className="text-[10px] text-amber-800 hover:text-amber-950 font-bold px-1"
+                      title="Clear date filter"
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
               </div>
             </CardHeader>
 

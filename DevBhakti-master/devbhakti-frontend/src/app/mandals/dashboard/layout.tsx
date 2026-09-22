@@ -166,12 +166,12 @@ const sidebarItems = [
         href: "/mandals/dashboard/aarti",
         permission: "aarti.view"
     },
-    // {
-    //     label: "Receipt Settings",
-    //     icon: FileText,
-    //     href: "/mandals/dashboard/receipt-settings",
-    //     permission: "receipt.settings.manage"
-    // },
+    {
+        label: "Receipt Settings",
+        icon: FileText,
+        href: "/mandals/dashboard/receipt-settings",
+        permission: "receipt.settings.manage"
+    },
     {
         label: "Profile",
         icon: Settings,

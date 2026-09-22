@@ -25,13 +25,13 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { fetchReceiptConfig, updateReceiptConfig, fetchMandalProfile } from "@/api/mandalAdminController";
 import { generateMandalReceiptHTML } from "@/utils/mandalReceiptTemplate";
-import { API_URL } from "@/config/apiConfig";
+import { BASE_URL } from "@/config/apiConfig";
 
 const getApiAssetUrl = (pathStr: string) => {
     if (!pathStr) return "";
-    if (pathStr.startsWith("http")) return pathStr;
+    if (pathStr.startsWith("http") || pathStr.startsWith("blob:")) return pathStr;
     const cleanPath = pathStr.startsWith("/") ? pathStr : `/${pathStr}`;
-    return `${API_URL}${cleanPath}`;
+    return `${BASE_URL}${cleanPath}`;
 };
 
 export default function MandalReceiptSettingsPage() {
