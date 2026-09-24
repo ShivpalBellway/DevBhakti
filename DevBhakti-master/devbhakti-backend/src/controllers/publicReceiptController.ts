@@ -4,9 +4,23 @@ import { generateMandalReceiptHTML, MandalReceiptData, ReceiptItem } from '../ut
 import PDFDocument from 'pdfkit';
 
 /**
+ * Helper to ensure image URLs are fully qualified absolute HTTP(S) URLs
+ */
+function sanitizeImageUrl(url?: string | null, reqHost?: string): string | null {
+  if (!url) return null;
+  if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:')) {
+    return url;
+  }
+  const host = reqHost || process.env.BACKEND_URL || 'https://devbhakti.com';
+  const cleanHost = host.replace(/\/+$/, '');
+  const cleanUrl = url.startsWith('/') ? url : `/${url}`;
+  return `${cleanHost}${cleanUrl}`;
+}
+
+/**
  * Fetch and construct standardized MandalReceiptData from any transaction type
  */
-async function getReceiptDataForTransaction(transactionId: string): Promise<MandalReceiptData | null> {
+async function getReceiptDataForTransaction(transactionId: string, reqHost?: string): Promise<MandalReceiptData | null> {
   // 1. Try TellerOrder (Counter Cart Order)
   const tellerOrder = await prisma.tellerOrder.findFirst({
     where: {
@@ -36,6 +50,12 @@ async function getReceiptDataForTransaction(transactionId: string): Promise<Mand
     const rawName = mandal.name;
     const mandalNameStr = typeof rawName === 'string' ? rawName : (rawName as any)?.en || (rawName as any)?.hi || 'Mandal';
 
+    const headerBanner = sanitizeImageUrl(config.headerBanner, reqHost);
+    const sponsors = (config.sponsors || []).map((sp: any) => ({
+      ...sp,
+      imageUrl: sanitizeImageUrl(sp.imageUrl, reqHost) || sp.imageUrl
+    }));
+
     return {
       receiptNo: tellerOrder.displayId || tellerOrder.id,
       dateTime: new Date(tellerOrder.createdAt).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }),
@@ -44,8 +64,8 @@ async function getReceiptDataForTransaction(transactionId: string): Promise<Mand
       mandalName: mandalNameStr,
       mandalAddress: mandal.address || mandal.city || 'India',
       mandalSlug: mandal.slug || 'mandal',
-      headerBanner: config.headerBanner || null,
-      sponsors: config.sponsors || [],
+      headerBanner,
+      sponsors,
       customThankYouNote: config.customThankYouNote || '',
       devoteeName: tellerOrder.devoteeName,
       devoteePhone: tellerOrder.devoteePhone,
@@ -77,6 +97,12 @@ async function getReceiptDataForTransaction(transactionId: string): Promise<Mand
     const rawName = mandal.name;
     const mandalNameStr = typeof rawName === 'string' ? rawName : (rawName as any)?.en || (rawName as any)?.hi || 'Mandal';
 
+    const headerBanner = sanitizeImageUrl(config.headerBanner, reqHost);
+    const sponsors = (config.sponsors || []).map((sp: any) => ({
+      ...sp,
+      imageUrl: sanitizeImageUrl(sp.imageUrl, reqHost) || sp.imageUrl
+    }));
+
     return {
       receiptNo: donation.displayId || donation.id,
       dateTime: new Date(donation.createdAt).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }),
@@ -85,8 +111,8 @@ async function getReceiptDataForTransaction(transactionId: string): Promise<Mand
       mandalName: mandalNameStr,
       mandalAddress: mandal.address || mandal.city || 'India',
       mandalSlug: mandal.slug || 'mandal',
-      headerBanner: config.headerBanner || null,
-      sponsors: config.sponsors || [],
+      headerBanner,
+      sponsors,
       customThankYouNote: config.customThankYouNote || '',
       devoteeName: donation.donorName,
       devoteePhone: donation.donorPhone,
@@ -128,6 +154,12 @@ async function getReceiptDataForTransaction(transactionId: string): Promise<Mand
     const poojaRawName = booking.pooja?.name;
     const poojaNameStr = typeof poojaRawName === 'string' ? poojaRawName : (poojaRawName as any)?.en || (poojaRawName as any)?.hi || booking.packageName || 'Pooja Seva';
 
+    const headerBanner = sanitizeImageUrl(config.headerBanner, reqHost);
+    const sponsors = (config.sponsors || []).map((sp: any) => ({
+      ...sp,
+      imageUrl: sanitizeImageUrl(sp.imageUrl, reqHost) || sp.imageUrl
+    }));
+
     return {
       receiptNo: booking.displayId || booking.id,
       dateTime: new Date(booking.createdAt).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }),
@@ -136,8 +168,8 @@ async function getReceiptDataForTransaction(transactionId: string): Promise<Mand
       mandalName: mandalNameStr,
       mandalAddress: mandal.address || mandal.city || 'India',
       mandalSlug: mandal.slug || 'mandal',
-      headerBanner: config.headerBanner || null,
-      sponsors: config.sponsors || [],
+      headerBanner,
+      sponsors,
       customThankYouNote: config.customThankYouNote || '',
       devoteeName: booking.devoteeName,
       devoteePhone: booking.devoteePhone,
@@ -174,6 +206,12 @@ async function getReceiptDataForTransaction(transactionId: string): Promise<Mand
     const rawName = mandal.name;
     const mandalNameStr = typeof rawName === 'string' ? rawName : (rawName as any)?.en || (rawName as any)?.hi || 'Mandal';
 
+    const headerBanner = sanitizeImageUrl(config.headerBanner, reqHost);
+    const sponsors = (config.sponsors || []).map((sp: any) => ({
+      ...sp,
+      imageUrl: sanitizeImageUrl(sp.imageUrl, reqHost) || sp.imageUrl
+    }));
+
     return {
       receiptNo: ticket.displayId || ticket.id,
       dateTime: new Date(ticket.createdAt).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }),
@@ -182,8 +220,8 @@ async function getReceiptDataForTransaction(transactionId: string): Promise<Mand
       mandalName: mandalNameStr,
       mandalAddress: mandal.address || mandal.city || 'India',
       mandalSlug: mandal.slug || 'mandal',
-      headerBanner: config.headerBanner || null,
-      sponsors: config.sponsors || [],
+      headerBanner,
+      sponsors,
       customThankYouNote: config.customThankYouNote || '',
       devoteeName: ticket.visitorName,
       devoteePhone: ticket.visitorPhone,
@@ -203,7 +241,7 @@ async function getReceiptDataForTransaction(transactionId: string): Promise<Mand
 }
 
 /**
- * 1️⃣ GET /api/v1/mandal/receipts/:transactionId/html
+ * 1️⃣ GET /api/mandal/receipts/:transactionId/html
  * Returns ready-made HTML receipt response for Mobile App WebView
  */
 export const getMandalReceiptHTMLResponse = async (req: Request, res: Response) => {
@@ -214,7 +252,8 @@ export const getMandalReceiptHTMLResponse = async (req: Request, res: Response) 
       return res.status(400).send('<h2>Transaction ID is required</h2>');
     }
 
-    const receiptData = await getReceiptDataForTransaction(transactionId);
+    const host = `${req.protocol}://${req.get('host')}`;
+    const receiptData = await getReceiptDataForTransaction(transactionId, host);
     if (!receiptData) {
       return res.status(404).send(`
         <html>
@@ -236,7 +275,7 @@ export const getMandalReceiptHTMLResponse = async (req: Request, res: Response) 
 };
 
 /**
- * 2️⃣ GET /api/v1/mandal/receipts/:transactionId/pdf
+ * 2️⃣ GET /api/mandal/receipts/:transactionId/pdf
  * Returns ready-made PDF stream/buffer response for Mobile App download
  */
 export const getMandalReceiptPDFResponse = async (req: Request, res: Response) => {
@@ -247,7 +286,8 @@ export const getMandalReceiptPDFResponse = async (req: Request, res: Response) =
       return res.status(400).json({ success: false, message: 'Transaction ID is required' });
     }
 
-    const receiptData = await getReceiptDataForTransaction(transactionId);
+    const host = `${req.protocol}://${req.get('host')}`;
+    const receiptData = await getReceiptDataForTransaction(transactionId, host);
 
     if (!receiptData) {
       return res.status(404).json({ success: false, message: 'Receipt transaction not found' });

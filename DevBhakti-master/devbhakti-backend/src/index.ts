@@ -224,7 +224,6 @@ app.use('/api/contact', contactRoutes);
 // Mandal Registration & Public Routes
 app.get('/api/mandals/:idOrSlug/aarti-timings', getPublicMandalAartiTimings);
 app.use('/api/mandals', mandalRoutes);
-app.use('/api/v1/mandal/receipts', publicReceiptRoutes);
 app.use('/api/mandal/receipts', publicReceiptRoutes);
 
 

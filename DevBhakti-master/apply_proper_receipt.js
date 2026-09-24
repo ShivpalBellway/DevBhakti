@@ -3,12 +3,17 @@ const fs = require('fs');
 const b64Path = 'C:/Users/admin/Downloads/DevBhakti-master/DevBhakti-master/devbhakti-frontend/src/assets/logo_b64.txt';
 const b64Data = fs.readFileSync(b64Path, 'utf8').trim();
 
+const namastePngPath = 'C:/Users/admin/Downloads/DevBhakti-master/DevBhakti-master/devbhakti-frontend/public/namsate.png';
+const namastePngBuffer = fs.readFileSync(namastePngPath);
+const namasteHandsB64 = `data:image/png;base64,${namastePngBuffer.toString('base64')}`;
+
 const frontendFile = 'C:/Users/admin/Downloads/DevBhakti-master/DevBhakti-master/devbhakti-frontend/src/utils/mandalReceiptTemplate.ts';
 const backendFile = 'C:/Users/admin/Downloads/DevBhakti-master/DevBhakti-master/devbhakti-backend/src/utils/mandalReceiptTemplate.ts';
 
 function buildTemplateContent(isFrontend) {
   const importLine = isFrontend ? 'import { parseLocalizedValue } from "./textUtils";\n\n' : '';
   return `${importLine}const DEVBHAKTI_LOGO_BASE64 = "${b64Data}";
+const NAMASTE_HANDS_BASE64 = "${namasteHandsB64}";
 
 export interface ReceiptItem {
   srNo?: number;
@@ -179,12 +184,15 @@ export const generateMandalReceiptHTML = (data: MandalReceiptData) => {
           border-collapse: collapse;
         }
         .details-left-table td {
-          padding: 3px 12px 3px 0;
+          padding: 4px 12px 4px 0;
           font-size: 12px;
         }
         .detail-label {
           color: #64748b;
           font-weight: 500;
+          display: flex;
+          align-items: center;
+          gap: 6px;
         }
         .detail-val {
           color: #0f172a;
@@ -192,39 +200,55 @@ export const generateMandalReceiptHTML = (data: MandalReceiptData) => {
           font-family: monospace;
         }
 
-        /* 4. Table */
+        /* 4. Table (EXACT MATCH TO REFERENCE DESIGN WITH FULL GRID BORDERS & CREAM TOTAL ROW) */
+        .items-table-wrapper {
+          width: 100%;
+          border: 1px solid #e2d7c9;
+          border-radius: 8px;
+          overflow: hidden;
+          margin-bottom: 20px;
+        }
         .items-table {
           width: 100%;
           border-collapse: collapse;
-          margin-bottom: 20px;
         }
         .items-table th {
-          background: #7b4623;
+          background: #6b2e17;
           color: #ffffff;
           font-size: 12px;
           font-weight: 700;
-          text-align: left;
           padding: 10px 14px;
+          border-right: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .items-table th:last-child {
+          border-right: none;
         }
         .items-table th.num-col, .items-table td.num-col { text-align: center; }
         .items-table th.amount-col, .items-table td.amount-col { text-align: right; }
         .items-table td {
           padding: 10px 14px;
-          border-bottom: 1px solid #f1f5f9;
+          border-bottom: 1px solid #f1e6da;
+          border-right: 1px solid #f1e6da;
           font-size: 13px;
-          color: #334155;
+          color: #1e293b;
+          background: #ffffff;
+        }
+        .items-table td:last-child {
+          border-right: none;
         }
         .total-row td {
-          border-top: 2px solid #7b4623;
+          background: #fdf6ee !important;
+          border-top: 1px solid #e2d7c9;
           border-bottom: none;
           font-weight: 800;
           font-size: 14px;
-          color: #0f172a;
-          padding-top: 14px;
+          color: #6b2e17;
+          padding: 12px 14px;
         }
         .total-amount-val {
-          font-size: 18px;
-          color: #7b4623;
+          font-size: 20px;
+          color: #6b2e17;
+          font-weight: 800;
         }
 
         /* 5. Thank You & QR Block */
@@ -364,35 +388,53 @@ export const generateMandalReceiptHTML = (data: MandalReceiptData) => {
             </div>
           \` : ''}
 
-          <!-- 3. DETAILS BLOCK WITH PROMINENT LOGO & CLEAN DISPLAY IDs -->
+          <!-- 3. DETAILS BLOCK -->
           <div class="details-grid">
             <table class="details-left-table">
               \${data.devoteeName ? \`
                 <tr>
-                  <td class="detail-label">Devotee Name</td>
+                  <td class="detail-label">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#7b4623" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    <span>Devotee Name</span>
+                  </td>
                   <td>: <span class="detail-val" style="font-family: inherit; color: #0f172a; text-transform: capitalize;">\${data.devoteeName}</span></td>
                 </tr>
               \` : ''}
               \${data.devoteePhone ? \`
                 <tr>
-                  <td class="detail-label">Devotee Phone</td>
+                  <td class="detail-label">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#7b4623" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                    <span>Devotee Phone</span>
+                  </td>
                   <td>: <span class="detail-val">\${data.devoteePhone}</span></td>
                 </tr>
               \` : ''}
               <tr>
-                <td class="detail-label">📄 Receipt No.</td>
+                <td class="detail-label">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#7b4623" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                  <span>Receipt No.</span>
+                </td>
                 <td>: <span class="detail-val">\${displayReceiptNo}</span></td>
               </tr>
               <tr>
-                <td class="detail-label">📅 Date & Time</td>
+                <td class="detail-label">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#7b4623" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                  <span>Date & Time</span>
+                </td>
                 <td>: <span class="detail-val">\${data.dateTime}</span></td>
               </tr>
               <tr>
-                <td class="detail-label">💳 Payment Mode</td>
+                <td class="detail-label">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#7b4623" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+                  <span>Payment Mode</span>
+                </td>
                 <td>: <span class="detail-val">\${data.paymentMode}</span></td>
               </tr>
               <tr>
-                <td class="detail-label"># Transaction ID</td>
+                <td class="detail-label">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#7b4623" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/></svg>
+                  <span>Transaction ID</span>
+                </td>
                 <td>: <span class="detail-val">\${displayTxnId}</span></td>
               </tr>
             </table>
@@ -407,47 +449,39 @@ export const generateMandalReceiptHTML = (data: MandalReceiptData) => {
             </div>
           </div>
 
-          <!-- 4. ITEMS TABLE -->
-          <table class="items-table">
-            <thead>
-              <tr>
-                <th class="num-col" width="10%">Sr. No.</th>
-                <th width="55%">Description</th>
-                <th class="num-col" width="15%">Qty</th>
-                <th class="amount-col" width="20%">Amount (₹)</th>
-              </tr>
-            </thead>
-            <tbody>
-              \${displayItems.map((item) => \`
+          <!-- 4. ITEMS TABLE (EXACT ROW, COLUMN, INNER BORDERS & CREAM TOTAL ROW MATCHING SCREENSHOT) -->
+          <div class="items-table-wrapper">
+            <table class="items-table">
+              <thead>
                 <tr>
-                  <td class="num-col">\${item.srNo}</td>
-                  <td>\${item.description || '—'}</td>
-                  <td class="num-col">\${item.amount > 0 ? (item.quantity || 1) : '—'}</td>
-                  <td class="amount-col">\${item.amount > 0 ? item.amount.toLocaleString('en-IN') : '—'}</td>
+                  <th class="num-col" width="12%">Sr. No.</th>
+                  <th width="53%">Description</th>
+                  <th class="num-col" width="15%">Qty</th>
+                  <th class="amount-col" width="20%">Amount (₹)</th>
                 </tr>
-              \`).join('')}
-              <tr class="total-row">
-                <td colspan="3" style="text-align: right; padding-right: 14px;">Total Amount</td>
-                <td class="amount-col total-amount-val">₹ \${data.totalAmount.toLocaleString('en-IN')}</td>
-              </tr>
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                \${displayItems.map((item) => \`
+                  <tr>
+                    <td class="num-col">\${item.srNo}</td>
+                    <td>\${item.description || '—'}</td>
+                    <td class="num-col">\${item.amount > 0 ? (item.quantity || 1) : ''}</td>
+                    <td class="amount-col">\${item.amount > 0 ? item.amount.toLocaleString('en-IN') : ''}</td>
+                  </tr>
+                \`).join('')}
+                <tr class="total-row">
+                  <td colspan="3" class="total-amount-label" style="text-align: right; padding-right: 18px;">Total Amount</td>
+                  <td class="amount-col total-amount-val">₹ \${data.totalAmount.toLocaleString('en-IN')}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
 
-          <!-- 5. THANK YOU & QR SECTION (PURE THEME BROWN #7b4623 FOLDED HANDS ICON & LOTUS) -->
+          <!-- 5. THANK YOU & QR SECTION -->
           <div class="bottom-flex-block">
             <div class="thankyou-left">
-              <div style="margin-bottom: 4px; text-align: center;">
-                <svg width="44" height="44" viewBox="0 0 64 64" style="display: block; margin: 0 auto;">
-                  <g fill="#7b4623">
-                    <circle cx="22" cy="51" r="5.5" fill="#582b0c"/>
-                    <circle cx="42" cy="51" r="5.5" fill="#582b0c"/>
-                    <path d="M32 6C32 6 24 19 19 29C16.5 34 15.5 38 15.5 42C15.5 47 19.5 51 24.5 51C27.5 51 29.5 49 32 46.5V6Z" fill="#7b4623"/>
-                    <path d="M32 6C32 6 40 19 45 29C47.5 34 48.5 38 48.5 42C48.5 47 44.5 51 39.5 51C36.5 51 34.5 49 32 46.5V6Z" fill="#7b4623"/>
-                    <path d="M32 6V47" stroke="#3d1b06" stroke-width="2.5" stroke-linecap="round"/>
-                    <path d="M21 35C18.5 38.5 18.5 42.5 21 45.5" stroke="#3d1b06" stroke-width="2.5" stroke-linecap="round"/>
-                    <path d="M43 35C45.5 38.5 45.5 42.5 43 45.5" stroke="#3d1b06" stroke-width="2.5" stroke-linecap="round"/>
-                  </g>
-                </svg>
+              <div style="margin-bottom: 6px; display: flex; justify-content: center;">
+                <img src="\${NAMASTE_HANDS_BASE64}" style="height: 52px; width: auto; display: block; margin: 0 auto; object-fit: contain;" alt="Namaste Hands" />
               </div>
               <div class="thankyou-heading">Thank you for your generous contribution!</div>
               <div class="thankyou-sub">\${data.customThankYouNote || "Your support helps us continue our seva and keep our traditions alive."}</div>
@@ -590,9 +624,11 @@ export const downloadMandalReceiptPDF = async (data: MandalReceiptData) => {
     const parser = new DOMParser();
     const doc = parser.parseFromString(finalHtml, 'text/html');
 
+    const currentScrollY = window.scrollY || 0;
+
     const container = document.createElement('div');
     container.className = 'mandal-pdf-container-root';
-    container.style.position = 'absolute';
+    container.style.position = 'fixed';
     container.style.left = '0';
     container.style.top = '0';
     container.style.width = '794px';
@@ -610,6 +646,7 @@ export const downloadMandalReceiptPDF = async (data: MandalReceiptData) => {
     });
 
     document.body.appendChild(container);
+    window.scrollTo(0, 0);
 
     const opt = {
       margin: [6, 6, 6, 6],
@@ -632,6 +669,7 @@ export const downloadMandalReceiptPDF = async (data: MandalReceiptData) => {
       if (document.body.contains(container)) {
         document.body.removeChild(container);
       }
+      window.scrollTo(0, currentScrollY);
     };
 
     const images = Array.from(container.querySelectorAll('img'));
@@ -645,7 +683,7 @@ export const downloadMandalReceiptPDF = async (data: MandalReceiptData) => {
     });
 
     await Promise.all(imagePromises);
-    await new Promise(r => setTimeout(r, 200));
+    await new Promise(r => setTimeout(r, 250));
 
     await (html2pdf as any)().set(opt).from(container).save();
     cleanup();
