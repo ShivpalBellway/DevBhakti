@@ -2,7 +2,7 @@ import { Router } from 'express';
 import multer from 'multer';
 import fs from 'fs';
 import path from 'path';
-import { getReceiptConfig, updateReceiptConfig, getPublicReceiptConfig } from '../../controllers/mandal_admin/receiptController';
+import { getReceiptConfig, updateReceiptConfig, getPublicReceiptConfig, renderReceiptHTML } from '../../controllers/mandal_admin/receiptController';
 import { authenticate, injectMandalContext } from '../../middleware/authMiddleware';
 
 const router = Router();
@@ -30,5 +30,6 @@ router.post('/', authenticate, injectMandalContext, (upload as any).fields([
 ]), updateReceiptConfig);
 
 router.get('/public/:idOrSlug', getPublicReceiptConfig);
+router.get('/render-html/:type/:transactionId', renderReceiptHTML);
 
 export default router;

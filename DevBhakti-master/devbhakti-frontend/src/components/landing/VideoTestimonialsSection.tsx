@@ -38,7 +38,66 @@ const VideoTestimonialsSection = () => {
     const scrollContainerRef = useRef<HTMLDivElement>(null);
     const [playingId, setPlayingId] = useState<string | number | null>(null);
     const [dynamicStories, setDynamicStories] = useState<VideoStory[]>([]);
+    const videoRefs = useRef<Map<string | number, HTMLVideoElement>>(new Map());
     const { t, language } = useLanguage();
+
+    // Stop all videos except the currently playing one whenever playingId changes
+    useEffect(() => {
+        videoRefs.current.forEach((videoEl, id) => {
+            if (id !== playingId) {
+                videoEl.pause();
+                videoEl.currentTime = 0;
+                videoEl.removeAttribute('src');
+                videoEl.load(); // forces browser to release the media resource
+            }
+        });
+    }, [playingId]);
+
+    // Cleanup all videos on unmount
+    useEffect(() => {
+        return () => {
+            videoRefs.current.forEach((videoEl) => {
+                videoEl.pause();
+                videoEl.removeAttribute('src');
+                videoEl.load();
+            });
+            videoRefs.current.clear();
+        };
+    }, []);
+
+    const setVideoRef = (id: string | number, el: HTMLVideoElement | null) => {
+        if (el) {
+            videoRefs.current.set(id, el);
+        } else {
+            videoRefs.current.delete(id);
+        }
+    };
+
+    const handleCardClick = (storyId: string | number) => {
+        if (playingId === storyId) {
+            // User clicked the same card — stop the video
+            const videoEl = videoRefs.current.get(storyId);
+            if (videoEl) {
+                videoEl.pause();
+                videoEl.currentTime = 0;
+                videoEl.removeAttribute('src');
+                videoEl.load();
+            }
+            setPlayingId(null);
+        } else {
+            // Stop the previously playing video first
+            if (playingId !== null) {
+                const prevVideoEl = videoRefs.current.get(playingId);
+                if (prevVideoEl) {
+                    prevVideoEl.pause();
+                    prevVideoEl.currentTime = 0;
+                    prevVideoEl.removeAttribute('src');
+                    prevVideoEl.load();
+                }
+            }
+            setPlayingId(storyId);
+        }
+    };
 
     const stories: VideoStory[] = [
         {
@@ -174,18 +233,18 @@ const VideoTestimonialsSection = () => {
                                 viewport={{ once: true }}
                                 transition={{ delay: index * 0.1 }}
                                 className="flex-shrink-0 w-[280px] md:w-[310px] aspect-[9/14] relative rounded-2xl overflow-hidden snap-center cursor-pointer group/card shadow-xl"
-                                onClick={() => setPlayingId(playingId === story.id ? null : story.id)}
+                                onClick={() => handleCardClick(story.id)}
                             >
                                 {/* Video or Thumbnail */}
                                 <div className="absolute inset-0 bg-black">
                                     {playingId === story.id ? (
                                         <video
+                                            ref={(el) => setVideoRef(story.id, el)}
                                             src={resolveAssetUrl(story.videoSrc)}
                                             className="w-full h-full object-cover"
                                             controls
                                             autoPlay
                                             playsInline
-
                                             onError={() => {
                                                 console.error("Video failed to load:", story.videoSrc);
                                                 setPlayingId(null);

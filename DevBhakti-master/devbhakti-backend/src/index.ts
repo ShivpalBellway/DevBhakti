@@ -87,6 +87,8 @@ import mandalAdminBankRoutes from './routes/mandal_admin/bankRoutes';
 import mandalAdminDevoteeRoutes from './routes/mandal_admin/devoteeRoutes';
 import mandalAdminExpenseRoutes from './routes/mandal_admin/expenseRoutes';
 import templeAdminExpenseRoutes from './routes/temple_admin/expenseRoutes';
+import publicReceiptRoutes from './routes/publicReceiptRoutes';
+
 
 
 const app = express();
@@ -222,6 +224,9 @@ app.use('/api/contact', contactRoutes);
 // Mandal Registration & Public Routes
 app.get('/api/mandals/:idOrSlug/aarti-timings', getPublicMandalAartiTimings);
 app.use('/api/mandals', mandalRoutes);
+app.use('/api/v1/mandal/receipts', publicReceiptRoutes);
+app.use('/api/mandal/receipts', publicReceiptRoutes);
+
 
 // Daily Activity Reports Route
 app.use('/api/reports/daily', dailyReportRoutes);

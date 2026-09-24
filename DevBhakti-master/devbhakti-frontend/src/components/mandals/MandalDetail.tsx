@@ -41,6 +41,7 @@ import {
   Printer,
 } from "lucide-react";
 import { downloadDonationReceiptPDF } from "@/utils/donationReceipt";
+import { downloadMandalReceiptPDF, MandalReceiptData } from "@/utils/mandalReceiptTemplate";
 import { UniversalVideoPlayer } from "@/components/video/UniversalVideoPlayer";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -758,11 +759,47 @@ export function MandalDetail({ slug }: { slug: string }) {
             </p>
 
             {/* Action buttons */}
-            {/* <div className="flex gap-3 pt-1">
+            <div className="flex gap-3 pt-1">
               <button
                 type="button"
                 onClick={() => {
-                  if (donationReceipt) downloadDonationReceiptPDF(donationReceipt);
+                  if (donationReceipt) {
+                    const config = mandal?.receiptSettings || mandal?.receiptConfig || {};
+                    const headerBanner = config.headerBanner ? getFullImageUrl(config.headerBanner) : null;
+                    const sponsors = (config.sponsors || []).map((sp: any) => ({
+                      ...sp,
+                      imageUrl: getFullImageUrl(sp.imageUrl)
+                    }));
+                    
+                    const receiptData: MandalReceiptData = {
+                      receiptNo: donationReceipt.donationId,
+                      dateTime: donationReceipt.date,
+                      paymentMode: "ONLINE",
+                      transactionId: donationReceipt.txnId,
+                      mandalName: donationReceipt.mandalName,
+                      mandalAddress: mandal?.address ? `${mandal.address}, ${mandal.city || ''}` : "India",
+                      mandalSlug: mandal?.slug || mandal?.id,
+                      headerBanner,
+                      sponsors,
+                      customThankYouNote: config.customThankYouNote,
+                      items: [
+                        {
+                          description: "Donation",
+                          quantity: 1,
+                          amount: donationReceipt.amount
+                        },
+                        ...(donationReceipt.platformFee ? [{
+                          description: "Platform Support Fee",
+                          quantity: 1,
+                          amount: donationReceipt.platformFee
+                        }] : [])
+                      ],
+                      totalAmount: donationReceipt.amount + (donationReceipt.platformFee || 0),
+                      devoteeName: donationReceipt.donorName,
+                      devoteePhone: donationReceipt.phone
+                    };
+                    downloadMandalReceiptPDF(receiptData);
+                  }
                 }}
                 className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm transition border-2 border-[#7c4624] text-[#7c4624] hover:bg-[#7c4624]/10 shadow-sm cursor-pointer active:scale-95 z-20"
               >
@@ -777,7 +814,7 @@ export function MandalDetail({ slug }: { slug: string }) {
                 <CheckCircle className="w-4 h-4" />
                 Done
               </button>
-            </div> */}
+            </div>
           </div>
         </DialogContent>
       </Dialog>

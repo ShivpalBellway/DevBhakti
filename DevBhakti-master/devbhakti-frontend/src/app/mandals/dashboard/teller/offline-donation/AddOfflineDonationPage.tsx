@@ -22,7 +22,15 @@ import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { fetchMandalProfile, createMandalDonation } from "@/api/mandalAdminController";
 import { parseLocalizedValue } from "@/utils/textUtils";
-import { generateReceiptHTML, downloadDonationReceiptPDF } from "@/utils/donationReceipt";
+import { generateMandalReceiptHTML, downloadMandalReceiptPDF, openPrintPDFWindow, MandalReceiptData } from "@/utils/mandalReceiptTemplate";
+import { BASE_URL } from "@/config/apiConfig";
+
+const getFullImageUrl = (pathStr: string) => {
+    if (!pathStr) return "";
+    if (pathStr.startsWith("http") || pathStr.startsWith("blob:")) return pathStr;
+    const cleanPath = pathStr.startsWith("/") ? pathStr : `/${pathStr}`;
+    return `${BASE_URL}${cleanPath}`;
+};
 
 interface AddOfflineDonationPageProps {
     onBack: () => void;
@@ -33,6 +41,7 @@ export default function AddOfflineDonationPage({ onBack }: AddOfflineDonationPag
 
     const [mandalId, setMandalId] = useState<string | null>(null);
     const [mandalName, setMandalName] = useState<string | null>(null);
+    const [mandalProfile, setMandalProfile] = useState<any>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isComplete, setIsComplete] = useState(false);
     const [createdDonation, setCreatedDonation] = useState<any>(null);
@@ -55,8 +64,9 @@ export default function AddOfflineDonationPage({ onBack }: AddOfflineDonationPag
         const loadProfile = async () => {
             try {
                 const profile = await fetchMandalProfile();
-                if (profile.success && profile.data.id) {
-                    setMandalId(profile.data.id);
+                if (profile.success && profile.data) {
+                    setMandalProfile(profile.data);
+                    if (profile.data.id) setMandalId(profile.data.id);
                     setMandalName(parseLocalizedValue(profile.data.name, "en") || "Mandal");
                 }
             } catch (error) {
@@ -122,26 +132,52 @@ export default function AddOfflineDonationPage({ onBack }: AddOfflineDonationPag
         }
     };
 
+    const buildReceiptData = (): MandalReceiptData | null => {
+        if (!createdDonation) return null;
+        const config = mandalProfile?.receiptConfig || mandalProfile?.receiptSettings || {};
+        const headerBanner = config.headerBanner ? getFullImageUrl(config.headerBanner) : null;
+        const sponsors = (config.sponsors || []).map((sp: any) => ({
+            ...sp,
+            imageUrl: getFullImageUrl(sp.imageUrl)
+        }));
+
+        return {
+            receiptNo: createdDonation.receiptNo || createdDonation.donationId || createdDonation.id || `DON-${Date.now()}`,
+            dateTime: createdDonation.createdAt 
+                ? new Date(createdDonation.createdAt).toLocaleString("en-IN", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })
+                : new Date().toLocaleString("en-IN", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }),
+            paymentMode: createdDonation.paymentMethod || paymentMethod || "CASH",
+            transactionId: createdDonation.transactionRef || createdDonation.id || "OFFLINE",
+            mandalName: mandalProfile?.name_en || mandalProfile?.name || mandalName || "DevBhakti Mandal",
+            mandalAddress: mandalProfile?.address ? `${mandalProfile.address}, ${mandalProfile.city || ''}` : "India",
+            mandalSlug: mandalProfile?.slug || mandalProfile?.id,
+            headerBanner,
+            sponsors,
+            customThankYouNote: config.customThankYouNote,
+            items: [
+                {
+                    description: createdDonation.message || "Donation Contribution",
+                    quantity: 1,
+                    amount: Number(createdDonation.amount)
+                }
+            ],
+            totalAmount: Number(createdDonation.amount),
+            devoteeName: createdDonation.donorName || donorName,
+            devoteePhone: createdDonation.donorPhone || donorPhone
+        };
+    };
+
     const handlePrintReceipt = () => {
-        if (!createdDonation) return;
-        const html = generateReceiptHTML({
-            ...createdDonation,
-            templeName: mandalName || "DevBhakti Mandal",
-        });
-        const printWindow = window.open("", "_blank");
-        if (printWindow) {
-            printWindow.document.write(html);
-            printWindow.document.close();
-            setTimeout(() => printWindow.print(), 500);
-        }
+        const data = buildReceiptData();
+        if (!data) return;
+        const html = generateMandalReceiptHTML(data);
+        openPrintPDFWindow(html);
     };
 
     const handleDownloadReceipt = () => {
-        if (!createdDonation) return;
-        downloadDonationReceiptPDF({
-            ...createdDonation,
-            templeName: mandalName || "DevBhakti Mandal",
-        });
+        const data = buildReceiptData();
+        if (!data) return;
+        downloadMandalReceiptPDF(data);
     };
 
     const handleNewDonation = () => {

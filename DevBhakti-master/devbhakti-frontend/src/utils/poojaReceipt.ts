@@ -254,65 +254,111 @@ export const generatePoojaReceiptHTML = (booking: PoojaReceiptProps["booking"], 
     `;
 };
 
+const urlToBase64 = async (url: string): Promise<string> => {
+  if (!url || typeof window === "undefined") return "";
+  if (url.startsWith("data:")) return url;
+  try {
+    const res = await fetch(url, { mode: "cors" });
+    if (!res.ok) return url;
+    const blob = await res.blob();
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve((reader.result as string) || url);
+      reader.onerror = () => resolve(url);
+      reader.readAsDataURL(blob);
+    });
+  } catch (e) {
+    return url;
+  }
+};
+
 export const downloadPoojaReceiptPDF = (booking: PoojaReceiptProps["booking"], t?: any) => {
     const html = generatePoojaReceiptHTML(booking, t);
     const bookingId = booking?.id || 'booking';
     const fileName = `Pooja_Receipt_${bookingId}.pdf`;
 
-    return new Promise<void>((resolve) => {
-        const executePDFDownload = () => {
+    return new Promise<void>(async (resolve) => {
+        try {
+            const html2pdfModule = await import("html2pdf.js");
+            const html2pdf = html2pdfModule.default || html2pdfModule;
+
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+
             const container = document.createElement('div');
+            container.className = 'pooja-pdf-container-root';
             container.style.position = 'absolute';
-            container.style.left = '-9999px';
-            container.style.top = '-9999px';
+            container.style.left = '0';
+            container.style.top = '0';
             container.style.width = '794px';
-            container.innerHTML = html;
+            container.style.zIndex = '999999';
+            container.style.background = '#ffffff';
+            container.style.color = '#1e293b';
+            container.style.pointerEvents = 'none';
+            container.style.boxSizing = 'border-box';
+
+            const styles = doc.querySelectorAll('style');
+            styles.forEach(s => container.appendChild(s.cloneNode(true)));
+
+            Array.from(doc.body.childNodes).forEach(node => {
+                container.appendChild(node.cloneNode(true));
+            });
+
             document.body.appendChild(container);
 
             const opt = {
-                margin: [10, 10, 10, 10],
+                margin: [6, 6, 6, 6],
                 filename: fileName,
                 image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: { scale: 2, useCORS: true, logging: false },
+                html2canvas: {
+                    scale: 2,
+                    useCORS: true,
+                    allowTaint: true,
+                    logging: false,
+                    scrollX: 0,
+                    scrollY: 0,
+                    windowWidth: 794,
+                    backgroundColor: '#ffffff'
+                },
                 jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
             };
 
-            if ((window as any).html2pdf) {
-                (window as any).html2pdf().set(opt).from(container).save().then(() => {
-                    if (document.body.contains(container)) {
-                        document.body.removeChild(container);
-                    }
-                    resolve();
-                }).catch((err: any) => {
-                    console.error("PDF generation error, falling back to print window", err);
-                    if (document.body.contains(container)) {
-                        document.body.removeChild(container);
-                    }
-                    fallbackToPrintWindow(html);
-                    resolve();
-                });
-            } else {
-                fallbackToPrintWindow(html);
-                resolve();
-            }
-        };
+            const cleanup = () => {
+                if (document.body.contains(container)) {
+                    document.body.removeChild(container);
+                }
+            };
 
-        if ((window as any).html2pdf) {
-            executePDFDownload();
-        } else {
-            const script = document.createElement('script');
-            script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
-            script.onload = () => {
-                executePDFDownload();
-            };
-            script.onerror = () => {
-                fallbackToPrintWindow(html);
-                resolve();
-            };
-            document.head.appendChild(script);
+            const images = Array.from(container.querySelectorAll('img'));
+            const imagePromises = images.map(async img => {
+                img.crossOrigin = "anonymous";
+                if (img.src && !img.src.startsWith('data:')) {
+                    const base64 = await urlToBase64(img.src);
+                    if (base64 && base64.startsWith('data:')) {
+                        img.src = base64;
+                    }
+                }
+                if (img.complete && img.naturalWidth > 0) return Promise.resolve();
+                return new Promise((r) => {
+                    img.onload = r;
+                    img.onerror = r;
+                });
+            });
+
+            await Promise.all(imagePromises);
+            await new Promise(r => setTimeout(r, 200));
+
+            await (html2pdf as any)().set(opt).from(container).save();
+            cleanup();
+            resolve();
+        } catch (err) {
+            console.error("Pooja PDF download error:", err);
+            resolve();
         }
-    });
+    });1
 };
+
+
 
 const fallbackToPrintWindow = (html: string) => {
     const printWindow = window.open('', '_blank');

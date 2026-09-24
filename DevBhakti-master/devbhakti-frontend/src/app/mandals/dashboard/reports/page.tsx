@@ -24,7 +24,16 @@ import {
   Filter
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { fetchMandalFinancialReport } from "@/api/mandalAdminController";
+import { fetchMandalFinancialReport, fetchMandalProfile } from "@/api/mandalAdminController";
+import { generateMandalReceiptHTML, downloadMandalReceiptPDF, openPrintPDFWindow, MandalReceiptData } from "@/utils/mandalReceiptTemplate";
+import { BASE_URL } from "@/config/apiConfig";
+
+const getFullImageUrl = (pathStr: string) => {
+    if (!pathStr) return "";
+    if (pathStr.startsWith("http") || pathStr.startsWith("blob:")) return pathStr;
+    const cleanPath = pathStr.startsWith("/") ? pathStr : `/${pathStr}`;
+    return `${BASE_URL}${cleanPath}`;
+};
 
 export default function MandalReportsPage() {
   const [period, setPeriod] = useState<string>("this_month");
@@ -37,6 +46,22 @@ export default function MandalReportsPage() {
   
   const [loading, setLoading] = useState<boolean>(true);
   const [reportData, setReportData] = useState<any>(null);
+  const [mandalProfile, setMandalProfile] = useState<any>(null);
+
+  const loadProfile = async () => {
+    try {
+      const res = await fetchMandalProfile();
+      if (res.success && res.data) {
+        setMandalProfile(res.data);
+      }
+    } catch (e) {
+      console.error("Failed to load mandal profile for reports:", e);
+    }
+  };
+
+  useEffect(() => {
+    loadProfile();
+  }, []);
 
   const loadReport = async () => {
     setLoading(true);
@@ -159,6 +184,50 @@ export default function MandalReportsPage() {
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
+  };
+
+  const buildTxReceiptData = (tx: any): MandalReceiptData => {
+    const config = mandalProfile?.receiptConfig || mandalProfile?.receiptSettings || {};
+    const headerBanner = config.headerBanner ? getFullImageUrl(config.headerBanner) : null;
+    const sponsors = (config.sponsors || []).map((sp: any) => ({
+      ...sp,
+      imageUrl: getFullImageUrl(sp.imageUrl)
+    }));
+
+    return {
+      receiptNo: tx.receiptNo || tx.id.slice(-8).toUpperCase(),
+      dateTime: tx.createdAt 
+        ? new Date(tx.createdAt).toLocaleString("en-IN", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })
+        : new Date().toLocaleString("en-IN", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }),
+      paymentMode: tx.paymentMode || "CASH",
+      transactionId: tx.id,
+      mandalName: mandalProfile?.name_en || mandalProfile?.name || "DevBhakti Mandal",
+      mandalAddress: mandalProfile?.address ? `${mandalProfile.address}, ${mandalProfile.city || ''}` : "India",
+      mandalSlug: mandalProfile?.slug || mandalProfile?.id,
+      headerBanner,
+      sponsors,
+      customThankYouNote: config.customThankYouNote,
+      items: [
+        {
+          description: tx.title || tx.categoryName || "Contribution / Booking",
+          quantity: 1,
+          amount: Number(tx.amount || 0)
+        }
+      ],
+      totalAmount: Number(tx.amount || 0),
+      devoteeName: tx.devotee?.name || "Devotee",
+      devoteePhone: tx.devotee?.phone || ""
+    };
+  };
+
+  const handlePrintTxReceipt = (tx: any) => {
+    const data = buildTxReceiptData(tx);
+    openPrintPDFWindow(generateMandalReceiptHTML(data));
+  };
+
+  const handleDownloadTxReceipt = (tx: any) => {
+    const data = buildTxReceiptData(tx);
+    downloadMandalReceiptPDF(data);
   };
 
   const formatCurrency = (val?: number) => {
@@ -570,12 +639,13 @@ export default function MandalReportsPage() {
                     <th className="py-3 px-3">Channel</th>
                     <th className="py-3 px-3">Payment Mode</th>
                     <th className="py-3 px-3 text-right">Amount</th>
+                    <th className="py-3 px-3 text-center">Receipt</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100 text-xs">
                   {txList.length === 0 ? (
                     <tr>
-                      <td colSpan={8} className="py-8 text-center text-gray-400 italic">
+                      <td colSpan={9} className="py-8 text-center text-gray-400 italic">
                         No transactions found for the selected filter and period.
                       </td>
                     </tr>
@@ -596,7 +666,11 @@ export default function MandalReportsPage() {
                           </span>
                         </td>
                         <td className="py-3 px-3 font-mono font-bold text-amber-900 whitespace-nowrap">
-                          #{tx.receiptNo || tx.id.slice(-6)}
+                          {tx.receiptNo
+                            ? (tx.receiptNo.length > 20
+                                ? `#${tx.receiptNo.slice(-6).toUpperCase()}`
+                                : (tx.receiptNo.startsWith('#') ? tx.receiptNo : `#${tx.receiptNo}`))
+                            : `#${tx.id.slice(-6).toUpperCase()}`}
                         </td>
                         <td className="py-3 px-3">
                           <div className="font-semibold text-gray-900 flex items-center gap-1.5">
@@ -640,6 +714,28 @@ export default function MandalReportsPage() {
                         </td>
                         <td className="py-3 px-3 font-bold text-gray-900 text-right whitespace-nowrap">
                           {formatCurrency(tx.amount)}
+                        </td>
+                        <td className="py-3 px-3 text-center whitespace-nowrap">
+                          <div className="flex items-center justify-center gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-amber-700 hover:text-amber-900 hover:bg-amber-100/60 rounded-lg"
+                              onClick={() => handlePrintTxReceipt(tx)}
+                              title="Print Receipt"
+                            >
+                              <Printer className="w-3.5 h-3.5" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-amber-700 hover:text-amber-900 hover:bg-amber-100/60 rounded-lg"
+                              onClick={() => handleDownloadTxReceipt(tx)}
+                              title="Download Receipt PDF"
+                            >
+                              <Download className="w-3.5 h-3.5" />
+                            </Button>
+                          </div>
                         </td>
                       </tr>
                     ))

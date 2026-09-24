@@ -45,10 +45,17 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { AnimatePresence, motion } from "framer-motion";
-import { generatePoojaReceiptHTML, downloadPoojaReceiptPDF } from '@/utils/poojaReceipt';
-import { fetchMyMandalPoojas, createOfflineBookingMandal, lookupDevoteeByPhoneMandal } from '@/api/mandalAdminController';
+import { generateMandalReceiptHTML, downloadMandalReceiptPDF, openPrintPDFWindow, MandalReceiptData, ReceiptItem } from '@/utils/mandalReceiptTemplate';
+import { fetchMyMandalPoojas, createOfflineBookingMandal, lookupDevoteeByPhoneMandal, fetchMandalProfile } from '@/api/mandalAdminController';
 import { parseLocalizedValue } from '@/utils/textUtils';
+import { BASE_URL } from "@/config/apiConfig";
 
+const getFullImageUrl = (pathStr: string) => {
+  if (!pathStr) return "";
+  if (pathStr.startsWith("http") || pathStr.startsWith("blob:")) return pathStr;
+  const cleanPath = pathStr.startsWith("/") ? pathStr : `/${pathStr}`;
+  return `${BASE_URL}${cleanPath}`;
+};
 
 export default function AddOfflineBookingPage({ onBack }: { onBack?: () => void }) {
   const searchParams = useSearchParams();
@@ -56,6 +63,8 @@ export default function AddOfflineBookingPage({ onBack }: { onBack?: () => void 
   const router = useRouter();
   const language = "en";
   const t = (key: string) => key.split(".").pop()?.replace(/_/g, " ") || key;
+
+  const [mandalProfile, setMandalProfile] = useState<any>(null);
 
   // Always start at Step 1 to allow data to load and normalize correctly
   const initialStep = 1;
@@ -217,6 +226,15 @@ export default function AddOfflineBookingPage({ onBack }: { onBack?: () => void 
             phone: (user.phone || "").replace(/\D/g, "").slice(-10),
             email: user.email || "",
           }));
+        }
+
+        try {
+          const profileRes = await fetchMandalProfile();
+          if (profileRes.success && profileRes.data) {
+            setMandalProfile(profileRes.data);
+          }
+        } catch (e) {
+          console.error("Mandal profile load err", e);
         }
 
         const poojasRaw = await fetchMyMandalPoojas();
@@ -563,74 +581,74 @@ export default function AddOfflineBookingPage({ onBack }: { onBack?: () => void 
     }
   };
 
-  const getReceiptBookingData = () => {
+  const buildMandalReceiptData = (): MandalReceiptData | null => {
     if (!createdBooking) return null;
+    const config = mandalProfile?.receiptConfig || mandalProfile?.receiptSettings || {};
+    const headerBanner = config.headerBanner ? getFullImageUrl(config.headerBanner) : null;
+    const sponsors = (config.sponsors || []).map((sp: any) => ({
+      ...sp,
+      imageUrl: getFullImageUrl(sp.imageUrl)
+    }));
+
+    const poojaNameStr = createdBooking.poojaName || createdBooking.pooja?.name || parseLocalizedValue(selectedPoojaData?.name, language) || "Pooja Seva";
+    const packageNameStr = createdBooking.packageName || selectedPackageData?.name || "Standard";
+    const pPrice = Number(createdBooking.packagePrice ?? createdBooking.amount ?? basePrice ?? 0);
+    const feePrice = Number(createdBooking.platformFee ?? platformFee ?? 0);
+
+    const items: ReceiptItem[] = [
+      {
+        description: `${poojaNameStr} (${packageNameStr})`,
+        quantity: 1,
+        amount: pPrice
+      }
+    ];
+
+    if (feePrice > 0) {
+      items.push({
+        description: "Platform Support Fee",
+        quantity: 1,
+        amount: feePrice
+      });
+    }
+
+    if (createdBooking.prasadTotal && Number(createdBooking.prasadTotal) > 0) {
+      items.push({
+        description: "Prasadam Seva",
+        quantity: 1,
+        amount: Number(createdBooking.prasadTotal)
+      });
+    }
+
     return {
-      id: createdBooking.id || `OFF-${Date.now()}`,
-      devoteeName: createdBooking.devoteeName || formData.name || "Devotee",
-      devoteePhone: createdBooking.devoteePhone || formData.phone || "N/A",
-      devoteeEmail: createdBooking.devoteeEmail || formData.email || "",
-      poojaName: createdBooking.poojaName || createdBooking.pooja?.name || parseLocalizedValue(selectedPoojaData?.name, language) || "Pooja Service",
-      templeName: createdBooking.templeName || createdBooking.temple?.name || parseLocalizedValue(allMandals.find((t: any) => t.id === selectedMandal)?.name, language) || "DevBhakti",
-      packageName: createdBooking.packageName || selectedPackageData?.name || "Standard Package",
-      packagePrice: Number(createdBooking.packagePrice ?? createdBooking.amount ?? basePrice ?? 0),
-      platformFee: Number(createdBooking.platformFee ?? platformFee ?? 0),
+      receiptNo: createdBooking.id || `OFF-${Date.now()}`,
+      dateTime: createdBooking.createdAt 
+        ? new Date(createdBooking.createdAt).toLocaleString("en-IN", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })
+        : new Date().toLocaleString("en-IN", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }),
+      paymentMode: createdBooking.paymentMethod || paymentMethod || "CASH",
+      transactionId: createdBooking.transactionRef || createdBooking.id || "OFFLINE",
+      mandalName: mandalProfile?.name_en || mandalProfile?.name || createdBooking.templeName || "DevBhakti Mandal",
+      mandalAddress: mandalProfile?.address ? `${mandalProfile.address}, ${mandalProfile.city || ''}` : "India",
+      mandalSlug: mandalProfile?.slug || mandalProfile?.id,
+      headerBanner,
+      sponsors,
+      customThankYouNote: config.customThankYouNote,
+      items,
       totalAmount: Number(createdBooking.totalAmount ?? createdBooking.amount ?? totalAmount ?? 0),
-      status: createdBooking.status || "CONFIRMED",
-      bookingDate: createdBooking.bookingDate || createdBooking.date || selectedDate || new Date().toISOString(),
-      createdAt: createdBooking.createdAt || new Date().toISOString(),
-      gothra: createdBooking.gothra || formData.gothra,
-      kuldevi: createdBooking.kuldevi || formData.kuldevi,
-      kuldevta: createdBooking.kuldevta || formData.kuldevta,
-      dob: createdBooking.dob || formData.dob,
-      anniversary: createdBooking.anniversary || formData.anniversary,
-      nativePlace: createdBooking.nativePlace || formData.nativePlace,
-      additionalDevotees: createdBooking.additionalDevotees || formData.additionalDevotees,
-      ...createdBooking,
+      devoteeName: createdBooking.devoteeName || formData.name,
+      devoteePhone: createdBooking.devoteePhone || formData.phone
     };
   };
 
   const handlePrintReceipt = () => {
-    const bookingForReceipt = getReceiptBookingData();
-    if (!bookingForReceipt) return;
-
-    const html = generatePoojaReceiptHTML(bookingForReceipt as any, t);
-    const printWindow = window.open('', '_blank');
-    if (printWindow) {
-      printWindow.document.open();
-      printWindow.document.write(html);
-      printWindow.document.close();
-      printWindow.focus();
-      setTimeout(() => {
-        printWindow.print();
-      }, 500);
-    } else {
-      const iframe = document.createElement('iframe');
-      iframe.style.position = 'fixed';
-      iframe.style.right = '0';
-      iframe.style.bottom = '0';
-      iframe.style.width = '0';
-      iframe.style.height = '0';
-      iframe.style.border = '0';
-      document.body.appendChild(iframe);
-      const doc = iframe.contentWindow?.document;
-      if (doc) {
-        doc.open();
-        doc.write(html);
-        doc.close();
-        iframe.contentWindow?.focus();
-        iframe.contentWindow?.print();
-        setTimeout(() => {
-          document.body.removeChild(iframe);
-        }, 1000);
-      }
-    }
+    const data = buildMandalReceiptData();
+    if (!data) return;
+    openPrintPDFWindow(generateMandalReceiptHTML(data));
   };
 
   const handleDownloadReceipt = () => {
-    const bookingForReceipt = getReceiptBookingData();
-    if (!bookingForReceipt) return;
-    downloadPoojaReceiptPDF(bookingForReceipt as any, t);
+    const data = buildMandalReceiptData();
+    if (!data) return;
+    downloadMandalReceiptPDF(data);
   };
 
   if (loading) {

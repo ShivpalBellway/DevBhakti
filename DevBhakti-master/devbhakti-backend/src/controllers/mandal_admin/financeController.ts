@@ -417,9 +417,11 @@ export const getMandalFinancialReport = async (req: Request, res: Response) => {
       const isOff = b.isOffline || b.bookingSource === "MANDAL_OFFLINE" || b.bookingSource === "COUNTER" || b.bookingSource === "TELLER" || !b.razorpayOrderId;
       const mode = normalizePaymentMode(b.paymentMethod || (isOff ? "Cash" : "UPI"));
 
+      const receiptId = b.displayId || (b.id.length > 15 ? `PB${b.id.slice(-6).toUpperCase()}` : b.id);
+
       allTransactionsList.push({
         id: b.id,
-        receiptNo: b.displayId || b.id,
+        receiptNo: receiptId,
         category: "POOJA_SEVA",
         categoryName: "Pooja & Seva",
         title: b.packageName || "Pooja Booking",
@@ -442,9 +444,11 @@ export const getMandalFinancialReport = async (req: Request, res: Response) => {
       const mode = normalizePaymentMode(d.paymentMethod || (isOff ? "Cash" : "UPI"));
 
       const donationObj = d as any;
+      const receiptId = d.displayId || donationObj.receiptNo || donationObj.transactionRef || (d.id.length > 15 ? `DN${d.id.slice(-6).toUpperCase()}` : d.id);
+
       allTransactionsList.push({
         id: d.id,
-        receiptNo: donationObj.receiptNo || donationObj.transactionRef || d.id,
+        receiptNo: receiptId,
         category: "DONATIONS",
         categoryName: "Donation",
         title: d.donorName ? `Donation from ${d.donorName}` : "Mandal Donation",
@@ -467,12 +471,14 @@ export const getMandalFinancialReport = async (req: Request, res: Response) => {
       const isOff = !o.order?.razorpayOrderId;
       const mode = normalizePaymentMode(o.order?.paymentMethod || (isOff ? "Cash" : "UPI"));
 
+      const receiptId = subOrderObj.subOrderNumber || (o.id.length > 15 ? `ORD${o.id.slice(-6).toUpperCase()}` : o.id);
+
       allTransactionsList.push({
         id: o.id,
-        receiptNo: subOrderObj.subOrderNumber || o.id,
+        receiptNo: receiptId,
         category: "SACRED_ITEMS",
         categoryName: "Sacred Items",
-        title: `Marketplace Order #${subOrderObj.subOrderNumber || o.id.slice(-6)}`,
+        title: `Marketplace Order #${receiptId}`,
         amount: amt,
         channel: isOff ? "OFFLINE" : "ONLINE",
         paymentMode: mode,
@@ -492,6 +498,7 @@ export const getMandalFinancialReport = async (req: Request, res: Response) => {
 
       const tellerObj = t as any;
       const mode = normalizePaymentMode(t.paymentMethod || "Cash");
+      const receiptId = tellerObj.receiptNumber || t.displayId || (t.id.length > 15 ? `TL${t.id.slice(-6).toUpperCase()}` : t.id);
 
       const productItemNames = (t.items || [])
         .filter((it: any) => {
@@ -507,7 +514,7 @@ export const getMandalFinancialReport = async (req: Request, res: Response) => {
 
       allTransactionsList.push({
         id: t.id,
-        receiptNo: tellerObj.receiptNumber || t.displayId || t.id,
+        receiptNo: receiptId,
         category: "SACRED_ITEMS",
         categoryName: "Sacred Items",
         title: productItemNames ? `Sacred Items (${productItemNames})` : "Counter Sacred Items Sale",
@@ -528,10 +535,11 @@ export const getMandalFinancialReport = async (req: Request, res: Response) => {
       const amt = t.totalAmount || 0;
       const isOff = t.paymentMethod === "CASH" || !t.paymentMethod;
       const mode = normalizePaymentMode(t.paymentMethod || (isOff ? "Cash" : "UPI"));
+      const receiptId = t.displayId || (t.id.length > 15 ? `TKT${t.id.slice(-6).toUpperCase()}` : t.id);
 
       allTransactionsList.push({
         id: t.id,
-        receiptNo: t.displayId || t.id,
+        receiptNo: receiptId,
         category: "TICKETING",
         categoryName: "Darshan Ticket",
         title: `Darshan Ticket (${t.visitorCount || 1} Person)`,

@@ -1,5 +1,6 @@
 import { Response } from 'express';
 import { prisma } from '../../lib/prisma';
+import { generateMandalReceiptHTML } from '../../utils/mandalReceiptTemplate';
 import fs from 'fs';
 import path from 'path';
 
@@ -184,5 +185,70 @@ export const getPublicReceiptConfig = async (req: any, res: Response) => {
     } catch (error: any) {
         console.error("Error in getPublicReceiptConfig:", error);
         return res.status(500).json({ success: false, message: error.message || 'Internal server error' });
+    }
+};
+
+export const renderReceiptHTML = async (req: any, res: Response) => {
+    try {
+        const { type, transactionId } = req.params;
+        let receiptData: any = null;
+
+        if (type === 'donation' || type === 'transaction' || type === 'offline-donation') {
+            const tx = await (prisma as any).mandalTransaction.findUnique({
+                where: { id: transactionId },
+                include: { mandal: true }
+            });
+
+            if (tx) {
+                let config = tx.mandal?.receiptConfig;
+                if (typeof config === 'string') {
+                    try { config = JSON.parse(config); } catch (e) { config = {}; }
+                }
+
+                const baseUrl = `${req.protocol}://${req.get('host')}`;
+                const sponsors = (config?.sponsors || []).map((sp: any) => ({
+                    ...sp,
+                    imageUrl: sp.imageUrl?.startsWith('http') ? sp.imageUrl : `${baseUrl}${sp.imageUrl}`
+                }));
+                const headerBanner = config?.headerBanner
+                    ? (config.headerBanner.startsWith('http') ? config.headerBanner : `${baseUrl}${config.headerBanner}`)
+                    : null;
+
+                receiptData = {
+                    receiptNo: tx.receiptNo || `REC-${tx.id.slice(-8).toUpperCase()}`,
+                    dateTime: new Date(tx.createdAt).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }),
+                    paymentMode: tx.paymentMode || 'Online',
+                    transactionId: tx.id,
+                    mandalName: tx.mandal?.name || 'Mandal',
+                    mandalAddress: tx.mandal?.address || '',
+                    mandalSlug: tx.mandal?.slug || '',
+                    headerBanner,
+                    sponsors,
+                    customThankYouNote: config?.customThankYouNote || '',
+                    devoteeName: tx.devoteeName || 'Devotee',
+                    devoteePhone: tx.devoteePhone || '',
+                    totalAmount: tx.amount,
+                    items: [
+                        {
+                            srNo: 1,
+                            description: tx.description || tx.type || 'Donation Contribution',
+                            quantity: 1,
+                            amount: tx.amount
+                        }
+                    ]
+                };
+            }
+        }
+
+        if (!receiptData) {
+            return res.status(404).send('<h2 style="font-family:sans-serif; text-align:center; margin-top:50px;">Receipt Not Found</h2>');
+        }
+
+        const html = generateMandalReceiptHTML(receiptData);
+        res.setHeader('Content-Type', 'text/html');
+        return res.send(html);
+    } catch (error: any) {
+        console.error("Error in renderReceiptHTML:", error);
+        return res.status(500).send(`<h2 style="font-family:sans-serif; text-align:center; margin-top:50px;">Error generating receipt: ${error.message}</h2>`);
     }
 };

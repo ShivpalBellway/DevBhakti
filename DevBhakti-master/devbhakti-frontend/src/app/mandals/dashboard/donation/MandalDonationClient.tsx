@@ -18,6 +18,7 @@ import {
     Calendar as CalendarIcon,
     Filter,
     MapPin,
+    Printer,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -34,8 +35,17 @@ import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { useDebounce } from "@/hooks/use-debounce";
-import { fetchMandalDonations, fetchMandalDonationStats } from "@/api/mandalAdminController";
+import { fetchMandalDonations, fetchMandalDonationStats, fetchMandalProfile } from "@/api/mandalAdminController";
+import { generateMandalReceiptHTML, downloadMandalReceiptPDF, openPrintPDFWindow, MandalReceiptData } from "@/utils/mandalReceiptTemplate";
+import { BASE_URL } from "@/config/apiConfig";
 import * as XLSX from "xlsx";
+
+const getFullImageUrl = (pathStr: string) => {
+    if (!pathStr) return "";
+    if (pathStr.startsWith("http") || pathStr.startsWith("blob:")) return pathStr;
+    const cleanPath = pathStr.startsWith("/") ? pathStr : `/${pathStr}`;
+    return `${BASE_URL}${cleanPath}`;
+};
 
 export default function MandalDonationClient() {
     const searchParams = useSearchParams();
@@ -52,6 +62,64 @@ export default function MandalDonationClient() {
     const [totalPages, setTotalPages] = useState(1);
     const [totalItems, setTotalItems] = useState(0);
     const { toast } = useToast();
+
+    const [mandalProfile, setMandalProfile] = useState<any>(null);
+
+    useEffect(() => {
+        const loadProfile = async () => {
+            try {
+                const res = await fetchMandalProfile();
+                if (res.success && res.data) setMandalProfile(res.data);
+            } catch (e) {
+                console.error("Mandal profile load err", e);
+            }
+        };
+        loadProfile();
+    }, []);
+
+    const buildReceiptData = (donation: any): MandalReceiptData => {
+        const config = mandalProfile?.receiptConfig || mandalProfile?.receiptSettings || {};
+        const headerBanner = config.headerBanner ? getFullImageUrl(config.headerBanner) : null;
+        const sponsors = (config.sponsors || []).map((sp: any) => ({
+            ...sp,
+            imageUrl: getFullImageUrl(sp.imageUrl)
+        }));
+
+        return {
+            receiptNo: donation.receiptNo || donation.donationId || donation.displayId || (donation.id ? donation.id.slice(-8).toUpperCase() : `DON-${Date.now()}`),
+            dateTime: donation.createdAt 
+                ? new Date(donation.createdAt).toLocaleString("en-IN", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })
+                : new Date().toLocaleString("en-IN", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }),
+            paymentMode: donation.paymentMethod || "ONLINE",
+            transactionId: donation.transactionRef || donation.id || "DONATION",
+            mandalName: mandalProfile?.name_en || mandalProfile?.name || "DevBhakti Mandal",
+            mandalAddress: mandalProfile?.address ? `${mandalProfile.address}, ${mandalProfile.city || ''}` : "India",
+            mandalSlug: mandalProfile?.slug || mandalProfile?.id,
+            headerBanner,
+            sponsors,
+            customThankYouNote: config.customThankYouNote,
+            items: [
+                {
+                    description: donation.message || "Donation Contribution",
+                    quantity: 1,
+                    amount: Number(donation.amount || 0)
+                }
+            ],
+            totalAmount: Number(donation.amount || 0),
+            devoteeName: donation.donorName || "Devotee",
+            devoteePhone: donation.donorPhone || ""
+        };
+    };
+
+    const handlePrintReceipt = (donation: any) => {
+        const data = buildReceiptData(donation);
+        openPrintPDFWindow(generateMandalReceiptHTML(data));
+    };
+
+    const handleDownloadReceipt = (donation: any) => {
+        const data = buildReceiptData(donation);
+        downloadMandalReceiptPDF(data);
+    };
 
     useEffect(() => {
         if (typeParam === "ONLINE" || typeParam === "OFFLINE") {
@@ -404,7 +472,25 @@ export default function MandalDonationClient() {
                                 </div>
 
                                 {/* Actions */}
-                                <div className="flex items-center justify-end">
+                                <div className="flex items-center justify-end gap-1">
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="hover:bg-[#7b4623]/10 hover:text-[#7b4623]"
+                                        onClick={() => handlePrintReceipt(donation)}
+                                        title="Print Receipt"
+                                    >
+                                        <Printer className="w-4 h-4" />
+                                    </Button>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="hover:bg-[#7b4623]/10 hover:text-[#7b4623]"
+                                        onClick={() => handleDownloadReceipt(donation)}
+                                        title="Download Receipt PDF"
+                                    >
+                                        <Download className="w-4 h-4" />
+                                    </Button>
                                     <Button
                                         variant="ghost"
                                         size="icon"
@@ -581,9 +667,25 @@ export default function MandalDonationClient() {
                             </div>
                         </div>
 
-                        <div className="p-5 border-t">
+                        <div className="p-5 border-t flex flex-col gap-2">
+                            <div className="flex gap-2">
+                                <Button
+                                    variant="outline"
+                                    className="flex-1 border-[#7b4623] text-[#7b4623] hover:bg-[#7b4623]/5 rounded-xl font-semibold text-xs gap-1.5"
+                                    onClick={() => handlePrintReceipt(selectedDonation)}
+                                >
+                                    <Printer className="w-4 h-4" /> Print
+                                </Button>
+                                <Button
+                                    className="flex-1 bg-[#7b4623] hover:bg-[#5d351a] text-white rounded-xl font-semibold text-xs gap-1.5"
+                                    onClick={() => handleDownloadReceipt(selectedDonation)}
+                                >
+                                    <Download className="w-4 h-4" /> Download PDF
+                                </Button>
+                            </div>
                             <Button
-                                className="w-full bg-[#7b4623] hover:bg-[#5d351a] text-white rounded-xl"
+                                variant="ghost"
+                                className="w-full text-slate-500 rounded-xl text-xs"
                                 onClick={() => setSelectedDonation(null)}
                             >
                                 Close

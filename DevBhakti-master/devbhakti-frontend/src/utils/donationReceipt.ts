@@ -179,82 +179,106 @@ export const generateReceiptHTML = (donation: any) => {
   });
 };
 
-export const downloadDonationReceiptPDF = (donation: DonationReceiptData) => {
+const urlToBase64 = async (url: string): Promise<string> => {
+  if (!url || typeof window === "undefined") return "";
+  if (url.startsWith("data:")) return url;
+  try {
+    const res = await fetch(url, { mode: "cors" });
+    if (!res.ok) return url;
+    const blob = await res.blob();
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve((reader.result as string) || url);
+      reader.onerror = () => resolve(url);
+      reader.readAsDataURL(blob);
+    });
+  } catch (e) {
+    return url;
+  }
+};
+
+export const downloadDonationReceiptPDF = async (donation: DonationReceiptData) => {
   if (typeof window === "undefined") return;
-  const html = generateDonationReceiptHTML(donation);
-  const cleanId = (donation.donationId || "Receipt").replace(/[^a-zA-Z0-9_-]/g, "");
-  const fileName = `Donation_Receipt_${cleanId}.pdf`;
 
-  const container = document.createElement('div');
-  container.style.position = 'fixed';
-  container.style.left = '0px';
-  container.style.top = '0px';
-  container.style.width = '794px';
-  container.style.padding = '0px';
-  container.style.margin = '0px';
-  container.style.background = '#ffffff';
-  container.style.color = '#1e293b';
-  container.style.zIndex = '-9999';
-  container.style.opacity = '0.99';
-  container.style.pointerEvents = 'none';
-  container.innerHTML = html;
-  document.body.appendChild(container);
+  try {
+    const html2pdfModule = await import("html2pdf.js");
+    const html2pdf = html2pdfModule.default || html2pdfModule;
 
-  const opt = {
-    margin: [8, 8, 8, 8],
-    filename: fileName,
-    image: { type: 'jpeg', quality: 0.98 },
-    html2canvas: {
-      scale: 2,
-      useCORS: true,
-      logging: false,
-      scrollX: 0,
-      scrollY: 0,
-      windowWidth: 794,
-      backgroundColor: '#ffffff'
-    },
-    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-  };
+    const html = generateDonationReceiptHTML(donation);
+    const cleanId = (donation.donationId || "Receipt").replace(/[^a-zA-Z0-9_-]/g, "");
+    const fileName = `Donation_Receipt_${cleanId}.pdf`;
 
-  const executePDFDownload = () => {
-    if ((window as any).html2pdf) {
-      (window as any).html2pdf().set(opt).from(container).save().then(() => {
-        if (document.body.contains(container)) {
-          document.body.removeChild(container);
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, 'text/html');
+
+    const container = document.createElement('div');
+    container.className = 'donation-pdf-container-root';
+    container.style.position = 'absolute';
+    container.style.left = '0';
+    container.style.top = '0';
+    container.style.width = '794px';
+    container.style.zIndex = '999999';
+    container.style.background = '#ffffff';
+    container.style.color = '#1e293b';
+    container.style.pointerEvents = 'none';
+    container.style.boxSizing = 'border-box';
+
+    const styles = doc.querySelectorAll('style');
+    styles.forEach(s => container.appendChild(s.cloneNode(true)));
+
+    Array.from(doc.body.childNodes).forEach(node => {
+      container.appendChild(node.cloneNode(true));
+    });
+
+    document.body.appendChild(container);
+
+    const opt = {
+      margin: [6, 6, 6, 6],
+      filename: fileName,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        logging: false,
+        scrollX: 0,
+        scrollY: 0,
+        windowWidth: 794,
+        backgroundColor: '#ffffff'
+      },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+
+    const cleanup = () => {
+      if (document.body.contains(container)) {
+        document.body.removeChild(container);
+      }
+    };
+
+    const images = Array.from(container.querySelectorAll('img'));
+    const imagePromises = images.map(async img => {
+      img.crossOrigin = "anonymous";
+      if (img.src && !img.src.startsWith('data:')) {
+        const base64 = await urlToBase64(img.src);
+        if (base64 && base64.startsWith('data:')) {
+          img.src = base64;
         }
-      }).catch((err: any) => {
-        console.error("PDF generation error, opening print preview fallback", err);
-        if (document.body.contains(container)) {
-          document.body.removeChild(container);
-        }
-        openPrintPDFWindow(html);
+      }
+      if (img.complete && img.naturalWidth > 0) return Promise.resolve();
+      return new Promise((resolve) => {
+        img.onload = resolve;
+        img.onerror = resolve;
       });
-    } else {
-      const script = document.createElement('script');
-      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
-      script.onload = () => {
-        (window as any).html2pdf().set(opt).from(container).save().then(() => {
-          if (document.body.contains(container)) {
-            document.body.removeChild(container);
-          }
-        }).catch(() => {
-          if (document.body.contains(container)) {
-            document.body.removeChild(container);
-          }
-          openPrintPDFWindow(html);
-        });
-      };
-      script.onerror = () => {
-        if (document.body.contains(container)) {
-          document.body.removeChild(container);
-        }
-        openPrintPDFWindow(html);
-      };
-      document.head.appendChild(script);
-    }
-  };
+    });
 
-  setTimeout(executePDFDownload, 350);
+    await Promise.all(imagePromises);
+    await new Promise(r => setTimeout(r, 200));
+
+    await (html2pdf as any)().set(opt).from(container).save();
+    cleanup();
+  } catch (err) {
+    console.error("Donation PDF download failed:", err);
+  }
 };
 
 export const openPrintPDFWindow = (html: string) => {
