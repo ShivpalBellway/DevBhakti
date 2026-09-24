@@ -116,7 +116,29 @@ export default function MandalDonationClient() {
         openPrintPDFWindow(generateMandalReceiptHTML(data));
     };
 
-    const handleDownloadReceipt = (donation: any) => {
+    const handleDownloadReceipt = async (donation: any) => {
+        const txId = donation.transactionRef || donation.id;
+        if (txId) {
+            try {
+                const pdfUrl = `${BASE_URL}/api/mandal/receipts/${txId}/pdf`;
+                const res = await fetch(pdfUrl);
+                if (res.ok) {
+                    const blob = await res.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement("a");
+                    a.href = url;
+                    const cleanReceiptNo = (donation.receiptNo || donation.displayId || txId.slice(-8)).replace(/[^a-zA-Z0-9_-]/g, "");
+                    a.download = `Mandal_Receipt_${cleanReceiptNo}.pdf`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    window.URL.revokeObjectURL(url);
+                    return;
+                }
+            } catch (e) {
+                console.error("API PDF download error, using fallback:", e);
+            }
+        }
         const data = buildReceiptData(donation);
         downloadMandalReceiptPDF(data);
     };

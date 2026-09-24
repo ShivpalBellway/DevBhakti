@@ -645,7 +645,31 @@ export default function AddOfflineBookingPage({ onBack }: { onBack?: () => void 
     openPrintPDFWindow(generateMandalReceiptHTML(data));
   };
 
-  const handleDownloadReceipt = () => {
+  const handleDownloadReceipt = async () => {
+    if (createdBooking) {
+      const txId = createdBooking.transactionRef || createdBooking.id;
+      if (txId) {
+        try {
+          const pdfUrl = `${BASE_URL}/api/mandal/receipts/${txId}/pdf`;
+          const res = await fetch(pdfUrl);
+          if (res.ok) {
+            const blob = await res.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            const cleanReceiptNo = (createdBooking.id || txId.slice(-8)).replace(/[^a-zA-Z0-9_-]/g, "");
+            a.download = `Mandal_Receipt_${cleanReceiptNo}.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+            return;
+          }
+        } catch (e) {
+          console.error("API PDF download error, fallback to client:", e);
+        }
+      }
+    }
     const data = buildMandalReceiptData();
     if (!data) return;
     downloadMandalReceiptPDF(data);

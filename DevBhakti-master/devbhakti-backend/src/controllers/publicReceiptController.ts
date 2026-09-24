@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
 import { generateMandalReceiptHTML, MandalReceiptData, ReceiptItem } from '../utils/mandalReceiptTemplate';
 import PDFDocument from 'pdfkit';
+import puppeteer from 'puppeteer';
 
 /**
  * Helper to ensure image URLs are fully qualified absolute HTTP(S) URLs
@@ -276,7 +277,7 @@ export const getMandalReceiptHTMLResponse = async (req: Request, res: Response) 
 
 /**
  * 2️⃣ GET /api/mandal/receipts/:transactionId/pdf
- * Returns ready-made PDF stream/buffer response for Mobile App download
+ * Returns ready-made PDF stream/buffer response for Mobile App & Web download
  */
 export const getMandalReceiptPDFResponse = async (req: Request, res: Response) => {
   try {
@@ -293,13 +294,57 @@ export const getMandalReceiptPDFResponse = async (req: Request, res: Response) =
       return res.status(404).json({ success: false, message: 'Receipt transaction not found' });
     }
 
+    const formatCleanId = (idStr?: string) => {
+      if (!idStr) return '—';
+      if (idStr.length > 20 && idStr.startsWith('c')) {
+        return `REC-${idStr.slice(-8).toUpperCase()}`;
+      }
+      return idStr;
+    };
+
+    const displayReceiptNo = formatCleanId(receiptData.receiptNo);
+    const htmlContent = generateMandalReceiptHTML(receiptData);
+
+    let pdfBuffer: Buffer | null = null;
+
+    try {
+      const browser = await puppeteer.launch({
+        headless: true,
+        args: [
+          '--no-sandbox',
+          '--disable-setuid-sandbox',
+          '--disable-dev-shm-usage',
+          '--disable-gpu'
+        ]
+      });
+      const page = await browser.newPage();
+      await page.setContent(htmlContent, { waitUntil: 'domcontentloaded' });
+      const pdfUint8Array = await page.pdf({
+        format: 'A4',
+        printBackground: true,
+        margin: { top: '10mm', bottom: '10mm', left: '10mm', right: '10mm' }
+      });
+      pdfBuffer = Buffer.from(pdfUint8Array);
+      await browser.close();
+    } catch (puppeteerErr) {
+      console.error('Puppeteer PDF generation failed, falling back to PDFKit:', puppeteerErr);
+    }
+
+    if (pdfBuffer) {
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `inline; filename="receipt-${displayReceiptNo}.pdf"`);
+      return res.status(200).send(pdfBuffer);
+    }
+
+    // Fallback PDFKit rendering
+    const displayTxnId = formatCleanId(receiptData.transactionId);
     res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `inline; filename="receipt-${receiptData.receiptNo}.pdf"`);
+    res.setHeader('Content-Disposition', `inline; filename="receipt-${displayReceiptNo}.pdf"`);
 
     const doc = new PDFDocument({ margin: 36, size: 'A4' });
     doc.pipe(res);
 
-    const primaryColor = '#7b4623';
+    const primaryColor = '#6b2e17';
     const secondaryColor = '#0f172a';
     const lightBg = '#fdfaf6';
     const borderColor = '#f1e6da';
@@ -315,15 +360,15 @@ export const getMandalReceiptPDFResponse = async (req: Request, res: Response) =
     let y = 120;
 
     // Details Box
-    doc.rect(36, y, 523, 65).fill('#ffffff').stroke('#cbd5e1');
+    doc.rect(36, y, 523, 65).fill('#ffffff').stroke('#f1e6da');
     doc.fillColor(secondaryColor).fontSize(9.5).font('Helvetica');
-    doc.text(`Receipt No: ${receiptData.receiptNo}`, 50, y + 12);
+    doc.text(`Receipt No: ${displayReceiptNo}`, 50, y + 12);
     doc.text(`Date & Time: ${receiptData.dateTime}`, 50, y + 28);
     doc.text(`Payment Mode: ${receiptData.paymentMode}`, 50, y + 44);
 
     doc.text(`Devotee: ${receiptData.devoteeName || 'Devotee'}`, 300, y + 12);
     doc.text(`Phone: ${receiptData.devoteePhone || 'N/A'}`, 300, y + 28);
-    doc.text(`Txn Ref: ${receiptData.transactionId}`, 300, y + 44);
+    doc.text(`Txn Ref: ${displayTxnId}`, 300, y + 44);
 
     y += 80;
 
@@ -337,20 +382,30 @@ export const getMandalReceiptPDFResponse = async (req: Request, res: Response) =
 
     y += 24;
 
+    // Minimum 5 items display
+    const displayItems = [...receiptData.items];
+    while (displayItems.length < 5) {
+      displayItems.push({
+        srNo: displayItems.length + 1,
+        description: '',
+        quantity: 0,
+        amount: 0
+      });
+    }
+
     // Items Rows
-    receiptData.items.forEach((item, index) => {
-      const bg = index % 2 === 0 ? '#ffffff' : '#f8fafc';
-      doc.rect(36, y, 523, 24).fill(bg).stroke('#f1f5f9');
-      doc.fillColor('#334155').fontSize(9.5).font('Helvetica');
-      doc.text(String(item.srNo || index + 1), 46, y + 7);
-      doc.text(item.description, 90, y + 7, { width: 280, height: 16 });
-      doc.text(String(item.quantity || 1), 380, y + 7, { align: 'center' });
-      doc.text(`₹ ${item.amount.toLocaleString('en-IN')}`, 460, y + 7, { align: 'right' });
+    displayItems.forEach((item, index) => {
+      doc.rect(36, y, 523, 24).fill('#ffffff').stroke('#f1e6da');
+      doc.fillColor('#1e293b').fontSize(9.5).font('Helvetica');
+      doc.text(String(index + 1), 46, y + 7);
+      doc.text(item.description || '—', 90, y + 7, { width: 280, height: 16 });
+      doc.text(item.amount > 0 ? String(item.quantity || 1) : '', 380, y + 7, { align: 'center' });
+      doc.text(item.amount > 0 ? `₹ ${item.amount.toLocaleString('en-IN')}` : '', 460, y + 7, { align: 'right' });
       y += 24;
     });
 
     // Total Row
-    doc.rect(36, y, 523, 28).fill('#fefcf9').stroke(primaryColor);
+    doc.rect(36, y, 523, 28).fill('#fdf6ee').stroke(borderColor);
     doc.fillColor(primaryColor).fontSize(12).font('Helvetica-Bold');
     doc.text('Total Amount Paid:', 90, y + 8);
     doc.text(`₹ ${receiptData.totalAmount.toLocaleString('en-IN')}`, 460, y + 8, { align: 'right' });

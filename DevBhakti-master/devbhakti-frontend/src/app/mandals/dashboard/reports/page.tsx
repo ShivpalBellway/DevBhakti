@@ -225,7 +225,26 @@ export default function MandalReportsPage() {
     openPrintPDFWindow(generateMandalReceiptHTML(data));
   };
 
-  const handleDownloadTxReceipt = (tx: any) => {
+  const handleDownloadTxReceipt = async (tx: any) => {
+    try {
+      const pdfUrl = `${BASE_URL}/api/mandal/receipts/${tx.id}/pdf`;
+      const res = await fetch(pdfUrl);
+      if (res.ok) {
+        const blob = await res.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        const cleanReceiptNo = (tx.receiptNo || tx.id.slice(-8)).replace(/[^a-zA-Z0-9_-]/g, "");
+        a.download = `Mandal_Receipt_${cleanReceiptNo}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+        return;
+      }
+    } catch (e) {
+      console.error("API PDF download error, using fallback:", e);
+    }
     const data = buildTxReceiptData(tx);
     downloadMandalReceiptPDF(data);
   };
